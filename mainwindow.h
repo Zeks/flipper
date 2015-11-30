@@ -9,7 +9,8 @@
 #include <QNetworkReply>
 #include <QTimer>
 #include <QMenu>
-
+#include <QHash>
+#include <QEventLoop>
 struct Section
 {
     int start = 0;
@@ -27,7 +28,12 @@ struct Section
     QDateTime updated;
     bool isValid =false;
 };
-
+struct Fandom
+{
+    QString name;
+    QString url;
+    QString section;
+};
 namespace Ui {
 class MainWindow;
 }
@@ -39,6 +45,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    void Init();
     void RequestPage(QString);
     void ProcessPage(QString);
     QString GetFandom(QString text);
@@ -63,8 +70,20 @@ public:
     void timerEvent(QTimerEvent *);
 
 
+    void UpdateFandomList();
+    void UpdateCrossoverList();
+    void PopulateComboboxes();
+    QStringList GetFandomListFromDB();
+    QStringList GetCrossoverListFromDB();
+    QString GetCrossoverUrl(QString);
+    QString GetNormalUrl(QString);
+
+    QDateTime GetMaxUpdateDateForSection(QString section);
+
     void LoadIntoDB(Section&);
     QNetworkAccessManager manager;
+    QNetworkAccessManager fandomManager;
+    QNetworkAccessManager crossoverManager;
 
 private:
     Ui::MainWindow *ui;
@@ -73,19 +92,29 @@ private:
     int timerId = -1;
     int pageCounter = 0;
     QMenu browserMenu;
+    QEventLoop managerEventLoop;
+    QHash<QString, QList<Fandom>> names;
+    QString currentProcessedSetion;
+    QString dbName = "CrawlerDB.sqlite";
+    QDateTime lastUpdated;
+    QHash<QString, QString> nameOfFandomSectionToLink;
+    QHash<QString, QString> nameOfCrossoverSectionToLink;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
+    void OnFandomReply(QNetworkReply*);
+    void OnCrossoverReply(QNetworkReply*);
 private slots:
     void on_pbCrawl_clicked();
     void OnHideFanfic();
     void OnSmutFanfic();
     void OnUnknownFandom();
     void OnShowContextMenu(QPoint);
-
+    void OnSectionChanged(QString);
     void on_pbLoadDatabase_clicked();
     void on_chkSmut_toggled(bool checked);
     void on_chkUnknownFandoms_toggled(bool checked);
+    void on_pbInit_clicked();
 };
 
 #endif // MAINWINDOW_H

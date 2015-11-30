@@ -18,15 +18,22 @@
     <item row="1" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Crawler</string>
+        <string>Database</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_2">
+       <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="pbInit">
+            <property name="text">
+             <string>Load Section Data</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QPushButton" name="pbCrawl">
             <property name="sizePolicy">
@@ -36,118 +43,152 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Crawl</string>
+             <string>Crawl Section</string>
             </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Section type: </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="cbSectionTypes">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <item>
+             <property name="text">
+              <string>Anime/Manga</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Book</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Cartoons</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Comics</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Games</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Misc</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Movies</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Plays/Musicals</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>TV Shows</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_2">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
             <property name="text">
-             <string>Page count</string>
+             <string>Normal</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lePageLimit">
+           <widget class="QComboBox" name="cbNormals">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
-              <width>40</width>
+              <width>200</width>
               <height>16777215</height>
              </size>
             </property>
-            <property name="text">
-             <string>1</string>
+            <property name="editable">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_6">
             <property name="text">
-             <string>Start From</string>
+             <string>Crossovers</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="leStartFromPage">
+           <widget class="QComboBox" name="cbCrossovers">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>40</width>
+              <width>200</width>
               <height>16777215</height>
              </size>
             </property>
-            <property name="text">
-             <string>1</string>
+            <property name="editable">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
-            <property name="text">
-             <string>Origin</string>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="leUrl">
-            <property name="text">
-             <string>https://www.fanfiction.net/anime/Naruto/?&amp;srt=2&amp;lan=1&amp;r=10&amp;len=100</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Explicit Category:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="leCategory">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
+           </spacer>
           </item>
          </layout>
         </item>
         <item row="1" column="0">
-         <widget class="QTextEdit" name="edtDebug"/>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tab_2">
-       <attribute name="title">
-        <string>Database</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_3">
-        <item row="0" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QPushButton" name="pbLoadDatabase">
@@ -190,7 +231,7 @@
              </size>
             </property>
             <property name="text">
-             <string>300000</string>
+             <string/>
             </property>
            </widget>
           </item>
@@ -226,24 +267,7 @@
           <item>
            <widget class="QLineEdit" name="leNotContainsGenre">
             <property name="text">
-             <string>DRAMA ANGST</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>Fandom:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="leFandom">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
+             <string/>
             </property>
            </widget>
           </item>
@@ -263,7 +287,7 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QTextBrowser" name="edtResults"/>
         </item>
        </layout>

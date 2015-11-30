@@ -6,6 +6,8 @@
 #include <QSqlQuery>
 #include <QSqlDatabase>
 #include <QSqlError>
+#include <QPair>
+#include <QStringListModel>
 #include <algorithm>
 
 
@@ -16,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setWindowTitle("ffnet sane search engine");
+
     connect(
                 &manager, SIGNAL (finished(QNetworkReply*)),
                 this, SLOT (OnNetworkReply(QNetworkReply*)));
@@ -24,7 +28,16 @@ MainWindow::MainWindow(QWidget *parent) :
     browserMenu.addAction("Unknown Fandom", this, SLOT(OnUnknownFandom()));
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->edtResults, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnShowContextMenu(QPoint)));
+    connect(&fandomManager, &QNetworkAccessManager::finished, this, &MainWindow::OnFandomReply);
+    connect(&crossoverManager, &QNetworkAccessManager::finished, this, &MainWindow::OnCrossoverReply);
+    connect(ui->cbSectionTypes, SIGNAL(currentTextChanged(QString)), this, SLOT(OnSectionChanged(QString)));
+    nameOfFandomSectionToLink["Normal/Anime/Manga"] = QString::fromLocal8Bit("https://www.fanfiction.net/anime/");
+    nameOfFandomSectionToLink["Normal/Book"] = QString::fromLocal8Bit("https://www.fanfiction.net/book/");
+    nameOfCrossoverSectionToLink["Crossover/Anime/Manga"] = QString::fromLocal8Bit("https://www.fanfiction.net/crossovers/anime/");
+    nameOfCrossoverSectionToLink["Crossover/Book"] = QString::fromLocal8Bit("https://www.fanfiction.net/crossovers/book/");
 
+    ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
+    ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 }
 
 MainWindow::~MainWindow()
@@ -32,18 +45,30 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::Init()
+{
+    UpdateFandomList();
+    UpdateCrossoverList();
+    ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
+    ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
+}
+
 void MainWindow::RequestPage(QString page)
 {
-    if(page.isEmpty())
-        page = ui->leUrl->text();
-    QString origin = ui->leStartFromPage->text();
+    //if(page.isEmpty())
+//        page = ui->leUrl->text();
+    //    QString origin = ui->leStartFromPage->text();
 
-    QString pageCount = ui->lePageLimit->text();
-    if(pageCount.isEmpty() || pageCount.toInt() < 0 || pageCount.toInt() > 1000)
-    {
-        if(QMessageBox::question(nullptr, "Warning!","Page count is questionable. Really use it?") != QMessageBox::Yes)
-            return;
-    }
+    //    QString pageCount = ui->lePageLimit->text();
+    //    if(pageCount.isEmpty() || pageCount.toInt() < 0 || pageCount.toInt() > 1000)
+    //    {
+    //        if(QMessageBox::question(nullptr, "Warning!","Page count is questionable. Really use it?") != QMessageBox::Yes)
+    //            return;
+    //    }
+    QString toInsert = "<a href=\"" + page + "\"> %1 </a>";
+    toInsert= toInsert.arg(page);
+    ui->edtResults->append("<span>Processing url: </span>");
+    ui->edtResults->insertHtml(toInsert);
     manager.get(QNetworkRequest(QUrl(page)));
 }
 
@@ -53,6 +78,7 @@ void MainWindow::ProcessPage(QString str)
     int currentPosition = 0;
     int counter = 0;
     QList<Section> sections;
+    bool abort = false;
     while(true)
     {
 
@@ -63,10 +89,8 @@ void MainWindow::ProcessPage(QString str)
         QString temp = str.mid(section.start, section.end - section.start);
         //ui->edtDebug->insertPlainText(temp);
         currentPosition = section.start;
-        if(ui->leCategory->text().isEmpty())
-            section.fandom = GetFandom(str).replace("\n", "");
-        else
-            section.fandom = ui->leCategory->text();
+
+        section.fandom = ui->cbCrossovers->currentText().isEmpty() ? ui->cbNormals->currentText() : ui->cbCrossovers->currentText() + " CROSSOVER";
         GetUrl(section, currentPosition, str);
         //qDebug() << section.url;
         //ui->edtDebug->insertPlainText(section.url + "\n");
@@ -86,6 +110,10 @@ void MainWindow::ProcessPage(QString str)
         //qDebug() << section.genre;
         ///ui->edtDebug->insertPlainText(section.genre + "\n");
         GetUpdatedDate(section, currentPosition, str);
+
+
+        if(section.updated.toMSecsSinceEpoch() < lastUpdated.toMSecsSinceEpoch())
+            abort = true;
         //qDebug() << section.updated;
         //ui->edtDebug->insertPlainText(section.updated.toString() + "\n");
         GetPublishedDate(section, currentPosition, str);
@@ -98,18 +126,32 @@ void MainWindow::ProcessPage(QString str)
         }
         qDebug() << "page: " << processedCount << " item: " << counter;
     }
+    if(sections.size() == 0)
+    {
+        ui->edtResults->insertHtml("<span> No data found on the page.<br></span>");
+        ui->edtResults->insertHtml("<span> \nFinished loading data <br></span>");
+        return;
+    }
+
+
     for(auto section : sections)
     {
         LoadIntoDB(section);
-        ui->edtDebug->insertPlainText("Written:" + section.title + " by " + section.author + "\n");
+        ui->edtResults->insertHtml("<span> Written:" + section.title + " by " + section.author + "\n <br></span>");
+    }
+    if(abort)
+    {
+        ui->edtResults->insertHtml("<span> Already have updates past that point, aborting<br></span>");
+        return;
     }
     if(sections.size() > 0)
         GetNext(sections.last(), currentPosition, str);
     currentPosition = 999;
-    ui->edtDebug->insertPlainText("\n Next page \n");
-    if(processedCount < ui->lePageLimit->text().toInt())
+    ui->edtResults->insertHtml("<span> \n Next page \n <br></span>");
+
+    if(!nextUrl.isEmpty())
         timerId = startTimer(1000);
-    //xicon-section-arrow'></span>
+
 }
 
 QString MainWindow::GetFandom(QString text)
@@ -234,16 +276,16 @@ void MainWindow::GetUrl(Section & section, int& startfrom, QString text)
 
 void MainWindow::GetNext(Section & section, int &startfrom, QString text)
 {
-    QRegExp rxStart("Last</a>\\s<a\\shref='");
-    QRegExp rxEnd(QRegExp::escape("'>Next"));
-
-    int indexStart = rxStart.indexIn(text,section.start);
+    QRegExp rxEnd(QRegExp::escape("Next &#187"));
+    int indexEnd = rxEnd.indexIn(text, startfrom);
+    int posHref = indexEnd - 400 + text.midRef(indexEnd - 400,400).lastIndexOf("href='");
+    //int indexStart = rxStart.indexIn(text,section.start);
     //indexStart = rxStart.indexIn(text,indexStart+1);
     //indexStart = rxStart.indexIn(text,indexStart+1);
-
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    nextUrl = CreateURL(text.mid(indexStart+19, indexEnd - (indexStart+19)));
-    indexEnd = rxEnd.indexIn(text, indexStart);
+    nextUrl = CreateURL(text.mid(posHref+6, indexEnd - (posHref+6)));
+    if(!nextUrl.contains("&p="))
+        nextUrl = "";
+    indexEnd = rxEnd.indexIn(text, startfrom);
 }
 
 QDateTime MainWindow::ConvertToDate(QString text)
@@ -254,7 +296,10 @@ QDateTime MainWindow::ConvertToDate(QString text)
     if(count == 0)
     {
         //hours
-        result = QDateTime::currentDateTime().addSecs(-1*60*60*text.replace(QRegExp("[\\sh]"), "").toInt());
+        if(text.contains("h"))
+            result = QDateTime::currentDateTime().addSecs(-1*60*60*text.replace(QRegExp("[\\sh]"), "").toInt());
+        if(text.contains("d"))
+            result = QDateTime::currentDateTime().addDays(-1*text.replace(QRegExp("[\\sd]"), "").toInt());
     }
     if(count == 1)
     {
@@ -322,8 +367,10 @@ void MainWindow::LoadData()
         queryString+=" and unknown_fandom = 0 ";
         queryString+=" and  hidden = 0 ";
     }
-    if(!ui->leFandom->text().isEmpty())
-        queryString+=QString(" and  fandom = '%1'").arg(ui->leFandom->text());
+    if(!ui->cbNormals->currentText().isEmpty())
+        queryString+=QString(" and  fandom = like '%%1%'").arg(ui->cbNormals->currentText());
+    else if(!ui->cbCrossovers->currentText().isEmpty())
+        queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbCrossovers->currentText());
     queryString+=" ORDER BY WORDCOUNT DESC ";
 
 
@@ -332,12 +379,19 @@ void MainWindow::LoadData()
     q.prepare(queryString);
     q.bindValue(":wordcount", ui->leMinWordCount->text().toInt());
     q.exec();
-    qDebug() << q.lastError();
+    qDebug() << q.lastQuery();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
     ui->edtResults->setOpenExternalLinks(true);
     ui->edtResults->clear();
     ui->edtResults->setFont(QFont("Verdana", 20));
+    int counter = 0;
     while(q.next())
     {
+        counter++;
         QString toInsert = "<a href=\"" + CreateURL((q.value("URL").toString()) + "\"> %1 </a>");
         toInsert= toInsert.arg(q.value("TITLE").toString());
         ui->edtResults->insertHtml(toInsert);
@@ -349,7 +403,8 @@ void MainWindow::LoadData()
 
         ui->edtResults->insertPlainText("\n");
         ui->edtResults->insertPlainText("\n");
-
+        if(counter%100 == 0)
+            qDebug() << "tick " << counter/100;
     }
 
 
@@ -392,21 +447,178 @@ void MainWindow::UnknownFandom(int id)
 
 void MainWindow::timerEvent(QTimerEvent *)
 {
-    if(processedCount < ui->lePageLimit->text().toInt()
-            && !nextUrl.isEmpty())
+    if(!nextUrl.isEmpty())
     {
         killTimer(timerId);
         timerId = -1;
         qDebug() << "Getting: " <<  nextUrl;
+        QString toInsert = "<a href=\"" + nextUrl + "\"> %1 </a>";
+        toInsert= toInsert.arg(nextUrl);
+        ui->edtResults->append("<span> Processing url: </span>");
+        ui->edtResults->insertHtml(toInsert);
         manager.get(QNetworkRequest(QUrl(nextUrl)));
 
     }
 }
 
+void MainWindow::UpdateFandomList()
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    names.clear();
+
+    for(auto section : nameOfFandomSectionToLink.keys())
+    {
+        currentProcessedSetion = section;
+
+        fandomManager.get(QNetworkRequest(QUrl(nameOfFandomSectionToLink[section])));
+        managerEventLoop.exec();
+    }
+    for(auto value : nameOfFandomSectionToLink.keys())
+    {
+
+        QString qs = QString("Select fandom from FANdoms where section = '%1'").arg(value.replace("'","''"));
+        QSqlQuery q(qs, db);
+        QHash<QString, QString> knownValues;
+        while(q.next())
+        {
+            knownValues[q.value(0).toString()] = q.value(0).toString();
+        }
+        qDebug() << q.lastError();
+
+        for(auto fandom : names[value])
+        {
+            if(!knownValues.contains(fandom.name))
+            {
+                QString insert = "INSERT INTO FANDOMS (FANDOM, URL, SECTION) VALUES (:FANDOM, :URL, :SECTION)";
+                QSqlQuery q(db);
+                q.prepare(insert);
+                q.bindValue(":FANDOM",fandom.name.replace("'","''"));
+                q.bindValue(":URL",fandom.url.replace("'","''"));
+                q.bindValue(":SECTION",value.replace("'","''"));
+                q.exec();
+                if(q.lastError().isValid())
+                    qDebug() << q.lastError();
+            }
+        }
+
+    }
+}
+
+
+void MainWindow::UpdateCrossoverList()
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    names.clear();
+
+    for(auto section : nameOfCrossoverSectionToLink.keys())
+    {
+        currentProcessedSetion = section;
+
+        crossoverManager.get(QNetworkRequest(QUrl(nameOfCrossoverSectionToLink[section])));
+        managerEventLoop.exec();
+    }
+    for(auto value : nameOfCrossoverSectionToLink.keys())
+    {
+
+        QString qs = QString("Select fandom from FANdoms where section = '%1'").arg(value.replace("'","''"));
+        QSqlQuery q(qs, db);
+        QHash<QString, QString> knownValues;
+        while(q.next())
+        {
+            knownValues[q.value(0).toString()] = q.value(0).toString();
+        }
+        qDebug() << q.lastError();
+
+        for(auto fandom : names[value])
+        {
+            if(!knownValues.contains(fandom.name))
+            {
+                QString insert = "INSERT INTO FANDOMS (FANDOM, URL, SECTION) VALUES (:FANDOM, :URL, :SECTION)";
+                QSqlQuery q(db);
+                q.prepare(insert);
+                q.bindValue(":FANDOM",fandom.name.replace("'","''" ));
+                q.bindValue(":URL",fandom.url.replace("'","''"));
+                q.bindValue(":SECTION",value.replace("'","''"));
+                q.exec();
+                if(q.lastError().isValid())
+                    qDebug() << q.lastError();
+            }
+        }
+
+    }
+}
+
+QStringList MainWindow::GetFandomListFromDB()
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("Select fandom from fandoms where section like '%Normal%' and section like '%%1%'").arg(ui->cbSectionTypes->currentText());
+    QSqlQuery q(qs, db);
+    QStringList result;
+    result.append("");
+    while(q.next())
+    {
+        result.append(q.value(0).toString());
+    }
+    return result;
+}
+
+QStringList MainWindow::GetCrossoverListFromDB()
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("Select fandom from fandoms where section like '%Crossover%' and section like '%%1%'").arg(ui->cbSectionTypes->currentText());
+    QSqlQuery q(qs, db);
+    QStringList result;
+    result.append("");
+    while(q.next())
+    {
+        result.append(q.value(0).toString());
+    }
+    return result;
+}
+
+QString MainWindow::GetCrossoverUrl(QString)
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("Select url from fandoms where section like '%Crossover%' and section like '%%1%' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbCrossovers->currentText());
+    QSqlQuery q(qs, db);
+    q.next();
+    QString rebindName = q.value(0).toString();
+    QStringList temp = rebindName.split("/");
+
+    rebindName = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
+    QString result =  "https://www.fanfiction.net" + rebindName + "/0/?&srt=1&lan=1&r=10&len=100";
+
+    qDebug() << result;
+    return result;
+}
+
+QString MainWindow::GetNormalUrl(QString)
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("Select url from fandoms where section like '%Normal%' and section like '%%1%' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbNormals->currentText());
+    //qDebug() << qs;
+    QSqlQuery q(qs, db);
+    q.next();
+    QString result = "https://www.fanfiction.net" + q.value(0).toString() + "/?&srt=1&lan=1&r=10&len=100";
+    qDebug() << result;
+    return result;
+}
+
+QDateTime MainWindow::GetMaxUpdateDateForSection(QString section)
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("Select max(updated) as updated from fanfics where fandom like '%1'").arg(section);
+    QSqlQuery q(qs, db);
+    q.next();
+    QDateTime result = q.value(0).toDateTime();
+    qDebug() << result;
+    return result;
+}
+
 void MainWindow::LoadIntoDB(Section & section)
 {
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
+
+    QSqlDatabase db = QSqlDatabase::database(dbName);
 
     bool isUpdate = false;
     QString getKeyQuery = "Select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2'";
@@ -481,15 +693,153 @@ void MainWindow::OnNetworkReply(QNetworkReply * reply)
     ProcessPage(str);
 }
 
+void MainWindow::OnFandomReply(QNetworkReply * reply)
+{
+
+    QByteArray data=reply->readAll();
+    qDebug() << reply->error();
+    QString str(data);
+    reply->deleteLater();
+    // getting to the start of fandom section
+    QRegExp rxStartFandoms("list_output");
+    int indexStart = rxStartFandoms.indexIn(str);
+    if(indexStart == -1)
+    {
+        QMessageBox::warning(0, "warning!", "failed to find the start of fandom section");
+        return;
+    }
+
+    QRegExp rxEndFandoms("</TABLE>");
+    int indexEnd= rxEndFandoms.indexIn(str);
+    if(indexEnd == -1)
+    {
+        QMessageBox::warning(0, "warning!", "failed to find the end of fandom section");
+        return;
+    }
+    int counter = 0;
+    while(true)
+    {
+        QRegExp rxStartLink("href=\"");
+        QRegExp rxEndLink("/\"");
+
+        int linkStart = rxStartLink.indexIn(str, indexStart);
+        if(linkStart == -1)
+            break;
+        int linkEnd= rxEndLink.indexIn(str, linkStart);
+        if(linkStart == -1 || linkEnd == -1)
+        {
+            QMessageBox::warning(0, "warning!", "failed to fetch link at: ", str.mid(linkStart, str.size() - linkStart));
+        }
+        QString link = str.mid(linkStart + rxStartLink.pattern().length(),
+                               linkEnd - (linkStart + rxStartLink.pattern().length()));
+
+        QRegExp rxStartName(">");
+        QRegExp rxEndName("</a");
+
+        int nameStart = rxStartName.indexIn(str, linkEnd);
+        int nameEnd= rxEndName.indexIn(str, nameStart);
+        if(nameStart == -1 || nameEnd == -1)
+        {
+            QMessageBox::warning(0, "warning!", "failed to fetch name at: ", str.mid(nameStart, str.size() - nameStart));
+        }
+        QString name = str.mid(nameStart + rxStartName.pattern().length(),
+                               nameEnd - (nameStart + rxStartName.pattern().length()));
+
+        //qDebug()  << name << " " << link << " " << counter++;
+        indexStart = linkEnd;
+        names[currentProcessedSetion].append(Fandom{name, link, currentProcessedSetion});
+    }
+    managerEventLoop.quit();
+}
+
+void MainWindow::OnCrossoverReply(QNetworkReply * reply)
+{
+    QByteArray data=reply->readAll();
+    qDebug() << reply->error();
+    QString str(data);
+    reply->deleteLater();
+    // getting to the start of fandom section
+    int indexOfSlash = currentProcessedSetion.indexOf("/");
+    QString pattern = currentProcessedSetion.mid(indexOfSlash + 1, currentProcessedSetion.length() - (indexOfSlash +1)) + "\\sCrossovers";
+    QRegExp rxStartFandoms(pattern);
+    int indexStart = rxStartFandoms.indexIn(str);
+    if(indexStart == -1)
+    {
+        QMessageBox::warning(0, "warning!", "failed to find the start of fandom section");
+        return;
+    }
+
+    QRegExp rxEndFandoms("</TABLE>");
+    int indexEnd= rxEndFandoms.indexIn(str);
+    if(indexEnd == -1)
+    {
+        QMessageBox::warning(0, "warning!", "failed to find the end of fandom section");
+        return;
+    }
+    while(true)
+    {
+        QRegExp rxStartLink("href=\"");
+        QRegExp rxEndLink("/\"");
+
+        int linkStart = rxStartLink.indexIn(str, indexStart);
+        if(linkStart == -1)
+            break;
+        int linkEnd= rxEndLink.indexIn(str, linkStart);
+        if(linkStart == -1 || linkEnd == -1)
+        {
+            QMessageBox::warning(0, "warning!", "failed to fetch link at: ", str.mid(linkStart, str.size() - linkStart));
+        }
+        QString link = str.mid(linkStart + rxStartLink.pattern().length(),
+                               linkEnd - (linkStart + rxStartLink.pattern().length()));
+
+        QRegExp rxStartName(">");
+        QRegExp rxEndName("</a");
+
+        int nameStart = rxStartName.indexIn(str, linkEnd);
+        int nameEnd= rxEndName.indexIn(str, nameStart);
+        if(nameStart == -1 || nameEnd == -1)
+        {
+            QMessageBox::warning(0, "warning!", "failed to fetch name at: ", str.mid(nameStart, str.size() - nameStart));
+        }
+        QString name = str.mid(nameStart + rxStartName.pattern().length(),
+                               nameEnd - (nameStart + rxStartName.pattern().length()));
+
+        //qDebug()  << name << " " << link << " " << counter++;
+        indexStart = linkEnd;
+        names[currentProcessedSetion].append(Fandom{name, link, currentProcessedSetion});
+    }
+    managerEventLoop.quit();
+}
+
 void MainWindow::on_pbCrawl_clicked()
 {
 
     pageCounter = 0;
-    ui->edtDebug->clear();
+    ui->edtResults->clear();
     processedCount = 0;
     nextUrl = QString();
-    SkipPages(ui->leStartFromPage->text().toInt()-1);
-    RequestPage(ui->leUrl->text());
+    if((ui->cbCrossovers->currentText().isEmpty()
+            && ui->cbNormals->currentText().isEmpty())
+            ||(!ui->cbCrossovers->currentText().isEmpty()
+               && !ui->cbNormals->currentText().isEmpty())
+            )
+    {
+        QMessageBox::warning(0, "warning!", "Please, select normal OR crossover category");
+        return;
+    }
+    QString url;
+    if(!ui->cbCrossovers->currentText().isEmpty())
+    {
+        url = GetCrossoverUrl(ui->cbCrossovers->currentText());
+        lastUpdated = GetMaxUpdateDateForSection(ui->cbCrossovers->currentText() + "CROSSOVERS");
+    }
+    else
+    {
+        url = GetNormalUrl(ui->cbCrossovers->currentText());
+        lastUpdated = GetMaxUpdateDateForSection(ui->cbNormals->currentText());
+    }
+    //SkipPages(ui->leStartFromPage->text().toInt()-1);
+    RequestPage(url);
 }
 
 void MainWindow::OnHideFanfic()
@@ -541,7 +891,15 @@ void MainWindow::OnUnknownFandom()
 
 void MainWindow::OnShowContextMenu(QPoint p)
 {
-   browserMenu.popup(this->mapToGlobal(p));
+    browserMenu.popup(this->mapToGlobal(p));
+}
+
+void MainWindow::OnSectionChanged(QString)
+{
+//    UpdateFandomList();
+//    UpdateCrossoverList();
+    ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
+    ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 }
 
 void MainWindow::on_pbLoadDatabase_clicked()
@@ -557,4 +915,9 @@ void MainWindow::on_chkSmut_toggled(bool checked)
 void MainWindow::on_chkUnknownFandoms_toggled(bool checked)
 {
     LoadData();
+}
+
+void MainWindow::on_pbInit_clicked()
+{
+    Init();
 }
