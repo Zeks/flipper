@@ -103,9 +103,13 @@ void MainWindow::ProcessPage(QString str)
         GetSummary(section, currentPosition, str);
         //qDebug() << section.summary;
         //ui->edtDebug->insertPlainText(section.summary + "\n");
+        if(section.fandom.contains("CROSSOVER"))
+            GetCrossoverFandomList(section, currentPosition, str);
+
         GetWordCount(section, currentPosition, str);
         //qDebug() << section.wordCount;
         //ui->edtDebug->insertPlainText(QString::number(section.wordCount) + "\n");
+
         GetGenre(section, currentPosition, str);
         //qDebug() << section.genre;
         ///ui->edtDebug->insertPlainText(section.genre + "\n");
@@ -189,19 +193,25 @@ void MainWindow::GetTitle(Section & section, int& startfrom, QString text)
 void MainWindow::GetGenre(Section & section, int& , QString text)
 {
     //need to check if genre section even exists
-    QString toCheck(text.mid(section.summaryEnd, section.wordCountStart - section.summaryEnd));
-    int count = std::count_if(toCheck.begin(), toCheck.end(), [](QString val){return val == "-";});
-    if(count == 3)
-        return ;
-    QRegExp rxStart(QRegExp::escape("-"));
+//    QString toCheck(text.mid(section.summaryEnd, section.wordCountStart - section.summaryEnd));
+//    int count = std::count_if(toCheck.begin(), toCheck.end(), [](QString val){return val == "-";});
+//    if(count == 3)
+//        return ;
+    QRegExp rxRated(QRegExp::escape("English"));
+    QRegExp rxChapters(QRegExp::escape("Chapters"));
 
-    int indexStart = rxStart.indexIn(text, section.summaryEnd);
-    indexStart = rxStart.indexIn(text, indexStart + 1);
-    indexStart = rxStart.indexIn(text, indexStart + 1);
-    int indexEnd = rxStart.indexIn(text, indexStart + 1);
-    section.genre = text.mid(indexStart,indexEnd - indexStart).trimmed();
-    section.genre = section.genre .replace("/", " ");
-    section.genre = section.genre .replace("-", "").trimmed();
+    int indexRated= rxRated.indexIn(text, section.summaryEnd);
+    int indexChapters = rxChapters.indexIn(text, indexRated + 1);
+
+    auto ref = text.midRef(indexRated + rxRated.pattern().length(), indexChapters - (indexRated + rxRated.pattern().length()));
+    int count = std::count_if(ref.begin(),ref.end(), [](QChar value){ return value == '-';});
+    if(count < 2)
+            return ;
+
+    QString genre = ref.mid(2, ref.length() - 2).toString();
+    genre=genre.replace("/", " ").replace("-", "").trimmed();
+    section.genre = genre;
+
 }
 
 void MainWindow::GetSummary(Section & section, int& startfrom, QString text)
@@ -216,6 +226,18 @@ void MainWindow::GetSummary(Section & section, int& startfrom, QString text)
     startfrom = indexEnd;
 
 
+}
+
+void MainWindow::GetCrossoverFandomList(Section & section, int &startfrom, QString text)
+{
+    QRegExp rxStart("Crossover\\s-\\s");
+    QRegExp rxEnd("\\s-\\sRated:");
+
+    int indexStart = rxStart.indexIn(text, startfrom);
+    int indexEnd = rxEnd.indexIn(text, indexStart + 1);
+
+    section.fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed().replace("&", " ") + QString(" CROSSOVER");
+    startfrom = indexEnd;
 }
 
 void MainWindow::GetWordCount(Section & section, int& startfrom, QString text)
@@ -259,6 +281,8 @@ void MainWindow::GetUpdatedDate(Section & section, int& startfrom, QString text)
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
     //qDebug() << "UpdateText: " << text.mid(indexStart+1, indexEnd - (indexStart +1));
     section.updated = ConvertToDate(text.mid(indexStart + 1,indexEnd - (indexStart + 1)));
+    if(!section.updated.isValid())
+        qDebug() << text.mid(indexStart + 1,indexEnd - (indexStart + 1));
     startfrom = indexEnd+12;
 
 }
@@ -296,10 +320,12 @@ QDateTime MainWindow::ConvertToDate(QString text)
     if(count == 0)
     {
         //hours
-        if(text.contains("h"))
-            result = QDateTime::currentDateTime().addSecs(-1*60*60*text.replace(QRegExp("[\\sh]"), "").toInt());
         if(text.contains("d"))
             result = QDateTime::currentDateTime().addDays(-1*text.replace(QRegExp("[\\sd]"), "").toInt());
+        if(text.contains("h"))
+            result = QDateTime::currentDateTime().addSecs(-1*60*60*text.replace(QRegExp("[\\sh]"), "").toInt());
+        if(text.contains("m"))
+            result = QDateTime::currentDateTime().addSecs(-1*60*text.replace(QRegExp("[\\sm]"), "").toInt());
     }
     if(count == 1)
     {
@@ -633,7 +659,7 @@ void MainWindow::LoadIntoDB(Section & section)
     if(!isUpdate)
     {
 
-        qDebug() << "Inserting: " << section.author << " " << section.title;
+        qDebug() << "Inserting: " << section.author << " " << section.title << " " << section.fandom << " " << section.genre;
         QString query = "INSERT INTO FANFICS (FANDOM, AUTHOR, TITLE,WORDCOUNT, SUMMARY, GENRES, PUBLISHED, UPDATED, URL) "
                         "VALUES (  :fandom, :author, :title, :wordcount, :summary, :genres, :published, :updated, :url)";
 

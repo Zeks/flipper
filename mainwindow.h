@@ -54,6 +54,7 @@ public:
     void GetTitle(Section& , int& startfrom, QString text);
     void GetGenre(Section& , int& startfrom, QString text);
     void GetSummary(Section& , int& startfrom, QString text);
+    void GetCrossoverFandomList(Section& , int& startfrom, QString text);
     void GetWordCount(Section& , int& startfrom, QString text);
     void GetPublishedDate(Section& , int& startfrom, QString text);
     void GetUpdatedDate(Section& , int& startfrom, QString text);
