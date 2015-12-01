@@ -1,4 +1,5 @@
 #ifndef MAINWINDOW_H
+
 #define MAINWINDOW_H
 
 #include <QMainWindow>
@@ -11,6 +12,7 @@
 #include <QMenu>
 #include <QHash>
 #include <QEventLoop>
+#include <QSignalMapper>
 struct Section
 {
     int start = 0;
@@ -100,6 +102,10 @@ private:
     QDateTime lastUpdated;
     QHash<QString, QString> nameOfFandomSectionToLink;
     QHash<QString, QString> nameOfCrossoverSectionToLink;
+    QSignalMapper* mapper;
+    QString WrapTag(QString tag);
+    void HideCurrentID();
+
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
@@ -107,15 +113,16 @@ public slots:
     void OnCrossoverReply(QNetworkReply*);
 private slots:
     void on_pbCrawl_clicked();
-    void OnHideFanfic();
-    void OnSmutFanfic();
-    void OnUnknownFandom();
+    void OnSetTag(QString);
+//    void OnSmutFanfic();
+    //void OnUnknownFandom();
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);
     void on_pbLoadDatabase_clicked();
     void on_chkSmut_toggled(bool checked);
     void on_chkUnknownFandoms_toggled(bool checked);
     void on_pbInit_clicked();
+    void on_chkEverything_toggled(bool checked);
 };
 
 #endif // MAINWINDOW_H

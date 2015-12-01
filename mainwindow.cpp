@@ -8,6 +8,7 @@
 #include <QSqlError>
 #include <QPair>
 #include <QStringListModel>
+
 #include <algorithm>
 
 
@@ -23,9 +24,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(
                 &manager, SIGNAL (finished(QNetworkReply*)),
                 this, SLOT (OnNetworkReply(QNetworkReply*)));
-    browserMenu.addAction("Hide fanfic", this, SLOT(OnHideFanfic()));
-    browserMenu.addAction("Smut fanfic", this, SLOT(OnSmutFanfic()));
-    browserMenu.addAction("Unknown Fandom", this, SLOT(OnUnknownFandom()));
+    mapper = new QSignalMapper(this);
+    connect(mapper, SIGNAL(mapped(QString)), this, SLOT(OnSetTag(QString)));
+    QAction* hideAction = browserMenu.addAction("Hide fanfic", mapper, SLOT(map()));
+    QAction* smutAction = browserMenu.addAction("Smut fanfic", mapper, SLOT(map()));
+    QAction* unknownFandom = browserMenu.addAction("Unknown Fandom", mapper, SLOT(map()));
+    QAction* readQueue = browserMenu.addAction("Add to reading queue", mapper, SLOT(map()));
+
+    mapper->setMapping(hideAction,   QString("hidden"));
+    mapper->setMapping(smutAction,   QString("smut"));
+    mapper->setMapping(unknownFandom, QString("unknown"));
+    mapper->setMapping(readQueue, QString("queue"));
+
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->edtResults, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnShowContextMenu(QPoint)));
     connect(&fandomManager, &QNetworkAccessManager::finished, this, &MainWindow::OnFandomReply);
@@ -56,7 +66,7 @@ void MainWindow::Init()
 void MainWindow::RequestPage(QString page)
 {
     //if(page.isEmpty())
-//        page = ui->leUrl->text();
+    //        page = ui->leUrl->text();
     //    QString origin = ui->leStartFromPage->text();
 
     //    QString pageCount = ui->lePageLimit->text();
@@ -193,10 +203,10 @@ void MainWindow::GetTitle(Section & section, int& startfrom, QString text)
 void MainWindow::GetGenre(Section & section, int& , QString text)
 {
     //need to check if genre section even exists
-//    QString toCheck(text.mid(section.summaryEnd, section.wordCountStart - section.summaryEnd));
-//    int count = std::count_if(toCheck.begin(), toCheck.end(), [](QString val){return val == "-";});
-//    if(count == 3)
-//        return ;
+    //    QString toCheck(text.mid(section.summaryEnd, section.wordCountStart - section.summaryEnd));
+    //    int count = std::count_if(toCheck.begin(), toCheck.end(), [](QString val){return val == "-";});
+    //    if(count == 3)
+    //        return ;
     QRegExp rxRated(QRegExp::escape("English"));
     QRegExp rxChapters(QRegExp::escape("Chapters"));
 
@@ -206,7 +216,7 @@ void MainWindow::GetGenre(Section & section, int& , QString text)
     auto ref = text.midRef(indexRated + rxRated.pattern().length(), indexChapters - (indexRated + rxRated.pattern().length()));
     int count = std::count_if(ref.begin(),ref.end(), [](QChar value){ return value == '-';});
     if(count < 2)
-            return ;
+        return ;
 
     QString genre = ref.mid(2, ref.length() - 2).toString();
     genre=genre.replace("/", " ").replace("-", "").trimmed();
@@ -368,12 +378,13 @@ QString MainWindow::CreateURL(QString str)
 
 void MainWindow::LoadData()
 {
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");//not dbConnection
-    db.setDatabaseName(path);
-    db.open();
-    qDebug() << db.lastError();
+    if(ui->leMinWordCount->text().trimmed().isEmpty())
+    {
+        QMessageBox::warning(0, "warning!", "Please set minimum word count");
+        return;
+    }
 
+    QSqlDatabase db = QSqlDatabase::database(dbName);
     QString queryString = "select rowid, f.* from fanfics f where wordcount > :wordcount ";
     if(!ui->leContainsGenre->text().isEmpty())
         for(auto genre : ui->leContainsGenre->text().split(" "))
@@ -383,27 +394,37 @@ void MainWindow::LoadData()
         for(auto genre : ui->leNotContainsGenre->text().split(" "))
             queryString += QString(" AND genres not like '%%1%' ").arg(genre);
 
+    QString tags, not_tags;
+
     if(ui->chkSmut->isChecked())
-        queryString+=" and smut = 1 ";
+        tags+=WrapTag("smut") + "|";
     else if(ui->chkUnknownFandoms->isChecked())
-        queryString+=" and unknown_fandom = 1 ";
+        tags+=WrapTag("unknown_fandom") + "|";
+    else if(ui->chkReadQueue->isChecked())
+        tags+=WrapTag("queue") + "|";
     else
-    {
-        queryString+=" and smut = 0 ";
-        queryString+=" and unknown_fandom = 0 ";
-        queryString+=" and  hidden = 0 ";
-    }
+        not_tags+="smut|unknown_fandom|hidden";
     if(!ui->cbNormals->currentText().isEmpty())
-        queryString+=QString(" and  fandom = like '%%1%'").arg(ui->cbNormals->currentText());
+        queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
     else if(!ui->cbCrossovers->currentText().isEmpty())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbCrossovers->currentText());
+
+
+    tags.chop(1);
+    not_tags.chop(1);
+
+    if(!tags.isEmpty())
+        queryString+=" and tags regexp :tags";
+    if(!not_tags.isEmpty())
+        queryString+=" and tags not regexp :not_tags";
+
     queryString+=" ORDER BY WORDCOUNT DESC ";
-
-
-
     QSqlQuery q(db);
     q.prepare(queryString);
     q.bindValue(":wordcount", ui->leMinWordCount->text().toInt());
+    q.bindValue(":tags", tags);
+    q.bindValue(":not_tags", not_tags);
+
     q.exec();
     qDebug() << q.lastQuery();
     if(q.lastError().isValid())
@@ -415,6 +436,7 @@ void MainWindow::LoadData()
     ui->edtResults->clear();
     ui->edtResults->setFont(QFont("Verdana", 20));
     int counter = 0;
+    ui->edtResults->setUpdatesEnabled(false);
     while(q.next())
     {
         counter++;
@@ -432,7 +454,8 @@ void MainWindow::LoadData()
         if(counter%100 == 0)
             qDebug() << "tick " << counter/100;
     }
-
+    ui->edtResults->setUpdatesEnabled(true);
+    qDebug() << "loaded fics:" << counter;
 
 }
 
@@ -449,16 +472,27 @@ void MainWindow::HideFanfic(int id)
 
 }
 
-void MainWindow::SmutFanfic(int id)
+void MainWindow::OnSetTag(QString tag)
 {
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
-    QSqlQuery q(db);
-    q.prepare(QString("update fanfics set smut = 1 where rowid = %1").arg(id));
-    q.exec();
-    if(q.lastError().isValid())
-        qDebug() << q.lastError();
+    bool ok = false;
+    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
+    if(ok)
+    {
+        QString path = "CrawlerDB.sqlite";
+        QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
+        QSqlQuery q(db);
+        q.prepare(QString("update fanfics set tags = tags || :tag where rowid = :id and tags not regexp :wrappedTag"));
+        q.bindValue(":id", value);
+        q.bindValue(":tag", " " + tag + " ");
+        q.bindValue(":wrappedTag", WrapTag(tag));
+        q.exec();
+        if(q.lastError().isValid())
+            qDebug() << q.lastError();
+    }
+    HideCurrentID();
 }
+
+
 
 void MainWindow::UnknownFandom(int id)
 {
@@ -709,6 +743,38 @@ void MainWindow::LoadIntoDB(Section & section)
     }
 }
 
+QString MainWindow::WrapTag(QString tag)
+{
+    tag= "(.{0,}" + tag + ".{0,})";
+    return tag;
+}
+
+void MainWindow::HideCurrentID()
+{
+    auto cursorPosition = ui->edtResults->textCursor().position();
+    auto cursor = ui->edtResults->textCursor();
+
+    QString text = ui->edtResults->toPlainText();
+    int posPrevious = text.midRef(0, cursorPosition - 70).lastIndexOf("ID:");
+
+    int posNewline = text.indexOf("\n", posPrevious);
+    if(posNewline == -1)
+        posNewline = text.length();
+    if(posPrevious == -1)
+    {
+        posPrevious = 0;
+        posNewline = 0;
+    }
+    int posCurrent = text.indexOf("\n", cursorPosition);
+    if(posCurrent == -1)
+        posCurrent = text.length();
+
+    cursor.setPosition(posNewline, QTextCursor::MoveAnchor);
+    cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,posCurrent - posNewline + 1);
+    cursor.deleteChar();
+    ui->edtResults->setTextCursor(cursor);
+}
+
 void MainWindow::OnNetworkReply(QNetworkReply * reply)
 {
     ++processedCount;
@@ -845,7 +911,7 @@ void MainWindow::on_pbCrawl_clicked()
     processedCount = 0;
     nextUrl = QString();
     if((ui->cbCrossovers->currentText().isEmpty()
-            && ui->cbNormals->currentText().isEmpty())
+        && ui->cbNormals->currentText().isEmpty())
             ||(!ui->cbCrossovers->currentText().isEmpty()
                && !ui->cbNormals->currentText().isEmpty())
             )
@@ -868,52 +934,52 @@ void MainWindow::on_pbCrawl_clicked()
     RequestPage(url);
 }
 
-void MainWindow::OnHideFanfic()
-{
-    bool ok = false;
-    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
-    if(ok)
-    {
-        auto cursorPosition = ui->edtResults->textCursor().position();
-        HideFanfic(value);
-        LoadData();
-        auto cursor = ui->edtResults->textCursor();
-        cursor.setPosition(cursorPosition);
-        ui->edtResults->setTextCursor(cursor);
-    }
+//void MainWindow::OnHideFanfic()
+//{
+//    bool ok = false;
+//    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
+//    if(ok)
+//    {
+//        auto cursorPosition = ui->edtResults->textCursor().position();
+//        HideFanfic(value);
+//        LoadData();
+//        auto cursor = ui->edtResults->textCursor();
+//        cursor.setPosition(cursorPosition);
+//        ui->edtResults->setTextCursor(cursor);
+//    }
 
-}
+//}
 
-void MainWindow::OnSmutFanfic()
-{
-    bool ok = false;
-    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
-    if(ok)
-    {
-        auto cursorPosition = ui->edtResults->textCursor().position();
-        SmutFanfic(value);
-        LoadData();
-        auto cursor = ui->edtResults->textCursor();
-        cursor.setPosition(cursorPosition);
-        ui->edtResults->setTextCursor(cursor);
-    }
+//void MainWindow::OnSmutFanfic()
+//{
+//    bool ok = false;
+//    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
+//    if(ok)
+//    {
+//        auto cursorPosition = ui->edtResults->textCursor().position();
+//        SmutFanfic(value);
+//        LoadData();
+//        auto cursor = ui->edtResults->textCursor();
+//        cursor.setPosition(cursorPosition);
+//        ui->edtResults->setTextCursor(cursor);
+//    }
 
-}
+//}
 
-void MainWindow::OnUnknownFandom()
-{
-    bool ok = false;
-    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
-    if(ok)
-    {
-        auto cursorPosition = ui->edtResults->textCursor().position();
-        UnknownFandom(value);
-        LoadData();
-        auto cursor = ui->edtResults->textCursor();
-        cursor.setPosition(cursorPosition);
-        ui->edtResults->setTextCursor(cursor);
-    }
-}
+//void MainWindow::OnUnknownFandom()
+//{
+//    bool ok = false;
+//    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
+//    if(ok)
+//    {
+//        auto cursorPosition = ui->edtResults->textCursor().position();
+//        UnknownFandom(value);
+//        LoadData();
+//        auto cursor = ui->edtResults->textCursor();
+//        cursor.setPosition(cursorPosition);
+//        ui->edtResults->setTextCursor(cursor);
+//    }
+//}
 
 void MainWindow::OnShowContextMenu(QPoint p)
 {
@@ -922,8 +988,8 @@ void MainWindow::OnShowContextMenu(QPoint p)
 
 void MainWindow::OnSectionChanged(QString)
 {
-//    UpdateFandomList();
-//    UpdateCrossoverList();
+    //    UpdateFandomList();
+    //    UpdateCrossoverList();
     ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
     ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 }
@@ -935,15 +1001,23 @@ void MainWindow::on_pbLoadDatabase_clicked()
 
 void MainWindow::on_chkSmut_toggled(bool checked)
 {
-    LoadData();
+    if(checked)
+        LoadData();
 }
 
 void MainWindow::on_chkUnknownFandoms_toggled(bool checked)
 {
-    LoadData();
+    if(checked)
+        LoadData();
 }
 
 void MainWindow::on_pbInit_clicked()
 {
     Init();
+}
+
+void MainWindow::on_chkEverything_toggled(bool checked)
+{
+    if(checked)
+        LoadData();
 }

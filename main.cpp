@@ -3,6 +3,31 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QMetaType>
+#include <QSqlDriver>
+#include <QPluginLoader>
+#include <sqlite3.h>
+
+void qtregexp(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+{
+    QRegExp regex;
+    QString str1((const char*)sqlite3_value_text(argv[0]));
+    QString str2((const char*)sqlite3_value_text(argv[1]));
+
+    regex.setPattern(str1);
+    regex.setCaseSensitivity(Qt::CaseInsensitive);
+
+    bool b = str2.contains(regex);
+
+    if (b)
+    {
+        sqlite3_result_int(ctx, 1);
+    }
+    else
+    {
+        sqlite3_result_int(ctx, 0);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -10,10 +35,9 @@ int main(int argc, char *argv[])
     a.setApplicationName("ffnet sane search engine");
 
     QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");//not dbConnection
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE_R");
     db.setDatabaseName(path);
     db.open();
-
 
     QString createFanfics = "create table if not exists FANFICS "
                             "(FANDOM VARCHAR NOT NULL,"

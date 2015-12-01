@@ -24,7 +24,7 @@
        <attribute name="title">
         <string>Database</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_3">
+       <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
@@ -231,7 +231,7 @@
              </size>
             </property>
             <property name="text">
-             <string/>
+             <string>300000</string>
             </property>
            </widget>
           </item>
@@ -271,24 +271,85 @@
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QCheckBox" name="chkSmut">
-            <property name="text">
-             <string>Show Smut</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="chkUnknownFandoms">
-            <property name="text">
-             <string>Unknown Fandoms</string>
-            </property>
-           </widget>
-          </item>
          </layout>
         </item>
         <item row="2" column="0">
-         <widget class="QTextBrowser" name="edtResults"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QLabel" name="label_7">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Display filter:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkEverything">
+              <property name="text">
+               <string>Default</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkSmut">
+              <property name="text">
+               <string>Smut</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkUnknownFandoms">
+              <property name="text">
+               <string>Unknown Fandoms</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkReadQueue">
+              <property name="text">
+               <string>Read Queue</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTextBrowser" name="edtResults"/>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -319,4 +380,7 @@
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+ </buttongroups>
 </ui>
