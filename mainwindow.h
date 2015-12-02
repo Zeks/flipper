@@ -13,21 +13,39 @@
 #include <QHash>
 #include <QEventLoop>
 #include <QSignalMapper>
+#include <functional>
+
+
+
 struct Section
 {
     int start = 0;
     int end = 0;
-    int wordCount = 0;
+
     int summaryEnd = 0;
     int wordCountStart = 0;
+    int statSectionStart=0;
+    int statSectionEnd=0;
+
+    QString wordCount = 0;
+    QString chapters = 0;
+    QString reviews = 0;
+    QString favourites= 0;
+    QString rated= 0;
+
+
     QString fandom;
     QString title;
     QString genre;
     QString summary;
+    QString statSection;
     QString author;
     QString url;
+    QString origin;
+    QString language;
     QDateTime published;
     QDateTime updated;
+    QString characters;
     bool isValid =false;
 };
 struct Fandom
@@ -54,6 +72,9 @@ public:
     Section GetSection( QString text, int start);
     void GetAuthor(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
+
+    void GetStatSection(Section& , int& startfrom, QString text);
+
     void GetGenre(Section& , int& startfrom, QString text);
     void GetSummary(Section& , int& startfrom, QString text);
     void GetCrossoverFandomList(Section& , int& startfrom, QString text);
@@ -62,6 +83,8 @@ public:
     void GetUpdatedDate(Section& , int& startfrom, QString text);
     void GetUrl(Section& , int& startfrom, QString text);
     void GetNext(Section& , int& startfrom, QString text);
+
+    void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
     QDateTime ConvertToDate(QString);
     void SkipPages(int);
     QString CreateURL(QString);
@@ -105,6 +128,7 @@ private:
     QSignalMapper* mapper;
     QString WrapTag(QString tag);
     void HideCurrentID();
+    QString GetCurrentFilterUrl();
 
 
 public slots:
@@ -123,6 +147,11 @@ private slots:
     void on_chkUnknownFandoms_toggled(bool checked);
     void on_pbInit_clicked();
     void on_chkEverything_toggled(bool checked);
+    void on_chkMeh_toggled(bool checked);
+    void on_chkReadQueue_toggled(bool checked);
+    void on_chkCrapFandom_toggled(bool checked);
+    void on_chkReading_toggled(bool checked);
+    void on_chkFinished_toggled(bool checked);
 };
 
 #endif // MAINWINDOW_H

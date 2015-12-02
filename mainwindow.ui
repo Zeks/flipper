@@ -74,7 +74,7 @@
             </item>
             <item>
              <property name="text">
-              <string>Cartoons</string>
+              <string>Cartoon</string>
              </property>
             </item>
             <item>
@@ -217,22 +217,52 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="leMinWordCount">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
+           <widget class="QComboBox" name="cbMinWordCount">
+            <property name="editable">
+             <bool>true</bool>
             </property>
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>16777215</height>
-             </size>
+            <item>
+             <property name="text">
+              <string>100000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>300000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>700000</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="cbMaxWordCount">
+            <property name="editable">
+             <bool>true</bool>
             </property>
-            <property name="text">
-             <string>300000</string>
-            </property>
+            <item>
+             <property name="text">
+              <string/>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1000000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>300000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>700000</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item>
@@ -296,6 +326,19 @@
               <property name="text">
                <string>Default</string>
               </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkReadQueue">
+              <property name="text">
+               <string>Read Queue</string>
+              </property>
               <attribute name="buttonGroup">
                <string notr="true">buttonGroup</string>
               </attribute>
@@ -312,9 +355,9 @@
              </widget>
             </item>
             <item>
-             <widget class="QCheckBox" name="chkUnknownFandoms">
+             <widget class="QCheckBox" name="chkCrapFandom">
               <property name="text">
-               <string>Unknown Fandoms</string>
+               <string>Crap Fandom</string>
               </property>
               <attribute name="buttonGroup">
                <string notr="true">buttonGroup</string>
@@ -322,9 +365,39 @@
              </widget>
             </item>
             <item>
-             <widget class="QCheckBox" name="chkReadQueue">
+             <widget class="QCheckBox" name="chkUnknownFandoms">
               <property name="text">
-               <string>Read Queue</string>
+               <string>Unknown Fandom</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkMeh">
+              <property name="text">
+               <string>Meh description</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkReading">
+              <property name="text">
+               <string>Reading</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkFinished">
+              <property name="text">
+               <string>Finished</string>
               </property>
               <attribute name="buttonGroup">
                <string notr="true">buttonGroup</string>

@@ -22,5 +22,3 @@ FORMS    += mainwindow.ui
 
 QMAKE_CXXFLAGS += -std=c++11
 
-INCLUDEPATH = K:/qt-everywhere-opensource-src-5.5.1/qtbase/src/3rdparty/sqlite
-SOURCES += K:/qt-everywhere-opensource-src-5.5.1/qtbase/src/3rdparty/sqlite/sqlite3.c

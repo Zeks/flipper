@@ -6,27 +6,15 @@
 #include <QMetaType>
 #include <QSqlDriver>
 #include <QPluginLoader>
-#include <sqlite3.h>
 
-void qtregexp(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+
+void CreateIndex(QString value)
 {
-    QRegExp regex;
-    QString str1((const char*)sqlite3_value_text(argv[0]));
-    QString str2((const char*)sqlite3_value_text(argv[1]));
-
-    regex.setPattern(str1);
-    regex.setCaseSensitivity(Qt::CaseInsensitive);
-
-    bool b = str2.contains(regex);
-
-    if (b)
-    {
-        sqlite3_result_int(ctx, 1);
-    }
-    else
-    {
-        sqlite3_result_int(ctx, 0);
-    }
+    QSqlDatabase db = QSqlDatabase::database("CrawlerDB.sqlite");
+    QSqlQuery q(db);
+    q.prepare(value);
+    q.exec();
+    qDebug() << q.lastError();
 }
 
 int main(int argc, char *argv[])
@@ -43,13 +31,18 @@ int main(int argc, char *argv[])
                             "(FANDOM VARCHAR NOT NULL,"
             "AUTHOR VARCHAR NOT NULL,"
             "TITLE VARCHAR NOT NULL,"
-            "WORDCOUNT VARCHAR NOT NULL,"
             "SUMMARY VARCHAR NOT NULL,"
             "GENRES VARCHAR,"
+            "CHARACTERS VARCHAR,"
+            "RATED VARCHAR,"
             "PUBLISHED DATETIME NOT NULL,"
             "UPDATED DATETIME NOT NULL,"
             "URL VARCHAR NOT NULL,"
-            "TAGS VARCHAR NOT NULL,"
+            "TAGS VARCHAR NOT NULL DEFAULT ' none ',"
+            "WORDCOUNT INTEGER NOT NULL,"
+            "FAVOURITES INTEGER NOT NULL,"
+            "REVIEWS INTEGER NOT NULL,"
+            "CHAPTERS INTEGER NOT NULL,"
             "ORIGIN VARCHAR NOT NULL)";
 
     QSqlQuery q(db);
@@ -66,6 +59,17 @@ int main(int argc, char *argv[])
     q.prepare(createFandoms);
     q.exec();
     qDebug() << q.lastError();
+
+
+
+    CreateIndex("CREATE INDEX if not exists  \"main\".\"I_FANFICS_IDENTITY\" ON \"FANFICS\" (\"AUTHOR\" ASC, \"TITLE\" ASC)");
+    CreateIndex("CREATE  INDEX  if not exists  \"main\".\"I_FANFICS_FANDOM\" ON \"FANFICS\" (\"FANDOM\" ASC)");
+    CreateIndex("CREATE  INDEX if  not exists \"main\".\"I_FANFICS_WORDCOUNT\" ON \"FANFICS\" (\"WORDCOUNT\" ASC)");
+    CreateIndex("CREATE  INDEX if  not exists \"main\".\"I_FANFICS_TAGS\" ON \"FANFICS\" (\"TAGS\" ASC)");
+    CreateIndex("CREATE  INDEX if  not exists \"main\".\"I_FANFICS_GENRES\" ON \"FANFICS\" (\"GENRES\" ASC)");
+    CreateIndex(" CREATE  INDEX if  not exists \"main\".\"I_FANDOMS_FANDOM\" ON \"FANDOMS\" (\"FANDOM\" ASC)");
+    CreateIndex(" CREATE  INDEX if  not exists \"main\".\"I_FANDOMS_SECTION\" ON \"FANDOMS\" (\"SECTION\" ASC)");
+
 
 
     MainWindow w;
