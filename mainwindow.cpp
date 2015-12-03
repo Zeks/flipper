@@ -394,18 +394,33 @@ void MainWindow::LoadData()
     }
     if(ui->chkPokemon->isChecked())
     {
-        queryString = "select rowid, f.* from fanfics f where 1 = 1";
+        queryString = "select rowid, f.* from fanfics f where 1 = 1 ";
         diffField = "length(characters) desc";
         tagsMatter = false;
     }
     if(ui->chkTLDR->isChecked())
     {
-        queryString = "select rowid, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'";
+        queryString = "select rowid, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'"
+                "and summary not like '%revision%'"
+                "and summary not like '%rewrite%'"
+                "and summary not like '%abandoned%'"
+                "and summary not like '%part%'"
+                "and summary not like '%complete%'"
+                "and summary not like '%adopted%'"
+                "and length(summary) < 100 "
+                "and summary not like '%discontinued%'";
         diffField = "length(summary) asc";
         tagsMatter = false;
     }
     if(ui->chkComplete->isChecked())
         queryString+=QString(" and  complete = 1");
+
+    if(ui->chkActive->isChecked())
+        queryString+=QString(" and cast("
+                             "("
+                                      " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
+                             " ) AS real "
+                          " )/60/60/24 >-365");
 
     if(!ui->cbNormals->currentText().isEmpty())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
