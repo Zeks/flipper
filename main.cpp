@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
             "FAVOURITES INTEGER NOT NULL,"
             "REVIEWS INTEGER NOT NULL,"
             "CHAPTERS INTEGER NOT NULL,"
+            "COMPLETE INTEGER NOT NULL DEFAULT 0,"
             "ORIGIN VARCHAR NOT NULL)";
 
     QSqlQuery q(db);

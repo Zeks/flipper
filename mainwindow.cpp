@@ -37,6 +37,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QAction* finished = browserMenu.addAction("Finished", mapper, SLOT(map()));
     QAction* disgusting= browserMenu.addAction("Disgusting", mapper, SLOT(map()));
 
+
+
+
     mapper->setMapping(hideAction,   QString("hidden"));
     mapper->setMapping(smutAction,   QString("smut"));
     mapper->setMapping(unknownFandom, QString("unknown"));
@@ -137,7 +140,13 @@ void MainWindow::ProcessPage(QString str)
         });
         GetTaggedSection(section.statSection, "Rated:\\s(.{1})", [&section](QString val){ section.rated = val;});
         GetTaggedSection(section.statSection, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.genre = val;});
-        GetTaggedSection(section.statSection, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){ section.characters = val;});
+        GetTaggedSection(section.statSection, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
+            section.characters = val.replace(" - Complete", "");
+        });
+        GetTaggedSection(section.statSection, "(Complete)$", [&section](QString val){
+            if(val != "not found")
+                section.complete = 1;
+        });
 
         if(section.fandom.contains("CROSSOVER"))
             GetCrossoverFandomList(section, currentPosition, str);
@@ -159,10 +168,10 @@ void MainWindow::ProcessPage(QString str)
         return;
     }
 
-    auto url = GetCurrentFilterUrl();
+
     for(auto section : sections)
     {
-        section.origin = url;
+        section.origin = currentFilterurl;
         LoadIntoDB(section);
         ui->edtResults->insertHtml("<span> Written:" + section.title + " by " + section.author + "\n <br></span>");
     }
@@ -222,7 +231,7 @@ void MainWindow::GetStatSection(Section &section, int &startfrom, QString text)
     section.statSection= text.mid(indexStart + 15,indexEnd - (indexStart + 15));
     section.statSectionStart = indexStart + 15;
     section.statSectionEnd = indexEnd;
-    //qDebug() << section.statSection;
+    qDebug() << section.statSection;
 }
 
 void MainWindow::GetSummary(Section & section, int& startfrom, QString text)
@@ -330,6 +339,20 @@ void MainWindow::LoadData()
         for(auto genre : ui->leNotContainsGenre->text().split(" "))
             queryString += QString(" AND genres not like '%%1%' ").arg(genre);
 
+    for(QString word: ui->leContainsWords->text().split(" "))
+    {
+        if(word.trimmed().isEmpty())
+            continue;
+        queryString += QString(" AND summary like '%%1%' and summary not like '%not %1%' ").arg(word);
+    }
+
+    for(QString word: ui->leNotContainsWords->text().split(" "))
+    {
+        if(word.trimmed().isEmpty())
+            continue;
+        queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%").arg(word);
+    }
+
     QString tags, not_tags;
 
     if(ui->chkSmut->isChecked())
@@ -349,6 +372,40 @@ void MainWindow::LoadData()
     else if(ui->chkCrapFandom->isChecked())
         tags+=WrapTag("crap_fandom") + "|";
 
+    QString diffField = " WORDCOUNT DESC";
+    bool tagsMatter = true;
+    if(ui->chkLongestRunning->isChecked())
+    {
+        queryString =  "select rowid, julianday(f.updated) - julianday(f.published) as datediff, f.* from fanfics f where 1 = 1 and datediff > 0  ";
+        diffField = "datediff desc";
+        tagsMatter = false;
+    }
+    if(ui->chkBehemothChapters->isChecked())
+    {
+        queryString = "select rowid, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1";
+        diffField = "datediff desc";
+        tagsMatter = false;
+    }
+    if(ui->chkMinigun->isChecked())
+    {
+        queryString = "select rowid, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1";
+        diffField = "datediff asc";
+        tagsMatter = false;
+    }
+    if(ui->chkPokemon->isChecked())
+    {
+        queryString = "select rowid, f.* from fanfics f where 1 = 1";
+        diffField = "length(characters) desc";
+        tagsMatter = false;
+    }
+    if(ui->chkTLDR->isChecked())
+    {
+        queryString = "select rowid, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'";
+        diffField = "length(summary) asc";
+        tagsMatter = false;
+    }
+    if(ui->chkComplete->isChecked())
+        queryString+=QString(" and  complete = 1");
 
     if(!ui->cbNormals->currentText().isEmpty())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
@@ -356,15 +413,21 @@ void MainWindow::LoadData()
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbCrossovers->currentText());
 
 
+
+
+
     tags.chop(1);
     not_tags.chop(1);
 
-    if(!tags.isEmpty())
-        queryString+=" and tags regexp :tags";
-    else
-        queryString+=" and tags = ' none ' ";
+    if(tagsMatter)
+    {
+        if(!tags.isEmpty())
+            queryString+=" and tags regexp :tags";
+        else
+            queryString+=" and tags = ' none ' ";
+    }
 
-    queryString+=" ORDER BY WORDCOUNT DESC ";
+    queryString+="COLLATE NOCASE ORDER BY " + diffField;
     QSqlQuery q(db);
     q.prepare(queryString);
 
@@ -391,6 +454,13 @@ void MainWindow::LoadData()
     while(q.next())
     {
         counter++;
+        if(ui->chkUrls->isChecked())
+        {
+            QString toInsert = "<a href=\"" + CreateURL((q.value("URL").toString()) + "\"> %1 </a><br>");
+            toInsert= toInsert.arg(CreateURL((q.value("URL").toString())));
+            ui->edtResults->insertHtml(toInsert);
+            continue;
+        }
         QString toInsert = "<a href=\"" + CreateURL((q.value("URL").toString()) + "\"> %1 </a>");
         toInsert= toInsert.arg(q.value("TITLE").toString());
         ui->edtResults->insertHtml(toInsert);
@@ -647,8 +717,8 @@ void MainWindow::LoadIntoDB(Section & section)
     {
 
         //qDebug() << "Inserting: " << section.author << " " << section.title << " " << section.fandom << " " << section.genre;
-        QString query = "INSERT INTO FANFICS (FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
-                        "VALUES (  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
+        QString query = "INSERT INTO FANFICS (FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
+                        "VALUES (  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
 
         QSqlQuery q(db);
         q.prepare(query);
@@ -663,6 +733,7 @@ void MainWindow::LoadIntoDB(Section & section)
         q.bindValue(":RATED",section.rated);
 
         q.bindValue(":summary",section.summary);
+        q.bindValue(":COMPLETE",section.complete);
         q.bindValue(":genres",section.genre);
         q.bindValue(":published",section.published);
         q.bindValue(":updated",section.updated);
@@ -680,7 +751,7 @@ void MainWindow::LoadIntoDB(Section & section)
     if(isUpdate)
     {
         //qDebug() << "Updating: " << section.author << " " << section.title;
-        QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, summary = :summary, genres= :genres, published = :published, updated = :updated, url = :url "
+        QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, summary = :summary, genres= :genres, published = :published, updated = :updated, url = :url "
                         " where author = :author and title = :title";
 
         QSqlQuery q(db);
@@ -697,6 +768,7 @@ void MainWindow::LoadIntoDB(Section & section)
         q.bindValue(":RATED",section.rated);
 
         q.bindValue(":summary",section.summary);
+        q.bindValue(":COMPLETE",section.complete);
         q.bindValue(":genres",section.genre);
         q.bindValue(":published",section.published);
         q.bindValue(":updated",section.updated);
@@ -906,7 +978,7 @@ void MainWindow::OnCrossoverReply(QNetworkReply * reply)
 
 void MainWindow::on_pbCrawl_clicked()
 {
-
+    currentFilterurl = GetCurrentFilterUrl();
     pageCounter = 0;
     ui->edtResults->clear();
     processedCount = 0;

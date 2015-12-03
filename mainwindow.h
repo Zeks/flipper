@@ -28,6 +28,7 @@ struct Section
     int wordCountStart = 0;
     int statSectionStart=0;
     int statSectionEnd=0;
+    int complete=0;
 
     QString wordCount = 0;
     QString chapters = 0;
@@ -131,7 +132,7 @@ private:
     QNetworkAccessManager manager;
     QNetworkAccessManager fandomManager;
     QNetworkAccessManager crossoverManager;
-
+    QString currentFilterurl;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
