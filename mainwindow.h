@@ -68,15 +68,20 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void Init();
+    void timerEvent(QTimerEvent *) override;
+
+    bool CheckSectionAvailability();
+private:
+
+
     void RequestPage(QString);
     void ProcessPage(QString);
+
     QString GetFandom(QString text);
     Section GetSection( QString text, int start);
+    QString GetCurrentFilterUrl();
     void GetAuthor(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
-
-    void GetStatSection(Section& , int& startfrom, QString text);
-
     void GetGenre(Section& , int& startfrom, QString text);
     void GetSummary(Section& , int& startfrom, QString text);
     void GetCrossoverFandomList(Section& , int& startfrom, QString text);
@@ -85,35 +90,28 @@ public:
     void GetUpdatedDate(Section& , int& startfrom, QString text);
     void GetUrl(Section& , int& startfrom, QString text);
     void GetNext(Section& , int& startfrom, QString text);
-
+    void GetStatSection(Section& , int& startfrom, QString text);
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
-    QDateTime ConvertToDate(QString);
-    void SkipPages(int);
+    QDateTime GetMaxUpdateDateForSection(QString section);
+
     QString CreateURL(QString);
 
     void LoadData();
-    void HideFanfic(int id);
-    void SmutFanfic(int id);
-    void UnknownFandom(int id);
-    void timerEvent(QTimerEvent *);
+    void LoadIntoDB(Section&);
 
+    QString WrapTag(QString tag);
+    void HideCurrentID();
 
     void UpdateFandomList();
     void UpdateCrossoverList();
     void PopulateComboboxes();
+
     QStringList GetFandomListFromDB();
     QStringList GetCrossoverListFromDB();
+
     QString GetCrossoverUrl(QString);
     QString GetNormalUrl(QString);
 
-    QDateTime GetMaxUpdateDateForSection(QString section);
-
-    void LoadIntoDB(Section&);
-    QNetworkAccessManager manager;
-    QNetworkAccessManager fandomManager;
-    QNetworkAccessManager crossoverManager;
-    bool CheckSectionAvailability();
-private:
     Ui::MainWindow *ui;
     int processedCount = 0;
     QString nextUrl;
@@ -127,14 +125,12 @@ private:
     QDateTime lastUpdated;
     QHash<QString, QString> nameOfFandomSectionToLink;
     QHash<QString, QString> nameOfCrossoverSectionToLink;
-    QSignalMapper* mapper;
-    QProgressBar* pbMain;
-    QLabel* lblCurrentOperation;
-    QString WrapTag(QString tag);
-    void HideCurrentID();
-    QString GetCurrentFilterUrl();
-
-
+    QSignalMapper* mapper = nullptr;
+    QProgressBar* pbMain = nullptr;
+    QLabel* lblCurrentOperation = nullptr;
+    QNetworkAccessManager manager;
+    QNetworkAccessManager fandomManager;
+    QNetworkAccessManager crossoverManager;
 
 
 public slots:
@@ -142,24 +138,14 @@ public slots:
     void OnFandomReply(QNetworkReply*);
     void OnCrossoverReply(QNetworkReply*);
 private slots:
-    void on_pbCrawl_clicked();
     void OnSetTag(QString);
-//    void OnSmutFanfic();
-    //void OnUnknownFandom();
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);
+    void OnCheckboxFilter(int);
     void on_pbLoadDatabase_clicked();
-    void on_chkSmut_toggled(bool checked);
-    void on_chkUnknownFandoms_toggled(bool checked);
     void on_pbInit_clicked();
-    void on_chkEverything_toggled(bool checked);
-    void on_chkMeh_toggled(bool checked);
-    void on_chkReadQueue_toggled(bool checked);
-    void on_chkCrapFandom_toggled(bool checked);
-    void on_chkReading_toggled(bool checked);
-    void on_chkFinished_toggled(bool checked);
-    void on_checkBox_toggled(bool checked);
-    void on_chkDisgusting_toggled(bool checked);
+    void on_pbCrawl_clicked();
+
 };
 
 #endif // MAINWINDOW_H

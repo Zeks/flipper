@@ -59,6 +59,9 @@ MainWindow::MainWindow(QWidget *parent) :
     nameOfCrossoverSectionToLink["Crossover/Book"] = QString::fromLocal8Bit("https://www.fanfiction.net/crossovers/book/");
     nameOfCrossoverSectionToLink["Crossover/Cartoon"] = QString::fromLocal8Bit("https://www.fanfiction.net/crossovers/cartoon/");
 
+
+    connect(ui->buttonGroup, SIGNAL(buttonClicked(int)), this, SLOT(OnCheckboxFilter(int)));
+
     ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
     ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 
@@ -108,23 +111,13 @@ void MainWindow::ProcessPage(QString str)
         section = GetSection(str, currentPosition);
         if(!section.isValid)
             break;
-        //QString temp = str.mid(section.start, section.end - section.start);
-        //ui->edtDebug->insertPlainText(temp);
         currentPosition = section.start;
 
         section.fandom = ui->cbCrossovers->currentText().isEmpty() ? ui->cbNormals->currentText() : ui->cbCrossovers->currentText() + " CROSSOVER";
         GetUrl(section, currentPosition, str);
-        //qDebug() << section.url;
-        //ui->edtDebug->insertPlainText(section.url + "\n");
         GetTitle(section, currentPosition, str);
-        //qDebug() << section.title;
-        //ui->edtDebug->insertPlainText(section.title + "\n");
         GetAuthor(section, currentPosition, str);
-        //qDebug() << section.author;
-        //ui->edtDebug->insertPlainText(section.author + "\n");
         GetSummary(section, currentPosition, str);
-        //qDebug() << section.summary;
-        //ui->edtDebug->insertPlainText(section.summary + "\n");
 
         GetStatSection(section, currentPosition, str);
 
@@ -146,28 +139,11 @@ void MainWindow::ProcessPage(QString str)
         GetTaggedSection(section.statSection, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.genre = val;});
         GetTaggedSection(section.statSection, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){ section.characters = val;});
 
-
         if(section.fandom.contains("CROSSOVER"))
             GetCrossoverFandomList(section, currentPosition, str);
 
-        //GetWordCount(section, currentPosition, str);
-        //qDebug() << section.wordCount;
-        //ui->edtDebug->insertPlainText(QString::number(section.wordCount) + "\n");
-
-        //GetGenre(section, currentPosition, str);
-        //qDebug() << section.genre;
-        ///ui->edtDebug->insertPlainText(section.genre + "\n");
-        //GetUpdatedDate(section, currentPosition, str);
-
-
         if(section.updated.toMSecsSinceEpoch() < lastUpdated.toMSecsSinceEpoch())
             abort = true;
-        //qDebug() << section.updated;
-        //ui->edtDebug->insertPlainText(section.updated.toString() + "\n");
-        //GetPublishedDate(section, currentPosition, str);
-        //qDebug() << section.published;
-        //ui->edtDebug->insertPlainText(section.published.toString() + "\n");
-        //ui->edtDebug->insertPlainText("\n");
         if(section.isValid)
         {
             sections.append(section);
@@ -249,30 +225,6 @@ void MainWindow::GetStatSection(Section &section, int &startfrom, QString text)
     //qDebug() << section.statSection;
 }
 
-void MainWindow::GetGenre(Section & section, int& , QString text)
-{
-    //need to check if genre section even exists
-    //    QString toCheck(text.mid(section.summaryEnd, section.wordCountStart - section.summaryEnd));
-    //    int count = std::count_if(toCheck.begin(), toCheck.end(), [](QString val){return val == "-";});
-    //    if(count == 3)
-    //        return ;
-    QRegExp rxRated(QRegExp::escape("English"));
-    QRegExp rxChapters(QRegExp::escape("Chapters"));
-
-    int indexRated= rxRated.indexIn(text, section.summaryEnd);
-    int indexChapters = rxChapters.indexIn(text, indexRated + 1);
-
-    auto ref = text.midRef(indexRated + rxRated.pattern().length(), indexChapters - (indexRated + rxRated.pattern().length()));
-    int count = std::count_if(ref.begin(),ref.end(), [](QChar value){ return value == '-';});
-    if(count < 2)
-        return ;
-
-    QString genre = ref.mid(2, ref.length() - 2).toString();
-    genre=genre.replace("/", " ").replace("-", "").trimmed();
-    section.genre = genre;
-
-}
-
 void MainWindow::GetSummary(Section & section, int& startfrom, QString text)
 {
     QRegExp rxStart(QRegExp::escape("padtop'>"));
@@ -283,8 +235,6 @@ void MainWindow::GetSummary(Section & section, int& startfrom, QString text)
     section.summary = text.mid(indexStart + 8,indexEnd - (indexStart + 8));
     section.summaryEnd = indexEnd;
     startfrom = indexEnd;
-
-
 }
 
 void MainWindow::GetCrossoverFandomList(Section & section, int &startfrom, QString text)
@@ -297,53 +247,6 @@ void MainWindow::GetCrossoverFandomList(Section & section, int &startfrom, QStri
 
     section.fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed().replace("&", " ") + QString(" CROSSOVER");
     startfrom = indexEnd;
-}
-
-void MainWindow::GetWordCount(Section & section, int& startfrom, QString text)
-{
-    QRegExp rxStart("-\\sWords:");
-    QRegExp rxEnd("\\s-");
-    int indexStart = rxStart.indexIn(text,startfrom);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-
-    QString words = text.mid(indexStart + 9,indexEnd - (indexStart + 9));
-    words=words.replace(" ", "");
-    words=words.replace(",", "");
-    section.wordCount = words.toInt();
-    section.wordCountStart = indexStart;
-    if(startfrom <=  indexEnd)
-        startfrom = indexEnd;
-
-
-}
-
-void MainWindow::GetPublishedDate(Section & section, int& startfrom, QString text)
-{
-    QRegExp rxStart(QRegExp::escape(">"));
-    QRegExp rxEnd(QRegExp::escape("<"));
-    int indexStart = rxStart.indexIn(text,startfrom);
-    int indexEnd = rxEnd.indexIn(text, indexStart + 1);
-    //qDebug() << "PublishText: " << text.mid(indexStart+1, indexEnd - (indexStart +1));
-    QDateTime temp = ConvertToDate(text.mid(indexStart + 1,indexEnd - (indexStart + 1)));
-    if(!temp.isValid())
-        qDebug() << text.mid(indexStart + 1,indexEnd - (indexStart + 1));
-    section.published = ConvertToDate(text.mid(indexStart + 1,indexEnd - (indexStart + 1)));
-    if(startfrom <=  indexEnd)
-        startfrom = indexEnd;
-}
-
-void MainWindow::GetUpdatedDate(Section & section, int& startfrom, QString text)
-{
-    QRegExp rxStart(QRegExp::escape(">"));
-    QRegExp rxEnd(QRegExp::escape("<"));
-    int indexStart = rxStart.indexIn(text,startfrom);
-    int indexEnd = rxEnd.indexIn(text, indexStart + 1);
-    //qDebug() << "UpdateText: " << text.mid(indexStart+1, indexEnd - (indexStart +1));
-    section.updated = ConvertToDate(text.mid(indexStart + 1,indexEnd - (indexStart + 1)));
-    if(!section.updated.isValid())
-        qDebug() << text.mid(indexStart + 1,indexEnd - (indexStart + 1));
-    startfrom = indexEnd+12;
-
 }
 
 void MainWindow::GetUrl(Section & section, int& startfrom, QString text)
@@ -382,32 +285,6 @@ void MainWindow::GetTaggedSection(QString text, QString rxString ,std::function<
         functor("not found");
 }
 
-QDateTime MainWindow::ConvertToDate(QString text)
-{
-    int count = std::count_if(text.begin(), text.end(), [](QString val){return val == "/";});
-    QDateTime result;
-
-    if(count == 0)
-    {
-        //hours
-        if(text.contains("d"))
-            result = QDateTime::currentDateTime().addDays(-1*text.replace(QRegExp("[\\sd]"), "").toInt());
-        if(text.contains("h"))
-            result = QDateTime::currentDateTime().addSecs(-1*60*60*text.replace(QRegExp("[\\sh]"), "").toInt());
-        if(text.contains("m"))
-            result = QDateTime::currentDateTime().addSecs(-1*60*text.replace(QRegExp("[\\sm]"), "").toInt());
-    }
-    if(count == 1)
-    {
-        //with month
-        result = QDateTime::fromString(text.trimmed() + QString("/") + QString::number(QDateTime::currentDateTime().date().year()) , "M/d/yyyy");
-    }
-    if(count == 2)
-    {
-        result = QDateTime::fromString(text.trimmed() , "M/d/yyyy");
-    }
-    return result;
-}
 
 Section MainWindow::GetSection(QString text, int start)
 {
@@ -424,11 +301,6 @@ Section MainWindow::GetSection(QString text, int start)
         section.end = end;
     }
     return section;
-}
-
-void MainWindow::SkipPages(int)
-{
-    //intentionally blank
 }
 
 QString MainWindow::CreateURL(QString str)
@@ -538,18 +410,6 @@ void MainWindow::LoadData()
 
 }
 
-void MainWindow::HideFanfic(int id)
-{
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
-    QSqlQuery q(db);
-    q.prepare(QString("update fanfics set hidden = 1 where rowid = %1").arg(id));
-    q.exec();
-    if(q.lastError().isValid())
-        qDebug() << q.lastError();
-
-
-}
 
 void MainWindow::OnSetTag(QString tag)
 {
@@ -569,19 +429,6 @@ void MainWindow::OnSetTag(QString tag)
             qDebug() << q.lastError();
     }
     HideCurrentID();
-}
-
-
-
-void MainWindow::UnknownFandom(int id)
-{
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
-    QSqlQuery q(db);
-    q.prepare(QString("update fanfics set unknown_fandom = 1 where rowid = %1").arg(id));
-    q.exec();
-    if(q.lastError().isValid())
-        qDebug() << q.lastError();
 }
 
 void MainWindow::timerEvent(QTimerEvent *)
@@ -1105,67 +952,13 @@ void MainWindow::on_pbLoadDatabase_clicked()
     LoadData();
 }
 
-void MainWindow::on_chkSmut_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
-
-void MainWindow::on_chkUnknownFandoms_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
-
 void MainWindow::on_pbInit_clicked()
 {
     Init();
 }
 
-void MainWindow::on_chkEverything_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
 
-void MainWindow::on_chkMeh_toggled(bool checked)
+void MainWindow::OnCheckboxFilter(int)
 {
-    if(checked)
-        LoadData();
-}
-
-void MainWindow::on_chkReadQueue_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
-
-void MainWindow::on_chkCrapFandom_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
-
-void MainWindow::on_chkReading_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
-
-void MainWindow::on_chkFinished_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
-
-void MainWindow::on_checkBox_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
-}
-
-void MainWindow::on_chkDisgusting_toggled(bool checked)
-{
-    if(checked)
-        LoadData();
+    LoadData();
 }
