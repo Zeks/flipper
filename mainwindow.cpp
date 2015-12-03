@@ -394,7 +394,7 @@ void MainWindow::LoadData()
     }
     if(ui->chkPokemon->isChecked())
     {
-        queryString = "select rowid, f.* from fanfics f where 1 = 1 ";
+        queryString = "select rowid, f.* from fanfics f where 1 = 1 and length(characters) > 40 ";
         diffField = "length(characters) desc";
         tagsMatter = false;
     }
