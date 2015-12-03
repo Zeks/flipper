@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QAction* crapFandom = browserMenu.addAction("Crap Fandom", mapper, SLOT(map()));
     QAction* reading = browserMenu.addAction("Already reading", mapper, SLOT(map()));
     QAction* finished = browserMenu.addAction("Finished", mapper, SLOT(map()));
+    QAction* disgusting= browserMenu.addAction("Disgusting", mapper, SLOT(map()));
 
     mapper->setMapping(hideAction,   QString("hidden"));
     mapper->setMapping(smutAction,   QString("smut"));
@@ -44,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
     mapper->setMapping(crapFandom, QString("crap_fandom"));
     mapper->setMapping(reading, QString("reading"));
     mapper->setMapping(finished, QString("finished"));
+    mapper->setMapping(disgusting, QString("disgusting"));
 
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->edtResults, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnShowContextMenu(QPoint)));
@@ -59,6 +61,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
     ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
+
+    pbMain = new QProgressBar;
+    pbMain->setMaximumWidth(200);
+    lblCurrentOperation = new QLabel;
+    lblCurrentOperation->setMaximumWidth(300);
+
+    ui->statusBar->addPermanentWidget(lblCurrentOperation,1);
+    ui->statusBar->addPermanentWidget(pbMain,0);
+
 }
 
 MainWindow::~MainWindow()
@@ -187,7 +198,7 @@ void MainWindow::ProcessPage(QString str)
     if(sections.size() > 0)
         GetNext(sections.last(), currentPosition, str);
     currentPosition = 999;
-    ui->edtResults->insertHtml("<span> \n Next page \n <br></span>");
+    //ui->edtResults->insertHtml("<span> \n Next page \n <br></span>");
 
     if(!nextUrl.isEmpty())
         timerId = startTimer(1000);
@@ -434,7 +445,7 @@ void MainWindow::LoadData()
     }
 
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString queryString = "select rowid, f.* from fanfics f where 1 = 1 and " ;
+    QString queryString = "select rowid, f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
         queryString += " and wordcount > :minwordcount ";
     if(ui->cbMaxWordCount->currentText().toInt() > 0)
@@ -457,6 +468,15 @@ void MainWindow::LoadData()
         tags+=WrapTag("meh_description") + "|";
     else if(ui->chkReadQueue->isChecked())
         tags+=WrapTag("queue") + "|";
+    else if(ui->chkReading->isChecked())
+        tags+=WrapTag("reading") + "|";
+    else if(ui->chkFinished->isChecked())
+        tags+=WrapTag("finished") + "|";
+    else if(ui->chkDisgusting->isChecked())
+        tags+=WrapTag("disgusting") + "|";
+    else if(ui->chkCrapFandom->isChecked())
+        tags+=WrapTag("crap_fandom") + "|";
+
 
     if(!ui->cbNormals->currentText().isEmpty())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
@@ -592,20 +612,28 @@ void MainWindow::UpdateFandomList()
         fandomManager.get(QNetworkRequest(QUrl(nameOfFandomSectionToLink[section])));
         managerEventLoop.exec();
     }
+
+
     for(auto value : nameOfFandomSectionToLink.keys())
     {
 
         QString qs = QString("Select fandom from FANdoms where section = '%1'").arg(value.replace("'","''"));
         QSqlQuery q(qs, db);
         QHash<QString, QString> knownValues;
+
         while(q.next())
         {
             knownValues[q.value(0).toString()] = q.value(0).toString();
         }
         qDebug() << q.lastError();
 
+        pbMain->setMinimum(0);
+        pbMain->setMaximum(names[value].size());
+        lblCurrentOperation->setText("Currently loading: " + value);
+        int counter = 0;
         for(auto fandom : names[value])
         {
+            counter++;
             if(!knownValues.contains(fandom.name))
             {
                 QString insert = "INSERT INTO FANDOMS (FANDOM, URL, SECTION) VALUES (:FANDOM, :URL, :SECTION)";
@@ -618,8 +646,14 @@ void MainWindow::UpdateFandomList()
                 if(q.lastError().isValid())
                     qDebug() << q.lastError();
             }
+            if(counter%100 == 0)
+            {
+                pbMain->setValue(counter);
+                QApplication::processEvents();
+            }
         }
-
+        pbMain->setValue(pbMain->maximum());
+        QApplication::processEvents();
     }
 }
 
@@ -648,8 +682,13 @@ void MainWindow::UpdateCrossoverList()
         }
         qDebug() << q.lastError();
 
+        pbMain->setMinimum(0);
+        pbMain->setMaximum(names[value].size());
+        lblCurrentOperation->setText("Currently loading: " + value);
+        int counter = 0;
         for(auto fandom : names[value])
         {
+            counter++;
             if(!knownValues.contains(fandom.name))
             {
                 QString insert = "INSERT INTO FANDOMS (FANDOM, URL, SECTION) VALUES (:FANDOM, :URL, :SECTION)";
@@ -662,7 +701,15 @@ void MainWindow::UpdateCrossoverList()
                 if(q.lastError().isValid())
                     qDebug() << q.lastError();
             }
+            if(counter%100 == 0)
+            {
+                pbMain->setValue(counter);
+                QApplication::processEvents();
+            }
         }
+        pbMain->setValue(pbMain->maximum());
+        QApplication::processEvents();
+
 
     }
 }
@@ -862,6 +909,24 @@ QString MainWindow::GetCurrentFilterUrl()
         lastUpdated = GetMaxUpdateDateForSection(ui->cbNormals->currentText());
     }
     return url;
+}
+
+bool MainWindow::CheckSectionAvailability()
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("Select count(fandom) from fandoms");
+    QSqlQuery q(qs, db);
+    q.next();
+    if(q.value(0).toInt() == 0)
+    {
+        lblCurrentOperation->setText("Please, wait");
+        QMessageBox::information(nullptr, "Attention!", "Section information is not available, the app will now load it from the internet.\nThis is a one time operation, unless you want to update it with \"Reload section data\"\nPlease wait until it finishes before doing anything.");
+        Init();
+        QMessageBox::information(nullptr, "Attention!", "Section data is initialized, the app is usable. Have fun searching.");
+        pbMain->hide();
+        lblCurrentOperation->hide();
+    }
+
 }
 
 void MainWindow::OnNetworkReply(QNetworkReply * reply)
@@ -1088,6 +1153,18 @@ void MainWindow::on_chkReading_toggled(bool checked)
 }
 
 void MainWindow::on_chkFinished_toggled(bool checked)
+{
+    if(checked)
+        LoadData();
+}
+
+void MainWindow::on_checkBox_toggled(bool checked)
+{
+    if(checked)
+        LoadData();
+}
+
+void MainWindow::on_chkDisgusting_toggled(bool checked)
 {
     if(checked)
         LoadData();

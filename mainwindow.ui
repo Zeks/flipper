@@ -22,7 +22,7 @@
       </property>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Database</string>
+        <string>42</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
@@ -30,20 +30,7 @@
           <item>
            <widget class="QPushButton" name="pbInit">
             <property name="text">
-             <string>Load Section Data</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pbCrawl">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Crawl Section</string>
+             <string>Reload Section Data</string>
             </property>
            </widget>
           </item>
@@ -174,6 +161,19 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pbCrawl">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Load Selected Fandom</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="horizontalSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -199,7 +199,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Load</string>
+             <string>Search</string>
             </property>
            </widget>
           </item>
@@ -348,6 +348,16 @@
              <widget class="QCheckBox" name="chkSmut">
               <property name="text">
                <string>Smut</string>
+              </property>
+              <attribute name="buttonGroup">
+               <string notr="true">buttonGroup</string>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkDisgusting">
+              <property name="text">
+               <string>Disgusting</string>
               </property>
               <attribute name="buttonGroup">
                <string notr="true">buttonGroup</string>

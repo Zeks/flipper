@@ -13,6 +13,8 @@
 #include <QHash>
 #include <QEventLoop>
 #include <QSignalMapper>
+#include <QProgressBar>
+#include <QLabel>
 #include <functional>
 
 
@@ -110,7 +112,7 @@ public:
     QNetworkAccessManager manager;
     QNetworkAccessManager fandomManager;
     QNetworkAccessManager crossoverManager;
-
+    bool CheckSectionAvailability();
 private:
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -126,9 +128,13 @@ private:
     QHash<QString, QString> nameOfFandomSectionToLink;
     QHash<QString, QString> nameOfCrossoverSectionToLink;
     QSignalMapper* mapper;
+    QProgressBar* pbMain;
+    QLabel* lblCurrentOperation;
     QString WrapTag(QString tag);
     void HideCurrentID();
     QString GetCurrentFilterUrl();
+
+
 
 
 public slots:
@@ -152,6 +158,8 @@ private slots:
     void on_chkCrapFandom_toggled(bool checked);
     void on_chkReading_toggled(bool checked);
     void on_chkFinished_toggled(bool checked);
+    void on_checkBox_toggled(bool checked);
+    void on_chkDisgusting_toggled(bool checked);
 };
 
 #endif // MAINWINDOW_H
