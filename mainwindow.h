@@ -72,7 +72,9 @@ public:
     void timerEvent(QTimerEvent *) override;
 
     bool CheckSectionAvailability();
+
 private:
+    bool event(QEvent * e);
     void ReadSettings();
 
     void RequestPage(QString);

@@ -20,7 +20,8 @@ bool TagEditorHider(QObject* /*obj*/, QEvent *event, QWidget* widget)
     if(event->type() == QEvent::FocusOut)
     {
         QWidget* focused = QApplication::focusWidget();
-        if(focused->parent() != widget)
+
+        if(focused->parent()->parent() != widget)
         {
             widget->hide();
             return true;
@@ -87,6 +88,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(tagWidgetDynamic, &TagWidget::tagDeleted, [&](QString tag){
         ui->wdgTagsPlaceholder->OnRemoveTagFromEdit(tag);
+
+        if(tagList.contains(tag))
+        {
+            QSqlDatabase db = QSqlDatabase::database(dbName);
+
+            QSqlQuery q(db);
+            q.prepare("DELETE FROM TAGS where tag = :tag");
+            q.bindValue(":tag", tag);
+            q.exec();
+            if(q.lastError().isValid())
+                qDebug() << q.lastError();
+        }
     });
     connect(tagWidgetDynamic, &TagWidget::tagAdded, [&](QString tag){
         ui->wdgTagsPlaceholder->OnNewTag(tag, false);
@@ -94,10 +107,23 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     ui->wdgTagsPlaceholder->SetAddDialogVisibility(false);
+//    QObject::connect(this, &MainWindow::activated, this, [&](QWidget*){
+//        tagWidgetDynamic->hide();
+//    });
     this->setAttribute(Qt::WA_QuitOnClose);
     ReadSettings();
 }
 
+bool MainWindow::event(QEvent * e)
+{
+    switch(e->type())
+    {
+        case QEvent::WindowActivate :
+            tagWidgetDynamic->hide();
+            break ;
+            } ;
+    return QMainWindow::event(e) ;
+}
 
 MainWindow::~MainWindow()
 {
@@ -810,6 +836,16 @@ void MainWindow::SetTag(int id, QString tag)
     q.exec();
     if(q.lastError().isValid())
         qDebug() << q.lastError();
+
+
+    if(!tagList.contains(tag))
+    {
+        q.prepare("INSERT INTO TAGS(TAG) VALUES(:tag)");
+        q.bindValue(":tag", tag);
+        q.exec();
+        if(q.lastError().isValid())
+            qDebug() << q.lastError();
+    }
 }
 
 void MainWindow::UnsetTag(int id, QString tag)
