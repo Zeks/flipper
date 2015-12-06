@@ -63,6 +63,14 @@ int main(int argc, char *argv[])
 
 
 
+    QString createTags = "create table if not exists tags "
+                            "(tag VARCHAR unique NOT NULL)";
+
+
+    q.prepare(createTags);
+    q.exec();
+    qDebug() << q.lastError();
+
     CreateIndex("CREATE INDEX if not exists  \"main\".\"I_FANFICS_IDENTITY\" ON \"FANFICS\" (\"AUTHOR\" ASC, \"TITLE\" ASC)");
     CreateIndex("CREATE  INDEX  if not exists  \"main\".\"I_FANFICS_FANDOM\" ON \"FANFICS\" (\"FANDOM\" ASC)");
     CreateIndex("CREATE  INDEX if  not exists \"main\".\"I_FANFICS_WORDCOUNT\" ON \"FANFICS\" (\"WORDCOUNT\" ASC)");

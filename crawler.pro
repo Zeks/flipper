@@ -13,11 +13,16 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    tagwidget.cpp \
+    genericeventfilter.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    tagwidget.h \
+    genericeventfilter.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    tagwidget.ui
 
 
 QMAKE_CXXFLAGS += -std=c++11

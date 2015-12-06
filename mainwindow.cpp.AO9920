@@ -7,24 +7,43 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QPair>
-#include <QPoint>
 #include <QStringListModel>
 #include <QDesktopServices>
-#include <QTextCodec>
-#include <QSettings>
-#include "genericeventfilter.h"
+
 #include <algorithm>
+
+GenericEventFilter::GenericEventFilter(QObject* parent):QObject(parent)
+{
+
+}
+GenericEventFilter::~GenericEventFilter()
+{}
+
+bool GenericEventFilter::eventFilter(QObject *obj, QEvent *event)
+{
+    if(eventProcessor != 0)
+    {
+        if(eventProcessor(obj, event))
+        {
+            event->accept();
+            return true;
+        }
+        else return false;
+    }
+    else
+        return QObject::eventFilter(obj, event);
+}
+void GenericEventFilter::SetEventProcessor(std::function<bool(QObject *, QEvent *)> processor)
+{
+    eventProcessor = processor;
+}
 
 bool TagEditorHider(QObject* /*obj*/, QEvent *event, QWidget* widget)
 {
     if(event->type() == QEvent::FocusOut)
     {
-        QWidget* focused = QApplication::focusWidget();
-        if(focused->parent() != widget)
-        {
-            widget->hide();
-            return true;
-        }
+        widget->hide();
+        return true;
     }
     return false;
 }
@@ -39,7 +58,31 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(
                 &manager, SIGNAL (finished(QNetworkReply*)),
                 this, SLOT (OnNetworkReply(QNetworkReply*)));
+    mapper = new QSignalMapper(this);
+    connect(mapper, SIGNAL(mapped(QString)), this, SLOT(OnSetTag(QString)));
+    QAction* hideAction = browserMenu.addAction("Hide fanfic", mapper, SLOT(map()));
+    QAction* smutAction = browserMenu.addAction("Smut fanfic", mapper, SLOT(map()));
+    QAction* unknownFandom = browserMenu.addAction("Unknown Fandom", mapper, SLOT(map()));
+    QAction* readQueue = browserMenu.addAction("Add to reading queue", mapper, SLOT(map()));
+    QAction* meh = browserMenu.addAction("Meh description", mapper, SLOT(map()));
 
+    QAction* crapFandom = browserMenu.addAction("Crap Fandom", mapper, SLOT(map()));
+    QAction* reading = browserMenu.addAction("Already reading", mapper, SLOT(map()));
+    QAction* finished = browserMenu.addAction("Finished", mapper, SLOT(map()));
+    QAction* disgusting= browserMenu.addAction("Disgusting", mapper, SLOT(map()));
+
+
+
+
+    mapper->setMapping(hideAction,   QString("hidden"));
+    mapper->setMapping(smutAction,   QString("smut"));
+    mapper->setMapping(unknownFandom, QString("unknown"));
+    mapper->setMapping(readQueue, QString("queue"));
+    mapper->setMapping(meh, QString("meh_description"));
+    mapper->setMapping(crapFandom, QString("crap_fandom"));
+    mapper->setMapping(reading, QString("reading"));
+    mapper->setMapping(finished, QString("finished"));
+    mapper->setMapping(disgusting, QString("disgusting"));
 
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->edtResults, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnShowContextMenu(QPoint)));
@@ -70,57 +113,17 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->edtResults->setOpenLinks(false);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, OnLinkClicked);
 
-//    tagEditor->setOpenLinks(false);
-//    tagEditor->setFont(QFont("Verdana", 16));
-//    connect(tagEditor, &QTextBrowser::anchorClicked, this, OnTagClicked);
-
-    // should refer to new tag widget instead
     GenericEventFilter* eventFilter = new GenericEventFilter(this);
-    eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagWidgetDynamic));
-    tagWidgetDynamic->installEventFilter(eventFilter);
-    connect(tagWidgetDynamic, &TagWidget::tagToggled, this, OnTagToggled);
-
-    connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
-        if(ui->gbTagFilters->isChecked() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0)
-            LoadData();
-    });
-
-    connect(tagWidgetDynamic, &TagWidget::tagDeleted, [&](QString tag){
-        ui->wdgTagsPlaceholder->OnRemoveTagFromEdit(tag);
-    });
-    connect(tagWidgetDynamic, &TagWidget::tagAdded, [&](QString tag){
-        ui->wdgTagsPlaceholder->OnNewTag(tag, false);
-
-    });
-
-    ui->wdgTagsPlaceholder->SetAddDialogVisibility(false);
-    this->setAttribute(Qt::WA_QuitOnClose);
-    ReadSettings();
+    eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagEditor));
+    tagEditor->installEventFilter(eventFilter);
+    tagEditor->setOpenLinks(false);
+    tagEditor->setFont(QFont("Verdana", 16));
+    connect(tagEditor, &QTextBrowser::anchorClicked, this, OnTagClicked);
 }
 
 
 MainWindow::~MainWindow()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    settings.setValue("Settings/minWordCount", ui->cbMinWordCount->currentText());
-    settings.setValue("Settings/maxWordCount", ui->cbMaxWordCount->currentText());
-    settings.setValue("Settings/normals", ui->cbNormals->currentText());
-    settings.setValue("Settings/crossovers", ui->cbCrossovers->currentText());
-    settings.setValue("Settings/plusGenre", ui->leContainsGenre->text());
-    settings.setValue("Settings/minusGenre", ui->leNotContainsGenre->text());
-    settings.setValue("Settings/plusWords", ui->leContainsWords->text());
-    settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
-    settings.setValue("Settings/section", ui->cbSectionTypes->currentText());
-    settings.setValue("Settings/active", ui->chkActive->isChecked());
-    settings.setValue("Settings/completed", ui->chkComplete->isChecked());
-    settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
-    //settings.setValue("Settings/spMain", ui->spMain->saveState());
-    QString temp;
-    for(int size : ui->spMain->sizes())
-        temp.push_back(QString::number(size) + " ");
-    settings.setValue("Settings/spMain", temp.trimmed());
-    settings.sync();
     delete ui;
 }
 
@@ -396,6 +399,22 @@ void MainWindow::LoadData()
 
     QString tags, not_tags;
 
+    if(ui->chkSmut->isChecked())
+        tags+=WrapTag("smut") + "|";
+    else if(ui->chkUnknownFandoms->isChecked())
+        tags+=WrapTag("unknown") + "|";
+    else if(ui->chkMeh->isChecked())
+        tags+=WrapTag("meh_description") + "|";
+    else if(ui->chkReadQueue->isChecked())
+        tags+=WrapTag("queue") + "|";
+    else if(ui->chkReading->isChecked())
+        tags+=WrapTag("reading") + "|";
+    else if(ui->chkFinished->isChecked())
+        tags+=WrapTag("finished") + "|";
+    else if(ui->chkDisgusting->isChecked())
+        tags+=WrapTag("disgusting") + "|";
+    else if(ui->chkCrapFandom->isChecked())
+        tags+=WrapTag("crap_fandom") + "|";
 
     QString diffField = " WORDCOUNT DESC";
     bool tagsMatter = true;
@@ -426,14 +445,14 @@ void MainWindow::LoadData()
     if(ui->chkTLDR->isChecked())
     {
         queryString = "select rowid, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'"
-                      "and summary not like '%revision%'"
-                      "and summary not like '%rewrite%'"
-                      "and summary not like '%abandoned%'"
-                      "and summary not like '%part%'"
-                      "and summary not like '%complete%'"
-                      "and summary not like '%adopted%'"
-                      "and length(summary) < 100 "
-                      "and summary not like '%discontinued%'";
+                "and summary not like '%revision%'"
+                "and summary not like '%rewrite%'"
+                "and summary not like '%abandoned%'"
+                "and summary not like '%part%'"
+                "and summary not like '%complete%'"
+                "and summary not like '%adopted%'"
+                "and length(summary) < 100 "
+                "and summary not like '%discontinued%'";
         diffField = "length(summary) asc";
         tagsMatter = false;
     }
@@ -443,9 +462,9 @@ void MainWindow::LoadData()
     if(ui->chkActive->isChecked())
         queryString+=QString(" and cast("
                              "("
-                             " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
+                                      " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
                              " ) AS real "
-                             " )/60/60/24 >-365");
+                          " )/60/60/24 >-365");
 
     if(!ui->cbNormals->currentText().isEmpty())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
@@ -453,8 +472,8 @@ void MainWindow::LoadData()
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbCrossovers->currentText());
 
 
-    for(auto tag : ui->wdgTagsPlaceholder->GetSelectedTags())
-        tags.push_back(WrapTag(tag) + "|");
+
+
 
     tags.chop(1);
     not_tags.chop(1);
@@ -511,12 +530,9 @@ void MainWindow::LoadData()
         //ui->edtResults->append("<span>" + QString("ID: ") +  QString::number(q.value("rowid").toInt()) +  "</font></span>");
 
 
-        QString toInsertTagOpener = QString("<br><a href=\"") + QString::number(q.value("rowid").toInt()) + "TAGS" + q.value("TAGS").toString() + QString(" \"> %1</a>");
-        toInsertTagOpener= toInsertTagOpener.arg("Tags:");
-
+        QString toInsertTagOpener = QString("<br><a href=\"") + QString::number(q.value("rowid").toInt()) + "TAGS" + q.value("TAGS").toString() + QString(" \"> %1 </a>");
+        toInsertTagOpener= toInsertTagOpener.arg("Tags");
         ui->edtResults->insertHtml(toInsertTagOpener);
-        ui->edtResults->insertHtml(" <span>" + q.value("TAGS").toString().replace(" none ", "").trimmed().replace(" ", ",")+ "</span>");
-
 
         ui->edtResults->insertPlainText("\n");
         ui->edtResults->insertPlainText("\n");
@@ -738,32 +754,25 @@ QString MainWindow::GetNormalUrl(QString)
 
 void MainWindow::OpenTagWidget(QPoint pos, QString url)
 {
+    tagEditor->clear();
+    tagEditor->resize(500,200);
+    tagEditor->move(pos);
+    tagEditor->setWindowFlags(Qt::FramelessWindowHint);
+    tagEditor->show();
     url = url.replace(" none ", "");
     QStringList temp = url.split("TAGS");
     QString id = temp.at(0);
     QString tags= temp.at(1);
-
-    QList<QPair<QString, QString>> tagPairs;
-
-    for(QString tag: ui->wdgTagsPlaceholder->GetAllTags())
+    for(QString tag: tagList)
     {
+        QString toInsert ;
         if(tags.contains(tag))
-            tagPairs.push_back({"1", tag});
+            toInsert = ("<a href=\"" + QString("1") + " " + id + " " + tag + " \" style=\"color:darkgreen\" >" + tag + "</a>    ");
         else
-            tagPairs.push_back({"0", tag});
+            toInsert = ("<a href=\""  + QString("0") + " " + id + " " + tag + " \">" + tag + "</a>    ");
+        tagEditor->insertHtml(toInsert);
     }
-
-    tagWidgetDynamic->InitFromTags(id.toInt(), tagPairs);
-    tagWidgetDynamic->resize(500,200);
-    //tagWidgetDynamic->move(ui->edtResults->mapTo(ui->twMain, QPoint(ui->edtResults->x(),0)).x(), pos.y());
-    QPoint tempPoint(ui->edtResults->x(), 0);
-    tempPoint = mapToGlobal(ui->twMain->mapTo(this, tempPoint));
-    tagWidgetDynamic->move(tempPoint.x(), pos.y());
-    tagWidgetDynamic->setWindowFlags(Qt::FramelessWindowHint);
-
-
-    tagWidgetDynamic->show();
-    tagWidgetDynamic->setFocus();
+    tagEditor->setFocus();
 }
 
 void MainWindow::ReadTags()
@@ -771,11 +780,8 @@ void MainWindow::ReadTags()
     QSqlDatabase db = QSqlDatabase::database(dbName);
     QString qs = QString("Select tag from tags ");
     QSqlQuery q(qs, db);
-    QList<QPair<QString, QString>> tagPairs;
     while(q.next())
-    {
         tagList.append(q.value(0).toString());
-    }
 
     if(tagList.isEmpty())
     {
@@ -793,67 +799,12 @@ void MainWindow::ReadTags()
         }
         tagList = temp;
     }
-    for(auto tag : tagList)
-        tagPairs.push_back({ "0", tag });
-    ui->wdgTagsPlaceholder->InitFromTags(-1, tagPairs);
 }
 
-void MainWindow::SetTag(int id, QString tag)
+QDateTime MainWindow::GetMaxUpdateDateForSection(QString section)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("update fanfics set tags = tags || ' ' || :tag where rowid = :id");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":tag", tag);
-    q.bindValue(":id",id);
-    q.exec();
-    if(q.lastError().isValid())
-        qDebug() << q.lastError();
-}
-
-void MainWindow::UnsetTag(int id, QString tag)
-{
-    QSqlDatabase db = QSqlDatabase::database(dbName);
-
-    QString qs = QString("select tags from fanfics where rowid = :id");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
-    q.exec();
-    q.next();
-
-    if(q.lastError().isValid())
-        qDebug() << q.lastError();
-
-    QStringList originaltags = q.value(0).toString().split(" ");
-    originaltags.removeAll("none");
-    originaltags.removeAll("");
-    originaltags.removeAll(tag);
-
-
-    qs = QString("update fanfics set tags = :tags where rowid = :id");
-
-    QSqlQuery q1(db);
-    q1.prepare(qs);
-    q1.bindValue(":tags", " none " + originaltags.join(" "));
-    q1.bindValue(":id", id);
-    q1.exec();
-    if(q1.lastError().isValid())
-        qDebug() << q1.lastError();
-}
-
-QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
-{
-    QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("Select max(updated) as updated from fanfics where 1 = 1 %1");
-    QString append;
-    for(auto section : sections)
-    {
-        append+= QString(" and fandom like '%1' ").arg(section);
-    }
-    qs=qs.arg(append);
+    QString qs = QString("Select max(updated) as updated from fanfics where fandom like '%1'").arg(section);
     QSqlQuery q(qs, db);
     q.next();
     QDateTime result = q.value(0).toDateTime();
@@ -983,12 +934,12 @@ QString MainWindow::GetCurrentFilterUrl()
     if(!ui->cbCrossovers->currentText().isEmpty())
     {
         url = GetCrossoverUrl(ui->cbCrossovers->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbCrossovers->currentText() << "CROSSOVERS");
+        lastUpdated = GetMaxUpdateDateForSection(ui->cbCrossovers->currentText() + "CROSSOVERS");
     }
     else
     {
         url = GetNormalUrl(ui->cbCrossovers->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText());
+        lastUpdated = GetMaxUpdateDateForSection(ui->cbNormals->currentText());
     }
     return url;
 }
@@ -1009,33 +960,6 @@ bool MainWindow::CheckSectionAvailability()
         lblCurrentOperation->hide();
     }
     return true;
-}
-
-void MainWindow::ReadSettings()
-{
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    ui->cbCrossovers->setCurrentText(settings.value("Settings/crossovers", "").toString());
-    ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
-    ui->cbMaxWordCount->setCurrentText(settings.value("Settings/maxWordCount", "").toString());
-    ui->cbMinWordCount->setCurrentText(settings.value("Settings/minWordCount", 100000).toString());
-
-    ui->leContainsGenre->setText(settings.value("Settings/plusGenre", "").toString());
-    ui->leNotContainsGenre->setText(settings.value("Settings/minusGenre", "").toString());
-    ui->leNotContainsWords->setText(settings.value("Settings/minusWords", "").toString());
-    ui->leContainsWords->setText(settings.value("Settings/plusWords", "").toString());
-
-
-    ui->chkActive->setChecked(settings.value("Settings/active", false).toBool());
-    ui->chkComplete->setChecked(settings.value("Settings/completed", false).toBool());
-    ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
-    QString temp = settings.value("Settings/spMain", false).toString();
-    QList<int>  sizes;
-    for(auto tmp : temp.split(" "))
-        if(!tmp.isEmpty())
-            sizes.push_back(tmp.toInt());
-
-    ui->spMain->setSizes(sizes);
 }
 
 void MainWindow::OnNetworkReply(QNetworkReply * reply)
@@ -1187,12 +1111,12 @@ void MainWindow::on_pbCrawl_clicked()
     if(!ui->cbCrossovers->currentText().isEmpty())
     {
         url = GetCrossoverUrl(ui->cbCrossovers->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbCrossovers->currentText() << "CROSSOVERS");
+        lastUpdated = GetMaxUpdateDateForSection(ui->cbCrossovers->currentText() + "CROSSOVERS");
     }
     else
     {
         url = GetNormalUrl(ui->cbCrossovers->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText() );
+        lastUpdated = GetMaxUpdateDateForSection(ui->cbNormals->currentText());
     }
     //SkipPages(ui->leStartFromPage->text().toInt()-1);
     if(ui->sbStartFrom->value() != 0)
@@ -1211,13 +1135,69 @@ void MainWindow::OnLinkClicked(const QUrl & url)
         OpenTagWidget(QCursor::pos(), url.toString());
 }
 
-
-void MainWindow::OnTagToggled(int id, QString tag, bool checked)
+void MainWindow::OnTagClicked(const QUrl & url)
 {
-    if(checked)
-        SetTag(id, tag);
-    else
-        UnsetTag(id, tag);
+    QStringList temp = url.toString().split(" ");
+    if(temp.at(0) == "0")
+    {
+        QSqlDatabase db = QSqlDatabase::database(dbName);
+        QString qs = QString("update fanfics set tags = tags || ' ' || :tag where rowid = :id");
+
+        QSqlQuery q(db);
+        q.prepare(qs);
+        q.bindValue(":tag", temp.at(2));
+        q.bindValue(":id", temp.at(1).toInt());
+        q.exec();
+        if(q.lastError().isValid())
+            qDebug() << q.lastError();
+
+        QString text = tagEditor->toHtml();
+        qDebug() << text;
+        text=text.replace("color:#0000ff;\">" + temp.at(2) + "</span></a> <a href=\"0",
+                     "color:#006400;\">" + temp.at(2)+ "</span></a> <a href=\"1");
+        tagEditor->setHtml(text);
+
+    }
+
+    if(temp.at(0) == "1")
+    {
+        QSqlDatabase db = QSqlDatabase::database(dbName);
+
+        QString qs = QString("select tags from fanfics where rowid = :id");
+
+        QSqlQuery q(db);
+        q.prepare(qs);
+        q.bindValue(":id", temp.at(1).toInt());
+        q.exec();
+        q.next();
+
+        if(q.lastError().isValid())
+            qDebug() << q.lastError();
+        QStringList originaltags = q.value(0).toString().split(" ");
+        originaltags.removeAll("none");
+        originaltags.removeAll("");
+        originaltags.removeAll(temp.at(2));
+
+
+        qs = QString("update fanfics set tags = :tags where rowid = :id");
+
+        QSqlQuery q1(db);
+        q1.prepare(qs);
+        q1.bindValue(":tags", " none " + originaltags.join(" "));
+        q1.bindValue(":id", temp.at(1).toInt());
+        q1.exec();
+        if(q1.lastError().isValid())
+            qDebug() << q1.lastError();
+
+        QString text = tagEditor->toHtml();
+        qDebug() << text;
+        text=text.replace("color:#006400;\">" + temp.at(2) + "</span></a> <a href=\"1",
+                     "color:#0000ff;\">" + temp.at(2)+ "</span></a> <a href=\"0");
+        tagEditor->setHtml(text);
+    }
+
+
+
 }
 
 

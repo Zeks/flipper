@@ -15,9 +15,9 @@
 #include <QSignalMapper>
 #include <QProgressBar>
 #include <QLabel>
+#include <QTextBrowser>
 #include <functional>
-
-
+#include "tagwidget.h"
 
 struct Section
 {
@@ -73,7 +73,7 @@ public:
 
     bool CheckSectionAvailability();
 private:
-
+    void ReadSettings();
 
     void RequestPage(QString);
     void ProcessPage(QString);
@@ -93,7 +93,7 @@ private:
     void GetNext(Section& , int& startfrom, QString text);
     void GetStatSection(Section& , int& startfrom, QString text);
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
-    QDateTime GetMaxUpdateDateForSection(QString section);
+    QDateTime GetMaxUpdateDateForSection(QStringList sections);
 
     QString CreateURL(QString);
 
@@ -112,6 +112,12 @@ private:
 
     QString GetCrossoverUrl(QString);
     QString GetNormalUrl(QString);
+
+    void OpenTagWidget(QPoint, QString url);
+    void ReadTags();
+
+    void SetTag(int id, QString tag);
+    void UnsetTag(int id, QString tag);
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -133,6 +139,9 @@ private:
     QNetworkAccessManager fandomManager;
     QNetworkAccessManager crossoverManager;
     QString currentFilterurl;
+    bool ignoreUpdateDate = false;
+    QStringList tagList;
+    TagWidget* tagWidgetDynamic = new TagWidget;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
@@ -146,6 +155,9 @@ private slots:
     void on_pbLoadDatabase_clicked();
     void on_pbInit_clicked();
     void on_pbCrawl_clicked();
+    void OnLinkClicked(const QUrl &);
+
+    void OnTagToggled(int, QString, bool);
 
 };
 
