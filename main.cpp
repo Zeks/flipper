@@ -55,7 +55,8 @@ int main(int argc, char *argv[])
     QString createFandoms = "create table if not exists fandoms "
                             "(FANDOM VARCHAR NOT NULL,"
             " SECTION VARCHAR NOT NULL, "
-            "URL VARCHAR NOT NULL)";
+            "NORMAL_URL VARCHAR NOT NULL,"
+            "CROSSOVER_URL VARCHAR NOT NULL)";
 
     q.prepare(createFandoms);
     q.exec();

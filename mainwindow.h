@@ -54,8 +54,9 @@ struct Section
 struct Fandom
 {
     QString name;
-    QString url;
     QString section;
+    QString url;
+    QString crossoverUrl;
 };
 namespace Ui {
 class MainWindow;
@@ -105,8 +106,9 @@ private:
     QString WrapTag(QString tag);
     void HideCurrentID();
 
-    void UpdateFandomList();
-    void UpdateCrossoverList();
+    void UpdateFandomList(QNetworkAccessManager& manager,
+                          std::function<QString(Fandom)> linkGetter);
+    void InsertFandomData(QMap<QPair<QString,QString>, Fandom> names);
     void PopulateComboboxes();
 
     QStringList GetFandomListFromDB();
@@ -128,12 +130,13 @@ private:
     int pageCounter = 0;
     QMenu browserMenu;
     QEventLoop managerEventLoop;
-    QHash<QString, QList<Fandom>> names;
-    QString currentProcessedSetion;
+    QMap<QPair<QString,QString>, Fandom> names;
+    QString currentProcessedSection;
     QString dbName = "CrawlerDB.sqlite";
     QDateTime lastUpdated;
-    QHash<QString, QString> nameOfFandomSectionToLink;
-    QHash<QString, QString> nameOfCrossoverSectionToLink;
+    QHash<QString, Fandom> sections;
+//    QHash<QString, QString> nameOfFandomSectionToLink;
+//    QHash<QString, QString> nameOfCrossoverSectionToLink;
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
