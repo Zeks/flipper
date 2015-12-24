@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
             "REVIEWS INTEGER NOT NULL,"
             "CHAPTERS INTEGER NOT NULL,"
             "COMPLETE INTEGER NOT NULL DEFAULT 0,"
+            "AT_CHAPTER INTEGER NOT NULL,"
             "ORIGIN VARCHAR NOT NULL)";
 
     QSqlQuery q(db);

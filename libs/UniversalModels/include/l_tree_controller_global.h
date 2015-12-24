@@ -1,0 +1,15 @@
+#ifndef L_TREE_CONTROLLER_GLOBAL_H
+#define L_TREE_CONTROLLER_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+#include <QHash>
+
+#if defined(L_TREE_CONTROLLER_LIBRARY)
+#  define L_TREE_CONTROLLER_EXPORT Q_DECL_EXPORT
+#else
+#  define L_TREE_CONTROLLER_EXPORT Q_DECL_IMPORT
+#endif
+
+
+
+#endif // L_TREE_CONTROLLER_GLOBAL_H

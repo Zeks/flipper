@@ -16,9 +16,13 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QTextBrowser>
+#include <QTableView>
 #include <functional>
 #include "tagwidget.h"
-
+#include "libs/UniversalModels/include/TableDataInterface.h"
+#include "libs/UniversalModels/include/TableDataListHolder.h"
+#include "libs/UniversalModels/include/AdaptingTableModel.h"
+class QSortFilterProxyModel;
 struct Section
 {
     int start = 0;
@@ -29,6 +33,7 @@ struct Section
     int statSectionStart=0;
     int statSectionEnd=0;
     int complete=0;
+    int atChapter=0;
 
     QString wordCount = 0;
     QString chapters = 0;
@@ -44,6 +49,7 @@ struct Section
     QString statSection;
     QString author;
     QString url;
+    QString tags;
     QString origin;
     QString language;
     QDateTime published;
@@ -75,6 +81,16 @@ public:
     bool CheckSectionAvailability();
 
 private:
+
+    void SetupFanficTable();
+    void SetupTableAccess();
+    //QTableView* types_table = nullptr;
+    AdaptingTableModel* typetableModel = nullptr;
+    QSharedPointer<TableDataInterface> typetableInterface;
+    TableDataListHolder<Section>* holder = nullptr;
+    QList<Section> fanfics;
+    QSortFilterProxyModel* sortModel;
+
     bool event(QEvent * e);
     void ReadSettings();
 

@@ -12,6 +12,7 @@
 #include <QDesktopServices>
 #include <QTextCodec>
 #include <QSettings>
+#include <QSortFilterProxyModel>
 #include "genericeventfilter.h"
 #include <algorithm>
 
@@ -122,8 +123,127 @@ MainWindow::MainWindow(QWidget *parent) :
 //    });
     this->setAttribute(Qt::WA_QuitOnClose);
     ReadSettings();
+    SetupFanficTable();
 }
 
+
+#define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
+HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+[] (const Section* data) \
+{ \
+    if(data) \
+        return QVariant(data->PARAM); \
+    else \
+        return QVariant(); \
+} \
+); \
+HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+[] (Section* data, QVariant value) \
+{ \
+    if(data) \
+        data->PARAM = value.toString(); \
+} \
+); \
+
+#define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
+HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+[] (const Section* data) \
+{ \
+    if(data) \
+        return QVariant(data->PARAM); \
+    else \
+        return QVariant(); \
+} \
+); \
+HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+[] (Section* data, QVariant value) \
+{ \
+    if(data) \
+        data->PARAM = value.toDateTime(); \
+} \
+); \
+
+#define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
+HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+[] (const Section* data) \
+{ \
+    if(data) \
+        return QVariant(data->PARAM); \
+    else \
+        return QVariant(); \
+} \
+); \
+HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+[] (Section* data, QVariant value) \
+{ \
+    if(data) \
+        data->PARAM = value.toInt(); \
+} \
+); \
+
+void MainWindow::SetupTableAccess()
+{
+    ADD_STRING_GETSET(holder, 0, 0, fandom);
+    ADD_STRING_GETSET(holder, 1, 0, author);
+    ADD_STRING_GETSET(holder, 2, 0, title);
+    ADD_STRING_GETSET(holder, 3, 0, summary);
+    ADD_STRING_GETSET(holder, 4, 0, genre);
+    ADD_STRING_GETSET(holder, 5, 0, characters);
+    ADD_STRING_GETSET(holder, 6, 0, rated);
+    ADD_DATE_GETSET(holder, 7, 0, published);
+    ADD_DATE_GETSET(holder, 8, 0, updated);
+    ADD_STRING_GETSET(holder, 9, 0, url);
+    ADD_STRING_GETSET(holder, 10, 0, tags);
+    ADD_INTEGER_GETSET(holder, 11, 0, wordCount);
+    ADD_INTEGER_GETSET(holder, 12, 0, favourites);
+    ADD_INTEGER_GETSET(holder, 13, 0, reviews);
+    ADD_INTEGER_GETSET(holder, 14, 0, chapters);
+    ADD_INTEGER_GETSET(holder, 15, 0, complete);
+    ADD_INTEGER_GETSET(holder, 15, 0, atChapter);
+
+
+//    holder->AddGetter(QPair<int,int>(8,0),
+//    [] (const Section* )
+//    {
+//        return QVariant(QString(" "));
+//    });
+
+    holder->AddFlagsFunctor(
+                [](const QModelIndex& index)
+    {
+        if(index.column() == 8)
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        Qt::ItemFlags result;
+        result |= Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        return result;
+    }
+    );
+}
+
+void MainWindow::SetupFanficTable()
+{
+    holder = new TableDataListHolder<Section>();
+    //rollbackBuiltins = GenerationSettings::builtins;
+    typetableModel = new AdaptingTableModel();
+
+    SetupTableAccess();
+
+
+    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
+
+    typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
+
+    typetableModel->SetInterface(typetableInterface);
+
+    //sortModel = new QSortFilterProxyModel();
+    //sortModel->setSourceModel(typetableModel);
+    //sortModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+
+    //types_table->setModel();
+    holder->SetData(fanfics);
+    ui->tvFanfics->setModel(typetableModel);
+
+}
 bool MainWindow::event(QEvent * e)
 {
     switch(e->type())
@@ -398,6 +518,30 @@ QString MainWindow::CreateURL(QString str)
     return "https://www.fanfiction.net/" + str;
 }
 
+inline Section LoadFanfic(QSqlQuery& q)
+{
+    Section result;
+    result.fandom = q.value("FANDOM").toString();
+    result.author = q.value("AUTHOR").toString();
+    result.title = q.value("TITLE").toString();
+    result.summary = q.value("SUMMARY").toString();
+    result.genre= q.value("GENRES").toString();
+    result.characters = q.value("CHARACTERS").toString();
+    result.rated = q.value("RATED").toString();
+    result.published = q.value("PUBLISHED").toDateTime();
+    result.updated= q.value("UPDATED").toDateTime();
+    result.url = q.value("URL").toString();
+    result.tags = q.value("TAGS").toString();
+    result.wordCount = q.value("WORDCOUNT").toString();
+    result.favourites = q.value("FAVOURITES").toString();
+    result.reviews = q.value("REVIEWS").toString();
+    result.chapters = q.value("CHAPTERS").toString();
+    result.complete= q.value("WORDCOUNT").toInt();
+    result.wordCount = q.value("COMPLETE").toString();
+    result.atChapter = q.value("AT_CHAPTER").toInt();
+    return std::move(result);
+}
+
 void MainWindow::LoadData()
 {
     if(ui->cbMinWordCount->currentText().trimmed().isEmpty())
@@ -531,40 +675,19 @@ void MainWindow::LoadData()
     ui->edtResults->setFont(QFont("Verdana", 20));
     int counter = 0;
     ui->edtResults->setUpdatesEnabled(false);
+    fanfics.clear();
     while(q.next())
     {
         counter++;
-        if(ui->chkUrls->isChecked())
-        {
-            QString toInsert = "<a href=\"" + CreateURL((q.value("URL").toString()) + "\"> %1 </a><br>");
-            toInsert= toInsert.arg(CreateURL((q.value("URL").toString())));
-            ui->edtResults->insertHtml(toInsert);
-            continue;
-        }
-        QString toInsert = "<a href=\"" + CreateURL((q.value("URL").toString()) + "\"> %1 </a>");
-        toInsert= toInsert.arg(q.value("TITLE").toString());
-        ui->edtResults->insertHtml(toInsert);
-        ui->edtResults->append("<span>" + QString("By: ") + q.value("AUTHOR").toString() + "</span>");
-        ui->edtResults->append("<span>" + QString(" ") + q.value("SUMMARY").toString() + "</span>");
-        ui->edtResults->append("<span>" + QString("<font color=\"green\">Genre: ") + q.value("GENRES").toString() + "</font></span>");
-        ui->edtResults->append("<span>" + QString("<font color=\"green\">Words: ") + q.value("WORDCOUNT").toString() + "</font></span>");
-        //ui->edtResults->append("<span>" + QString("ID: ") +  QString::number(q.value("rowid").toInt()) +  "</font></span>");
+        fanfics.push_back(LoadFanfic(q));
 
-
-        QString toInsertTagOpener = QString("<br><a href=\"") + QString::number(q.value("rowid").toInt()) + "TAGS" + q.value("TAGS").toString() + QString(" \"> %1</a>");
-        toInsertTagOpener= toInsertTagOpener.arg("Tags:");
-
-        ui->edtResults->insertHtml(toInsertTagOpener);
-        ui->edtResults->insertHtml(" <span>" + q.value("TAGS").toString().replace(" none ", "").trimmed().replace(" ", ",")+ "</span>");
-
-
-        ui->edtResults->insertPlainText("\n");
-        ui->edtResults->insertPlainText("\n");
         if(counter%100 == 0)
             qDebug() << "tick " << counter/100;
     }
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+    typetableModel->OnReloadDataFromInterface();
     qDebug() << "loaded fics:" << counter;
 
 }
