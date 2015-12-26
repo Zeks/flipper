@@ -29,7 +29,9 @@ cpp.includePaths: [
 
 files: [
         "debug/Ficform.qml",
-        "debug/Ficview.qml",
+        "debug/HighlightedListview.qml",
+        "debug/ficview.qml",
+        "icons.qrc",
         "include/mainwindow.h",
         "include/tagwidget.h",
         "include/genericeventfilter.h",

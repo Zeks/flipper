@@ -176,14 +176,13 @@ void AdaptingTableModel::OnReloadDataFromInterface()
     // Bouml preserved body begin 0021702A
     Q_D(AdaptingTableModel);
     beginResetModel();
-
-
-    if(d->interface->PreviousRowCount() == 0)
+    if(d->interface->PreviousRowCount() != 0)
     {
         int removeLimit = d->interface->PreviousRowCount() == 0 ? 0 : d->interface->PreviousRowCount()- 1;
         beginRemoveRows(QModelIndex(), 0, removeLimit);
         endRemoveRows();
     }
+    int rowCount = d->interface->rowCount();
     if(d->interface->rowCount() != 0)
     {
         beginInsertRows(QModelIndex(), 0, d->interface->rowCount()-1);

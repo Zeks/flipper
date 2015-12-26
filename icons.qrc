@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/ok.png</file>
+        <file>icons/ok_grayed.png</file>
+    </qresource>
+</RCC>

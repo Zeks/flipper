@@ -8,7 +8,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
     if(index.column() == 0  && ( role > Qt::UserRole && role < AtChapterRole + 1))
     {
         if(role == FandomRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 0), Qt::DisplayRole);
+            return AdaptingTableModel::data(index.sibling(index.row(), 0), Qt::DisplayRole).toString().trimmed().split(" ");
         if(role == AuthorRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 1), Qt::DisplayRole);
         if(role == TitleRole)
@@ -16,29 +16,29 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
         if(role == SummaryRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 3), Qt::DisplayRole);
         if(role == GenreRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole);
+            return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole).toString().split("/");
         if(role == CharactersRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 5), Qt::DisplayRole);
+            return AdaptingTableModel::data(index.sibling(index.row(), 5), Qt::DisplayRole).toString().split(QRegExp("[,/]"));
         if(role == RatedRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 6), Qt::DisplayRole);
         if(role == PublishedRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 7), Qt::DisplayRole).toString();
+            return AdaptingTableModel::data(index.sibling(index.row(), 7), Qt::DisplayRole).toDateTime();
         if(role == UpdatedRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 8), Qt::DisplayRole).toString();
+            return AdaptingTableModel::data(index.sibling(index.row(), 8), Qt::DisplayRole).toDateTime();
         if(role == UrlRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 9), Qt::DisplayRole);
         if(role == TagsRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 10), Qt::DisplayRole);
+            return AdaptingTableModel::data(index.sibling(index.row(), 10), Qt::DisplayRole).toString().replace("none", "").trimmed().split(" ");
         if(role == WordsRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 11), Qt::DisplayRole);
+            return AdaptingTableModel::data(index.sibling(index.row(), 11), Qt::DisplayRole).toString();
         if(role == FavesRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 12), Qt::DisplayRole);
         if(role == ReviewsRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 12), Qt::DisplayRole);
-        if(role == ChaptersRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 13), Qt::DisplayRole);
+        if(role == ChaptersRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 14), Qt::DisplayRole).toInt();
         if(role == CompleteRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 14), Qt::DisplayRole);
+            return AdaptingTableModel::data(index.sibling(index.row(), 15), Qt::DisplayRole).toInt();
         if(role == OriginRole)
             return QString("");
         if(role == AtChapterRole)
@@ -76,7 +76,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[PublishedRole] = "published";
     roles[UpdatedRole] = "updated";
     roles[CharactersRole] = "characters";
-    roles[WordsRole] = "worsd";
+    roles[WordsRole] = "words";
     roles[CompleteRole] = "complete";
     roles[CurrentChapterRole] = "currentchapter";
     roles[ChaptersRole] = "chapters";

@@ -98,6 +98,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         if(ui->gbTagFilters->isChecked() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0)
             LoadData();
+        ui->edtResults->setUpdatesEnabled(true);
+        ui->edtResults->setReadOnly(true);
+        holder->SetData(fanfics);
+        typetableModel->OnReloadDataFromInterface();
     });
 
     connect(tagWidgetDynamic, &TagWidget::tagDeleted, [&](QString tag){
@@ -186,6 +190,8 @@ HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
 
 void MainWindow::SetupTableAccess()
 {
+//    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated"
+//                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
     ADD_STRING_GETSET(holder, 0, 0, fandom);
     ADD_STRING_GETSET(holder, 1, 0, author);
     ADD_STRING_GETSET(holder, 2, 0, title);
@@ -202,7 +208,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 13, 0, reviews);
     ADD_INTEGER_GETSET(holder, 14, 0, chapters);
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
-    ADD_INTEGER_GETSET(holder, 15, 0, atChapter);
+    ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
 
 
 //    holder->AddGetter(QPair<int,int>(8,0),
@@ -247,12 +253,16 @@ void MainWindow::SetupFanficTable()
     holder->SetData(fanfics);
     ui->tvFanfics->setModel(typetableModel);
 
-    ui->wdgFicviewPlaceholder->resize(400,400);
-    qwFics = new QQuickWidget(ui->wdgFicviewPlaceholder);
+    //ui->wdgFicviewPlaceholder->resize(400,400);
+    qwFics = new QQuickWidget();
+    QHBoxLayout* lay = new QHBoxLayout;
+    lay->addWidget(qwFics);
+    ui->wdgFicviewPlaceholder->setLayout(lay);
+    qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
     qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
     //qwFics->rootContext()->setContextProperty("ficModel", new QStringListModel(QStringList() << "Naruto"));
-    qwFics->setSource(QUrl::fromLocalFile("Ficview.qml"));
-    qwFics->show();
+    qwFics->setSource(QUrl::fromLocalFile("ficview.qml"));
+    //qwFics->show();
 }
 bool MainWindow::event(QEvent * e)
 {
@@ -283,11 +293,12 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/active", ui->chkActive->isChecked());
     settings.setValue("Settings/completed", ui->chkComplete->isChecked());
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
-    //settings.setValue("Settings/spMain", ui->spMain->saveState());
-    QString temp;
-    for(int size : ui->spMain->sizes())
-        temp.push_back(QString::number(size) + " ");
-    settings.setValue("Settings/spMain", temp.trimmed());
+    settings.setValue("Settings/spMain", ui->spMain->saveState());
+    settings.setValue("Settings/spDebug", ui->spDebug->saveState());
+//    QString temp;
+//    for(int size : ui->spMain->sizes())
+//        temp.push_back(QString::number(size) + " ");
+//    settings.setValue("Settings/spMain", temp.trimmed());
     settings.sync();
     delete ui;
 }
@@ -536,7 +547,7 @@ inline Section LoadFanfic(QSqlQuery& q)
     result.title = q.value("TITLE").toString();
     result.summary = q.value("SUMMARY").toString();
     result.genre= q.value("GENRES").toString();
-    result.characters = q.value("CHARACTERS").toString();
+    result.characters = q.value("CHARACTERS").toString().replace("not found", "");
     result.rated = q.value("RATED").toString();
     result.published = q.value("PUBLISHED").toDateTime();
     result.updated= q.value("UPDATED").toDateTime();
@@ -546,8 +557,8 @@ inline Section LoadFanfic(QSqlQuery& q)
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
     result.chapters = q.value("CHAPTERS").toString();
-    result.complete= q.value("WORDCOUNT").toInt();
-    result.wordCount = q.value("COMPLETE").toString();
+    result.complete= q.value("COMPLETE").toInt();
+    result.wordCount = q.value("WORDCOUNT").toString();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     return std::move(result);
 }
@@ -694,10 +705,6 @@ void MainWindow::LoadData()
         if(counter%100 == 0)
             qDebug() << "tick " << counter/100;
     }
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(fanfics);
-    typetableModel->OnReloadDataFromInterface();
     qDebug() << "loaded fics:" << counter;
 
 }
@@ -1190,13 +1197,14 @@ void MainWindow::ReadSettings()
     ui->chkActive->setChecked(settings.value("Settings/active", false).toBool());
     ui->chkComplete->setChecked(settings.value("Settings/completed", false).toBool());
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
-    QString temp = settings.value("Settings/spMain", false).toString();
-    QList<int>  sizes;
-    for(auto tmp : temp.split(" "))
-        if(!tmp.isEmpty())
-            sizes.push_back(tmp.toInt());
+    ui->spMain->restoreState(settings.value("Settings/spMain", false).toByteArray());
+    ui->spDebug->restoreState(settings.value("Settings/spDebug", false).toByteArray());
+//    QList<int>  sizes;
+//    for(auto tmp : temp.split(" "))
+//        if(!tmp.isEmpty())
+//            sizes.push_back(tmp.toInt());
 
-    ui->spMain->setSizes(sizes);
+    //ui->spMain->setSizes(sizes);
 }
 
 void MainWindow::OnNetworkReply(QNetworkReply * reply)
@@ -1398,6 +1406,10 @@ void MainWindow::OnSectionChanged(QString)
 void MainWindow::on_pbLoadDatabase_clicked()
 {
     LoadData();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+    typetableModel->OnReloadDataFromInterface();
 }
 
 void MainWindow::on_pbInit_clicked()
@@ -1409,4 +1421,8 @@ void MainWindow::on_pbInit_clicked()
 void MainWindow::OnCheckboxFilter(int)
 {
     LoadData();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+    typetableModel->OnReloadDataFromInterface();
 }
