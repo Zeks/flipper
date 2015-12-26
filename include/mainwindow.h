@@ -22,7 +22,10 @@
 #include "libs/UniversalModels/include/TableDataInterface.h"
 #include "libs/UniversalModels/include/TableDataListHolder.h"
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
+#include "qml_ficmodel.h"
 class QSortFilterProxyModel;
+class QQuickWidget;
+class QQuickView;
 struct Section
 {
     int start = 0;
@@ -85,7 +88,7 @@ private:
     void SetupFanficTable();
     void SetupTableAccess();
     //QTableView* types_table = nullptr;
-    AdaptingTableModel* typetableModel = nullptr;
+    FicModel* typetableModel = nullptr;
     QSharedPointer<TableDataInterface> typetableInterface;
     TableDataListHolder<Section>* holder = nullptr;
     QList<Section> fanfics;
@@ -163,6 +166,7 @@ private:
     bool ignoreUpdateDate = false;
     QStringList tagList;
     TagWidget* tagWidgetDynamic = new TagWidget;
+    QQuickWidget* qwFics = nullptr;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);

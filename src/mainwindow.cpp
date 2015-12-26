@@ -13,6 +13,9 @@
 #include <QTextCodec>
 #include <QSettings>
 #include <QSortFilterProxyModel>
+#include <QQuickWidget>
+#include <QQuickView>
+#include <QQmlContext>
 #include "genericeventfilter.h"
 #include <algorithm>
 
@@ -220,11 +223,12 @@ void MainWindow::SetupTableAccess()
     );
 }
 
+
 void MainWindow::SetupFanficTable()
 {
     holder = new TableDataListHolder<Section>();
     //rollbackBuiltins = GenerationSettings::builtins;
-    typetableModel = new AdaptingTableModel();
+    typetableModel = new FicModel();
 
     SetupTableAccess();
 
@@ -243,6 +247,12 @@ void MainWindow::SetupFanficTable()
     holder->SetData(fanfics);
     ui->tvFanfics->setModel(typetableModel);
 
+    ui->wdgFicviewPlaceholder->resize(400,400);
+    qwFics = new QQuickWidget(ui->wdgFicviewPlaceholder);
+    qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
+    //qwFics->rootContext()->setContextProperty("ficModel", new QStringListModel(QStringList() << "Naruto"));
+    qwFics->setSource(QUrl::fromLocalFile("Ficview.qml"));
+    qwFics->show();
 }
 bool MainWindow::event(QEvent * e)
 {

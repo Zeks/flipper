@@ -37,7 +37,7 @@ Q_OBJECT
 
     bool insertRow(int row, const QModelIndex & parent);
 
-    QModelIndex index(int row, int column, const QModelIndex & parent) const;
+    QModelIndex index(int row, int column, const QModelIndex & parent = QModelIndex()) const;
 
     Qt::ItemFlags flags(const QModelIndex & index) const;
 

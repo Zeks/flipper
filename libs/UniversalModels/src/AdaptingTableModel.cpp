@@ -4,6 +4,7 @@
 #include "../include/AdaptingTableModel.h"
 #include "../include/TableDataInterface.h"
 #include "../include/AdaptingTableModelPrivate.h"
+#include <QDebug>
 
 AdaptingTableModel::AdaptingTableModel(QObject * parent) : QAbstractTableModel(parent),
 d_ptr(new AdaptingTableModelPrivate())
@@ -44,6 +45,7 @@ int AdaptingTableModel::rowCount(const QModelIndex & index) const
     // Bouml preserved body begin 0020F02A
     Q_UNUSED(index);
     Q_D(const AdaptingTableModel);
+    //qDebug() << "rowcount is: " << d->interface->rowCount();
     return d->interface->rowCount();
     // Bouml preserved body end 0020F02A
 }
@@ -174,7 +176,7 @@ void AdaptingTableModel::OnReloadDataFromInterface()
     // Bouml preserved body begin 0021702A
     Q_D(AdaptingTableModel);
     beginResetModel();
-    endResetModel();
+
 
     if(d->interface->PreviousRowCount() == 0)
     {
@@ -184,9 +186,10 @@ void AdaptingTableModel::OnReloadDataFromInterface()
     }
     if(d->interface->rowCount() != 0)
     {
-        beginInsertRows(QModelIndex(), 0, d->interface->rowCount());
+        beginInsertRows(QModelIndex(), 0, d->interface->rowCount()-1);
         endInsertRows();
     }
+    endResetModel();
     // Bouml preserved body end 0021702A
 }
 

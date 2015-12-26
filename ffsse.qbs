@@ -13,6 +13,8 @@ Depends { name: "Qt.core" }
 Depends { name: "Qt.widgets" }
 Depends { name: "Qt.network" }
 Depends { name: "Qt.gui" }
+Depends { name: "Qt.quick" }
+Depends { name: "Qt.quickwidgets" }
 Depends { name: "cpp" }
 Depends { name: "UniversalModels" }
 Depends { name: "logger" }
@@ -20,16 +22,20 @@ Depends { name: "logger" }
 cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY"])
 cpp.includePaths: [
                 sourceDirectory,
-                sourceDirectory + "/include"
+                sourceDirectory + "/include",
+                sourceDirectory + "/libs",
+
 ]
 
 files: [
-        "Ficform.qml",
-        "FicformForm.ui.qml",
+        "debug/Ficform.qml",
+        "debug/Ficview.qml",
         "include/mainwindow.h",
         "include/tagwidget.h",
         "include/genericeventfilter.h",
         "include/fanficdisplay.h",
+        "qml_ficmodel.cpp",
+        "qml_ficmodel.h",
         "ui/mainwindow.ui",
         "ui/tagwidget.ui",
         "ui/fanficdisplay.ui",
