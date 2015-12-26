@@ -1,0 +1,7 @@
+*.user
+qtc_*/*
+release/*
+debug/*
+Makefile
+Makefile.*
+ui_*
