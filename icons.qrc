@@ -2,5 +2,11 @@
     <qresource prefix="/icons">
         <file>icons/ok.png</file>
         <file>icons/ok_grayed.png</file>
+        <file>icons/updating_fresh.png</file>
+        <file>icons/updating_normal.png</file>
+        <file>icons/updating_old.png</file>
+        <file>icons/add.png</file>
+        <file>icons/cross.png</file>
+        <file>icons/cross_24_2x.png</file>
     </qresource>
 </RCC>

@@ -15,7 +15,9 @@
 #include <QSortFilterProxyModel>
 #include <QQuickWidget>
 #include <QQuickView>
+#include <QQuickItem>
 #include <QQmlContext>
+
 #include "genericeventfilter.h"
 #include <algorithm>
 
@@ -85,9 +87,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->edtResults->setOpenLinks(false);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, OnLinkClicked);
 
-//    tagEditor->setOpenLinks(false);
-//    tagEditor->setFont(QFont("Verdana", 16));
-//    connect(tagEditor, &QTextBrowser::anchorClicked, this, OnTagClicked);
+    //    tagEditor->setOpenLinks(false);
+    //    tagEditor->setFont(QFont("Verdana", 16));
+    //    connect(tagEditor, &QTextBrowser::anchorClicked, this, OnTagClicked);
 
     // should refer to new tag widget instead
     GenericEventFilter* eventFilter = new GenericEventFilter(this);
@@ -96,12 +98,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(tagWidgetDynamic, &TagWidget::tagToggled, this, OnTagToggled);
 
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
+        qwFics->rootContext()->setContextProperty("ficModel", nullptr);
         if(ui->gbTagFilters->isChecked() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0)
             LoadData();
         ui->edtResults->setUpdatesEnabled(true);
         ui->edtResults->setReadOnly(true);
         holder->SetData(fanfics);
         typetableModel->OnReloadDataFromInterface();
+        qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
     });
 
     connect(tagWidgetDynamic, &TagWidget::tagDeleted, [&](QString tag){
@@ -125,9 +129,9 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     ui->wdgTagsPlaceholder->SetAddDialogVisibility(false);
-//    QObject::connect(this, &MainWindow::activated, this, [&](QWidget*){
-//        tagWidgetDynamic->hide();
-//    });
+    //    QObject::connect(this, &MainWindow::activated, this, [&](QWidget*){
+    //        tagWidgetDynamic->hide();
+    //    });
     this->setAttribute(Qt::WA_QuitOnClose);
     ReadSettings();
     SetupFanficTable();
@@ -135,63 +139,63 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
 #define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-[] (const Section* data) \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const Section* data) \
 { \
     if(data) \
-        return QVariant(data->PARAM); \
+    return QVariant(data->PARAM); \
     else \
-        return QVariant(); \
-} \
-); \
-HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-[] (Section* data, QVariant value) \
+    return QVariant(); \
+    } \
+    ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (Section* data, QVariant value) \
 { \
     if(data) \
-        data->PARAM = value.toString(); \
-} \
-); \
+    data->PARAM = value.toString(); \
+    } \
+    ); \
 
 #define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-[] (const Section* data) \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const Section* data) \
 { \
     if(data) \
-        return QVariant(data->PARAM); \
+    return QVariant(data->PARAM); \
     else \
-        return QVariant(); \
-} \
-); \
-HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-[] (Section* data, QVariant value) \
+    return QVariant(); \
+    } \
+    ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (Section* data, QVariant value) \
 { \
     if(data) \
-        data->PARAM = value.toDateTime(); \
-} \
-); \
+    data->PARAM = value.toDateTime(); \
+    } \
+    ); \
 
 #define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
-HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-[] (const Section* data) \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const Section* data) \
 { \
     if(data) \
-        return QVariant(data->PARAM); \
+    return QVariant(data->PARAM); \
     else \
-        return QVariant(); \
-} \
-); \
-HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-[] (Section* data, QVariant value) \
+    return QVariant(); \
+    } \
+    ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (Section* data, QVariant value) \
 { \
     if(data) \
-        data->PARAM = value.toInt(); \
-} \
-); \
+    data->PARAM = value.toInt(); \
+    } \
+    ); \
 
 void MainWindow::SetupTableAccess()
 {
-//    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated"
-//                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
+    //    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated"
+    //                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
     ADD_STRING_GETSET(holder, 0, 0, fandom);
     ADD_STRING_GETSET(holder, 1, 0, author);
     ADD_STRING_GETSET(holder, 2, 0, title);
@@ -211,11 +215,11 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
 
 
-//    holder->AddGetter(QPair<int,int>(8,0),
-//    [] (const Section* )
-//    {
-//        return QVariant(QString(" "));
-//    });
+    //    holder->AddGetter(QPair<int,int>(8,0),
+    //    [] (const Section* )
+    //    {
+    //        return QVariant(QString(" "));
+    //    });
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -260,17 +264,21 @@ void MainWindow::SetupFanficTable()
     ui->wdgFicviewPlaceholder->setLayout(lay);
     qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
     qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
+    //tagModel = new QStringListModel(tagList);
+    qwFics->rootContext()->setContextProperty("tagModel", tagList);
     //qwFics->rootContext()->setContextProperty("ficModel", new QStringListModel(QStringList() << "Naruto"));
     qwFics->setSource(QUrl::fromLocalFile("ficview.qml"));
-    //qwFics->show();
+
+    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
 }
 bool MainWindow::event(QEvent * e)
 {
     switch(e->type())
     {
-        case QEvent::WindowActivate :
-            tagWidgetDynamic->hide();
-            break ;
+    case QEvent::WindowActivate :
+        tagWidgetDynamic->hide();
+        break ;
     default:
         break;
     } ;
@@ -295,10 +303,10 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
     settings.setValue("Settings/spMain", ui->spMain->saveState());
     settings.setValue("Settings/spDebug", ui->spDebug->saveState());
-//    QString temp;
-//    for(int size : ui->spMain->sizes())
-//        temp.push_back(QString::number(size) + " ");
-//    settings.setValue("Settings/spMain", temp.trimmed());
+    //    QString temp;
+    //    for(int size : ui->spMain->sizes())
+    //        temp.push_back(QString::number(size) + " ");
+    //    settings.setValue("Settings/spMain", temp.trimmed());
     settings.sync();
     delete ui;
 }
@@ -769,61 +777,61 @@ void MainWindow::InsertFandomData(QMap<QPair<QString,QString>, Fandom> names)
         }
         qDebug() << q.lastError();
     }
-        auto make_key = [](Fandom f){return QPair<QString, QString>(f.section, f.name);} ;
-        pbMain->setMinimum(0);
-        pbMain->setMaximum(names.size());
+    auto make_key = [](Fandom f){return QPair<QString, QString>(f.section, f.name);} ;
+    pbMain->setMinimum(0);
+    pbMain->setMaximum(names.size());
 
-        int counter = 0;
-        QString prevSection;
-        for(auto fandom : names)
+    int counter = 0;
+    QString prevSection;
+    for(auto fandom : names)
+    {
+        counter++;
+        if(prevSection != fandom.section)
         {
-            counter++;
-            if(prevSection != fandom.section)
-            {
-                lblCurrentOperation->setText("Currently loading: " + fandom.section);
-                prevSection = fandom.section;
-            }
-            auto key = make_key(fandom);
-            bool hasFandom = knownValues.contains(key);
-            if(!hasFandom)
-            {
-                QString insert = "INSERT INTO FANDOMS (FANDOM, NORMAL_URL, CROSSOVER_URL, SECTION) "
-                                 "VALUES (:FANDOM, :URL, :CROSS, :SECTION)";
-                QSqlQuery q(db);
-                q.prepare(insert);
-                q.bindValue(":FANDOM",fandom.name.replace("'","''"));
-                q.bindValue(":URL",fandom.url.replace("'","''"));
-                q.bindValue(":CROSS",fandom.crossoverUrl.replace("'","''"));
-                q.bindValue(":SECTION",fandom.section.replace("'","''"));
-                q.exec();
-                if(q.lastError().isValid())
-                    qDebug() << q.lastError();
-            }
-            if(hasFandom && (
-                        (knownValues[key].crossoverUrl.isEmpty() && !fandom.crossoverUrl.isEmpty())
-                        || (knownValues[key].url.isEmpty() && !fandom.url.isEmpty())))
-            {
-                QString insert = "UPDATE FANDOMS set normal_url = :normal, crossover_url = :cross "
-                                 "where section = :section and fandom = :fandom";
-                QSqlQuery q(db);
-                q.prepare(insert);
-                q.bindValue(":fandom",fandom.name.replace("'","''"));
-                q.bindValue(":normal",fandom.url.replace("'","''"));
-                q.bindValue(":cross",fandom.crossoverUrl.replace("'","''"));
-                q.bindValue(":section",fandom.section.replace("'","''"));
-                q.exec();
-                if(q.lastError().isValid())
-                    qDebug() << q.lastError();
-            }
-
-            if(counter%100 == 0)
-            {
-                pbMain->setValue(counter);
-                QApplication::processEvents();
-            }
+            lblCurrentOperation->setText("Currently loading: " + fandom.section);
+            prevSection = fandom.section;
         }
-        pbMain->setValue(pbMain->maximum());
-        QApplication::processEvents();
+        auto key = make_key(fandom);
+        bool hasFandom = knownValues.contains(key);
+        if(!hasFandom)
+        {
+            QString insert = "INSERT INTO FANDOMS (FANDOM, NORMAL_URL, CROSSOVER_URL, SECTION) "
+                             "VALUES (:FANDOM, :URL, :CROSS, :SECTION)";
+            QSqlQuery q(db);
+            q.prepare(insert);
+            q.bindValue(":FANDOM",fandom.name.replace("'","''"));
+            q.bindValue(":URL",fandom.url.replace("'","''"));
+            q.bindValue(":CROSS",fandom.crossoverUrl.replace("'","''"));
+            q.bindValue(":SECTION",fandom.section.replace("'","''"));
+            q.exec();
+            if(q.lastError().isValid())
+                qDebug() << q.lastError();
+        }
+        if(hasFandom && (
+                    (knownValues[key].crossoverUrl.isEmpty() && !fandom.crossoverUrl.isEmpty())
+                    || (knownValues[key].url.isEmpty() && !fandom.url.isEmpty())))
+        {
+            QString insert = "UPDATE FANDOMS set normal_url = :normal, crossover_url = :cross "
+                             "where section = :section and fandom = :fandom";
+            QSqlQuery q(db);
+            q.prepare(insert);
+            q.bindValue(":fandom",fandom.name.replace("'","''"));
+            q.bindValue(":normal",fandom.url.replace("'","''"));
+            q.bindValue(":cross",fandom.crossoverUrl.replace("'","''"));
+            q.bindValue(":section",fandom.section.replace("'","''"));
+            q.exec();
+            if(q.lastError().isValid())
+                qDebug() << q.lastError();
+        }
+
+        if(counter%100 == 0)
+        {
+            pbMain->setValue(counter);
+            QApplication::processEvents();
+        }
+    }
+    pbMain->setValue(pbMain->maximum());
+    QApplication::processEvents();
 }
 
 
@@ -1199,10 +1207,10 @@ void MainWindow::ReadSettings()
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
     ui->spMain->restoreState(settings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(settings.value("Settings/spDebug", false).toByteArray());
-//    QList<int>  sizes;
-//    for(auto tmp : temp.split(" "))
-//        if(!tmp.isEmpty())
-//            sizes.push_back(tmp.toInt());
+    //    QList<int>  sizes;
+    //    for(auto tmp : temp.split(" "))
+    //        if(!tmp.isEmpty())
+    //            sizes.push_back(tmp.toInt());
 
     //ui->spMain->setSizes(sizes);
 }
@@ -1335,6 +1343,22 @@ void MainWindow::OnCrossoverReply(QNetworkReply * reply)
             names[{currentProcessedSection,name}].crossoverUrl = link;
     }
     managerEventLoop.quit();
+}
+
+void MainWindow::OnChapterUpdated(QVariant chapter, QVariant author, QVariant title)
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("update fanfics set at_chapter = :chapter where author = :author and title = :title");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":chapter", chapter.toInt());
+    q.bindValue(":author", author.toString());
+    q.bindValue(":title", title.toString());
+    q.exec();
+    qDebug() << chapter.toInt() << " " << author.toString() << " " <<  title.toString();
+    if(q.lastError().isValid())
+        qDebug() << q.lastError();
+
 }
 
 void MainWindow::on_pbCrawl_clicked()

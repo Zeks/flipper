@@ -1,5 +1,6 @@
 #include "qml_ficmodel.h"
 #include <QDebug>
+#include <QDateTime>
 
 QVariant FicModel::data(const QModelIndex &index, int role) const
 {
@@ -8,7 +9,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
     if(index.column() == 0  && ( role > Qt::UserRole && role < AtChapterRole + 1))
     {
         if(role == FandomRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 0), Qt::DisplayRole).toString().trimmed().split(" ");
+            return AdaptingTableModel::data(index.sibling(index.row(), 0), Qt::DisplayRole).toString().replace("CROSSOVER", "");
         if(role == AuthorRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 1), Qt::DisplayRole);
         if(role == TitleRole)
@@ -42,7 +43,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
         if(role == OriginRole)
             return QString("");
         if(role == AtChapterRole)
-            return QString("");
+            return AdaptingTableModel::data(index.sibling(index.row(), 16), Qt::DisplayRole).toInt();
         if(role == LanguageRole)
             return QString("");
         if(role == CurrentChapterRole)

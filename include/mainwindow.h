@@ -26,6 +26,7 @@
 class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
+class QStringListModel;
 struct Section
 {
     int start = 0;
@@ -165,6 +166,7 @@ private:
     QString currentFilterurl;
     bool ignoreUpdateDate = false;
     QStringList tagList;
+    QStringListModel* tagModel;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
 
@@ -172,6 +174,7 @@ public slots:
     void OnNetworkReply(QNetworkReply*);
     void OnFandomReply(QNetworkReply*);
     void OnCrossoverReply(QNetworkReply*);
+    void OnChapterUpdated(QVariant, QVariant, QVariant);
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);
