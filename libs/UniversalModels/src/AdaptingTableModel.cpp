@@ -35,6 +35,7 @@ bool AdaptingTableModel::setData(const QModelIndex & index, const QVariant & val
     Q_D(AdaptingTableModel);
     if(!index.isValid())
         return false;
+
     d->interface->SetValue(index.row(),  index.column(), role, value);
     return true;
     // Bouml preserved body end 0021172A
@@ -136,7 +137,7 @@ void AdaptingTableModel::ClearData()
 void AdaptingTableModel::updateAll() 
 {
     // Bouml preserved body begin 000218AB
-    emit dataChanged(index(0, 0, QModelIndex()), index(rowCount(), columnCount(),QModelIndex()));
+    emit dataChanged(index(0, 0, QModelIndex()), index(rowCount()-1, columnCount()-1,QModelIndex()));
     // Bouml preserved body end 000218AB
 }
 

@@ -5,8 +5,8 @@
 QVariant FicModel::data(const QModelIndex &index, int role) const
 {
     //<< "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" <<
-    //"published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
-    if(index.column() == 0  && ( role > Qt::UserRole && role < AtChapterRole + 1))
+    //"published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << rownum);
+    if(index.column() == 0  && ( role > Qt::UserRole && role < EndRole + 1))
     {
         if(role == FandomRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 0), Qt::DisplayRole).toString().replace("CROSSOVER", "");
@@ -44,6 +44,8 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return QString("");
         if(role == AtChapterRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 16), Qt::DisplayRole).toInt();
+        if(role == RownumRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 17), Qt::DisplayRole).toInt();
         if(role == LanguageRole)
             return QString("");
         if(role == CurrentChapterRole)
@@ -85,6 +87,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[FavesRole] = "faves";
     roles[RatedRole] = "rated";
     roles[AtChapterRole] = "atChapter";
+    roles[RownumRole] = "rownum";
     return roles;
 }
 

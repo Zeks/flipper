@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>200</width>
+    <width>397</width>
     <height>174</height>
    </rect>
   </property>
@@ -62,19 +62,6 @@
          <string>Delete Tag</string>
         </property>
        </widget>
-      </item>
-      <item>
-       <spacer name="hSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>114</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
       </item>
       <item>
        <widget class="QLineEdit" name="leTag"/>

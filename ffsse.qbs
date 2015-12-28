@@ -5,6 +5,7 @@ import "BaseDefines.qbs" as App
 
 App{
 name: "ffsse_app"
+consoleApplication:false
 type:"application"
 qbsSearchPaths: sourceDirectory + "/modules"
 Depends { name: "Qt.core"}
@@ -28,11 +29,12 @@ cpp.includePaths: [
 ]
 
 files: [
-        "debug/Ficform.qml",
-        "debug/Funcs.js",
-        "debug/HighlightedListview.qml",
-        "debug/TagCloud.qml",
-        "debug/ficview.qml",
+//        "debug/Ficform.qml",
+//        "debug/Funcs.js",
+//        "debug/HighlightedListview.qml",
+//        "debug/TagCloud.qml",
+//        "debug/ficview.qml",
+        "forms.qrc",
         "icons.qrc",
         "include/mainwindow.h",
         "include/tagwidget.h",

@@ -128,13 +128,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
     });
 
-    ui->wdgTagsPlaceholder->SetAddDialogVisibility(false);
+    //ui->wdgTagsPlaceholder->SetAddDialogVisibility(false);
     //    QObject::connect(this, &MainWindow::activated, this, [&](QWidget*){
     //        tagWidgetDynamic->hide();
     //    });
     this->setAttribute(Qt::WA_QuitOnClose);
     ReadSettings();
     SetupFanficTable();
+    ui->tvFanfics->hide();
 }
 
 
@@ -213,6 +214,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 14, 0, chapters);
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
     ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
+    ADD_INTEGER_GETSET(holder, 17, 0, rowid);
 
 
     //    holder->AddGetter(QPair<int,int>(8,0),
@@ -243,7 +245,8 @@ void MainWindow::SetupFanficTable()
     SetupTableAccess();
 
 
-    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
+    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" << "published"
+                       << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "rowid");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -267,10 +270,14 @@ void MainWindow::SetupFanficTable()
     //tagModel = new QStringListModel(tagList);
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
     //qwFics->rootContext()->setContextProperty("ficModel", new QStringListModel(QStringList() << "Naruto"));
-    qwFics->setSource(QUrl::fromLocalFile("ficview.qml"));
+    QUrl source("qrc:/qml/ficview.qml");
+    qwFics->setSource(source);
 
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
+    connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
 }
 bool MainWindow::event(QEvent * e)
 {
@@ -550,6 +557,7 @@ QString MainWindow::CreateURL(QString str)
 inline Section LoadFanfic(QSqlQuery& q)
 {
     Section result;
+    result.rowid = q.value("rowid").toInt();
     result.fandom = q.value("FANDOM").toString();
     result.author = q.value("AUTHOR").toString();
     result.title = q.value("TITLE").toString();
@@ -1359,6 +1367,32 @@ void MainWindow::OnChapterUpdated(QVariant chapter, QVariant author, QVariant ti
     if(q.lastError().isValid())
         qDebug() << q.lastError();
 
+}
+
+void MainWindow::OnTagAdd(QVariant tag, QVariant row)
+{
+
+    int rownum = row.toInt();
+    SetTag(rownum, tag.toString());
+    QModelIndex index = typetableModel->index(rownum, 10);
+    auto data = typetableModel->data(index, 0).toString();
+    data += " " + tag.toString();
+    typetableModel->setData(index,data,0);
+    typetableModel->updateAll();
+}
+
+void MainWindow::OnTagRemove(QVariant tag, QVariant row)
+{
+    UnsetTag(row.toInt(), tag.toString());
+    QModelIndex index = typetableModel->index(row.toInt(), 10);
+    auto data = typetableModel->data(index, 0).toString();
+    data = data.replace(tag.toString(), "");
+    typetableModel->setData(index,data,0);
+    typetableModel->updateAll();
+}
+
+void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
+{
 }
 
 void MainWindow::on_pbCrawl_clicked()

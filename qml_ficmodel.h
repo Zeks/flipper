@@ -28,7 +28,10 @@ public:
         ReviewsRole,
         FavesRole,
         RatedRole,
-        AtChapterRole
+        AtChapterRole,
+        RownumRole,
+        EndRole = RownumRole
+
     };
 
     QVariant data(const QModelIndex & index, int role) const;

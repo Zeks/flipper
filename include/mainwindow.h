@@ -29,6 +29,7 @@ class QQuickView;
 class QStringListModel;
 struct Section
 {
+    int rowid = -1;
     int start = 0;
     int end = 0;
 
@@ -143,6 +144,8 @@ private:
     void SetTag(int id, QString tag);
     void UnsetTag(int id, QString tag);
 
+    void ToggleTag();
+
     Ui::MainWindow *ui;
     int processedCount = 0;
     QString nextUrl;
@@ -175,6 +178,9 @@ public slots:
     void OnFandomReply(QNetworkReply*);
     void OnCrossoverReply(QNetworkReply*);
     void OnChapterUpdated(QVariant, QVariant, QVariant);
+    void OnTagAdd(QVariant tag, QVariant row);
+    void OnTagRemove(QVariant tag, QVariant row);
+    void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);
