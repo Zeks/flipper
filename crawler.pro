@@ -15,14 +15,17 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     tagwidget.cpp \
-    genericeventfilter.cpp
+    genericeventfilter.cpp \
+    fanficdisplay.cpp
 
 HEADERS  += mainwindow.h \
     tagwidget.h \
-    genericeventfilter.h
+    genericeventfilter.h \
+    fanficdisplay.h
 
 FORMS    += mainwindow.ui \
-    tagwidget.ui
+    tagwidget.ui \
+    fanficdisplay.ui
 
 
 QMAKE_CXXFLAGS += -std=c++11

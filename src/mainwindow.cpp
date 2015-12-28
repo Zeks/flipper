@@ -12,6 +12,12 @@
 #include <QDesktopServices>
 #include <QTextCodec>
 #include <QSettings>
+#include <QSortFilterProxyModel>
+#include <QQuickWidget>
+#include <QQuickView>
+#include <QQuickItem>
+#include <QQmlContext>
+
 #include "genericeventfilter.h"
 #include <algorithm>
 
@@ -81,9 +87,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->edtResults->setOpenLinks(false);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, OnLinkClicked);
 
-//    tagEditor->setOpenLinks(false);
-//    tagEditor->setFont(QFont("Verdana", 16));
-//    connect(tagEditor, &QTextBrowser::anchorClicked, this, OnTagClicked);
+    //    tagEditor->setOpenLinks(false);
+    //    tagEditor->setFont(QFont("Verdana", 16));
+    //    connect(tagEditor, &QTextBrowser::anchorClicked, this, OnTagClicked);
 
     // should refer to new tag widget instead
     GenericEventFilter* eventFilter = new GenericEventFilter(this);
@@ -92,8 +98,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(tagWidgetDynamic, &TagWidget::tagToggled, this, OnTagToggled);
 
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
+        qwFics->rootContext()->setContextProperty("ficModel", nullptr);
         if(ui->gbTagFilters->isChecked() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0)
             LoadData();
+        ui->edtResults->setUpdatesEnabled(true);
+        ui->edtResults->setReadOnly(true);
+        holder->SetData(fanfics);
+        typetableModel->OnReloadDataFromInterface();
+        qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
     });
 
     connect(tagWidgetDynamic, &TagWidget::tagDeleted, [&](QString tag){
@@ -116,21 +128,164 @@ MainWindow::MainWindow(QWidget *parent) :
 
     });
 
-    ui->wdgTagsPlaceholder->SetAddDialogVisibility(false);
-//    QObject::connect(this, &MainWindow::activated, this, [&](QWidget*){
-//        tagWidgetDynamic->hide();
-//    });
+    //ui->wdgTagsPlaceholder->SetAddDialogVisibility(false);
+    //    QObject::connect(this, &MainWindow::activated, this, [&](QWidget*){
+    //        tagWidgetDynamic->hide();
+    //    });
     this->setAttribute(Qt::WA_QuitOnClose);
     ReadSettings();
+    SetupFanficTable();
+    ui->tvFanfics->hide();
 }
 
+
+#define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const Section* data) \
+{ \
+    if(data) \
+    return QVariant(data->PARAM); \
+    else \
+    return QVariant(); \
+    } \
+    ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (Section* data, QVariant value) \
+{ \
+    if(data) \
+    data->PARAM = value.toString(); \
+    } \
+    ); \
+
+#define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const Section* data) \
+{ \
+    if(data) \
+    return QVariant(data->PARAM); \
+    else \
+    return QVariant(); \
+    } \
+    ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (Section* data, QVariant value) \
+{ \
+    if(data) \
+    data->PARAM = value.toDateTime(); \
+    } \
+    ); \
+
+#define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const Section* data) \
+{ \
+    if(data) \
+    return QVariant(data->PARAM); \
+    else \
+    return QVariant(); \
+    } \
+    ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (Section* data, QVariant value) \
+{ \
+    if(data) \
+    data->PARAM = value.toInt(); \
+    } \
+    ); \
+
+void MainWindow::SetupTableAccess()
+{
+    //    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated"
+    //                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
+    ADD_STRING_GETSET(holder, 0, 0, fandom);
+    ADD_STRING_GETSET(holder, 1, 0, author);
+    ADD_STRING_GETSET(holder, 2, 0, title);
+    ADD_STRING_GETSET(holder, 3, 0, summary);
+    ADD_STRING_GETSET(holder, 4, 0, genre);
+    ADD_STRING_GETSET(holder, 5, 0, characters);
+    ADD_STRING_GETSET(holder, 6, 0, rated);
+    ADD_DATE_GETSET(holder, 7, 0, published);
+    ADD_DATE_GETSET(holder, 8, 0, updated);
+    ADD_STRING_GETSET(holder, 9, 0, url);
+    ADD_STRING_GETSET(holder, 10, 0, tags);
+    ADD_INTEGER_GETSET(holder, 11, 0, wordCount);
+    ADD_INTEGER_GETSET(holder, 12, 0, favourites);
+    ADD_INTEGER_GETSET(holder, 13, 0, reviews);
+    ADD_INTEGER_GETSET(holder, 14, 0, chapters);
+    ADD_INTEGER_GETSET(holder, 15, 0, complete);
+    ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
+    ADD_INTEGER_GETSET(holder, 17, 0, rowid);
+
+
+    //    holder->AddGetter(QPair<int,int>(8,0),
+    //    [] (const Section* )
+    //    {
+    //        return QVariant(QString(" "));
+    //    });
+
+    holder->AddFlagsFunctor(
+                [](const QModelIndex& index)
+    {
+        if(index.column() == 8)
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        Qt::ItemFlags result;
+        result |= Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        return result;
+    }
+    );
+}
+
+
+void MainWindow::SetupFanficTable()
+{
+    holder = new TableDataListHolder<Section>();
+    //rollbackBuiltins = GenerationSettings::builtins;
+    typetableModel = new FicModel();
+
+    SetupTableAccess();
+
+
+    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" << "published"
+                       << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "rowid");
+
+    typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
+
+    typetableModel->SetInterface(typetableInterface);
+
+    //sortModel = new QSortFilterProxyModel();
+    //sortModel->setSourceModel(typetableModel);
+    //sortModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+
+    //types_table->setModel();
+    holder->SetData(fanfics);
+    ui->tvFanfics->setModel(typetableModel);
+
+    //ui->wdgFicviewPlaceholder->resize(400,400);
+    qwFics = new QQuickWidget();
+    QHBoxLayout* lay = new QHBoxLayout;
+    lay->addWidget(qwFics);
+    ui->wdgFicviewPlaceholder->setLayout(lay);
+    qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
+    qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
+    //tagModel = new QStringListModel(tagList);
+    qwFics->rootContext()->setContextProperty("tagModel", tagList);
+    //qwFics->rootContext()->setContextProperty("ficModel", new QStringListModel(QStringList() << "Naruto"));
+    QUrl source("qrc:/qml/ficview.qml");
+    qwFics->setSource(source);
+
+    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
+    connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
+}
 bool MainWindow::event(QEvent * e)
 {
     switch(e->type())
     {
-        case QEvent::WindowActivate :
-            tagWidgetDynamic->hide();
-            break ;
+    case QEvent::WindowActivate :
+        tagWidgetDynamic->hide();
+        break ;
     default:
         break;
     } ;
@@ -153,11 +308,12 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/active", ui->chkActive->isChecked());
     settings.setValue("Settings/completed", ui->chkComplete->isChecked());
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
-    //settings.setValue("Settings/spMain", ui->spMain->saveState());
-    QString temp;
-    for(int size : ui->spMain->sizes())
-        temp.push_back(QString::number(size) + " ");
-    settings.setValue("Settings/spMain", temp.trimmed());
+    settings.setValue("Settings/spMain", ui->spMain->saveState());
+    settings.setValue("Settings/spDebug", ui->spDebug->saveState());
+    //    QString temp;
+    //    for(int size : ui->spMain->sizes())
+    //        temp.push_back(QString::number(size) + " ");
+    //    settings.setValue("Settings/spMain", temp.trimmed());
     settings.sync();
     delete ui;
 }
@@ -398,6 +554,31 @@ QString MainWindow::CreateURL(QString str)
     return "https://www.fanfiction.net/" + str;
 }
 
+inline Section LoadFanfic(QSqlQuery& q)
+{
+    Section result;
+    result.rowid = q.value("rowid").toInt();
+    result.fandom = q.value("FANDOM").toString();
+    result.author = q.value("AUTHOR").toString();
+    result.title = q.value("TITLE").toString();
+    result.summary = q.value("SUMMARY").toString();
+    result.genre= q.value("GENRES").toString();
+    result.characters = q.value("CHARACTERS").toString().replace("not found", "");
+    result.rated = q.value("RATED").toString();
+    result.published = q.value("PUBLISHED").toDateTime();
+    result.updated= q.value("UPDATED").toDateTime();
+    result.url = q.value("URL").toString();
+    result.tags = q.value("TAGS").toString();
+    result.wordCount = q.value("WORDCOUNT").toString();
+    result.favourites = q.value("FAVOURITES").toString();
+    result.reviews = q.value("REVIEWS").toString();
+    result.chapters = q.value("CHAPTERS").toString();
+    result.complete= q.value("COMPLETE").toInt();
+    result.wordCount = q.value("WORDCOUNT").toString();
+    result.atChapter = q.value("AT_CHAPTER").toInt();
+    return std::move(result);
+}
+
 void MainWindow::LoadData()
 {
     if(ui->cbMinWordCount->currentText().trimmed().isEmpty())
@@ -531,40 +712,15 @@ void MainWindow::LoadData()
     ui->edtResults->setFont(QFont("Verdana", 20));
     int counter = 0;
     ui->edtResults->setUpdatesEnabled(false);
+    fanfics.clear();
     while(q.next())
     {
         counter++;
-        if(ui->chkUrls->isChecked())
-        {
-            QString toInsert = "<a href=\"" + CreateURL((q.value("URL").toString()) + "\"> %1 </a><br>");
-            toInsert= toInsert.arg(CreateURL((q.value("URL").toString())));
-            ui->edtResults->insertHtml(toInsert);
-            continue;
-        }
-        QString toInsert = "<a href=\"" + CreateURL((q.value("URL").toString()) + "\"> %1 </a>");
-        toInsert= toInsert.arg(q.value("TITLE").toString());
-        ui->edtResults->insertHtml(toInsert);
-        ui->edtResults->append("<span>" + QString("By: ") + q.value("AUTHOR").toString() + "</span>");
-        ui->edtResults->append("<span>" + QString(" ") + q.value("SUMMARY").toString() + "</span>");
-        ui->edtResults->append("<span>" + QString("<font color=\"green\">Genre: ") + q.value("GENRES").toString() + "</font></span>");
-        ui->edtResults->append("<span>" + QString("<font color=\"green\">Words: ") + q.value("WORDCOUNT").toString() + "</font></span>");
-        //ui->edtResults->append("<span>" + QString("ID: ") +  QString::number(q.value("rowid").toInt()) +  "</font></span>");
+        fanfics.push_back(LoadFanfic(q));
 
-
-        QString toInsertTagOpener = QString("<br><a href=\"") + QString::number(q.value("rowid").toInt()) + "TAGS" + q.value("TAGS").toString() + QString(" \"> %1</a>");
-        toInsertTagOpener= toInsertTagOpener.arg("Tags:");
-
-        ui->edtResults->insertHtml(toInsertTagOpener);
-        ui->edtResults->insertHtml(" <span>" + q.value("TAGS").toString().replace(" none ", "").trimmed().replace(" ", ",")+ "</span>");
-
-
-        ui->edtResults->insertPlainText("\n");
-        ui->edtResults->insertPlainText("\n");
         if(counter%100 == 0)
             qDebug() << "tick " << counter/100;
     }
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
     qDebug() << "loaded fics:" << counter;
 
 }
@@ -629,61 +785,61 @@ void MainWindow::InsertFandomData(QMap<QPair<QString,QString>, Fandom> names)
         }
         qDebug() << q.lastError();
     }
-        auto make_key = [](Fandom f){return QPair<QString, QString>(f.section, f.name);} ;
-        pbMain->setMinimum(0);
-        pbMain->setMaximum(names.size());
+    auto make_key = [](Fandom f){return QPair<QString, QString>(f.section, f.name);} ;
+    pbMain->setMinimum(0);
+    pbMain->setMaximum(names.size());
 
-        int counter = 0;
-        QString prevSection;
-        for(auto fandom : names)
+    int counter = 0;
+    QString prevSection;
+    for(auto fandom : names)
+    {
+        counter++;
+        if(prevSection != fandom.section)
         {
-            counter++;
-            if(prevSection != fandom.section)
-            {
-                lblCurrentOperation->setText("Currently loading: " + fandom.section);
-                prevSection = fandom.section;
-            }
-            auto key = make_key(fandom);
-            bool hasFandom = knownValues.contains(key);
-            if(!hasFandom)
-            {
-                QString insert = "INSERT INTO FANDOMS (FANDOM, NORMAL_URL, CROSSOVER_URL, SECTION) "
-                                 "VALUES (:FANDOM, :URL, :CROSS, :SECTION)";
-                QSqlQuery q(db);
-                q.prepare(insert);
-                q.bindValue(":FANDOM",fandom.name.replace("'","''"));
-                q.bindValue(":URL",fandom.url.replace("'","''"));
-                q.bindValue(":CROSS",fandom.crossoverUrl.replace("'","''"));
-                q.bindValue(":SECTION",fandom.section.replace("'","''"));
-                q.exec();
-                if(q.lastError().isValid())
-                    qDebug() << q.lastError();
-            }
-            if(hasFandom && (
-                        (knownValues[key].crossoverUrl.isEmpty() && !fandom.crossoverUrl.isEmpty())
-                        || (knownValues[key].url.isEmpty() && !fandom.url.isEmpty())))
-            {
-                QString insert = "UPDATE FANDOMS set normal_url = :normal, crossover_url = :cross "
-                                 "where section = :section and fandom = :fandom";
-                QSqlQuery q(db);
-                q.prepare(insert);
-                q.bindValue(":fandom",fandom.name.replace("'","''"));
-                q.bindValue(":normal",fandom.url.replace("'","''"));
-                q.bindValue(":cross",fandom.crossoverUrl.replace("'","''"));
-                q.bindValue(":section",fandom.section.replace("'","''"));
-                q.exec();
-                if(q.lastError().isValid())
-                    qDebug() << q.lastError();
-            }
-
-            if(counter%100 == 0)
-            {
-                pbMain->setValue(counter);
-                QApplication::processEvents();
-            }
+            lblCurrentOperation->setText("Currently loading: " + fandom.section);
+            prevSection = fandom.section;
         }
-        pbMain->setValue(pbMain->maximum());
-        QApplication::processEvents();
+        auto key = make_key(fandom);
+        bool hasFandom = knownValues.contains(key);
+        if(!hasFandom)
+        {
+            QString insert = "INSERT INTO FANDOMS (FANDOM, NORMAL_URL, CROSSOVER_URL, SECTION) "
+                             "VALUES (:FANDOM, :URL, :CROSS, :SECTION)";
+            QSqlQuery q(db);
+            q.prepare(insert);
+            q.bindValue(":FANDOM",fandom.name.replace("'","''"));
+            q.bindValue(":URL",fandom.url.replace("'","''"));
+            q.bindValue(":CROSS",fandom.crossoverUrl.replace("'","''"));
+            q.bindValue(":SECTION",fandom.section.replace("'","''"));
+            q.exec();
+            if(q.lastError().isValid())
+                qDebug() << q.lastError();
+        }
+        if(hasFandom && (
+                    (knownValues[key].crossoverUrl.isEmpty() && !fandom.crossoverUrl.isEmpty())
+                    || (knownValues[key].url.isEmpty() && !fandom.url.isEmpty())))
+        {
+            QString insert = "UPDATE FANDOMS set normal_url = :normal, crossover_url = :cross "
+                             "where section = :section and fandom = :fandom";
+            QSqlQuery q(db);
+            q.prepare(insert);
+            q.bindValue(":fandom",fandom.name.replace("'","''"));
+            q.bindValue(":normal",fandom.url.replace("'","''"));
+            q.bindValue(":cross",fandom.crossoverUrl.replace("'","''"));
+            q.bindValue(":section",fandom.section.replace("'","''"));
+            q.exec();
+            if(q.lastError().isValid())
+                qDebug() << q.lastError();
+        }
+
+        if(counter%100 == 0)
+        {
+            pbMain->setValue(counter);
+            QApplication::processEvents();
+        }
+    }
+    pbMain->setValue(pbMain->maximum());
+    QApplication::processEvents();
 }
 
 
@@ -1057,13 +1213,14 @@ void MainWindow::ReadSettings()
     ui->chkActive->setChecked(settings.value("Settings/active", false).toBool());
     ui->chkComplete->setChecked(settings.value("Settings/completed", false).toBool());
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
-    QString temp = settings.value("Settings/spMain", false).toString();
-    QList<int>  sizes;
-    for(auto tmp : temp.split(" "))
-        if(!tmp.isEmpty())
-            sizes.push_back(tmp.toInt());
+    ui->spMain->restoreState(settings.value("Settings/spMain", false).toByteArray());
+    ui->spDebug->restoreState(settings.value("Settings/spDebug", false).toByteArray());
+    //    QList<int>  sizes;
+    //    for(auto tmp : temp.split(" "))
+    //        if(!tmp.isEmpty())
+    //            sizes.push_back(tmp.toInt());
 
-    ui->spMain->setSizes(sizes);
+    //ui->spMain->setSizes(sizes);
 }
 
 void MainWindow::OnNetworkReply(QNetworkReply * reply)
@@ -1196,6 +1353,48 @@ void MainWindow::OnCrossoverReply(QNetworkReply * reply)
     managerEventLoop.quit();
 }
 
+void MainWindow::OnChapterUpdated(QVariant chapter, QVariant author, QVariant title)
+{
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QString qs = QString("update fanfics set at_chapter = :chapter where author = :author and title = :title");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":chapter", chapter.toInt());
+    q.bindValue(":author", author.toString());
+    q.bindValue(":title", title.toString());
+    q.exec();
+    qDebug() << chapter.toInt() << " " << author.toString() << " " <<  title.toString();
+    if(q.lastError().isValid())
+        qDebug() << q.lastError();
+
+}
+
+void MainWindow::OnTagAdd(QVariant tag, QVariant row)
+{
+
+    int rownum = row.toInt();
+    SetTag(rownum, tag.toString());
+    QModelIndex index = typetableModel->index(rownum, 10);
+    auto data = typetableModel->data(index, 0).toString();
+    data += " " + tag.toString();
+    typetableModel->setData(index,data,0);
+    typetableModel->updateAll();
+}
+
+void MainWindow::OnTagRemove(QVariant tag, QVariant row)
+{
+    UnsetTag(row.toInt(), tag.toString());
+    QModelIndex index = typetableModel->index(row.toInt(), 10);
+    auto data = typetableModel->data(index, 0).toString();
+    data = data.replace(tag.toString(), "");
+    typetableModel->setData(index,data,0);
+    typetableModel->updateAll();
+}
+
+void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
+{
+}
+
 void MainWindow::on_pbCrawl_clicked()
 {
     currentFilterurl = GetCurrentFilterUrl();
@@ -1265,6 +1464,10 @@ void MainWindow::OnSectionChanged(QString)
 void MainWindow::on_pbLoadDatabase_clicked()
 {
     LoadData();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+    typetableModel->OnReloadDataFromInterface();
 }
 
 void MainWindow::on_pbInit_clicked()
@@ -1276,4 +1479,8 @@ void MainWindow::on_pbInit_clicked()
 void MainWindow::OnCheckboxFilter(int)
 {
     LoadData();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+    typetableModel->OnReloadDataFromInterface();
 }

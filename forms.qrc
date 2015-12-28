@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/ficview.qml</file>
+        <file>qml/components/Ficform.qml</file>
+        <file>qml/components/Funcs.js</file>
+        <file>qml/components/HighlightedListview.qml</file>
+        <file>qml/components/TagCloud.qml</file>
+    </qresource>
+</RCC>

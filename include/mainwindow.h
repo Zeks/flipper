@@ -16,11 +16,20 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QTextBrowser>
+#include <QTableView>
 #include <functional>
 #include "tagwidget.h"
-
+#include "libs/UniversalModels/include/TableDataInterface.h"
+#include "libs/UniversalModels/include/TableDataListHolder.h"
+#include "libs/UniversalModels/include/AdaptingTableModel.h"
+#include "qml_ficmodel.h"
+class QSortFilterProxyModel;
+class QQuickWidget;
+class QQuickView;
+class QStringListModel;
 struct Section
 {
+    int rowid = -1;
     int start = 0;
     int end = 0;
 
@@ -29,6 +38,7 @@ struct Section
     int statSectionStart=0;
     int statSectionEnd=0;
     int complete=0;
+    int atChapter=0;
 
     QString wordCount = 0;
     QString chapters = 0;
@@ -44,6 +54,7 @@ struct Section
     QString statSection;
     QString author;
     QString url;
+    QString tags;
     QString origin;
     QString language;
     QDateTime published;
@@ -75,6 +86,16 @@ public:
     bool CheckSectionAvailability();
 
 private:
+
+    void SetupFanficTable();
+    void SetupTableAccess();
+    //QTableView* types_table = nullptr;
+    FicModel* typetableModel = nullptr;
+    QSharedPointer<TableDataInterface> typetableInterface;
+    TableDataListHolder<Section>* holder = nullptr;
+    QList<Section> fanfics;
+    QSortFilterProxyModel* sortModel;
+
     bool event(QEvent * e);
     void ReadSettings();
 
@@ -123,6 +144,8 @@ private:
     void SetTag(int id, QString tag);
     void UnsetTag(int id, QString tag);
 
+    void ToggleTag();
+
     Ui::MainWindow *ui;
     int processedCount = 0;
     QString nextUrl;
@@ -146,12 +169,18 @@ private:
     QString currentFilterurl;
     bool ignoreUpdateDate = false;
     QStringList tagList;
+    QStringListModel* tagModel;
     TagWidget* tagWidgetDynamic = new TagWidget;
+    QQuickWidget* qwFics = nullptr;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
     void OnFandomReply(QNetworkReply*);
     void OnCrossoverReply(QNetworkReply*);
+    void OnChapterUpdated(QVariant, QVariant, QVariant);
+    void OnTagAdd(QVariant tag, QVariant row);
+    void OnTagRemove(QVariant tag, QVariant row);
+    void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);

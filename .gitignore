@@ -5,3 +5,4 @@ debug/*
 Makefile
 Makefile.*
 ui_*
+modules/*
