@@ -5,5 +5,7 @@
         <file>qml/components/Funcs.js</file>
         <file>qml/components/HighlightedListview.qml</file>
         <file>qml/components/TagCloud.qml</file>
+        <file>qml/components/GenreTagList.qml</file>
+        <file>qml/components/TagSection.qml</file>
     </qresource>
 </RCC>
