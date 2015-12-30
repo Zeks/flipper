@@ -1,9 +1,11 @@
 import QtQuick 2.0
 
-Item{
+Rectangle{
     id: root
+    border.width: 3
+    border.color: Qt.lighter(tagSelectorColor)
     width:parent.width
-    signal activated()
+    signal activated(var index)
     signal tagToggled(var tag, var value)
     property string tagName
     property bool active: false
@@ -11,7 +13,9 @@ Item{
     property var currentChoices
     property bool appendVisible: true
     property bool selectionMode: false
-    function deactivate() {
+    property bool canAdd: false
+    property string tagSelectorColor: '#ABB6D3'
+    function deactivate(index) {
         root.active = false
     }
     height: list.visible ? list.height + txtGenre.height + 6 : txtGenre.height + 6
@@ -21,7 +25,7 @@ Item{
         id:rect
         height: 24//txtGenre.height + 6
         width:parent.width
-        color: "brown"
+        color: tagSelectorColor
         Text{
             id:txtGenre
             width:parent.width - plus.width
@@ -34,9 +38,12 @@ Item{
         MouseArea{
             anchors.fill: parent
             onClicked: {
-                //print("activated")
+                print("Current index: " + delegateItem.indexOfThisDelegate)
+                //delegateItem.z = 10
+                lvFics.currentIndex = delegateItem.indexOfThisDelegate
                 active = true
-                activated()
+                activated(delegateItem.indexOfThisDelegate)
+
             }
         }
         Image{
@@ -47,16 +54,20 @@ Item{
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.topMargin: 3
-            visible:root.active && root.appendVisible
+            visible: canAdd//root.active && root.appendVisible
             width: appendVisible ? 24 : 0
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
+                    lvFics.currentIndex = delegateItem.indexOfThisDelegate
                     root.selectionMode = !root.selectionMode
                     if(root.selectionMode)
                         list.model = allChoices
                     else
                         list.model = currentChoices
+
+                    active = true
+                    activated(delegateItem.indexOfThisDelegate)
                 }
             }
         }
@@ -69,9 +80,10 @@ Item{
         anchors.topMargin: 2
         property int pixelSize : 16
         model:currentChoices
+
         height: {
             //print("Current count: " + count )
-            return count * (pixelSize + 4 + spacing)
+            return spacing*4 + count * (pixelSize + spacing + 3)
         }
         spacing: 2
         delegate: Rectangle{
@@ -85,21 +97,30 @@ Item{
                     if(currentChoices.indexOf(modelData) !== -1)
                         color = "#F5F5DC10"
                     else
-                        color = "white"
+                        color = "lightGray"
                 }
                 //print("Color is: " + color)
                 return color
 
+
             }
+            z:2
             border.width: 1
-            border.color: Qt.lighter("green")
+            border.color: Qt.lighter(color)
             radius: 2
+            anchors.leftMargin: 2
+            anchors.rightMargin: 2
             height: tagText.height
-            width: root.width
+            width: root.width - 8
+            x: 3
             Text{
                 id:tagText
                 text: modelData
                 font.pixelSize: list.pixelSize
+                width: root.width - 4
+                verticalAlignment: Text.AlignVCenter
+                z:1
+                //horizontalAlignment: Text.AlignHCenter
             }
             MouseArea{
                 anchors.fill: parent
@@ -109,8 +130,9 @@ Item{
 
                     if(currentChoices.indexOf(modelData) === -1)
                     {
-                        currentChoices.push(modelData)
                         tagToggled(modelData, true)
+                        root.currentChoices.push(modelData)
+                        currentChoices = currentChoices
                     }
                     else
                     {

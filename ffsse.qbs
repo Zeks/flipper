@@ -4,7 +4,7 @@ import "BaseDefines.qbs" as App
 
 
 App{
-name: "ffsse_app"
+name: "ffsse"
 consoleApplication:false
 type:"application"
 qbsSearchPaths: sourceDirectory + "/modules"

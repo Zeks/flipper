@@ -17,6 +17,9 @@
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
      <widget class="QTabWidget" name="twMain">
+      <property name="toolTip">
+       <string/>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -303,12 +306,12 @@
                  </item>
                  <item>
                   <property name="text">
-                   <string>Book</string>
+                   <string>Books</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Cartoon</string>
+                   <string>Cartoons</string>
                   </property>
                  </item>
                  <item>
@@ -634,6 +637,9 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="toolTip">
+                <string>Usually means author crashing in to say &quot;hi!&quot; in an older story.</string>
+               </property>
                <property name="text">
                 <string>Longest Running</string>
                </property>
@@ -666,8 +672,11 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="toolTip">
+                <string>Really.short.chapters.</string>
+               </property>
                <property name="text">
-                <string>Minigun Chapter Splitting</string>
+                <string>Splinched</string>
                </property>
                <attribute name="buttonGroup">
                 <string notr="true">buttonGroup</string>
@@ -681,6 +690,9 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>More than a certain amount of text in &quot;characters&quot; section</string>
                </property>
                <property name="text">
                 <string>Catch'Em'All</string>
@@ -698,8 +710,24 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="toolTip">
+                <string>Uncle</string>
+               </property>
                <property name="text">
                 <string>One Liners</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroup</string>
+               </attribute>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="chkDumped">
+               <property name="toolTip">
+                <string>Best way to have no exposure(or readers) - just dump it all in one piece. Wait, that's not how it went for Roger?!</string>
+               </property>
+               <property name="text">
+                <string>Dumped</string>
                </property>
                <attribute name="buttonGroup">
                 <string notr="true">buttonGroup</string>

@@ -8,9 +8,15 @@ Rectangle {
     property string delTitle : title
     property string delAuthor : author
     property int delRow : rownum
-    width: 1000
+    property int indexOfThisDelegate: index
+    width: 850
+    z: {
+        var newZ = lvFics.currentIndex === index ? 10 : 1
+        //print("changing z for: " + index + " to: " + newZ)
+        return lvFics.currentIndex === index ? 10 : 1
+    }
     //height: txtUpdated.y + 24
-    height:mainLayout.height + 20
+    height:mainLayout.height > (tagColumn.height + genreTagList1.height) ? mainLayout.height + 30 : (tagColumn.height + genreTagList1.height) + 10
     //anchors.bottom: tagColumn.bottom
     //anchors.top: lblTitle.top
     clip: false
@@ -112,10 +118,11 @@ Rectangle {
 
     Column {
         id: tagColumn
-        x: 888
         y: 277
-        anchors.bottom: mainLayout.bottom
-        anchors.bottomMargin: 0
+//        anchors.left: genreTagList1.left
+//        anchors.leftMargin: 0
+//        anchors.top: genreTagList1.bottom
+//        anchors.topMargin: 10
 
         Text {
             id: txtPublished
@@ -138,7 +145,17 @@ Rectangle {
         if(state)
             lvFics.tagAdded(tag,rownum)
         else
-            lvFics.tagRemoved(tag,rownum)
+            lvFics.tagDeleted(tag,rownum)
+    }
+    function tagListActivated(activatedIndex) {
+//        print("activation")
+//        if(lvFics.previousIndex !== -1)
+//            lvFics.children[lvFics.previousIndex].z = 1
+//        print("original previndex: " + lvFics.previousIndex )
+//        lvFics.previousIndex = activatedIndex
+//        print("updated previndex: " + lvFics.previousIndex )
+//        console.log(lvFics)
+//        lvFics.children[activatedIndex].z = 10
     }
 
     ColumnLayout {
@@ -300,7 +317,7 @@ Rectangle {
         id: genreTagList1
         x: 888
         width: 134
-        height: 155
+        height: 76
         anchors.right: parent.right
         anchors.rightMargin: 10
         anchors.top: mainLayout.top

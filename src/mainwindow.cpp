@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
         qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
     });
 
-    connect(tagWidgetDynamic, &TagWidget::tagDeleted, [&](QString tag){
+    connect(ui->wdgTagsPlaceholder, &TagWidget::tagDeleted, [&](QString tag){
         ui->wdgTagsPlaceholder->OnRemoveTagFromEdit(tag);
 
         if(tagList.contains(tag))
@@ -121,10 +121,24 @@ MainWindow::MainWindow(QWidget *parent) :
             q.exec();
             if(q.lastError().isValid())
                 qDebug() << q.lastError();
+            qwFics->rootContext()->setContextProperty("tagModel", tagList);
         }
     });
-    connect(tagWidgetDynamic, &TagWidget::tagAdded, [&](QString tag){
-        ui->wdgTagsPlaceholder->OnNewTag(tag, false);
+    connect(ui->wdgTagsPlaceholder, &TagWidget::tagAdded, [&](QString tag){
+        //ui->wdgTagsPlaceholder->OnNewTag(tag, false);
+        if(!tagList.contains(tag))
+        {
+            QSqlDatabase db = QSqlDatabase::database(dbName);
+
+            QSqlQuery q(db);
+            q.prepare("INSERT INTO TAGS(TAG) VALUES(:tag)");
+            q.bindValue(":tag", tag);
+            q.exec();
+            if(q.lastError().isValid())
+                qDebug() << q.lastError();
+            tagList.append(tag);
+            qwFics->rootContext()->setContextProperty("tagModel", tagList);
+        }
 
     });
 
@@ -642,6 +656,16 @@ void MainWindow::LoadData()
     {
         queryString = "select rowid, f.* from fanfics f where 1 = 1 and length(characters) > 40 ";
         diffField = "length(characters) desc";
+        tagsMatter = false;
+    }
+    if(ui->chkDumped->isChecked())
+    {
+        queryString+=QString(" and abs(cast("
+                             "("
+                             " strftime('%s',f.updated)-strftime('%s',f.published) "
+                             " ) AS real "
+                             " )/60/60/24) < 60");
+
         tagsMatter = false;
     }
     if(ui->chkTLDR->isChecked())
@@ -1301,7 +1325,7 @@ void MainWindow::OnCrossoverReply(QNetworkReply * reply)
     // getting to the start of fandom section
     //int indexOfSlash = currentProcessedSection.indexOf("/");
     QString pattern = sections[currentProcessedSection].section;//.mid(indexOfSlash + 1, currentProcessedSection.length() - (indexOfSlash +1)) + "\\sCrossovers";
-    QRegExp rxStartFandoms(pattern);
+    QRegExp rxStartFandoms("<TABLE\\sWIDTH='100%'><TR>");
     int indexStart = rxStartFandoms.indexIn(str);
     if(indexStart == -1)
     {
@@ -1318,7 +1342,7 @@ void MainWindow::OnCrossoverReply(QNetworkReply * reply)
     }
     while(true)
     {
-        QRegExp rxStartLink("href=\"");
+        QRegExp rxStartLink("href=[\"]");
         QRegExp rxEndLink("/\"");
 
         int linkStart = rxStartLink.indexIn(str, indexStart);
@@ -1329,8 +1353,8 @@ void MainWindow::OnCrossoverReply(QNetworkReply * reply)
         {
             QMessageBox::warning(0, "warning!", "failed to fetch link at: ", str.mid(linkStart, str.size() - linkStart));
         }
-        QString link = str.mid(linkStart + rxStartLink.pattern().length(),
-                               linkEnd - (linkStart + rxStartLink.pattern().length()));
+        QString link = str.mid(linkStart + rxStartLink.pattern().length()-2,
+                               linkEnd - (linkStart + rxStartLink.pattern().length())+2);
 
         QRegExp rxStartName(">");
         QRegExp rxEndName("</a");
@@ -1371,7 +1395,6 @@ void MainWindow::OnChapterUpdated(QVariant chapter, QVariant author, QVariant ti
 
 void MainWindow::OnTagAdd(QVariant tag, QVariant row)
 {
-
     int rownum = row.toInt();
     SetTag(rownum, tag.toString());
     QModelIndex index = typetableModel->index(rownum, 10);

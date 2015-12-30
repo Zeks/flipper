@@ -19,7 +19,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
         if(role == GenreRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole).toString().split("/");
         if(role == CharactersRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 5), Qt::DisplayRole).toString().split(QRegExp("[,/]"));
+            return AdaptingTableModel::data(index.sibling(index.row(), 5), Qt::DisplayRole).toString();
         if(role == RatedRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 6), Qt::DisplayRole);
         if(role == PublishedRole)
@@ -29,7 +29,11 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
         if(role == UrlRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 9), Qt::DisplayRole);
         if(role == TagsRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 10), Qt::DisplayRole).toString().replace("none", "").trimmed().split(" ");
+        {
+            QStringList temp = AdaptingTableModel::data(index.sibling(index.row(), 10), Qt::DisplayRole).toString().replace("none", "").trimmed().split(" ");
+            temp.removeAll("");
+            return temp;
+        }
         if(role == WordsRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 11), Qt::DisplayRole).toString();
         if(role == FavesRole)

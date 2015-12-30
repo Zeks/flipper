@@ -10,11 +10,13 @@ Rectangle {
         anchors.fill: parent
         verticalScrollBarPolicy: Qt.ScrollBarAsNeeded
     ListView{
-        cacheBuffer: 4000
-
+        cacheBuffer: 6000
+        displayMarginBeginning: 50
+        displayMarginEnd:  50
         id:lvFics
         objectName: "lvFics"
-        //snapMode: ListView.SnapToItem
+        //snapMode: ListView.NoSnap
+        property int previousIndex: -1
     spacing: 5
     clip:true
     model:ficModel

@@ -19,13 +19,17 @@ Item {
         anchors.topMargin: 6
         tagName: "Tags"
         currentChoices: tags
+        canAdd: true
         allChoices: tagModel
 
     }
     Component.onCompleted: {
             tsGenre.activated.connect(tsTags.deactivate)
             tsTags.activated.connect(tsGenre.deactivate)
+            tsTags.activated.connect(delegateItem.tagListActivated)
             tsTags.tagToggled.connect(delegateItem.tagToggled)
+            tagColumn.y = tsTags.y + tsTags.height + 20
+            tagColumn.x = tagGenreList.x
         }
 }
 

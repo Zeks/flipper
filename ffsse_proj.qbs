@@ -3,7 +3,7 @@ import qbs.Process
 import "BaseDefines.qbs" as Application
 
 Project {
-    name: "ffsse"
+    name: "ffsse_proj"
     references: [
         "ffsse.qbs",
         "libs/UniversalModels/UniversalModels.qbs",
