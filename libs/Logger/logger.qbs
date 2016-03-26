@@ -5,7 +5,7 @@ import "../../BaseDefines.qbs" as Library
 
 Library{
 name: "logger"
-type:"dynamiclibrary"
+type:"staticlibrary"
 Depends { name: "Qt.core"}
 Depends { name: "cpp" }
 Depends { name: "conditionals" }

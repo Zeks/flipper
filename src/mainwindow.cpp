@@ -85,7 +85,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->statusBar->addPermanentWidget(pbMain,0);
 
     ui->edtResults->setOpenLinks(false);
-    connect(ui->edtResults, &QTextBrowser::anchorClicked, this, OnLinkClicked);
+    connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnLinkClicked);
 
     //    tagEditor->setOpenLinks(false);
     //    tagEditor->setFont(QFont("Verdana", 16));
@@ -95,7 +95,7 @@ MainWindow::MainWindow(QWidget *parent) :
     GenericEventFilter* eventFilter = new GenericEventFilter(this);
     eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagWidgetDynamic));
     tagWidgetDynamic->installEventFilter(eventFilter);
-    connect(tagWidgetDynamic, &TagWidget::tagToggled, this, OnTagToggled);
+    connect(tagWidgetDynamic, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
 
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);

@@ -3,7 +3,7 @@ import qbs.Process
 
 Product{
     Depends { name: "conditionals" }
-    cpp.debugInformation: false
+    cpp.debugInformation: true
     cpp.cxxLanguageVersion: "c++11"
     conditionals.debugAppend : qbs.buildVariant == "debug" ? "d" : ""
     cpp.libraryPaths:  {

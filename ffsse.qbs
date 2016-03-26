@@ -20,11 +20,13 @@ Depends { name: "cpp" }
 Depends { name: "UniversalModels" }
 Depends { name: "logger" }
 
-cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY"])
+cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
 cpp.includePaths: [
                 sourceDirectory,
                 sourceDirectory + "/include",
                 sourceDirectory + "/libs",
+                sourceDirectory + "/libs/Logger/include",
+
 
 ]
 
@@ -32,21 +34,20 @@ files: [
         "forms.qrc",
         "icons.qrc",
         "include/mainwindow.h",
+        "include/pagegetter.h",
         "include/tagwidget.h",
-        "include/genericeventfilter.h",
         "include/fanficdisplay.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
+        "src/pagegetter.cpp",
         "ui/mainwindow.ui",
         "ui/tagwidget.ui",
         "ui/fanficdisplay.ui",
         "src/main.cpp",
         "src/mainwindow.cpp",
         "src/tagwidget.cpp",
-        "src/genericeventfilter.cpp",
         "src/fanficdisplay.cpp",
     ]
 
-cpp.dynamicLibraries: ["UniversalModels", "logger"]
-
+cpp.staticLibraries: ["UniversalModels", "logger"]
 }
