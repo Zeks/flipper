@@ -35,6 +35,7 @@ files: [
         "icons.qrc",
         "include/mainwindow.h",
         "include/pagegetter.h",
+        "include/parse.h",
         "include/tagwidget.h",
         "include/fanficdisplay.h",
         "qml_ficmodel.cpp",

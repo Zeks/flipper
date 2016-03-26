@@ -45,12 +45,14 @@ int main(int argc, char *argv[])
             "CHAPTERS INTEGER NOT NULL,"
             "COMPLETE INTEGER NOT NULL DEFAULT 0,"
             "AT_CHAPTER INTEGER NOT NULL,"
-            "ORIGIN VARCHAR NOT NULL)";
+            "ORIGIN VARCHAR NOT NULL"
+            "ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE,)";
 
     QSqlQuery q(db);
     q.prepare(createFanfics);
     q.exec();
-    qDebug() << q.lastError();
+    if(q.lastError().isValid())
+        qDebug() << q.lastError();
 
 
     QString createFandoms = "create table if not exists fandoms "
@@ -61,7 +63,8 @@ int main(int argc, char *argv[])
 
     q.prepare(createFandoms);
     q.exec();
-    qDebug() << q.lastError();
+    if(q.lastError().isValid())
+        qDebug() << q.lastError();
 
 
 
@@ -71,7 +74,8 @@ int main(int argc, char *argv[])
 
     q.prepare(createTags);
     q.exec();
-    qDebug() << q.lastError();
+    if(q.lastError().isValid())
+        qDebug() << q.lastError();
 
     CreateIndex("CREATE INDEX if not exists  \"main\".\"I_FANFICS_IDENTITY\" ON \"FANFICS\" (\"AUTHOR\" ASC, \"TITLE\" ASC)");
     CreateIndex("CREATE  INDEX  if not exists  \"main\".\"I_FANFICS_FANDOM\" ON \"FANFICS\" (\"FANDOM\" ASC)");
@@ -82,6 +86,13 @@ int main(int argc, char *argv[])
     CreateIndex(" CREATE  INDEX if  not exists \"main\".\"I_FANDOMS_SECTION\" ON \"FANDOMS\" (\"SECTION\" ASC)");
 
 
+
+    QString pageCache = "CREATE TABLE if not exists \"PageCache\" (\"URL\" VARCHAR PRIMARY KEY  NOT NULL , \"GENERATION_DATE\" DATETIME,"
+    " \"CONTENT\" BLOB, \"NEXT\" VARCHAR, \"FANDOM\" VARCHAR, \"CROSSOVER\" INTEGER, \"PREVIOUS\" VARCHAR, \"REFERENCED_FICS\" BLOB, \"PAGE_TYPE\" INTEGER)";
+    q.prepare(pageCache);
+    q.exec();
+    if(q.lastError().isValid())
+        qDebug() << q.lastError();
 
     MainWindow w;
     w.show();

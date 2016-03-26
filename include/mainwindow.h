@@ -13,6 +13,7 @@
 #include <QHash>
 #include <QEventLoop>
 #include <QSignalMapper>
+#include <QSqlQuery>
 #include <QProgressBar>
 #include <QLabel>
 #include <QTextBrowser>
@@ -29,7 +30,7 @@ class QQuickView;
 class QStringListModel;
 struct Section
 {
-    int rowid = -1;
+    int ID = -1;
     int start = 0;
     int end = 0;
 
@@ -166,12 +167,19 @@ private:
     QNetworkAccessManager manager;
     QNetworkAccessManager fandomManager;
     QNetworkAccessManager crossoverManager;
-    QString currentFilterurl;
+    QString currentFilterUrl;
     bool ignoreUpdateDate = false;
     QStringList tagList;
     QStringListModel* tagModel;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
+    QString currentFandom;
+    bool isCrossover = false;
+    void PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate = false);
+    QString AddIdList(QString query, int count);
+    QString CreateLimitQueryPart();
+    QHash<QString, QList<int>> randomIdLists;
+
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
@@ -193,6 +201,8 @@ private slots:
 
     void OnTagToggled(int, QString, bool);
 
+
+    void on_chkRandomizeSelection_clicked(bool checked);
 };
 
 #endif // MAINWINDOW_H

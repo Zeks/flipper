@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1547</width>
-    <height>753</height>
+    <height>717</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -158,47 +158,6 @@
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
               <layout class="QGridLayout" name="gridLayout_5">
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_3">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Words:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QComboBox" name="cbMinWordCount">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="editable">
-                  <bool>true</bool>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>100000</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>300000</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>700000</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
                <item row="1" column="1">
                 <widget class="QComboBox" name="cbMaxWordCount">
                  <property name="sizePolicy">
@@ -232,23 +191,79 @@
                  </item>
                 </widget>
                </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="cbMinWordCount">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="editable">
+                  <bool>true</bool>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>100000</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>300000</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>700000</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Min. Words</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QSpinBox" name="sbMaxFicCount">
+                 <property name="maximum">
+                  <number>50</number>
+                 </property>
+                 <property name="value">
+                  <number>10</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_7">
+                 <property name="text">
+                  <string>Max fics:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0" colspan="2">
+                <widget class="QCheckBox" name="chkRandomizeSelection">
+                 <property name="text">
+                  <string>Randomize</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string>Max. Words</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_4">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>13</height>
-                </size>
-               </property>
-              </spacer>
              </item>
             </layout>
            </item>
@@ -434,6 +449,13 @@
                   </size>
                  </property>
                 </spacer>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkCacheMode">
+                 <property name="text">
+                  <string>Cache Mode</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>

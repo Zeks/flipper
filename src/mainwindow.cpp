@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "GlobalHeaders/SingletonHolder.h"
 #include <QMessageBox>
 #include <QRegExp>
 #include <QDebug>
@@ -17,9 +18,12 @@
 #include <QQuickView>
 #include <QQuickItem>
 #include <QQmlContext>
+#include <QThread>
 
 #include "genericeventfilter.h"
+#include "include/pagegetter.h"
 #include <algorithm>
+
 
 bool TagEditorHider(QObject* /*obj*/, QEvent *event, QWidget* widget)
 {
@@ -228,7 +232,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 14, 0, chapters);
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
     ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
-    ADD_INTEGER_GETSET(holder, 17, 0, rowid);
+    ADD_INTEGER_GETSET(holder, 17, 0, ID);
 
 
     //    holder->AddGetter(QPair<int,int>(8,0),
@@ -260,7 +264,7 @@ void MainWindow::SetupFanficTable()
 
 
     holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" << "published"
-                       << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "rowid");
+                       << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "ID");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -320,6 +324,7 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
     settings.setValue("Settings/section", ui->cbSectionTypes->currentText());
     settings.setValue("Settings/active", ui->chkActive->isChecked());
+    settings.setValue("Settings/cacheMode", ui->chkCacheMode->isChecked());
     settings.setValue("Settings/completed", ui->chkComplete->isChecked());
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
     settings.setValue("Settings/spMain", ui->spMain->saveState());
@@ -348,7 +353,30 @@ void MainWindow::RequestPage(QString page)
     toInsert= toInsert.arg(page);
     ui->edtResults->append("<span>Processing url: </span>");
     ui->edtResults->insertHtml(toInsert);
-    manager.get(QNetworkRequest(QUrl(page)));
+    An<PageManager> pager;
+    pager->SetDatabase(QSqlDatabase::database(dbName));
+    nextUrl = page;
+    bool cacheMode = ui->chkCacheMode->isChecked();
+    do
+    {
+        auto result = pager->GetPage(nextUrl, cacheMode);
+        if(!result.isValid)
+        {
+            ui->edtResults->append(" Не удалось получить страницу");
+            return;
+        }
+        ProcessPage(QString(result.content));
+        result.fandom =  currentFandom;
+        result.crossover = isCrossover;
+        result.type = EPageType::sorted_ficlist;
+        if(result.source == EPageSource::network)
+        {
+            pager->SavePageToDB(result);
+            QThread::msleep(1000);
+        }
+    }while(!nextUrl.isEmpty());
+
+    //manager.get(QNetworkRequest(QUrl(page)));
 }
 
 void MainWindow::ProcessPage(QString str)
@@ -422,13 +450,14 @@ void MainWindow::ProcessPage(QString str)
 
     for(auto section : sections)
     {
-        section.origin = currentFilterurl;
+        section.origin = currentFilterUrl;
         LoadIntoDB(section);
         ui->edtResults->insertHtml("<span> Written:" + section.title + " by " + section.author + "\n <br></span>");
     }
     if(abort)
     {
         ui->edtResults->insertHtml("<span> Already have updates past that point, aborting<br></span>");
+        nextUrl = "";
         return;
     }
     if(sections.size() > 0)
@@ -436,8 +465,7 @@ void MainWindow::ProcessPage(QString str)
     currentPosition = 999;
     //ui->edtResults->insertHtml("<span> \n Next page \n <br></span>");
 
-    if(!nextUrl.isEmpty())
-        timerId = startTimer(1000);
+
 
 }
 
@@ -571,7 +599,7 @@ QString MainWindow::CreateURL(QString str)
 inline Section LoadFanfic(QSqlQuery& q)
 {
     Section result;
-    result.rowid = q.value("rowid").toInt();
+    result.ID = q.value("ID").toInt();
     result.fandom = q.value("FANDOM").toString();
     result.author = q.value("AUTHOR").toString();
     result.title = q.value("TITLE").toString();
@@ -602,7 +630,7 @@ void MainWindow::LoadData()
     }
 
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString queryString = "select rowid, f.* from fanfics f where 1 = 1 " ;
+    QString queryString = "select ID, f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
         queryString += " and wordcount > :minwordcount ";
     if(ui->cbMaxWordCount->currentText().toInt() > 0)
@@ -636,25 +664,25 @@ void MainWindow::LoadData()
     bool tagsMatter = true;
     if(ui->chkLongestRunning->isChecked())
     {
-        queryString =  "select rowid, julianday(f.updated) - julianday(f.published) as datediff, f.* from fanfics f where 1 = 1 and datediff > 0  ";
+        queryString =  "select ID, julianday(f.updated) - julianday(f.published) as datediff, f.* from fanfics f where 1 = 1 and datediff > 0  ";
         diffField = "datediff desc";
         tagsMatter = false;
     }
     if(ui->chkBehemothChapters->isChecked())
     {
-        queryString = "select rowid, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
+        queryString = "select ID, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
         diffField = "datediff desc";
         tagsMatter = false;
     }
     if(ui->chkMinigun->isChecked())
     {
-        queryString = "select rowid, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
+        queryString = "select ID, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
         diffField = "datediff asc";
         tagsMatter = false;
     }
     if(ui->chkPokemon->isChecked())
     {
-        queryString = "select rowid, f.* from fanfics f where 1 = 1 and length(characters) > 40 ";
+        queryString = "select ID, f.* from fanfics f where 1 = 1 and length(characters) > 40 ";
         diffField = "length(characters) desc";
         tagsMatter = false;
     }
@@ -670,7 +698,7 @@ void MainWindow::LoadData()
     }
     if(ui->chkTLDR->isChecked())
     {
-        queryString = "select rowid, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'"
+        queryString = "select ID, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'"
                       "and summary not like '%revision%'"
                       "and summary not like '%rewrite%'"
                       "and summary not like '%abandoned%'"
@@ -679,6 +707,7 @@ void MainWindow::LoadData()
                       "and summary not like '%adopted%'"
                       "and length(summary) < 100 "
                       "and summary not like '%discontinued%'";
+
         diffField = "length(summary) asc";
         tagsMatter = false;
     }
@@ -713,17 +742,29 @@ void MainWindow::LoadData()
     }
 
     queryString+="COLLATE NOCASE ORDER BY " + diffField;
-    QSqlQuery q(db);
-    q.prepare(queryString);
+    queryString+=CreateLimitQueryPart();
 
-    if(ui->cbMinWordCount->currentText().toInt() > 0)
-        q.bindValue(":minwordcount", ui->cbMinWordCount->currentText().toInt());
-    if(ui->cbMaxWordCount->currentText().toInt() > 0)
-        q.bindValue(":maxwordcount", ui->cbMaxWordCount->currentText().toInt());
+    std::function<QSqlQuery(QString)> bindQuery =
+            [&](QString qs){
+        QSqlQuery q(db);
+        q.prepare(qs);
 
-    q.bindValue(":tags", tags);
-    q.bindValue(":not_tags", not_tags);
+        if(ui->cbMinWordCount->currentText().toInt() > 0)
+            q.bindValue(":minwordcount", ui->cbMinWordCount->currentText().toInt());
+        if(ui->cbMaxWordCount->currentText().toInt() > 0)
+            q.bindValue(":maxwordcount", ui->cbMaxWordCount->currentText().toInt());
 
+        q.bindValue(":tags", tags);
+        q.bindValue(":not_tags", not_tags);
+        return q;
+    };
+
+
+    if(ui->chkRandomizeSelection->isChecked() && ui->sbMaxFicCount->value() > 0 && ui->sbMaxFicCount->value() < 51)
+    {
+        PopulateIdList(bindQuery, queryString);
+    }
+    auto q = bindQuery(AddIdList(queryString, ui->sbMaxFicCount->value()));
     q.exec();
     qDebug() << q.lastQuery();
     if(q.lastError().isValid())
@@ -759,7 +800,7 @@ void MainWindow::OnSetTag(QString tag)
         QString path = "CrawlerDB.sqlite";
         QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
         QSqlQuery q(db);
-        q.prepare(QString("update fanfics set tags = tags || :tag where rowid = :id and tags not regexp :wrappedTag"));
+        q.prepare(QString("update fanfics set tags = tags || :tag where ID = :id and tags not regexp :wrappedTag"));
         q.bindValue(":id", value);
         q.bindValue(":tag", " " + tag + " ");
         q.bindValue(":wrappedTag", WrapTag(tag));
@@ -999,7 +1040,7 @@ void MainWindow::ReadTags()
 void MainWindow::SetTag(int id, QString tag)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("update fanfics set tags = tags || ' ' || :tag where rowid = :id");
+    QString qs = QString("update fanfics set tags = tags || ' ' || :tag where ID = :id");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1024,7 +1065,7 @@ void MainWindow::UnsetTag(int id, QString tag)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
 
-    QString qs = QString("select tags from fanfics where rowid = :id");
+    QString qs = QString("select tags from fanfics where ID = :id");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1041,7 +1082,7 @@ void MainWindow::UnsetTag(int id, QString tag)
     originaltags.removeAll(tag);
 
 
-    qs = QString("update fanfics set tags = :tags where rowid = :id");
+    qs = QString("update fanfics set tags = :tags where ID = :id");
 
     QSqlQuery q1(db);
     q1.prepare(qs);
@@ -1050,6 +1091,53 @@ void MainWindow::UnsetTag(int id, QString tag)
     q1.exec();
     if(q1.lastError().isValid())
         qDebug() << q1.lastError();
+}
+
+void MainWindow::PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate)
+{
+    if(randomIdLists.contains(query) && !forceUpdate)
+        return;
+    randomIdLists.remove(query);
+    randomIdLists.insert(query, QList<int>());
+    QString qS = query;
+
+    int posFrom= qS.indexOf("from fanfics f where 1 = 1");
+    QString temp = qS.right(qS.length() - posFrom);
+    temp = temp.remove(CreateLimitQueryPart());
+    qS = "select id " + temp;
+    qDebug() << qS;
+    QSqlQuery q = bindQuery(qS);
+    q.exec();
+    while(q.next())
+        randomIdLists[query].push_back(q.value("ID").toInt());
+}
+
+QString MainWindow::AddIdList(QString query, int count)
+{
+    QString idList;
+    if(!ui->chkRandomizeSelection->isChecked() || !randomIdLists.contains(query) || randomIdLists[query].isEmpty())
+        return query;
+    std::random_shuffle (randomIdLists[query].begin(), randomIdLists[query].end());
+    for(int i(0); i < count && i < randomIdLists[query].size(); i++)
+    {
+        idList+=QString::number(randomIdLists[query].at(i)) + ",";
+    }
+    if(idList.isEmpty())
+        return idList;
+    if(idList.contains(","))
+        idList.chop(1);
+    idList = "ID IN ( " + idList + " ) ";
+    query=query.replace("1 = 1", "1 = 1 AND " + idList + " ");
+
+    return query;
+}
+
+QString MainWindow::CreateLimitQueryPart()
+{
+    QString result;
+    if(ui->sbMaxFicCount->value() > 0 && ui->sbMaxFicCount->value() < 51)
+        result+= QString(" LIMIT %1 ").arg(QString::number(ui->sbMaxFicCount->value()));
+    return result;
 }
 
 QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
@@ -1192,10 +1280,14 @@ QString MainWindow::GetCurrentFilterUrl()
     {
         url = GetCrossoverUrl(ui->cbCrossovers->currentText());
         lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbCrossovers->currentText() << "CROSSOVERS");
+        isCrossover = true;
+        currentFandom = ui->cbCrossovers->currentText();
     }
     else
     {
-        url = GetNormalUrl(ui->cbCrossovers->currentText());
+        isCrossover = false;
+        currentFandom = ui->cbNormals->currentText();
+        url = GetNormalUrl(ui->cbNormals->currentText());
         lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText());
     }
     return url;
@@ -1235,6 +1327,7 @@ void MainWindow::ReadSettings()
 
 
     ui->chkActive->setChecked(settings.value("Settings/active", false).toBool());
+    ui->chkCacheMode->setChecked(settings.value("Settings/cacheMode", false).toBool());
     ui->chkComplete->setChecked(settings.value("Settings/completed", false).toBool());
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
     ui->spMain->restoreState(settings.value("Settings/spMain", false).toByteArray());
@@ -1420,7 +1513,7 @@ void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 
 void MainWindow::on_pbCrawl_clicked()
 {
-    currentFilterurl = GetCurrentFilterUrl();
+    currentFilterUrl = GetCurrentFilterUrl();
     pageCounter = 0;
     ui->edtResults->clear();
     processedCount = 0;
@@ -1435,17 +1528,8 @@ void MainWindow::on_pbCrawl_clicked()
         QMessageBox::warning(0, "warning!", "Please, select normal OR crossover category");
         return;
     }
-    QString url;
-    if(!ui->cbCrossovers->currentText().isEmpty())
-    {
-        url = GetCrossoverUrl(ui->cbCrossovers->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbCrossovers->currentText() << "CROSSOVERS");
-    }
-    else
-    {
-        url = GetNormalUrl(ui->cbCrossovers->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText() );
-    }
+    QString url = currentFilterUrl;
+
     //SkipPages(ui->leStartFromPage->text().toInt()-1);
     if(ui->sbStartFrom->value() != 0)
     {
@@ -1490,7 +1574,7 @@ void MainWindow::on_pbLoadDatabase_clicked()
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
-    typetableModel->OnReloadDataFromInterface();
+    //typetableModel->OnReloadDataFromInterface();
 }
 
 void MainWindow::on_pbInit_clicked()
@@ -1506,4 +1590,10 @@ void MainWindow::OnCheckboxFilter(int)
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
     typetableModel->OnReloadDataFromInterface();
+}
+
+void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
+{
+    if(checked && ui->sbMaxFicCount->value() < 1 || ui->sbMaxFicCount->value() >50)
+        ui->sbMaxFicCount->setValue(10);
 }
