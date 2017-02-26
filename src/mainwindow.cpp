@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "GlobalHeaders/SingletonHolder.h"
+#include "GlobalHeaders/simplesettings.h"
 #include <QMessageBox>
 #include <QRegExp>
 #include <QDebug>
@@ -64,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&fandomManager, &QNetworkAccessManager::finished, this, &MainWindow::OnFandomReply);
     connect(&crossoverManager, &QNetworkAccessManager::finished, this, &MainWindow::OnCrossoverReply);
     connect(ui->cbSectionTypes, SIGNAL(currentTextChanged(QString)), this, SLOT(OnSectionChanged(QString)));
+    connect(ui->pbWipeFandom, SIGNAL(clicked(bool)), this, SLOT(WipeSelectedFandom(bool)));
 
     sections.insert("Anime/Manga", Fandom{"Anime/Manga", "anime", NameOfFandomSectionToLink("anime"), NameOfCrossoverSectionToLink("anime")});
     sections.insert("Misc", Fandom{"Misc", "misc", NameOfFandomSectionToLink("misc"), NameOfCrossoverSectionToLink("misc")});
@@ -430,8 +432,9 @@ void MainWindow::ProcessPage(QString str)
         if(section.fandom.contains("CROSSOVER"))
             GetCrossoverFandomList(section, currentPosition, str);
 
-        if(section.updated.toMSecsSinceEpoch() < lastUpdated.toMSecsSinceEpoch() && !ignoreUpdateDate)
+        if(section.updated.toMSecsSinceEpoch() < lastUpdated.toMSecsSinceEpoch() && section.updated.date().year() > 2000 && !ignoreUpdateDate)
             abort = true;
+
         if(section.isValid)
         {
             sections.append(section);
@@ -630,11 +633,18 @@ void MainWindow::LoadData()
     }
 
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString queryString = "select ID, f.* from fanfics f where 1 = 1 " ;
+    QString queryString = "select ID, ";
+    if(ui->chkPopNew->isChecked())
+    queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
+    queryString+=" f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
         queryString += " and wordcount > :minwordcount ";
     if(ui->cbMaxWordCount->currentText().toInt() > 0)
         queryString += " and wordcount < :maxwordcount ";
+
+    if(ui->sbMinimumFavourites->value() > 0)
+        queryString += " and favourites > :favourites ";
+
     if(!ui->leContainsGenre->text().isEmpty())
         for(auto genre : ui->leContainsGenre->text().split(" "))
             queryString += QString(" AND genres like '%%1%' ").arg(genre);
@@ -647,20 +657,31 @@ void MainWindow::LoadData()
     {
         if(word.trimmed().isEmpty())
             continue;
-        queryString += QString(" AND summary like '%%1%' and summary not like '%not %1%' ").arg(word);
+        queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
     }
 
     for(QString word: ui->leNotContainsWords->text().split(" "))
     {
         if(word.trimmed().isEmpty())
             continue;
-        queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%").arg(word);
+        queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
     }
 
     QString tags, not_tags;
 
 
-    QString diffField = " WORDCOUNT DESC";
+    QString diffField;
+    if(ui->chkWordcount->isChecked())
+        diffField = " WORDCOUNT DESC";
+    else if(ui->chkFavourites->isChecked())
+        diffField = " FAVOURITES DESC";
+    else if(ui->chkFavToLength->isChecked())
+        diffField = " wordcount/favourites asc";
+    else
+        diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
+
+
+
     bool tagsMatter = true;
     if(ui->chkLongestRunning->isChecked())
     {
@@ -692,10 +713,14 @@ void MainWindow::LoadData()
                              "("
                              " strftime('%s',f.updated)-strftime('%s',f.published) "
                              " ) AS real "
-                             " )/60/60/24) < 60");
+                             " )/60/60/24) < 60 ");
 
-        tagsMatter = false;
+        //tagsMatter = false;
     }
+
+
+
+
     if(ui->chkTLDR->isChecked())
     {
         queryString = "select ID, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'"
@@ -740,6 +765,19 @@ void MainWindow::LoadData()
         else
             queryString+=" and tags = ' none ' ";
     }
+    if(ui->chkFavRate->isChecked())
+    {
+        queryString+= " and published <> updated and published > date('now', '-1 years') and updated > date('now', '-60 days') ";
+    }
+
+    if(ui->chkPopNew->isChecked())
+    {
+        queryString+="and published > date('now', '-1 years') and updated > date('now', '-60 days')";
+        diffField = " sumfaves desc";
+
+        //tagsMatter = false;
+    }
+
 
     queryString+="COLLATE NOCASE ORDER BY " + diffField;
     queryString+=CreateLimitQueryPart();
@@ -753,6 +791,8 @@ void MainWindow::LoadData()
             q.bindValue(":minwordcount", ui->cbMinWordCount->currentText().toInt());
         if(ui->cbMaxWordCount->currentText().toInt() > 0)
             q.bindValue(":maxwordcount", ui->cbMaxWordCount->currentText().toInt());
+        if(ui->sbMinimumFavourites->value() > 0)
+            q.bindValue(":favourites", ui->sbMinimumFavourites->value());
 
         q.bindValue(":tags", tags);
         q.bindValue(":not_tags", not_tags);
@@ -957,7 +997,13 @@ QString MainWindow::GetCrossoverUrl(QString)
     QStringList temp = rebindName.split("/");
 
     rebindName = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
-    QString result =  "https://www.fanfiction.net" + rebindName + "/0/?&srt=1&lan=1&r=10&len=100";
+    QString lastPart = "/0/?&srt=1&lan=1&r=10&len=%1";
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    int lengthCutoff = settings.value("Settings/lengthCutoff",100).toInt();
+    lastPart=lastPart.arg(lengthCutoff);
+    QString result =  "https://www.fanfiction.net" + rebindName + lastPart;
+
 
     qDebug() << result;
     return result;
@@ -970,7 +1016,12 @@ QString MainWindow::GetNormalUrl(QString)
     //qDebug() << qs;
     QSqlQuery q(qs, db);
     q.next();
-    QString result = "https://www.fanfiction.net" + q.value(0).toString() + "/?&srt=1&lan=1&r=10&len=100";
+    QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    int lengthCutoff = settings.value("Settings/lengthCutoff",100).toInt();
+    lastPart=lastPart.arg(lengthCutoff);
+    QString result = "https://www.fanfiction.net" + q.value(0).toString() + lastPart;
     qDebug() << result;
     return result;
 }
@@ -1152,11 +1203,12 @@ QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
     qs=qs.arg(append);
     QSqlQuery q(qs, db);
     q.next();
-    QDateTime result = q.value(0).toDateTime();
-    qDebug() << result;
+    //QDateTime result = q.value("updated").toDateTime();
+    QString resultStr = q.value("updated").toString();
+
+    QDateTime result = QDateTime::fromString(resultStr, "dd.MM.yyyy H:mm:ss");
     return result;
 }
-
 void MainWindow::LoadIntoDB(Section & section)
 {
 
@@ -1292,6 +1344,28 @@ QString MainWindow::GetCurrentFilterUrl()
     }
     return url;
 }
+
+void MainWindow::WipeSelectedFandom(bool)
+{
+    QString fandom;
+    if(!ui->cbCrossovers->currentText().isEmpty())
+    {
+        fandom = ui->cbCrossovers->currentText();
+    }
+    else
+    {
+        fandom = ui->cbNormals->currentText();
+    }
+    if(!fandom.isEmpty())
+    {
+        QSqlDatabase db = QSqlDatabase::database(dbName);
+        QString qs = QString("delete from fanfics where fandom like '%%1%'");
+        qs=qs.arg(fandom);
+        QSqlQuery q(qs, db);
+        q.exec();
+    }
+}
+
 
 bool MainWindow::CheckSectionAvailability()
 {

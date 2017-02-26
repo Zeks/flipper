@@ -189,6 +189,7 @@ public slots:
     void OnTagAdd(QVariant tag, QVariant row);
     void OnTagRemove(QVariant tag, QVariant row);
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
+    void WipeSelectedFandom(bool);
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);

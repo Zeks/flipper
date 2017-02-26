@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1547</width>
-    <height>717</height>
+    <height>741</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -52,50 +52,7 @@
            <property name="spacing">
             <number>5</number>
            </property>
-           <item row="0" column="0">
-            <layout class="QVBoxLayout" name="verticalLayout_2">
-             <item>
-              <widget class="QPushButton" name="pbInit">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Reload Section Data</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pbLoadDatabase">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Search</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-           <item row="0" column="1">
+           <item row="0" column="2">
             <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
               <widget class="QCheckBox" name="chkComplete">
@@ -154,10 +111,44 @@
              </item>
             </layout>
            </item>
-           <item row="0" column="2">
+           <item row="0" column="3">
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
               <layout class="QGridLayout" name="gridLayout_5">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Min. Words</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_7">
+                 <property name="text">
+                  <string>Max fics:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0" colspan="2">
+                <widget class="QCheckBox" name="chkRandomizeSelection">
+                 <property name="text">
+                  <string>Randomize</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string>Max. Words</string>
+                 </property>
+                </widget>
+               </item>
                <item row="1" column="1">
                 <widget class="QComboBox" name="cbMaxWordCount">
                  <property name="sizePolicy">
@@ -219,19 +210,6 @@
                  </item>
                 </widget>
                </item>
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_3">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Min. Words</string>
-                 </property>
-                </widget>
-               </item>
                <item row="2" column="1">
                 <widget class="QSpinBox" name="sbMaxFicCount">
                  <property name="maximum">
@@ -242,24 +220,20 @@
                  </property>
                 </widget>
                </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>Max fics:</string>
+               <item row="3" column="1">
+                <widget class="QSpinBox" name="sbMinimumFavourites">
+                 <property name="maximum">
+                  <number>10000</number>
+                 </property>
+                 <property name="value">
+                  <number>50</number>
                  </property>
                 </widget>
                </item>
-               <item row="3" column="0" colspan="2">
-                <widget class="QCheckBox" name="chkRandomizeSelection">
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_12">
                  <property name="text">
-                  <string>Randomize</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_11">
-                 <property name="text">
-                  <string>Max. Words</string>
+                  <string>Min Faves:</string>
                  </property>
                 </widget>
                </item>
@@ -267,7 +241,7 @@
              </item>
             </layout>
            </item>
-           <item row="0" column="3">
+           <item row="0" column="4">
             <layout class="QGridLayout" name="gridLayout_3">
              <item row="0" column="0">
               <layout class="QHBoxLayout" name="horizontalLayout">
@@ -451,6 +425,13 @@
                 </spacer>
                </item>
                <item>
+                <widget class="QPushButton" name="pbWipeFandom">
+                 <property name="text">
+                  <string>WIPE selected fandom</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="chkCacheMode">
                  <property name="text">
                   <string>Cache Mode</string>
@@ -559,6 +540,107 @@
               </layout>
              </item>
             </layout>
+           </item>
+           <item row="0" column="0">
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <widget class="QPushButton" name="pbInit">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Reload Section Data</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pbLoadDatabase">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Search</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item row="0" column="1">
+            <widget class="QGroupBox" name="groupBox">
+             <property name="title">
+              <string>Order By:</string>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_8">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="chkFavourites">
+                <property name="text">
+                 <string>Favourites</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="chkFavRate">
+                <property name="text">
+                 <string>FavRate</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QCheckBox" name="chkWordcount">
+                <property name="text">
+                 <string>Wordcount</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QCheckBox" name="chkFavToLength">
+                <property name="text">
+                 <string>Fav to Length</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -750,6 +832,16 @@
                </property>
                <property name="text">
                 <string>Dumped</string>
+               </property>
+               <attribute name="buttonGroup">
+                <string notr="true">buttonGroup</string>
+               </attribute>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="chkPopNew">
+               <property name="text">
+                <string>New From Popular</string>
                </property>
                <attribute name="buttonGroup">
                 <string notr="true">buttonGroup</string>

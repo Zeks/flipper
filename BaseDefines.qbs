@@ -14,7 +14,7 @@ Product{
     }
     destinationDirectory: {
          var path = conditionals.projectPath
-         path+= qbs.buildVariant == "release" ? "/release" : "/debug"
+         path+= qbs.buildVariant == "release" ? "/Run" : "/Run"
          print("destdir1: " + path);
          return path
     }
