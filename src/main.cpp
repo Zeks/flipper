@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
-
+    database::BackupDatabase();
     QString path = "CrawlerDB.sqlite";
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE_R");
     db.setDatabaseName(path);

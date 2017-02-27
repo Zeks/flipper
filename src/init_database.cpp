@@ -5,7 +5,11 @@
 #include <QString>
 #include <QSqlError>
 #include <QDebug>
+#include <QDateTime>
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
 
+namespace database{
 bool database::ReadDbFile()
 {
     QFile data("dbcode/dbinit.sql");
@@ -53,12 +57,17 @@ bool database::ReindexTable(QString table)
 void database::SetFandomTracked(QString fandom, bool crossover, bool tracked)
 {
     QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
-    QString trackedPart = crossover ? "_crossover" : "";
+    QString trackedPart = crossover ? "_crossovers" : "";
     QSqlQuery q1(db);
-    QString qsl = " UPDATE fandoms SET tracked%1 = %2 where name = %3 ";
+    QString qsl = " UPDATE fandoms SET tracked%1 = %2 where fandom = '%3' ";
     qsl = qsl.arg(trackedPart).arg(QString(tracked ? "1" : "0")).arg(fandom);
     q1.prepare(qsl);
     q1.exec();
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
 }
 
 void database::PushFandom(QString fandom)
@@ -118,4 +127,70 @@ QStringList database::FetchRecentFandoms()
         qDebug() << q1.lastQuery();
     }
     return result;
+}
+
+bool database::FetchTrackStateForFandom(QString fandom, bool crossover)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QString trackedPart = crossover ? "_crossovers" : "";
+    QSqlQuery q1(db);
+    QString qsl = " select tracked%1 from fandoms where fandom = '%2' ";
+    qsl = qsl.arg(trackedPart).arg(fandom);
+    q1.prepare(qsl);
+    q1.exec();
+    q1.next();
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    return q1.value(0).toBool();
+}
+
+QStringList database::FetchTrackedFandoms()
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = " select fandom from fandoms where tracked = 1";
+    q1.prepare(qsl);
+    q1.exec();
+    QStringList result;
+    while(q1.next())
+        result.push_back(q1.value(0).toString());
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    return result;
+}
+
+QStringList database::FetchTrackedCrossovers()
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = " select fandom from fandoms where tracked_crossovers = 1";
+    q1.prepare(qsl);
+    q1.exec();
+    QStringList result;
+    while(q1.next())
+        result.push_back(q1.value(0).toString());
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    return result;
+}
+
+void database::BackupDatabase()
+{
+    QString backupName = "backups/CrawlerDB." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
+    if(!QFile::exists(backupName))
+        JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
+//        QFile::copy("CrawlerDB.sqlite", backupName);
+}
 }

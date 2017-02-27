@@ -688,6 +688,8 @@ void MainWindow::LoadData()
         diffField = " WORDCOUNT DESC";
     else if(ui->cbSortMode->currentText() == "Favourites")
         diffField = " FAVOURITES DESC";
+    else if(ui->cbSortMode->currentText() == "Update Date")
+        diffField = " updated DESC";
     else if(ui->cbSortMode->currentText() == "Fav Rate")
         diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
 //        diffField = " wordcount/favourites asc";
@@ -1024,10 +1026,10 @@ QString MainWindow::GetCrossoverUrl(QString)
     return result;
 }
 
-QString MainWindow::GetNormalUrl(QString)
+QString MainWindow::GetNormalUrl(QString fandom)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("Select normal_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbNormals->currentText());
+    QString qs = QString("Select normal_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(fandom);
     //qDebug() << qs;
     QSqlQuery q(qs, db);
     q.next();
@@ -1224,7 +1226,7 @@ QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
     //QDateTime result = q.value("updated").toDateTime();
     QString resultStr = q.value("updated").toString();
 
-    QDateTime result = QDateTime::fromString(resultStr, "dd.MM.yyyy H:mm:ss");
+    QDateTime result = QDateTime::fromString(resultStr, "yyyy-MM-ddThh:mm:ss.000");
     return result;
 }
 void MainWindow::LoadIntoDB(Section & section)
@@ -1343,22 +1345,22 @@ void MainWindow::HideCurrentID()
     ui->edtResults->setTextCursor(cursor);
 }
 
-QString MainWindow::GetCurrentFilterUrl()
+QString MainWindow::GetCurrentFilterUrl(QString selectedFandom, bool crossoverState)
 {
     QString url;
-    if(ui->rbCrossovers->isChecked())
+    if(crossoverState)
     {
-        url = GetCrossoverUrl(ui->cbNormals->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText() << "CROSSOVERS");
+        url = GetCrossoverUrl(selectedFandom);
+        lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVERS");
         isCrossover = true;
-        currentFandom = ui->cbNormals->currentText();
+        currentFandom = selectedFandom;
     }
     else
     {
         isCrossover = false;
-        currentFandom = ui->cbNormals->currentText();
-        url = GetNormalUrl(ui->cbNormals->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText());
+        currentFandom = selectedFandom;
+        url = GetNormalUrl(selectedFandom);
+        lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom);
     }
     return url;
 }
@@ -1409,6 +1411,11 @@ void MainWindow::ReadSettings()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     //ui->cbCrossovers->setCurrentText(settings.value("Settings/crossovers", "").toString());
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
+
+    ui->chkTrackedFandom->blockSignals(true);
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->blockSignals(false);
+
     ui->cbMaxWordCount->setCurrentText(settings.value("Settings/maxWordCount", "").toString());
     ui->cbMinWordCount->setCurrentText(settings.value("Settings/minWordCount", 100000).toString());
 
@@ -1605,7 +1612,7 @@ void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 
 void MainWindow::on_pbCrawl_clicked()
 {
-    currentFilterUrl = GetCurrentFilterUrl();
+    currentFilterUrl = GetCurrentFilterUrl(ui->cbNormals->currentText(), ui->rbCrossovers->isChecked());
     pageCounter = 0;
     ui->edtResults->clear();
     processedCount = 0;
@@ -1743,12 +1750,10 @@ void MainWindow::on_pbExpandMinusWords_clicked()
 
 void MainWindow::OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous)
 {
-    //ui->lvTrackedFandoms->blockSignals(true);
     ui->cbNormals->setCurrentText(current.data().toString());
-    //on_pbLoadDatabase_clicked();
-    //ui->lvTrackedFandoms->selectionModel()->select(recentFandomsModel->index(0,0),QItemSelectionModel::SelectCurrent);
-    //ui->lvTrackedFandoms->blockSignals(false);
-    //selectionTimer.singleShot(100, [&](){ui->lvTrackedFandoms->selectionModel()->clearSelection();});
+    ui->chkTrackedFandom->blockSignals(true);
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->blockSignals(false);
 }
 
 //void MainWindow::OnAcceptedExpandedWidget(QString)
@@ -1781,3 +1786,48 @@ void MainWindow::CallExpandedWidget()
     expanderWidget->exec();
 }
 
+
+void MainWindow::on_chkTrackedFandom_toggled(bool checked)
+{
+    database::SetFandomTracked(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked(), checked);
+}
+
+void MainWindow::on_rbNormal_clicked()
+{
+    ui->chkTrackedFandom->blockSignals(true);
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->blockSignals(false);
+}
+
+void MainWindow::on_rbCrossovers_clicked()
+{
+    ui->chkTrackedFandom->blockSignals(true);
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->blockSignals(false);
+}
+
+void MainWindow::on_pbLoadTrackedFandoms_clicked()
+{
+    for(QString fandom : database::FetchTrackedFandoms())
+    {
+        currentFilterUrl = GetCurrentFilterUrl(fandom, false);
+        pageCounter = 0;
+        ui->edtResults->clear();
+        processedCount = 0;
+        ignoreUpdateDate = false;
+        nextUrl = QString();
+        QString url = currentFilterUrl;
+        RequestPage(url);
+    }
+    for(QString fandom : database::FetchTrackedCrossovers())
+    {
+        currentFilterUrl = GetCurrentFilterUrl(fandom, false);
+        pageCounter = 0;
+        ui->edtResults->clear();
+        processedCount = 0;
+        ignoreUpdateDate = false;
+        nextUrl = QString();
+        QString url = currentFilterUrl;
+        RequestPage(url);
+    }
+}

@@ -25,6 +25,7 @@ cpp.includePaths: [
                 sourceDirectory,
                 sourceDirectory + "/include",
                 sourceDirectory + "/libs",
+                sourceDirectory + "/zlib",
                 sourceDirectory + "/libs/Logger/include",
 
 
@@ -52,5 +53,5 @@ files: [
         "src/fanficdisplay.cpp",
     ]
 
-cpp.staticLibraries: ["UniversalModels", "logger"]
+cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]
 }

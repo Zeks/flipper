@@ -106,7 +106,6 @@ private:
 
     QString GetFandom(QString text);
     Section GetSection( QString text, int start);
-    //QString GetCurrentFilterUrl();
     QString GetCurrentFilterUrl(QString selectedFandom, bool crossoverState);
     void GetAuthor(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
@@ -224,7 +223,6 @@ private slots:
     void on_rbNormal_clicked();
     void on_rbCrossovers_clicked();
     void on_pbLoadTrackedFandoms_clicked();
-
 };
 
 #endif // MAINWINDOW_H
