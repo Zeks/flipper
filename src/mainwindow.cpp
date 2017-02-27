@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle("ffnet sane search engine");
     ReadTags();
+    recentFandomsModel = new QStringListModel;
     connect(
                 &manager, SIGNAL (finished(QNetworkReply*)),
                 this, SLOT (OnNetworkReply(QNetworkReply*)));
@@ -158,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->tvFanfics->hide();
     IntiConnections();
     database::RebaseFandoms();
-    recentFandomsModel = new QStringListModel;
+
     recentFandomsModel->setStringList(database::FetchRecentFandoms());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
@@ -338,6 +339,9 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
     settings.setValue("Settings/spMain", ui->spMain->saveState());
     settings.setValue("Settings/spDebug", ui->spDebug->saveState());
+    settings.setValue("Settings/currentSortFilter", ui->cbSortMode->currentText());
+    settings.setValue("Settings/currentCustomFilter", ui->cbCustomFilters->currentText());
+    settings.setValue("Settings/customFilterEnabled", ui->chkCustomFilter->isChecked());
     //    QString temp;
     //    for(int size : ui->spMain->sizes())
     //        temp.push_back(QString::number(size) + " ");
@@ -360,6 +364,8 @@ void MainWindow::Init()
 void MainWindow::IntiConnections()
 {
     connect(ui->chkCustomFilter, &QCheckBox::clicked, this, &MainWindow::OnCustomFilterClicked);
+    connect(ui->chkActivateReloadSectionData, &QCheckBox::clicked, this, &MainWindow::OnSectionReloadActivated);
+
 }
 
 void MainWindow::RequestPage(QString page)
@@ -372,6 +378,7 @@ void MainWindow::RequestPage(QString page)
     pager->SetDatabase(QSqlDatabase::database(dbName));
     nextUrl = page;
     bool cacheMode = ui->chkCacheMode->isChecked();
+    pbMain->setTextVisible(false);
     do
     {
         auto result = pager->GetPage(nextUrl, cacheMode);
@@ -389,8 +396,10 @@ void MainWindow::RequestPage(QString page)
             pager->SavePageToDB(result);
             QThread::msleep(1000);
         }
+        pbMain->setValue(pbMain->value()+10);
     }while(!nextUrl.isEmpty());
-
+    pbMain->setValue(0);
+    pbMain->hide();
     //manager.get(QNetworkRequest(QUrl(page)));
 }
 
@@ -1222,9 +1231,16 @@ QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
     QSqlDatabase db = QSqlDatabase::database(dbName);
     QString qs = QString("Select max(updated) as updated from fanfics where 1 = 1 %1");
     QString append;
-    for(auto section : sections)
+    if(sections.size() == 1)
     {
-        append+= QString(" and fandom like '%%1%' ").arg(section);
+        append+= QString(" and fandom = '%1' ").arg(sections.at(0));
+    }
+    else
+    {
+        for(auto section : sections)
+        {
+            append+= QString(" and fandom like '%%1%' ").arg(section);
+        }
     }
     qs=qs.arg(append);
     QSqlQuery q(qs, db);
@@ -1233,7 +1249,12 @@ QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
     //QDateTime result = q.value("updated").toDateTime();
     QString resultStr = q.value("updated").toString();
 
-    QDateTime result = QDateTime::fromString(resultStr, "yyyy-MM-ddThh:mm:ss.000");
+
+    QDateTime result;
+    if(!ui->chkIgnoreUpdateDate->isChecked())
+        result = QDateTime::fromString(resultStr, "yyyy-MM-ddThh:mm:ss.000");
+    else
+        result = QDateTime();
     return result;
 }
 void MainWindow::LoadIntoDB(Section & section)
@@ -1242,16 +1263,30 @@ void MainWindow::LoadIntoDB(Section & section)
     QSqlDatabase db = QSqlDatabase::database(dbName);
 
     bool isUpdate = false;
-    QString getKeyQuery = "Select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2'";
+    bool isInsert = false;
+    QString getKeyQuery = "Select ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2') as COUNT_NAMED,"
+                          " ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2' and updated <> :updated) as count_updated"
+                            " FROM FANFICS WHERE 1=1 ";
     getKeyQuery = getKeyQuery.arg(QString(section.author).replace("'","''")).arg(QString(section.title).replace("'","''"));
-    QSqlQuery keyQ(getKeyQuery, db);
+    QSqlQuery keyQ(db);
+    keyQ.prepare(getKeyQuery);
+    keyQ.bindValue(":updated", section.updated);
+    keyQ.exec();
     keyQ.next();
-    //qDebug() << keyQ.value(0).toInt();
-    if(keyQ.value(0).toInt() > 0)
+    //qDebug() << keyQ.lastQuery();
+    //qDebug() << " named: " << keyQ.value(0).toInt();
+    //qDebug() << " updated: " << keyQ.value(1).toInt();
+    if(keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0)
         isUpdate = true;
+    if(keyQ.value(0).toInt() == 0)
+        isInsert = true;
 
-
-    if(!isUpdate)
+    if(keyQ.lastError().isValid())
+    {
+        qDebug() << keyQ.lastQuery();
+        qDebug() << keyQ.lastError();
+    }
+    if(isInsert)
     {
 
         //qDebug() << "Inserting: " << section.author << " " << section.title << " " << section.fandom << " " << section.genre;
@@ -1283,7 +1318,7 @@ void MainWindow::LoadIntoDB(Section & section)
             qDebug() << "failed to insert: " << section.author << " " << section.title;
             qDebug() << q.lastError();
         }
-
+        processedFics++;
     }
 
     if(isUpdate)
@@ -1317,7 +1352,9 @@ void MainWindow::LoadIntoDB(Section & section)
             qDebug() << "failed to update: " << section.author << " " << section.title;
             qDebug() << q.lastError();
         }
+        processedFics++;
     }
+
 }
 
 QString MainWindow::WrapTag(QString tag)
@@ -1440,12 +1477,16 @@ void MainWindow::ReadSettings()
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
     ui->spMain->restoreState(settings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(settings.value("Settings/spDebug", false).toByteArray());
-    //    QList<int>  sizes;
-    //    for(auto tmp : temp.split(" "))
-    //        if(!tmp.isEmpty())
-    //            sizes.push_back(tmp.toInt());
+    ui->cbSortMode->blockSignals(true);
+    ui->cbCustomFilters->blockSignals(true);
+    ui->chkCustomFilter->blockSignals(true);
+    ui->cbSortMode->setCurrentText(settings.value("Settings/currentSortFilter", "Update Date").toString());
+    ui->cbCustomFilters->setCurrentText(settings.value("Settings/currentSortFilter", "Longest Running").toString());
+    ui->chkCustomFilter->setChecked(settings.value("Settings/customFilterEnabled", false).toBool());
+    ui->cbSortMode->blockSignals(false);
+    ui->cbCustomFilters->blockSignals(false);
+    ui->chkCustomFilter->blockSignals(false);
 
-    //ui->spMain->setSizes(sizes);
 }
 
 void MainWindow::OnNetworkReply(QNetworkReply * reply)
@@ -1621,6 +1662,7 @@ void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 
 void MainWindow::on_pbCrawl_clicked()
 {
+    processedFics = 0;
     currentFilterUrl = GetCurrentFilterUrl(ui->cbNormals->currentText(), ui->rbCrossovers->isChecked(), true);
     pageCounter = 0;
     ui->edtResults->clear();
@@ -1636,6 +1678,13 @@ void MainWindow::on_pbCrawl_clicked()
 //        ignoreUpdateDate = true;
 //    }
     RequestPage(url);
+    QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
+
+    database::PushFandom(ui->cbNormals->currentText().trimmed());
+    //ui->cbNormals->blockSignals(true);
+    recentFandomsModel->setStringList(database::FetchRecentFandoms());
+    ui->lvTrackedFandoms->setModel(recentFandomsModel);
+
 }
 
 void MainWindow::OnLinkClicked(const QUrl & url)
@@ -1676,6 +1725,11 @@ void MainWindow::OnCustomFilterClicked()
         ui->chkCustomFilter->setStyleSheet("");
     }
     //on_pbLoadDatabase_clicked();
+}
+
+void MainWindow::OnSectionReloadActivated()
+{
+    ui->pbInit->setEnabled(ui->chkActivateReloadSectionData->isChecked());
 }
 
 
@@ -1817,6 +1871,7 @@ void MainWindow::on_rbCrossovers_clicked()
 
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
+    processedFics = 0;
     for(QString fandom : database::FetchTrackedFandoms())
     {
         currentFilterUrl = GetCurrentFilterUrl(fandom, false);
@@ -1839,4 +1894,6 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         QString url = currentFilterUrl;
         RequestPage(url);
     }
+    QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
+    //ui->sb
 }

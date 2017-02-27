@@ -712,7 +712,7 @@
                         </widget>
                        </item>
                        <item>
-                        <widget class="QCheckBox" name="checkBox">
+                        <widget class="QCheckBox" name="chkIgnoreUpdateDate">
                          <property name="text">
                           <string>Ignore updatedate</string>
                          </property>

@@ -97,6 +97,7 @@ private:
     TableDataListHolder<Section>* holder = nullptr;
     QList<Section> fanfics;
     QSortFilterProxyModel* sortModel;
+    int processedFics = 0;
 
     bool event(QEvent * e);
     void ReadSettings();
@@ -209,6 +210,7 @@ private slots:
 
     void OnTagToggled(int, QString, bool);
     void OnCustomFilterClicked();
+    void OnSectionReloadActivated();
 
     void on_chkRandomizeSelection_clicked(bool checked);
     void on_cbCustomFilters_currentTextChanged(const QString &arg1);
