@@ -33,6 +33,7 @@ cpp.includePaths: [
 files: [
         "forms.qrc",
         "icons.qrc",
+        "include/init_database.h",
         "include/mainwindow.h",
         "include/pagegetter.h",
         "include/parse.h",
@@ -40,6 +41,7 @@ files: [
         "include/fanficdisplay.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
+        "src/init_database.cpp",
         "src/pagegetter.cpp",
         "ui/mainwindow.ui",
         "ui/tagwidget.ui",
