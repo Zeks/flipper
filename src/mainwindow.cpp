@@ -410,7 +410,7 @@ void MainWindow::ProcessPage(QString str)
             break;
         currentPosition = section.start;
 
-        section.fandom = ui->rbNormal->isChecked() ? ui->cbNormals->currentText() : ui->cbNormals->currentText() + " CROSSOVER";
+        section.fandom = ui->rbNormal->isChecked() ? currentFandom: currentFandom + " CROSSOVER";
         GetUrl(section, currentPosition, str);
         GetTitle(section, currentPosition, str);
         GetAuthor(section, currentPosition, str);
@@ -1218,11 +1218,12 @@ QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
     QString append;
     for(auto section : sections)
     {
-        append+= QString(" and fandom like '%1' ").arg(section);
+        append+= QString(" and fandom like '%%1%' ").arg(section);
     }
     qs=qs.arg(append);
     QSqlQuery q(qs, db);
     q.next();
+    qDebug() << q.lastQuery();
     //QDateTime result = q.value("updated").toDateTime();
     QString resultStr = q.value("updated").toString();
 
@@ -1351,16 +1352,18 @@ QString MainWindow::GetCurrentFilterUrl(QString selectedFandom, bool crossoverSt
     if(crossoverState)
     {
         url = GetCrossoverUrl(selectedFandom);
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVERS");
+        lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVER");
         isCrossover = true;
         currentFandom = selectedFandom;
     }
     else
     {
+
         isCrossover = false;
-        currentFandom = selectedFandom;
         url = GetNormalUrl(selectedFandom);
         lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom);
+        currentFandom = selectedFandom;
+
     }
     return url;
 }
@@ -1821,7 +1824,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     }
     for(QString fandom : database::FetchTrackedCrossovers())
     {
-        currentFilterUrl = GetCurrentFilterUrl(fandom, false);
+        currentFilterUrl = GetCurrentFilterUrl(fandom, true);
         pageCounter = 0;
         ui->edtResults->clear();
         processedCount = 0;
