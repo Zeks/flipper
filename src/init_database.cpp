@@ -1,4 +1,7 @@
 #include "include/init_database.h"
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
+
 #include <QFile>
 #include <QTextStream>
 #include <QSqlQuery>
@@ -6,8 +9,8 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QDateTime>
-#include <quazip/quazip.h>
-#include <quazip/JlCompress.h>
+#include <QFileInfo>
+#include <QDir>
 
 namespace database{
 bool database::ReadDbFile()
@@ -191,6 +194,20 @@ void database::BackupDatabase()
     QString backupName = "backups/CrawlerDB." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
     if(!QFile::exists(backupName))
         JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
-//        QFile::copy("CrawlerDB.sqlite", backupName);
+    QDir dir("backups");
+    QStringList filters;
+    filters << "*.zip";
+    dir.setNameFilters(filters);
+    auto entries = dir.entryList(QDir::NoFilter, QDir::Time|QDir::Reversed);
+    int i = 0;
+    for(QString entry : entries)
+    {
+        i++;
+        QFileInfo fi(entry);
+        if(i < 10)
+            continue;
+        QFile::remove("backups/" + entry);
+    };
+
 }
 }
