@@ -147,6 +147,7 @@ private:
     void UnsetTag(int id, QString tag);
 
     void ToggleTag();
+    void CallExpandedWidget();
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -172,6 +173,7 @@ private:
     bool ignoreUpdateDate = false;
     QStringList tagList;
     QStringListModel* tagModel;
+    QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
     QString currentFandom;
@@ -180,7 +182,8 @@ private:
     QString AddIdList(QString query, int count);
     QString CreateLimitQueryPart();
     QHash<QString, QList<int>> randomIdLists;
-
+    QDialog* expanderWidget = nullptr;
+    QTextEdit* edtExpander = new QTextEdit;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
@@ -207,6 +210,11 @@ private slots:
     void on_chkRandomizeSelection_clicked(bool checked);
     void on_cbCustomFilters_currentTextChanged(const QString &arg1);
     void on_cbSortMode_currentTextChanged(const QString &arg1);
+    void on_pbExpandPlusGenre_clicked();
+    void on_pbExpandMinusGenre_clicked();
+    void on_pbExpandPlusWords_clicked();
+    void on_pbExpandMinusWords_clicked();
+    //void OnAcceptedExpandedWidget(QString);
 };
 
 #endif // MAINWINDOW_H

@@ -31,6 +31,7 @@ bool database::ReadDbFile()
          }
      }
      else return false;
+     return true;
 }
 
 bool database::ReindexTable(QString table)

@@ -77,7 +77,7 @@ MainWindow::MainWindow(QWidget *parent) :
     sections.insert("Plays/Musicals", Fandom{"Plays/Musicals", "play", NameOfFandomSectionToLink("play"), NameOfCrossoverSectionToLink("play")});
     sections.insert("TV Shows", Fandom{"TV Shows", "tv", NameOfFandomSectionToLink("tv"), NameOfCrossoverSectionToLink("tv")});
 
-    connect(ui->buttonGroup, SIGNAL(buttonClicked(int)), this, SLOT(OnCheckboxFilter(int)));
+    //connect(ui->buttonGroup, SIGNAL(buttonClicked(int)), this, SLOT(OnCheckboxFilter(int)));
 
     ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
     //ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
@@ -652,22 +652,22 @@ void MainWindow::LoadData()
     if(ui->chkFaveLimitActivated->isChecked() && ui->sbMinimumFavourites->value() > 0)
         queryString += " and favourites > :favourites ";
 
-    if(!ui->leContainsGenre->text().isEmpty())
-        for(auto genre : ui->leContainsGenre->text().split(" "))
+    if(!ui->leContainsGenre->text().trimmed().isEmpty())
+        for(auto genre : ui->leContainsGenre->text().trimmed().split(" "))
             queryString += QString(" AND genres like '%%1%' ").arg(genre);
 
-    if(!ui->leNotContainsGenre->text().isEmpty())
-        for(auto genre : ui->leNotContainsGenre->text().split(" "))
+    if(!ui->leNotContainsGenre->text().trimmed().isEmpty())
+        for(auto genre : ui->leNotContainsGenre->text().trimmed().split(" "))
             queryString += QString(" AND genres not like '%%1%' ").arg(genre);
 
-    for(QString word: ui->leContainsWords->text().split(" "))
+    for(QString word: ui->leContainsWords->text().trimmed().split(" "))
     {
         if(word.trimmed().isEmpty())
             continue;
         queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
     }
 
-    for(QString word: ui->leNotContainsWords->text().split(" "))
+    for(QString word: ui->leNotContainsWords->text().trimmed().split(" "))
     {
         if(word.trimmed().isEmpty())
             continue;
@@ -755,7 +755,7 @@ void MainWindow::LoadData()
     if(ui->rbNormal->isChecked())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
     else if(ui->rbCrossovers->isChecked())
-        queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
+        queryString+=QString(" and  fandom like '%%1 Crossover%'").arg(ui->cbNormals->currentText());
 
 
     for(auto tag : ui->wdgTagsPlaceholder->GetSelectedTags())
@@ -1149,6 +1149,8 @@ void MainWindow::UnsetTag(int id, QString tag)
     if(q1.lastError().isValid())
         qDebug() << q1.lastError();
 }
+
+
 
 void MainWindow::PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate)
 {
@@ -1648,7 +1650,7 @@ void MainWindow::OnCustomFilterClicked()
         ui->cbCustomFilters->setPalette(p);
         ui->chkCustomFilter->setStyleSheet("");
     }
-    on_pbLoadDatabase_clicked();
+    //on_pbLoadDatabase_clicked();
 }
 
 
@@ -1703,3 +1705,60 @@ void MainWindow::on_cbSortMode_currentTextChanged(const QString &arg1)
 {
     on_pbLoadDatabase_clicked();
 }
+
+
+
+void MainWindow::on_pbExpandPlusGenre_clicked()
+{
+    currentExpandedEdit = ui->leContainsGenre;
+    CallExpandedWidget();
+}
+
+void MainWindow::on_pbExpandMinusGenre_clicked()
+{
+    currentExpandedEdit = ui->leNotContainsGenre;
+    CallExpandedWidget();
+}
+
+void MainWindow::on_pbExpandPlusWords_clicked()
+{
+    currentExpandedEdit = ui->leContainsWords;
+    CallExpandedWidget();
+}
+
+void MainWindow::on_pbExpandMinusWords_clicked()
+{
+    currentExpandedEdit = ui->leNotContainsWords;
+    CallExpandedWidget();
+}
+
+//void MainWindow::OnAcceptedExpandedWidget(QString)
+//{
+
+//}
+
+void MainWindow::CallExpandedWidget()
+{
+    if(!expanderWidget)
+    {
+        expanderWidget = new QDialog();
+        //expanderWidget->setWindowModality(Qt::WindowModal);
+        expanderWidget->resize(400, 300);
+        QVBoxLayout* vl = new QVBoxLayout;
+        QPushButton* okButton = new QPushButton;
+        okButton->setText("OK");
+        edtExpander = new QTextEdit;
+        vl->addWidget(edtExpander);
+        vl->addWidget(okButton);
+        expanderWidget->setLayout(vl);
+        connect(okButton, &QPushButton::clicked, [&](){
+            if(currentExpandedEdit)
+                currentExpandedEdit->setText(edtExpander->toPlainText());
+            expanderWidget->hide();
+        });
+    }
+    if(currentExpandedEdit)
+        edtExpander->setText(currentExpandedEdit->text());
+    expanderWidget->exec();
+}
+
