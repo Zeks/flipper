@@ -19,7 +19,7 @@ CREATE TABLE if not exists PageCache (URL VARCHAR PRIMARY KEY  NOT NULL , GENERA
  CONTENT BLOB, NEXT VARCHAR, FANDOM VARCHAR, CROSSOVER INTEGER, PREVIOUS VARCHAR, REFERENCED_FICS BLOB, PAGE_TYPE INTEGER);
  
  CREATE INDEX if not exists  I_FANDOM_SECTION ON fandoms (FANDOM ASC, SECTION ASC);
- CREATE TABLE if not exists sqlite_sequence(name,seq);
+ CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);
  INSERT INTO sqlite_sequence(name, seq) SELECT 'fanfics', 0 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name = 'fanfics');
  update sqlite_sequence set seq = (select max(id) from fanfics) where name = 'fanfics';
  --не забыть сделать авторасстановку;
@@ -28,4 +28,7 @@ CREATE TABLE if not exists PageCache (URL VARCHAR PRIMARY KEY  NOT NULL , GENERA
  alter table fandoms add column tracked_crossovers integer default 0; 
  alter table fandoms add column last_update datetime; 
  alter table fandoms add column last_update_crossover datetime; 
- 
+ alter table fandoms add column id integer; 
+ update fandoms set id = rowid where id is null;
+ CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);
+ INSERT INTO recent_fandoms(fandom, seq_num) SELECT 'base', 0 WHERE NOT EXISTS(SELECT 1 FROM fandom WHERE fandom = 'base');

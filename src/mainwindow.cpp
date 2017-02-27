@@ -24,7 +24,7 @@
 #include "genericeventfilter.h"
 #include "include/pagegetter.h"
 #include <algorithm>
-
+#include "include/init_database.h"
 
 bool TagEditorHider(QObject* /*obj*/, QEvent *event, QWidget* widget)
 {
@@ -157,6 +157,11 @@ MainWindow::MainWindow(QWidget *parent) :
     SetupFanficTable();
     //ui->tvFanfics->hide();
     IntiConnections();
+    database::RebaseFandoms();
+    recentFandomsModel = new QStringListModel;
+    recentFandomsModel->setStringList(database::FetchRecentFandoms());
+    ui->lvTrackedFandoms->setModel(recentFandomsModel);
+    connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
 }
 
 
@@ -289,6 +294,7 @@ void MainWindow::SetupFanficTable()
     qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
     qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
     //tagModel = new QStringListModel(tagList);
+
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
     //qwFics->rootContext()->setContextProperty("ficModel", new QStringListModel(QStringList() << "Naruto"));
     QUrl source("qrc:/qml/ficview.qml");
@@ -756,8 +762,11 @@ void MainWindow::LoadData()
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
     else if(ui->rbCrossovers->isChecked())
         queryString+=QString(" and  fandom like '%%1 Crossover%'").arg(ui->cbNormals->currentText());
-
-
+    database::PushFandom(ui->cbNormals->currentText().trimmed());
+    //ui->cbNormals->blockSignals(true);
+    recentFandomsModel->setStringList(database::FetchRecentFandoms());
+    ui->lvTrackedFandoms->setModel(recentFandomsModel);
+    //ui->cbNormals->blockSignals(false);
     for(auto tag : ui->wdgTagsPlaceholder->GetSelectedTags())
         tags.push_back(WrapTag(tag) + "|");
 
@@ -1730,6 +1739,16 @@ void MainWindow::on_pbExpandMinusWords_clicked()
 {
     currentExpandedEdit = ui->leNotContainsWords;
     CallExpandedWidget();
+}
+
+void MainWindow::OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous)
+{
+    //ui->lvTrackedFandoms->blockSignals(true);
+    ui->cbNormals->setCurrentText(current.data().toString());
+    //on_pbLoadDatabase_clicked();
+    //ui->lvTrackedFandoms->selectionModel()->select(recentFandomsModel->index(0,0),QItemSelectionModel::SelectCurrent);
+    //ui->lvTrackedFandoms->blockSignals(false);
+    //selectionTimer.singleShot(100, [&](){ui->lvTrackedFandoms->selectionModel()->clearSelection();});
 }
 
 //void MainWindow::OnAcceptedExpandedWidget(QString)

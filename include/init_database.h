@@ -4,4 +4,7 @@ namespace database{
     bool ReadDbFile();
     bool ReindexTable(QString table);
     void SetFandomTracked(QString fandom, bool crossover, bool);
+    void PushFandom(QString);
+    void RebaseFandoms();
+    QStringList FetchRecentFandoms();
 }

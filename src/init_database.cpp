@@ -60,3 +60,62 @@ void database::SetFandomTracked(QString fandom, bool crossover, bool tracked)
     q1.prepare(qsl);
     q1.exec();
 }
+
+void database::PushFandom(QString fandom)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QString upsert1 ("UPDATE recent_fandoms SET seq_num= (select max(seq_num) +1 from  recent_fandoms ) WHERE fandom = '%1'; ");
+    QString upsert2 ("INSERT INTO recent_fandoms(fandom, seq_num) select '%1',  (select max(seq_num)+1 from recent_fandoms) WHERE changes() = 0;");
+    QSqlQuery q1(db);
+    upsert1 = upsert1.arg(fandom);
+    q1.prepare(upsert1);
+    q1.exec();
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    QSqlQuery q2(db);
+    upsert2 = upsert2.arg(fandom);
+    q2.prepare(upsert2);
+    q2.exec();
+    if(q2.lastError().isValid())
+    {
+        qDebug() << q2.lastError();
+        qDebug() << q2.lastQuery();
+    }
+}
+
+void database::RebaseFandoms()
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = "UPDATE recent_fandoms SET seq_num = seq_num - (select min(seq_num) from recent_fandoms where fandom is not 'base') where fandom is not 'base'";
+    q1.prepare(qsl);
+    q1.exec();
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+}
+
+QStringList database::FetchRecentFandoms()
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = "select fandom from recent_fandoms where fandom is not 'base' order by seq_num desc";
+    q1.prepare(qsl);
+    q1.exec();
+    QStringList result;
+    while(q1.next())
+    {
+        result.push_back(q1.value(0).toString());
+    }
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    return result;
+}

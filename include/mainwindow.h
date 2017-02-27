@@ -173,6 +173,7 @@ private:
     bool ignoreUpdateDate = false;
     QStringList tagList;
     QStringListModel* tagModel;
+    QStringListModel* recentFandomsModel;
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
@@ -184,6 +185,7 @@ private:
     QHash<QString, QList<int>> randomIdLists;
     QDialog* expanderWidget = nullptr;
     QTextEdit* edtExpander = new QTextEdit;
+    QTimer selectionTimer;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
@@ -214,6 +216,8 @@ private slots:
     void on_pbExpandMinusGenre_clicked();
     void on_pbExpandPlusWords_clicked();
     void on_pbExpandMinusWords_clicked();
+    void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
+    //currentChanged(const QModelIndex &current, const QModelIndex &previous);
     //void OnAcceptedExpandedWidget(QString);
 };
 
