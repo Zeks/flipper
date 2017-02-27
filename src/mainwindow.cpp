@@ -460,6 +460,7 @@ void MainWindow::ProcessPage(QString str)
     {
         ui->edtResults->insertHtml("<span> No data found on the page.<br></span>");
         ui->edtResults->insertHtml("<span> \nFinished loading data <br></span>");
+        nextUrl = "";
         return;
     }
 
@@ -763,7 +764,7 @@ void MainWindow::LoadData()
     if(ui->rbNormal->isChecked())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
     else if(ui->rbCrossovers->isChecked())
-        queryString+=QString(" and  fandom like '%%1 Crossover%'").arg(ui->cbNormals->currentText());
+        queryString+=QString(" and  fandom like '%%1%' and fandom like '%CROSSOVER%'").arg(ui->cbNormals->currentText());
     database::PushFandom(ui->cbNormals->currentText().trimmed());
     //ui->cbNormals->blockSignals(true);
     recentFandomsModel->setStringList(database::FetchRecentFandoms());
@@ -1004,10 +1005,13 @@ QStringList MainWindow::GetCrossoverListFromDB()
     return result;
 }
 
-QString MainWindow::GetCrossoverUrl(QString)
+QString MainWindow::GetCrossoverUrl(QString fandom, bool ignoreTrackingState)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("Select crossover_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbNormals->currentText());
+    //QString qs = QString("Select crossover_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbNormals->currentText());
+    QString qs = QString("Select crossover_url from fandoms where fandom = '%1' ").arg(fandom);
+    if(!ignoreTrackingState)
+        qs+=" and (tracked = 1 or tracked_crossovers = 1)";
     QSqlQuery q(qs, db);
     q.next();
     QString rebindName = q.value(0).toString();
@@ -1026,10 +1030,12 @@ QString MainWindow::GetCrossoverUrl(QString)
     return result;
 }
 
-QString MainWindow::GetNormalUrl(QString fandom)
+QString MainWindow::GetNormalUrl(QString fandom, bool ignoreTrackingState)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("Select normal_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(fandom);
+    QString qs = QString("Select normal_url from fandoms where fandom = '%1' ").arg(fandom);
+    if(!ignoreTrackingState)
+        qs+=" and (tracked = 1 or tracked_crossovers = 1)";
     //qDebug() << qs;
     QSqlQuery q(qs, db);
     q.next();
@@ -1346,12 +1352,12 @@ void MainWindow::HideCurrentID()
     ui->edtResults->setTextCursor(cursor);
 }
 
-QString MainWindow::GetCurrentFilterUrl(QString selectedFandom, bool crossoverState)
+QString MainWindow::GetCurrentFilterUrl(QString selectedFandom, bool crossoverState, bool ignoreTrackingState)
 {
     QString url;
     if(crossoverState)
     {
-        url = GetCrossoverUrl(selectedFandom);
+        url = GetCrossoverUrl(selectedFandom,ignoreTrackingState);
         lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVER");
         isCrossover = true;
         currentFandom = selectedFandom;
@@ -1360,7 +1366,7 @@ QString MainWindow::GetCurrentFilterUrl(QString selectedFandom, bool crossoverSt
     {
 
         isCrossover = false;
-        url = GetNormalUrl(selectedFandom);
+        url = GetNormalUrl(selectedFandom,ignoreTrackingState);
         lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom);
         currentFandom = selectedFandom;
 
@@ -1416,7 +1422,7 @@ void MainWindow::ReadSettings()
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 
     ui->cbMaxWordCount->setCurrentText(settings.value("Settings/maxWordCount", "").toString());
@@ -1615,7 +1621,7 @@ void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 
 void MainWindow::on_pbCrawl_clicked()
 {
-    currentFilterUrl = GetCurrentFilterUrl(ui->cbNormals->currentText(), ui->rbCrossovers->isChecked());
+    currentFilterUrl = GetCurrentFilterUrl(ui->cbNormals->currentText(), ui->rbCrossovers->isChecked(), true);
     pageCounter = 0;
     ui->edtResults->clear();
     processedCount = 0;
@@ -1755,7 +1761,7 @@ void MainWindow::OnNewSelectionInRecentList(const QModelIndex &current, const QM
 {
     ui->cbNormals->setCurrentText(current.data().toString());
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 }
 
@@ -1792,20 +1798,20 @@ void MainWindow::CallExpandedWidget()
 
 void MainWindow::on_chkTrackedFandom_toggled(bool checked)
 {
-    database::SetFandomTracked(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked(), checked);
+    database::SetFandomTracked(ui->cbSectionTypes->currentText().trimmed(), ui->cbNormals->currentText(),ui->rbCrossovers->isChecked(), checked);
 }
 
 void MainWindow::on_rbNormal_clicked()
 {
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 }
 
 void MainWindow::on_rbCrossovers_clicked()
 {
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 }
 

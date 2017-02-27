@@ -54,13 +54,13 @@ bool database::ReindexTable(QString table)
     return true;
 }
 
-void database::SetFandomTracked(QString fandom, bool crossover, bool tracked)
+void database::SetFandomTracked(QString section, QString fandom, bool crossover, bool tracked)
 {
     QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
     QString trackedPart = crossover ? "_crossovers" : "";
     QSqlQuery q1(db);
-    QString qsl = " UPDATE fandoms SET tracked%1 = %2 where fandom = '%3' ";
-    qsl = qsl.arg(trackedPart).arg(QString(tracked ? "1" : "0")).arg(fandom);
+    QString qsl = " UPDATE fandoms SET tracked%1 = %2 where fandom = '%3' and section = '%4' ";
+    qsl = qsl.arg(trackedPart).arg(QString(tracked ? "1" : "0")).arg(fandom).arg(section);
     q1.prepare(qsl);
     q1.exec();
     if(q1.lastError().isValid())
@@ -129,13 +129,13 @@ QStringList database::FetchRecentFandoms()
     return result;
 }
 
-bool database::FetchTrackStateForFandom(QString fandom, bool crossover)
+bool database::FetchTrackStateForFandom(QString section, QString fandom, bool crossover)
 {
     QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
     QString trackedPart = crossover ? "_crossovers" : "";
     QSqlQuery q1(db);
-    QString qsl = " select tracked%1 from fandoms where fandom = '%2' ";
-    qsl = qsl.arg(trackedPart).arg(fandom);
+    QString qsl = " select tracked%1 from fandoms where fandom = '%2' and section = '%3'";
+    qsl = qsl.arg(trackedPart).arg(fandom).arg(section);
     q1.prepare(qsl);
     q1.exec();
     q1.next();
