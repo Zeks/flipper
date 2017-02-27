@@ -29,7 +29,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_9">
         <item row="0" column="0">
-         <widget class="QSplitter" name="splitter">
+         <widget class="QSplitter" name="spMain">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -85,6 +85,9 @@
             </item>
             <item row="14" column="1" colspan="3">
              <widget class="QPushButton" name="pbInit">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
                 <horstretch>0</horstretch>
@@ -130,7 +133,7 @@
              </widget>
             </item>
             <item row="8" column="1" colspan="3">
-             <widget class="QComboBox" name="comboBox">
+             <widget class="QComboBox" name="cbSortMode">
               <item>
                <property name="text">
                 <string>Wordcount</string>
@@ -250,9 +253,12 @@
              </widget>
             </item>
             <item row="6" column="0">
-             <widget class="QCheckBox" name="chkFaveLimitAactivated">
+             <widget class="QCheckBox" name="chkFaveLimitActivated">
               <property name="text">
                <string>MinFaves</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -387,20 +393,6 @@
                        </property>
                       </widget>
                      </item>
-                     <item row="1" column="0">
-                      <widget class="QCheckBox" name="chkNormalFics">
-                       <property name="text">
-                        <string>Normal</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="1" colspan="2">
-                      <widget class="QCheckBox" name="chkCrossoverFics">
-                       <property name="text">
-                        <string>Crossovers</string>
-                       </property>
-                      </widget>
-                     </item>
                      <item row="1" column="3">
                       <spacer name="horizontalSpacer_2">
                        <property name="orientation">
@@ -455,24 +447,32 @@
                        </property>
                       </widget>
                      </item>
+                     <item row="1" column="0">
+                      <widget class="QRadioButton" name="rbNormal">
+                       <property name="text">
+                        <string>Normal</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                       <attribute name="buttonGroup">
+                        <string notr="true">buttonGroup</string>
+                       </attribute>
+                      </widget>
+                     </item>
+                     <item row="1" column="1">
+                      <widget class="QRadioButton" name="rbCrossovers">
+                       <property name="text">
+                        <string>Crossovers</string>
+                       </property>
+                       <attribute name="buttonGroup">
+                        <string notr="true">buttonGroup</string>
+                       </attribute>
+                      </widget>
+                     </item>
                     </layout>
                    </item>
                   </layout>
-                  <zorder>lvTrackedFandoms</zorder>
-                  <zorder>cbNormals</zorder>
-                  <zorder>cbSectionTypes</zorder>
-                  <zorder>pbWipeFandom</zorder>
-                  <zorder>chkNormalFics</zorder>
-                  <zorder>chkCrossoverFics</zorder>
-                  <zorder>horizontalSpacer_2</zorder>
-                  <zorder>cbSectionTypes</zorder>
-                  <zorder>lvTrackedFandoms</zorder>
-                  <zorder>cbNormals</zorder>
-                  <zorder>cbSectionTypes</zorder>
-                  <zorder>pbWipeFandom</zorder>
-                  <zorder>chkNormalFics</zorder>
-                  <zorder>chkCrossoverFics</zorder>
-                  <zorder>horizontalSpacer_2</zorder>
                  </widget>
                  <widget class="QWidget" name="tab_7">
                   <attribute name="title">
@@ -783,7 +783,10 @@
              </widget>
             </item>
             <item row="11" column="1" colspan="3">
-             <widget class="QComboBox" name="comboBox_2">
+             <widget class="QComboBox" name="cbCustomFilters">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <item>
                <property name="text">
                 <string>Longest Running</string>
@@ -842,57 +845,36 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="">
-           <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
-             <widget class="QWidget" name="wdgFicviewPlaceholder" native="true">
-              <property name="minimumSize">
-               <size>
-                <width>100</width>
-                <height>100</height>
-               </size>
-              </property>
-              <zorder>edtResults</zorder>
-              <zorder>edtResults</zorder>
-             </widget>
-            </item>
-            <item>
-             <widget class="QTextBrowser" name="edtResults">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="baseSize">
-               <size>
-                <width>0</width>
-                <height>50</height>
-               </size>
-              </property>
-             </widget>
-            </item>
-           </layout>
+          <widget class="QSplitter" name="spDebug">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <widget class="QWidget" name="wdgFicviewPlaceholder" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>100</height>
+             </size>
+            </property>
+           </widget>
+           <widget class="QTextBrowser" name="edtResults">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="baseSize">
+             <size>
+              <width>0</width>
+              <height>50</height>
+             </size>
+            </property>
+           </widget>
           </widget>
          </widget>
         </item>
        </layout>
-       <zorder>layoutWidget</zorder>
-       <zorder>edtResults</zorder>
-       <zorder>wdgFicviewPlaceholder</zorder>
-       <zorder>label_4</zorder>
-       <zorder>leContainsGenre</zorder>
-       <zorder>label_5</zorder>
-       <zorder>leNotContainsGenre</zorder>
-       <zorder>leNotContainsWords</zorder>
-       <zorder>leContainsWords</zorder>
-       <zorder>label_9</zorder>
-       <zorder>label_10</zorder>
-       <zorder>comboBox_2</zorder>
-       <zorder>chkCustomFilter</zorder>
-       <zorder>comboBox_2</zorder>
-       <zorder>chkCustomFilter</zorder>
-       <zorder>wdgTagsPlaceholder</zorder>
       </widget>
      </widget>
     </item>

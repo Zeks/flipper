@@ -82,6 +82,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void Init();
+    void IntiConnections();
     void timerEvent(QTimerEvent *) override;
 
     bool CheckSectionAvailability();
@@ -201,9 +202,11 @@ private slots:
     void OnLinkClicked(const QUrl &);
 
     void OnTagToggled(int, QString, bool);
-
+    void OnCustomFilterClicked();
 
     void on_chkRandomizeSelection_clicked(bool checked);
+    void on_cbCustomFilters_currentTextChanged(const QString &arg1);
+    void on_cbSortMode_currentTextChanged(const QString &arg1);
 };
 
 #endif // MAINWINDOW_H

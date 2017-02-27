@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 
     database::ReadDbFile();
     database::ReindexTable("tags");
-//    MainWindow w;
-//    w.show();
-//    w.CheckSectionAvailability();
+    MainWindow w;
+    w.show();
+    w.CheckSectionAvailability();
 
 
     return a.exec();

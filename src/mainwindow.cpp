@@ -80,7 +80,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->buttonGroup, SIGNAL(buttonClicked(int)), this, SLOT(OnCheckboxFilter(int)));
 
     ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
-    ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
+    //ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 
     pbMain = new QProgressBar;
     pbMain->setMaximumWidth(200);
@@ -155,7 +155,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setAttribute(Qt::WA_QuitOnClose);
     ReadSettings();
     SetupFanficTable();
-    ui->tvFanfics->hide();
+    //ui->tvFanfics->hide();
+    IntiConnections();
 }
 
 
@@ -278,7 +279,7 @@ void MainWindow::SetupFanficTable()
 
     //types_table->setModel();
     holder->SetData(fanfics);
-    ui->tvFanfics->setModel(typetableModel);
+    //ui->tvFanfics->setModel(typetableModel);
 
     //ui->wdgFicviewPlaceholder->resize(400,400);
     qwFics = new QQuickWidget();
@@ -319,7 +320,7 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/minWordCount", ui->cbMinWordCount->currentText());
     settings.setValue("Settings/maxWordCount", ui->cbMaxWordCount->currentText());
     settings.setValue("Settings/normals", ui->cbNormals->currentText());
-    settings.setValue("Settings/crossovers", ui->cbCrossovers->currentText());
+    //settings.setValue("Settings/crossovers", ui->cbCrossovers->currentText());
     settings.setValue("Settings/plusGenre", ui->leContainsGenre->text());
     settings.setValue("Settings/minusGenre", ui->leNotContainsGenre->text());
     settings.setValue("Settings/plusWords", ui->leContainsWords->text());
@@ -346,7 +347,13 @@ void MainWindow::Init()
     UpdateFandomList(crossoverManager, [](Fandom f){return f.crossoverUrl;});
     InsertFandomData(names);
     ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
-    ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
+
+    //ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
+}
+
+void MainWindow::IntiConnections()
+{
+    connect(ui->chkCustomFilter, &QCheckBox::clicked, this, &MainWindow::OnCustomFilterClicked);
 }
 
 void MainWindow::RequestPage(QString page)
@@ -397,7 +404,7 @@ void MainWindow::ProcessPage(QString str)
             break;
         currentPosition = section.start;
 
-        section.fandom = ui->cbCrossovers->currentText().isEmpty() ? ui->cbNormals->currentText() : ui->cbCrossovers->currentText() + " CROSSOVER";
+        section.fandom = ui->rbNormal->isChecked() ? ui->cbNormals->currentText() : ui->cbNormals->currentText() + " CROSSOVER";
         GetUrl(section, currentPosition, str);
         GetTitle(section, currentPosition, str);
         GetAuthor(section, currentPosition, str);
@@ -634,7 +641,7 @@ void MainWindow::LoadData()
 
     QSqlDatabase db = QSqlDatabase::database(dbName);
     QString queryString = "select ID, ";
-    if(ui->chkPopNew->isChecked())
+    if(ui->cbCustomFilters->currentText() == "New From Popular")
     queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
     queryString+=" f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
@@ -642,7 +649,7 @@ void MainWindow::LoadData()
     if(ui->cbMaxWordCount->currentText().toInt() > 0)
         queryString += " and wordcount < :maxwordcount ";
 
-    if(ui->sbMinimumFavourites->value() > 0)
+    if(ui->chkFaveLimitActivated->isChecked() && ui->sbMinimumFavourites->value() > 0)
         queryString += " and favourites > :favourites ";
 
     if(!ui->leContainsGenre->text().isEmpty())
@@ -671,43 +678,44 @@ void MainWindow::LoadData()
 
 
     QString diffField;
-    if(ui->chkWordcount->isChecked())
+    if(ui->cbSortMode->currentText() == "Wordcount")
         diffField = " WORDCOUNT DESC";
-    else if(ui->chkFavourites->isChecked())
+    else if(ui->cbSortMode->currentText() == "Favourites")
         diffField = " FAVOURITES DESC";
-    else if(ui->chkFavToLength->isChecked())
-        diffField = " wordcount/favourites asc";
-    else
+    else if(ui->cbSortMode->currentText() == "Fav Rate")
         diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
+//        diffField = " wordcount/favourites asc";
+//    else
+
 
 
 
     bool tagsMatter = true;
-    if(ui->chkLongestRunning->isChecked())
+    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Longest Running")
     {
         queryString =  "select ID, julianday(f.updated) - julianday(f.published) as datediff, f.* from fanfics f where 1 = 1 and datediff > 0  ";
         diffField = "datediff desc";
         tagsMatter = false;
     }
-    if(ui->chkBehemothChapters->isChecked())
+    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Behemoth Chapters")
     {
         queryString = "select ID, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
         diffField = "datediff desc";
         tagsMatter = false;
     }
-    if(ui->chkMinigun->isChecked())
+    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Splinched")
     {
         queryString = "select ID, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
         diffField = "datediff asc";
         tagsMatter = false;
     }
-    if(ui->chkPokemon->isChecked())
+    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Catch'Em'All")
     {
         queryString = "select ID, f.* from fanfics f where 1 = 1 and length(characters) > 40 ";
         diffField = "length(characters) desc";
         tagsMatter = false;
     }
-    if(ui->chkDumped->isChecked())
+    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Dumped")
     {
         queryString+=QString(" and abs(cast("
                              "("
@@ -719,9 +727,7 @@ void MainWindow::LoadData()
     }
 
 
-
-
-    if(ui->chkTLDR->isChecked())
+    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "One Liners")
     {
         queryString = "select ID, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'"
                       "and summary not like '%revision%'"
@@ -746,10 +752,10 @@ void MainWindow::LoadData()
                              " ) AS real "
                              " )/60/60/24 >-365");
 
-    if(!ui->cbNormals->currentText().isEmpty())
+    if(ui->rbNormal->isChecked())
         queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
-    else if(!ui->cbCrossovers->currentText().isEmpty())
-        queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbCrossovers->currentText());
+    else if(ui->rbCrossovers->isChecked())
+        queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
 
 
     for(auto tag : ui->wdgTagsPlaceholder->GetSelectedTags())
@@ -765,12 +771,12 @@ void MainWindow::LoadData()
         else
             queryString+=" and tags = ' none ' ";
     }
-    if(ui->chkFavRate->isChecked())
+    if(ui->cbSortMode->currentText() == "Fav Rate")
     {
         queryString+= " and published <> updated and published > date('now', '-1 years') and updated > date('now', '-60 days') ";
     }
 
-    if(ui->chkPopNew->isChecked())
+    if(ui->cbSortMode->currentText() == "New From Popular")
     {
         queryString+="and published > date('now', '-1 years') and updated > date('now', '-60 days')";
         diffField = " sumfaves desc";
@@ -799,12 +805,12 @@ void MainWindow::LoadData()
         return q;
     };
 
-
-    if(ui->chkRandomizeSelection->isChecked() && ui->sbMaxFicCount->value() > 0 && ui->sbMaxFicCount->value() < 51)
+    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
+    if(ui->chkRandomizeSelection->isChecked() && maxFicCountValue > 0 && maxFicCountValue < 51)
     {
         PopulateIdList(bindQuery, queryString);
     }
-    auto q = bindQuery(AddIdList(queryString, ui->sbMaxFicCount->value()));
+    auto q = bindQuery(AddIdList(queryString, maxFicCountValue));
     q.exec();
     qDebug() << q.lastQuery();
     if(q.lastError().isValid())
@@ -990,7 +996,7 @@ QStringList MainWindow::GetCrossoverListFromDB()
 QString MainWindow::GetCrossoverUrl(QString)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("Select crossover_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbCrossovers->currentText());
+    QString qs = QString("Select crossover_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbNormals->currentText());
     QSqlQuery q(qs, db);
     q.next();
     QString rebindName = q.value(0).toString();
@@ -1186,8 +1192,9 @@ QString MainWindow::AddIdList(QString query, int count)
 QString MainWindow::CreateLimitQueryPart()
 {
     QString result;
-    if(ui->sbMaxFicCount->value() > 0 && ui->sbMaxFicCount->value() < 51)
-        result+= QString(" LIMIT %1 ").arg(QString::number(ui->sbMaxFicCount->value()));
+    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
+    if(maxFicCountValue > 0 && maxFicCountValue < 51)
+        result+= QString(" LIMIT %1 ").arg(QString::number(maxFicCountValue));
     return result;
 }
 
@@ -1328,12 +1335,12 @@ void MainWindow::HideCurrentID()
 QString MainWindow::GetCurrentFilterUrl()
 {
     QString url;
-    if(!ui->cbCrossovers->currentText().isEmpty())
+    if(ui->rbCrossovers->isChecked())
     {
-        url = GetCrossoverUrl(ui->cbCrossovers->currentText());
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbCrossovers->currentText() << "CROSSOVERS");
+        url = GetCrossoverUrl(ui->cbNormals->currentText());
+        lastUpdated = GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText() << "CROSSOVERS");
         isCrossover = true;
-        currentFandom = ui->cbCrossovers->currentText();
+        currentFandom = ui->cbNormals->currentText();
     }
     else
     {
@@ -1348,9 +1355,9 @@ QString MainWindow::GetCurrentFilterUrl()
 void MainWindow::WipeSelectedFandom(bool)
 {
     QString fandom;
-    if(!ui->cbCrossovers->currentText().isEmpty())
+    if(ui->rbCrossovers->isChecked())
     {
-        fandom = ui->cbCrossovers->currentText();
+        fandom = ui->cbNormals->currentText();
     }
     else
     {
@@ -1389,7 +1396,7 @@ void MainWindow::ReadSettings()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    ui->cbCrossovers->setCurrentText(settings.value("Settings/crossovers", "").toString());
+    //ui->cbCrossovers->setCurrentText(settings.value("Settings/crossovers", "").toString());
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
     ui->cbMaxWordCount->setCurrentText(settings.value("Settings/maxWordCount", "").toString());
     ui->cbMinWordCount->setCurrentText(settings.value("Settings/minWordCount", 100000).toString());
@@ -1593,23 +1600,14 @@ void MainWindow::on_pbCrawl_clicked()
     processedCount = 0;
     ignoreUpdateDate = false;
     nextUrl = QString();
-    if((ui->cbCrossovers->currentText().isEmpty()
-        && ui->cbNormals->currentText().isEmpty())
-            ||(!ui->cbCrossovers->currentText().isEmpty()
-               && !ui->cbNormals->currentText().isEmpty())
-            )
-    {
-        QMessageBox::warning(0, "warning!", "Please, select normal OR crossover category");
-        return;
-    }
     QString url = currentFilterUrl;
 
     //SkipPages(ui->leStartFromPage->text().toInt()-1);
-    if(ui->sbStartFrom->value() != 0)
-    {
-        url+="&p=" + QString::number(ui->sbStartFrom->value());
-        ignoreUpdateDate = true;
-    }
+//    if(ui->sbStartFrom->value() != 0)
+//    {
+//        url+="&p=" + QString::number(ui->sbStartFrom->value());
+//        ignoreUpdateDate = true;
+//    }
     RequestPage(url);
 }
 
@@ -1630,6 +1628,29 @@ void MainWindow::OnTagToggled(int id, QString tag, bool checked)
         UnsetTag(id, tag);
 }
 
+void MainWindow::OnCustomFilterClicked()
+{
+    if(ui->chkCustomFilter->isChecked())
+    {
+        ui->cbCustomFilters->setEnabled(true);
+        QPalette p = ui->cbCustomFilters->palette();
+        //p.setColor(QPalette::Button, QColor("DarkGreen"));
+        //p.setColor(QPalette::Active, QPalette::Button, Qt::white);
+        //p.setColor(QPalette::Inactive, QPalette::Button, Qt::white);
+        //ui->cbCustomFilters->setStyleSheet("QComboBox{ border: 1px solid green;}");
+        ui->chkCustomFilter->setStyleSheet("QCheckBox {border: none; color: DarkGreen;}");
+        ui->cbCustomFilters->setPalette(p);
+    }
+    else
+    {
+        ui->cbCustomFilters->setEnabled(false);
+        QPalette p = ui->cbSortMode->palette();
+        ui->cbCustomFilters->setPalette(p);
+        ui->chkCustomFilter->setStyleSheet("");
+    }
+    on_pbLoadDatabase_clicked();
+}
+
 
 void MainWindow::OnShowContextMenu(QPoint p)
 {
@@ -1639,7 +1660,7 @@ void MainWindow::OnShowContextMenu(QPoint p)
 void MainWindow::OnSectionChanged(QString)
 {
     ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
-    ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
+    //ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 }
 
 void MainWindow::on_pbLoadDatabase_clicked()
@@ -1668,6 +1689,17 @@ void MainWindow::OnCheckboxFilter(int)
 
 void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
-    if(checked && ui->sbMaxFicCount->value() < 1 || ui->sbMaxFicCount->value() >50)
+    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
+    if(checked && maxFicCountValue < 1 || maxFicCountValue >50)
         ui->sbMaxFicCount->setValue(10);
+}
+
+void MainWindow::on_cbCustomFilters_currentTextChanged(const QString &arg1)
+{
+    on_pbLoadDatabase_clicked();
+}
+
+void MainWindow::on_cbSortMode_currentTextChanged(const QString &arg1)
+{
+    on_pbLoadDatabase_clicked();
 }
