@@ -396,7 +396,7 @@ void MainWindow::RequestPage(QString page)
             pager->SavePageToDB(result);
             QThread::msleep(1000);
         }
-        pbMain->setValue(pbMain->value()+10);
+        pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
     }while(!nextUrl.isEmpty());
     pbMain->setValue(0);
     pbMain->hide();
@@ -1679,7 +1679,6 @@ void MainWindow::on_pbCrawl_clicked()
 //    }
     RequestPage(url);
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
-
     database::PushFandom(ui->cbNormals->currentText().trimmed());
     //ui->cbNormals->blockSignals(true);
     recentFandomsModel->setStringList(database::FetchRecentFandoms());

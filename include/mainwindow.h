@@ -163,8 +163,6 @@ private:
     QString dbName = "CrawlerDB.sqlite";
     QDateTime lastUpdated;
     QHash<QString, Fandom> sections;
-//    QHash<QString, QString> nameOfFandomSectionToLink;
-//    QHash<QString, QString> nameOfCrossoverSectionToLink;
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
