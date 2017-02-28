@@ -1,0 +1,19 @@
+для 
+//div//div//div[@class = 'z-indent z-padtop']
+
+//div/self::element()[@class = 'z-indent z-padtop']
+
+
+//чисто описание
+//div[@class = 'z-indent z-padtop']/text() 
+
+//чисто статистика
+//div[@class = 'z-indent z-padtop']//div/text() 
+
+// имена авторов
+//div[@class = 'z-list zhover zpointer']/a[not(@class = 'stitle') and not(@class = 'reviews') and not(span)]
+
+//ссылки
+//div[@class = 'z-list zhover zpointer']/a[position() = 1]/@href
+
+

@@ -5,7 +5,7 @@ import "../../BaseDefines.qbs" as Library
 
 Library{
 name: "UniversalModels"
-type:"dynamiclibrary"
+type:"staticlibrary"
 qbsSearchPaths: sourceDirectory + "/../../modules"
 Depends { name: "conditionals" }
 Depends { name: "Qt.core"}

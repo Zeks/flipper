@@ -10,7 +10,7 @@ TagWidget::TagWidget(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->edtTags->setOpenLinks(false);
-    connect(ui->edtTags, &QTextBrowser::anchorClicked, this, OnTagClicked);
+    connect(ui->edtTags, &QTextBrowser::anchorClicked, this, &TagWidget::OnTagClicked);
     ui->edtTags->setFont(QFont("Verdana", 12));
 
 

@@ -13,6 +13,7 @@
 #include <QHash>
 #include <QEventLoop>
 #include <QSignalMapper>
+#include <QSqlQuery>
 #include <QProgressBar>
 #include <QLabel>
 #include <QTextBrowser>
@@ -29,7 +30,7 @@ class QQuickView;
 class QStringListModel;
 struct Section
 {
-    int rowid = -1;
+    int ID = -1;
     int start = 0;
     int end = 0;
 
@@ -81,6 +82,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void Init();
+    void IntiConnections();
     void timerEvent(QTimerEvent *) override;
 
     bool CheckSectionAvailability();
@@ -95,6 +97,7 @@ private:
     TableDataListHolder<Section>* holder = nullptr;
     QList<Section> fanfics;
     QSortFilterProxyModel* sortModel;
+    int processedFics = 0;
 
     bool event(QEvent * e);
     void ReadSettings();
@@ -104,7 +107,8 @@ private:
 
     QString GetFandom(QString text);
     Section GetSection( QString text, int start);
-    QString GetCurrentFilterUrl();
+    //QString GetCurrentFilterUrl();
+    QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
     void GetAuthor(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
     void GetGenre(Section& , int& startfrom, QString text);
@@ -135,8 +139,8 @@ private:
     QStringList GetFandomListFromDB();
     QStringList GetCrossoverListFromDB();
 
-    QString GetCrossoverUrl(QString);
-    QString GetNormalUrl(QString);
+    QStringList GetCrossoverUrl(QString, bool ignoreTrackingState = false);
+    QStringList GetNormalUrl(QString, bool ignoreTrackingState = false);
 
     void OpenTagWidget(QPoint, QString url);
     void ReadTags();
@@ -145,6 +149,7 @@ private:
     void UnsetTag(int id, QString tag);
 
     void ToggleTag();
+    void CallExpandedWidget();
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -158,20 +163,30 @@ private:
     QString dbName = "CrawlerDB.sqlite";
     QDateTime lastUpdated;
     QHash<QString, Fandom> sections;
-//    QHash<QString, QString> nameOfFandomSectionToLink;
-//    QHash<QString, QString> nameOfCrossoverSectionToLink;
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
     QNetworkAccessManager manager;
     QNetworkAccessManager fandomManager;
     QNetworkAccessManager crossoverManager;
-    QString currentFilterurl;
+    QStringList currentFilterUrls;
+    QString currentFilterUrl;
     bool ignoreUpdateDate = false;
     QStringList tagList;
     QStringListModel* tagModel;
+    QStringListModel* recentFandomsModel;
+    QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
+    QString currentFandom;
+    bool isCrossover = false;
+    void PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate = false);
+    QString AddIdList(QString query, int count);
+    QString CreateLimitQueryPart();
+    QHash<QString, QList<int>> randomIdLists;
+    QDialog* expanderWidget = nullptr;
+    QTextEdit* edtExpander = new QTextEdit;
+    QTimer selectionTimer;
 
 public slots:
     void OnNetworkReply(QNetworkReply*);
@@ -181,6 +196,7 @@ public slots:
     void OnTagAdd(QVariant tag, QVariant row);
     void OnTagRemove(QVariant tag, QVariant row);
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
+    void WipeSelectedFandom(bool);
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);
@@ -192,6 +208,23 @@ private slots:
     void OnLinkClicked(const QUrl &);
 
     void OnTagToggled(int, QString, bool);
+    void OnCustomFilterClicked();
+    void OnSectionReloadActivated();
+
+    void on_chkRandomizeSelection_clicked(bool checked);
+    void on_cbCustomFilters_currentTextChanged(const QString &arg1);
+    void on_cbSortMode_currentTextChanged(const QString &arg1);
+    void on_pbExpandPlusGenre_clicked();
+    void on_pbExpandMinusGenre_clicked();
+    void on_pbExpandPlusWords_clicked();
+    void on_pbExpandMinusWords_clicked();
+    void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
+    //currentChanged(const QModelIndex &current, const QModelIndex &previous);
+    //void OnAcceptedExpandedWidget(QString);
+    void on_chkTrackedFandom_toggled(bool checked);
+    void on_rbNormal_clicked();
+    void on_rbCrossovers_clicked();
+    void on_pbLoadTrackedFandoms_clicked();
 
 };
 
