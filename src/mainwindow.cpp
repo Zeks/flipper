@@ -54,6 +54,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowTitle("ffnet sane search engine");
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    if(settings.value("Settings/hideCache", true).toBool())
+        ui->chkCacheMode->setVisible(false);
     ReadTags();
     recentFandomsModel = new QStringListModel;
     connect(
@@ -342,6 +346,7 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/currentSortFilter", ui->cbSortMode->currentText());
     settings.setValue("Settings/currentCustomFilter", ui->cbCustomFilters->currentText());
     settings.setValue("Settings/customFilterEnabled", ui->chkCustomFilter->isChecked());
+    settings.setValue("Settings/lengthCutoff", ui->cbWordCutoff->currentText());
     //    QString temp;
     //    for(int size : ui->spMain->sizes())
     //        temp.push_back(QString::number(size) + " ");
@@ -379,6 +384,7 @@ void MainWindow::RequestPage(QString page)
     nextUrl = page;
     bool cacheMode = ui->chkCacheMode->isChecked();
     pbMain->setTextVisible(false);
+    pbMain->show();
     do
     {
         auto result = pager->GetPage(nextUrl, cacheMode);
@@ -1014,47 +1020,53 @@ QStringList MainWindow::GetCrossoverListFromDB()
     return result;
 }
 
-QString MainWindow::GetCrossoverUrl(QString fandom, bool ignoreTrackingState)
+QStringList MainWindow::GetCrossoverUrl(QString fandom, bool ignoreTrackingState)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
     //QString qs = QString("Select crossover_url from fandoms where section = '%1' and fandom = '%2'").arg(ui->cbSectionTypes->currentText()).arg(ui->cbNormals->currentText());
     QString qs = QString("Select crossover_url from fandoms where fandom = '%1' ").arg(fandom);
-    if(!ignoreTrackingState)
+    if(false)
         qs+=" and (tracked = 1 or tracked_crossovers = 1)";
     QSqlQuery q(qs, db);
-    q.next();
-    QString rebindName = q.value(0).toString();
-    QStringList temp = rebindName.split("/");
+    QStringList result;
+    while(q.next())
+    {
+        QString rebindName = q.value(0).toString();
+        QStringList temp = rebindName.split("/");
 
-    rebindName = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
-    QString lastPart = "/0/?&srt=1&lan=1&r=10&len=%1";
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    int lengthCutoff = settings.value("Settings/lengthCutoff",100).toInt();
-    lastPart=lastPart.arg(lengthCutoff);
-    QString result =  "https://www.fanfiction.net" + rebindName + lastPart;
-
-
+        rebindName = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
+        QString lastPart = "/0/?&srt=1&lan=1&r=10&len=%1";
+        QSettings settings("settings.ini", QSettings::IniFormat);
+        settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+        int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
+        lastPart=lastPart.arg(lengthCutoff);
+        QString resultString =  "https://www.fanfiction.net" + rebindName + lastPart;
+        result.push_back(resultString);
+    }
     qDebug() << result;
     return result;
 }
 
-QString MainWindow::GetNormalUrl(QString fandom, bool ignoreTrackingState)
+QStringList MainWindow::GetNormalUrl(QString fandom, bool ignoreTrackingState)
 {
     QSqlDatabase db = QSqlDatabase::database(dbName);
     QString qs = QString("Select normal_url from fandoms where fandom = '%1' ").arg(fandom);
-    if(!ignoreTrackingState)
+    if(false)
         qs+=" and (tracked = 1 or tracked_crossovers = 1)";
     //qDebug() << qs;
     QSqlQuery q(qs, db);
-    q.next();
+    QStringList result;
+    while(q.next())
+    {
     QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    int lengthCutoff = settings.value("Settings/lengthCutoff",100).toInt();
+    int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
     lastPart=lastPart.arg(lengthCutoff);
-    QString result = "https://www.fanfiction.net" + q.value(0).toString() + lastPart;
+    QString resultString = "https://www.fanfiction.net" + q.value(0).toString() + lastPart;
+    result.push_back(resultString);
     qDebug() << result;
+    }
     return result;
 }
 
@@ -1389,12 +1401,12 @@ void MainWindow::HideCurrentID()
     ui->edtResults->setTextCursor(cursor);
 }
 
-QString MainWindow::GetCurrentFilterUrl(QString selectedFandom, bool crossoverState, bool ignoreTrackingState)
+QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState)
 {
-    QString url;
+    QStringList urls;
     if(crossoverState)
     {
-        url = GetCrossoverUrl(selectedFandom,ignoreTrackingState);
+        urls = GetCrossoverUrl(selectedFandom,ignoreTrackingState);
         lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVER");
         isCrossover = true;
         currentFandom = selectedFandom;
@@ -1403,12 +1415,12 @@ QString MainWindow::GetCurrentFilterUrl(QString selectedFandom, bool crossoverSt
     {
 
         isCrossover = false;
-        url = GetNormalUrl(selectedFandom,ignoreTrackingState);
+        urls = GetNormalUrl(selectedFandom,ignoreTrackingState);
         lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom);
         currentFandom = selectedFandom;
 
     }
-    return url;
+    return urls;
 }
 
 void MainWindow::WipeSelectedFandom(bool)
@@ -1459,7 +1471,7 @@ void MainWindow::ReadSettings()
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 
     ui->cbMaxWordCount->setCurrentText(settings.value("Settings/maxWordCount", "").toString());
@@ -1482,6 +1494,7 @@ void MainWindow::ReadSettings()
     ui->chkCustomFilter->blockSignals(true);
     ui->cbSortMode->setCurrentText(settings.value("Settings/currentSortFilter", "Update Date").toString());
     ui->cbCustomFilters->setCurrentText(settings.value("Settings/currentSortFilter", "Longest Running").toString());
+    ui->cbWordCutoff->setCurrentText(settings.value("Settings/lengthCutoff", "100k Words").toString());
     ui->chkCustomFilter->setChecked(settings.value("Settings/customFilterEnabled", false).toBool());
     ui->cbSortMode->blockSignals(false);
     ui->cbCustomFilters->blockSignals(false);
@@ -1663,24 +1676,19 @@ void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 void MainWindow::on_pbCrawl_clicked()
 {
     processedFics = 0;
-    currentFilterUrl = GetCurrentFilterUrl(ui->cbNormals->currentText(), ui->rbCrossovers->isChecked(), true);
+    currentFilterUrls = GetCurrentFilterUrls(ui->cbNormals->currentText(), ui->rbCrossovers->isChecked(), true);
     pageCounter = 0;
     ui->edtResults->clear();
     processedCount = 0;
     ignoreUpdateDate = false;
     nextUrl = QString();
-    QString url = currentFilterUrl;
-
-    //SkipPages(ui->leStartFromPage->text().toInt()-1);
-//    if(ui->sbStartFrom->value() != 0)
-//    {
-//        url+="&p=" + QString::number(ui->sbStartFrom->value());
-//        ignoreUpdateDate = true;
-//    }
-    RequestPage(url);
+    for(QString url: currentFilterUrls)
+    {
+        currentFilterUrl = url;
+        RequestPage(url);
+    }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     database::PushFandom(ui->cbNormals->currentText().trimmed());
-    //ui->cbNormals->blockSignals(true);
     recentFandomsModel->setStringList(database::FetchRecentFandoms());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
 
@@ -1814,7 +1822,7 @@ void MainWindow::OnNewSelectionInRecentList(const QModelIndex &current, const QM
 {
     ui->cbNormals->setCurrentText(current.data().toString());
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 }
 
@@ -1851,20 +1859,20 @@ void MainWindow::CallExpandedWidget()
 
 void MainWindow::on_chkTrackedFandom_toggled(bool checked)
 {
-    database::SetFandomTracked(ui->cbSectionTypes->currentText().trimmed(), ui->cbNormals->currentText(),ui->rbCrossovers->isChecked(), checked);
+    database::SetFandomTracked( ui->cbNormals->currentText(),ui->rbCrossovers->isChecked(), checked);
 }
 
 void MainWindow::on_rbNormal_clicked()
 {
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 }
 
 void MainWindow::on_rbCrossovers_clicked()
 {
     ui->chkTrackedFandom->blockSignals(true);
-    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbSectionTypes->currentText(),ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
+    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(ui->cbNormals->currentText(),ui->rbCrossovers->isChecked()));
     ui->chkTrackedFandom->blockSignals(false);
 }
 
@@ -1873,25 +1881,31 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     processedFics = 0;
     for(QString fandom : database::FetchTrackedFandoms())
     {
-        currentFilterUrl = GetCurrentFilterUrl(fandom, false);
+        currentFilterUrls = GetCurrentFilterUrls(fandom, false);
         pageCounter = 0;
         ui->edtResults->clear();
         processedCount = 0;
         ignoreUpdateDate = false;
         nextUrl = QString();
-        QString url = currentFilterUrl;
-        RequestPage(url);
+        for(QString url: currentFilterUrls)
+        {
+            currentFilterUrl = url;
+            RequestPage(url);
+        }
     }
     for(QString fandom : database::FetchTrackedCrossovers())
     {
-        currentFilterUrl = GetCurrentFilterUrl(fandom, true);
+        currentFilterUrls = GetCurrentFilterUrls(fandom, true);
         pageCounter = 0;
         ui->edtResults->clear();
         processedCount = 0;
         ignoreUpdateDate = false;
         nextUrl = QString();
-        QString url = currentFilterUrl;
-        RequestPage(url);
+        for(QString url: currentFilterUrls)
+        {
+            currentFilterUrl = url;
+            RequestPage(url);
+        }
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     //ui->sb

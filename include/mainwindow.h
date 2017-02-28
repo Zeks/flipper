@@ -108,7 +108,7 @@ private:
     QString GetFandom(QString text);
     Section GetSection( QString text, int start);
     //QString GetCurrentFilterUrl();
-    QString GetCurrentFilterUrl(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
+    QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
     void GetAuthor(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
     void GetGenre(Section& , int& startfrom, QString text);
@@ -139,8 +139,8 @@ private:
     QStringList GetFandomListFromDB();
     QStringList GetCrossoverListFromDB();
 
-    QString GetCrossoverUrl(QString, bool ignoreTrackingState = false);
-    QString GetNormalUrl(QString, bool ignoreTrackingState = false);
+    QStringList GetCrossoverUrl(QString, bool ignoreTrackingState = false);
+    QStringList GetNormalUrl(QString, bool ignoreTrackingState = false);
 
     void OpenTagWidget(QPoint, QString url);
     void ReadTags();
@@ -169,6 +169,7 @@ private:
     QNetworkAccessManager manager;
     QNetworkAccessManager fandomManager;
     QNetworkAccessManager crossoverManager;
+    QStringList currentFilterUrls;
     QString currentFilterUrl;
     bool ignoreUpdateDate = false;
     QStringList tagList;
