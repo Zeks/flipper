@@ -25,6 +25,8 @@
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
 #include "qml_ficmodel.h"
 #include "include/section.h"
+#include "include/pagegetter.h"
+
 class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
@@ -62,7 +64,8 @@ private:
     bool event(QEvent * e);
     void ReadSettings();
 
-    void RequestPage(QString);
+    void RequestAndProcessPage(QString);
+    WebPage RequestPage(QString);
 
 
     QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
@@ -88,6 +91,7 @@ private:
     QString CreateURL(QString);
 
     void LoadData();
+    void LoadRecommendations(QString url);
     void LoadIntoDB(Section&);
 
     QString WrapTag(QString tag);
@@ -188,6 +192,7 @@ private slots:
     void on_rbCrossovers_clicked();
     void on_pbLoadTrackedFandoms_clicked();
 
+    void on_pbLoadPage_clicked();
 };
 
 #endif // MAINWINDOW_H

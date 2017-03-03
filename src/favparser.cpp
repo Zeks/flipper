@@ -9,6 +9,9 @@ void FavouriteStoryParser::ProcessPage(QString url, QString str)
     int currentPosition = 0;
     int counter = 0;
     QList<Section> sections;
+    Recommender recommender;
+    recommender.name = ExtractRecommdenderNameFromUrl(url);
+    recommender.url = url;
     while(true)
     {
 
@@ -137,7 +140,11 @@ void FavouriteStoryParser::GetCrossoverFandomList(Section & section, int &startf
     QRegExp rxStart("Crossover\\s-\\s");
     QRegExp rxEnd("\\s-\\sRated:");
 
+
     int indexStart = rxStart.indexIn(text, startfrom);
+    if(indexStart != -1 )
+        section.fandom += " CROSSOVER";
+
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
     section.fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed().replace("&", " ") + QString(" CROSSOVER");
@@ -184,4 +191,10 @@ Section FavouriteStoryParser::GetSection(QString text, int start)
         section.end = end;
     }
     return section;
+}
+
+QString FavouriteStoryParser::ExtractRecommdenderNameFromUrl(QString url)
+{
+    int pos = url.lastIndexOf("/");
+    return url.mid(pos);
 }

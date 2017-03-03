@@ -310,4 +310,104 @@ bool LoadIntoDB(Section & section)
     }
     return loaded;
 }
+
+bool LoadRecommendationIntoDB(const Recommender &recommender,  Section &section)
+{
+    // get recommender id from database if not write him
+    // try to update fic inside the database via usual Load
+    // find id of the fic in question
+    // insert if not exists recommender/ficid pair
+    LoadIntoDB(section);
+    int fic_id = GetFicIdByAuthorAndName(section.author, section.title);
+    //int rec_id = GetRecommenderId(recommender.url);
+    if(!WriteRecommendation(recommender, fic_id))
+        return false;
+    return true;
+}
+
+int GetFicIdByAuthorAndName(QString author, QString title)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = " select id from fanfics where author = :author and title = :title";
+    q1.prepare(qsl);
+    q1.bindValue(":author", author);
+    q1.bindValue(":title", title);
+    q1.exec();
+    int result;
+    while(q1.next())
+        result = q1.value(0).toInt();
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    return result;
+}
+
+bool WriteRecommendation(const Recommender &recommender, int fic_id)
+{
+    int recommender_id;
+    while(recommender_id = GetRecommenderId(recommender.url), recommender_id == -1)
+    {
+        WriteRecommender(recommender);
+    }
+    if(recommender_id < 0)
+        return false;
+
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = " insert into recommendations (recommender_id, fic_id) values( :recommender_id,:fic_id); ";
+    q1.prepare(qsl);
+    q1.bindValue(":recommender_id", recommender_id);
+    q1.bindValue(":fic_id", fic_id);
+    q1.exec();
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    return true;
+}
+
+int GetRecommenderId(QString url)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = " select id from recommenders where url = :url ";
+    q1.prepare(qsl);
+    q1.bindValue(":url", url);
+    q1.exec();
+    int result = -1;
+    while(q1.next())
+        result = q1.value(0).toInt();
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+        return -2;
+    }
+    return result;
+}
+void WriteRecommender(const Recommender& recommender)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = " insert into recommenders(name, url, page_data, page_updated) values(:name, :url, :page_data, date('now'))";
+    q1.prepare(qsl);
+    q1.bindValue(":name", recommender.name);
+    q1.bindValue(":url", recommender.url);
+    q1.bindValue(":page_data", recommender.pageData);
+    q1.exec();
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+}
+
 }

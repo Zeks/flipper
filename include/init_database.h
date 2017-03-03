@@ -1,6 +1,7 @@
 #pragma once
 #include <QString>
 #include "section.h"
+
 namespace database{
     bool ReadDbFile();
     bool ReindexTable(QString table);
@@ -13,5 +14,9 @@ namespace database{
     QStringList FetchTrackedCrossovers();
     void BackupDatabase();
     bool LoadIntoDB(Section & section);
-
+    bool LoadRecommendationIntoDB(const Recommender& recommender, Section &section);
+    bool WriteRecommendation(const Recommender& recommender, int id);
+    void WriteRecommender(const Recommender& recommender);
+    int GetFicIdByAuthorAndName(QString, QString);
+    int GetRecommenderId(QString);
 }

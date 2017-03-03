@@ -22,9 +22,10 @@
 #include <QThread>
 
 #include "genericeventfilter.h"
-#include "include/pagegetter.h"
+
 #include <algorithm>
 #include "include/init_database.h"
+#include "include/favparser.h"
 
 bool TagEditorHider(QObject* /*obj*/, QEvent *event, QWidget* widget)
 {
@@ -373,21 +374,14 @@ void MainWindow::IntiConnections()
 
 }
 
-void MainWindow::RequestPage(QString page)
+void MainWindow::RequestAndProcessPage(QString page)
 {
-    QString toInsert = "<a href=\"" + page + "\"> %1 </a>";
-    toInsert= toInsert.arg(page);
-    ui->edtResults->append("<span>Processing url: </span>");
-    ui->edtResults->insertHtml(toInsert);
-    An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database(dbName));
     nextUrl = page;
-    bool cacheMode = ui->chkCacheMode->isChecked();
-    pbMain->setTextVisible(false);
-    pbMain->show();
     do
     {
-        auto result = pager->GetPage(nextUrl, cacheMode);
+        An<PageManager> pager;
+        bool cacheMode = ui->chkCacheMode->isChecked();
+        WebPage result = pager->GetPage(nextUrl, cacheMode);
         if(!result.isValid)
         {
             ui->edtResults->append(" Не удалось получить страницу");
@@ -407,6 +401,23 @@ void MainWindow::RequestPage(QString page)
     pbMain->setValue(0);
     pbMain->hide();
     //manager.get(QNetworkRequest(QUrl(page)));
+}
+
+WebPage MainWindow::RequestPage(QString pageUrl)
+{
+    WebPage result;
+    QString toInsert = "<a href=\"" + pageUrl + "\"> %1 </a>";
+    toInsert= toInsert.arg(pageUrl);
+    ui->edtResults->append("<span>Processing url: </span>");
+    ui->edtResults->insertHtml(toInsert);
+    An<PageManager> pager;
+    pager->SetDatabase(QSqlDatabase::database(dbName));
+    bool cacheMode = ui->chkCacheMode->isChecked();
+    pbMain->setTextVisible(false);
+    pbMain->show();
+
+    result = pager->GetPage(pageUrl, cacheMode);
+    return result;
 }
 
 void MainWindow::ProcessPage(QString str)
@@ -496,10 +507,6 @@ void MainWindow::ProcessPage(QString str)
     if(sections.size() > 0)
         GetNext(sections.last(), currentPosition, str);
     currentPosition = 999;
-    //ui->edtResults->insertHtml("<span> \n Next page \n <br></span>");
-
-
-
 }
 
 QString MainWindow::GetFandom(QString text)
@@ -862,6 +869,62 @@ void MainWindow::LoadData()
     }
     qDebug() << "loaded fics:" << counter;
 
+}
+
+void MainWindow::LoadRecommendations(QString url)
+{
+    QString tags, not_tags;
+
+    for(auto tag : ui->wdgTagsPlaceholder->GetSelectedTags())
+        tags.push_back(WrapTag(tag) + "|");
+
+    tags.chop(1);
+
+    QSqlDatabase db = QSqlDatabase::database(dbName);
+
+    QSqlQuery q1(db);
+    QString qsl = " select * from fanfics f where id in (select fic_id from recommendations %1) %2 %3";
+    if(!url.trimmed().isEmpty())
+        qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(database::GetRecommenderId(url))));
+    else
+        qsl=qsl.arg(QString(""));
+
+    qsl=qsl.arg(" and tags = ' none ' ");
+
+    QString diffField;
+    if(ui->cbSortMode->currentText() == "Wordcount")
+        diffField = " WORDCOUNT DESC";
+    else if(ui->cbSortMode->currentText() == "Favourites")
+        diffField = " FAVOURITES DESC";
+    else if(ui->cbSortMode->currentText() == "Update Date")
+        diffField = " updated DESC";
+    else if(ui->cbSortMode->currentText() == "Fav Rate")
+        diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
+
+     QString order = "COLLATE NOCASE ORDER BY " + diffField;
+     qsl=qsl.arg(order);
+
+    q1.prepare(qsl);
+    q1.exec();
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+
+    ui->edtResults->setOpenExternalLinks(true);
+    ui->edtResults->clear();
+    ui->edtResults->setFont(QFont("Verdana", 20));
+    int counter = 0;
+    ui->edtResults->setUpdatesEnabled(false);
+    fanfics.clear();
+    while(q1.next())
+    {
+        counter++;
+        fanfics.push_back(LoadFanfic(q1));
+    }
+    qDebug() << "loaded fics:" << counter;
 }
 
 
@@ -1588,7 +1651,7 @@ void MainWindow::on_pbCrawl_clicked()
     for(QString url: currentFilterUrls)
     {
         currentFilterUrl = url;
-        RequestPage(url);
+        RequestAndProcessPage(url);
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     database::PushFandom(ui->cbNormals->currentText().trimmed());
@@ -1793,7 +1856,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         for(QString url: currentFilterUrls)
         {
             currentFilterUrl = url;
-            RequestPage(url);
+            RequestAndProcessPage(url);
         }
     }
     for(QString fandom : database::FetchTrackedCrossovers())
@@ -1807,9 +1870,18 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         for(QString url: currentFilterUrls)
         {
             currentFilterUrl = url;
-            RequestPage(url);
+            RequestAndProcessPage(url);
         }
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     //ui->sb
+}
+
+void MainWindow::on_pbLoadPage_clicked()
+{
+    auto page = RequestPage(ui->leAuthorUrl->text());
+    FavouriteStoryParser parser;
+    parser.ProcessPage(page.url, QString(page.content));
+    LoadRecommendations(page.url);
+
 }

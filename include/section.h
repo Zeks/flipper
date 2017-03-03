@@ -45,4 +45,10 @@ struct Fandom
     QString crossoverUrl;
 };
 
-
+struct Recommender
+{
+    QString name;
+    QString url;
+    QString pageData;
+    int id;
+};
