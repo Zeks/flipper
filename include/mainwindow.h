@@ -99,7 +99,9 @@ private:
     QString CreateURL(QString);
 
     void LoadData();
-    void LoadRecommendations(QString url);
+    QSqlQuery BuildQuery();
+
+    //void LoadRecommendations(QString url);
     void LoadIntoDB(Section&);
 
     QString WrapTag(QString tag);
@@ -131,6 +133,7 @@ private:
     int timerId = -1;
     int pageCounter = 0;
     QMenu browserMenu;
+    int currentRecommenderId = -1;
     QEventLoop managerEventLoop;
     QMap<QPair<QString,QString>, Fandom> names;
     QString currentProcessedSection;
@@ -149,6 +152,8 @@ private:
     QStringList tagList;
     QStringListModel* tagModel;
     QStringListModel* recentFandomsModel;
+    QStringListModel* recommendersModel;
+    QHash<QString, Recommender> recommenders;
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
@@ -193,14 +198,19 @@ private slots:
     void on_pbExpandPlusWords_clicked();
     void on_pbExpandMinusWords_clicked();
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
+    void OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous);
+
     //currentChanged(const QModelIndex &current, const QModelIndex &previous);
     //void OnAcceptedExpandedWidget(QString);
     void on_chkTrackedFandom_toggled(bool checked);
     void on_rbNormal_clicked();
     void on_rbCrossovers_clicked();
     void on_pbLoadTrackedFandoms_clicked();
-
     void on_pbLoadPage_clicked();
+    void on_pbRemoveRecommender_clicked();
+    void on_pbOpenRecommendations_clicked();
+    void on_pbLoadAllRecommenders_clicked();
+    void on_pbOpenWholeList_clicked();
 };
 
 #endif // MAINWINDOW_H

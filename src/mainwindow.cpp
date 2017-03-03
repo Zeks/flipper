@@ -62,6 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->chkCacheMode->setVisible(false);
     ReadTags();
     recentFandomsModel = new QStringListModel;
+    recommendersModel= new QStringListModel;
     connect(
                 &manager, SIGNAL (finished(QNetworkReply*)),
                 this, SLOT (OnNetworkReply(QNetworkReply*)));
@@ -168,7 +169,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     recentFandomsModel->setStringList(database::FetchRecentFandoms());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
+    recommenders = database::FetchRecommenders();
+    recommendersModel->setStringList(recommenders.keys());
+    ui->lvRecommenders->setModel(recommendersModel);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
+    connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
 }
 
 
@@ -671,11 +676,39 @@ void MainWindow::LoadData()
         QMessageBox::warning(0, "warning!", "Please set minimum word count");
         return;
     }
+    auto q = BuildQuery();
+    q.exec();
+    qDebug() << q.lastQuery();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+    ui->edtResults->setOpenExternalLinks(true);
+    ui->edtResults->clear();
+    ui->edtResults->setFont(QFont("Verdana", 20));
+    int counter = 0;
+    ui->edtResults->setUpdatesEnabled(false);
+    fanfics.clear();
+    while(q.next())
+    {
+        counter++;
+        fanfics.push_back(LoadFanfic(q));
 
+        if(counter%100 == 0)
+            qDebug() << "tick " << counter/100;
+    }
+    qDebug() << "loaded fics:" << counter;
+
+}
+
+QSqlQuery MainWindow::BuildQuery()
+{
     QSqlDatabase db = QSqlDatabase::database(dbName);
     QString queryString = "select ID, ";
-    if(ui->cbCustomFilters->currentText() == "New From Popular")
+    //if(ui->cbCustomFilters->currentText() == "New From Popular")
     queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
+    queryString+= " (SELECT  count(fic_id) FROM recommendations where f.id = fic_id) as sumrecs, ";
     queryString+=" f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
         queryString += " and wordcount > :minwordcount ";
@@ -707,8 +740,18 @@ void MainWindow::LoadData()
         queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
     }
 
-    QString tags, not_tags;
+    if(currentSearchButton == MainWindow::lfbp_recs)
+    {
+        QString qsl = " and id in (select fic_id from recommendations %1)";
 
+        if(!ui->leAuthorUrl->text().trimmed().isEmpty())
+            qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(currentRecommenderId)));
+        else
+            qsl=qsl.arg(QString(""));
+        queryString+=qsl;
+    }
+
+    QString tags, not_tags;
 
     QString diffField;
     if(ui->cbSortMode->currentText() == "Wordcount")
@@ -717,6 +760,8 @@ void MainWindow::LoadData()
         diffField = " FAVOURITES DESC";
     else if(ui->cbSortMode->currentText() == "Update Date")
         diffField = " updated DESC";
+    else if(ui->cbSortMode->currentText() == "Rec Count")
+        diffField = " sumrecs desc";
     else if(ui->cbSortMode->currentText() == "Fav Rate")
         diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
 //        diffField = " wordcount/favourites asc";
@@ -802,13 +847,25 @@ void MainWindow::LoadData()
     tags.chop(1);
     not_tags.chop(1);
 
-    if(tagsMatter)
+    //QString queryString;
+    if(currentSearchButton == MainWindow::lfbp_search)
     {
-        if(!tags.isEmpty())
-            queryString+=" and tags regexp :tags ";
-        else
-            queryString+=" and tags = ' none ' ";
+        if(tagsMatter)
+        {
+            if(!tags.isEmpty())
+                queryString +=" and tags regexp :tags ";
+            else
+                queryString +=" and tags = ' none ' ";
+        }
     }
+    else
+    {
+        if(ui->chkShowRecsRegardlessOfTags->isChecked())
+            queryString += QString("");
+        else
+            queryString += QString(" and tags = ' none ' ");
+    }
+
     if(ui->cbSortMode->currentText() == "Fav Rate")
     {
         queryString+= " and published <> updated and published > date('now', '-1 years') and updated > date('now', '-60 days') ";
@@ -849,92 +906,8 @@ void MainWindow::LoadData()
         PopulateIdList(bindQuery, queryString);
     }
     auto q = bindQuery(AddIdList(queryString, maxFicCountValue));
-    q.exec();
-    qDebug() << q.lastQuery();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-    }
-    ui->edtResults->setOpenExternalLinks(true);
-    ui->edtResults->clear();
-    ui->edtResults->setFont(QFont("Verdana", 20));
-    int counter = 0;
-    ui->edtResults->setUpdatesEnabled(false);
-    fanfics.clear();
-    while(q.next())
-    {
-        counter++;
-        fanfics.push_back(LoadFanfic(q));
-
-        if(counter%100 == 0)
-            qDebug() << "tick " << counter/100;
-    }
-    qDebug() << "loaded fics:" << counter;
-
+    return q;
 }
-
-void MainWindow::LoadRecommendations(QString url)
-{
-    QString tags, not_tags;
-
-    for(auto tag : ui->wdgTagsPlaceholder->GetSelectedTags())
-        tags.push_back(WrapTag(tag) + "|");
-
-    tags.chop(1);
-
-    QSqlDatabase db = QSqlDatabase::database(dbName);
-
-    QSqlQuery q1(db);
-    QString qsl = " select * from fanfics f where id in (select fic_id from recommendations %1) %2 %3";
-    int recommender_id = database::GetRecommenderId(url);
-    if(!url.trimmed().isEmpty())
-        qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(recommender_id)));
-    else
-        qsl=qsl.arg(QString(""));
-
-    if(ui->chkShowRecsRegardlessOfTags->isChecked())
-        qsl=qsl.arg(QString(""));
-    else
-        qsl=qsl.arg(QString(" and tags = ' none ' "));
-
-
-    QString diffField;
-    if(ui->cbSortMode->currentText() == "Wordcount")
-        diffField = " WORDCOUNT DESC";
-    else if(ui->cbSortMode->currentText() == "Favourites")
-        diffField = " FAVOURITES DESC";
-    else if(ui->cbSortMode->currentText() == "Update Date")
-        diffField = " updated DESC";
-    else if(ui->cbSortMode->currentText() == "Fav Rate")
-        diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
-
-     QString order = "COLLATE NOCASE ORDER BY " + diffField;
-     qsl=qsl.arg(order);
-
-    q1.prepare(qsl);
-    q1.exec();
-
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
-
-    ui->edtResults->setOpenExternalLinks(true);
-    ui->edtResults->clear();
-    ui->edtResults->setFont(QFont("Verdana", 20));
-    int counter = 0;
-    ui->edtResults->setUpdatesEnabled(false);
-    fanfics.clear();
-    while(q1.next())
-    {
-        counter++;
-        fanfics.push_back(LoadFanfic(q1));
-    }
-    qDebug() << "loaded fics:" << counter;
-}
-
 
 void MainWindow::OnSetTag(QString tag)
 {
@@ -1807,6 +1780,13 @@ void MainWindow::OnNewSelectionInRecentList(const QModelIndex &current, const QM
     ui->chkTrackedFandom->blockSignals(false);
 }
 
+void MainWindow::OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous)
+{
+    QString recommender = current.data().toString();
+    if(recommenders.contains(recommender))
+        ui->leAuthorUrl->setText(recommenders[recommender].url);
+}
+
 //void MainWindow::OnAcceptedExpandedWidget(QString)
 //{
 
@@ -1907,11 +1887,101 @@ void MainWindow::on_pbLoadPage_clicked()
     ui->edtResults->clear();
     ui->edtResults->insertHtml(parser.diagnostics.join(""));
     auto startRecLoad = std::chrono::high_resolution_clock::now();
-    LoadRecommendations(page.url);
+
+    currentRecommenderId = database::GetRecommenderId(page.url);
+    //auto query = BuildQuery();
+    //LoadRecommendations(page.url);
+
+    recommenders = database::FetchRecommenders();
+    recommendersModel->setStringList(recommenders.keys());
+
+    LoadData();
     elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
     qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
 
+}
+
+void MainWindow::on_pbRemoveRecommender_clicked()
+{
+    QString currentSelection = ui->lvRecommenders->selectionModel()->currentIndex().data().toString();
+    if(recommenders.contains(currentSelection))
+    {
+        database::RemoveRecommender(recommenders[currentSelection]);
+        recommenders = database::FetchRecommenders();
+        recommendersModel->setStringList(recommenders.keys());
+    }
+}
+
+void MainWindow::on_pbOpenRecommendations_clicked()
+{
+
+    currentSearchButton = MainWindow::lfbp_recs;
+
+    auto startRecLoad = std::chrono::high_resolution_clock::now();
+
+    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+    recommenders = database::FetchRecommenders();
+    recommendersModel->setStringList(recommenders.keys());
+    LoadData();
+
+    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+}
+
+void MainWindow::on_pbLoadAllRecommenders_clicked()
+{
+    currentSearchButton = MainWindow::lfbp_recs;
+    auto startPageRequest = std::chrono::high_resolution_clock::now();
+    for(auto recommender: recommenders.values())
+    {
+        auto page = RequestPage(recommender.url);
+        auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
+        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        FavouriteStoryParser parser;
+        auto startPageProcess = std::chrono::high_resolution_clock::now();
+        parser.ProcessPage(page.url, QString(page.content));
+        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        ui->edtResults->clear();
+        ui->edtResults->insertHtml(parser.diagnostics.join(""));
+
+    }
+    ui->leAuthorUrl->setText("");
+    auto startRecLoad = std::chrono::high_resolution_clock::now();
+    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+    //auto query = BuildQuery();
+    //LoadRecommendations(page.url);
+
+    recommenders = database::FetchRecommenders();
+    recommendersModel->setStringList(recommenders.keys());
+
+    LoadData();
+    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+}
+
+void MainWindow::on_pbOpenWholeList_clicked()
+{
+    currentSearchButton = MainWindow::lfbp_recs;
+    ui->leAuthorUrl->setText("");
+    auto startRecLoad = std::chrono::high_resolution_clock::now();
+    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+    recommenders = database::FetchRecommenders();
+    recommendersModel->setStringList(recommenders.keys());
+
+    LoadData();
+    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
 }

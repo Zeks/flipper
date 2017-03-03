@@ -68,7 +68,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>2</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -545,7 +545,7 @@
                     </layout>
                    </item>
                    <item row="2" column="0">
-                    <widget class="QListView" name="listView"/>
+                    <widget class="QListView" name="lvRecommenders"/>
                    </item>
                    <item row="3" column="0">
                     <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -722,6 +722,11 @@
               <item>
                <property name="text">
                 <string>Update Date</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Rec Count</string>
                </property>
               </item>
              </widget>

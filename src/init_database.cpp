@@ -410,4 +410,54 @@ void WriteRecommender(const Recommender& recommender)
     }
 }
 
+QHash<QString, Recommender> FetchRecommenders()
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = "select * from recommenders  order by name asc";
+    q1.prepare(qsl);
+    q1.exec();
+    QHash<QString, Recommender> result;
+    while(q1.next())
+    {
+        Recommender rec;
+        rec.id = q1.value("ID").toInt();
+        rec.name= q1.value("name").toString();
+        rec.url= q1.value("url").toString();
+        result[rec.name] = rec;
+    }
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    return result;
+}
+
+void RemoveRecommender(const Recommender &recommender)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = "delete from recommendations where recommender_id = %1";
+    qsl=qsl.arg(GetRecommenderId(recommender.url));
+    q1.prepare(qsl);
+    q1.exec();
+
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+    QSqlQuery q2(db);
+    qsl = "delete from recommenders where url = '%1'";
+    qsl=qsl.arg(recommender.url);
+    q2.prepare(qsl);
+    q2.exec();
+    if(q2.lastError().isValid())
+    {
+        qDebug() << q2.lastError();
+        qDebug() << q2.lastQuery();
+    }
+}
+
 }

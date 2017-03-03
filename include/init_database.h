@@ -9,6 +9,7 @@ namespace database{
     void PushFandom(QString);
     void RebaseFandoms();
     QStringList FetchRecentFandoms();
+    QHash<QString, Recommender> FetchRecommenders();
     bool FetchTrackStateForFandom(QString fandom, bool crossover);
     QStringList FetchTrackedFandoms();
     QStringList FetchTrackedCrossovers();
@@ -17,6 +18,7 @@ namespace database{
     bool LoadRecommendationIntoDB(const Recommender& recommender, Section &section);
     bool WriteRecommendation(const Recommender& recommender, int id);
     void WriteRecommender(const Recommender& recommender);
+    void RemoveRecommender(const Recommender& recommender);
     int GetFicIdByAuthorAndName(QString, QString);
-    int GetRecommenderId(QString);
+    int GetRecommenderId(QString url);
 }
