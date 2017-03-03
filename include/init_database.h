@@ -1,5 +1,6 @@
 #pragma once
 #include <QString>
+#include "section.h"
 namespace database{
     bool ReadDbFile();
     bool ReindexTable(QString table);
@@ -11,5 +12,6 @@ namespace database{
     QStringList FetchTrackedFandoms();
     QStringList FetchTrackedCrossovers();
     void BackupDatabase();
+    bool LoadIntoDB(Section & section);
 
 }

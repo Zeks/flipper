@@ -483,7 +483,8 @@ void MainWindow::ProcessPage(QString str)
     for(auto section : sections)
     {
         section.origin = currentFilterUrl;
-        LoadIntoDB(section);
+        if(database::LoadIntoDB(section))
+            processedFics++;
         ui->edtResults->insertHtml("<span> Written:" + section.title + " by " + section.author + "\n <br></span>");
     }
     if(abort)
@@ -1269,105 +1270,7 @@ QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
         result = QDateTime();
     return result;
 }
-void MainWindow::LoadIntoDB(Section & section)
-{
 
-    QSqlDatabase db = QSqlDatabase::database(dbName);
-
-    bool isUpdate = false;
-    bool isInsert = false;
-    QString getKeyQuery = "Select ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2') as COUNT_NAMED,"
-                          " ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2' and updated <> :updated) as count_updated"
-                            " FROM FANFICS WHERE 1=1 ";
-    getKeyQuery = getKeyQuery.arg(QString(section.author).replace("'","''")).arg(QString(section.title).replace("'","''"));
-    QSqlQuery keyQ(db);
-    keyQ.prepare(getKeyQuery);
-    keyQ.bindValue(":updated", section.updated);
-    keyQ.exec();
-    keyQ.next();
-    //qDebug() << keyQ.lastQuery();
-    //qDebug() << " named: " << keyQ.value(0).toInt();
-    //qDebug() << " updated: " << keyQ.value(1).toInt();
-    if(keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0)
-        isUpdate = true;
-    if(keyQ.value(0).toInt() == 0)
-        isInsert = true;
-
-    if(keyQ.lastError().isValid())
-    {
-        qDebug() << keyQ.lastQuery();
-        qDebug() << keyQ.lastError();
-    }
-    if(isInsert)
-    {
-
-        //qDebug() << "Inserting: " << section.author << " " << section.title << " " << section.fandom << " " << section.genre;
-        QString query = "INSERT INTO FANFICS (FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
-                        "VALUES (  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
-
-        QSqlQuery q(db);
-        q.prepare(query);
-        q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author);
-        q.bindValue(":title",section.title);
-        q.bindValue(":wordcount",section.wordCount.toInt());
-        q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
-        q.bindValue(":FAVOURITES",section.favourites.toInt());
-        q.bindValue(":REVIEWS",section.reviews.toInt());
-        q.bindValue(":CHARACTERS",section.characters);
-        q.bindValue(":RATED",section.rated);
-
-        q.bindValue(":summary",section.summary);
-        q.bindValue(":COMPLETE",section.complete);
-        q.bindValue(":genres",section.genre);
-        q.bindValue(":published",section.published);
-        q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url);
-        q.bindValue(":origin",section.origin);
-        q.exec();
-        if(q.lastError().isValid())
-        {
-            qDebug() << "failed to insert: " << section.author << " " << section.title;
-            qDebug() << q.lastError();
-        }
-        processedFics++;
-    }
-
-    if(isUpdate)
-    {
-        //qDebug() << "Updating: " << section.author << " " << section.title;
-        QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, summary = :summary, genres= :genres, published = :published, updated = :updated, url = :url "
-                        " where author = :author and title = :title";
-
-        QSqlQuery q(db);
-        q.prepare(query);
-        q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author);
-        q.bindValue(":title",section.title);
-
-        q.bindValue(":wordcount",section.wordCount.toInt());
-        q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
-        q.bindValue(":FAVOURITES",section.favourites.toInt());
-        q.bindValue(":REVIEWS",section.reviews.toInt());
-        q.bindValue(":CHARACTERS",section.characters);
-        q.bindValue(":RATED",section.rated);
-
-        q.bindValue(":summary",section.summary);
-        q.bindValue(":COMPLETE",section.complete);
-        q.bindValue(":genres",section.genre);
-        q.bindValue(":published",section.published);
-        q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url);
-        q.exec();
-        if(q.lastError().isValid())
-        {
-            qDebug() << "failed to update: " << section.author << " " << section.title;
-            qDebug() << q.lastError();
-        }
-        processedFics++;
-    }
-
-}
 
 QString MainWindow::WrapTag(QString tag)
 {

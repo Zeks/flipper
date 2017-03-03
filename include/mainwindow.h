@@ -24,52 +24,12 @@
 #include "libs/UniversalModels/include/TableDataListHolder.h"
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
 #include "qml_ficmodel.h"
+#include "include/section.h"
 class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
 class QStringListModel;
-struct Section
-{
-    int ID = -1;
-    int start = 0;
-    int end = 0;
 
-    int summaryEnd = 0;
-    int wordCountStart = 0;
-    int statSectionStart=0;
-    int statSectionEnd=0;
-    int complete=0;
-    int atChapter=0;
-
-    QString wordCount = 0;
-    QString chapters = 0;
-    QString reviews = 0;
-    QString favourites= 0;
-    QString rated= 0;
-
-
-    QString fandom;
-    QString title;
-    QString genre;
-    QString summary;
-    QString statSection;
-    QString author;
-    QString url;
-    QString tags;
-    QString origin;
-    QString language;
-    QDateTime published;
-    QDateTime updated;
-    QString characters;
-    bool isValid =false;
-};
-struct Fandom
-{
-    QString name;
-    QString section;
-    QString url;
-    QString crossoverUrl;
-};
 namespace Ui {
 class MainWindow;
 }
@@ -103,12 +63,13 @@ private:
     void ReadSettings();
 
     void RequestPage(QString);
-    void ProcessPage(QString);
 
-    QString GetFandom(QString text);
-    Section GetSection( QString text, int start);
-    //QString GetCurrentFilterUrl();
+
     QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
+    QString GetFandom(QString text);
+
+    void ProcessPage(QString);
+    Section GetSection( QString text, int start);
     void GetAuthor(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
     void GetGenre(Section& , int& startfrom, QString text);
@@ -121,6 +82,7 @@ private:
     void GetNext(Section& , int& startfrom, QString text);
     void GetStatSection(Section& , int& startfrom, QString text);
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
+
     QDateTime GetMaxUpdateDateForSection(QStringList sections);
 
     QString CreateURL(QString);
