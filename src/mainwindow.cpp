@@ -20,6 +20,7 @@
 #include <QQuickItem>
 #include <QQmlContext>
 #include <QThread>
+#include <chrono>
 
 #include "genericeventfilter.h"
 
@@ -346,6 +347,8 @@ MainWindow::~MainWindow()
     settings.setValue("Settings/spDebug", ui->spDebug->saveState());
     settings.setValue("Settings/currentSortFilter", ui->cbSortMode->currentText());
     settings.setValue("Settings/currentCustomFilter", ui->cbCustomFilters->currentText());
+    settings.setValue("Settings/currentRecommender", ui->leAuthorUrl->text());
+    settings.setValue("Settings/ignoreTagsOnRecommendations", ui->chkShowRecsRegardlessOfTags->isChecked());
     settings.setValue("Settings/customFilterEnabled", ui->chkCustomFilter->isChecked());
     settings.setValue("Settings/lengthCutoff", ui->cbWordCutoff->currentText());
     //    QString temp;
@@ -884,12 +887,17 @@ void MainWindow::LoadRecommendations(QString url)
 
     QSqlQuery q1(db);
     QString qsl = " select * from fanfics f where id in (select fic_id from recommendations %1) %2 %3";
+    int recommender_id = database::GetRecommenderId(url);
     if(!url.trimmed().isEmpty())
-        qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(database::GetRecommenderId(url))));
+        qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(recommender_id)));
     else
         qsl=qsl.arg(QString(""));
 
-    qsl=qsl.arg(" and tags = ' none ' ");
+    if(ui->chkShowRecsRegardlessOfTags->isChecked())
+        qsl=qsl.arg(QString(""));
+    else
+        qsl=qsl.arg(QString(" and tags = ' none ' "));
+
 
     QString diffField;
     if(ui->cbSortMode->currentText() == "Wordcount")
@@ -1458,6 +1466,8 @@ void MainWindow::ReadSettings()
     ui->cbSortMode->blockSignals(true);
     ui->cbCustomFilters->blockSignals(true);
     ui->chkCustomFilter->blockSignals(true);
+    ui->leAuthorUrl->setText(settings.value("Settings/currentRecommender", "").toString());
+    ui->chkShowRecsRegardlessOfTags->setChecked(settings.value("Settings/ignoreTagsOnRecommendations", false).toBool());
     ui->cbSortMode->setCurrentText(settings.value("Settings/currentSortFilter", "Update Date").toString());
     ui->cbCustomFilters->setCurrentText(settings.value("Settings/currentSortFilter", "Longest Running").toString());
     ui->cbWordCutoff->setCurrentText(settings.value("Settings/lengthCutoff", "100k Words").toString());
@@ -1719,7 +1729,9 @@ void MainWindow::OnSectionChanged(QString)
 
 void MainWindow::on_pbLoadDatabase_clicked()
 {
+    currentSearchButton = MainWindow::lfbp_search;
     LoadData();
+
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
@@ -1755,7 +1767,10 @@ void MainWindow::on_cbCustomFilters_currentTextChanged(const QString &arg1)
 
 void MainWindow::on_cbSortMode_currentTextChanged(const QString &arg1)
 {
-    on_pbLoadDatabase_clicked();
+    if(currentSearchButton == MainWindow::lfbp_search)
+        on_pbLoadDatabase_clicked();
+    else
+        on_pbLoadPage_clicked();
 }
 
 
@@ -1879,9 +1894,24 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
 
 void MainWindow::on_pbLoadPage_clicked()
 {
+    currentSearchButton = MainWindow::lfbp_recs;
+    auto startPageRequest = std::chrono::high_resolution_clock::now();
     auto page = RequestPage(ui->leAuthorUrl->text());
+    auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
+    qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     FavouriteStoryParser parser;
+    auto startPageProcess = std::chrono::high_resolution_clock::now();
     parser.ProcessPage(page.url, QString(page.content));
+    elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+    qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->clear();
+    ui->edtResults->insertHtml(parser.diagnostics.join(""));
+    auto startRecLoad = std::chrono::high_resolution_clock::now();
     LoadRecommendations(page.url);
+    elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
 
 }

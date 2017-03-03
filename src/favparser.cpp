@@ -29,6 +29,7 @@ void FavouriteStoryParser::ProcessPage(QString url, QString str)
 
         GetStatSection(section, currentPosition, str);
 
+        GetTaggedSection(section.statSection.replace(",", ""), "([A-Za-z/\\-\\s&]+)\\s-\\sRated:", [&section](QString val){ section.fandom = val;});
         GetTaggedSection(section.statSection.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.wordCount = val;});
         GetTaggedSection(section.statSection.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.chapters = val;});
         GetTaggedSection(section.statSection.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.reviews = val;});
@@ -52,7 +53,7 @@ void FavouriteStoryParser::ProcessPage(QString url, QString str)
             if(val != "not found")
                 section.complete = 1;
         });
-        if(section.statSection.contains("CROSSOVER"))
+        if(section.statSection.contains("CROSSOVER", Qt::CaseInsensitive))
             GetCrossoverFandomList(section, currentPosition, str);
 
         if(section.isValid)
@@ -72,7 +73,8 @@ void FavouriteStoryParser::ProcessPage(QString url, QString str)
     for(auto section : sections)
     {
         section.origin = url;
-        database::LoadIntoDB(section);
+        //database::LoadIntoDB(section);
+        database::LoadRecommendationIntoDB(recommender, section);
         diagnostics.push_back("<span> Written:" + section.title + " by " + section.author + "\n <br></span>");
     }
 
@@ -143,7 +145,10 @@ void FavouriteStoryParser::GetCrossoverFandomList(Section & section, int &startf
 
     int indexStart = rxStart.indexIn(text, startfrom);
     if(indexStart != -1 )
+    {
+        section.fandom.replace("Crossover - ", "");
         section.fandom += " CROSSOVER";
+    }
 
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
@@ -179,7 +184,8 @@ void FavouriteStoryParser::GetTaggedSection(QString text, QString rxString ,std:
 Section FavouriteStoryParser::GetSection(QString text, int start)
 {
     Section section;
-    QRegExp rxStart("<div\\sclass=\'z-list\\favstories\'");
+    QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
+
     int index = rxStart.indexIn(text, start);
     if(index != -1)
     {
@@ -196,5 +202,5 @@ Section FavouriteStoryParser::GetSection(QString text, int start)
 QString FavouriteStoryParser::ExtractRecommdenderNameFromUrl(QString url)
 {
     int pos = url.lastIndexOf("/");
-    return url.mid(pos);
+    return url.mid(pos+1);
 }

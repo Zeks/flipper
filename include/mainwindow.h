@@ -36,11 +36,19 @@ namespace Ui {
 class MainWindow;
 }
 
+
+
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
+    enum ELastFilterButtonPressed
+    {
+        lfbp_search = 0,
+        lfbp_recs = 1
+    };
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void Init();
@@ -60,7 +68,7 @@ private:
     QList<Section> fanfics;
     QSortFilterProxyModel* sortModel;
     int processedFics = 0;
-
+    ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
     bool event(QEvent * e);
     void ReadSettings();
 

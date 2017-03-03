@@ -68,7 +68,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>2</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -493,6 +493,16 @@
                       </widget>
                      </item>
                      <item>
+                      <widget class="QCheckBox" name="chkShowRecsRegardlessOfTags">
+                       <property name="text">
+                        <string>Show Everything</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QPushButton" name="pbOpenRecommendations">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -504,9 +514,6 @@
                         <string>Open</string>
                        </property>
                       </widget>
-                     </item>
-                     <item>
-                      <widget class="QLineEdit" name="leAuthorUrl"/>
                      </item>
                      <item>
                       <widget class="QPushButton" name="pbRemoveRecommender">
@@ -524,9 +531,23 @@
                     </layout>
                    </item>
                    <item row="1" column="0">
-                    <widget class="QListView" name="listView"/>
+                    <layout class="QHBoxLayout" name="horizontalLayout_4">
+                     <item>
+                      <widget class="QLabel" name="label_6">
+                       <property name="text">
+                        <string>Url:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="leAuthorUrl"/>
+                     </item>
+                    </layout>
                    </item>
                    <item row="2" column="0">
+                    <widget class="QListView" name="listView"/>
+                   </item>
+                   <item row="3" column="0">
                     <layout class="QHBoxLayout" name="horizontalLayout_3">
                      <item>
                       <widget class="QPushButton" name="pbLoadAllRecommenders">
