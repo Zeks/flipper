@@ -53,5 +53,5 @@ struct Recommender
     QString url;
     QString pageData;
     int wave = 0;
-    int id;
+    int id = -3;
 };

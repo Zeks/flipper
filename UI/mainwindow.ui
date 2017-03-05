@@ -557,6 +557,16 @@
                       </widget>
                      </item>
                      <item>
+                      <widget class="QCheckBox" name="chkShowDirectRecs">
+                       <property name="text">
+                        <string>Show Direct Recs Only</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QPushButton" name="pbFirstWave">
                        <property name="text">
                         <string>Load First Wave</string>
