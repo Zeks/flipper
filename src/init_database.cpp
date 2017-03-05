@@ -191,6 +191,8 @@ QStringList database::FetchTrackedCrossovers()
 
 void database::BackupDatabase()
 {
+    if(!QFile::exists("CrawlerDB.sqlite"))
+        QFile::copy("CrawlerDB.sqlite.default", "CrawlerDB.sqlite");
     QString backupName = "backups/CrawlerDB." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
     if(!QFile::exists(backupName))
         JlCompress::compressFile(backupName, "CrawlerDB.sqlite");

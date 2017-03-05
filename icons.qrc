@@ -8,5 +8,9 @@
         <file>icons/add.png</file>
         <file>icons/cross.png</file>
         <file>icons/cross_24_2x.png</file>
+        <file>icons/thumbs_up.png</file>
+        <file>icons/thumbs_up_green.png</file>
+        <file>icons/heart_active.png</file>
+        <file>icons/heart.png</file>
     </qresource>
 </RCC>

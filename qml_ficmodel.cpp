@@ -50,6 +50,8 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 16), Qt::DisplayRole).toInt();
         if(role == RownumRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 17), Qt::DisplayRole).toInt();
+        if(role == RecommendationsRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 18), Qt::DisplayRole).toInt();
         if(role == LanguageRole)
             return QString("");
         if(role == CurrentChapterRole)
@@ -92,6 +94,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[RatedRole] = "rated";
     roles[AtChapterRole] = "atChapter";
     roles[RownumRole] = "rownum";
+    roles[RecommendationsRole] = "recommendations";
     return roles;
 }
 

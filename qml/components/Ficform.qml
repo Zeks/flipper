@@ -95,35 +95,12 @@ Rectangle {
                 }
             }
         }
-        //        ScrollView{
-        //            verticalScrollBarPolicy: Qt.ScrollBarAsNeeded
-        //            anchors.fill: parent
-        ////            ListView{
-        ////                model:1000
-        ////                spacing: 1
-        ////                anchors.fill: parent
 
-        ////                delegate:Text {
-        ////                    id: name
-        ////                    text: modelData
-        ////                }
-        ////            }
-        ////            TagCloud{
-        ////                model:tagModel
-        ////                anchors.fill: parent
-        ////            }
-
-        //            }
     }
 
     Column {
         id: tagColumn
         y: 277
-//        anchors.left: genreTagList1.left
-//        anchors.leftMargin: 0
-//        anchors.top: genreTagList1.bottom
-//        anchors.topMargin: 10
-
         Text {
             id: txtPublished
             height: 24
@@ -294,6 +271,25 @@ Rectangle {
 
         RowLayout {
 
+            Image {
+                id: imgRecommendations
+                //property int _MS_PER_DAY: 1000 * 60 * 60 * 24;
+                width: recommendations > 0 ? 20 : 0
+                height: 24
+                visible: recommendations > 0
+                source: {
+                        return "qrc:/icons/icons/heart.png"
+                }
+            }
+            Text {
+                id: txtRecCount
+                width: recommendations > 0 ? 20 : 0
+                height: 24
+                text: { return recommendations}
+                visible: recommendations > 0
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: 16
+            }
             Text {
                 id: txtWords
                 width: 70

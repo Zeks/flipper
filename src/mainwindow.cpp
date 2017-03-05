@@ -170,7 +170,7 @@ MainWindow::MainWindow(QWidget *parent) :
     recentFandomsModel->setStringList(database::FetchRecentFandoms());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
     recommenders = database::FetchRecommenders();
-    recommendersModel->setStringList(recommenders.keys());
+    recommendersModel->setStringList(SortedList(recommenders.keys()));
     ui->lvRecommenders->setModel(recommendersModel);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
@@ -253,7 +253,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
     ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
     ADD_INTEGER_GETSET(holder, 17, 0, ID);
-
+    ADD_INTEGER_GETSET(holder, 18, 0, recommendations);
 
     //    holder->AddGetter(QPair<int,int>(8,0),
     //    [] (const Section* )
@@ -284,7 +284,7 @@ void MainWindow::SetupFanficTable()
 
 
     holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" << "published"
-                       << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "ID");
+                       << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "ID" << "recommendations");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -666,6 +666,8 @@ inline Section LoadFanfic(QSqlQuery& q)
     result.complete= q.value("COMPLETE").toInt();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.atChapter = q.value("AT_CHAPTER").toInt();
+    result.recommendations= q.value("SUMRECS").toInt();
+    //result.recommendations= 1;
     return std::move(result);
 }
 
@@ -1817,6 +1819,12 @@ void MainWindow::CallExpandedWidget()
     expanderWidget->exec();
 }
 
+QStringList MainWindow::SortedList(QStringList list)
+{
+    qSort(list.begin(),list.end());
+    return list;
+}
+
 
 void MainWindow::on_chkTrackedFandom_toggled(bool checked)
 {
@@ -1893,7 +1901,8 @@ void MainWindow::on_pbLoadPage_clicked()
     //LoadRecommendations(page.url);
 
     recommenders = database::FetchRecommenders();
-    recommendersModel->setStringList(recommenders.keys());
+    recommendersModel->setStringList(SortedList(recommenders.keys()));
+    //recommendersModel->setStringList(recommenders.keys());
 
     LoadData();
     elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -1911,7 +1920,7 @@ void MainWindow::on_pbRemoveRecommender_clicked()
     {
         database::RemoveRecommender(recommenders[currentSelection]);
         recommenders = database::FetchRecommenders();
-        recommendersModel->setStringList(recommenders.keys());
+        recommendersModel->setStringList(SortedList(recommenders.keys()));
     }
 }
 
@@ -1924,7 +1933,7 @@ void MainWindow::on_pbOpenRecommendations_clicked()
 
     currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
     recommenders = database::FetchRecommenders();
-    recommendersModel->setStringList(recommenders.keys());
+    recommendersModel->setStringList(SortedList(recommenders.keys()));
     LoadData();
 
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -1959,7 +1968,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     //LoadRecommendations(page.url);
 
     recommenders = database::FetchRecommenders();
-    recommendersModel->setStringList(recommenders.keys());
+    recommendersModel->setStringList(SortedList(recommenders.keys()));
 
     LoadData();
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -1976,7 +1985,7 @@ void MainWindow::on_pbOpenWholeList_clicked()
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
     recommenders = database::FetchRecommenders();
-    recommendersModel->setStringList(recommenders.keys());
+    recommendersModel->setStringList(SortedList(recommenders.keys()));
 
     LoadData();
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;

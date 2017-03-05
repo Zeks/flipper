@@ -13,6 +13,7 @@ struct Section
     int statSectionEnd=0;
     int complete=0;
     int atChapter=0;
+    int recommendations=0;
 
     QString wordCount = 0;
     QString chapters = 0;

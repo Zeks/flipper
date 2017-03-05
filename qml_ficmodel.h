@@ -30,7 +30,8 @@ public:
         RatedRole,
         AtChapterRole,
         RownumRole,
-        EndRole = RownumRole
+        RecommendationsRole,
+        EndRole = RecommendationsRole
 
     };
 

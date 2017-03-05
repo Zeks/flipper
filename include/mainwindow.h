@@ -126,6 +126,8 @@ private:
 
     void ToggleTag();
     void CallExpandedWidget();
+    QStringList SortedList(QStringList);
+
 
     Ui::MainWindow *ui;
     int processedCount = 0;
