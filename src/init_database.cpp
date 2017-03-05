@@ -398,11 +398,12 @@ void WriteRecommender(const Recommender& recommender)
 {
     QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
     QSqlQuery q1(db);
-    QString qsl = " insert into recommenders(name, url, page_data, page_updated) values(:name, :url, :page_data, date('now'))";
+    QString qsl = " insert into recommenders(name, url, page_data, page_updated, wave) values(:name, :url, :page_data, date('now'), :wave)";
     q1.prepare(qsl);
     q1.bindValue(":name", recommender.name);
     q1.bindValue(":url", recommender.url);
     q1.bindValue(":page_data", recommender.pageData);
+    q1.bindValue(":wave", recommender.wave);
     q1.exec();
 
     if(q1.lastError().isValid())
@@ -426,6 +427,7 @@ QHash<QString, Recommender> FetchRecommenders()
         rec.id = q1.value("ID").toInt();
         rec.name= q1.value("name").toString();
         rec.url= q1.value("url").toString();
+        rec.wave= q1.value("wave").toInt();
         result[rec.name] = rec;
     }
     if(q1.lastError().isValid())
@@ -438,10 +440,15 @@ QHash<QString, Recommender> FetchRecommenders()
 
 void RemoveRecommender(const Recommender &recommender)
 {
+    int id = GetRecommenderId(recommender.url);
+    RemoveRecommender(id);
+}
+void RemoveRecommender(int id)
+{
     QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
     QSqlQuery q1(db);
     QString qsl = "delete from recommendations where recommender_id = %1";
-    qsl=qsl.arg(GetRecommenderId(recommender.url));
+    qsl=qsl.arg(QString::number(id));
     q1.prepare(qsl);
     q1.exec();
 
@@ -461,5 +468,32 @@ void RemoveRecommender(const Recommender &recommender)
         qDebug() << q2.lastQuery();
     }
 }
+
+bool FilterRecommenderByRecField(int recommender_id, int rec_threshhold)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlQuery q1(db);
+    QString qsl = "select count(id) from fanfics where tags like '% rec %' and id in (select fic_id from recommendations where recommender_id = %1)";
+    qsl=qsl.arg(QString::number(recommender_id));
+    q1.prepare(qsl);
+    q1.exec();
+    q1.next();
+    if(q1.lastError().isValid())
+    {
+        qDebug() << q1.lastError();
+        qDebug() << q1.lastQuery();
+    }
+
+    int matches  = q1.value(0).toInt();
+
+    if(matches < rec_threshhold)
+    {
+        RemoveRecommender(recommender_id);
+        return false;
+    }
+    return true;
+}
+
+
 
 }

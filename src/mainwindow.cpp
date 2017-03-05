@@ -1994,3 +1994,58 @@ void MainWindow::on_pbOpenWholeList_clicked()
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
 }
+
+void MainWindow::on_pbFirstWave_clicked()
+{
+    currentSearchButton = MainWindow::lfbp_recs;
+    auto startPageRequest = std::chrono::high_resolution_clock::now();
+    for(auto recommender: recommenders.values())
+    {
+        auto page = RequestPage(recommender.url);
+        auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
+        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        FavouriteStoryParser parser;
+        auto startPageProcess = std::chrono::high_resolution_clock::now();
+        auto sections = parser.ProcessPage(page.url, QString(page.content));
+        for(auto section: sections)
+        {
+            QString toInsert = "<a href=\"" + section.authorUrl + "\"> %1 </a>";
+            toInsert= toInsert.arg(pageUrl);
+            ui->edtResults->append("<span>Processing url: </span>");
+            ui->edtResults->insertHtml(toInsert);
+
+            auto page = RequestPage(section.authorUrl);
+            auto id = database::GetRecommenderId(section.authorUrl);
+            if(id == -1)
+            {
+                FavouriteStoryParser parser;
+                parser.ProcessPage(page.url, QString(page.content),1);
+                auto id = database::GetRecommenderId(section.authorUrl);
+                database::FilterRecommenderByRecField(id, 5);
+            }
+        }
+
+
+        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        ui->edtResults->clear();
+        ui->edtResults->insertHtml(parser.diagnostics.join(""));
+
+    }
+    ui->leAuthorUrl->setText("");
+    auto startRecLoad = std::chrono::high_resolution_clock::now();
+    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+    //auto query = BuildQuery();
+    //LoadRecommendations(page.url);
+
+    recommenders = database::FetchRecommenders();
+    recommendersModel->setStringList(SortedList(recommenders.keys()));
+    currentRecWave = 1;
+    LoadData();
+    currentRecWave = 0;
+    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+}

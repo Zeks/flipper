@@ -19,6 +19,9 @@ namespace database{
     bool WriteRecommendation(const Recommender& recommender, int id);
     void WriteRecommender(const Recommender& recommender);
     void RemoveRecommender(const Recommender& recommender);
+    void RemoveRecommender(int id);
     int GetFicIdByAuthorAndName(QString, QString);
     int GetRecommenderId(QString url);
+    bool FilterRecommenderByRecField(int, int);
+
 }

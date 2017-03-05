@@ -69,6 +69,7 @@ private:
     QSortFilterProxyModel* sortModel;
     int processedFics = 0;
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
+    int currentRecWave = 0;
     bool event(QEvent * e);
     void ReadSettings();
 
@@ -126,6 +127,7 @@ private:
 
     void ToggleTag();
     void CallExpandedWidget();
+
     QStringList SortedList(QStringList);
 
 
@@ -213,6 +215,7 @@ private slots:
     void on_pbOpenRecommendations_clicked();
     void on_pbLoadAllRecommenders_clicked();
     void on_pbOpenWholeList_clicked();
+    void on_pbFirstWave_clicked();
 };
 
 #endif // MAINWINDOW_H

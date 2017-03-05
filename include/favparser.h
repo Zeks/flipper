@@ -7,10 +7,11 @@ class FavouriteStoryParser
 {
 public:
 
-    void ProcessPage(QString url,QString);
+    QList<Section> ProcessPage(QString url,QString, int authorWave = 0);
     Section GetSection( QString text, int start);
     QString ExtractRecommdenderNameFromUrl(QString url);
     void GetAuthor(Section& , int& startfrom, QString text);
+    void GetAuthorUrl(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
     void GetGenre(Section& , int& startfrom, QString text);
     void GetSummary(Section& , int& startfrom, QString text);

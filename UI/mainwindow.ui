@@ -68,7 +68,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>2</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -553,6 +553,13 @@
                       <widget class="QPushButton" name="pbLoadAllRecommenders">
                        <property name="text">
                         <string>Reload Whole List</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbFirstWave">
+                       <property name="text">
+                        <string>Load First Wave</string>
                        </property>
                       </widget>
                      </item>

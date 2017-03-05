@@ -3,7 +3,7 @@
 #include "include/init_database.h"
 #include <QDebug>
 
-void FavouriteStoryParser::ProcessPage(QString url, QString str)
+QList<Section> FavouriteStoryParser::ProcessPage(QString url, QString str, int authorWave)
 {
     Section section;
     int currentPosition = 0;
@@ -12,6 +12,7 @@ void FavouriteStoryParser::ProcessPage(QString url, QString str)
     Recommender recommender;
     recommender.name = ExtractRecommdenderNameFromUrl(url);
     recommender.url = url;
+    recommender.wave = authorWave;
     while(true)
     {
 
@@ -21,9 +22,11 @@ void FavouriteStoryParser::ProcessPage(QString url, QString str)
             break;
         currentPosition = section.start;
 
+
         //section.fandom = ui->rbNormal->isChecked() ? currentFandom: currentFandom + " CROSSOVER";
         GetUrl(section, currentPosition, str);
         GetTitle(section, currentPosition, str);
+        GetAuthorUrl(section, currentPosition, str);
         GetAuthor(section, currentPosition, str);
         GetSummary(section, currentPosition, str);
 
@@ -79,6 +82,7 @@ void FavouriteStoryParser::ProcessPage(QString url, QString str)
     }
 
     currentPosition = 999;
+    return sections;
 }
 
 QString FavouriteStoryParser::GetFandom(QString text)
@@ -88,6 +92,18 @@ QString FavouriteStoryParser::GetFandom(QString text)
     int indexStart = rxStart.indexIn(text, 0);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     return text.mid(indexStart + 28,indexEnd - (indexStart + 28));
+}
+
+
+void FavouriteStoryParser::GetAuthorUrl(Section & section, int &startfrom, QString text)
+{
+    // looking for first href
+    QRegExp rxStart(QRegExp::escape("href=\""));
+    QRegExp rxEnd(QRegExp::escape("\">"));
+    int indexStart = rxStart.indexIn(text,startfrom);
+    int indexEnd = rxEnd.indexIn(text, indexStart);
+    section.authorUrl = "https://www.fanfiction.net/" + text.mid(indexStart + 6,indexEnd - (indexStart + 6));
+    startfrom = indexEnd+2;
 }
 
 void FavouriteStoryParser::GetAuthor(Section & section, int& startfrom, QString text)
@@ -102,6 +118,8 @@ void FavouriteStoryParser::GetAuthor(Section & section, int& startfrom, QString 
     section.author = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
 
 }
+
+
 
 void FavouriteStoryParser::GetTitle(Section & section, int& startfrom, QString text)
 {
