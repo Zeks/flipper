@@ -68,7 +68,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>2</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -494,6 +494,9 @@
                      </item>
                      <item>
                       <widget class="QCheckBox" name="chkShowRecsRegardlessOfTags">
+                       <property name="toolTip">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will show fics regardless of if you have tagged them already.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       </property>
                        <property name="text">
                         <string>Show Everything</string>
                        </property>
@@ -562,7 +565,7 @@
                         <string>Show Direct Recs Only</string>
                        </property>
                        <property name="checked">
-                        <bool>true</bool>
+                        <bool>false</bool>
                        </property>
                       </widget>
                      </item>
@@ -719,7 +722,7 @@
             <item row="10" column="1" colspan="3">
              <widget class="QComboBox" name="cbSortMode">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows you to select fic sorting criteria.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Wordcount &lt;/span&gt;lists larger fics first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Favourites&lt;/span&gt;  displays stuff with the max amount of faves first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fav Rate &lt;/span&gt;only shows stuff that's been started during the last year and sorts it by faves to time running ratio.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Update Date &lt;/span&gt;is your usual &amp;quot;last updated first come&amp;quot; filter.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows you to select fic sorting criteria.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Wordcount &lt;/span&gt;lists larger fics first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Favourites&lt;/span&gt; displays stuff with the max amount of faves first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fav Rate &lt;/span&gt;only shows stuff that's been started during the last year and sorts it by faves to time running ratio.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Update Date &lt;/span&gt;is your usual &amp;quot;last updated first come&amp;quot; filter.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Rec count &lt;/span&gt;is the amount of times taht fic appears in your recommendation lists.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;WCRC-R&lt;/span&gt; is WordCount/ReviewCount ratio&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Biased WCRC-R&lt;/span&gt; will filter out everything with Review/Favourite ratio greater than 2 out of WCRC-R&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Crap WCRC-R&lt;/span&gt; will filter out everything with Review/Favourite ratio lower than 2 out of WCRC-R&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <item>
                <property name="text">
@@ -744,6 +747,21 @@
               <item>
                <property name="text">
                 <string>Rec Count</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>WCRC-R</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Biased WCRC-R</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Crap Biased WCRC-R</string>
                </property>
               </item>
              </widget>

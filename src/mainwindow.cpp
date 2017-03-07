@@ -56,6 +56,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->chkShowDirectRecs->setVisible(false);
+    ui->pbFirstWave->setVisible(false);
+
     this->setWindowTitle("ffnet sane search engine");
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
@@ -717,8 +720,8 @@ QSqlQuery MainWindow::BuildQuery()
     //if(ui->cbCustomFilters->currentText() == "New From Popular")
     queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
     //queryString+= " (SELECT  count(fic_id) FROM recommendations where f.id = fic_id) as sumrecs, ";
-    queryString+= " (SELECT  count(fic_id) FROM recommendations , recommenders where recommenders.id = recommendations.recommender_id and f.id = recommendations.fic_id and recommenders.wave >= %1) as sumrecs, ";
-    queryString=queryString.arg(ui->chkShowDirectRecs->isChecked() ? QString::number(0): QString::number(1));
+    queryString+= " (SELECT  count(fic_id) FROM recommendations , recommenders where recommenders.id = recommendations.recommender_id and f.id = recommendations.fic_id and recommenders.wave <= %1) as sumrecs, ";
+    queryString=queryString.arg(ui->chkShowDirectRecs->isChecked() || !ui->chkShowDirectRecs->isVisible() ? QString::number(0): QString::number(1));
 
     queryString+=" f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
@@ -767,6 +770,12 @@ QSqlQuery MainWindow::BuildQuery()
     QString diffField;
     if(ui->cbSortMode->currentText() == "Wordcount")
         diffField = " WORDCOUNT DESC";
+    if(ui->cbSortMode->currentText() == "Biased WCRC-R")
+        diffField = " ((wordcount/reviews) / (select fandom_multiplier from fandoms where fandom = f.fandom UNION select 1 as  fandom_multiplier limit 1) ) * (case when f.reviews/f.favourites  < 2 then 1 else 10000 end )  asc";
+    if(ui->cbSortMode->currentText() == "Crap Biased WCRC-R")
+        diffField = " ((wordcount/reviews) / (select fandom_multiplier from fandoms where fandom = f.fandom UNION select 1 as  fandom_multiplier limit 1) ) * (case when f.reviews/f.favourites  > 2 then 1 else 10000 end )  asc";
+    if(ui->cbSortMode->currentText() == "WCRC-R")
+        diffField = " ((wordcount/reviews) / (select fandom_multiplier from fandoms where fandom = f.fandom UNION select 1 as  fandom_multiplier limit 1) ) asc";
     else if(ui->cbSortMode->currentText() == "Favourites")
         diffField = " FAVOURITES DESC";
     else if(ui->cbSortMode->currentText() == "Update Date")
@@ -1426,6 +1435,9 @@ void MainWindow::ReadSettings()
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     //ui->cbCrossovers->setCurrentText(settings.value("Settings/crossovers", "").toString());
+    ui->chkShowDirectRecs->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
+    ui->pbFirstWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
+
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
     ui->chkTrackedFandom->blockSignals(true);
@@ -2039,8 +2051,14 @@ void MainWindow::on_pbFirstWave_clicked()
     pbMain->show();
     FavouriteStoryParser parser;
     ui->edtResults->insertHtml("Authors: " + QString::number(uniqueSections.keys().size()));
+    bool reached = false;
     for(auto authorUrl: SortedList(uniqueSections.keys()))
     {
+        pbMain->setValue(pbMain->value()+1);
+        if(authorUrl.contains("Heliosion"))
+            reached = true;
+        if(!reached)
+            continue;
         QString toInsert = "<a href=\"" + authorUrl + "\"> %1 </a>";
         toInsert= toInsert.arg(authorUrl );
 
@@ -2069,7 +2087,7 @@ void MainWindow::on_pbFirstWave_clicked()
             }
         }
         //QThread::sleep(1);
-        pbMain->setValue(pbMain->value()+1);
+
     }
     parser.ClearDoneCache();
     database::RebuildFanficIndexes();

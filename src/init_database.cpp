@@ -418,6 +418,7 @@ void WriteRecommender(const Recommender& recommender)
 
 QHash<QString, Recommender> FetchRecommenders(int limitingWave)
 {
+    limitingWave=1;
     QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
     QSqlQuery q1(db);
     QString qsl = "select * from recommenders  where wave <= :wave order by name asc";

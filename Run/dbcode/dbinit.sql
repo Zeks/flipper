@@ -39,3 +39,4 @@ CREATE TABLE if not exists PageCache (URL VARCHAR PRIMARY KEY  NOT NULL , GENERA
  CREATE  INDEX if  not exists I_FIC_ID ON Recommendations (fic_id ASC);
  alter table Recommenders add column wave integer default 0;
  CREATE  INDEX if not exists I_RECOMMENDER_WAVE ON Recommenders (wave ASC);
+ alter table fandoms add column fandom_multiplier integer default 1; 
