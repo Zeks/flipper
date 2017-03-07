@@ -1,5 +1,6 @@
 #pragma once
 #include "include/section.h"
+#include "include/init_database.h"
 #include <QString>
 #include <QDateTime>
 #include <functional>
@@ -7,10 +8,11 @@ class FavouriteStoryParser
 {
 public:
 
-    void ProcessPage(QString url,QString);
+    QList<Section> ProcessPage(QString url,QString, int authorWave = 0);
     Section GetSection( QString text, int start);
     QString ExtractRecommdenderNameFromUrl(QString url);
     void GetAuthor(Section& , int& startfrom, QString text);
+    void GetAuthorUrl(Section& , int& startfrom, QString text);
     void GetTitle(Section& , int& startfrom, QString text);
     void GetGenre(Section& , int& startfrom, QString text);
     void GetSummary(Section& , int& startfrom, QString text);
@@ -23,4 +25,13 @@ public:
     void GetCrossoverFandomList(Section& , int& startfrom, QString text);
     QString GetFandom(QString text);
     QStringList diagnostics;
+    void ClearProcessed();
+    void ClearDoneCache();
+    void WriteProcessed();
+    QList<Section> processedStuff;
+    database::WriteStats writeSections;
+    Recommender recommender;
+    QHash<QString, QString> alreadyDone;
+
 };
+

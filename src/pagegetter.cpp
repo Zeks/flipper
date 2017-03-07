@@ -52,7 +52,10 @@ WebPage PageGetterPrivate::GetPage(QString url, bool useCache)
             return result;
     }
     else
+    {
         result = GetPageFromNetwork(url);
+        //SavePageToDB(result);
+    }
     return result;
 }
 

@@ -29,6 +29,7 @@ struct Section
     QString summary;
     QString statSection;
     QString author;
+    QString authorUrl;
     QString url;
     QString tags;
     QString origin;
@@ -51,5 +52,6 @@ struct Recommender
     QString name;
     QString url;
     QString pageData;
-    int id;
+    int wave = 0;
+    int id = -3;
 };

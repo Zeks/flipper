@@ -52,7 +52,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void Init();
-    void IntiConnections();
+    void InitConnections();
     void timerEvent(QTimerEvent *) override;
 
     bool CheckSectionAvailability();
@@ -69,11 +69,12 @@ private:
     QSortFilterProxyModel* sortModel;
     int processedFics = 0;
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
+    int currentRecWave = 0;
     bool event(QEvent * e);
     void ReadSettings();
 
     void RequestAndProcessPage(QString);
-    WebPage RequestPage(QString);
+    WebPage RequestPage(QString, bool autoSaveToDB = false);
 
 
     QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
@@ -126,7 +127,11 @@ private:
 
     void ToggleTag();
     void CallExpandedWidget();
+
+
+
     QStringList SortedList(QStringList);
+    QStringList ReverseSortedList(QStringList list);
 
 
     Ui::MainWindow *ui;
@@ -213,6 +218,8 @@ private slots:
     void on_pbOpenRecommendations_clicked();
     void on_pbLoadAllRecommenders_clicked();
     void on_pbOpenWholeList_clicked();
+    void on_pbFirstWave_clicked();
+    void OnReloadRecLists();
 };
 
 #endif // MAINWINDOW_H
