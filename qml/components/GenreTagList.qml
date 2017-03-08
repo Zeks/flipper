@@ -23,10 +23,31 @@ Item {
         allChoices: tagModel
 
     }
+    function makeSelection(){
+        //console.log(tsTags.currentChoices);
+        lvFics.currentIndex = delegateItem.indexOfThisDelegate
+        if(tsTags.currentChoices.length === 0)
+        {
+            //console.log("Activating genres");
+            tsTags.deactivateIntoAllChoices();
+            tsGenre.activate();
+            tsGenre.activated(delegateItem.indexOfThisDelegate)
+        }
+        else
+        {
+            //console.log("Activating tags");
+            tsTags.activate();
+            tsGenre.deactivate();
+            tsTags.activated(delegateItem.indexOfThisDelegate)
+            tsTags.showCurrrentTags();
+        }
+    }
+
     Component.onCompleted: {
             tsGenre.activated.connect(tsTags.deactivate)
             tsTags.activated.connect(tsGenre.deactivate)
             tsTags.activated.connect(delegateItem.tagListActivated)
+            delegateItem.mouseClicked.connect(tagGenreList.makeSelection)
             tsTags.tagToggled.connect(delegateItem.tagToggled)
             tagColumn.y = tsTags.y + tsTags.height + 20
             tagColumn.x = tagGenreList.x

@@ -721,7 +721,12 @@ QSqlQuery MainWindow::BuildQuery()
     queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
     //queryString+= " (SELECT  count(fic_id) FROM recommendations where f.id = fic_id) as sumrecs, ";
     queryString+= " (SELECT  count(fic_id) FROM recommendations , recommenders where recommenders.id = recommendations.recommender_id and f.id = recommendations.fic_id and recommenders.wave <= %1) as sumrecs, ";
-    queryString=queryString.arg(ui->chkShowDirectRecs->isChecked() || !ui->chkShowDirectRecs->isVisible() ? QString::number(0): QString::number(1));
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    bool directRecsChecked = ui->chkShowDirectRecs->isChecked();
+    bool directRecsVisible = settings.value("Settings/showExperimentaWaveparser", false).toBool();
+    QString wave = (directRecsChecked || !directRecsVisible) ? QString::number(0): QString::number(1);
+    queryString=queryString.arg(wave);
 
     queryString+=" f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)

@@ -17,7 +17,22 @@ Rectangle{
     property string tagSelectorColor: '#ABB6D3'
     function deactivate(index) {
         root.active = false
+        //root.selectionMode = false;
+        //list.model = allChoices;
     }
+    function deactivateIntoAllChoices(index) {
+        root.active = false
+        root.selectionMode = false;
+        list.model = allChoices;
+    }
+    function activate(index) {
+        root.active = true
+    }
+    function showCurrrentTags() {
+        root.selectionMode = false;
+        list.model = currentChoices;
+    }
+
     height: list.visible ? list.height + txtGenre.height + 6 : txtGenre.height + 6
     //height: list.height
     //height:40
@@ -61,6 +76,7 @@ Rectangle{
                 onClicked: {
                     lvFics.currentIndex = delegateItem.indexOfThisDelegate
                     root.selectionMode = !root.selectionMode
+
                     if(root.selectionMode)
                         list.model = allChoices
                     else

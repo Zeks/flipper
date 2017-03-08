@@ -30,8 +30,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 9), Qt::DisplayRole);
         if(role == TagsRole)
         {
-            QStringList temp = AdaptingTableModel::data(index.sibling(index.row(), 10), Qt::DisplayRole).toString().replace("none", "").trimmed().split(" ");
-            temp.removeAll("");
+            QStringList temp = AdaptingTableModel::data(index.sibling(index.row(), 10), Qt::DisplayRole).toString().replace("none", "").trimmed().split(" ", QString::SkipEmptyParts);
             return temp;
         }
         if(role == WordsRole)

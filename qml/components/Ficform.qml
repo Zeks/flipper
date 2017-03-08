@@ -9,31 +9,30 @@ Rectangle {
     property string delAuthor : author
     property int delRow : rownum
     property int indexOfThisDelegate: index
+    signal mouseClicked
+    MouseArea{
+        anchors.fill : parent
+        propagateComposedEvents : true
+
+        onClicked : {
+            delegateItem.mouseClicked();
+            console.log("clickoutside");
+        }
+     }
+
     width: 850
     z: {
         var newZ = lvFics.currentIndex === index ? 10 : 1
         //print("changing z for: " + index + " to: " + newZ)
         return lvFics.currentIndex === index ? 10 : 1
     }
-    //height: txtUpdated.y + 24
     height:mainLayout.height > (tagColumn.height + genreTagList1.height) ? mainLayout.height + 30 : (tagColumn.height + genreTagList1.height) + 10
-    //anchors.bottom: tagColumn.bottom
-    //anchors.top: lblTitle.top
     clip: false
     id: delegateItem
     color: "#B0E0E6FF"
     border.width: 2
     radius: 0
     border.color: Qt.rgba(0, 0, 1, 0.4)
-    //    Component.onCompleted: {
-    //        print("completed " + cbChapters.find(atChapter))
-    //        print("molde size " + cbChapters.count)
-
-    //        cbChapters.currentIndex = cbChapters.find(atChapter)
-    //    }
-    //signal chapterChanged(int chapter)
-
-
 
     ToolButton {
         id: tbAddGenre
@@ -64,38 +63,6 @@ Rectangle {
             id: tbUpdate
             enabled:false
         }
-    }
-
-    Window {
-        id: splash
-        title: "Splash Window"
-        modality: Qt.ApplicationModal
-        flags: Qt.FramelessWindowHint
-        width:300
-        height:flow.height
-
-        property int timeoutInterval: 2000
-        //        Flickable{
-        //            anchors.fill: parent
-        Flow{
-            anchors.left: parent.left
-            anchors.right: parent.right
-            spacing : 5
-            id:flow
-            width:300
-            flow:Flow.LeftToRight
-
-            Repeater{
-                model:200
-                Text {
-                    id: textBlock
-                    text: modelData + " "
-                    font.pointSize: 12;
-                    //}
-                }
-            }
-        }
-
     }
 
     Column {
@@ -276,10 +243,10 @@ Rectangle {
                 //property int _MS_PER_DAY: 1000 * 60 * 60 * 24;
                 width: recommendations > 0 ? 20 : 0
                 height: 24
+                sourceSize.height: 24
+                sourceSize.width: 24
                 visible: recommendations > 0
-                source: {
-                        return "qrc:/icons/icons/heart.png"
-                }
+                source: "qrc:/icons/icons/heart.png"
             }
             Text {
                 id: txtRecCount
