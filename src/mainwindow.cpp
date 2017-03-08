@@ -64,6 +64,12 @@ MainWindow::MainWindow(QWidget *parent) :
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     if(settings.value("Settings/hideCache", true).toBool())
         ui->chkCacheMode->setVisible(false);
+
+
+    ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
+                                      "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
+                                      "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
+
     ReadTags();
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
@@ -91,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //connect(ui->buttonGroup, SIGNAL(buttonClicked(int)), this, SLOT(OnCheckboxFilter(int)));
 
-    ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
+    ui->cbNormals->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSectionTypes->currentText())));
     //ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 
     pbMain = new QProgressBar;
@@ -374,7 +380,7 @@ void MainWindow::Init()
     UpdateFandomList(fandomManager, [](Fandom f){return f.url;});
     UpdateFandomList(crossoverManager, [](Fandom f){return f.crossoverUrl;});
     InsertFandomData(names);
-    ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
+    ui->cbNormals->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSectionTypes->currentText())));
 
     //ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 }
@@ -795,7 +801,7 @@ QSqlQuery MainWindow::BuildQuery()
 
 
 
-    bool tagsMatter = true;
+    bool tagsMatter = !ui->chkIgnoreTags->isChecked();
     if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Longest Running")
     {
         queryString =  "select ID, julianday(f.updated) - julianday(f.published) as datediff, f.* from fanfics f where 1 = 1 and datediff > 0  ";
@@ -1062,19 +1068,6 @@ void MainWindow::UpdateFandomList(QNetworkAccessManager& manager,
     }
 }
 
-QStringList MainWindow::GetFandomListFromDB()
-{
-    QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("Select fandom from fandoms where section ='%1' and normal_url is not null").arg(ui->cbSectionTypes->currentText());
-    QSqlQuery q(qs, db);
-    QStringList result;
-    result.append("");
-    while(q.next())
-    {
-        result.append(q.value(0).toString());
-    }
-    return result;
-}
 
 QStringList MainWindow::GetCrossoverListFromDB()
 {
@@ -1724,7 +1717,7 @@ void MainWindow::OnShowContextMenu(QPoint p)
 
 void MainWindow::OnSectionChanged(QString)
 {
-    ui->cbNormals->setModel(new QStringListModel(GetFandomListFromDB()));
+    ui->cbNormals->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSectionTypes->currentText())));
     //ui->cbCrossovers->setModel(new QStringListModel(GetCrossoverListFromDB()));
 }
 

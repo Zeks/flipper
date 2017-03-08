@@ -1,8 +1,10 @@
 #include "tagwidget.h"
 #include "ui_tagwidget.h"
 #include "genericeventfilter.h"
+#include "init_database.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QStringListModel>
 
 TagWidget::TagWidget(QWidget *parent) :
     QWidget(parent),
@@ -37,6 +39,8 @@ void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
         allTags.push_back(tag.second);
         ui->edtTags->insertHtml(toInsert);
     }
+    ui->cbAssignTag->setModel(new QStringListModel(allTags));
+    ui->cbFandom->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSection->currentText())));
 }
 
 QStringList TagWidget::GetSelectedTags()
@@ -70,6 +74,7 @@ void TagWidget::on_pbAddTag_clicked()
     allTags.push_back(tag);
     QString toInsert = "<a href=\"0 " + tag + " \">" + tag + "</a>    ";
     ui->edtTags->insertHtml(toInsert);
+    ui->cbAssignTag->setModel(new QStringListModel(allTags));
     emit tagAdded(ui->leTag->text());
 }
 
@@ -87,6 +92,7 @@ void TagWidget::on_pbDeleteTag_clicked()
         return;
     }
     OnRemoveTagFromEdit(tag);
+    ui->cbAssignTag->setModel(new QStringListModel(allTags));
     emit tagDeleted(ui->leTag->text());
 }
 
@@ -158,3 +164,8 @@ void TagWidget::OnRemoveTagFromEdit(QString tag)
     ui->edtTags->setHtml(text);
 }
 
+
+void TagWidget::on_pbAssignTagToFandom_clicked()
+{
+    database::AssignTagToFandom(ui->cbAssignTag->currentText(), ui->cbFandom->currentText());
+}

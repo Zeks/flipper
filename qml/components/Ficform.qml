@@ -16,7 +16,7 @@ Rectangle {
 
         onClicked : {
             delegateItem.mouseClicked();
-            console.log("clickoutside");
+            //console.log("clickoutside");
         }
      }
 

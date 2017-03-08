@@ -14,6 +14,12 @@ struct WriteStats
     void SetFandomTracked(QString fandom, bool crossover, bool);
     void PushFandom(QString);
     void RebaseFandoms();
+    QStringList GetFandomListFromDB(QString);
+
+    void AssignTagToFandom(QString tag, QString fandom);
+
+
+
     QStringList FetchRecentFandoms();
     QHash<QString, Recommender> FetchRecommenders(int limitingWave = 0);
     bool FetchTrackStateForFandom(QString fandom, bool crossover);

@@ -42,6 +42,8 @@ public slots:
     void OnNewTag(QString, bool);
     void OnRemoveTagFromEdit(QString);
 
+private slots:
+    void on_pbAssignTagToFandom_clicked();
 };
 
 #endif // TAGWIDGET_H

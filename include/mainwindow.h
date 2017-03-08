@@ -113,7 +113,6 @@ private:
     void InsertFandomData(QMap<QPair<QString,QString>, Fandom> names);
     void PopulateComboboxes();
 
-    QStringList GetFandomListFromDB();
     QStringList GetCrossoverListFromDB();
 
     QStringList GetCrossoverUrl(QString, bool ignoreTrackingState = false);

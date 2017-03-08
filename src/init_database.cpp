@@ -11,6 +11,7 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QDir>
+#include <algorithm>
 
 namespace database{
 bool database::ReadDbFile()
@@ -191,16 +192,23 @@ QStringList database::FetchTrackedCrossovers()
 
 void database::BackupDatabase()
 {
-    if(!QFile::exists("CrawlerDB.sqlite"))
-        QFile::copy("CrawlerDB.sqlite.default", "CrawlerDB.sqlite");
-    QString backupName = "backups/CrawlerDB." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
-    if(!QFile::exists(backupName))
-        JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
     QDir dir("backups");
     QStringList filters;
     filters << "*.zip";
     dir.setNameFilters(filters);
     auto entries = dir.entryList(QDir::NoFilter, QDir::Time|QDir::Reversed);
+    qSort(entries.begin(),entries.end());
+    std::reverse(entries.begin(),entries.end());
+    qDebug() << entries;
+
+    if(!QFile::exists("CrawlerDB.sqlite"))
+        QFile::copy("CrawlerDB.sqlite.default", "CrawlerDB.sqlite");
+    QString backupName = "backups/CrawlerDB." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
+    if(!QFile::exists(backupName))
+        JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
+
+
+
     int i = 0;
     for(QString entry : entries)
     {
@@ -709,7 +717,31 @@ void RebuildAllFanficIndexes()
         }
     }
 }
+QStringList GetFandomListFromDB(QString section)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QString qs = QString("Select fandom from fandoms where section ='%1' and normal_url is not null").arg(section);
+    QSqlQuery q(qs, db);
+    QStringList result;
+    result.append("");
+    while(q.next())
+    {
+        result.append(q.value(0).toString());
+    }
+    return result;
+}
 
 
-
+void AssignTagToFandom(QString tag, QString fandom)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QString qs = QString("update fanfics set tags = tags || ' ' || '%1' where fandom like '%%2%' and tags not like '%%1%'").arg(tag).arg(fandom);
+    QSqlQuery q(qs, db);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+}
 }
