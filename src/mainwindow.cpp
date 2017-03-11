@@ -341,36 +341,10 @@ bool MainWindow::event(QEvent * e)
     return QMainWindow::event(e) ;
 }
 
+
 MainWindow::~MainWindow()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    settings.setValue("Settings/minWordCount", ui->cbMinWordCount->currentText());
-    settings.setValue("Settings/maxWordCount", ui->cbMaxWordCount->currentText());
-    settings.setValue("Settings/normals", ui->cbNormals->currentText());
-    //settings.setValue("Settings/crossovers", ui->cbCrossovers->currentText());
-    settings.setValue("Settings/plusGenre", ui->leContainsGenre->text());
-    settings.setValue("Settings/minusGenre", ui->leNotContainsGenre->text());
-    settings.setValue("Settings/plusWords", ui->leContainsWords->text());
-    settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
-    settings.setValue("Settings/section", ui->cbSectionTypes->currentText());
-    settings.setValue("Settings/active", ui->chkActive->isChecked());
-    settings.setValue("Settings/cacheMode", ui->chkCacheMode->isChecked());
-    settings.setValue("Settings/completed", ui->chkComplete->isChecked());
-    settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
-    settings.setValue("Settings/spMain", ui->spMain->saveState());
-    settings.setValue("Settings/spDebug", ui->spDebug->saveState());
-    settings.setValue("Settings/currentSortFilter", ui->cbSortMode->currentText());
-    settings.setValue("Settings/currentCustomFilter", ui->cbCustomFilters->currentText());
-    settings.setValue("Settings/currentRecommender", ui->leAuthorUrl->text());
-    settings.setValue("Settings/ignoreTagsOnRecommendations", ui->chkShowRecsRegardlessOfTags->isChecked());
-    settings.setValue("Settings/customFilterEnabled", ui->chkCustomFilter->isChecked());
-    settings.setValue("Settings/lengthCutoff", ui->cbWordCutoff->currentText());
-    //    QString temp;
-    //    for(int size : ui->spMain->sizes())
-    //        temp.push_back(QString::number(size) + " ");
-    //    settings.setValue("Settings/spMain", temp.trimmed());
-    settings.sync();
+    WriteSettings();
     delete ui;
 }
 
@@ -725,6 +699,7 @@ QSqlQuery MainWindow::BuildQuery()
     QString queryString = "select ID, ";
     //if(ui->cbCustomFilters->currentText() == "New From Popular")
     queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
+    //queryString+= " (select max(favourites) where fandom = f.fandom) as maxf, ";
     //queryString+= " (SELECT  count(fic_id) FROM recommendations where f.id = fic_id) as sumrecs, ";
     queryString+= " (SELECT  count(fic_id) FROM recommendations , recommenders where recommenders.id = recommendations.recommender_id and f.id = recommendations.fic_id and recommenders.wave <= %1) as sumrecs, ";
     QSettings settings("settings.ini", QSettings::IniFormat);
@@ -734,7 +709,7 @@ QSqlQuery MainWindow::BuildQuery()
     QString wave = (directRecsChecked || !directRecsVisible) ? QString::number(0): QString::number(1);
     queryString=queryString.arg(wave);
 
-    queryString+=" f.* from fanfics f where 1 = 1 " ;
+    queryString+=" f.* from fanfics f, fandom_stats fs where fs.fandom = f.fandom and 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
         queryString += " and wordcount > :minwordcount ";
     if(ui->cbMaxWordCount->currentText().toInt() > 0)
@@ -757,6 +732,8 @@ QSqlQuery MainWindow::BuildQuery()
             continue;
         queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
     }
+
+    queryString+= BuildBias();
 
     for(QString word: ui->leNotContainsWords->text().trimmed().split(" "))
     {
@@ -781,16 +758,22 @@ QSqlQuery MainWindow::BuildQuery()
     QString diffField;
     if(ui->cbSortMode->currentText() == "Wordcount")
         diffField = " WORDCOUNT DESC";
-    if(ui->cbSortMode->currentText() == "Biased WCRC-R")
-        diffField = " ((wordcount/reviews) / (select fandom_multiplier from fandoms where fandom = f.fandom UNION select 1 as  fandom_multiplier limit 1) ) * (case when f.reviews/f.favourites  < 2 then 1 else 10000 end )  asc";
-    if(ui->cbSortMode->currentText() == "Crap Biased WCRC-R")
-        diffField = " ((wordcount/reviews) / (select fandom_multiplier from fandoms where fandom = f.fandom UNION select 1 as  fandom_multiplier limit 1) ) * (case when f.reviews/f.favourites  > 2 then 1 else 10000 end )  asc";
+//    if(ui->cbSortMode->currentText() == "Biased WCRC-R")
+//        diffField = " wcr *  (case when reviewstofavourites  < 2 then 1 else 10000 end )  asc";
+//    if(ui->cbSortMode->currentText() == "Crap Biased WCRC-R")
+//        diffField = " wcr * (case when reviewstofavourites  > 2 then 1 else 10000 end )  asc";
     if(ui->cbSortMode->currentText() == "WCRC-R")
-        diffField = " ((wordcount/reviews) / (select fandom_multiplier from fandoms where fandom = f.fandom UNION select 1 as  fandom_multiplier limit 1) ) asc";
+        diffField = " (wcr ) asc";
     else if(ui->cbSortMode->currentText() == "Favourites")
         diffField = " FAVOURITES DESC";
     else if(ui->cbSortMode->currentText() == "Update Date")
         diffField = " updated DESC";
+    else if(ui->cbSortMode->currentText() == "Experimental")
+    {
+        diffField =  " 1.3*(favourites*1.0/(select max(favourites) from fanfics f2 where f2.fandom = fandom))*(case when daysrunning < 90 then 2.5 when daysrunning < 365 then 2 else 1 end) "
+        " + 20/(wcr_adjusted) desc";
+        //(case when fs.ficcount < 1000 then 2 when fs.ficcount < 10000 then 1.5 else 1 end)
+    }
     else if(ui->cbSortMode->currentText() == "Rec Count")
         diffField = " sumrecs desc";
     else if(ui->cbSortMode->currentText() == "Fav Rate")
@@ -864,9 +847,9 @@ QSqlQuery MainWindow::BuildQuery()
                              " )/60/60/24 >-365");
 
     if(ui->rbNormal->isChecked())
-        queryString+=QString(" and  fandom like '%%1%'").arg(ui->cbNormals->currentText());
+        queryString+=QString(" and  f.fandom like '%%1%'").arg(ui->cbNormals->currentText());
     else if(ui->rbCrossovers->isChecked())
-        queryString+=QString(" and  fandom like '%%1%' and fandom like '%CROSSOVER%'").arg(ui->cbNormals->currentText());
+        queryString+=QString(" and  f.fandom like '%%1%' and f.fandom like '%CROSSOVER%'").arg(ui->cbNormals->currentText());
     database::PushFandom(ui->cbNormals->currentText().trimmed());
     //ui->cbNormals->blockSignals(true);
     recentFandomsModel->setStringList(database::FetchRecentFandoms());
@@ -938,6 +921,23 @@ QSqlQuery MainWindow::BuildQuery()
     }
     auto q = bindQuery(AddIdList(queryString, maxFicCountValue));
     return q;
+}
+
+QString MainWindow::BuildBias()
+{
+    QString result;
+    if(ui->cbBiasFavor->currentText() == "None")
+        return result;
+    if(ui->cbBiasFavor->currentText() == "Favor")
+        result += QString(" and ");
+    else
+        result += QString(" and not ");
+    if(ui->cbBiasOperator->currentText() == ">")
+        result += QString(" reviewstofavourites > ");
+    else
+        result += QString(" reviewstofavourites < ");
+    result += ui->leBiasValue->text();
+    return result;
 }
 
 void MainWindow::OnSetTag(QString tag)
@@ -1469,7 +1469,45 @@ void MainWindow::ReadSettings()
     ui->cbSortMode->blockSignals(false);
     ui->cbCustomFilters->blockSignals(false);
     ui->chkCustomFilter->blockSignals(false);
+    ui->cbBiasFavor->setCurrentText(settings.value("Settings/biasMode", "None").toString());
+    ui->cbBiasOperator->setCurrentText(settings.value("Settings/biasOperator", "<").toString());
+    ui->leBiasValue->setText(settings.value("Settings/biasValue", "2.5").toString());
 
+}
+
+void MainWindow::WriteSettings()
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    settings.setValue("Settings/minWordCount", ui->cbMinWordCount->currentText());
+    settings.setValue("Settings/maxWordCount", ui->cbMaxWordCount->currentText());
+    settings.setValue("Settings/normals", ui->cbNormals->currentText());
+    //settings.setValue("Settings/crossovers", ui->cbCrossovers->currentText());
+    settings.setValue("Settings/plusGenre", ui->leContainsGenre->text());
+    settings.setValue("Settings/minusGenre", ui->leNotContainsGenre->text());
+    settings.setValue("Settings/plusWords", ui->leContainsWords->text());
+    settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
+    settings.setValue("Settings/section", ui->cbSectionTypes->currentText());
+    settings.setValue("Settings/active", ui->chkActive->isChecked());
+    settings.setValue("Settings/cacheMode", ui->chkCacheMode->isChecked());
+    settings.setValue("Settings/completed", ui->chkComplete->isChecked());
+    settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
+    settings.setValue("Settings/spMain", ui->spMain->saveState());
+    settings.setValue("Settings/spDebug", ui->spDebug->saveState());
+    settings.setValue("Settings/currentSortFilter", ui->cbSortMode->currentText());
+    settings.setValue("Settings/currentCustomFilter", ui->cbCustomFilters->currentText());
+    settings.setValue("Settings/currentRecommender", ui->leAuthorUrl->text());
+    settings.setValue("Settings/ignoreTagsOnRecommendations", ui->chkShowRecsRegardlessOfTags->isChecked());
+    settings.setValue("Settings/customFilterEnabled", ui->chkCustomFilter->isChecked());
+    settings.setValue("Settings/biasMode", ui->cbBiasFavor->currentText());
+    settings.setValue("Settings/biasOperator", ui->cbBiasOperator->currentText());
+    settings.setValue("Settings/biasValue", ui->leBiasValue->text());
+    settings.setValue("Settings/lengthCutoff", ui->cbWordCutoff->currentText());
+    //    QString temp;
+    //    for(int size : ui->spMain->sizes())
+    //        temp.push_back(QString::number(size) + " ");
+    //    settings.setValue("Settings/spMain", temp.trimmed());
+    settings.sync();
 }
 
 void MainWindow::OnNetworkReply(QNetworkReply * reply)

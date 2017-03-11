@@ -38,6 +38,7 @@ Rectangle{
     //height:40
     Rectangle{
         id:rect
+        //rotation: root.rotation === 180 ? 180 : 0;
         height: 24//txtGenre.height + 6
         width:parent.width
         color: tagSelectorColor
@@ -74,6 +75,9 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
+                    console.log(mainWindow.height);
+                    //console.log(plus.mapToItem(mainWindow,0,0));
+
                     lvFics.currentIndex = delegateItem.indexOfThisDelegate
                     root.selectionMode = !root.selectionMode
 
@@ -84,6 +88,23 @@ Rectangle{
 
                     active = true
                     activated(delegateItem.indexOfThisDelegate)
+                    if(plus.mapToItem(mainWindow,0,0).y > mainWindow.height/2 )
+                    {
+                        //list.verticalLayoutDirection = ListView.BottomToTop;
+                        //list.anchors.top = undefined;
+                        //list.y = y - list.height;
+                        console.log("list y: ", list.y);
+                        console.log("list height: ", list.height);
+                        root.parent.rotation =  180;
+                        rect.rotation = 180;
+                    }
+                    else
+                    {
+                        root.parent.rotation =  0;
+                        rect.rotation = 0;
+                        //list.verticalLayoutDirection = ListView.TopToBottom;
+                        //list.anchors.top =  rect.bottom
+                    }
                 }
             }
         }
@@ -96,14 +117,18 @@ Rectangle{
         anchors.topMargin: 2
         property int pixelSize : 16
         model:currentChoices
-
+        //interactive : true
+        //verticalLayoutDirection:ListView.BottomToTop
         height: {
             //print("Current count: " + count )
-            return spacing*4 + count * (pixelSize + spacing + 3)
+            //var taglimit = count >30 ? 30 : count;
+            var taglimit = count;
+            return spacing*4 + taglimit * (pixelSize + spacing + 3)
         }
         spacing: 2
         delegate: Rectangle{
             id:frame
+            rotation: root.parent.rotation === 180 ? 180 : 0
             color: {
                 var color
                 if(!selectionMode)
@@ -141,6 +166,7 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
+
                     if(!selectionMode)
                         return
 
@@ -156,6 +182,23 @@ Rectangle{
                         tagToggled(modelData, false)
                     }
                 }
+//                onWheel: {
+
+//                    var angleDelta = root.parent.rotation === 0 ? -1* wheel.angleDelta.y : wheel.angleDelta.y;
+
+//                    if(angleDelta > 0)
+//                    {
+//                        list.positionViewAtIndex(list.currentIndex+1,ListView.Beginning )
+//                        if(list.currentIndex < list.count)
+//                            list.currentIndex=list.currentIndex+1
+//                    }
+//                    else{
+//                        list.positionViewAtIndex(list.currentIndex-1,ListView.Beginning )
+//                        if(list.currentIndex >=0)
+//                            list.currentIndex=list.currentIndex-1
+//                    }
+//                }
+
             }
         }
 

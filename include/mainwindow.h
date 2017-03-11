@@ -72,6 +72,7 @@ private:
     int currentRecWave = 0;
     bool event(QEvent * e);
     void ReadSettings();
+    void WriteSettings();
 
     void RequestAndProcessPage(QString);
     WebPage RequestPage(QString, bool autoSaveToDB = false);
@@ -101,6 +102,7 @@ private:
 
     void LoadData();
     QSqlQuery BuildQuery();
+    QString BuildBias();
 
     //void LoadRecommendations(QString url);
     void LoadIntoDB(Section&);
