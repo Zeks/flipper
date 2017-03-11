@@ -40,3 +40,26 @@ CREATE TABLE if not exists PageCache (URL VARCHAR PRIMARY KEY  NOT NULL , GENERA
  alter table Recommenders add column wave integer default 0;
  CREATE  INDEX if not exists I_RECOMMENDER_WAVE ON Recommenders (wave ASC);
  alter table fandoms add column fandom_multiplier integer default 1; 
+ alter table fanfics add column wcr real; 
+ alter table fanfics add column wcr_adjusted real; 
+  alter table fanfics add column reviewstofavourites real; 
+ alter table fanfics add column daysrunning integer default null; 
+ alter table fanfics add column age integer default null; 
+ update fanfics set wcr = wordcount*1.0/reviews where wcr is null and reviews > 0 and wordcount > 1000;
+ update fanfics set wcr = 200000 where wcr is null and ( reviews = 0 or wordcount <=1000);
+ update fanfics set wcr_adjusted = wcr where reviews/favourites < 2.5 and wcr_adjusted is null;
+ update fanfics set wcr_adjusted = 200000 where reviews/favourites >= 2.5 and wcr_adjusted is null;
+ update fanfics set reviewstofavourites = reviews*1.0/favourites where reviewstofavourites is null;
+ update fanfics set age= abs(cast((strftime('%s',CURRENT_TIMESTAMP)-strftime('%s',published) ) AS real )/60/60/24) where daysrunning is null;
+ update fanfics set daysrunning= abs(cast((strftime('%s',updated)-strftime('%s',published) ) AS real )/60/60/24) where daysrunning is null;
+ CREATE INDEX if not exists  I_WCR ON fanfics (wcr ASC);
+ CREATE INDEX if not exists  I_DAYSRUNNING ON fanfics (daysrunning ASC);
+ CREATE INDEX if not exists  I_age ON fanfics (age ASC);
+ CREATE INDEX if not exists  I_reviewstofavourites ON fanfics (reviewstofavourites ASC);
+CREATE VIEW fandom_stats AS  select fandom, 
+cast (strftime('%s',CURRENT_TIMESTAMP)-strftime('%s',min(published)) AS real )/60/60/24/365  as age,
+min(published) as origin,
+(select sum(wcr) from fanfics where wcr < 200000 and fandom = fs.fandom)/(select count(id) from fanfics where wcr < 200000  and fandom = fs.fandom) as averagewcr,
+max(favourites) as maxfaves, min(wcr) as minwcr, count(id) as ficcount from fanfics fs group by fandom;
+ 
+ 

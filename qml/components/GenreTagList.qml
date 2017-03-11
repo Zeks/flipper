@@ -6,22 +6,22 @@ Item {
     height: 700
     id:tagGenreList
     TagSection{
-        anchors.top: parent.top
+        anchors.top: tsTags.rotation === 0 ? parent.top : tsTags.bottom;
         id:tsGenre
         tagName: "Genre"
         currentChoices: genre
         active: true
+        rotation:tagGenreList.rotation
 
     }
     TagSection{
         id:tsTags
-        anchors.top: tsGenre.bottom
+        anchors.top: tsTags.rotation === 0 ? tsGenre.bottom : parent.top;
         anchors.topMargin: 6
         tagName: "Tags"
         currentChoices: tags
         canAdd: true
         allChoices: tagModel
-
     }
     function makeSelection(){
         //console.log(tsTags.currentChoices);
