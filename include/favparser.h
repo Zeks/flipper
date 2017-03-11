@@ -24,10 +24,12 @@ public:
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
     void GetCrossoverFandomList(Section& , int& startfrom, QString text);
     QString GetFandom(QString text);
-    QStringList diagnostics;
     void ClearProcessed();
     void ClearDoneCache();
     void WriteProcessed();
+
+
+    QStringList diagnostics;
     QList<Section> processedStuff;
     database::WriteStats writeSections;
     Recommender recommender;

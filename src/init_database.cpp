@@ -223,7 +223,7 @@ void database::BackupDatabase()
 
 bool LoadIntoDB(Section & section)
 {
-
+    qDebug() << "Loading:" << section.title;
     QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
     bool loaded = false;
     bool isUpdate = false;
@@ -244,6 +244,8 @@ bool LoadIntoDB(Section & section)
         isUpdate = true;
     if(keyQ.value(0).toInt() == 0)
         isInsert = true;
+    if(isUpdate == false && isInsert == false)
+        return false;
 
     if(keyQ.lastError().isValid())
     {
@@ -744,4 +746,34 @@ void AssignTagToFandom(QString tag, QString fandom)
         qDebug() << q.lastQuery();
     }
 }
+
+
+QDateTime GetMaxUpdateDateForSection(QStringList sections)
+{
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QString qs = QString("Select max(updated) as updated from fanfics where 1 = 1 %1");
+    QString append;
+    if(sections.size() == 1)
+    {
+        append+= QString(" and fandom = '%1' ").arg(sections.at(0));
+    }
+    else
+    {
+        for(auto section : sections)
+        {
+            append+= QString(" and fandom like '%%1%' ").arg(section);
+        }
+    }
+    qs=qs.arg(append);
+    QSqlQuery q(qs, db);
+    q.next();
+    qDebug() << q.lastQuery();
+    //QDateTime result = q.value("updated").toDateTime();
+    QString resultStr = q.value("updated").toString();
+    QDateTime result;
+    result = QDateTime::fromString(resultStr, "yyyy-MM-ddThh:mm:ss.000");
+    return result;
+}
+
+
 }

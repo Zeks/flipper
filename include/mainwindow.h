@@ -18,6 +18,8 @@
 #include <QLabel>
 #include <QTextBrowser>
 #include <QTableView>
+#include <QQueue>
+#include <QThread>
 #include <functional>
 #include "tagwidget.h"
 #include "libs/UniversalModels/include/TableDataInterface.h"
@@ -53,7 +55,7 @@ public:
     ~MainWindow();
     void Init();
     void InitConnections();
-    void timerEvent(QTimerEvent *) override;
+    //void timerEvent(QTimerEvent *) override;
 
     bool CheckSectionAvailability();
 
@@ -74,7 +76,7 @@ private:
     void ReadSettings();
     void WriteSettings();
 
-    void RequestAndProcessPage(QString);
+    void RequestAndProcessPage(QString, bool useLastIndex = false);
     WebPage RequestPage(QString, bool autoSaveToDB = false);
 
 
@@ -96,9 +98,8 @@ private:
     void GetStatSection(Section& , int& startfrom, QString text);
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
 
-    QDateTime GetMaxUpdateDateForSection(QStringList sections);
 
-    QString CreateURL(QString);
+    //QString CreateURL(QString);
 
     void LoadData();
     QSqlQuery BuildQuery();
@@ -110,8 +111,7 @@ private:
     QString WrapTag(QString tag);
     void HideCurrentID();
 
-    void UpdateFandomList(QNetworkAccessManager& manager,
-                          std::function<QString(Fandom)> linkGetter);
+    void UpdateFandomList(std::function<QString(Fandom)> linkGetter);
     void InsertFandomData(QMap<QPair<QString,QString>, Fandom> names);
     void PopulateComboboxes();
 
@@ -151,9 +151,9 @@ private:
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
-    QNetworkAccessManager manager;
-    QNetworkAccessManager fandomManager;
-    QNetworkAccessManager crossoverManager;
+//    QNetworkAccessManager manager;
+    //QNetworkAccessManager fandomManager;
+    //QNetworkAccessManager crossoverManager;
     QStringList currentFilterUrls;
     QString currentFilterUrl;
     bool ignoreUpdateDate = false;
@@ -174,16 +174,19 @@ private:
     QDialog* expanderWidget = nullptr;
     QTextEdit* edtExpander = new QTextEdit;
     QTimer selectionTimer;
+    QThread pageThread;
+    QList<WebPage> pageQueue;
 
 public slots:
-    void OnNetworkReply(QNetworkReply*);
-    void OnFandomReply(QNetworkReply*);
-    void OnCrossoverReply(QNetworkReply*);
+    //void OnNetworkReply(QNetworkReply*);
+    void ProcessFandoms(WebPage webPage);
+    void ProcessCrossovers(WebPage webPage);
     void OnChapterUpdated(QVariant, QVariant, QVariant);
     void OnTagAdd(QVariant tag, QVariant row);
     void OnTagRemove(QVariant tag, QVariant row);
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
     void WipeSelectedFandom(bool);
+    void OnNewPage(WebPage);
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);
@@ -221,6 +224,8 @@ private slots:
     void on_pbOpenWholeList_clicked();
     void on_pbFirstWave_clicked();
     void OnReloadRecLists();
+signals:
+    void pageTask(QString, QString, QDateTime, bool);
 };
 
 #endif // MAINWINDOW_H

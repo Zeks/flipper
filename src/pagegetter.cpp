@@ -11,6 +11,8 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QEventLoop>
+#include <QThread>
+
 
 
 class PageGetterPrivate : public QObject
@@ -166,3 +168,61 @@ void PageManager::SavePageToDB(const WebPage & page)
     d->SavePageToDB(page);
 }
 #include "pagegetter.moc"
+
+PageThreadWorker::PageThreadWorker(QObject *parent)
+{
+
+}
+
+void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit, bool cacheMode)
+{
+    QScopedPointer<PageManager> pager(new PageManager);
+    WebPage result;
+    do
+    {
+        result = pager->GetPage(url, cacheMode);
+
+        auto minUpdate = GrabMinUpdate(result.content);
+        url = GetNext(result.content);
+        if(updateLimit.isValid() && minUpdate < updateLimit)
+        {
+            result.error = "Already have the stuff past this point. borting.";
+            result.isLastPage = true;
+        }
+        if(!result.isValid || url.isEmpty())
+            result.isLastPage = true;
+        emit pageReady(result);
+        QThread::sleep(1);
+    }while(url != lastUrl && result.isValid && !result.isLastPage);
+}
+static QString CreateURL(QString str)
+{
+    return "https://www.fanfiction.net/" + str;
+}
+
+QString PageThreadWorker::GetNext(QString text)
+{
+    QString nextUrl;
+    QRegExp rxEnd(QRegExp::escape("Next &#187"));
+    int indexEnd = rxEnd.indexIn(text);
+    if(indexEnd != -1)
+        indexEnd-=2;
+    int posHref = indexEnd - 400 + text.midRef(indexEnd - 400,400).lastIndexOf("href='");
+    nextUrl = CreateURL(text.mid(posHref+6, indexEnd - (posHref+6)));
+    if(!nextUrl.contains("&p="))
+        nextUrl = "";
+    indexEnd = rxEnd.indexIn(text);
+    return nextUrl;
+}
+
+QDateTime PageThreadWorker::GrabMinUpdate(QString text)
+{
+    QDateTime minDate;
+    QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
+    int indexStart = rx.lastIndexIn(text);
+    if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
+        minDate.setTime_t(rx.cap(1).toInt());
+
+    return minDate;
+}
+

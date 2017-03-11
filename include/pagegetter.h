@@ -34,6 +34,8 @@ struct WebPage
     EPageType type;
     bool isValid = false;
     EPageSource source = EPageSource::none;
+    QString error;
+    bool isLastPage = false;
 };
 
 class PageGetterPrivate;
@@ -49,4 +51,20 @@ class PageManager
     void SavePageToDB(const WebPage & page);
     QScopedPointer<PageGetterPrivate> d;
 };
+
+class PageThreadWorker: public QObject
+{
+    Q_OBJECT
+public:
+    PageThreadWorker(QObject* parent = nullptr);
+    QString GetNext(QString);
+    QDateTime GrabMinUpdate(QString text);
+
+public slots:
+    void Task(QString url, QString lastUrl, QDateTime updateLimit, bool cacheMode);
+signals:
+    void pageReady(WebPage);
+};
+
+
 BIND_TO_SELF_SINGLE(PageManager);

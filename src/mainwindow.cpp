@@ -28,6 +28,7 @@
 #include <algorithm>
 #include "include/init_database.h"
 #include "include/favparser.h"
+#include "include/fandomparser.h"
 
 bool TagEditorHider(QObject* /*obj*/, QEvent *event, QWidget* widget)
 {
@@ -73,15 +74,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ReadTags();
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
-    connect(
-                &manager, SIGNAL (finished(QNetworkReply*)),
-                this, SLOT (OnNetworkReply(QNetworkReply*)));
+    qRegisterMetaType<WebPage>("WebPage");
 
 
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->edtResults, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnShowContextMenu(QPoint)));
-    connect(&fandomManager, &QNetworkAccessManager::finished, this, &MainWindow::OnFandomReply);
-    connect(&crossoverManager, &QNetworkAccessManager::finished, this, &MainWindow::OnCrossoverReply);
     connect(ui->cbSectionTypes, SIGNAL(currentTextChanged(QString)), this, SLOT(OnSectionChanged(QString)));
     connect(ui->pbWipeFandom, SIGNAL(clicked(bool)), this, SLOT(WipeSelectedFandom(bool)));
 
@@ -351,8 +348,8 @@ MainWindow::~MainWindow()
 void MainWindow::Init()
 {
     names.clear();
-    UpdateFandomList(fandomManager, [](Fandom f){return f.url;});
-    UpdateFandomList(crossoverManager, [](Fandom f){return f.crossoverUrl;});
+    UpdateFandomList([](Fandom f){return f.url;});
+    UpdateFandomList([](Fandom f){return f.crossoverUrl;});
     InsertFandomData(names);
     ui->cbNormals->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSectionTypes->currentText())));
 
@@ -367,30 +364,76 @@ void MainWindow::InitConnections()
 
 }
 
-void MainWindow::RequestAndProcessPage(QString page)
+void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
 {
     nextUrl = page;
+    QStringList sections;
+    sections.push_back(ui->cbNormals->currentText());
+    if(ui->rbCrossovers->isChecked())
+        sections.push_back("CROSSOVER");
+    auto lastFandomUpdatedate = database::GetMaxUpdateDateForSection(sections);
+    if(ui->chkIgnoreUpdateDate->isChecked())
+        lastFandomUpdatedate = QDateTime();
+    PageThreadWorker* worker = new PageThreadWorker;
+    worker->moveToThread(&pageThread);
+    connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
+    connect( worker, &PageThreadWorker::pageReady, this, &MainWindow::OnNewPage);
+    pageThread.start();
+
+    An<PageManager> pager;
+    bool cacheMode = ui->chkCacheMode->isChecked();
+    WebPage currentPage = pager->GetPage(nextUrl, cacheMode);
+    FandomParser parser;
+    QString lastUrl = parser.GetLast(currentPage.content);
+    int pageCount = lastUrl.mid(lastUrl.lastIndexOf("=")+1).toInt();
+    if(pageCount != 0)
+    {
+        pbMain->show();
+        pbMain->setMaximum(pageCount);
+    }
+    emit pageTask(nextUrl, lastUrl, lastFandomUpdatedate, ui->chkCacheMode->isChecked());
+    int counter = 0;
+    WebPage webPage;
     do
     {
-        An<PageManager> pager;
-        bool cacheMode = ui->chkCacheMode->isChecked();
-        WebPage result = pager->GetPage(nextUrl, cacheMode);
-        if(!result.isValid)
+        while(pageQueue.isEmpty())
+            QCoreApplication::processEvents();
+
+        webPage = pageQueue[0];
+        pageQueue.pop_front();
+        webPage.crossover = ui->rbCrossovers->isChecked();
+        webPage.fandom =  ui->cbNormals->currentText();
+        webPage.type = EPageType::sorted_ficlist;
+        parser.ProcessPage(webPage);
+
+        if(webPage.source == EPageSource::network)
         {
-            ui->edtResults->append(" Не удалось получить страницу");
-            return;
+            pager->SavePageToDB(webPage);
+            //QThread::msleep(1000);
         }
-        ProcessPage(QString(result.content));
-        result.fandom =  currentFandom;
-        result.crossover = isCrossover;
-        result.type = EPageType::sorted_ficlist;
-        if(result.source == EPageSource::network)
+
+        if(parser.minSectionUpdateDate < lastFandomUpdatedate && !ui->chkIgnoreUpdateDate->isChecked())
         {
-            pager->SavePageToDB(result);
-            QThread::msleep(1000);
+            ui->edtResults->append("Already have updates past this point. Aborting.");
+            break;
         }
+        //        if(database::LoadIntoDB(section))
+        //            processedFics++;
+        QCoreApplication::processEvents();
+
+    if(pageCount == 0)
         pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
-    }while(!nextUrl.isEmpty());
+    else
+        pbMain->setValue(counter++);
+    for(auto section: parser.processedStuff)
+    {
+        if(database::LoadIntoDB(section))
+            processedFics++;
+        else
+            processedFics++;
+    }
+    }while(!webPage.isLastPage);
+    pageThread.terminate();
     pbMain->setValue(0);
     pbMain->hide();
     //manager.get(QNetworkRequest(QUrl(page)));
@@ -417,221 +460,7 @@ WebPage MainWindow::RequestPage(QString pageUrl, bool autoSaveToDB)
     return result;
 }
 
-void MainWindow::ProcessPage(QString str)
-{
-    Section section;
-    int currentPosition = 0;
-    int counter = 0;
-    QList<Section> sections;
-    bool abort = false;
-    while(true)
-    {
 
-        counter++;
-        section = GetSection(str, currentPosition);
-        if(!section.isValid)
-            break;
-        currentPosition = section.start;
-
-        section.fandom = ui->rbNormal->isChecked() ? currentFandom: currentFandom + " CROSSOVER";
-        GetUrl(section, currentPosition, str);
-        GetTitle(section, currentPosition, str);
-        GetAuthor(section, currentPosition, str);
-        GetSummary(section, currentPosition, str);
-
-        GetStatSection(section, currentPosition, str);
-
-        GetTaggedSection(section.statSection.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.wordCount = val;});
-        GetTaggedSection(section.statSection.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.chapters = val;});
-        GetTaggedSection(section.statSection.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.reviews = val;});
-        GetTaggedSection(section.statSection.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.favourites = val;});
-        GetTaggedSection(section.statSection, "Published:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
-            if(val != "not found")
-                section.published.setTime_t(val.toInt()); ;
-        });
-        GetTaggedSection(section.statSection, "Updated:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
-            if(val != "not found")
-                section.updated.setTime_t(val.toInt());
-            else
-                section.updated.setTime_t(0);
-        });
-        GetTaggedSection(section.statSection, "Rated:\\s(.{1})", [&section](QString val){ section.rated = val;});
-        GetTaggedSection(section.statSection, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.genre = val;});
-        GetTaggedSection(section.statSection, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
-            section.characters = val.replace(" - Complete", "");
-        });
-        GetTaggedSection(section.statSection, "(Complete)$", [&section](QString val){
-            if(val != "not found")
-                section.complete = 1;
-        });
-
-        if(section.fandom.contains("CROSSOVER"))
-            GetCrossoverFandomList(section, currentPosition, str);
-
-        if(section.updated.toMSecsSinceEpoch() < lastUpdated.toMSecsSinceEpoch() && section.updated.date().year() > 2000 && !ignoreUpdateDate)
-            abort = true;
-
-        if(section.isValid)
-        {
-            sections.append(section);
-        }
-
-    }
-    qDebug() << "page: " << processedCount;
-
-    if(sections.size() == 0)
-    {
-        ui->edtResults->insertHtml("<span> No data found on the page.<br></span>");
-        ui->edtResults->insertHtml("<span> \nFinished loading data <br></span>");
-        nextUrl = "";
-        return;
-    }
-
-
-    for(auto section : sections)
-    {
-        section.origin = currentFilterUrl;
-        if(database::LoadIntoDB(section))
-            processedFics++;
-        ui->edtResults->insertHtml("<span> Written:" + section.title + " by " + section.author + "\n <br></span>");
-    }
-    if(abort)
-    {
-        ui->edtResults->insertHtml("<span> Already have updates past that point, aborting<br></span>");
-        nextUrl = "";
-        return;
-    }
-    if(sections.size() > 0)
-        GetNext(sections.last(), currentPosition, str);
-    currentPosition = 999;
-}
-
-QString MainWindow::GetFandom(QString text)
-{
-    QRegExp rxStart(QRegExp::escape("xicon-section-arrow'></span>"));
-    QRegExp rxEnd(QRegExp::escape("<div"));
-    int indexStart = rxStart.indexIn(text, 0);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    return text.mid(indexStart + 28,indexEnd - (indexStart + 28));
-}
-
-void MainWindow::GetAuthor(Section & section, int& startfrom, QString text)
-{
-    QRegExp rxBy("by\\s<");
-    QRegExp rxStart(">");
-    QRegExp rxEnd(QRegExp::escape("</a>"));
-    int indexBy = rxBy.indexIn(text, startfrom);
-    int indexStart = rxStart.indexIn(text, indexBy + 3);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    startfrom = indexEnd;
-    section.author = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
-
-}
-
-void MainWindow::GetTitle(Section & section, int& startfrom, QString text)
-{
-    QRegExp rxStart(QRegExp::escape(">"));
-    QRegExp rxEnd(QRegExp::escape("</a>"));
-    int indexStart = rxStart.indexIn(text, startfrom + 1);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    startfrom = indexEnd;
-    section.title = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
-}
-
-void MainWindow::GetStatSection(Section &section, int &startfrom, QString text)
-{
-    QRegExp rxStart("padtop2\\sxgray");
-    QRegExp rxEnd("</div></div></div>");
-    int indexStart = rxStart.indexIn(text, startfrom + 1);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    section.statSection= text.mid(indexStart + 15,indexEnd - (indexStart + 15));
-    section.statSectionStart = indexStart + 15;
-    section.statSectionEnd = indexEnd;
-    qDebug() << section.statSection;
-}
-
-void MainWindow::GetSummary(Section & section, int& startfrom, QString text)
-{
-    QRegExp rxStart(QRegExp::escape("padtop'>"));
-    QRegExp rxEnd(QRegExp::escape("<div"));
-    int indexStart = rxStart.indexIn(text,startfrom);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-
-    section.summary = text.mid(indexStart + 8,indexEnd - (indexStart + 8));
-    section.summaryEnd = indexEnd;
-    startfrom = indexEnd;
-}
-
-void MainWindow::GetCrossoverFandomList(Section & section, int &startfrom, QString text)
-{
-    QRegExp rxStart("Crossover\\s-\\s");
-    QRegExp rxEnd("\\s-\\sRated:");
-
-    int indexStart = rxStart.indexIn(text, startfrom);
-    int indexEnd = rxEnd.indexIn(text, indexStart + 1);
-
-    section.fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed().replace("&", " ") + QString(" CROSSOVER");
-    startfrom = indexEnd;
-}
-
-void MainWindow::GetUrl(Section & section, int& startfrom, QString text)
-{
-    // looking for first href
-    QRegExp rxStart(QRegExp::escape("href=\""));
-    QRegExp rxEnd(QRegExp::escape("\"><img"));
-    int indexStart = rxStart.indexIn(text,startfrom);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    section.url = text.mid(indexStart + 6,indexEnd - (indexStart + 6));
-    startfrom = indexEnd+2;
-}
-
-void MainWindow::GetNext(Section & section, int &startfrom, QString text)
-{
-    QRegExp rxEnd(QRegExp::escape("Next &#187"));
-    int indexEnd = rxEnd.indexIn(text, startfrom);
-    int posHref = indexEnd - 400 + text.midRef(indexEnd - 400,400).lastIndexOf("href='");
-    //int indexStart = rxStart.indexIn(text,section.start);
-    //indexStart = rxStart.indexIn(text,indexStart+1);
-    //indexStart = rxStart.indexIn(text,indexStart+1);
-    nextUrl = CreateURL(text.mid(posHref+6, indexEnd - (posHref+6)));
-    if(!nextUrl.contains("&p="))
-        nextUrl = "";
-    indexEnd = rxEnd.indexIn(text, startfrom);
-}
-
-void MainWindow::GetTaggedSection(QString text, QString rxString ,std::function<void (QString)> functor)
-{
-    QRegExp rx(rxString);
-    int indexStart = rx.indexIn(text);
-    //qDebug() << rx.capturedTexts();
-    if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
-        functor(rx.cap(1));
-    else
-        functor("not found");
-}
-
-
-Section MainWindow::GetSection(QString text, int start)
-{
-    Section section;
-    QRegExp rxStart("<div\\sclass=\'z-list\\szhover\\szpointer\\s\'");
-    int index = rxStart.indexIn(text, start);
-    if(index != -1)
-    {
-        section.isValid = true;
-        section.start = index;
-        int end = rxStart.indexIn(text, index+1);
-        if(end == -1)
-            end = index + 2000;
-        section.end = end;
-    }
-    return section;
-}
-
-QString MainWindow::CreateURL(QString str)
-{
-    return "https://www.fanfiction.net/" + str;
-}
 
 inline Section LoadFanfic(QSqlQuery& q)
 {
@@ -960,21 +789,21 @@ void MainWindow::OnSetTag(QString tag)
     HideCurrentID();
 }
 
-void MainWindow::timerEvent(QTimerEvent *)
-{
-    if(!nextUrl.isEmpty())
-    {
-        killTimer(timerId);
-        timerId = -1;
-        qDebug() << "Getting: " <<  nextUrl;
-        QString toInsert = "<a href=\"" + nextUrl + "\"> %1 </a>";
-        toInsert= toInsert.arg(nextUrl);
-        ui->edtResults->append("<span> Processing url: </span>");
-        ui->edtResults->insertHtml(toInsert);
-        manager.get(QNetworkRequest(QUrl(nextUrl)));
+//void MainWindow::timerEvent(QTimerEvent *)
+//{
+//    if(!nextUrl.isEmpty())
+//    {
+//        killTimer(timerId);
+//        timerId = -1;
+//        qDebug() << "Getting: " <<  nextUrl;
+//        QString toInsert = "<a href=\"" + nextUrl + "\"> %1 </a>";
+//        toInsert= toInsert.arg(nextUrl);
+//        ui->edtResults->append("<span> Processing url: </span>");
+//        ui->edtResults->insertHtml(toInsert);
+//        manager.get(QNetworkRequest(QUrl(nextUrl)));
 
-    }
-}
+//    }
+//}
 
 void MainWindow::InsertFandomData(QMap<QPair<QString,QString>, Fandom> names)
 {
@@ -1057,13 +886,17 @@ void MainWindow::InsertFandomData(QMap<QPair<QString,QString>, Fandom> names)
 }
 
 
-void MainWindow::UpdateFandomList(QNetworkAccessManager& manager,
-                                  std::function<QString(Fandom)> linkGetter)
+void MainWindow::UpdateFandomList(std::function<QString(Fandom)> linkGetter)
 {
     for(auto value : sections)
     {
         currentProcessedSection = value.name;
-        manager.get(QNetworkRequest(QUrl(linkGetter(value))));
+
+        An<PageManager> pager;
+        WebPage result = pager->GetPage(linkGetter(value), false);
+        ProcessFandoms(result);
+
+        //manager.get(QNetworkRequest(QUrl(linkGetter(value))));
         managerEventLoop.exec();
     }
 }
@@ -1301,37 +1134,6 @@ QString MainWindow::CreateLimitQueryPart()
     return result;
 }
 
-QDateTime MainWindow::GetMaxUpdateDateForSection(QStringList sections)
-{
-    QSqlDatabase db = QSqlDatabase::database(dbName);
-    QString qs = QString("Select max(updated) as updated from fanfics where 1 = 1 %1");
-    QString append;
-    if(sections.size() == 1)
-    {
-        append+= QString(" and fandom = '%1' ").arg(sections.at(0));
-    }
-    else
-    {
-        for(auto section : sections)
-        {
-            append+= QString(" and fandom like '%%1%' ").arg(section);
-        }
-    }
-    qs=qs.arg(append);
-    QSqlQuery q(qs, db);
-    q.next();
-    qDebug() << q.lastQuery();
-    //QDateTime result = q.value("updated").toDateTime();
-    QString resultStr = q.value("updated").toString();
-
-
-    QDateTime result;
-    if(!ui->chkIgnoreUpdateDate->isChecked())
-        result = QDateTime::fromString(resultStr, "yyyy-MM-ddThh:mm:ss.000");
-    else
-        result = QDateTime();
-    return result;
-}
 
 
 QString MainWindow::WrapTag(QString tag)
@@ -1372,7 +1174,7 @@ QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crosso
     if(crossoverState)
     {
         urls = GetCrossoverUrl(selectedFandom,ignoreTrackingState);
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVER");
+        lastUpdated = database::GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVER");
         isCrossover = true;
         currentFandom = selectedFandom;
     }
@@ -1381,7 +1183,7 @@ QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crosso
 
         isCrossover = false;
         urls = GetNormalUrl(selectedFandom,ignoreTrackingState);
-        lastUpdated = GetMaxUpdateDateForSection(QStringList() << selectedFandom);
+        lastUpdated = database::GetMaxUpdateDateForSection(QStringList() << selectedFandom);
         currentFandom = selectedFandom;
 
     }
@@ -1407,6 +1209,11 @@ void MainWindow::WipeSelectedFandom(bool)
         QSqlQuery q(qs, db);
         q.exec();
     }
+}
+
+void MainWindow::OnNewPage(WebPage page)
+{
+    pageQueue.push_back(page);
 }
 
 
@@ -1510,23 +1317,21 @@ void MainWindow::WriteSettings()
     settings.sync();
 }
 
-void MainWindow::OnNetworkReply(QNetworkReply * reply)
-{
-    ++processedCount;
-    QByteArray data=reply->readAll();
-    qDebug() << reply->error();
-    reply->deleteLater();
-    QString str(data);
-    ProcessPage(str);
-}
+//void MainWindow::OnNetworkReply(QNetworkReply * reply)
+//{
+//    ++processedCount;
+//    QByteArray data=reply->readAll();
+//    qDebug() << reply->error();
+//    reply->deleteLater();
+//    QString str(data);
+//    ProcessPage(str);
+//}
 
-void MainWindow::OnFandomReply(QNetworkReply * reply)
+void MainWindow::ProcessFandoms(WebPage webPage)
 {
 
-    QByteArray data=reply->readAll();
-    qDebug() << reply->error();
+    QByteArray data=webPage.content;
     QString str(data);
-    reply->deleteLater();
     // getting to the start of fandom section
     QRegExp rxStartFandoms("list_output");
     int indexStart = rxStartFandoms.indexIn(str);
@@ -1579,12 +1384,10 @@ void MainWindow::OnFandomReply(QNetworkReply * reply)
     managerEventLoop.quit();
 }
 
-void MainWindow::OnCrossoverReply(QNetworkReply * reply)
+void MainWindow::ProcessCrossovers(WebPage webPage)
 {
-    QByteArray data=reply->readAll();
-    qDebug() << reply->error();
+    QByteArray data=webPage.content;
     QString str(data);
-    reply->deleteLater();
     // getting to the start of fandom section
     //int indexOfSlash = currentProcessedSection.indexOf("/");
     QString pattern = sections[currentProcessedSection].section;//.mid(indexOfSlash + 1, currentProcessedSection.length() - (indexOfSlash +1)) + "\\sCrossovers";

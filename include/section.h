@@ -23,6 +23,7 @@ struct Section
 
 
     QString fandom;
+    QStringList fandoms;
     QString isCrossover = false;
     QString title;
     QString genre;

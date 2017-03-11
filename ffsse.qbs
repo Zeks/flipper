@@ -34,6 +34,7 @@ cpp.includePaths: [
 files: [
         "forms.qrc",
         "icons.qrc",
+        "include/fandomparser.h",
         "include/favparser.h",
         "include/init_database.h",
         "include/mainwindow.h",
@@ -44,6 +45,7 @@ files: [
         "include/fanficdisplay.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
+        "src/fandomparser.cpp",
         "src/favparser.cpp",
         "src/init_database.cpp",
         "src/pagegetter.cpp",
