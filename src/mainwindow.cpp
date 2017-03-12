@@ -425,6 +425,9 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
         pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
     else
         pbMain->setValue(counter++);
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    db.transaction();
+    auto startPageRequest = std::chrono::high_resolution_clock::now();
     for(auto section: parser.processedStuff)
     {
         if(database::LoadIntoDB(section))
@@ -432,6 +435,9 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
         else
             processedFics++;
     }
+    auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
+    qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    db.commit();
     }while(!webPage.isLastPage);
     pageThread.terminate();
     pbMain->setValue(0);
