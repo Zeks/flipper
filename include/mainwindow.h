@@ -81,8 +81,8 @@ private:
     QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
     QString GetFandom(QString text);
 
-    DisableAllLoadButtons();
-    EnableAllLoadButtons();
+    void DisableAllLoadButtons();
+    void EnableAllLoadButtons();
 
     //QString CreateURL(QString);
 
@@ -114,11 +114,16 @@ private:
     void ToggleTag();
     void CallExpandedWidget();
 
-
-
     QStringList SortedList(QStringList);
     QStringList ReverseSortedList(QStringList list);
+    QStringList GetAllUniqueAuthorsFromRecommenders();
+    void CreatePageThreadWorker();
+    void StartPageWorker();
+    void StopPageWorker();
 
+    void ReinitProgressbar(int maxValue);
+    void ShutdownProgressbar();
+    void AddToProgressLog(QString);
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -205,5 +210,6 @@ private slots:
     void OnReloadRecLists();
 signals:
     void pageTask(QString, QString, QDateTime, bool);
+    void pageTaskList(QStringList, bool);
 };
 

@@ -60,9 +60,10 @@ public:
     PageThreadWorker(QObject* parent = nullptr);
     QString GetNext(QString);
     QDateTime GrabMinUpdate(QString text);
-
+    int timeout = 800;
 public slots:
     void Task(QString url, QString lastUrl, QDateTime updateLimit, bool cacheMode);
+    void TaskList(QStringList urls, bool cacheMode);
 signals:
     void pageReady(WebPage);
 };

@@ -170,6 +170,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lvRecommenders->setModel(recommendersModel);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
+    CreatePageThreadWorker();
 }
 
 
@@ -345,11 +346,9 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
     auto lastFandomUpdatedate = database::GetMaxUpdateDateForSection(sections);
     if(ui->chkIgnoreUpdateDate->isChecked())
         lastFandomUpdatedate = QDateTime();
-    PageThreadWorker* worker = new PageThreadWorker;
-    worker->moveToThread(&pageThread);
-    connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
-    connect( worker, &PageThreadWorker::pageReady, this, &MainWindow::OnNewPage);
-    pageThread.start();
+
+
+    StartPageWorker();
 
     DisableAllLoadButtons();
 
@@ -407,9 +406,8 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
     qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     db.commit();
     }while(!webPage.isLastPage);
-    pageThread.terminate();
-    pbMain->setValue(0);
-    pbMain->hide();
+    StopPageWorker();
+    ShutdownProgressbar();
     EnableAllLoadButtons();
     //manager.get(QNetworkRequest(QUrl(page)));
 }
@@ -1131,7 +1129,7 @@ QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crosso
     return urls;
 }
 
-MainWindow::DisableAllLoadButtons()
+void MainWindow::DisableAllLoadButtons()
 {
     ui->pbCrawl->setEnabled(false);
     ui->pbFirstWave->setEnabled(false);
@@ -1139,7 +1137,7 @@ MainWindow::DisableAllLoadButtons()
     ui->pbLoadPage->setEnabled(false);
     ui->pbLoadAllRecommenders->setEnabled(false);
 }
-MainWindow::EnableAllLoadButtons()
+void MainWindow::EnableAllLoadButtons()
 {
     ui->pbCrawl->setEnabled(true);
     ui->pbFirstWave->setEnabled(true);
@@ -1618,6 +1616,67 @@ QStringList MainWindow::ReverseSortedList(QStringList list)
     return list;
 }
 
+QStringList MainWindow::GetAllUniqueAuthorsFromRecommenders()
+{
+    QStringList result;
+    QList<Section> sections;
+    int counter = 0;
+    for(auto recName: ReverseSortedList(recommenders.keys()))
+    {
+        counter++;
+//        if(counter != 4)
+//            continue;
+        Recommender recommender = recommenders[recName];
+        auto page = RequestPage(recommender.url);
+        QThread::sleep(1);
+        FavouriteStoryParser parser;
+        sections += parser.ProcessPage(page.url, page.content);
+    }
+
+    QHash<QString, Section> uniqueSections;
+    for(auto section: sections)
+        uniqueSections[section.authorUrl] = section;
+    result = SortedList(uniqueSections.keys());
+    return result;
+}
+
+void MainWindow::CreatePageThreadWorker()
+{
+    PageThreadWorker* worker = new PageThreadWorker;
+    worker->moveToThread(&pageThread);
+    connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
+    connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
+    connect(worker, &PageThreadWorker::pageReady, this, &MainWindow::OnNewPage);
+}
+
+void MainWindow::StartPageWorker()
+{
+    pageThread.start();
+}
+
+void MainWindow::StopPageWorker()
+{
+    pageThread.quit();
+}
+
+void MainWindow::ReinitProgressbar(int maxValue)
+{
+    pbMain->setMaximum(maxValue);
+    pbMain->setValue(0);
+    pbMain->show();
+}
+
+void MainWindow::ShutdownProgressbar()
+{
+    pbMain->setValue(0);
+    pbMain->hide();
+}
+
+void MainWindow::AddToProgressLog(QString value)
+{
+    ui->edtResults->insertHtml(value);
+}
+
 
 void MainWindow::on_chkTrackedFandom_toggled(bool checked)
 {
@@ -1786,52 +1845,40 @@ void MainWindow::on_pbOpenWholeList_clicked()
 void MainWindow::on_pbFirstWave_clicked()
 {
     currentSearchButton = MainWindow::lfbp_recs;
-    QStringList matchesList;
-    QList<Section> sections;
-    int counter = 0;
-    for(auto recName: ReverseSortedList(recommenders.keys()))
-    {
-        counter++;
-//        if(counter != 4)
-//            continue;
-        Recommender recommender = recommenders[recName];
-        auto page = RequestPage(recommender.url);
-        QThread::sleep(1);
-        FavouriteStoryParser parser;
-        sections += parser.ProcessPage(page.url, page.content);
-    }
+    QStringList uniqueAuthors = GetAllUniqueAuthorsFromRecommenders();
+    AddToProgressLog("Authors: " + QString::number(uniqueAuthors.size()));
 
-    QHash<QString, Section> uniqueSections;
-    for(auto section: sections)
-        uniqueSections[section.authorUrl] = section;
-
-    /////
-    database::DropFanficIndexes();
-    pbMain->setMaximum(uniqueSections.keys().size());
-    pbMain->setValue(0);
-    pbMain->show();
+    ReinitProgressbar(uniqueAuthors.size());
+    bool reachedCurrentTarget = false;
     FavouriteStoryParser parser;
-    ui->edtResults->insertHtml("Authors: " + QString::number(uniqueSections.keys().size()));
-    bool reached = false;
-    for(auto authorUrl: SortedList(uniqueSections.keys()))
+    QStringList matchesList;
+    StartPageWorker();
+    emit pageTaskList(uniqueAuthors, false);
+    DisableAllLoadButtons();
+    WebPage webPage;
+    do
     {
-        pbMain->setValue(pbMain->value()+1);
-        if(authorUrl.contains("Heliosion"))
-            reached = true;
-        if(!reached)
-            continue;
-        QString toInsert = "<a href=\"" + authorUrl + "\"> %1 </a>";
-        toInsert= toInsert.arg(authorUrl );
+        while(pageQueue.isEmpty())
+            QCoreApplication::processEvents();
+        webPage = pageQueue[0];
+        pageQueue.pop_front();
 
-        auto page = RequestPage(authorUrl);
-        auto id = database::GetRecommenderId(authorUrl);
+        pbMain->setValue(pbMain->value()+1);
+        if(webPage.url.contains("Heliosion"))
+            reachedCurrentTarget = true;
+        if(!reachedCurrentTarget)
+            continue;
+
+        auto id = database::GetRecommenderId(webPage.url);
         if(id == -1)
         {
+            QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+            db.transaction();
             auto startRecLoad = std::chrono::high_resolution_clock::now();
-            parser.ProcessPage(page.url, page.content,1);
+            parser.ProcessPage(webPage.url, webPage.content,1);
             auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
             qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-            ui->edtResults->insertHtml("All: " + QString::number(parser.processedStuff.count()) + " ");
+            AddToProgressLog("All: " + QString::number(parser.processedStuff.count()) + " ");
             if(parser.processedStuff.size() < 2000)
                 parser.WriteProcessed();
             else
@@ -1839,36 +1886,25 @@ void MainWindow::on_pbFirstWave_clicked()
                 parser.ClearProcessed();
                 continue;
             }
-            auto id = database::GetRecommenderId(authorUrl);
+            auto id = database::GetRecommenderId(webPage.url);
             auto matchesCount = database::FilterRecommenderByRecField(id, 5);
-            ui->edtResults->insertHtml("Matches: " + QString::number(matchesCount));
+            db.commit();
+            AddToProgressLog("Matches: " + QString::number(matchesCount));
             if(matchesCount >= 5)
             {
                 matchesList.push_back(QString::number(id));
             }
         }
-    }
+    }while(!webPage.isLastPage);
     parser.ClearDoneCache();
-    database::RebuildFanficIndexes();
     ui->edtResults->clear();
-    ui->edtResults->append(" рекомендатели: ");
-    ui->edtResults->insertHtml(matchesList.join("<br>"));
+    AddToProgressLog(" Found recommenders: ");
+    AddToProgressLog(matchesList.join("<br>"));
     /////
-
-    ui->leAuthorUrl->setText("");
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
-
-    recommenders = database::FetchRecommenders();
-    recommendersModel->setStringList(SortedList(recommenders.keys()));
-    currentRecWave = 1;
-    LoadData();
-    currentRecWave = 0;
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ShutdownProgressbar();
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
-    holder->SetData(fanfics);
+    EnableAllLoadButtons();
 }
 
 void MainWindow::OnReloadRecLists()

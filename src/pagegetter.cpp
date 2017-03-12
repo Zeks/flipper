@@ -191,8 +191,22 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit
         if(!result.isValid || url.isEmpty())
             result.isLastPage = true;
         emit pageReady(result);
-        QThread::msleep(1000);
+        QThread::msleep(timeout);
     }while(url != lastUrl && result.isValid && !result.isLastPage);
+}
+
+void PageThreadWorker::TaskList(QStringList urls, bool cacheMode)
+{
+    QScopedPointer<PageManager> pager(new PageManager);
+    WebPage result;
+    for(int i=0; i< urls.size();  i++)
+    {
+        result = pager->GetPage(urls[i], cacheMode);
+        if(i == urls.size()-1)
+            result.isLastPage = true;
+        emit pageReady(result);
+        QThread::msleep(timeout);
+    }
 }
 static QString CreateURL(QString str)
 {
