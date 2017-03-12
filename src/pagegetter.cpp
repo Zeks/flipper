@@ -11,6 +11,8 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QEventLoop>
+#include <QThread>
+
 
 
 class PageGetterPrivate : public QObject
@@ -49,7 +51,11 @@ WebPage PageGetterPrivate::GetPage(QString url, bool useCache)
     {
         result = GetPageFromDB(url);
         if(result.isValid)
-            return result;
+        {
+            result.isFromCache = true;
+        }
+        else
+            result = GetPageFromNetwork(url);
     }
     else
     {
@@ -66,16 +72,22 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     q.prepare("select * from PageCache where url = :URL");
     q.bindValue(":URL", url);
     q.exec();
-    q.next();
+    bool dataFound = q.next();
+
     if(q.lastError().isValid())
     {
         qDebug() << q.lastError();
         return result;
     }
+    if(!dataFound)
+        return result;
     qDebug() << q.record();
     result.url = url;
     result.isValid = true;
-    result.content = q.value("CONTENT").toByteArray();
+    if(q.value("COMPRESSED").toInt() == 1)
+        result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
+    else
+        result.content = q.value("CONTENT").toByteArray();
     result.crossover= q.value("CROSSOVER").toInt();
     result.fandom= q.value("FANDOM").toString();
     result.generated= q.value("GENERATION_DATE").toDateTime();
@@ -98,14 +110,18 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
-    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT, FANDOM, CROSSOVER, PAGE_TYPE) "
-                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :FANDOM, :CROSSOVER, :PAGE_TYPE)";
+    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT, FANDOM, CROSSOVER, PAGE_TYPE, COMPRESSED) "
+                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :FANDOM, :CROSSOVER, :PAGE_TYPE, :COMPRESSED)";
     q.prepare(insert);
     q.bindValue(":URL", page.url);
     q.bindValue(":GENERATION_DATE", QDateTime::currentDateTime());
-    q.bindValue(":CONTENT", page.content);
+    q.bindValue(":CONTENT", qCompress(page.content.toUtf8()));
+    q.bindValue(":COMPRESSED", 1);
+    //q.bindValue(":CONTENT", page.content);
+    //q.bindValue(":COMPRESSED", 1);
     q.bindValue(":FANDOM", page.fandom);
     q.bindValue(":CROSSOVER", page.crossover);
+
     q.bindValue(":PAGE_TYPE", static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
@@ -125,7 +141,7 @@ void PageGetterPrivate::OnNetworkReply(QNetworkReply * reply)
     reply->deleteLater();
     if(error != QNetworkReply::NoError)
         return;
-    QString str(data);
+    //QString str(data);
     result.content = data;
     result.isValid = true;
     result.url = currentRequest.url().toString();
@@ -163,6 +179,90 @@ WebPage PageManager::GetPage(QString url, bool useCache)
 
 void PageManager::SavePageToDB(const WebPage & page)
 {
-    d->SavePageToDB(page);
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    if(settings.value("Settings/storeCache", false).toBool())
+        d->SavePageToDB(page);
 }
 #include "pagegetter.moc"
+
+PageThreadWorker::PageThreadWorker(QObject *parent)
+{
+
+}
+
+void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit, bool cacheMode)
+{
+    QScopedPointer<PageManager> pager(new PageManager);
+    WebPage result;
+    do
+    {
+        auto startPageLoad = std::chrono::high_resolution_clock::now();
+        result = pager->GetPage(url, cacheMode);
+        auto minUpdate = GrabMinUpdate(result.content);
+        url = GetNext(result.content);
+        if(updateLimit.isValid() && minUpdate < updateLimit)
+        {
+            result.error = "Already have the stuff past this point. borting.";
+            result.isLastPage = true;
+        }
+        if(!result.isValid || url.isEmpty())
+            result.isLastPage = true;
+        emit pageReady(result);
+        auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
+
+        result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        QThread::msleep(timeout);
+    }while(url != lastUrl && result.isValid && !result.isLastPage);
+}
+
+void PageThreadWorker::TaskList(QStringList urls, bool cacheMode)
+{
+    QScopedPointer<PageManager> pager(new PageManager);
+    WebPage result;
+    for(int i=0; i< urls.size();  i++)
+    {
+        auto startPageLoad = std::chrono::high_resolution_clock::now();
+        result = pager->GetPage(urls[i], cacheMode);
+        if(!result.isFromCache)
+            pager->SavePageToDB(result);
+
+        if(i == urls.size()-1)
+            result.isLastPage = true;
+        auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
+        result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        emit pageReady(result);
+        if(!result.isFromCache)
+            QThread::msleep(timeout);
+    }
+}
+static QString CreateURL(QString str)
+{
+    return "https://www.fanfiction.net/" + str;
+}
+
+QString PageThreadWorker::GetNext(QString text)
+{
+    QString nextUrl;
+    QRegExp rxEnd(QRegExp::escape("Next &#187"));
+    int indexEnd = rxEnd.indexIn(text);
+    if(indexEnd != -1)
+        indexEnd-=2;
+    int posHref = indexEnd - 400 + text.midRef(indexEnd - 400,400).lastIndexOf("href='");
+    nextUrl = CreateURL(text.mid(posHref+6, indexEnd - (posHref+6)));
+    if(!nextUrl.contains("&p="))
+        nextUrl = "";
+    indexEnd = rxEnd.indexIn(text);
+    return nextUrl;
+}
+
+QDateTime PageThreadWorker::GrabMinUpdate(QString text)
+{
+    QDateTime minDate;
+    QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
+    int indexStart = rx.lastIndexIn(text);
+    if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
+        minDate.setTime_t(rx.cap(1).toInt());
+
+    return minDate;
+}
+

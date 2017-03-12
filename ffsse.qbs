@@ -15,6 +15,7 @@ Depends { name: "Qt.widgets" }
 Depends { name: "Qt.network" }
 Depends { name: "Qt.gui" }
 Depends { name: "Qt.quick" }
+Depends { name: "Qt.concurrent" }
 Depends { name: "Qt.quickwidgets" }
 Depends { name: "cpp" }
 Depends { name: "UniversalModels" }
@@ -34,6 +35,7 @@ cpp.includePaths: [
 files: [
         "forms.qrc",
         "icons.qrc",
+        "include/fandomparser.h",
         "include/favparser.h",
         "include/init_database.h",
         "include/mainwindow.h",
@@ -44,6 +46,7 @@ files: [
         "include/fanficdisplay.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
+        "src/fandomparser.cpp",
         "src/favparser.cpp",
         "src/init_database.cpp",
         "src/pagegetter.cpp",

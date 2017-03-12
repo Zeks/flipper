@@ -28,6 +28,15 @@ int main(int argc, char *argv[])
     db.setDatabaseName(path);
     db.open();
 
+    //QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+
+
+    //db.setDatabaseName(path);
+    //db.open();
+    //bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
+    //db = QSqlDatabase::database();
+    //hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
+
     database::ReadDbFile();
     database::ReindexTable("tags");
     MainWindow w;

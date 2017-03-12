@@ -25,7 +25,8 @@ struct WebPage
 {
     QString url;
     QDateTime generated;
-    QByteArray content;
+    //QString stringContent;
+    QString content;
     QString previousUrl;
     QString nextUrl;
     QStringList referencedFics;
@@ -34,6 +35,10 @@ struct WebPage
     EPageType type;
     bool isValid = false;
     EPageSource source = EPageSource::none;
+    QString error;
+    bool isLastPage = false;
+    bool isFromCache = false;
+    int loadedIn = 0;
 };
 
 class PageGetterPrivate;
@@ -49,4 +54,21 @@ class PageManager
     void SavePageToDB(const WebPage & page);
     QScopedPointer<PageGetterPrivate> d;
 };
+
+class PageThreadWorker: public QObject
+{
+    Q_OBJECT
+public:
+    PageThreadWorker(QObject* parent = nullptr);
+    QString GetNext(QString);
+    QDateTime GrabMinUpdate(QString text);
+    int timeout = 500;
+public slots:
+    void Task(QString url, QString lastUrl, QDateTime updateLimit, bool cacheMode);
+    void TaskList(QStringList urls, bool cacheMode);
+signals:
+    void pageReady(WebPage);
+};
+
+
 BIND_TO_SELF_SINGLE(PageManager);

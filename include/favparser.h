@@ -2,13 +2,14 @@
 #include "include/section.h"
 #include "include/init_database.h"
 #include <QString>
+#include <QSqlDatabase>
 #include <QDateTime>
 #include <functional>
 class FavouriteStoryParser
 {
 public:
 
-    QList<Section> ProcessPage(QString url,QString, int authorWave = 0);
+    QList<Section> ProcessPage(QString url,QString&, int authorWave = 0);
     Section GetSection( QString text, int start);
     QString ExtractRecommdenderNameFromUrl(QString url);
     void GetAuthor(Section& , int& startfrom, QString text);
@@ -24,10 +25,12 @@ public:
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
     void GetCrossoverFandomList(Section& , int& startfrom, QString text);
     QString GetFandom(QString text);
-    QStringList diagnostics;
     void ClearProcessed();
     void ClearDoneCache();
     void WriteProcessed();
+
+
+    QStringList diagnostics;
     QList<Section> processedStuff;
     database::WriteStats writeSections;
     Recommender recommender;

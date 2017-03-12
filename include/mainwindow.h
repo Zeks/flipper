@@ -1,6 +1,4 @@
-#ifndef MAINWINDOW_H
-
-#define MAINWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <QObject>
@@ -18,6 +16,8 @@
 #include <QLabel>
 #include <QTextBrowser>
 #include <QTableView>
+#include <QQueue>
+#include <QThread>
 #include <functional>
 #include "tagwidget.h"
 #include "libs/UniversalModels/include/TableDataInterface.h"
@@ -53,7 +53,7 @@ public:
     ~MainWindow();
     void Init();
     void InitConnections();
-    void timerEvent(QTimerEvent *) override;
+    //void timerEvent(QTimerEvent *) override;
 
     bool CheckSectionAvailability();
 
@@ -74,31 +74,17 @@ private:
     void ReadSettings();
     void WriteSettings();
 
-    void RequestAndProcessPage(QString);
+    void RequestAndProcessPage(QString, bool useLastIndex = false);
     WebPage RequestPage(QString, bool autoSaveToDB = false);
 
 
     QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
     QString GetFandom(QString text);
 
-    void ProcessPage(QString);
-    Section GetSection( QString text, int start);
-    void GetAuthor(Section& , int& startfrom, QString text);
-    void GetTitle(Section& , int& startfrom, QString text);
-    void GetGenre(Section& , int& startfrom, QString text);
-    void GetSummary(Section& , int& startfrom, QString text);
-    void GetCrossoverFandomList(Section& , int& startfrom, QString text);
-    void GetWordCount(Section& , int& startfrom, QString text);
-    void GetPublishedDate(Section& , int& startfrom, QString text);
-    void GetUpdatedDate(Section& , int& startfrom, QString text);
-    void GetUrl(Section& , int& startfrom, QString text);
-    void GetNext(Section& , int& startfrom, QString text);
-    void GetStatSection(Section& , int& startfrom, QString text);
-    void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
+    void DisableAllLoadButtons();
+    void EnableAllLoadButtons();
 
-    QDateTime GetMaxUpdateDateForSection(QStringList sections);
-
-    QString CreateURL(QString);
+    //QString CreateURL(QString);
 
     void LoadData();
     QSqlQuery BuildQuery();
@@ -110,8 +96,7 @@ private:
     QString WrapTag(QString tag);
     void HideCurrentID();
 
-    void UpdateFandomList(QNetworkAccessManager& manager,
-                          std::function<QString(Fandom)> linkGetter);
+    void UpdateFandomList(std::function<QString(Fandom)> linkGetter);
     void InsertFandomData(QMap<QPair<QString,QString>, Fandom> names);
     void PopulateComboboxes();
 
@@ -129,11 +114,16 @@ private:
     void ToggleTag();
     void CallExpandedWidget();
 
-
-
     QStringList SortedList(QStringList);
     QStringList ReverseSortedList(QStringList list);
+    QStringList GetAllUniqueAuthorsFromRecommenders();
+    void CreatePageThreadWorker();
+    void StartPageWorker();
+    void StopPageWorker();
 
+    void ReinitProgressbar(int maxValue);
+    void ShutdownProgressbar();
+    void AddToProgressLog(QString);
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -151,9 +141,6 @@ private:
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
-    QNetworkAccessManager manager;
-    QNetworkAccessManager fandomManager;
-    QNetworkAccessManager crossoverManager;
     QStringList currentFilterUrls;
     QString currentFilterUrl;
     bool ignoreUpdateDate = false;
@@ -174,16 +161,18 @@ private:
     QDialog* expanderWidget = nullptr;
     QTextEdit* edtExpander = new QTextEdit;
     QTimer selectionTimer;
+    QThread pageThread;
+    QList<WebPage> pageQueue;
 
 public slots:
-    void OnNetworkReply(QNetworkReply*);
-    void OnFandomReply(QNetworkReply*);
-    void OnCrossoverReply(QNetworkReply*);
+    void ProcessFandoms(WebPage webPage);
+    void ProcessCrossovers(WebPage webPage);
     void OnChapterUpdated(QVariant, QVariant, QVariant);
     void OnTagAdd(QVariant tag, QVariant row);
     void OnTagRemove(QVariant tag, QVariant row);
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
     void WipeSelectedFandom(bool);
+    void OnNewPage(WebPage);
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);
@@ -208,8 +197,6 @@ private slots:
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
     void OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous);
 
-    //currentChanged(const QModelIndex &current, const QModelIndex &previous);
-    //void OnAcceptedExpandedWidget(QString);
     void on_chkTrackedFandom_toggled(bool checked);
     void on_rbNormal_clicked();
     void on_rbCrossovers_clicked();
@@ -221,6 +208,8 @@ private slots:
     void on_pbOpenWholeList_clicked();
     void on_pbFirstWave_clicked();
     void OnReloadRecLists();
+signals:
+    void pageTask(QString, QString, QDateTime, bool);
+    void pageTaskList(QStringList, bool);
 };
 
-#endif // MAINWINDOW_H
