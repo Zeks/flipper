@@ -20,6 +20,8 @@
 #include <QQuickItem>
 #include <QQmlContext>
 #include <QThread>
+#include <QFuture>
+#include <QtConcurrent>
 #include <chrono>
 #include <algorithm>
 
@@ -421,12 +423,13 @@ WebPage MainWindow::RequestPage(QString pageUrl, bool autoSaveToDB)
     if(toInsert.trimmed().isEmpty())
         toInsert=toInsert;
     ui->edtResults->insertHtml(toInsert);
-    An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database(dbName));
+
+
     bool cacheMode = ui->chkCacheMode->isChecked();
     pbMain->setTextVisible(false);
     pbMain->show();
-
+    An<PageManager> pager;
+    pager->SetDatabase(QSqlDatabase::database(dbName));
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)
         pager->SavePageToDB(result);
@@ -1616,21 +1619,106 @@ QStringList MainWindow::ReverseSortedList(QStringList list)
     return list;
 }
 
+struct SplitJobs
+{
+    QList<QString> parts;
+    int storyCount;
+};
+
+SplitJobs SplitJob(QString data)
+{
+    SplitJobs result;
+    int threadCount = QThread::idealThreadCount();
+    QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
+    int index = rxStart.indexIn(data);
+    int captured = data.count(rxStart);
+    result.storyCount = captured;
+    qDebug() << "Will process "  << captured << " stories";
+
+    int partSize = captured/(threadCount-1);
+    qDebug() << "In packs of "  << partSize;
+    index = 0;
+
+    if(partSize < 70)
+        partSize = 70;
+
+    QList<int> splitPositions;
+    int counter = 0;
+    do{
+        index = rxStart.indexIn(data, index+1);
+        if(counter%partSize == 0 && index != -1)
+        {
+            splitPositions.push_back(index);
+        }
+        counter++;
+    }while(index != -1);
+    qDebug() << "Splitting into: "  << splitPositions;
+    for(int i = 0; i < splitPositions.size(); i++)
+    {
+        if(i != splitPositions.size()-1)
+            result.parts.push_back(data.mid(splitPositions[i], splitPositions[i+1] - splitPositions[i]));
+        else
+            result.parts.push_back(data.mid(splitPositions[i], data.length() - splitPositions[i]));
+    }
+    return result;
+}
+void InsertLogIntoEditor(QTextEdit* edit, QString url)
+{
+    QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
+    toInsert= toInsert.arg(url);
+    edit->append("<span>Processing url: </span>");
+    if(toInsert.trimmed().isEmpty())
+        toInsert=toInsert;
+    edit->insertHtml(toInsert);
+    QCoreApplication::processEvents();
+}
+
 QStringList MainWindow::GetAllUniqueAuthorsFromRecommenders()
 {
     QStringList result;
     QList<Section> sections;
     int counter = 0;
-    for(auto recName: ReverseSortedList(recommenders.keys()))
+    auto list = ReverseSortedList(recommenders.keys());
+    auto job = [](QString url, QString content){
+        QList<Section> sections;
+        FavouriteStoryParser parser;
+        sections += parser.ProcessPage(url, content);
+        return sections;
+    };
+    QList<QFuture<QList<Section>>> futures;
+    An<PageManager> pager;
+    pager->SetDatabase(QSqlDatabase::database(dbName));
+    for(auto recName: list)
     {
+        auto startRecProcessing = std::chrono::high_resolution_clock::now();
         counter++;
 //        if(counter != 4)
 //            continue;
         Recommender recommender = recommenders[recName];
-        auto page = RequestPage(recommender.url);
-        QThread::sleep(1);
-        FavouriteStoryParser parser;
-        sections += parser.ProcessPage(page.url, page.content);
+
+        InsertLogIntoEditor(ui->edtResults, recommender.url);
+        auto page = pager->GetPage(recommender.url, true);
+        if(!page.isFromCache)
+            pager->SavePageToDB(page);
+
+
+        auto splittings = SplitJob(page.content);
+        for(auto part: splittings.parts)
+        {
+            futures.push_back(QtConcurrent::run(job, page.url, part));
+        }
+        for(auto future: futures)
+        {
+            future.waitForFinished();
+            sections+=future.result();
+        }
+        if(!page.isFromCache)
+        {
+            qDebug() << "Sleeping";
+            QThread::sleep(1);
+        }
+        auto elapsed = std::chrono::high_resolution_clock::now() - startRecProcessing;
+        qDebug() << "Recommender processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     }
 
     QHash<QString, Section> uniqueSections;
@@ -1651,6 +1739,7 @@ void MainWindow::CreatePageThreadWorker()
 
 void MainWindow::StartPageWorker()
 {
+    pageQueue.clear();
     pageThread.start();
 }
 
@@ -1675,6 +1764,7 @@ void MainWindow::ShutdownProgressbar()
 void MainWindow::AddToProgressLog(QString value)
 {
     ui->edtResults->insertHtml(value);
+    //ui->edtResults->insertHtml("<br>");;
 }
 
 
@@ -1845,17 +1935,27 @@ void MainWindow::on_pbOpenWholeList_clicked()
 void MainWindow::on_pbFirstWave_clicked()
 {
     currentSearchButton = MainWindow::lfbp_recs;
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    db.transaction();
     QStringList uniqueAuthors = GetAllUniqueAuthorsFromRecommenders();
+    db.commit();
+    //return;
     AddToProgressLog("Authors: " + QString::number(uniqueAuthors.size()));
 
     ReinitProgressbar(uniqueAuthors.size());
-    bool reachedCurrentTarget = false;
-    FavouriteStoryParser parser;
+    //FavouriteStoryParser parser;
     QStringList matchesList;
     StartPageWorker();
-    emit pageTaskList(uniqueAuthors, false);
+    emit pageTaskList(uniqueAuthors, true);
     DisableAllLoadButtons();
     WebPage webPage;
+    auto job = [](QString url, QString content){
+        FavouriteStoryParser parser;
+        parser.ProcessPage(url, content);
+        return parser;
+    };
+    QList<QFuture<FavouriteStoryParser>> futures;
+    QList<FavouriteStoryParser> parsers;
     do
     {
         while(pageQueue.isEmpty())
@@ -1864,10 +1964,10 @@ void MainWindow::on_pbFirstWave_clicked()
         pageQueue.pop_front();
 
         pbMain->setValue(pbMain->value()+1);
-        if(webPage.url.contains("Heliosion"))
-            reachedCurrentTarget = true;
-        if(!reachedCurrentTarget)
-            continue;
+//        if(webPage.url.contains("Heliosion"))
+//            reachedCurrentTarget = true;
+//        if(!reachedCurrentTarget)
+//            continue;
 
         auto id = database::GetRecommenderId(webPage.url);
         if(id == -1)
@@ -1875,28 +1975,48 @@ void MainWindow::on_pbFirstWave_clicked()
             QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
             db.transaction();
             auto startRecLoad = std::chrono::high_resolution_clock::now();
-            parser.ProcessPage(webPage.url, webPage.content,1);
+
+
+            auto splittings = SplitJob(webPage.content);
+            if(splittings.storyCount > 2000)
+                continue;
+
+            for(auto part: splittings.parts)
+            {
+                futures.push_back(QtConcurrent::run(job, webPage.url, part));
+            }
+            for(auto future: futures)
+            {
+                future.waitForFinished();
+                parsers+=future.result();
+            }
+
             auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
             qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-            AddToProgressLog("All: " + QString::number(parser.processedStuff.count()) + " ");
-            if(parser.processedStuff.size() < 2000)
-                parser.WriteProcessed();
-            else
+
+            auto startDbWrite = std::chrono::high_resolution_clock::now();
+            int sum = 0;
+            for(auto actualParser: parsers)
             {
-                parser.ClearProcessed();
-                continue;
+                sum+=actualParser.processedStuff.count() ;
+                if(actualParser.processedStuff.size() < 2000)
+                    actualParser.WriteProcessed();
             }
+            InsertLogIntoEditor(ui->edtResults, webPage.url);
+            AddToProgressLog(" All Faves: " + QString::number(sum) + " ");
             auto id = database::GetRecommenderId(webPage.url);
             auto matchesCount = database::FilterRecommenderByRecField(id, 5);
             db.commit();
-            AddToProgressLog("Matches: " + QString::number(matchesCount));
+            elapsed = std::chrono::high_resolution_clock::now() - startDbWrite;
+            qDebug() << "Page writing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+            AddToProgressLog("Matches: " + QString::number(matchesCount) + " <br>");
             if(matchesCount >= 5)
             {
                 matchesList.push_back(QString::number(id));
             }
         }
     }while(!webPage.isLastPage);
-    parser.ClearDoneCache();
+    //parser.ClearDoneCache();
     ui->edtResults->clear();
     AddToProgressLog(" Found recommenders: ");
     AddToProgressLog(matchesList.join("<br>"));

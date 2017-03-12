@@ -73,7 +73,7 @@ QList<Section> FavouriteStoryParser::ProcessPage(QString url, QString& str, int 
         diagnostics.push_back("<span> \nFinished loading data <br></span>");
     }
 
-    qDebug() << "Writing detected fics into database, count:  " << sections.count();
+    qDebug() << "Processed fic, count:  " << sections.count();
     processedStuff+=sections;
     currentPosition = 999;
     return sections;
@@ -101,8 +101,7 @@ void FavouriteStoryParser::ClearDoneCache()
 
 void FavouriteStoryParser::WriteProcessed()
 {
-    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
-    db.transaction();
+
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     writeSections = database::ProcessSectionsIntoUpdateAndInsert(processedStuff);
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -133,7 +132,6 @@ void FavouriteStoryParser::WriteProcessed()
     }
     elapsed = std::chrono::high_resolution_clock::now() - startRecommending;
     qDebug() << "Recommendations done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    db.commit();
     ClearProcessed();
 }
 

@@ -15,6 +15,7 @@ Depends { name: "Qt.widgets" }
 Depends { name: "Qt.network" }
 Depends { name: "Qt.gui" }
 Depends { name: "Qt.quick" }
+Depends { name: "Qt.concurrent" }
 Depends { name: "Qt.quickwidgets" }
 Depends { name: "cpp" }
 Depends { name: "UniversalModels" }

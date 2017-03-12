@@ -37,6 +37,7 @@ struct WebPage
     EPageSource source = EPageSource::none;
     QString error;
     bool isLastPage = false;
+    bool isFromCache = false;
 };
 
 class PageGetterPrivate;

@@ -379,7 +379,7 @@ bool WriteRecommendation( Recommender &recommender, int fic_id)
     q1.bindValue(":fic_id", fic_id);
     q1.exec();
 
-    if(q1.lastError().isValid())
+    if(q1.lastError().isValid()&& !q1.lastError().text().contains("UNIQUE constraint failed"))
     {
         qDebug() << q1.lastError();
         qDebug() << q1.lastQuery();

@@ -51,7 +51,11 @@ WebPage PageGetterPrivate::GetPage(QString url, bool useCache)
     {
         result = GetPageFromDB(url);
         if(result.isValid)
-            return result;
+        {
+            result.isFromCache = true;
+        }
+        else
+            result = GetPageFromNetwork(url);
     }
     else
     {
@@ -68,12 +72,15 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     q.prepare("select * from PageCache where url = :URL");
     q.bindValue(":URL", url);
     q.exec();
-    q.next();
+    bool dataFound = q.next();
+
     if(q.lastError().isValid())
     {
         qDebug() << q.lastError();
         return result;
     }
+    if(!dataFound)
+        return result;
     qDebug() << q.record();
     result.url = url;
     result.isValid = true;
@@ -202,10 +209,14 @@ void PageThreadWorker::TaskList(QStringList urls, bool cacheMode)
     for(int i=0; i< urls.size();  i++)
     {
         result = pager->GetPage(urls[i], cacheMode);
+        if(!result.isFromCache)
+            pager->SavePageToDB(result);
+
         if(i == urls.size()-1)
             result.isLastPage = true;
         emit pageReady(result);
-        QThread::msleep(timeout);
+        if(!result.isFromCache)
+            QThread::msleep(timeout);
     }
 }
 static QString CreateURL(QString str)
