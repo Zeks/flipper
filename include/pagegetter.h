@@ -25,7 +25,8 @@ struct WebPage
 {
     QString url;
     QDateTime generated;
-    QByteArray content;
+    //QString stringContent;
+    QString content;
     QString previousUrl;
     QString nextUrl;
     QStringList referencedFics;

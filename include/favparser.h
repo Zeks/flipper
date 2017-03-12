@@ -8,7 +8,7 @@ class FavouriteStoryParser
 {
 public:
 
-    QList<Section> ProcessPage(QString url,QString, int authorWave = 0);
+    QList<Section> ProcessPage(QString url,QString&, int authorWave = 0);
     Section GetSection( QString text, int start);
     QString ExtractRecommdenderNameFromUrl(QString url);
     void GetAuthor(Section& , int& startfrom, QString text);

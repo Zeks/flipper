@@ -6,12 +6,12 @@ void FandomParser::ProcessPage(WebPage page)
 {
     processedStuff.clear();
     minSectionUpdateDate = QDateTime::currentDateTimeUtc();
-    QString str = page.content;
+    QString& str = page.content;
     Section section;
     int currentPosition = 0;
     int counter = 0;
     QList<Section> sections;
-    bool abort = false;
+
     while(true)
     {
 
@@ -67,18 +67,6 @@ void FandomParser::ProcessPage(WebPage page)
 
     }
 
-    for(auto section : sections)
-    {
-        //! this definitely goes outside
-//        if(database::LoadIntoDB(section))
-//            processedFics++;
-    }
-//    if(abort)
-//    {
-//        ui->edtResults->insertHtml("<span> Already have updates past that point, aborting<br></span>");
-//        nextUrl = "";
-//        return;
-//    }
     if(sections.size() > 0)
         nextUrl = GetNext(sections.last(), currentPosition, str);
 }

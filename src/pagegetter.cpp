@@ -127,7 +127,7 @@ void PageGetterPrivate::OnNetworkReply(QNetworkReply * reply)
     reply->deleteLater();
     if(error != QNetworkReply::NoError)
         return;
-    QString str(data);
+    //QString str(data);
     result.content = data;
     result.isValid = true;
     result.url = currentRequest.url().toString();
@@ -181,7 +181,6 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit
     do
     {
         result = pager->GetPage(url, cacheMode);
-
         auto minUpdate = GrabMinUpdate(result.content);
         url = GetNext(result.content);
         if(updateLimit.isValid() && minUpdate < updateLimit)
@@ -192,7 +191,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit
         if(!result.isValid || url.isEmpty())
             result.isLastPage = true;
         emit pageReady(result);
-        QThread::sleep(1);
+        QThread::msleep(1000);
     }while(url != lastUrl && result.isValid && !result.isLastPage);
 }
 static QString CreateURL(QString str)

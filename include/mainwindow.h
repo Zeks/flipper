@@ -1,6 +1,4 @@
-#ifndef MAINWINDOW_H
-
-#define MAINWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <QObject>
@@ -83,21 +81,8 @@ private:
     QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
     QString GetFandom(QString text);
 
-    void ProcessPage(QString);
-    Section GetSection( QString text, int start);
-    void GetAuthor(Section& , int& startfrom, QString text);
-    void GetTitle(Section& , int& startfrom, QString text);
-    void GetGenre(Section& , int& startfrom, QString text);
-    void GetSummary(Section& , int& startfrom, QString text);
-    void GetCrossoverFandomList(Section& , int& startfrom, QString text);
-    void GetWordCount(Section& , int& startfrom, QString text);
-    void GetPublishedDate(Section& , int& startfrom, QString text);
-    void GetUpdatedDate(Section& , int& startfrom, QString text);
-    void GetUrl(Section& , int& startfrom, QString text);
-    void GetNext(Section& , int& startfrom, QString text);
-    void GetStatSection(Section& , int& startfrom, QString text);
-    void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
-
+    DisableAllLoadButtons();
+    EnableAllLoadButtons();
 
     //QString CreateURL(QString);
 
@@ -151,9 +136,6 @@ private:
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
-//    QNetworkAccessManager manager;
-    //QNetworkAccessManager fandomManager;
-    //QNetworkAccessManager crossoverManager;
     QStringList currentFilterUrls;
     QString currentFilterUrl;
     bool ignoreUpdateDate = false;
@@ -178,7 +160,6 @@ private:
     QList<WebPage> pageQueue;
 
 public slots:
-    //void OnNetworkReply(QNetworkReply*);
     void ProcessFandoms(WebPage webPage);
     void ProcessCrossovers(WebPage webPage);
     void OnChapterUpdated(QVariant, QVariant, QVariant);
@@ -211,8 +192,6 @@ private slots:
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
     void OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous);
 
-    //currentChanged(const QModelIndex &current, const QModelIndex &previous);
-    //void OnAcceptedExpandedWidget(QString);
     void on_chkTrackedFandom_toggled(bool checked);
     void on_rbNormal_clicked();
     void on_rbCrossovers_clicked();
@@ -228,4 +207,3 @@ signals:
     void pageTask(QString, QString, QDateTime, bool);
 };
 
-#endif // MAINWINDOW_H

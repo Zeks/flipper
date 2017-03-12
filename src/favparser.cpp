@@ -2,9 +2,10 @@
 #include "include/section.h"
 #include "include/init_database.h"
 #include <QDebug>
+#include <QSqlDatabase>
 #include <chrono>
 
-QList<Section> FavouriteStoryParser::ProcessPage(QString url, QString str, int authorWave)
+QList<Section> FavouriteStoryParser::ProcessPage(QString url, QString& str, int authorWave)
 {
     Section section;
     int currentPosition = 0;
@@ -100,6 +101,8 @@ void FavouriteStoryParser::ClearDoneCache()
 
 void FavouriteStoryParser::WriteProcessed()
 {
+    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    db.transaction();
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     writeSections = database::ProcessSectionsIntoUpdateAndInsert(processedStuff);
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -130,6 +133,7 @@ void FavouriteStoryParser::WriteProcessed()
     }
     elapsed = std::chrono::high_resolution_clock::now() - startRecommending;
     qDebug() << "Recommendations done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    db.commit();
     ClearProcessed();
 }
 
