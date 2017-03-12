@@ -22,6 +22,7 @@
 #include <QThread>
 #include <QFuture>
 #include <QtConcurrent>
+#include <QSqlDriver>
 #include <chrono>
 #include <algorithm>
 
@@ -130,7 +131,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
         if(tagList.contains(tag))
         {
-            QSqlDatabase db = QSqlDatabase::database(dbName);
+            QSqlDatabase db = QSqlDatabase::database();
 
             QSqlQuery q(db);
             q.prepare("DELETE FROM TAGS where tag = :tag");
@@ -145,7 +146,7 @@ MainWindow::MainWindow(QWidget *parent) :
         //ui->wdgTagsPlaceholder->OnNewTag(tag, false);
         if(!tagList.contains(tag))
         {
-            QSqlDatabase db = QSqlDatabase::database(dbName);
+            QSqlDatabase db = QSqlDatabase::database();
 
             QSqlQuery q(db);
             q.prepare("INSERT INTO TAGS(TAG) VALUES(:tag)");
@@ -396,7 +397,7 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
         pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
     else
         pbMain->setValue(counter++);
-    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
+    QSqlDatabase db = QSqlDatabase::database();
     db.transaction();
     auto startPageRequest = std::chrono::high_resolution_clock::now();
     for(auto section: parser.processedStuff)
@@ -429,7 +430,7 @@ WebPage MainWindow::RequestPage(QString pageUrl, bool autoSaveToDB)
     pbMain->setTextVisible(false);
     pbMain->show();
     An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database(dbName));
+    pager->SetDatabase(QSqlDatabase::database());
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)
         pager->SavePageToDB(result);
@@ -500,7 +501,7 @@ void MainWindow::LoadData()
 
 QSqlQuery MainWindow::BuildQuery()
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString queryString = "select ID, ";
     //if(ui->cbCustomFilters->currentText() == "New From Popular")
     queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
@@ -752,7 +753,7 @@ void MainWindow::OnSetTag(QString tag)
 
 void MainWindow::InsertFandomData(QMap<QPair<QString,QString>, Fandom> names)
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QHash<QPair<QString, QString>, Fandom> knownValues;
     for(auto value : sections)
     {
@@ -849,7 +850,7 @@ void MainWindow::UpdateFandomList(std::function<QString(Fandom)> linkGetter)
 
 QStringList MainWindow::GetCrossoverListFromDB()
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("Select fandom from fandoms where section = '%1' and crossover_url is not null").arg(ui->cbSectionTypes->currentText());
     QSqlQuery q(qs, db);
     QStringList result;
@@ -863,7 +864,7 @@ QStringList MainWindow::GetCrossoverListFromDB()
 
 QStringList MainWindow::GetCrossoverUrl(QString fandom, bool ignoreTrackingState)
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("Select crossover_url from fandoms where fandom = '%1' ").arg(fandom);
     if(false)
         qs+=" and (tracked = 1 or tracked_crossovers = 1)";
@@ -889,7 +890,7 @@ QStringList MainWindow::GetCrossoverUrl(QString fandom, bool ignoreTrackingState
 
 QStringList MainWindow::GetNormalUrl(QString fandom, bool ignoreTrackingState)
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("Select normal_url from fandoms where fandom = '%1' ").arg(fandom);
     if(false)
         qs+=" and (tracked = 1 or tracked_crossovers = 1)";
@@ -940,7 +941,7 @@ void MainWindow::OpenTagWidget(QPoint pos, QString url)
 
 void MainWindow::ReadTags()
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("Select tag from tags ");
     QSqlQuery q(qs, db);
     QList<QPair<QString, QString>> tagPairs;
@@ -972,7 +973,7 @@ void MainWindow::ReadTags()
 
 void MainWindow::SetTag(int id, QString tag)
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("update fanfics set tags = tags || ' ' || :tag where ID = :id");
 
     QSqlQuery q(db);
@@ -996,7 +997,7 @@ void MainWindow::SetTag(int id, QString tag)
 
 void MainWindow::UnsetTag(int id, QString tag)
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
 
     QString qs = QString("select tags from fanfics where ID = :id");
 
@@ -1162,7 +1163,7 @@ void MainWindow::WipeSelectedFandom(bool)
     }
     if(!fandom.isEmpty())
     {
-        QSqlDatabase db = QSqlDatabase::database(dbName);
+        QSqlDatabase db = QSqlDatabase::database();
         QString qs = QString("delete from fanfics where fandom like '%%1%'");
         qs=qs.arg(fandom);
         QSqlQuery q(qs, db);
@@ -1178,7 +1179,7 @@ void MainWindow::OnNewPage(WebPage page)
 
 bool MainWindow::CheckSectionAvailability()
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("Select count(fandom) from fandoms");
     QSqlQuery q(qs, db);
     q.next();
@@ -1385,7 +1386,7 @@ void MainWindow::ProcessCrossovers(WebPage webPage)
 
 void MainWindow::OnChapterUpdated(QVariant chapter, QVariant author, QVariant title)
 {
-    QSqlDatabase db = QSqlDatabase::database(dbName);
+    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("update fanfics set at_chapter = :chapter where author = :author and title = :title");
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1687,7 +1688,7 @@ QStringList MainWindow::GetAllUniqueAuthorsFromRecommenders()
     };
     QList<QFuture<QList<Section>>> futures;
     An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database(dbName));
+    pager->SetDatabase(QSqlDatabase::database());
     for(auto recName: list)
     {
         auto startRecProcessing = std::chrono::high_resolution_clock::now();
@@ -1695,6 +1696,8 @@ QStringList MainWindow::GetAllUniqueAuthorsFromRecommenders()
 //        if(counter != 4)
 //            continue;
         Recommender recommender = recommenders[recName];
+        if(recommender.wave == 0)
+            continue;
 
         InsertLogIntoEditor(ui->edtResults, recommender.url);
         auto page = pager->GetPage(recommender.url, true);
@@ -1935,10 +1938,10 @@ void MainWindow::on_pbOpenWholeList_clicked()
 void MainWindow::on_pbFirstWave_clicked()
 {
     currentSearchButton = MainWindow::lfbp_recs;
-    QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
-    db.transaction();
+    QSqlDatabase db = QSqlDatabase::database();
+    //db.transaction();
     QStringList uniqueAuthors = GetAllUniqueAuthorsFromRecommenders();
-    db.commit();
+    //db.commit();
     //return;
     AddToProgressLog("Authors: " + QString::number(uniqueAuthors.size()));
 
@@ -1956,14 +1959,22 @@ void MainWindow::on_pbFirstWave_clicked()
     };
     QList<QFuture<FavouriteStoryParser>> futures;
     QList<FavouriteStoryParser> parsers;
+    An<PageManager> pager;
     do
     {
+        futures.clear();
+        parsers.clear();
         while(pageQueue.isEmpty())
             QCoreApplication::processEvents();
         webPage = pageQueue[0];
         pageQueue.pop_front();
-
+        if(!webPage.isFromCache)
+            pager->SavePageToDB(webPage);
+        qDebug() << "Page loaded in: " << webPage.loadedIn;
         pbMain->setValue(pbMain->value()+1);
+        pbMain->setTextVisible(true);
+        pbMain->setFormat("%v");
+        //%v
 //        if(webPage.url.contains("Heliosion"))
 //            reachedCurrentTarget = true;
 //        if(!reachedCurrentTarget)
@@ -1972,14 +1983,18 @@ void MainWindow::on_pbFirstWave_clicked()
         auto id = database::GetRecommenderId(webPage.url);
         if(id == -1)
         {
-            QSqlDatabase db = QSqlDatabase::database("QSQLITE_R");
-            db.transaction();
+            QSqlDatabase db = QSqlDatabase::database();
+            bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
+            bool transOpen = db.transaction();
             auto startRecLoad = std::chrono::high_resolution_clock::now();
 
 
             auto splittings = SplitJob(webPage.content);
             if(splittings.storyCount > 2000)
+            {
+                InsertLogIntoEditor(ui->edtResults, "Skipping page with too much favourites");
                 continue;
+            }
 
             for(auto part: splittings.parts)
             {
@@ -1993,6 +2008,7 @@ void MainWindow::on_pbFirstWave_clicked()
 
             auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
             qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+            qDebug() << "Count of parts:" << parsers.size();
 
             auto startDbWrite = std::chrono::high_resolution_clock::now();
             int sum = 0;
@@ -2014,6 +2030,9 @@ void MainWindow::on_pbFirstWave_clicked()
             {
                 matchesList.push_back(QString::number(id));
             }
+            elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+            qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+            ui->edtResults->ensureCursorVisible();
         }
     }while(!webPage.isLastPage);
     //parser.ClearDoneCache();

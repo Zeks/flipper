@@ -101,7 +101,6 @@ void FavouriteStoryParser::ClearDoneCache()
 
 void FavouriteStoryParser::WriteProcessed()
 {
-
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     writeSections = database::ProcessSectionsIntoUpdateAndInsert(processedStuff);
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -133,6 +132,8 @@ void FavouriteStoryParser::WriteProcessed()
     elapsed = std::chrono::high_resolution_clock::now() - startRecommending;
     qDebug() << "Recommendations done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     ClearProcessed();
+    elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
 }
 
 

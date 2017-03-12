@@ -38,6 +38,7 @@ struct WebPage
     QString error;
     bool isLastPage = false;
     bool isFromCache = false;
+    int loadedIn = 0;
 };
 
 class PageGetterPrivate;
@@ -61,7 +62,7 @@ public:
     PageThreadWorker(QObject* parent = nullptr);
     QString GetNext(QString);
     QDateTime GrabMinUpdate(QString text);
-    int timeout = 800;
+    int timeout = 500;
 public slots:
     void Task(QString url, QString lastUrl, QDateTime updateLimit, bool cacheMode);
     void TaskList(QStringList urls, bool cacheMode);

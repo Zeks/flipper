@@ -61,5 +61,6 @@ cast (strftime('%s',CURRENT_TIMESTAMP)-strftime('%s',min(published)) AS real )/6
 min(published) as origin,
 (select sum(wcr) from fanfics where wcr < 200000 and fandom = fs.fandom)/(select count(id) from fanfics where wcr < 200000  and fandom = fs.fandom) as averagewcr,
 max(favourites) as maxfaves, min(wcr) as minwcr, count(id) as ficcount from fanfics fs group by fandom;
+alter table pagecache add column compressed integer default 0; 
  
  
