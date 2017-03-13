@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
 
     database::InstallCustomFunctions();
     database::EnsureFandomsFilled();
+    database::EnsureWebIdsFilled();
 
 
     return a.exec();

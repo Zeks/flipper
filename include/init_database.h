@@ -47,5 +47,7 @@ struct WriteStats
     QDateTime GetMaxUpdateDateForSection(QStringList sections);
     void InstallCustomFunctions();
     void EnsureFandomsFilled();
+    void EnsureWebIdsFilled();
+    void ImportTags(QString anotherDatabase);
 
 }

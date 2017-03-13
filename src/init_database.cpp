@@ -38,7 +38,15 @@ void cfRegexp(sqlite3_context* ctx, int argc, sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
     }
 }
-
+void cfReturnCapture(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+{
+    QString pattern((const char*)sqlite3_value_text(argv[0]));
+    QString str((const char*)sqlite3_value_text(argv[1]));
+    QRegExp regex(pattern);
+    regex.indexIn(str);
+    QString cap = regex.cap(1);
+    sqlite3_result_text(ctx, qPrintable(cap), cap.length(), SQLITE_TRANSIENT);
+}
 void cfGetFirstFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
 {
     QRegExp regex("&");
@@ -77,6 +85,8 @@ void InstallCustomFunctions()
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfReturnCapture", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfReturnCapture, NULL, NULL);
+
             qDebug() << "This won't be reached.";
 
             QSqlQuery query;
@@ -96,6 +106,12 @@ void InstallCustomFunctions()
             secondFandom.exec();
             secondFandom.next();
             qDebug() << secondFandom.value(0).toString();
+
+            QSqlQuery capture;
+            capture.prepare("select cfReturnCapture('/s/(\\d+)','/s/8477381/1/Kamen-Rider-Blade-The-Battle-Royale');");
+            capture.exec();
+            capture.next();
+            qDebug() << capture.value(0).toString();
         }
     }
 }
@@ -866,6 +882,25 @@ void EnsureFandomsFilled()
 {
     QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("update fanfics set fandom1 = cfGetFirstFandom(fandom), fandom2 = cfGetSecondfandom(fandom) where fandom1 is null and fandom2 is null");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+}
+
+void ImportTags(QString anotherDatabase)
+{
+
+}
+
+void EnsureWebIdsFilled()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update fanfics set web_id = cfReturnCapture('/s/(\\d+)', url) where web_id is null");
     QSqlQuery q(db);
     q.prepare(qs);
     q.exec();
