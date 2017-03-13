@@ -137,7 +137,7 @@ void FandomParser::GetCrossoverFandomList(Section & section, int &startfrom, QSt
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
     QString tmp = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed();
-    section.fandom = tmp.replace("&", " ") + QString(" CROSSOVER");
+    section.fandom = tmp + QString(" CROSSOVER");
     section.fandoms = tmp.split("&");
     startfrom = indexEnd;
 }

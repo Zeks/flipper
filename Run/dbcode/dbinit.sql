@@ -64,4 +64,5 @@ max(favourites) as maxfaves, min(wcr) as minwcr, count(id) as ficcount from fanf
 alter table pagecache add column compressed integer default 0; 
 alter table fanfics add column fandom1 VARCHAR; 
 alter table fanfics add column fandom2 VARCHAR;
- 
+CREATE INDEX if not exists  I_FANDOM1 ON fanfics (fandom1 ASC);
+CREATE INDEX if not exists  I_FANDOM2 ON fanfics (fandom2 ASC);

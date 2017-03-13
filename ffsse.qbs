@@ -46,6 +46,8 @@ files: [
         "include/fanficdisplay.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
+        "sqlite/sqlite3.c",
+        "sqlite/sqlite3.h",
         "src/fandomparser.cpp",
         "src/favparser.cpp",
         "src/init_database.cpp",

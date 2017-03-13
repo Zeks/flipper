@@ -660,7 +660,7 @@ QSqlQuery MainWindow::BuildQuery()
         if(tagsMatter)
         {
             if(!tags.isEmpty())
-                queryString +=" and tags regexp :tags ";
+                queryString +=" and cfRegexp(:tags, tags) ";
             else
                 queryString +=" and tags = ' none ' ";
         }
@@ -740,7 +740,7 @@ void MainWindow::OnSetTag(QString tag)
         QString path = "CrawlerDB.sqlite";
         QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
         QSqlQuery q(db);
-        q.prepare(QString("update fanfics set tags = tags || :tag where ID = :id and tags not regexp :wrappedTag"));
+        q.prepare(QString("update fanfics set tags = tags || :tag where ID = :id and not cfRegexp(:wrappedTag, tags)"));
         q.bindValue(":id", value);
         q.bindValue(":tag", " " + tag + " ");
         q.bindValue(":wrappedTag", WrapTag(tag));

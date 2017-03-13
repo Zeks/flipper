@@ -217,7 +217,7 @@ void FavouriteStoryParser::GetCrossoverFandomList(Section & section, int &startf
 
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
-    section.fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed().replace("&", " ") + QString(" CROSSOVER");
+    section.fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed() + QString(" CROSSOVER");
     startfrom = indexEnd;
 }
 

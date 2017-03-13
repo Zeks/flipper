@@ -45,6 +45,7 @@ struct WriteStats
     void RebuildAllFanficIndexes();
     WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Section>&);
     QDateTime GetMaxUpdateDateForSection(QStringList sections);
-
+    void InstallCustomFunctions();
+    void EnsureFandomsFilled();
 
 }

@@ -5,8 +5,10 @@
 #include <QSqlError>
 #include <QMetaType>
 #include <QSqlDriver>
+#include <QSqlQuery>
 #include <QPluginLoader>
 #include "include/init_database.h"
+#include "../../Qt/qt-everywhere-opensource-src-5.6.0/qtbase/src/3rdparty/sqlite/sqlite3.h"
 
 
 void CreateIndex(QString value)
@@ -18,30 +20,26 @@ void CreateIndex(QString value)
     qDebug() << q.lastError();
 }
 
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
     database::BackupDatabase();
     QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE_R");
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(path);
     db.open();
 
-    //QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-
-
-    //db.setDatabaseName(path);
-    //db.open();
-    //bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
-    //db = QSqlDatabase::database();
-    //hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
 
     database::ReadDbFile();
     database::ReindexTable("tags");
     MainWindow w;
     w.show();
     w.CheckSectionAvailability();
+
+    database::InstallCustomFunctions();
+    database::EnsureFandomsFilled();
 
 
     return a.exec();
