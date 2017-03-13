@@ -42,7 +42,7 @@ CREATE TABLE if not exists PageCache (URL VARCHAR PRIMARY KEY  NOT NULL , GENERA
  alter table fandoms add column fandom_multiplier integer default 1; 
  alter table fanfics add column wcr real; 
  alter table fanfics add column wcr_adjusted real; 
-  alter table fanfics add column reviewstofavourites real; 
+ alter table fanfics add column reviewstofavourites real; 
  alter table fanfics add column daysrunning integer default null; 
  alter table fanfics add column age integer default null; 
  update fanfics set wcr = wordcount*1.0/reviews where wcr is null and reviews > 0 and wordcount > 1000;
@@ -62,5 +62,6 @@ min(published) as origin,
 (select sum(wcr) from fanfics where wcr < 200000 and fandom = fs.fandom)/(select count(id) from fanfics where wcr < 200000  and fandom = fs.fandom) as averagewcr,
 max(favourites) as maxfaves, min(wcr) as minwcr, count(id) as ficcount from fanfics fs group by fandom;
 alter table pagecache add column compressed integer default 0; 
- 
+alter table fanfics add column fandom1 VARCHAR; 
+alter table fanfics add column fandom2 VARCHAR;
  

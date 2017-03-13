@@ -512,7 +512,7 @@ QSqlQuery MainWindow::BuildQuery()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     bool directRecsChecked = ui->chkShowDirectRecs->isChecked();
     bool directRecsVisible = settings.value("Settings/showExperimentaWaveparser", false).toBool();
-    QString wave = (directRecsChecked || !directRecsVisible) ? QString::number(0): QString::number(1);
+    QString wave = (directRecsChecked || !directRecsVisible) ? QString::number(0): QString::number(2);
     queryString=queryString.arg(wave);
 
     queryString+=" f.* from fanfics f, fandom_stats fs where fs.fandom = f.fandom and 1 = 1 " ;
@@ -1696,7 +1696,7 @@ QStringList MainWindow::GetAllUniqueAuthorsFromRecommenders()
 //        if(counter != 4)
 //            continue;
         Recommender recommender = recommenders[recName];
-        if(recommender.wave == 0)
+        if(recommender.wave != 1)
             continue;
 
         InsertLogIntoEditor(ui->edtResults, recommender.url);
@@ -2021,7 +2021,7 @@ void MainWindow::on_pbFirstWave_clicked()
             InsertLogIntoEditor(ui->edtResults, webPage.url);
             AddToProgressLog(" All Faves: " + QString::number(sum) + " ");
             auto id = database::GetRecommenderId(webPage.url);
-            auto matchesCount = database::FilterRecommenderByRecField(id, 5);
+            auto matchesCount = database::FilterRecommenderByRecField(id, 5, sum);
             db.commit();
             elapsed = std::chrono::high_resolution_clock::now() - startDbWrite;
             qDebug() << "Page writing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();

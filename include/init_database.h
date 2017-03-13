@@ -38,7 +38,7 @@ struct WriteStats
     void RemoveRecommender(int id);
     int GetFicIdByAuthorAndName(QString, QString);
     int GetRecommenderId(QString url);
-    int FilterRecommenderByRecField(int, int);
+    int FilterRecommenderByRecField(int, int, int favCount);
     void DropFanficIndexes();
     void RebuildFanficIndexes();
     void DropAllFanficIndexes();

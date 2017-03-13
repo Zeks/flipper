@@ -484,7 +484,7 @@ void RemoveRecommender(int id)
     }
 }
 
-int FilterRecommenderByRecField(int recommender_id, int rec_threshhold)
+int FilterRecommenderByRecField(int recommender_id, int rec_threshhold, int favCount)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
@@ -502,7 +502,8 @@ int FilterRecommenderByRecField(int recommender_id, int rec_threshhold)
     int matches  = q1.value(0).toInt();
     qDebug() << "Using query: " << q1.lastQuery();
     qDebug() << "Matches found: " << matches;
-    if(matches < rec_threshhold)
+    bool passesOnLimitedFaves = favCount < 130 && (matches >= rec_threshhold - 1);
+    if(!passesOnLimitedFaves && matches < rec_threshhold)
     {
         RemoveRecommender(recommender_id);
     }
