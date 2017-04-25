@@ -175,6 +175,7 @@ void FavouriteStoryParser::GetTitle(Section & section, int& startfrom, QString t
     int indexEnd = rxEnd.indexIn(text, indexStart+13);
     startfrom = indexEnd;
     section.title = text.mid(indexStart + 12,indexEnd - (indexStart + 12));
+    section.title=section.title.replace("\\'","'");
     section.title=section.title.replace("\'","'");
 }
 

@@ -81,43 +81,44 @@ void InstallCustomFunctions()
             sqlite3_initialize();
             // check that it is not NULL
             // This shows that the database handle is generally valid:
-            qDebug() << sqlite3_db_filename(db_handle, "main");
+            //qDebug() << sqlite3_db_filename(db_handle, "main");
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfReturnCapture", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfReturnCapture, NULL, NULL);
 
-            qDebug() << "This won't be reached.";
+//            qDebug() << "This won't be reached.";
 
-            QSqlQuery query;
-            query.prepare("select cfRegexp('p$','tap');");
-            query.exec();
-            query.next();
-            qDebug() << query.value(0).toString();
+//            QSqlQuery query;
+//            query.prepare("select cfRegexp('p$','tap');");
+//            query.exec();
+//            query.next();
+//            qDebug() << query.value(0).toString();
 
-            QSqlQuery firstFandom;
-            firstFandom.prepare("select cfGetFirstFandom('tap');");
-            firstFandom.exec();
-            firstFandom.next();
-            qDebug() << firstFandom.value(0).toString();
+//            QSqlQuery firstFandom;
+//            firstFandom.prepare("select cfGetFirstFandom('tap');");
+//            firstFandom.exec();
+//            firstFandom.next();
+//            qDebug() << firstFandom.value(0).toString();
 
-            QSqlQuery secondFandom;
-            secondFandom.prepare("select cfGetSecondFandom('barrel');");
-            secondFandom.exec();
-            secondFandom.next();
-            qDebug() << secondFandom.value(0).toString();
+//            QSqlQuery secondFandom;
+//            secondFandom.prepare("select cfGetSecondFandom('barrel');");
+//            secondFandom.exec();
+//            secondFandom.next();
+//            qDebug() << secondFandom.value(0).toString();
 
-            QSqlQuery capture;
-            capture.prepare("select cfReturnCapture('/s/(\\d+)','/s/8477381/1/Kamen-Rider-Blade-The-Battle-Royale');");
-            capture.exec();
-            capture.next();
-            qDebug() << capture.value(0).toString();
+//            QSqlQuery capture;
+//            capture.prepare("select cfReturnCapture('/s/(\\d+)','/s/8477381/1/Kamen-Rider-Blade-The-Battle-Royale');");
+//            capture.exec();
+//            capture.next();
+//            qDebug() << capture.value(0).toString();
         }
     }
 }
-bool database::ReadDbFile()
+//"dbcode/dbinit.sql"
+bool database::ReadDbFile(QString file, QString connectionName)
 {
-    QFile data("dbcode/dbinit.sql");
+    QFile data(file);
      if (data.open(QFile::ReadOnly))
      {
          QTextStream in(&data);
@@ -128,7 +129,11 @@ bool database::ReadDbFile()
              if(statement.trimmed().isEmpty() || statement.trimmed().left(2) == "--")
                  continue;
 
-             QSqlDatabase db = QSqlDatabase::database();
+             QSqlDatabase db ;
+             if(!connectionName.isEmpty())
+                db = QSqlDatabase::database(connectionName);
+             else
+                db = QSqlDatabase::database();
              QSqlQuery q(db);
              q.prepare(statement.trimmed());
              q.exec();
@@ -863,7 +868,8 @@ QDateTime GetMaxUpdateDateForSection(QStringList sections)
     {
         for(auto section : sections)
         {
-            append+= QString(" and fandom like '%%1%' ").arg(section);
+            if(!section.trimmed().isEmpty())
+                append+= QString(" and fandom like '%%1%' ").arg(section);
         }
     }
     qs=qs.arg(append);

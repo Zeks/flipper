@@ -35,13 +35,13 @@ public:
     QSqlDatabase db;
 
 public slots:
-    void OnNetworkReply(QNetworkReply*);
+    //void OnNetworkReply(QNetworkReply*);
 };
 
 PageGetterPrivate::PageGetterPrivate(QObject *parent): QObject(parent)
 {
-    connect(&manager, SIGNAL (finished(QNetworkReply*)),
-            this, SLOT (OnNetworkReply(QNetworkReply*)));
+//    connect(&manager, SIGNAL (finished(QNetworkReply*)),
+//            this, SLOT (OnNetworkReply(QNetworkReply*)));
 }
 
 WebPage PageGetterPrivate::GetPage(QString url, bool useCache)
@@ -68,7 +68,7 @@ WebPage PageGetterPrivate::GetPage(QString url, bool useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-    QSqlQuery q(db);
+    QSqlQuery q(QSqlDatabase::database("pagecache"));
     q.prepare("select * from PageCache where url = :URL");
     q.bindValue(":URL", url);
     q.exec();
@@ -99,14 +99,30 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 {
     result = WebPage();
     currentRequest = QNetworkRequest(QUrl(url));
-    manager.get(currentRequest);
-    waitLoop.exec();
+    auto reply = manager.get(currentRequest);
+    int retries = 20;
+    while(!reply->isFinished() || retries > 0)
+    {
+        retries--;
+        //QThread::sleep(500);
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    }
+    QByteArray data=reply->readAll();
+    error = reply->error();
+    reply->deleteLater();
+    if(error != QNetworkReply::NoError)
+        return result;
+    //QString str(data);
+    result.content = data;
+    result.isValid = true;
+    result.url = currentRequest.url().toString();
+    result.source = EPageSource::network;
     return result;
 }
 
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
-    QSqlQuery q(db);
+    QSqlQuery q(QSqlDatabase::database("pagecache"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
@@ -133,20 +149,20 @@ void PageGetterPrivate::SetDatabase(QSqlDatabase _db)
     db  = _db;
 }
 
-void PageGetterPrivate::OnNetworkReply(QNetworkReply * reply)
-{
-    FuncCleanup f([&](){waitLoop.quit();});
-    QByteArray data=reply->readAll();
-    error = reply->error();
-    reply->deleteLater();
-    if(error != QNetworkReply::NoError)
-        return;
-    //QString str(data);
-    result.content = data;
-    result.isValid = true;
-    result.url = currentRequest.url().toString();
-    result.source = EPageSource::network;
-}
+//void PageGetterPrivate::OnNetworkReply(QNetworkReply * reply)
+//{
+//    FuncCleanup f([&](){waitLoop.quit();});
+//    QByteArray data=reply->readAll();
+//    error = reply->error();
+//    reply->deleteLater();
+//    if(error != QNetworkReply::NoError)
+//        return;
+//    //QString str(data);
+//    result.content = data;
+//    result.isValid = true;
+//    result.url = currentRequest.url().toString();
+//    result.source = EPageSource::network;
+//}
 
 PageManager::PageManager() : d(new PageGetterPrivate)
 {
@@ -155,6 +171,7 @@ PageManager::PageManager() : d(new PageGetterPrivate)
 
 PageManager::~PageManager()
 {
+    qDebug() << "deleting page worker";
 }
 
 void PageManager::SetDatabase(QSqlDatabase _db)
@@ -187,20 +204,33 @@ void PageManager::SavePageToDB(const WebPage & page)
 
 PageThreadWorker::PageThreadWorker(QObject *parent)
 {
+    startTimer(2000);
+}
 
+PageThreadWorker::~PageThreadWorker()
+{
+    qDebug() << "deleting pageThread worker";
+}
+
+void PageThreadWorker::timerEvent(QTimerEvent *)
+{
+    qDebug() << "worker is alive";
 }
 
 void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit, bool cacheMode)
 {
+    FuncCleanup f([&](){working = false;});
+    working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
     do
     {
+        qDebug() << "loading page: " << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(url, cacheMode);
         auto minUpdate = GrabMinUpdate(result.content);
         url = GetNext(result.content);
-        if(updateLimit.isValid() && minUpdate < updateLimit)
+        if((url == lastUrl || lastUrl.trimmed().isEmpty())|| (updateLimit.isValid() && (minUpdate < updateLimit)))
         {
             result.error = "Already have the stuff past this point. borting.";
             result.isLastPage = true;
@@ -211,14 +241,19 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
 
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        qDebug() << "thread will sleep for " << timeout;
         QThread::msleep(timeout);
     }while(url != lastUrl && result.isValid && !result.isLastPage);
+    qDebug() << "leaving task1";
 }
 
 void PageThreadWorker::TaskList(QStringList urls, bool cacheMode)
 {
+    FuncCleanup f([&](){working = false;});
+    working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
+    qDebug() << "loading task: " << urls;
     for(int i=0; i< urls.size();  i++)
     {
         auto startPageLoad = std::chrono::high_resolution_clock::now();
@@ -230,10 +265,15 @@ void PageThreadWorker::TaskList(QStringList urls, bool cacheMode)
             result.isLastPage = true;
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
         emit pageReady(result);
         if(!result.isFromCache)
+        {
+            qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
+        }
     }
+    qDebug() << "leaving task2";
 }
 static QString CreateURL(QString str)
 {

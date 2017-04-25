@@ -301,6 +301,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
+    ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
 {
@@ -329,6 +330,7 @@ void MainWindow::Init()
     UpdateFandomList([](Fandom f){return f.crossoverUrl;});
     InsertFandomData(names);
     ui->cbNormals->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSectionTypes->currentText())));
+    ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 
 void MainWindow::InitConnections()
@@ -339,14 +341,12 @@ void MainWindow::InitConnections()
 
 }
 
-void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
+void MainWindow::RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString page, bool useLastIndex)
 {
     nextUrl = page;
-    QStringList sections;
-    sections.push_back(ui->cbNormals->currentText());
-    if(ui->rbCrossovers->isChecked())
-        sections.push_back("CROSSOVER");
-    auto lastFandomUpdatedate = database::GetMaxUpdateDateForSection(sections);
+    //qDebug() << "will request url:" << nextUrl;
+    if(ui->cbUseDateCutoff->isChecked())
+        lastFandomUpdatedate = QDateTime(ui->deCutoffLimit->date());
     if(ui->chkIgnoreUpdateDate->isChecked())
         lastFandomUpdatedate = QDateTime();
 
@@ -357,6 +357,7 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
 
     An<PageManager> pager;
     bool cacheMode = ui->chkCacheMode->isChecked();
+    qDebug() << "will request url:" << nextUrl;
     WebPage currentPage = pager->GetPage(nextUrl, cacheMode);
     FandomParser parser;
     QString lastUrl = parser.GetLast(currentPage.content);
@@ -366,18 +367,25 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
         pbMain->show();
         pbMain->setMaximum(pageCount);
     }
+    qDebug() << "emitting page task:" << nextUrl << "\n" << lastUrl << "\n" << lastFandomUpdatedate;
     emit pageTask(nextUrl, lastUrl, lastFandomUpdatedate, ui->chkCacheMode->isChecked());
     int counter = 0;
     WebPage webPage;
     do
     {
         while(pageQueue.isEmpty())
+        {
+            QThread::msleep(500);
+            //qDebug() << "worker value is: " << worker->value;
+            if(!worker->working)
+                pageThread.start(QThread::HighPriority);
             QCoreApplication::processEvents();
+        }
 
-        webPage = pageQueue[0];
+        webPage = pageQueue.at(0);
         pageQueue.pop_front();
         webPage.crossover = ui->rbCrossovers->isChecked();
-        webPage.fandom =  ui->cbNormals->currentText();
+        webPage.fandom =  fandom;
         webPage.type = EPageType::sorted_ficlist;
         auto startPageProcessing= std::chrono::high_resolution_clock::now();
         parser.ProcessPage(webPage);
@@ -1130,6 +1138,8 @@ QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crosso
         currentFandom = selectedFandom;
 
     }
+
+    qDebug() << "got last update date";
     return urls;
 }
 
@@ -1437,7 +1447,9 @@ void MainWindow::on_pbCrawl_clicked()
     for(QString url: currentFilterUrls)
     {
         currentFilterUrl = url;
-        RequestAndProcessPage(url);
+        QString crossOverAddin = ui->rbCrossovers->isChecked() ? "CROSSOVER" : "";
+        auto lastUpdated = database::GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText() << crossOverAddin);
+        RequestAndProcessPage(ui->cbNormals->currentText(), lastUpdated, url);
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     database::PushFandom(ui->cbNormals->currentText().trimmed());
@@ -1733,7 +1745,7 @@ QStringList MainWindow::GetAllUniqueAuthorsFromRecommenders()
 
 void MainWindow::CreatePageThreadWorker()
 {
-    PageThreadWorker* worker = new PageThreadWorker;
+    worker = new PageThreadWorker;
     worker->moveToThread(&pageThread);
     connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
     connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
@@ -1743,7 +1755,8 @@ void MainWindow::CreatePageThreadWorker()
 void MainWindow::StartPageWorker()
 {
     pageQueue.clear();
-    pageThread.start();
+    pageThread.start(QThread::HighPriority);
+
 }
 
 void MainWindow::StopPageWorker()
@@ -1793,7 +1806,9 @@ void MainWindow::on_rbCrossovers_clicked()
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
     processedFics = 0;
-    for(QString fandom : database::FetchTrackedFandoms())
+    auto trackedFandoms = database::FetchTrackedFandoms();
+    qDebug() << trackedFandoms;
+    for(QString fandom : trackedFandoms)
     {
         currentFilterUrls = GetCurrentFilterUrls(fandom, false);
         pageCounter = 0;
@@ -1804,9 +1819,11 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         for(QString url: currentFilterUrls)
         {
             currentFilterUrl = url;
-            RequestAndProcessPage(url);
+            RequestAndProcessPage(fandom, lastUpdated, url);
         }
     }
+    auto trackedCrossovers = database::FetchTrackedCrossovers();
+    qDebug() << trackedCrossovers;
     for(QString fandom : database::FetchTrackedCrossovers())
     {
         currentFilterUrls = GetCurrentFilterUrls(fandom, true);
@@ -1818,7 +1835,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         for(QString url: currentFilterUrls)
         {
             currentFilterUrl = url;
-            RequestAndProcessPage(url);
+            RequestAndProcessPage(fandom,lastUpdated, url);
         }
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
@@ -2050,4 +2067,9 @@ void MainWindow::OnReloadRecLists()
 {
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
+}
+
+void MainWindow::on_cbUseDateCutoff_clicked()
+{
+    ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
 }

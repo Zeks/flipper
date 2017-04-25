@@ -818,6 +818,23 @@
                       </widget>
                      </item>
                      <item>
+                      <widget class="QCheckBox" name="cbUseDateCutoff">
+                       <property name="text">
+                        <string/>
+                       </property>
+                       <property name="checked">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QDateEdit" name="deCutoffLimit">
+                       <property name="enabled">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QLabel" name="label_2">
                        <property name="text">
                         <string>Cutoff</string>

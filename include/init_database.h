@@ -9,7 +9,7 @@ struct WriteStats
     QList<Section> requiresInsert;
     QList<Section> requiresUpdate;
 };
-    bool ReadDbFile();
+    bool ReadDbFile(QString file, QString connectionName = "");
     bool ReindexTable(QString table);
     void SetFandomTracked(QString fandom, bool crossover, bool);
     void PushFandom(QString);
