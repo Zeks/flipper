@@ -532,28 +532,34 @@ QSqlQuery MainWindow::BuildQuery()
     if(ui->chkFaveLimitActivated->isChecked() && ui->sbMinimumFavourites->value() > 0)
         queryString += " and favourites > :favourites ";
 
-    if(!ui->leContainsGenre->text().trimmed().isEmpty())
+    if(ui->chkGenrePlus->isChecked() && !ui->leContainsGenre->text().trimmed().isEmpty())
         for(auto genre : ui->leContainsGenre->text().trimmed().split(" "))
             queryString += QString(" AND genres like '%%1%' ").arg(genre);
 
-    if(!ui->leNotContainsGenre->text().trimmed().isEmpty())
+    if(ui->chkGenreMinus->isChecked() && !ui->leNotContainsGenre->text().trimmed().isEmpty())
         for(auto genre : ui->leNotContainsGenre->text().trimmed().split(" "))
             queryString += QString(" AND genres not like '%%1%' ").arg(genre);
-
-    for(QString word: ui->leContainsWords->text().trimmed().split(" "))
+    if(ui->cbSortMode->currentText() == "Fav Rate")
+        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > 4 OR  favourites > 1000) ";
+    if(ui->chkWordsPlus->isChecked())
     {
-        if(word.trimmed().isEmpty())
-            continue;
-        queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
+        for(QString word: ui->leContainsWords->text().trimmed().split(" "))
+        {
+            if(word.trimmed().isEmpty())
+                continue;
+            queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
+        }
     }
-
     queryString+= BuildBias();
 
-    for(QString word: ui->leNotContainsWords->text().trimmed().split(" "))
+    if(ui->chkWordsMinus->isChecked())
     {
-        if(word.trimmed().isEmpty())
-            continue;
-        queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
+        for(QString word: ui->leNotContainsWords->text().trimmed().split(" "))
+        {
+            if(word.trimmed().isEmpty())
+                continue;
+            queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
+        }
     }
 
     if(currentSearchButton == MainWindow::lfbp_recs)
@@ -642,12 +648,17 @@ QSqlQuery MainWindow::BuildQuery()
     if(ui->chkComplete->isChecked())
         queryString+=QString(" and  complete = 1");
 
+    QString activeString = " cast("
+                           "("
+                           " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
+                           " ) AS real "
+                           " )/60/60/24 >-365";
+
+    if(!ui->chkShowUnfinished->isChecked())
+        queryString+=QString(" and  ( complete = 1 or " + activeString + " )");
+
     if(ui->chkActive->isChecked())
-        queryString+=QString(" and cast("
-                             "("
-                             " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
-                             " ) AS real "
-                             " )/60/60/24 >-365");
+        queryString+=QString(" and " + activeString);
 
     if(ui->rbNormal->isChecked())
         queryString+=QString(" and  f.fandom like '%%1%'").arg(ui->cbNormals->currentText());
@@ -1226,8 +1237,13 @@ void MainWindow::ReadSettings()
     ui->leNotContainsWords->setText(settings.value("Settings/minusWords", "").toString());
     ui->leContainsWords->setText(settings.value("Settings/plusWords", "").toString());
 
+    ui->chkGenrePlus->setChecked(settings.value("Settings/chkGenrePlus", false).toBool());
+    ui->chkGenreMinus->setChecked(settings.value("Settings/chkGenreMinus", false).toBool());
+    ui->chkWordsPlus->setChecked(settings.value("Settings/chkWordsPlus", false).toBool());
+    ui->chkWordsMinus->setChecked(settings.value("Settings/chkWordsMinus", false).toBool());
 
     ui->chkActive->setChecked(settings.value("Settings/active", false).toBool());
+    ui->chkShowUnfinished->setChecked(settings.value("Settings/showUnfinished", false).toBool());
     ui->chkCacheMode->setChecked(settings.value("Settings/cacheMode", false).toBool());
     ui->chkComplete->setChecked(settings.value("Settings/completed", false).toBool());
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
@@ -1264,7 +1280,15 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/plusWords", ui->leContainsWords->text());
     settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
     settings.setValue("Settings/section", ui->cbSectionTypes->currentText());
+
+
+    settings.setValue("Settings/chkGenrePlus", ui->chkGenrePlus->isChecked());
+    settings.setValue("Settings/chkGenreMinus", ui->chkGenreMinus->isChecked());
+    settings.setValue("Settings/chkWordsPlus", ui->chkWordsPlus->isChecked());
+    settings.setValue("Settings/chkWordsMinus", ui->chkWordsMinus->isChecked());
+
     settings.setValue("Settings/active", ui->chkActive->isChecked());
+    settings.setValue("Settings/showUnfinished", ui->chkShowUnfinished->isChecked());
     settings.setValue("Settings/cacheMode", ui->chkCacheMode->isChecked());
     settings.setValue("Settings/completed", ui->chkComplete->isChecked());
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
