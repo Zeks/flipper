@@ -74,7 +74,7 @@ private:
     void ReadSettings();
     void WriteSettings();
 
-    void RequestAndProcessPage(QString, bool useLastIndex = false);
+    void RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString url, bool useLastIndex = false);
     WebPage RequestPage(QString, bool autoSaveToDB = false);
 
 
@@ -162,6 +162,7 @@ private:
     QTextEdit* edtExpander = new QTextEdit;
     QTimer selectionTimer;
     QThread pageThread;
+    PageThreadWorker* worker = nullptr;
     QList<WebPage> pageQueue;
 
 public slots:
@@ -208,6 +209,8 @@ private slots:
     void on_pbOpenWholeList_clicked();
     void on_pbFirstWave_clicked();
     void OnReloadRecLists();
+    void on_cbUseDateCutoff_clicked();
+
 signals:
     void pageTask(QString, QString, QDateTime, bool);
     void pageTaskList(QStringList, bool);

@@ -8,7 +8,6 @@
 #include <QSqlQuery>
 #include <QPluginLoader>
 #include "include/init_database.h"
-#include "../../Qt/qt-everywhere-opensource-src-5.6.0/qtbase/src/3rdparty/sqlite/sqlite3.h"
 
 
 void CreateIndex(QString value)
@@ -32,7 +31,14 @@ int main(int argc, char *argv[])
     db.open();
 
 
-    database::ReadDbFile();
+    path = "PageCache.sqlite";
+    QSqlDatabase pcDb = QSqlDatabase::addDatabase("QSQLITE", "pagecache");
+    pcDb.setDatabaseName(path);
+    pcDb.open();
+
+
+    database::ReadDbFile("dbcode/dbinit.sql");
+    database::ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
     database::ReindexTable("tags");
     MainWindow w;
     w.show();

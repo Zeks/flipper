@@ -5,6 +5,7 @@
 #include <QScopedPointer>
 #include <QSqlDatabase>
 #include "GlobalHeaders/SingletonHolder.h"
+#include <atomic>
 
 enum class EPageType
 {
@@ -60,9 +61,12 @@ class PageThreadWorker: public QObject
     Q_OBJECT
 public:
     PageThreadWorker(QObject* parent = nullptr);
+    ~PageThreadWorker();
+    virtual void timerEvent(QTimerEvent *);
     QString GetNext(QString);
     QDateTime GrabMinUpdate(QString text);
     int timeout = 500;
+    std::atomic<bool> working;
 public slots:
     void Task(QString url, QString lastUrl, QDateTime updateLimit, bool cacheMode);
     void TaskList(QStringList urls, bool cacheMode);

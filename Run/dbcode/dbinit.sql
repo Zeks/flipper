@@ -16,9 +16,7 @@ CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC);
 CREATE  INDEX if  not exists main.I_FANDOMS_FANDOM ON FANDOMS (FANDOM ASC);
 CREATE  INDEX if  not exists main.I_FANDOMS_SECTION ON FANDOMS (SECTION ASC);
 
-CREATE TABLE if not exists PageCache (URL VARCHAR PRIMARY KEY  NOT NULL , GENERATION_DATE DATETIME,
- CONTENT BLOB, NEXT VARCHAR, FANDOM VARCHAR, CROSSOVER INTEGER, PREVIOUS VARCHAR, REFERENCED_FICS BLOB, PAGE_TYPE INTEGER);
- 
+
  CREATE INDEX if not exists  I_FANDOM_SECTION ON fandoms (FANDOM ASC, SECTION ASC);
  CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);
  INSERT INTO sqlite_sequence(name, seq) SELECT 'fanfics', 0 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name = 'fanfics');
@@ -61,7 +59,6 @@ cast (strftime('%s',CURRENT_TIMESTAMP)-strftime('%s',min(published)) AS real )/6
 min(published) as origin,
 (select sum(wcr) from fanfics where wcr < 200000 and fandom = fs.fandom)/(select count(id) from fanfics where wcr < 200000  and fandom = fs.fandom) as averagewcr,
 max(favourites) as maxfaves, min(wcr) as minwcr, count(id) as ficcount from fanfics fs group by fandom;
-alter table pagecache add column compressed integer default 0; 
 alter table fanfics add column fandom1 VARCHAR; 
 alter table fanfics add column fandom2 VARCHAR;
 CREATE INDEX if not exists  I_FANDOM1 ON fanfics (fandom1 ASC);

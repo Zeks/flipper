@@ -69,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if(settings.value("Settings/hideCache", true).toBool())
         ui->chkCacheMode->setVisible(false);
 
-
+    ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
     ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
                                       "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
                                       "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
@@ -301,6 +301,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
+    ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
 {
@@ -329,6 +330,7 @@ void MainWindow::Init()
     UpdateFandomList([](Fandom f){return f.crossoverUrl;});
     InsertFandomData(names);
     ui->cbNormals->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSectionTypes->currentText())));
+    ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 
 void MainWindow::InitConnections()
@@ -339,14 +341,12 @@ void MainWindow::InitConnections()
 
 }
 
-void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
+void MainWindow::RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString page, bool useLastIndex)
 {
     nextUrl = page;
-    QStringList sections;
-    sections.push_back(ui->cbNormals->currentText());
-    if(ui->rbCrossovers->isChecked())
-        sections.push_back("CROSSOVER");
-    auto lastFandomUpdatedate = database::GetMaxUpdateDateForSection(sections);
+    //qDebug() << "will request url:" << nextUrl;
+    if(ui->cbUseDateCutoff->isChecked())
+        lastFandomUpdatedate = QDateTime(ui->deCutoffLimit->date());
     if(ui->chkIgnoreUpdateDate->isChecked())
         lastFandomUpdatedate = QDateTime();
 
@@ -357,6 +357,7 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
 
     An<PageManager> pager;
     bool cacheMode = ui->chkCacheMode->isChecked();
+    qDebug() << "will request url:" << nextUrl;
     WebPage currentPage = pager->GetPage(nextUrl, cacheMode);
     FandomParser parser;
     QString lastUrl = parser.GetLast(currentPage.content);
@@ -366,18 +367,25 @@ void MainWindow::RequestAndProcessPage(QString page, bool useLastIndex)
         pbMain->show();
         pbMain->setMaximum(pageCount);
     }
+    qDebug() << "emitting page task:" << nextUrl << "\n" << lastUrl << "\n" << lastFandomUpdatedate;
     emit pageTask(nextUrl, lastUrl, lastFandomUpdatedate, ui->chkCacheMode->isChecked());
     int counter = 0;
     WebPage webPage;
     do
     {
         while(pageQueue.isEmpty())
+        {
+            QThread::msleep(500);
+            //qDebug() << "worker value is: " << worker->value;
+            if(!worker->working)
+                pageThread.start(QThread::HighPriority);
             QCoreApplication::processEvents();
+        }
 
-        webPage = pageQueue[0];
+        webPage = pageQueue.at(0);
         pageQueue.pop_front();
         webPage.crossover = ui->rbCrossovers->isChecked();
-        webPage.fandom =  ui->cbNormals->currentText();
+        webPage.fandom =  fandom;
         webPage.type = EPageType::sorted_ficlist;
         auto startPageProcessing= std::chrono::high_resolution_clock::now();
         parser.ProcessPage(webPage);
@@ -524,28 +532,34 @@ QSqlQuery MainWindow::BuildQuery()
     if(ui->chkFaveLimitActivated->isChecked() && ui->sbMinimumFavourites->value() > 0)
         queryString += " and favourites > :favourites ";
 
-    if(!ui->leContainsGenre->text().trimmed().isEmpty())
+    if(ui->chkGenrePlus->isChecked() && !ui->leContainsGenre->text().trimmed().isEmpty())
         for(auto genre : ui->leContainsGenre->text().trimmed().split(" "))
             queryString += QString(" AND genres like '%%1%' ").arg(genre);
 
-    if(!ui->leNotContainsGenre->text().trimmed().isEmpty())
+    if(ui->chkGenreMinus->isChecked() && !ui->leNotContainsGenre->text().trimmed().isEmpty())
         for(auto genre : ui->leNotContainsGenre->text().trimmed().split(" "))
             queryString += QString(" AND genres not like '%%1%' ").arg(genre);
-
-    for(QString word: ui->leContainsWords->text().trimmed().split(" "))
+    if(ui->cbSortMode->currentText() == "Fav Rate")
+        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(ui->sbFavrateValue->value()) + " OR  favourites > 1000) ";
+    if(ui->chkWordsPlus->isChecked())
     {
-        if(word.trimmed().isEmpty())
-            continue;
-        queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
+        for(QString word: ui->leContainsWords->text().trimmed().split(" "))
+        {
+            if(word.trimmed().isEmpty())
+                continue;
+            queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
+        }
     }
-
     queryString+= BuildBias();
 
-    for(QString word: ui->leNotContainsWords->text().trimmed().split(" "))
+    if(ui->chkWordsMinus->isChecked())
     {
-        if(word.trimmed().isEmpty())
-            continue;
-        queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
+        for(QString word: ui->leNotContainsWords->text().trimmed().split(" "))
+        {
+            if(word.trimmed().isEmpty())
+                continue;
+            queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
+        }
     }
 
     if(currentSearchButton == MainWindow::lfbp_recs)
@@ -634,12 +648,20 @@ QSqlQuery MainWindow::BuildQuery()
     if(ui->chkComplete->isChecked())
         queryString+=QString(" and  complete = 1");
 
+    QString activeString = " cast("
+                           "("
+                           " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
+                           " ) AS real "
+                           " )/60/60/24 >-365";
+
+    if(!ui->chkShowUnfinished->isChecked())
+        queryString+=QString(" and  ( complete = 1 or " + activeString + " )");
+
+    if(!ui->chkNoGenre->isChecked())
+        queryString+=QString(" and  ( genres != 'not found' )");
+
     if(ui->chkActive->isChecked())
-        queryString+=QString(" and cast("
-                             "("
-                             " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
-                             " ) AS real "
-                             " )/60/60/24 >-365");
+        queryString+=QString(" and " + activeString);
 
     if(ui->rbNormal->isChecked())
         queryString+=QString(" and  f.fandom like '%%1%'").arg(ui->cbNormals->currentText());
@@ -675,7 +697,7 @@ QSqlQuery MainWindow::BuildQuery()
 
     if(ui->cbSortMode->currentText() == "Fav Rate")
     {
-        queryString+= " and published <> updated and published > date('now', '-1 years') and updated > date('now', '-60 days') ";
+        queryString+= " and published <> updated and published > date('now', '-" + QString::number(ui->dteFavRateCut->date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
     }
 
     if(ui->cbSortMode->currentText() == "New From Popular")
@@ -1130,6 +1152,8 @@ QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crosso
         currentFandom = selectedFandom;
 
     }
+
+    qDebug() << "got last update date";
     return urls;
 }
 
@@ -1201,6 +1225,7 @@ void MainWindow::ReadSettings()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ui->chkShowDirectRecs->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbFirstWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
+    ui->pbWipeFandom->setVisible(settings.value("Settings/pbWipeFandom", false).toBool());
 
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
@@ -1216,8 +1241,14 @@ void MainWindow::ReadSettings()
     ui->leNotContainsWords->setText(settings.value("Settings/minusWords", "").toString());
     ui->leContainsWords->setText(settings.value("Settings/plusWords", "").toString());
 
+    ui->chkGenrePlus->setChecked(settings.value("Settings/chkGenrePlus", false).toBool());
+    ui->chkGenreMinus->setChecked(settings.value("Settings/chkGenreMinus", false).toBool());
+    ui->chkWordsPlus->setChecked(settings.value("Settings/chkWordsPlus", false).toBool());
+    ui->chkWordsMinus->setChecked(settings.value("Settings/chkWordsMinus", false).toBool());
 
     ui->chkActive->setChecked(settings.value("Settings/active", false).toBool());
+    ui->chkShowUnfinished->setChecked(settings.value("Settings/showUnfinished", false).toBool());
+    ui->chkNoGenre->setChecked(settings.value("Settings/chkNoGenre", false).toBool());
     ui->chkCacheMode->setChecked(settings.value("Settings/cacheMode", false).toBool());
     ui->chkComplete->setChecked(settings.value("Settings/completed", false).toBool());
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
@@ -1254,7 +1285,16 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/plusWords", ui->leContainsWords->text());
     settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
     settings.setValue("Settings/section", ui->cbSectionTypes->currentText());
+
+
+    settings.setValue("Settings/chkGenrePlus", ui->chkGenrePlus->isChecked());
+    settings.setValue("Settings/chkGenreMinus", ui->chkGenreMinus->isChecked());
+    settings.setValue("Settings/chkWordsPlus", ui->chkWordsPlus->isChecked());
+    settings.setValue("Settings/chkWordsMinus", ui->chkWordsMinus->isChecked());
+
     settings.setValue("Settings/active", ui->chkActive->isChecked());
+    settings.setValue("Settings/showUnfinished", ui->chkShowUnfinished->isChecked());
+    settings.setValue("Settings/chkNoGenre", ui->chkNoGenre->isChecked());
     settings.setValue("Settings/cacheMode", ui->chkCacheMode->isChecked());
     settings.setValue("Settings/completed", ui->chkComplete->isChecked());
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());
@@ -1437,7 +1477,9 @@ void MainWindow::on_pbCrawl_clicked()
     for(QString url: currentFilterUrls)
     {
         currentFilterUrl = url;
-        RequestAndProcessPage(url);
+        QString crossOverAddin = ui->rbCrossovers->isChecked() ? "CROSSOVER" : "";
+        auto lastUpdated = database::GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText() << crossOverAddin);
+        RequestAndProcessPage(ui->cbNormals->currentText(), lastUpdated, url);
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     database::PushFandom(ui->cbNormals->currentText().trimmed());
@@ -1733,7 +1775,7 @@ QStringList MainWindow::GetAllUniqueAuthorsFromRecommenders()
 
 void MainWindow::CreatePageThreadWorker()
 {
-    PageThreadWorker* worker = new PageThreadWorker;
+    worker = new PageThreadWorker;
     worker->moveToThread(&pageThread);
     connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
     connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
@@ -1743,7 +1785,8 @@ void MainWindow::CreatePageThreadWorker()
 void MainWindow::StartPageWorker()
 {
     pageQueue.clear();
-    pageThread.start();
+    pageThread.start(QThread::HighPriority);
+
 }
 
 void MainWindow::StopPageWorker()
@@ -1793,7 +1836,9 @@ void MainWindow::on_rbCrossovers_clicked()
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
     processedFics = 0;
-    for(QString fandom : database::FetchTrackedFandoms())
+    auto trackedFandoms = database::FetchTrackedFandoms();
+    qDebug() << trackedFandoms;
+    for(QString fandom : trackedFandoms)
     {
         currentFilterUrls = GetCurrentFilterUrls(fandom, false);
         pageCounter = 0;
@@ -1804,9 +1849,11 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         for(QString url: currentFilterUrls)
         {
             currentFilterUrl = url;
-            RequestAndProcessPage(url);
+            RequestAndProcessPage(fandom, lastUpdated, url);
         }
     }
+    auto trackedCrossovers = database::FetchTrackedCrossovers();
+    qDebug() << trackedCrossovers;
     for(QString fandom : database::FetchTrackedCrossovers())
     {
         currentFilterUrls = GetCurrentFilterUrls(fandom, true);
@@ -1818,7 +1865,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         for(QString url: currentFilterUrls)
         {
             currentFilterUrl = url;
-            RequestAndProcessPage(url);
+            RequestAndProcessPage(fandom,lastUpdated, url);
         }
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
@@ -1842,6 +1889,11 @@ void MainWindow::on_pbLoadPage_clicked()
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
     currentRecommenderId = database::GetRecommenderId(page.url);
+    if(currentRecommenderId == -1)
+    {
+        database::WriteRecommender(parser.recommender);
+        currentRecommenderId = database::GetRecommenderId(page.url);
+    }
 
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
@@ -1874,6 +1926,7 @@ void MainWindow::on_pbOpenRecommendations_clicked()
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
     currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
     LoadData();
@@ -2050,4 +2103,9 @@ void MainWindow::OnReloadRecLists()
 {
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
+}
+
+void MainWindow::on_cbUseDateCutoff_clicked()
+{
+    ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
 }
