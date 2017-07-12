@@ -1889,6 +1889,11 @@ void MainWindow::on_pbLoadPage_clicked()
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
     currentRecommenderId = database::GetRecommenderId(page.url);
+    if(currentRecommenderId == -1)
+    {
+        database::WriteRecommender(parser.recommender);
+        currentRecommenderId = database::GetRecommenderId(page.url);
+    }
 
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
@@ -1921,6 +1926,7 @@ void MainWindow::on_pbOpenRecommendations_clicked()
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
     currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
     LoadData();
