@@ -69,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if(settings.value("Settings/hideCache", true).toBool())
         ui->chkCacheMode->setVisible(false);
 
-
+    ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
     ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
                                       "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
                                       "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
@@ -657,6 +657,9 @@ QSqlQuery MainWindow::BuildQuery()
     if(!ui->chkShowUnfinished->isChecked())
         queryString+=QString(" and  ( complete = 1 or " + activeString + " )");
 
+    if(!ui->chkNoGenre->isChecked())
+        queryString+=QString(" and  ( genres != 'not found' )");
+
     if(ui->chkActive->isChecked())
         queryString+=QString(" and " + activeString);
 
@@ -694,7 +697,7 @@ QSqlQuery MainWindow::BuildQuery()
 
     if(ui->cbSortMode->currentText() == "Fav Rate")
     {
-        queryString+= " and published <> updated and published > date('now', '-1 years') and updated > date('now', '-60 days') ";
+        queryString+= " and published <> updated and published > date('now', '-" + QString::number(ui->dteFavRateCut->date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
     }
 
     if(ui->cbSortMode->currentText() == "New From Popular")
@@ -1244,6 +1247,7 @@ void MainWindow::ReadSettings()
 
     ui->chkActive->setChecked(settings.value("Settings/active", false).toBool());
     ui->chkShowUnfinished->setChecked(settings.value("Settings/showUnfinished", false).toBool());
+    ui->chkNoGenre->setChecked(settings.value("Settings/chkNoGenre", false).toBool());
     ui->chkCacheMode->setChecked(settings.value("Settings/cacheMode", false).toBool());
     ui->chkComplete->setChecked(settings.value("Settings/completed", false).toBool());
     ui->gbTagFilters->setChecked(settings.value("Settings/filterOnTags", false).toBool());
@@ -1289,6 +1293,7 @@ void MainWindow::WriteSettings()
 
     settings.setValue("Settings/active", ui->chkActive->isChecked());
     settings.setValue("Settings/showUnfinished", ui->chkShowUnfinished->isChecked());
+    settings.setValue("Settings/chkNoGenre", ui->chkNoGenre->isChecked());
     settings.setValue("Settings/cacheMode", ui->chkCacheMode->isChecked());
     settings.setValue("Settings/completed", ui->chkComplete->isChecked());
     settings.setValue("Settings/filterOnTags", ui->gbTagFilters->isChecked());

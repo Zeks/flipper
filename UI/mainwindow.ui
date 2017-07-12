@@ -789,6 +789,105 @@
               </layout>
              </widget>
             </item>
+            <item row="9" column="0" colspan="4">
+             <widget class="QWidget" name="widget_3" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QCheckBox" name="chkComplete">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>Only shows complete fics.</string>
+                 </property>
+                 <property name="text">
+                  <string>Complete</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkActive">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>Only shows fics that had activity in the last year.</string>
+                 </property>
+                 <property name="text">
+                  <string>Active</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkShowUnfinished">
+                 <property name="text">
+                  <string>Unfinished</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkNoGenre">
+                 <property name="text">
+                  <string>No Genre</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_5">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>860</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkRandomizeSelection">
+                 <property name="toolTip">
+                  <string>Together with &quot;Max fics&quot; checkbox, allow random navigation for a fandom if you feel like it.</string>
+                 </property>
+                 <property name="text">
+                  <string>Randomize</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
             <item row="6" column="0">
              <widget class="QLabel" name="label_3">
               <property name="sizePolicy">
@@ -802,7 +901,7 @@
               </property>
              </widget>
             </item>
-            <item row="12" column="0" colspan="4">
+            <item row="13" column="0" colspan="4">
              <layout class="QGridLayout" name="gridLayout_2">
               <item row="2" column="1" rowspan="2">
                <widget class="QLineEdit" name="leNotContainsGenre">
@@ -977,7 +1076,17 @@
               </item>
              </layout>
             </item>
-            <item row="18" column="0" colspan="4">
+            <item row="18" column="0">
+             <widget class="QCheckBox" name="chkActivateReloadSectionData">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Is only necessary if there appears a new growing fandom that hasnt been in the database when the app was created.&lt;/p&gt;&lt;p&gt;Reloads the fandom lists for categories.&lt;/p&gt;&lt;p&gt;I've disabled the button so that it isn't pressed accidentally.This checkbox enables it back.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Activate</string>
+              </property>
+             </widget>
+            </item>
+            <item row="19" column="0" colspan="4">
              <widget class="QPushButton" name="pbLoadTrackedFandoms">
               <property name="minimumSize">
                <size>
@@ -1012,13 +1121,55 @@
               </property>
              </widget>
             </item>
-            <item row="17" column="0">
-             <widget class="QCheckBox" name="chkActivateReloadSectionData">
+            <item row="14" column="1" colspan="3">
+             <widget class="QComboBox" name="cbCustomFilters">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <item>
+               <property name="text">
+                <string>Longest Running</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Behemoth Chapters</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Splinched</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Catch'Em'All</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>One Liners</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Dumped</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>New From Popular</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="14" column="0">
+             <widget class="QCheckBox" name="chkCustomFilter">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Is only necessary if there appears a new growing fandom that hasnt been in the database when the app was created.&lt;/p&gt;&lt;p&gt;Reloads the fandom lists for categories.&lt;/p&gt;&lt;p&gt;I've disabled the button so that it isn't pressed accidentally.This checkbox enables it back.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;A list of custom filters of varying usefulness.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Longest Running&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; will show fics that have been going for ages.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Behemoth Chapters &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;picks up stuff that's been dumped in HUGE chunks.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Splinched &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;shows fics that have tiny teeny chapters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Catch'Em'All  &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;is for stuff that really had a field day with characters section of thedescription.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;One liners &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;will display stuff that wasnt... eh... described very well.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dumped &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Shows fanfics that were dumped whole in a veryshorttime.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;New From Popular &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;are recent fics from authors that have ton of faves on their other fics.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string>Activate</string>
+               <string>Custom</string>
               </property>
              </widget>
             </item>
@@ -1064,62 +1215,10 @@
               </item>
              </widget>
             </item>
-            <item row="13" column="1" colspan="3">
-             <widget class="QComboBox" name="cbCustomFilters">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <item>
-               <property name="text">
-                <string>Longest Running</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Behemoth Chapters</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Splinched</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Catch'Em'All</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>One Liners</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Dumped</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>New From Popular</string>
-               </property>
-              </item>
-             </widget>
-            </item>
             <item row="7" column="0">
              <widget class="QCheckBox" name="chkFicLimitActivated">
               <property name="text">
                <string>MaxFics</string>
-              </property>
-             </widget>
-            </item>
-            <item row="13" column="0">
-             <widget class="QCheckBox" name="chkCustomFilter">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;A list of custom filters of varying usefulness.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Longest Running&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; will show fics that have been going for ages.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Behemoth Chapters &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;picks up stuff that's been dumped in HUGE chunks.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Splinched &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;shows fics that have tiny teeny chapters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Catch'Em'All  &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;is for stuff that really had a field day with characters section of thedescription.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;One liners &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;will display stuff that wasnt... eh... described very well.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dumped &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Shows fanfics that were dumped whole in a veryshorttime.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;New From Popular &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;are recent fics from authors that have ton of faves on their other fics.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Custom</string>
               </property>
              </widget>
             </item>
@@ -1151,7 +1250,7 @@
               </item>
              </widget>
             </item>
-            <item row="17" column="1" colspan="3">
+            <item row="18" column="1" colspan="3">
              <widget class="QPushButton" name="pbInit">
               <property name="enabled">
                <bool>false</bool>
@@ -1214,93 +1313,17 @@
               </item>
              </widget>
             </item>
-            <item row="9" column="0" colspan="4">
-             <widget class="QWidget" name="widget_3" native="true">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
+            <item row="7" column="3">
+             <widget class="QSpinBox" name="sbMinimumFavourites">
+              <property name="toolTip">
+               <string>Limits the fics displayed by the minimum amount of favourites they have.</string>
               </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_7">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QCheckBox" name="chkComplete">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="toolTip">
-                  <string>Only shows complete fics.</string>
-                 </property>
-                 <property name="text">
-                  <string>Complete</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="chkActive">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="toolTip">
-                  <string>Only shows fics that had activity in the last year.</string>
-                 </property>
-                 <property name="text">
-                  <string>Active</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="chkShowUnfinished">
-                 <property name="text">
-                  <string>Unfinished</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_5">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>860</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="chkRandomizeSelection">
-                 <property name="toolTip">
-                  <string>Together with &quot;Max fics&quot; checkbox, allow random navigation for a fandom if you feel like it.</string>
-                 </property>
-                 <property name="text">
-                  <string>Randomize</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+              <property name="value">
+               <number>50</number>
+              </property>
              </widget>
             </item>
             <item row="7" column="2">
@@ -1319,17 +1342,55 @@
               </property>
              </widget>
             </item>
-            <item row="7" column="3">
-             <widget class="QSpinBox" name="sbMinimumFavourites">
-              <property name="toolTip">
-               <string>Limits the fics displayed by the minimum amount of favourites they have.</string>
+            <item row="11" column="0" colspan="4">
+             <widget class="QWidget" name="widget_4" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
               </property>
-              <property name="maximum">
-               <number>10000</number>
-              </property>
-              <property name="value">
-               <number>50</number>
-              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>FavrateCut: </string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDateEdit" name="dteFavRateCut">
+                 <property name="calendarPopup">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_6">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>1028</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
              </widget>
             </item>
            </layout>
