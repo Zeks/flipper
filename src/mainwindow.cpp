@@ -540,7 +540,7 @@ QSqlQuery MainWindow::BuildQuery()
         for(auto genre : ui->leNotContainsGenre->text().trimmed().split(" "))
             queryString += QString(" AND genres not like '%%1%' ").arg(genre);
     if(ui->cbSortMode->currentText() == "Fav Rate")
-        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > 4 OR  favourites > 1000) ";
+        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(ui->sbFavrateValue->value()) + " OR  favourites > 1000) ";
     if(ui->chkWordsPlus->isChecked())
     {
         for(QString word: ui->leContainsWords->text().trimmed().split(" "))
