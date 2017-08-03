@@ -136,7 +136,7 @@
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>Fav/Review ratio</string>
+                  <string>Review/Fav ratio</string>
                  </property>
                 </widget>
                </item>
@@ -184,7 +184,7 @@
                   <string>dd.d</string>
                  </property>
                  <property name="text">
-                  <string>1.</string>
+                  <string>2.</string>
                  </property>
                 </widget>
                </item>
