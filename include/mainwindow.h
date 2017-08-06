@@ -174,6 +174,8 @@ public slots:
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
     void WipeSelectedFandom(bool);
     void OnNewPage(WebPage);
+    void OnCopyFicUrl(QString);
+    void OnCopyAllUrls();
 private slots:
     void OnSetTag(QString);
     void OnShowContextMenu(QPoint);

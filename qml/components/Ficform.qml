@@ -10,6 +10,7 @@ Rectangle {
     property int delRow : rownum
     property int indexOfThisDelegate: index
     signal mouseClicked
+
     MouseArea{
         anchors.fill : parent
         propagateComposedEvents : true
@@ -18,7 +19,7 @@ Rectangle {
             delegateItem.mouseClicked();
             //console.log("clickoutside");
         }
-     }
+    }
 
     width: 850
     z: {
@@ -92,14 +93,14 @@ Rectangle {
             lvFics.tagDeleted(tag,rownum)
     }
     function tagListActivated(activatedIndex) {
-//        print("activation")
-//        if(lvFics.previousIndex !== -1)
-//            lvFics.children[lvFics.previousIndex].z = 1
-//        print("original previndex: " + lvFics.previousIndex )
-//        lvFics.previousIndex = activatedIndex
-//        print("updated previndex: " + lvFics.previousIndex )
-//        console.log(lvFics)
-//        lvFics.children[activatedIndex].z = 10
+        //        print("activation")
+        //        if(lvFics.previousIndex !== -1)
+        //            lvFics.children[lvFics.previousIndex].z = 1
+        //        print("original previndex: " + lvFics.previousIndex )
+        //        lvFics.previousIndex = activatedIndex
+        //        print("updated previndex: " + lvFics.previousIndex )
+        //        console.log(lvFics)
+        //        lvFics.children[activatedIndex].z = 10
     }
 
     ColumnLayout {
@@ -110,20 +111,40 @@ Rectangle {
         anchors.leftMargin: 30
         anchors.right: genreTagList1.left
         anchors.rightMargin: 69
+        RowLayout {
+            id: rowTitle
 
-        Text {
-            id: lblTitle
-            width: 517
-            height: 21
-            textFormat: Text.RichText;
-            text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/" + url + "\">" + title + "</a></body></html>"
-            verticalAlignment: Text.AlignVCenter
-            style: Text.Raised
-            font.pointSize: 16
-            font.family: "Verdana"
-            font.bold: true
-            color: "red"
-            onLinkActivated: Qt.openUrlExternally(link)
+
+            Text {
+                id: lblTitle
+                width: 517
+                height: 21
+                textFormat: Text.RichText;
+                text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net" + url + "\">" + title + "</a></body></html>"
+                verticalAlignment: Text.AlignVCenter
+                style: Text.Raised
+                font.pointSize: 16
+                font.family: "Verdana"
+                font.bold: true
+                color: "red"
+                onLinkActivated: Qt.openUrlExternally(link)
+            }
+            Image {
+                id: imgCopy
+                width: 24
+                height: 24
+                verticalAlignment: Text.AlignVCenter
+                source: "qrc:/icons/icons/copy.png"
+                visible: lvFics.showUrlCopyIcon
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+
+                    onClicked : {
+                        lvFics.urlCopyClicked("http://www.fanfiction.net" + url);
+                    }
+                }
+            }
         }
 
         RowLayout {

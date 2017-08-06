@@ -12,5 +12,6 @@
         <file>icons/thumbs_up_green.png</file>
         <file>icons/heart_active.png</file>
         <file>icons/heart.png</file>
+        <file>icons/copy.png</file>
     </qresource>
 </RCC>

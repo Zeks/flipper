@@ -23,6 +23,7 @@
 #include <QFuture>
 #include <QtConcurrent>
 #include <QSqlDriver>
+#include <QClipboard>
 #include <chrono>
 #include <algorithm>
 
@@ -84,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->edtResults, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnShowContextMenu(QPoint)));
     connect(ui->cbSectionTypes, SIGNAL(currentTextChanged(QString)), this, SLOT(OnSectionChanged(QString)));
     connect(ui->pbWipeFandom, SIGNAL(clicked(bool)), this, SLOT(WipeSelectedFandom(bool)));
+    connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
 
     sections.insert("Anime/Manga", Fandom{"Anime/Manga", "anime", NameOfFandomSectionToLink("anime"), NameOfCrossoverSectionToLink("anime")});
     sections.insert("Misc", Fandom{"Misc", "misc", NameOfFandomSectionToLink("misc"), NameOfCrossoverSectionToLink("misc")});
@@ -293,6 +295,10 @@ void MainWindow::SetupFanficTable()
     qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
 
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    qwFics->rootContext()->setContextProperty("urlCopyIconVisible",
+                                              settings.value("Settings/urlCopyIconVisible", true).toBool());
     QUrl source("qrc:/qml/ficview.qml");
     qwFics->setSource(source);
 
@@ -301,6 +307,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
+    connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
@@ -1198,6 +1205,25 @@ void MainWindow::WipeSelectedFandom(bool)
 void MainWindow::OnNewPage(WebPage page)
 {
     pageQueue.push_back(page);
+}
+
+void MainWindow::OnCopyFicUrl(QString text)
+{
+     QClipboard *clipboard = QApplication::clipboard();
+     clipboard->setText(text);
+     ui->edtResults->insertPlainText(text + "\n");
+
+}
+
+void MainWindow::OnCopyAllUrls()
+{
+    QClipboard *clipboard = QApplication::clipboard();
+    QString result;
+    for(int i = 0; i < typetableModel->rowCount(); i ++)
+    {
+        result += "http://www.fanfiction.net" + typetableModel->index(i, 9).data().toString() + "\n";
+    }
+    clipboard->setText(result);
 }
 
 

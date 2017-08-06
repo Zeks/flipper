@@ -17,6 +17,8 @@ Rectangle {
         objectName: "lvFics"
         //snapMode: ListView.NoSnap
         property int previousIndex: -1
+        property bool showUrlCopyIcon: urlCopyIconVisible
+
     spacing: 5
     clip:true
     model:ficModel
@@ -28,6 +30,7 @@ Rectangle {
     signal tagAdded(var tag, var row)
     signal tagClicked(var tag, var currentMode, var title, var author)
     signal callTagWindow()
+    signal urlCopyClicked(string msg)
     }
     }
 }
