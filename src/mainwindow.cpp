@@ -1921,6 +1921,8 @@ void MainWindow::on_pbLoadPage_clicked()
         currentRecommenderId = database::GetRecommenderId(page.url);
     }
 
+    parser.WriteProcessed();
+
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
 
@@ -1976,6 +1978,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
         FavouriteStoryParser parser;
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         parser.ProcessPage(page.url, QString(page.content));
+        parser.WriteProcessed();
         elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
         qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
         ui->edtResults->clear();

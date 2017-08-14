@@ -37,8 +37,8 @@ Rectangle {
 
     ToolButton {
         id: tbAddGenre
-        width: 24
-        height: 24
+        width: 16
+        height: 16
         iconSource: "qrc:/icons/icons/add.png"
         enabled:false
         visible:false
