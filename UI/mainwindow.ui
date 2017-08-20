@@ -81,6 +81,9 @@
                 <number>0</number>
                </property>
                <item>
+                <widget class="QComboBox" name="cbRecGroup"/>
+               </item>
+               <item>
                 <widget class="QLabel" name="label_7">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -250,6 +253,18 @@
                    <string>Fandoms</string>
                   </attribute>
                   <layout class="QGridLayout" name="gridLayout_4">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
                    <item row="1" column="0">
                     <widget class="QComboBox" name="cbSectionTypes">
                      <property name="sizePolicy">
@@ -449,12 +464,12 @@
                        </property>
                        <item>
                         <property name="text">
-                         <string>100k Words</string>
+                         <string>60k Words</string>
                         </property>
                        </item>
                        <item>
                         <property name="text">
-                         <string>60k Words</string>
+                         <string>100k Words</string>
                         </property>
                        </item>
                       </widget>
@@ -691,6 +706,16 @@
                       </widget>
                      </item>
                      <item>
+                      <widget class="QComboBox" name="cbRecTagGroup">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QCheckBox" name="chkShowRecsRegardlessOfTags">
                        <property name="toolTip">
                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will show fics regardless of if you have tagged them already.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -749,28 +774,171 @@
                     <widget class="QListView" name="lvRecommenders"/>
                    </item>
                    <item row="3" column="0">
+                    <widget class="QWidget" name="wdgWave" native="true">
+                     <layout class="QGridLayout" name="gridLayout_5">
+                      <property name="leftMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="rightMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
+                      <item row="0" column="0">
+                       <layout class="QHBoxLayout" name="horizontalLayout_9">
+                        <item>
+                         <widget class="QPushButton" name="pbBuildRecs">
+                          <property name="minimumSize">
+                           <size>
+                            <width>93</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>Build</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="label_10">
+                          <property name="text">
+                           <string>Build recommendations on tag: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QComboBox" name="cbRecTagBuildGroup">
+                          <property name="minimumSize">
+                           <size>
+                            <width>150</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="label_12">
+                          <property name="text">
+                           <string>Min match count:</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QSpinBox" name="sbMinRecMatch">
+                          <property name="value">
+                           <number>3</number>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="label_13">
+                          <property name="text">
+                           <string>Threshold ratio:</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QDoubleSpinBox" name="dsbMinRecThreshhold">
+                          <property name="suffix">
+                           <string/>
+                          </property>
+                          <property name="value">
+                           <double>40.000000000000000</double>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="label_14">
+                          <property name="text">
+                           <string>Always pick on:</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QSpinBox" name="sbAlwaysPickRecAt">
+                          <property name="value">
+                           <number>10</number>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="horizontalSpacer_7">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>40</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </item>
+                      <item row="1" column="0">
+                       <layout class="QHBoxLayout" name="horizontalLayout_10">
+                        <item>
+                         <widget class="QPushButton" name="pbFirstWave">
+                          <property name="minimumSize">
+                           <size>
+                            <width>93</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>Load First Wave</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QCheckBox" name="chkWaveOnlyCache">
+                          <property name="text">
+                           <string>Cache only</string>
+                          </property>
+                          <property name="checked">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QCheckBox" name="chkShowDirectRecs">
+                          <property name="text">
+                           <string>Show Direct Recs Only</string>
+                          </property>
+                          <property name="checked">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="horizontalSpacer_8">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>40</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="4" column="0">
                     <layout class="QHBoxLayout" name="horizontalLayout_3">
                      <item>
                       <widget class="QPushButton" name="pbLoadAllRecommenders">
                        <property name="text">
                         <string>Reload Whole List</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="chkShowDirectRecs">
-                       <property name="text">
-                        <string>Show Direct Recs Only</string>
-                       </property>
-                       <property name="checked">
-                        <bool>false</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbFirstWave">
-                       <property name="text">
-                        <string>Load First Wave</string>
                        </property>
                       </widget>
                      </item>
@@ -1226,34 +1394,6 @@
               </property>
              </widget>
             </item>
-            <item row="6" column="1">
-             <widget class="QComboBox" name="cbMinWordCount">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="editable">
-               <bool>true</bool>
-              </property>
-              <item>
-               <property name="text">
-                <string>100000</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>300000</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>700000</string>
-               </property>
-              </item>
-             </widget>
-            </item>
             <item row="18" column="1" colspan="3">
              <widget class="QPushButton" name="pbInit">
               <property name="enabled">
@@ -1342,7 +1482,7 @@
                <string>MinFaves</string>
               </property>
               <property name="checked">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -1409,6 +1549,37 @@
                 </spacer>
                </item>
               </layout>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QComboBox" name="cbMinWordCount">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="editable">
+               <bool>true</bool>
+              </property>
+              <property name="currentText">
+               <string>100000</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>100000</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>300000</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>700000</string>
+               </property>
+              </item>
              </widget>
             </item>
            </layout>

@@ -75,7 +75,7 @@ private:
     void WriteSettings();
 
     void RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString url, bool useLastIndex = false);
-    WebPage RequestPage(QString, bool autoSaveToDB = false);
+    WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 
 
     QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
@@ -116,7 +116,7 @@ private:
 
     QStringList SortedList(QStringList);
     QStringList ReverseSortedList(QStringList list);
-    QStringList GetAllUniqueAuthorsFromRecommenders();
+    QStringList GetUniqueAuthorsFromActiveRecommenderSet();
     void CreatePageThreadWorker();
     void StartPageWorker();
     void StopPageWorker();
@@ -124,6 +124,9 @@ private:
     void ReinitProgressbar(int maxValue);
     void ShutdownProgressbar();
     void AddToProgressLog(QString);
+    void FillRecTagBuildCombobox();
+    void FillRecTagCombobox();
+
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -164,6 +167,7 @@ private:
     QThread pageThread;
     PageThreadWorker* worker = nullptr;
     QList<WebPage> pageQueue;
+    void LoadMoreAuthors(bool reprocessCache = false);
 
 public slots:
     void ProcessFandoms(WebPage webPage);
@@ -213,8 +217,10 @@ private slots:
     void OnReloadRecLists();
     void on_cbUseDateCutoff_clicked();
 
+    void on_pbBuildRecs_clicked();
+
 signals:
-    void pageTask(QString, QString, QDateTime, bool);
-    void pageTaskList(QStringList, bool);
+    void pageTask(QString, QString, QDateTime, ECacheMode);
+    void pageTaskList(QStringList, ECacheMode);
 };
 

@@ -21,7 +21,7 @@ struct WriteStats
 
 
     QStringList FetchRecentFandoms();
-    QHash<QString, Recommender> FetchRecommenders(int limitingWave = 0);
+    QHash<QString, Recommender> FetchRecommenders(int limitingWave = 0, QString tag = "core");
     bool FetchTrackStateForFandom(QString fandom, bool crossover);
     QStringList FetchTrackedFandoms();
     QStringList FetchTrackedCrossovers();
@@ -32,13 +32,14 @@ struct WriteStats
     bool InsertIntoDB(Section & section);
 
     bool LoadRecommendationIntoDB(Recommender &recommender, Section &section);
-    bool WriteRecommendation( Recommender& recommender, int id);
+    bool WriteRecommendation( Recommender& recommender, int id, QString tag = "none");
     void WriteRecommender(const Recommender& recommender);
+    //void WriteRecommendersMetainfo(const Recommender& recommender);
     void RemoveRecommender(const Recommender& recommender);
     void RemoveRecommender(int id);
     int GetFicIdByAuthorAndName(QString, QString);
     int GetRecommenderId(QString url);
-    int FilterRecommenderByRecField(int, int, int favCount);
+    int GetMatchCountForRecommenderOnTag(int recommender_id, QString tag);
     void DropFanficIndexes();
     void RebuildFanficIndexes();
     void DropAllFanficIndexes();
@@ -49,5 +50,12 @@ struct WriteStats
     void EnsureFandomsFilled();
     void EnsureWebIdsFilled();
     void ImportTags(QString anotherDatabase);
+    bool EnsureTagForRecommendations();
+    QStringList ReadAvailableRecTagGroups();
+    RecommenderStats GetRecommenderStats(int recommenderId, QString tag);
+    bool HasNoneTagInRecommendations();
+    bool WipeCurrentRecommenderRecsOnTag(int recommenderId, QString tag);
+    bool CopyAllRecommenderFicsToTag(int recommenderId, QString tag);
+    QList<int>GetFulLRecommenderList();
 
 }

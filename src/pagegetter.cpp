@@ -27,7 +27,7 @@ public:
     WebPage result;
     bool cachedMode = false;
     QNetworkReply::NetworkError error;
-    WebPage GetPage(QString url, bool useCache = false);
+    WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::use_cache);
     WebPage GetPageFromDB(QString url);
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
@@ -44,17 +44,17 @@ PageGetterPrivate::PageGetterPrivate(QObject *parent): QObject(parent)
 //            this, SLOT (OnNetworkReply(QNetworkReply*)));
 }
 
-WebPage PageGetterPrivate::GetPage(QString url, bool useCache)
+WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 {
     WebPage result;
-    if(useCache)
+    if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
     {
         result = GetPageFromDB(url);
         if(result.isValid)
         {
             result.isFromCache = true;
         }
-        else
+        else if(useCache == ECacheMode::use_cache)
             result = GetPageFromNetwork(url);
     }
     else
@@ -189,7 +189,7 @@ bool PageManager::GetCachedMode() const
     return d->cachedMode;
 }
 
-WebPage PageManager::GetPage(QString url, bool useCache)
+WebPage PageManager::GetPage(QString url, ECacheMode useCache)
 {
     return d->GetPage(url, useCache);
 }
@@ -217,7 +217,7 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
     qDebug() << "worker is alive";
 }
 
-void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit, bool cacheMode)
+void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
     working = true;
@@ -247,7 +247,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit
     qDebug() << "leaving task1";
 }
 
-void PageThreadWorker::TaskList(QStringList urls, bool cacheMode)
+void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
     working = true;
@@ -258,6 +258,8 @@ void PageThreadWorker::TaskList(QStringList urls, bool cacheMode)
     {
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(urls[i], cacheMode);
+        if(!result.isValid)
+            continue;
         if(!result.isFromCache)
             pager->SavePageToDB(result);
 

@@ -65,3 +65,6 @@ CREATE INDEX if not exists  I_FANDOM1 ON fanfics (fandom1 ASC);
 CREATE INDEX if not exists  I_FANDOM2 ON fanfics (fandom2 ASC);
 alter table fanfics add column web_id integer defaul null;
 CREATE INDEX if not exists  I_WEB_ID ON fanfics (web_id ASC);
+alter table Recommenders add column website_type varchar default null;
+alter table Recommenders add column total_fics integer default null;
+update Recommenders set website_type = 'ffn' where website_type is null;

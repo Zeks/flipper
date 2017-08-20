@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     database::InstallCustomFunctions();
     database::EnsureFandomsFilled();
     database::EnsureWebIdsFilled();
-
-
+    auto result = database::EnsureTagForRecommendations();
+    Q_UNUSED(result);
     return a.exec();
 }

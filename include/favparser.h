@@ -28,6 +28,8 @@ public:
     void ClearProcessed();
     void ClearDoneCache();
     void WriteProcessed();
+    void WriteRecommenderInfo();
+    void SetCurrentTag(QString);
 
 
     QStringList diagnostics;
@@ -35,6 +37,7 @@ public:
     database::WriteStats writeSections;
     Recommender recommender;
     QHash<QString, QString> alreadyDone;
+    QString currentTagMode = "core";
 
 };
 

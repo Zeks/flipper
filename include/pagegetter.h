@@ -42,6 +42,13 @@ struct WebPage
     int loadedIn = 0;
 };
 
+enum class ECacheMode
+{
+    dont_use_cache = 0,
+    use_cache = 1,
+    use_only_cache = 2
+};
+
 class PageGetterPrivate;
 class PageManager
 {
@@ -51,7 +58,7 @@ class PageManager
     void SetDatabase(QSqlDatabase _db);
     void SetCachedMode(bool value);
     bool GetCachedMode() const;
-    WebPage GetPage(QString url, bool useCache = false);
+    WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::dont_use_cache);
     void SavePageToDB(const WebPage & page);
     QScopedPointer<PageGetterPrivate> d;
 };
@@ -68,8 +75,8 @@ public:
     int timeout = 500;
     std::atomic<bool> working;
 public slots:
-    void Task(QString url, QString lastUrl, QDateTime updateLimit, bool cacheMode);
-    void TaskList(QStringList urls, bool cacheMode);
+    void Task(QString url, QString lastUrl, QDateTime updateLimit, ECacheMode cacheMode);
+    void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
     void pageReady(WebPage);
 };

@@ -53,6 +53,19 @@ struct Recommender
     QString name;
     QString url;
     QString pageData;
+    //type of website, ffn or ao3
+    QString website;
+    QString tag = "core";
+    bool relevantForTag = true;
     int wave = 0;
     int id = -3;
+};
+
+struct RecommenderStats
+{
+    int totalFics = -1;
+    int matchesWithReferenceTag = -1;
+    double matchRatio = -1;
+    bool isValid = false;
+    QString tag;
 };

@@ -14,6 +14,7 @@ QList<Section> FavouriteStoryParser::ProcessPage(QString url, QString& str, int 
     recommender.name = ExtractRecommdenderNameFromUrl(url);
     recommender.url = url;
     recommender.wave = authorWave;
+    recommender.website = "ffn";
     while(true)
     {
 
@@ -136,6 +137,15 @@ void FavouriteStoryParser::WriteProcessed()
     qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
 }
 
+void FavouriteStoryParser::WriteRecommenderInfo()
+{
+    //database::WriteRecommendersMetainfo(recommender);
+}
+
+void FavouriteStoryParser::SetCurrentTag(QString value)
+{
+    currentTagMode = value;
+}
 
 void FavouriteStoryParser::GetAuthorUrl(Section & section, int &startfrom, QString text)
 {

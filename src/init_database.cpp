@@ -464,7 +464,7 @@ int GetFicIdByAuthorAndName(QString author, QString title)
     return result;
 }
 
-bool WriteRecommendation( Recommender &recommender, int fic_id)
+bool WriteRecommendation(Recommender &recommender, int fic_id, QString tag)
 {
     if(recommender.id == -3)
         recommender.id =  GetRecommenderId(recommender.url);
@@ -479,10 +479,11 @@ bool WriteRecommendation( Recommender &recommender, int fic_id)
 
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = " insert into recommendations (recommender_id, fic_id) values( :recommender_id,:fic_id); ";
+    QString qsl = " insert into recommendations (recommender_id, fic_id, tag) values( :recommender_id,:fic_id,:tag); ";
     q1.prepare(qsl);
     q1.bindValue(":recommender_id", recommender.id);
     q1.bindValue(":fic_id", fic_id);
+    q1.bindValue(":tag", tag);
     q1.exec();
 
     if(q1.lastError().isValid()&& !q1.lastError().text().contains("UNIQUE constraint failed"))
@@ -532,14 +533,15 @@ void WriteRecommender(const Recommender& recommender)
     }
 }
 
-QHash<QString, Recommender> FetchRecommenders(int limitingWave)
+QHash<QString, Recommender> FetchRecommenders(int limitingWave, QString tag)
 {
     limitingWave=1;
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = "select * from recommenders  where wave <= :wave order by name asc";
+    QString qsl = "select * from recommenders authors where wave <= :wave and exists (select distinct recommender_id from recommendations recs where authors.id = recs.recommender_id and tag = :tag) order by name asc";
     q1.prepare(qsl);
     q1.bindValue(":wave", limitingWave);
+    q1.bindValue(":tag", tag);
     q1.exec();
     QHash<QString, Recommender> result;
     while(q1.next())
@@ -590,12 +592,12 @@ void RemoveRecommender(int id)
     }
 }
 
-int FilterRecommenderByRecField(int recommender_id, int rec_threshhold, int favCount)
+int GetMatchCountForRecommenderOnTag(int recommender_id, QString tag)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = "select count(id) from fanfics where tags like '% rec%' and id in (select fic_id from recommendations where recommender_id = %1)";
-    qsl=qsl.arg(QString::number(recommender_id));
+    QString qsl = "select count(id) from fanfics where tags like '% %1%' and id in (select fic_id from recommendations where recommender_id = %2)";
+    qsl=qsl.arg(tag).arg(QString::number(recommender_id));
     q1.prepare(qsl);
     q1.exec();
     q1.next();
@@ -608,12 +610,13 @@ int FilterRecommenderByRecField(int recommender_id, int rec_threshhold, int favC
     int matches  = q1.value(0).toInt();
     qDebug() << "Using query: " << q1.lastQuery();
     qDebug() << "Matches found: " << matches;
-    bool passesOnLimitedFaves = favCount < 130 && (matches >= rec_threshhold - 1);
-    if(!passesOnLimitedFaves && matches < rec_threshhold)
-    {
-        RemoveRecommender(recommender_id);
-    }
     return matches;
+    //bool passesOnLimitedFaves = favCount < 130 && (matches >= rec_threshhold - 1);
+//    if(!passesOnLimitedFaves && matches < rec_threshhold)
+//    {
+//        RemoveRecommender(recommender_id);
+//    }
+    //return matches;
 }
 //CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
 //CREATE INDEX if not exists  I_FIC_ID ON Recommendations (fic_id ASC);
@@ -915,6 +918,222 @@ void EnsureWebIdsFilled()
         qDebug() << q.lastError();
         qDebug() << q.lastQuery();
     }
+}
+
+//void WriteRecommendersMetainfo(const Recommender &recommender)
+//{
+//    QSqlDatabase db = QSqlDatabase::database();
+//    QString qs = QString("insert into authors (name, url, website) select :name, :url, :website where not exists (SELECT 1 FROM authors where url = :url)");
+//    QSqlQuery q(db);
+//    q.prepare(qs);
+//    q.bindValue(":name",recommender.name);
+//    q.bindValue(":url",recommender.url);
+//    q.bindValue(":website",recommender.website);
+//    q.exec();
+//    if(q.lastError().isValid())
+//    {
+//        qDebug() << q.lastError();
+//        qDebug() << q.lastQuery();
+//    }
+//}
+
+bool ExecuteQuery(QSqlQuery& q, QString query)
+{
+    QString qs = query;
+    q.prepare(qs);
+    q.exec();
+
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+
+bool ExecuteQueryChain(QSqlQuery& q, QStringList queries)
+{
+    for(auto query: queries)
+    {
+        if(!ExecuteQuery(q, query))
+            return false;
+    }
+    return true;
+}
+
+bool EnsureTagForRecommendations()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("PRAGMA table_info(recommendations)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    while(q.next())
+    {
+        if(q.value("name").toString() == "tag")
+            return true;
+    }
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+
+    bool result =  ExecuteQueryChain(q,
+                     {"CREATE TABLE if not exists Recommendations2(recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , tag varchar default 'core', PRIMARY KEY (recommender_id, fic_id, tag) );",
+                      "insert into Recommendations2 (recommender_id,fic_id, tag) SELECT recommender_id, fic_id, 'core' from Recommendations;",
+                      "DROP TABLE Recommendations;",
+                      "ALTER TABLE Recommendations2 RENAME TO Recommendations;",
+                      "drop index i_recommendations;",
+                      "CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);"
+                      "CREATE INDEX if not exists  I_RECOMMENDATIONS_TAG ON Recommendations (tag ASC);"
+                      "CREATE INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);",
+                      });
+    return result;
+}
+
+QStringList ReadAvailableRecTagGroups()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select distinct tag from recommendations order by tag");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+    QStringList result;
+    while(q.next())
+    {
+        result.push_back(q.value(0).toString());
+    }
+    return result;
+}
+
+static QString WrapTag(QString tag)
+{
+    tag= "(.{0,}" + tag + ".{0,})";
+    return tag;
+}
+
+
+RecommenderStats GetRecommenderStats(int recommenderId, QString tag)
+{
+    RecommenderStats result;
+    result.tag = tag;
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select count(distinct fic_id) from recommendations where recommender_id = :id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id",recommenderId);
+    q.exec();
+    q.next();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    result.totalFics = q.value(0).toInt();
+
+    qs = QString("select count(distinct fic_id) from recommendations where recommender_id = :id and exists (select id from fanfics where id = recommendations.fic_id and cfRegexp(:wrappedTag, tags))");
+    q.prepare(qs);
+    q.bindValue(":id",recommenderId);
+    //q.bindValue(":tag",tag);
+    q.bindValue(":wrappedTag",WrapTag(tag));
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    q.next();
+    result.matchesWithReferenceTag = q.value(0).toInt();
+    result.matchRatio = (double)result.totalFics/(double)result.matchesWithReferenceTag;
+    result.isValid = true;
+    return result;
+}
+
+bool HasNoneTagInRecommendations()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select count(fic_id) from recommendations where tag = 'none'");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return 1;
+    }
+    q.next();
+    auto result = q.value(0).toInt();
+    return result > 0;
+}
+
+bool WipeCurrentRecommenderRecsOnTag(int recommenderId, QString tag)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("delete from recommendations where recommender_id = :id and tag = :tag");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id",recommenderId);
+    q.bindValue(":tag",tag);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+
+bool CopyAllRecommenderFicsToTag(int recommenderId, QString tag)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("insert into recommendations (fic_id, recommender_id, tag) select fic_id, recommender_id, '%1' as tag from recommendations where recommender_id = :id and tag = 'none' ");
+    qs=qs.arg(tag);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id",recommenderId);
+    q.bindValue(":tag",tag);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+
+QList<int> GetFulLRecommenderList()
+{
+    QList<int> result;
+
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select id from recommenders");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    while(q.next())
+    {
+        result.push_back(q.value(0).toInt());
+    }
+    return result;
 }
 
 
