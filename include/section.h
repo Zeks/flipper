@@ -63,9 +63,11 @@ struct Recommender
 
 struct RecommenderStats
 {
+    int recommenderId= -1;
     int totalFics = -1;
     int matchesWithReferenceTag = -1;
     double matchRatio = -1;
     bool isValid = false;
     QString tag;
+    QString authorName;
 };

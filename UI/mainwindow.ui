@@ -690,6 +690,37 @@
                    <string>Recommendations</string>
                   </attribute>
                   <layout class="QGridLayout" name="gridLayout_10">
+                   <item row="5" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_3">
+                     <item>
+                      <widget class="QPushButton" name="pbLoadAllRecommenders">
+                       <property name="text">
+                        <string>Reload Whole List</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_3">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbOpenWholeList">
+                       <property name="text">
+                        <string>Open Whole List</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
                    <item row="0" column="0">
                     <layout class="QHBoxLayout" name="horizontalLayout_2">
                      <item>
@@ -756,6 +787,9 @@
                      </item>
                     </layout>
                    </item>
+                   <item row="3" column="0">
+                    <widget class="QListView" name="lvRecommenders"/>
+                   </item>
                    <item row="1" column="0">
                     <layout class="QHBoxLayout" name="horizontalLayout_4">
                      <item>
@@ -768,12 +802,16 @@
                      <item>
                       <widget class="QLineEdit" name="leAuthorUrl"/>
                      </item>
+                     <item>
+                      <widget class="QPushButton" name="pbOpenAuthorUrl">
+                       <property name="text">
+                        <string>Open</string>
+                       </property>
+                      </widget>
+                     </item>
                     </layout>
                    </item>
                    <item row="2" column="0">
-                    <widget class="QListView" name="lvRecommenders"/>
-                   </item>
-                   <item row="3" column="0">
                     <widget class="QWidget" name="wdgWave" native="true">
                      <layout class="QGridLayout" name="gridLayout_5">
                       <property name="leftMargin">
@@ -845,6 +883,9 @@
                          <widget class="QDoubleSpinBox" name="dsbMinRecThreshhold">
                           <property name="suffix">
                            <string/>
+                          </property>
+                          <property name="maximum">
+                           <double>999.990000000000009</double>
                           </property>
                           <property name="value">
                            <double>40.000000000000000</double>
@@ -932,37 +973,6 @@
                       </item>
                      </layout>
                     </widget>
-                   </item>
-                   <item row="4" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_3">
-                     <item>
-                      <widget class="QPushButton" name="pbLoadAllRecommenders">
-                       <property name="text">
-                        <string>Reload Whole List</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="horizontalSpacer_3">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbOpenWholeList">
-                       <property name="text">
-                        <string>Open Whole List</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
                    </item>
                   </layout>
                  </widget>

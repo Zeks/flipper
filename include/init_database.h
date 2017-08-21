@@ -52,10 +52,12 @@ struct WriteStats
     void ImportTags(QString anotherDatabase);
     bool EnsureTagForRecommendations();
     QStringList ReadAvailableRecTagGroups();
-    RecommenderStats GetRecommenderStats(int recommenderId, QString tag);
+    RecommenderStats CreateRecommenderStats(int recommenderId, QString tag);
+    QList<RecommenderStats> GetRecommenderStatsForTag(QString tag, QString sortOn = "author_id", QString order = "asc");
     bool HasNoneTagInRecommendations();
     bool WipeCurrentRecommenderRecsOnTag(int recommenderId, QString tag);
     bool CopyAllRecommenderFicsToTag(int recommenderId, QString tag);
     QList<int>GetFulLRecommenderList();
+    void WriteRecommenderStatsForTag(RecommenderStats stats);
 
 }

@@ -149,8 +149,8 @@ private:
     bool ignoreUpdateDate = false;
     QStringList tagList;
     QStringListModel* tagModel;
-    QStringListModel* recentFandomsModel;
-    QStringListModel* recommendersModel;
+    QStringListModel* recentFandomsModel= nullptr;
+    QStringListModel* recommendersModel = nullptr;
     QHash<QString, Recommender> recommenders;
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
@@ -168,6 +168,7 @@ private:
     PageThreadWorker* worker = nullptr;
     QList<WebPage> pageQueue;
     void LoadMoreAuthors(bool reprocessCache = false);
+    void ProcessTagIntoRecommenders(QString tag);
 
 public slots:
     void ProcessFandoms(WebPage webPage);
@@ -218,6 +219,10 @@ private slots:
     void on_cbUseDateCutoff_clicked();
 
     void on_pbBuildRecs_clicked();
+
+    void on_cbRecTagGroup_currentIndexChanged(const QString &arg1);
+
+    void on_pbOpenAuthorUrl_clicked();
 
 signals:
     void pageTask(QString, QString, QDateTime, ECacheMode);

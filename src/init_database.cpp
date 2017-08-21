@@ -1021,7 +1021,7 @@ static QString WrapTag(QString tag)
 }
 
 
-RecommenderStats GetRecommenderStats(int recommenderId, QString tag)
+RecommenderStats CreateRecommenderStats(int recommenderId, QString tag)
 {
     RecommenderStats result;
     result.tag = tag;
@@ -1038,6 +1038,7 @@ RecommenderStats GetRecommenderStats(int recommenderId, QString tag)
         qDebug() << q.lastQuery();
         return result;
     }
+    result.recommenderId = recommenderId;
     result.totalFics = q.value(0).toInt();
 
     qs = QString("select count(distinct fic_id) from recommendations where recommender_id = :id and exists (select id from fanfics where id = recommendations.fic_id and cfRegexp(:wrappedTag, tags))");
@@ -1092,6 +1093,17 @@ bool WipeCurrentRecommenderRecsOnTag(int recommenderId, QString tag)
         qDebug() << q.lastQuery();
         return false;
     }
+    qs = QString("delete from RecommendationTagStats where tag = :tag and author_id = :author_id");
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    q.bindValue(":author_id",tag);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
     return true;
 }
 
@@ -1132,6 +1144,63 @@ QList<int> GetFulLRecommenderList()
     while(q.next())
     {
         result.push_back(q.value(0).toInt());
+    }
+    return result;
+}
+
+void WriteRecommenderStatsForTag(RecommenderStats stats)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("insert into RecommendationTagStats (author_id, fic_count, match_count, match_ratio, tag) "
+                         "values(:author_id, :fic_count, :match_count, :match_ratio, :tag)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",stats.recommenderId);
+    q.bindValue(":fic_count",stats.totalFics);
+    q.bindValue(":match_count",stats.matchesWithReferenceTag);
+    q.bindValue(":match_ratio",stats.matchRatio);
+    q.bindValue(":tag",stats.tag);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+}
+
+QList<RecommenderStats> GetRecommenderStatsForTag(QString tag, QString sortOn, QString order)
+{
+    QList<RecommenderStats> result;
+
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select rts.match_count as match_count,"
+                         "rts.match_ratio as match_ratio,"
+                         "rts.author_id as author_id,"
+                         "rts.fic_count as fic_count,"
+                         "r.name as name"
+                         "  from RecommendationTagStats rts, recommenders r where rts.author_id = r.id and tag = :tag order by %1 %2");
+    qs=qs.arg(sortOn).arg(order);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    while(q.next())
+    {
+        RecommenderStats stats;
+        stats.isValid = true;
+        stats.matchesWithReferenceTag = q.value("match_count").toInt();
+        stats.matchRatio= q.value("match_ratio").toDouble();
+        stats.recommenderId= q.value("author_id").toInt();
+        stats.tag= tag;
+        stats.totalFics= q.value("fic_count").toInt();
+        stats.authorName = q.value("name").toString();
+        result.push_back(stats);
     }
     return result;
 }

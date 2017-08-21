@@ -213,6 +213,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 qDebug() << q.lastError();
             tagList.append(tag);
             qwFics->rootContext()->setContextProperty("tagModel", tagList);
+            FillRecTagBuildCombobox();
         }
 
     });
@@ -1271,6 +1272,17 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     EnableAllLoadButtons();
 }
 
+void MainWindow::ProcessTagIntoRecommenders(QString tag)
+{
+    if(!recommendersModel)
+        return;
+    QStringList result;
+    auto allStats = database::GetRecommenderStatsForTag(tag, "match_ratio", "asc");
+    for(auto stat : allStats)
+        result.push_back(stat.authorName);
+    recommendersModel->setStringList(result);
+}
+
 
 
 QString MainWindow::WrapTag(QString tag)
@@ -2179,16 +2191,39 @@ void MainWindow::on_pbBuildRecs_clicked()
     auto threshholdRatio = ui->dsbMinRecThreshhold->value();
     auto alwaysPickAuthorOnThisMatchCount = ui->sbAlwaysPickRecAt->value();
     QList<int> fullRecommenderList = database::GetFulLRecommenderList();
+    bool found = false;
+    QList<int> resultingRecommenderList;
+    resultingRecommenderList.reserve(fullRecommenderList.size()/10);
     for(auto id: fullRecommenderList)
     {
-        auto stats = database::GetRecommenderStats(id, currentTag);
+        auto stats = database::CreateRecommenderStats(id, currentTag);
 
         if( stats.matchesWithReferenceTag >= alwaysPickAuthorOnThisMatchCount
                 || (stats.matchRatio <= threshholdRatio && stats.matchesWithReferenceTag >= minTagCountMatch) )
         {
             database::WipeCurrentRecommenderRecsOnTag(id,currentTag);
             database::CopyAllRecommenderFicsToTag(id,currentTag);
+            database::WriteRecommenderStatsForTag(stats);
+            resultingRecommenderList.push_back(id);
         }
     }
-    //if(stats.isValid)
+    if(resultingRecommenderList.size() > 0)
+    {
+        FillRecTagCombobox();
+        QStringList result;
+        auto allStats = database::GetRecommenderStatsForTag("tag", "match_ratio");
+        for(auto stat : allStats)
+            result.push_back(stat.authorName);
+        recommendersModel->setStringList(result);
+    }
+}
+
+void MainWindow::on_cbRecTagGroup_currentIndexChanged(const QString &tag)
+{
+    ProcessTagIntoRecommenders(tag);    ;
+}
+
+void MainWindow::on_pbOpenAuthorUrl_clicked()
+{
+    QDesktopServices::openUrl(ui->leAuthorUrl->text());
 }
