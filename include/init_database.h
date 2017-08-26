@@ -59,5 +59,8 @@ struct WriteStats
     bool CopyAllRecommenderFicsToTag(int recommenderId, QString tag);
     QList<int>GetFulLRecommenderList();
     void WriteRecommenderStatsForTag(RecommenderStats stats);
-
+    bool AssignNewNameForRecommenderId(Recommender recommender);
+    QVector<Recommender> GetAllAuthors(QString website);
+    QVector<int> GetAllFicIDsFromRecommendations(QString tag);
+    bool UpdateTagStatsPerFic(QString tag);
 }

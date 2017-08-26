@@ -48,6 +48,13 @@ struct Fandom
     QString crossoverUrl;
 };
 
+enum class ERecommenderIdStatus
+{
+    unassigned = -1,
+    not_found = -2,
+    valid = 0
+};
+
 struct Recommender
 {
     QString name;
@@ -59,6 +66,20 @@ struct Recommender
     bool relevantForTag = true;
     int wave = 0;
     int id = -3;
+    ERecommenderIdStatus idStatus = ERecommenderIdStatus::unassigned;
+    void AssignId(int id){
+        if(id == -1)
+        {
+            this->id = -1;
+            this->idStatus = ERecommenderIdStatus::not_found;
+        }
+        if(id > -1)
+        {
+            this->id = id;
+            this->idStatus = ERecommenderIdStatus::valid;
+        }
+    }
+    ERecommenderIdStatus GetIdStatus() const {return idStatus;}
 };
 
 struct RecommenderStats

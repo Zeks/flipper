@@ -28,6 +28,7 @@ public:
     void ClearProcessed();
     void ClearDoneCache();
     void WriteProcessed();
+    void WriteJustAuthorName();
     void WriteRecommenderInfo();
     void SetCurrentTag(QString);
 
@@ -38,6 +39,7 @@ public:
     Recommender recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
+    QString authorName;
 
 };
 

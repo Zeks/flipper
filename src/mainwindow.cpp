@@ -34,11 +34,32 @@
 #include "include/favparser.h"
 #include "include/fandomparser.h"
 
+struct SplitPart
+{
+    QString data;
+    int partId;
+};
+
 struct SplitJobs
 {
-    QList<QString> parts;
-    int storyCount;
+    QVector<SplitPart> parts;
+    int storyCountInWhole;
+    QString authorName;
 };
+
+
+QString ParseAuthorNameFromFavouritePage(QString data)
+{
+    QString result;
+    QRegExp rx("title>([A-Za-z0-9.\\-\\s]+)(?=\\s|\\sFanFiction)");
+    //rx.setMinimal(true);
+    int index = rx.indexIn(data);
+    if(index == -1)
+        return result;
+    //qDebug() << rx.capturedTexts();
+    result = rx.cap(1);
+    return result;
+}
 
 SplitJobs SplitJob(QString data)
 {
@@ -47,7 +68,7 @@ SplitJobs SplitJob(QString data)
     QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
     int captured = data.count(rxStart);
-    result.storyCount = captured;
+    result.storyCountInWhole = captured;
     qDebug() << "Will process "  << captured << " stories";
 
     int partSize = captured/(threadCount-1);
@@ -68,12 +89,13 @@ SplitJobs SplitJob(QString data)
         counter++;
     }while(index != -1);
     qDebug() << "Splitting into: "  << splitPositions;
+    result.parts.reserve(splitPositions.size());
     for(int i = 0; i < splitPositions.size(); i++)
     {
         if(i != splitPositions.size()-1)
-            result.parts.push_back(data.mid(splitPositions[i], splitPositions[i+1] - splitPositions[i]));
+            result.parts.push_back({data.mid(splitPositions[i], splitPositions[i+1] - splitPositions[i]), i});
         else
-            result.parts.push_back(data.mid(splitPositions[i], data.length() - splitPositions[i]));
+            result.parts.push_back({data.mid(splitPositions[i], data.length() - splitPositions[i]),i});
     }
     return result;
 }
@@ -563,7 +585,7 @@ void MainWindow::LoadData()
         counter++;
         fanfics.push_back(LoadFanfic(q));
 
-        if(counter%100 == 0)
+        if(counter%10000 == 0)
             qDebug() << "tick " << counter/100;
     }
     qDebug() << "loaded fics:" << counter;
@@ -575,18 +597,16 @@ QSqlQuery MainWindow::BuildQuery()
     QSqlDatabase db = QSqlDatabase::database();
     QString queryString = "select ID, ";
     //if(ui->cbCustomFilters->currentText() == "New From Popular")
-    queryString+= " (SELECT  Sum(favourites) as summation FROM fanfics where author = f.author) as sumfaves, ";
-    //queryString+= " (select max(favourites) where fandom = f.fandom) as maxf, ";
-    //queryString+= " (SELECT  count(fic_id) FROM recommendations where f.id = fic_id) as sumrecs, ";
-    queryString+= " (SELECT  count(fic_id) FROM recommendations , recommenders where recommenders.id = recommendations.recommender_id and f.id = recommendations.fic_id and recommenders.wave <= %1 and recommendations.tag = '%2') as sumrecs, ";
+    queryString+= " (SELECT sumfaves FROM recommenders where name = f.author) as sumfaves, ";
+    queryString+= " (SELECT sumrecs FROM RecommendationFicStats rfs where rfs.fic_id = f.id and rfs.tag = '%1') as sumrecs, ";
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     bool directRecsChecked = ui->chkShowDirectRecs->isChecked();
     bool directRecsVisible = settings.value("Settings/showExperimentaWaveparser", false).toBool();
     QString wave = (directRecsChecked || !directRecsVisible) ? QString::number(0): QString::number(2);
-    queryString=queryString.arg(wave).arg(ui->cbRecGroup->currentText());
+    queryString=queryString.arg(ui->cbRecGroup->currentText());
 
-    queryString+=" f.* from fanfics f, fandom_stats fs where fs.fandom = f.fandom and 1 = 1 " ;
+    queryString+=" f.* from fanfics f where 1 = 1 " ;
     if(ui->cbMinWordCount->currentText().toInt() > 0)
         queryString += " and wordcount > :minwordcount ";
     if(ui->cbMaxWordCount->currentText().toInt() > 0)
@@ -1226,7 +1246,8 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
 
 
             auto splittings = SplitJob(webPage.content);
-            if(splittings.storyCount > 2000)
+            //QString  authorName = splittings.authorName;
+            if(splittings.storyCountInWhole > 2000)
             {
                 InsertLogIntoEditor(ui->edtResults, "Skipping page with too much favourites");
                 continue;
@@ -1234,7 +1255,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
 
             for(auto part: splittings.parts)
             {
-                futures.push_back(QtConcurrent::run(job, webPage.url, part));
+                futures.push_back(QtConcurrent::run(job, webPage.url, part.data));
             }
             for(auto future: futures)
             {
@@ -1251,7 +1272,10 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
             {
                 sum+=actualParser.processedStuff.count() ;
                 if(actualParser.processedStuff.size() < 2000)
+                {
                     actualParser.WriteProcessed();
+                    //actualParser.WriteJustAuthorName();
+                }
             }
             InsertLogIntoEditor(ui->edtResults, webPage.url);
             AddToProgressLog(" All Faves: " + QString::number(sum) + " ");
@@ -1272,6 +1296,55 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     EnableAllLoadButtons();
 }
 
+void MainWindow::UpdateAllAuthorsWith(std::function<void(Recommender, WebPage)> updater)
+{
+    currentSearchButton = MainWindow::lfbp_recs;
+    auto authors = database::GetAllAuthors("ffn");
+    AddToProgressLog("Authors: " + QString::number(authors.size()));
+
+    ReinitProgressbar(authors.size());
+    DisableAllLoadButtons();
+    An<PageManager> pager;
+
+    for(auto author: authors)
+    {
+        auto webPage = pager->GetPage(author.url, ECacheMode::use_only_cache);
+        qDebug() << "Page loaded in: " << webPage.loadedIn;
+        pbMain->setValue(pbMain->value()+1);
+        pbMain->setTextVisible(true);
+        pbMain->setFormat("%v");
+        updater(author, webPage);
+    }
+    //parser.ClearDoneCache();
+    ui->edtResults->clear();
+    ShutdownProgressbar();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    EnableAllLoadButtons();
+}
+
+void MainWindow::ReprocessAuthors()
+{
+    auto functor = [](Recommender author, WebPage webPage){
+        //auto splittings = SplitJob(webPage.content);
+        QString authorName = ParseAuthorNameFromFavouritePage(webPage.content);
+        author.name = authorName;
+        database::AssignNewNameForRecommenderId(author);
+    };
+    UpdateAllAuthorsWith(functor);
+}
+
+void MainWindow::ReprocessTagSumRecs()
+{
+    auto tags = database::ReadAvailableRecTagGroups();
+    for(auto tag : tags)
+    {
+        if(tag == "core" || tag == "none")
+            continue;
+        database::UpdateTagStatsPerFic(tag);
+    }
+}
+
 void MainWindow::ProcessTagIntoRecommenders(QString tag)
 {
     if(!recommendersModel)
@@ -1282,8 +1355,6 @@ void MainWindow::ProcessTagIntoRecommenders(QString tag)
         result.push_back(stat.authorName);
     recommendersModel->setStringList(result);
 }
-
-
 
 QString MainWindow::WrapTag(QString tag)
 {
@@ -1909,7 +1980,7 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
         auto splittings = SplitJob(page.content);
         for(auto part: splittings.parts)
         {
-            futures.push_back(QtConcurrent::run(job, page.url, part));
+            futures.push_back(QtConcurrent::run(job, page.url, part.data));
         }
         for(auto future: futures)
         {
@@ -1931,6 +2002,7 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
     result = SortedList(uniqueSections.keys());
     return result;
 }
+
 
 void MainWindow::CreatePageThreadWorker()
 {
@@ -2057,6 +2129,8 @@ void MainWindow::on_pbLoadPage_clicked()
     qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     FavouriteStoryParser parser;
     auto startPageProcess = std::chrono::high_resolution_clock::now();
+    QString name = ParseAuthorNameFromFavouritePage(page.content);
+    parser.authorName = name;
     parser.ProcessPage(page.url, page.content);
     elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
     qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
@@ -2207,6 +2281,7 @@ void MainWindow::on_pbBuildRecs_clicked()
             resultingRecommenderList.push_back(id);
         }
     }
+    database::UpdateTagStatsPerFic(currentTag);
     if(resultingRecommenderList.size() > 0)
     {
         FillRecTagCombobox();
@@ -2226,4 +2301,9 @@ void MainWindow::on_cbRecTagGroup_currentIndexChanged(const QString &tag)
 void MainWindow::on_pbOpenAuthorUrl_clicked()
 {
     QDesktopServices::openUrl(ui->leAuthorUrl->text());
+}
+
+void MainWindow::on_pbReprocessAuthors_clicked()
+{
+    ReprocessTagSumRecs();
 }

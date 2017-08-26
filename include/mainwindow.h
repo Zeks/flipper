@@ -117,6 +117,7 @@ private:
     QStringList SortedList(QStringList);
     QStringList ReverseSortedList(QStringList list);
     QStringList GetUniqueAuthorsFromActiveRecommenderSet();
+
     void CreatePageThreadWorker();
     void StartPageWorker();
     void StopPageWorker();
@@ -168,7 +169,13 @@ private:
     PageThreadWorker* worker = nullptr;
     QList<WebPage> pageQueue;
     void LoadMoreAuthors(bool reprocessCache = false);
+    void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
+    //void ReprocessAuthorNameIntoDb();
+    void UpdateAllAuthorsWith(std::function<void (Recommender, WebPage)> updater);
+    //void UpdateTagStatsPerFic();
+    void ReprocessAuthors();
+    void ReprocessTagSumRecs();
 
 public slots:
     void ProcessFandoms(WebPage webPage);
@@ -223,6 +230,8 @@ private slots:
     void on_cbRecTagGroup_currentIndexChanged(const QString &arg1);
 
     void on_pbOpenAuthorUrl_clicked();
+
+    void on_pbReprocessAuthors_clicked();
 
 signals:
     void pageTask(QString, QString, QDateTime, ECacheMode);
