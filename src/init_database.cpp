@@ -466,12 +466,12 @@ int GetFicIdByAuthorAndName(QString author, QString title)
 
 bool WriteRecommendation(Recommender &recommender, int fic_id, QString tag)
 {
-    if(recommender.id == -3)
-        recommender.id =  GetRecommenderId(recommender.url);
-    if(recommender.id == -1)
+    if(recommender.GetIdStatus() == ERecommenderIdStatus::unassigned)
+        recommender.AssignId(GetRecommenderId(recommender.url));
+    if(recommender.GetIdStatus() == ERecommenderIdStatus::not_found)
     {
         WriteRecommender(recommender);
-        recommender.id =  GetRecommenderId(recommender.url);
+        recommender.AssignId(GetRecommenderId(recommender.url));
     }
 
     if(recommender.id < 0)
@@ -1201,6 +1201,144 @@ QList<RecommenderStats> GetRecommenderStatsForTag(QString tag, QString sortOn, Q
         stats.totalFics= q.value("fic_count").toInt();
         stats.authorName = q.value("name").toString();
         result.push_back(stats);
+    }
+    return result;
+}
+
+bool AssignNewNameForRecommenderId(Recommender recommender)
+{
+    if(recommender.GetIdStatus() != ERecommenderIdStatus::valid)
+        return true;
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q(db);
+    QString qsl = " UPDATE recommenders SET name = :name where id = :id";
+    q.prepare(qsl);
+    q.bindValue(":name",recommender.name);
+    q.bindValue(":id",recommender.id);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+
+QVector<Recommender> GetAllAuthors(QString website)
+{
+    QVector<Recommender> result;
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select count(id) from recommenders where website_type = :site");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":site",website);
+    q.exec();
+    q.next();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    int size = q.value(0).toInt();
+
+    qs = QString("select id, url from recommenders where website_type = :site");
+    q.prepare(qs);
+    q.bindValue(":site",website);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    result.reserve(size);
+    while(q.next())
+    {
+        Recommender rec;
+        rec.AssignId(q.value("id").toInt());
+        rec.url = q.value("url").toString();
+        result.push_back(rec);
+    }
+    return result;
+}
+
+bool UpdateTagStatsPerFic(QString tag)
+{
+    auto allFics = GetAllFicIDsFromRecommendations(tag);
+
+    QString insertStatementPrototype = "INSERT INTO RecommendationFicStats(fic_id,tag, sumrecs) "
+            "SELECT %1, '%2', 0 "
+            "WHERE NOT EXISTS(SELECT 1 FROM RecommendationFicStats where fic_id = :fic_id AND tag = :tag)";
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q(db);
+    db.transaction();
+    qDebug() << "processing tag: " << tag;
+    for(auto fic_id: allFics)
+    {
+
+        QString qs = insertStatementPrototype.arg(fic_id).arg(tag);
+        q.prepare(qs);
+        q.bindValue(":fic_id",fic_id);
+        q.bindValue(":tag",tag);
+        q.exec();
+        if(q.lastError().isValid())
+        {
+            qDebug() << q.lastError();
+            qDebug() << q.lastQuery();
+        }
+
+        qs = "update RecommendationFicStats set sumrecs = (SELECT  count(recommender_id) FROM recommendations r "
+             " where r.fic_id = :fic_id"
+             " and r.tag = :tag) "
+             " where fic_id = :fic_id and tag = :tag";
+        q.prepare(qs);
+        q.bindValue(":fic_id",fic_id);
+        q.bindValue(":tag",tag);
+        q.exec();
+        if(q.lastError().isValid())
+        {
+            qDebug() << q.lastError();
+            qDebug() << q.lastQuery();
+        }
+    }
+    db.commit();
+    return true;
+}
+
+QVector<int> GetAllFicIDsFromRecommendations(QString tag)
+{
+    QVector<int> result;
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select count(fic_id) from recommendations where tag = :tag");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    q.exec();
+    q.next();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    int size = q.value(0).toInt();
+
+    qs = QString("select fic_id from recommendations where tag = :tag");
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    result.reserve(size);
+    while(q.next())
+    {
+        result.push_back(q.value("fic_id").toInt());
     }
     return result;
 }

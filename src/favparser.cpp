@@ -11,7 +11,8 @@ QList<Section> FavouriteStoryParser::ProcessPage(QString url, QString& str, int 
     int currentPosition = 0;
     int counter = 0;
     QList<Section> sections;
-    recommender.name = ExtractRecommdenderNameFromUrl(url);
+    //recommender.name = ExtractRecommdenderNameFromUrl(url);
+    recommender.name = authorName;
     recommender.url = url;
     recommender.wave = authorWave;
     recommender.website = "ffn";
@@ -135,6 +136,18 @@ void FavouriteStoryParser::WriteProcessed()
     ClearProcessed();
     elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
     qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+}
+
+void FavouriteStoryParser::WriteJustAuthorName()
+{
+    if(recommender.GetIdStatus() == ERecommenderIdStatus::unassigned)
+        recommender.AssignId(database::GetRecommenderId(recommender.url));
+    if(recommender.GetIdStatus() == ERecommenderIdStatus::not_found)
+    {
+        database::WriteRecommender(recommender);
+        recommender.AssignId(database::GetRecommenderId(recommender.url));
+    }
+    database::AssignNewNameForRecommenderId(recommender);
 }
 
 void FavouriteStoryParser::WriteRecommenderInfo()

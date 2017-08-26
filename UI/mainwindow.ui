@@ -50,6 +50,71 @@
           </property>
           <widget class="QWidget" name="layoutWidget">
            <layout class="QGridLayout" name="gridLayout_7">
+            <item row="11" column="0" colspan="4">
+             <widget class="QWidget" name="widget_4" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>FavrateCut: </string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDateEdit" name="dteFavRateCut">
+                 <property name="calendarPopup">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>FavRatio</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="sbFavrateValue">
+                 <property name="value">
+                  <number>4</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_6">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>1028</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
             <item row="10" column="3">
              <widget class="QWidget" name="widget_2" native="true">
               <property name="sizePolicy">
@@ -240,7 +305,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>2</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -1080,19 +1145,6 @@
               </layout>
              </widget>
             </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Min. Words</string>
-              </property>
-             </widget>
-            </item>
             <item row="13" column="0" colspan="4">
              <layout class="QGridLayout" name="gridLayout_2">
               <item row="2" column="1" rowspan="2">
@@ -1278,28 +1330,6 @@
               </property>
              </widget>
             </item>
-            <item row="19" column="0" colspan="4">
-             <widget class="QPushButton" name="pbLoadTrackedFandoms">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>231231</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will load all the updates for the fandoms you've set as &amp;quot;Track&amp;quot; above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Load All Tracked Fandoms</string>
-              </property>
-             </widget>
-            </item>
             <item row="7" column="1">
              <widget class="QSpinBox" name="sbMaxFicCount">
               <property name="toolTip">
@@ -1397,10 +1427,25 @@
               </item>
              </widget>
             </item>
-            <item row="7" column="0">
-             <widget class="QCheckBox" name="chkFicLimitActivated">
+            <item row="20" column="0" colspan="4">
+             <widget class="QPushButton" name="pbLoadTrackedFandoms">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>231231</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will load all the updates for the fandoms you've set as &amp;quot;Track&amp;quot; above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
-               <string>MaxFics</string>
+               <string>Load All Tracked Fandoms</string>
               </property>
              </widget>
             </item>
@@ -1420,6 +1465,13 @@
               </property>
              </widget>
             </item>
+            <item row="7" column="0">
+             <widget class="QCheckBox" name="chkFicLimitActivated">
+              <property name="text">
+               <string>MaxFics</string>
+              </property>
+             </widget>
+            </item>
             <item row="10" column="0">
              <widget class="QLabel" name="label">
               <property name="text">
@@ -1431,6 +1483,35 @@
              <widget class="QLabel" name="label_11">
               <property name="text">
                <string>Max. Words</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="2">
+             <widget class="QCheckBox" name="chkFaveLimitActivated">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>MinFaves</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="3">
+             <widget class="QSpinBox" name="sbMinimumFavourites">
+              <property name="toolTip">
+               <string>Limits the fics displayed by the minimum amount of favourites they have.</string>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+              <property name="value">
+               <number>50</number>
               </property>
              </widget>
             </item>
@@ -1467,100 +1548,6 @@
               </item>
              </widget>
             </item>
-            <item row="7" column="3">
-             <widget class="QSpinBox" name="sbMinimumFavourites">
-              <property name="toolTip">
-               <string>Limits the fics displayed by the minimum amount of favourites they have.</string>
-              </property>
-              <property name="maximum">
-               <number>10000</number>
-              </property>
-              <property name="value">
-               <number>50</number>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="2">
-             <widget class="QCheckBox" name="chkFaveLimitActivated">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>MinFaves</string>
-              </property>
-              <property name="checked">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="11" column="0" colspan="4">
-             <widget class="QWidget" name="widget_4" native="true">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_8">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="label_4">
-                 <property name="text">
-                  <string>FavrateCut: </string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QDateEdit" name="dteFavRateCut">
-                 <property name="calendarPopup">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_5">
-                 <property name="text">
-                  <string>FavRatio</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QSpinBox" name="sbFavrateValue">
-                 <property name="value">
-                  <number>4</number>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_6">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>1028</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-              </layout>
-             </widget>
-            </item>
             <item row="6" column="1">
              <widget class="QComboBox" name="cbMinWordCount">
               <property name="sizePolicy">
@@ -1590,6 +1577,26 @@
                 <string>700000</string>
                </property>
               </item>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_3">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Min. Words</string>
+              </property>
+             </widget>
+            </item>
+            <item row="19" column="0" colspan="4">
+             <widget class="QPushButton" name="pbReprocessAuthors">
+              <property name="text">
+               <string>Rebuild Tag Stats</string>
+              </property>
              </widget>
             </item>
            </layout>
