@@ -486,21 +486,21 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdat
         }
         QCoreApplication::processEvents();
 
-    if(pageCount == 0)
-        pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
-    else
-        pbMain->setValue(counter++);
-    QSqlDatabase db = QSqlDatabase::database();
-    db.transaction();
-    auto startPageRequest = std::chrono::high_resolution_clock::now();
-    for(auto section: parser.processedStuff)
-    {
-        if(database::LoadIntoDB(section))
-            processedFics++;
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-    qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    db.commit();
+        if(pageCount == 0)
+            pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
+        else
+            pbMain->setValue(counter++);
+        QSqlDatabase db = QSqlDatabase::database();
+        db.transaction();
+        auto startPageRequest = std::chrono::high_resolution_clock::now();
+        for(auto section: parser.processedStuff)
+        {
+            if(database::LoadIntoDB(section))
+                processedFics++;
+        }
+        elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
+        qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        db.commit();
     }while(!webPage.isLastPage);
     StopPageWorker();
     ShutdownProgressbar();
@@ -675,7 +675,7 @@ QSqlQuery MainWindow::BuildQuery()
     else if(ui->cbSortMode->currentText() == "Experimental")
     {
         diffField =  " 1.3*(favourites*1.0/(select max(favourites) from fanfics f2 where f2.fandom = fandom))*(case when daysrunning < 90 then 2.5 when daysrunning < 365 then 2 else 1 end) "
-        " + 20/(wcr_adjusted) desc";
+                     " + 20/(wcr_adjusted) desc";
     }
     else if(ui->cbSortMode->currentText() == "Rec Count")
         diffField = " sumrecs desc";
@@ -1009,14 +1009,14 @@ QStringList MainWindow::GetNormalUrl(QString fandom, bool ignoreTrackingState)
     QStringList result;
     while(q.next())
     {
-    QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
-    lastPart=lastPart.arg(lengthCutoff);
-    QString resultString = "https://www.fanfiction.net" + q.value(0).toString() + lastPart;
-    result.push_back(resultString);
-    qDebug() << result;
+        QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
+        QSettings settings("settings.ini", QSettings::IniFormat);
+        settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+        int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
+        lastPart=lastPart.arg(lengthCutoff);
+        QString resultString = "https://www.fanfiction.net" + q.value(0).toString() + lastPart;
+        result.push_back(resultString);
+        qDebug() << result;
     }
     return result;
 }
@@ -1105,6 +1105,7 @@ void MainWindow::SetTag(int id, QString tag)
         q.exec();
         if(q.lastError().isValid())
             qDebug() << q.lastError();
+        tagList.push_back(tag);
     }
 }
 
@@ -1345,6 +1346,44 @@ void MainWindow::ReprocessTagSumRecs()
     }
 }
 
+void MainWindow::ProcessListIntoRecommendations(QString list)
+{
+    QFile data(list);
+    QStringList usedList;
+    if (data.open(QFile::ReadOnly))
+    {
+        QTextStream in(&data);
+        BuildRecommendationParams params;
+        params.tag = in.readLine().split("#").at(1);
+        params.minTagCountMatch = in.readLine().split("#").at(1).toInt();
+        params.threshholdRatio = in.readLine().split("#").at(1).toDouble();
+        params.alwaysPickAuthorOnThisMatchCount = in.readLine().split("#").at(1).toInt();
+
+        QString str;
+        do{
+            str = in.readLine();
+            QRegExp rx("/s/(\\d+)");
+            int pos = rx.indexIn(str);
+            QString ficIdPart;
+            if(pos != -1)
+            {
+                ficIdPart = rx.cap(0);
+            }
+            if(ficIdPart.isEmpty())
+                continue;
+            int id = database::GetFicDBIdByDelimitedSiteId(ficIdPart);
+
+            if(id == -1)
+                continue;
+            qDebug()<< "Settign tag: " << params.tag << " to: " << id;
+            usedList.push_back(str);
+            SetTag(id, params.tag);
+        }while(!str.isEmpty());
+        BuildRecommendations(params);
+        qDebug() << "using list: " << usedList;
+    }
+}
+
 void MainWindow::ProcessTagIntoRecommenders(QString tag)
 {
     if(!recommendersModel)
@@ -1457,9 +1496,9 @@ void MainWindow::OnNewPage(WebPage page)
 
 void MainWindow::OnCopyFicUrl(QString text)
 {
-     QClipboard *clipboard = QApplication::clipboard();
-     clipboard->setText(text);
-     ui->edtResults->insertPlainText(text + "\n");
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(text);
+    ui->edtResults->insertPlainText(text + "\n");
 
 }
 
@@ -1964,8 +2003,8 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
 
         auto startRecProcessing = std::chrono::high_resolution_clock::now();
         counter++;
-//        if(counter != 4)
-//            continue;
+        //        if(counter != 4)
+        //            continue;
         Recommender recommender = recommenders[recName];
         uniqueSections[recommender.url] = Section();
         if(recommender.wave > 1)
@@ -2258,30 +2297,29 @@ void MainWindow::on_cbUseDateCutoff_clicked()
     ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
 }
 
-void MainWindow::on_pbBuildRecs_clicked()
+
+void MainWindow::BuildRecommendations(BuildRecommendationParams params)
 {
-    auto currentTag = ui->cbRecTagBuildGroup->currentText();
-    auto minTagCountMatch = ui->sbMinRecMatch->value();
-    auto threshholdRatio = ui->dsbMinRecThreshhold->value();
-    auto alwaysPickAuthorOnThisMatchCount = ui->sbAlwaysPickRecAt->value();
+    QSqlDatabase db = QSqlDatabase::database();
+    db.transaction();
     QList<int> fullRecommenderList = database::GetFulLRecommenderList();
     bool found = false;
     QList<int> resultingRecommenderList;
     resultingRecommenderList.reserve(fullRecommenderList.size()/10);
+    database::WipeCurrentRecommenderRecsOnTag(params.tag);
     for(auto id: fullRecommenderList)
     {
-        auto stats = database::CreateRecommenderStats(id, currentTag);
+        auto stats = database::CreateRecommenderStats(id, params.tag);
 
-        if( stats.matchesWithReferenceTag >= alwaysPickAuthorOnThisMatchCount
-                || (stats.matchRatio <= threshholdRatio && stats.matchesWithReferenceTag >= minTagCountMatch) )
+        if( stats.matchesWithReferenceTag >= params.alwaysPickAuthorOnThisMatchCount
+                || (stats.matchRatio <= params.threshholdRatio && stats.matchesWithReferenceTag >= params.minTagCountMatch) )
         {
-            database::WipeCurrentRecommenderRecsOnTag(id,currentTag);
-            database::CopyAllRecommenderFicsToTag(id,currentTag);
+            database::CopyAllRecommenderFicsToTag(id,params.tag);
             database::WriteRecommenderStatsForTag(stats);
             resultingRecommenderList.push_back(id);
         }
     }
-    database::UpdateTagStatsPerFic(currentTag);
+    database::UpdateTagStatsPerFic(params.tag);
     if(resultingRecommenderList.size() > 0)
     {
         FillRecTagCombobox();
@@ -2291,6 +2329,17 @@ void MainWindow::on_pbBuildRecs_clicked()
             result.push_back(stat.authorName);
         recommendersModel->setStringList(result);
     }
+    db.commit();
+}
+
+void MainWindow::on_pbBuildRecs_clicked()
+{
+    BuildRecommendationParams params;
+    params.tag = ui->cbRecTagBuildGroup->currentText();
+    params.minTagCountMatch = ui->sbMinRecMatch->value();
+    params.threshholdRatio = ui->dsbMinRecThreshhold->value();
+    params.alwaysPickAuthorOnThisMatchCount = ui->sbAlwaysPickRecAt->value();
+    BuildRecommendations(params);
 }
 
 void MainWindow::on_cbRecTagGroup_currentIndexChanged(const QString &tag)
@@ -2305,5 +2354,6 @@ void MainWindow::on_pbOpenAuthorUrl_clicked()
 
 void MainWindow::on_pbReprocessAuthors_clicked()
 {
-    ReprocessTagSumRecs();
+    //ReprocessTagSumRecs();
+    ProcessListIntoRecommendations("lists/sneaky.txt");
 }

@@ -55,7 +55,7 @@ struct WriteStats
     RecommenderStats CreateRecommenderStats(int recommenderId, QString tag);
     QList<RecommenderStats> GetRecommenderStatsForTag(QString tag, QString sortOn = "author_id", QString order = "asc");
     bool HasNoneTagInRecommendations();
-    bool WipeCurrentRecommenderRecsOnTag(int recommenderId, QString tag);
+    bool WipeCurrentRecommenderRecsOnTag(QString tag);
     bool CopyAllRecommenderFicsToTag(int recommenderId, QString tag);
     QList<int>GetFulLRecommenderList();
     void WriteRecommenderStatsForTag(RecommenderStats stats);
@@ -63,4 +63,5 @@ struct WriteStats
     QVector<Recommender> GetAllAuthors(QString website);
     QVector<int> GetAllFicIDsFromRecommendations(QString tag);
     bool UpdateTagStatsPerFic(QString tag);
+    int GetFicDBIdByDelimitedSiteId(QString id);
 }

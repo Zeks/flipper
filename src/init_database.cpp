@@ -1078,13 +1078,13 @@ bool HasNoneTagInRecommendations()
     return result > 0;
 }
 
-bool WipeCurrentRecommenderRecsOnTag(int recommenderId, QString tag)
+bool WipeCurrentRecommenderRecsOnTag(QString tag)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("delete from recommendations where recommender_id = :id and tag = :tag");
+    QString qs = QString("delete from recommendations where tag = :tag");
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":id",recommenderId);
+    //q.bindValue(":id",recommenderId);
     q.bindValue(":tag",tag);
     q.exec();
     if(q.lastError().isValid())
@@ -1093,10 +1093,10 @@ bool WipeCurrentRecommenderRecsOnTag(int recommenderId, QString tag)
         qDebug() << q.lastQuery();
         return false;
     }
-    qs = QString("delete from RecommendationTagStats where tag = :tag and author_id = :author_id");
+    qs = QString("delete from RecommendationTagStats where tag = :tag");
     q.prepare(qs);
     q.bindValue(":tag",tag);
-    q.bindValue(":author_id",tag);
+    //q.bindValue(":author_id",tag);
     q.exec();
     if(q.lastError().isValid())
     {
@@ -1340,6 +1340,26 @@ QVector<int> GetAllFicIDsFromRecommendations(QString tag)
     {
         result.push_back(q.value("fic_id").toInt());
     }
+    return result;
+}
+
+int GetFicDBIdByDelimitedSiteId(QString id)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select id from fanfics where url like '%%1%'");
+    qs= qs.arg(id);
+    QSqlQuery q(db);
+    int result = -1;
+    q.prepare(qs);
+    q.exec();
+    q.next();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    result = q.value(0).toInt();
     return result;
 }
 

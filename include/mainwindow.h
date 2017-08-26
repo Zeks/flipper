@@ -37,6 +37,12 @@ class MainWindow;
 }
 
 
+struct BuildRecommendationParams{
+    QString tag;
+    int minTagCountMatch;
+    int alwaysPickAuthorOnThisMatchCount;
+    double threshholdRatio;
+};
 
 
 class MainWindow : public QMainWindow
@@ -176,6 +182,8 @@ private:
     //void UpdateTagStatsPerFic();
     void ReprocessAuthors();
     void ReprocessTagSumRecs();
+    void ProcessListIntoRecommendations(QString list);
+    void BuildRecommendations(BuildRecommendationParams params);
 
 public slots:
     void ProcessFandoms(WebPage webPage);
