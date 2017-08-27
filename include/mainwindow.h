@@ -20,6 +20,7 @@
 #include <QThread>
 #include <functional>
 #include "tagwidget.h"
+#include "storyfilter.h"
 #include "libs/UniversalModels/include/TableDataInterface.h"
 #include "libs/UniversalModels/include/TableDataListHolder.h"
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
@@ -174,6 +175,9 @@ private:
     QThread pageThread;
     PageThreadWorker* worker = nullptr;
     QList<WebPage> pageQueue;
+
+    core::StoryFilter filter;
+
     void LoadMoreAuthors(bool reprocessCache = false);
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
@@ -184,7 +188,7 @@ private:
     void ReprocessTagSumRecs();
     void ProcessListIntoRecommendations(QString list);
     void BuildRecommendations(BuildRecommendationParams params);
-
+    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);
 public slots:
     void ProcessFandoms(WebPage webPage);
     void ProcessCrossovers(WebPage webPage);

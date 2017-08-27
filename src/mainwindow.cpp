@@ -650,7 +650,7 @@ QSqlQuery MainWindow::BuildQuery()
         }
     }
 
-    if(currentSearchButton == MainWindow::lfbp_recs)
+    if(filter.mode == core::StoryFilter::filtering_in_recommendations)
     {
         QString qsl = " and id in (select fic_id from recommendations %1)";
 
@@ -765,7 +765,7 @@ QSqlQuery MainWindow::BuildQuery()
     not_tags.chop(1);
 
     //QString queryString;
-    if(currentSearchButton == MainWindow::lfbp_search)
+    if(filter.mode == core::StoryFilter::filtering_in_fics)
     {
         if(tagsMatter)
         {
@@ -1193,7 +1193,7 @@ QString MainWindow::CreateLimitQueryPart()
 
 void MainWindow::LoadMoreAuthors(bool reprocessCache)
 {
-    currentSearchButton = MainWindow::lfbp_recs;
+    filter.mode = core::StoryFilter::filtering_in_recommendations;
     QStringList uniqueAuthors = GetUniqueAuthorsFromActiveRecommenderSet();
     AddToProgressLog("Authors: " + QString::number(uniqueAuthors.size()));
 
@@ -1299,7 +1299,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
 
 void MainWindow::UpdateAllAuthorsWith(std::function<void(Recommender, WebPage)> updater)
 {
-    currentSearchButton = MainWindow::lfbp_recs;
+    filter.mode = core::StoryFilter::filtering_in_recommendations;
     auto authors = database::GetAllAuthors("ffn");
     AddToProgressLog("Authors: " + QString::number(authors.size()));
 
@@ -1857,7 +1857,7 @@ void MainWindow::OnSectionChanged(QString)
 
 void MainWindow::on_pbLoadDatabase_clicked()
 {
-    currentSearchButton = MainWindow::lfbp_search;
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     LoadData();
 
     ui->edtResults->setUpdatesEnabled(true);
@@ -2161,7 +2161,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
 
 void MainWindow::on_pbLoadPage_clicked()
 {
-    currentSearchButton = MainWindow::lfbp_recs;
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
     auto startPageRequest = std::chrono::high_resolution_clock::now();
     auto page = RequestPage(ui->leAuthorUrl->text(),  ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache);
     auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
@@ -2211,8 +2211,7 @@ void MainWindow::on_pbRemoveRecommender_clicked()
 
 void MainWindow::on_pbOpenRecommendations_clicked()
 {
-
-    currentSearchButton = MainWindow::lfbp_recs;
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
 
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
@@ -2231,7 +2230,8 @@ void MainWindow::on_pbOpenRecommendations_clicked()
 
 void MainWindow::on_pbLoadAllRecommenders_clicked()
 {
-    currentSearchButton = MainWindow::lfbp_recs;
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+
     auto startPageRequest = std::chrono::high_resolution_clock::now();
     for(auto recommender: recommenders.values())
     {
@@ -2265,7 +2265,8 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
 
 void MainWindow::on_pbOpenWholeList_clicked()
 {
-    currentSearchButton = MainWindow::lfbp_recs;
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
@@ -2330,6 +2331,38 @@ void MainWindow::BuildRecommendations(BuildRecommendationParams params)
         recommendersModel->setStringList(result);
     }
     db.commit();
+}
+
+core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode)
+{
+    core::StoryFilter filter;
+    filter.activeTags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    filter.allowNoGenre = ui->chkNoGenre->isChecked();
+    filter.allowUnfinished = ui->chkShowUnfinished->isChecked();
+    filter.ensureActive = ui->chkActive->isChecked();
+    filter.ensureCompleted= ui->chkComplete->isChecked();
+    filter.fandom = ui->cbNormals->currentText();
+    filter.ficCategory = ui->cbSectionTypes->currentText();
+    filter.genreExclusion = core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text());
+    filter.genreInclusion = core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text());
+    filter.wordExclusion = core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text());
+    filter.wordInclusion = core::StoryFilter::ProcessDelimited(ui->leContainsWords->text());
+    filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
+    filter.includeCrossovers = ui->rbCrossovers->isChecked();
+    filter.maxFics = ui->sbMaxFicCount->value();
+    filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
+    filter.minWords= ui->cbMinWordCount->currentText().toInt();
+    filter.randomizeResults = ui->chkRandomizeSelection->isChecked();
+    filter.recentAndPopularFavRatio = ui->sbFavrateValue->value();
+    filter.recentCutoff = ui->dteFavRateCut->dateTime();
+    filter.reviewBias = static_cast<core::StoryFilter::EReviewBiasMode>(ui->cbBiasFavor->currentIndex());
+    filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
+    filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
+    filter.sortMode = static_cast<core::StoryFilter::EBiasOperator>(ui->cbSortMode->currentIndex());
+    filter.tagForRecommendations = ui->cbRecGroup->currentText();
+    //filter.titleInclusion = nothing for now
+    filter.website = "ffn"; // just ffn for now
+    filter.mode = mode;
 }
 
 void MainWindow::on_pbBuildRecs_clicked()
