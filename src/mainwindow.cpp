@@ -1389,7 +1389,7 @@ void MainWindow::ProcessTagIntoRecommenders(QString tag)
     if(!recommendersModel)
         return;
     QStringList result;
-    auto allStats = database::GetRecommenderStatsForTag(tag, "match_ratio", "asc");
+    auto allStats = database::GetRecommenderStatsForTag(tag, "(1/match_ratio)*match_count", "desc");
     for(auto stat : allStats)
         result.push_back(stat.authorName);
     recommendersModel->setStringList(result);
@@ -1898,10 +1898,10 @@ void MainWindow::on_cbSortMode_currentTextChanged(const QString &arg1)
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     if(ui->cbSortMode->currentText() == "Rec Count")
         ui->cbRecGroup->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
-    if(currentSearchButton == MainWindow::lfbp_search)
-        on_pbLoadDatabase_clicked();
-    else
-        on_pbLoadPage_clicked();
+//    if(currentSearchButton == MainWindow::lfbp_search)
+//        on_pbLoadDatabase_clicked();
+//    else
+//        on_pbLoadPage_clicked();
 }
 
 
