@@ -32,13 +32,15 @@ CREATE  INDEX if  not exists main.I_FANDOMS_SECTION ON FANDOMS (SECTION ASC);
  CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);
  INSERT INTO recent_fandoms(fandom, seq_num) SELECT 'base', 0 WHERE NOT EXISTS(SELECT 1 FROM fandom WHERE fandom = 'base');
  CREATE TABLE if not exists Recommenders (id INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE , name VARCHAR NOT NULL , url VARCHAR NOT NULL , page_data BLOB, page_updated DATETIME, author_updated DATETIME);
+ CREATE  INDEX if not exists I_RECOMMENDERS_NAME ON Recommenders (name ASC);
+ CREATE  INDEX if not exists I_RECOMMENDERS_URL ON Recommenders (URL ASC);
  CREATE TABLE if not exists Recommendations (recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , PRIMARY KEY (recommender_id, fic_id));
  CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
  CREATE INDEX if not exists I_RECOMMENDATIONS_FIC_TAG ON Recommendations (tag ASC, fic_id asc);
  CREATE INDEX if not exists I_RECOMMENDATIONS_REC_FIC ON Recommendations (recommender_id ASC, fic_id asc);
  CREATE INDEX if not exists I_RECOMMENDATIONS_TAG ON Recommendations (tag ASC);
  CREATE INDEX if not exists I_RECOMMENDATIONS_FIC ON Recommendations (fic_id ASC);
- CREATE  INDEX if  not exists I_FIC_ID ON Recommendations (fic_id ASC);
+ CREATE  INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);
  alter table Recommenders add column wave integer default 0;
  CREATE  INDEX if not exists I_RECOMMENDER_WAVE ON Recommenders (wave ASC);
  alter table fandoms add column fandom_multiplier integer default 1; 
@@ -58,6 +60,7 @@ CREATE  INDEX if  not exists main.I_FANDOMS_SECTION ON FANDOMS (SECTION ASC);
  CREATE INDEX if not exists  I_DAYSRUNNING ON fanfics (daysrunning ASC);
  CREATE INDEX if not exists  I_age ON fanfics (age ASC);
  CREATE INDEX if not exists  I_reviewstofavourites ON fanfics (reviewstofavourites ASC);
+ CREATE INDEX if not exists  I_FICS_FAVOURITES ON fanfics (favourites ASC);
 CREATE VIEW fandom_stats AS  select fandom, 
 cast (strftime('%s',CURRENT_TIMESTAMP)-strftime('%s',min(published)) AS real )/60/60/24/365  as age,
 min(published) as origin,

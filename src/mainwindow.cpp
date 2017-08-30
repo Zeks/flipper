@@ -1151,10 +1151,14 @@ void MainWindow::PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QSt
     randomIdLists.insert(query, QList<int>());
     QString qS = query;
 
-    int posFrom= qS.indexOf("from fanfics f where 1 = 1");
-    QString temp = qS.right(qS.length() - posFrom);
-    temp = temp.remove(CreateLimitQueryPart());
-    qS = "select id " + temp;
+    //int posFrom= qS.indexOf("from fanfics f where 1 = 1");
+    //QString temp = qS.right(qS.length() - posFrom);
+    //temp = temp.remove(CreateLimitQueryPart());
+    int posOfLIMIT= qS.indexOf("LIMIT");
+
+    //qS = "select id " + temp;
+    if(posOfLIMIT != -1)
+          qS=qS.left(posOfLIMIT);
     qDebug() << qS;
     QSqlQuery q = bindQuery(qS);
     q.exec();
