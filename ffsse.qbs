@@ -42,6 +42,7 @@ files: [
         "include/pagegetter.h",
         "include/parse.h",
         "include/querybuilder.h",
+        "include/queryinterfaces.h",
         "include/section.h",
         "include/storyfilter.h",
         "include/tagwidget.h",

@@ -137,6 +137,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    queryBuilder.SetIdRNGgenerator(new core::DefaultRNGgenerator());
     ui->chkShowDirectRecs->setVisible(false);
     ui->pbFirstWave->setVisible(false);
 
@@ -196,8 +197,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
+
         if(ui->gbTagFilters->isChecked() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0)
+        {
+            filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
             LoadData();
+        }
         ui->edtResults->setUpdatesEnabled(true);
         ui->edtResults->setReadOnly(true);
         holder->SetData(fanfics);
@@ -595,233 +600,17 @@ void MainWindow::LoadData()
 QSqlQuery MainWindow::BuildQuery()
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString queryString = "select ID, ";
-    //if(ui->cbCustomFilters->currentText() == "New From Popular")
-    queryString+= " (SELECT sumfaves FROM recommenders where name = f.author) as sumfaves, ";
-    queryString+= " (SELECT sumrecs FROM RecommendationFicStats rfs where rfs.fic_id = f.id and rfs.tag = '%1') as sumrecs, ";
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    bool directRecsChecked = ui->chkShowDirectRecs->isChecked();
-    bool directRecsVisible = settings.value("Settings/showExperimentaWaveparser", false).toBool();
-    QString wave = (directRecsChecked || !directRecsVisible) ? QString::number(0): QString::number(2);
-    queryString=queryString.arg(ui->cbRecGroup->currentText());
-
-    queryString+=" f.* from fanfics f where 1 = 1 " ;
-    if(ui->cbMinWordCount->currentText().toInt() > 0)
-        queryString += " and wordcount > :minwordcount ";
-    if(ui->cbMaxWordCount->currentText().toInt() > 0)
-        queryString += " and wordcount < :maxwordcount ";
-
-    if(ui->chkFaveLimitActivated->isChecked() && ui->sbMinimumFavourites->value() > 0)
-        queryString += " and favourites > :favourites ";
-
-    if(ui->chkGenrePlus->isChecked() && !ui->leContainsGenre->text().trimmed().isEmpty())
-        for(auto genre : ui->leContainsGenre->text().trimmed().split(" "))
-            queryString += QString(" AND genres like '%%1%' ").arg(genre);
-
-    if(ui->chkGenreMinus->isChecked() && !ui->leNotContainsGenre->text().trimmed().isEmpty())
-        for(auto genre : ui->leNotContainsGenre->text().trimmed().split(" "))
-            queryString += QString(" AND genres not like '%%1%' ").arg(genre);
-    if(ui->cbSortMode->currentText() == "Fav Rate")
-        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(ui->sbFavrateValue->value()) + " OR  favourites > 1000) ";
-    if(ui->chkWordsPlus->isChecked())
+    auto query = queryBuilder.Build(filter);
+    QSqlQuery q(db);
+    q.prepare(query.str);
+    auto it = query.bindings.begin();
+    auto end = query.bindings.end();
+    while(it != end)
     {
-        for(QString word: ui->leContainsWords->text().trimmed().split(" "))
-        {
-            if(word.trimmed().isEmpty())
-                continue;
-            queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
-        }
+        qDebug() << it.key() << " " << it.value();
+        q.bindValue(it.key(), it.value());
+        ++it;
     }
-    if(ui->cbSortMode->currentText() == "Rec Count")
-    {
-        queryString += QString(" AND sumrecs > 0 ");
-    }
-
-    queryString+= BuildBias();
-
-    if(ui->chkWordsMinus->isChecked())
-    {
-        for(QString word: ui->leNotContainsWords->text().trimmed().split(" "))
-        {
-            if(word.trimmed().isEmpty())
-                continue;
-            queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
-        }
-    }
-
-    if(filter.mode == core::StoryFilter::filtering_in_recommendations)
-    {
-        QString qsl = " and id in (select fic_id from recommendations %1)";
-
-        if(!ui->leAuthorUrl->text().trimmed().isEmpty())
-            qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(currentRecommenderId)));
-        else
-            qsl=qsl.arg(QString(""));
-        queryString+=qsl;
-    }
-
-    QString tags, not_tags;
-
-    QString diffField;
-    if(ui->cbSortMode->currentText() == "Wordcount")
-        diffField = " WORDCOUNT DESC";
-    if(ui->cbSortMode->currentText() == "WCRC-R")
-        diffField = " (wcr ) asc";
-    else if(ui->cbSortMode->currentText() == "Favourites")
-        diffField = " FAVOURITES DESC";
-    else if(ui->cbSortMode->currentText() == "Update Date")
-        diffField = " updated DESC";
-    else if(ui->cbSortMode->currentText() == "Experimental")
-    {
-        diffField =  " 1.3*(favourites*1.0/(select max(favourites) from fanfics f2 where f2.fandom = fandom))*(case when daysrunning < 90 then 2.5 when daysrunning < 365 then 2 else 1 end) "
-                     " + 20/(wcr_adjusted) desc";
-    }
-    else if(ui->cbSortMode->currentText() == "Rec Count")
-        diffField = " sumrecs desc";
-    else if(ui->cbSortMode->currentText() == "Fav Rate")
-        diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
-
-
-    bool tagsMatter = !ui->chkIgnoreTags->isChecked();
-    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Longest Running")
-    {
-        queryString =  "select ID, julianday(f.updated) - julianday(f.published) as datediff, f.* from fanfics f where 1 = 1 and datediff > 0  ";
-        diffField = "datediff desc";
-        tagsMatter = false;
-    }
-    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Behemoth Chapters")
-    {
-        queryString = "select ID, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
-        diffField = "datediff desc";
-        tagsMatter = false;
-    }
-    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Splinched")
-    {
-        queryString = "select ID, f.wordcount / f.chapters as datediff, f.* from fanfics f where 1 = 1 ";
-        diffField = "datediff asc";
-        tagsMatter = false;
-    }
-    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Catch'Em'All")
-    {
-        queryString = "select ID, f.* from fanfics f where 1 = 1 and length(characters) > 40 ";
-        diffField = "length(characters) desc";
-        tagsMatter = false;
-    }
-    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "Dumped")
-    {
-        queryString+=QString(" and abs(cast("
-                             "("
-                             " strftime('%s',f.updated)-strftime('%s',f.published) "
-                             " ) AS real "
-                             " )/60/60/24) < 60 ");
-    }
-
-
-    if(ui->chkCustomFilter->isChecked() && ui->cbCustomFilters->currentText() == "One Liners")
-    {
-        queryString = "select ID, f.* from fanfics f where 1 = 1 and summary not like '%sequel%'"
-                      "and summary not like '%revision%'"
-                      "and summary not like '%rewrite%'"
-                      "and summary not like '%abandoned%'"
-                      "and summary not like '%part%'"
-                      "and summary not like '%complete%'"
-                      "and summary not like '%adopted%'"
-                      "and length(summary) < 100 "
-                      "and summary not like '%discontinued%'";
-
-        diffField = "length(summary) asc";
-        tagsMatter = false;
-    }
-    if(ui->chkComplete->isChecked())
-        queryString+=QString(" and  complete = 1");
-
-    QString activeString = " cast("
-                           "("
-                           " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
-                           " ) AS real "
-                           " )/60/60/24 >-365";
-
-    if(!ui->chkShowUnfinished->isChecked())
-        queryString+=QString(" and  ( complete = 1 or " + activeString + " )");
-
-    if(!ui->chkNoGenre->isChecked())
-        queryString+=QString(" and  ( genres != 'not found' )");
-
-    if(ui->chkActive->isChecked())
-        queryString+=QString(" and " + activeString);
-
-    if(ui->rbNormal->isChecked())
-        queryString+=QString(" and  f.fandom like '%%1%'").arg(ui->cbNormals->currentText());
-    else if(ui->rbCrossovers->isChecked())
-        queryString+=QString(" and  f.fandom like '%%1%' and f.fandom like '%CROSSOVER%'").arg(ui->cbNormals->currentText());
-    database::PushFandom(ui->cbNormals->currentText().trimmed());
-    recentFandomsModel->setStringList(database::FetchRecentFandoms());
-    ui->lvTrackedFandoms->setModel(recentFandomsModel);
-    for(auto tag : ui->wdgTagsPlaceholder->GetSelectedTags())
-        tags.push_back(WrapTag(tag) + "|");
-
-    tags.chop(1);
-    not_tags.chop(1);
-
-    //QString queryString;
-    if(filter.mode == core::StoryFilter::filtering_in_fics)
-    {
-        if(tagsMatter)
-        {
-            if(!tags.isEmpty())
-                queryString +=" and cfRegexp(:tags, tags) ";
-            else
-                queryString +=" and tags = ' none ' ";
-        }
-    }
-    else
-    {
-        if(ui->chkShowRecsRegardlessOfTags->isChecked())
-            queryString += QString("");
-        else
-            queryString += QString(" and tags = ' none ' ");
-    }
-
-    if(ui->cbSortMode->currentText() == "Fav Rate")
-    {
-        queryString+= " and published <> updated and published > date('now', '-" + QString::number(ui->dteFavRateCut->date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
-    }
-
-    if(ui->cbSortMode->currentText() == "New From Popular")
-    {
-        queryString+="and published > date('now', '-1 years') and updated > date('now', '-60 days')";
-        diffField = " sumfaves desc";
-    }
-
-
-    queryString+="COLLATE NOCASE ORDER BY " + diffField;
-    queryString+=CreateLimitQueryPart();
-
-    std::function<QSqlQuery(QString)> bindQuery =
-            [&](QString qs){
-        QSqlQuery q(db);
-        q.prepare(qs);
-
-        if(ui->cbMinWordCount->currentText().toInt() > 0)
-            q.bindValue(":minwordcount", ui->cbMinWordCount->currentText().toInt());
-        if(ui->cbMaxWordCount->currentText().toInt() > 0)
-            q.bindValue(":maxwordcount", ui->cbMaxWordCount->currentText().toInt());
-        if(ui->sbMinimumFavourites->value() > 0)
-            q.bindValue(":favourites", ui->sbMinimumFavourites->value());
-
-        q.bindValue(":tags", tags);
-        q.bindValue(":rectag", ui->cbRecGroup->currentText());
-        q.bindValue(":not_tags", not_tags);
-        return q;
-    };
-
-    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
-    if(ui->chkRandomizeSelection->isChecked() && maxFicCountValue > 0 && maxFicCountValue < 51)
-    {
-        PopulateIdList(bindQuery, queryString);
-    }
-    auto q = bindQuery(AddIdList(queryString, maxFicCountValue));
     return q;
 }
 
@@ -2335,6 +2124,11 @@ void MainWindow::BuildRecommendations(BuildRecommendationParams params)
 
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode)
 {
+    auto valueIfChecked = [](QCheckBox* box, auto value){
+        if(box->isChecked())
+            return value;
+        return decltype(value)();
+    };
     core::StoryFilter filter;
     filter.activeTags = ui->wdgTagsPlaceholder->GetSelectedTags();
     filter.allowNoGenre = ui->chkNoGenre->isChecked();
@@ -2343,13 +2137,14 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = ui->cbNormals->currentText();
     filter.ficCategory = ui->cbSectionTypes->currentText();
-    filter.genreExclusion = core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text());
-    filter.genreInclusion = core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text());
-    filter.wordExclusion = core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text());
-    filter.wordInclusion = core::StoryFilter::ProcessDelimited(ui->leContainsWords->text());
-    filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
+    filter.genreExclusion = valueIfChecked(ui->chkGenreMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text(), "###"));
+    filter.genreInclusion = valueIfChecked(ui->chkGenrePlus,core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text(), "###"));
+    filter.wordExclusion = valueIfChecked(ui->chkWordsMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text(), "###"));
+    filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
+    filter.ignoreAlreadyTagged = !ui->chkIgnoreTags->isChecked();
     filter.includeCrossovers = ui->rbCrossovers->isChecked();
-    filter.maxFics = ui->sbMaxFicCount->value();
+    filter.maxFics = valueIfChecked(ui->chkFicLimitActivated, ui->sbMaxFicCount->value());
+    filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
     filter.minWords= ui->cbMinWordCount->currentText().toInt();
     filter.randomizeResults = ui->chkRandomizeSelection->isChecked();
@@ -2358,11 +2153,12 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.reviewBias = static_cast<core::StoryFilter::EReviewBiasMode>(ui->cbBiasFavor->currentIndex());
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
-    filter.sortMode = static_cast<core::StoryFilter::EBiasOperator>(ui->cbSortMode->currentIndex());
+    filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex());
     filter.tagForRecommendations = ui->cbRecGroup->currentText();
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
+    return filter;
 }
 
 void MainWindow::on_pbBuildRecs_clicked()

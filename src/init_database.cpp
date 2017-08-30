@@ -1363,5 +1363,36 @@ int GetFicDBIdByDelimitedSiteId(QString id)
     return result;
 }
 
+QStringList ObtainIdList(core::Query query)
+{
+    QString where = query.str;
+    QStringList result;
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select group_concat(id, ',') as merged, " + where);
+    qs= qs.arg(where);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    auto it = query.bindings.begin();
+    auto end = query.bindings.end();
+    while(it != end)
+    {
+        qDebug() << it.key() << " " << it.value();
+        q.bindValue(it.key(), it.value());
+        ++it;
+    }
+    q.exec();
+
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return result;
+    }
+    q.next();
+    auto temp = q.value("merged").toString();
+    result = temp.split(",");
+    return result;
+}
+
 
 }

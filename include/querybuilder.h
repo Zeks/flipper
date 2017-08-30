@@ -1,32 +1,28 @@
 #pragma once
-#include "storyfilter.h"
-#include <QVariantHash>
+
+#include "queryinterfaces.h"
+
+#include <QSqlDatabase>
 #include <functional>
+#include <random>
 namespace core{
 
-struct Query
-{
-    QString str;
-    QVariantHash bindings;
+struct DefaultRNGgenerator : public IRNGGenerator{
+    virtual QString Get(Query where);
+    QHash<QString, QStringList> randomIdLists;
 };
 
-class IQueryBuilder
-{
-public:
-    virtual ~IQueryBuilder();
-    virtual QString Build(StoryFilter) = 0;
-    Query query;
-    std::function<QList<int>(QString)> idListAccess;
-    QHash<QString, QList<int>> randomIdLists;
-};
+
 class DefaultQueryBuilder : public IQueryBuilder
 {
 public:
-    QString Build(StoryFilter);
-
+    Query Build(StoryFilter);
+    //Query BuildIdQuery(StoryFilter);
+    void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
 
 private:
-    QString CreateFields(StoryFilter);
+    //QString CreateIndexField(StoryFilter);
+    QString CreateCustomFields(StoryFilter);
     QString CreateWhere(StoryFilter);
 
     QString ProcessBias(StoryFilter);
@@ -43,13 +39,11 @@ private:
     QString ProcessNormalOrCrossover(StoryFilter);
     QString ProcessFilteringMode(StoryFilter);
     QString ProcessActiveTags(StoryFilter);
-    QString ProcessIdRandomization(StoryFilter);
-
-
-    QString ProcessBindings(StoryFilter);
+    QString ProcessRandomization(StoryFilter, QString);
+    void ProcessBindings(StoryFilter, Query&);
 
     QString BuildSortMode(StoryFilter);
-    QString BuildConditions(StoryFilter);
+    QString CreateLimitQueryPart(StoryFilter);
 
     //select group_concat(id, ',') from recommenders order by id asc
     QString BuildIdListQuery(StoryFilter);
@@ -57,8 +51,9 @@ private:
     QString queryString;
     QString diffField;
     QString activeTags;
-
-
-
+    QString wherePart;
+    QScopedPointer<IRNGGenerator> rng;
+    Query query;
+    Query idQuery;
 };
 }

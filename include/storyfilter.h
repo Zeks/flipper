@@ -4,6 +4,11 @@
 
 namespace core{
 struct StoryFilter{
+    static QStringList ProcessDelimited(QString str, QString delimiter){
+        if(str.contains(delimiter))
+            return str.split(delimiter);
+        return str.split(" ");
+    }
     enum ESortMode
     {
         wordcount =  0,

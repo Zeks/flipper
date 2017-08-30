@@ -1,6 +1,7 @@
 #pragma once
 #include <QString>
 #include "section.h"
+#include "queryinterfaces.h"
 
 namespace database{
 
@@ -64,4 +65,5 @@ struct WriteStats
     QVector<int> GetAllFicIDsFromRecommendations(QString tag);
     bool UpdateTagStatsPerFic(QString tag);
     int GetFicDBIdByDelimitedSiteId(QString id);
+    QStringList ObtainIdList(core::Query);
 }

@@ -27,6 +27,7 @@
 #include "qml_ficmodel.h"
 #include "include/section.h"
 #include "include/pagegetter.h"
+#include "querybuilder.h"
 
 class QSortFilterProxyModel;
 class QQuickWidget;
@@ -175,7 +176,7 @@ private:
     QThread pageThread;
     PageThreadWorker* worker = nullptr;
     QList<WebPage> pageQueue;
-
+    core::DefaultQueryBuilder queryBuilder;
     core::StoryFilter filter;
 
     void LoadMoreAuthors(bool reprocessCache = false);

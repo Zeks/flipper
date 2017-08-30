@@ -1,4 +1,6 @@
 #include "querybuilder.h"
+#include "init_database.h"
+#include <QDebug>
 
 namespace  core{
 QString WrapTag(QString tag)
@@ -6,61 +8,51 @@ QString WrapTag(QString tag)
     tag= "(.{0,}" + tag + ".{0,})";
     return tag;
 }
-QString CreateLimitQueryPart(StoryFilter filter)
+
+Query DefaultQueryBuilder::Build(StoryFilter filter)
 {
-    QString result;
-    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
-    if(maxFicCountValue > 0 && maxFicCountValue < 51)
-        result+= QString(" LIMIT %1 ").arg(QString::number(maxFicCountValue));
-    return result;
-}
-QString DefaultQueryBuilder::Build(StoryFilter filter)
-{
-
-    ProcessBindings(filter);
-
-    queryString+= CreateFields(filter);
-    queryString+=" f.* from fanfics f where 1 = 1 " ;
-    queryString+= CreateWhere(filter);
-    queryString+="COLLATE NOCASE ORDER BY " + diffField;
-    queryString+=CreateLimitQueryPart(filter);
-
-    std::function<QSqlQuery(QString)> bindQuery =
-            [&](QString qs){
-        QSqlQuery q(db);
-        q.prepare(qs);
-
-        if(ui->cbMinWordCount->currentText().toInt() > 0)
-            q.bindValue(":minwordcount", ui->cbMinWordCount->currentText().toInt());
-        if(ui->cbMaxWordCount->currentText().toInt() > 0)
-            q.bindValue(":maxwordcount", ui->cbMaxWordCount->currentText().toInt());
-        if(ui->sbMinimumFavourites->value() > 0)
-            q.bindValue(":favourites", ui->sbMinimumFavourites->value());
-
-        q.bindValue(":tags", tags);
-        q.bindValue(":rectag", ui->cbRecGroup->currentText());
-        return q;
-    };
-
-    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
-    if(ui->chkRandomizeSelection->isChecked() && maxFicCountValue > 0 && maxFicCountValue < 51)
-    {
-        PopulateIdList(bindQuery, queryString);
-    }
-    auto q = bindQuery(AddIdList(queryString, maxFicCountValue));
-    return q;
+    query.Clear();
+    ProcessBindings(filter, query);
+    queryString.clear();
+    queryString = "ID, ";
+    queryString+= CreateCustomFields(filter) + " f.* ";
+    queryString+=" from fanfics f where 1 = 1 " ;
+    QString where = CreateWhere(filter);
+    queryString+= where;
+    queryString+= ProcessRandomization(filter, queryString);
+    queryString+= BuildSortMode(filter);
+    queryString+= CreateLimitQueryPart(filter);
+    qDebug() << queryString;
+    query.str = "select " + queryString;
+    return query;
 }
 
-QString DefaultQueryBuilder::CreateFields(StoryFilter filter)
+//Query DefaultQueryBuilder::BuildIdQuery(StoryFilter)
+//{
+//    idQuery.Clear();
+//    queryString.clear();
+//    ProcessBindings(filter, idQuery);
+//    queryString = "select ID, ";
+//    queryString+=" from fanfics f where 1 = 1 " ;
+//    queryString+= CreateWhere(filter);
+//    queryString+= CreateLimitQueryPart(filter);
+//    idQuery.str = queryString;
+//    return idQuery;
+
+//}
+
+QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
 {
-    queryString = "select ID, ";
+    QString queryString;
     queryString+=ProcessSumFaves(filter);
     queryString+=ProcessSumRecs(filter);
+    return queryString;
 }
 
-QString DefaultQueryBuilder::CreateWhere(StoryFilter)
+QString DefaultQueryBuilder::CreateWhere(StoryFilter filter)
 {
-    diffField = ProcessDiffField(filter);
+    QString queryString;
+
     activeTags = ProcessActiveTags(filter)    ;
 
     queryString+= ProcessWordcount(filter);
@@ -70,12 +62,14 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter)
     queryString+= ProcessWhereSortMode(filter);
     queryString+= ProcessActiveRecommendationsPart(filter);
 
+
     if(filter.minFavourites > 0)
         queryString += " and favourites > :favourites ";
 
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
     queryString+= ProcessFilteringMode(filter);
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessBias(StoryFilter filter)
@@ -111,14 +105,17 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
 {
+    QString queryString;
     if(filter.minWords > 0)
         queryString += " and wordcount > :minwordcount ";
     if(filter.maxWords > 0)
         queryString += " and wordcount < :maxwordcount ";
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
 {
+    QString queryString;
     if(filter.genreInclusion.size() > 0)
         for(auto genre : filter.genreInclusion)
             queryString += QString(" AND genres like '%%1%' ").arg(genre);
@@ -126,10 +123,12 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
     if(filter.genreExclusion.size() > 0)
         for(auto genre : filter.genreExclusion)
             queryString += QString(" AND genres not like '%%1%' ").arg(genre);
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
 {
+    QString queryString;
     if(filter.wordInclusion.size() > 0)
     {
         for(QString word: filter.wordInclusion)
@@ -148,31 +147,36 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
             queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
         }
     }
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessActiveRecommendationsPart(StoryFilter filter)
 {
+    QString queryString;
     if(filter.mode == core::StoryFilter::filtering_in_recommendations)
     {
         QString qsl = " and id in (select fic_id from recommendations %1)";
 
         if(filter.useThisRecommenderOnly != -1)
-            qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(currentRecommenderId)));
+            qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(filter.useThisRecommenderOnly)));
         else
             qsl=qsl.arg(QString(""));
         queryString+=qsl;
     }
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 {
+    QString queryString;
     if(filter.sortMode == StoryFilter::favrate)
-        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(ui->sbFavrateValue->value()) + " OR  favourites > 1000) ";
+        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
 
     if(filter.sortMode == StoryFilter::reccount)
         queryString += QString(" AND sumrecs > 0 ");
     if(filter.sortMode == StoryFilter::favrate)
-        queryString+= " and published <> updated and published > date('now', '-" + QString::number(ui->dteFavRateCut->date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
+        queryString+= " and published <> updated and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
@@ -195,6 +199,7 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
 {
+    QString queryString;
     QString activeString = " cast("
                            "("
                            " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
@@ -212,22 +217,26 @@ QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
 
     if(filter.ensureActive)
         queryString+=QString(" and " + activeString);
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
 {
+    QString queryString;
     if(filter.includeCrossovers)
         queryString+=QString(" and  f.fandom like '%%1%' and f.fandom like '%CROSSOVER%'").arg(filter.fandom);
     else
         queryString+=QString(" and  f.fandom like '%%1%'").arg(filter.fandom);
+    return queryString;
 
 }
 
 QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
 {
+    QString queryString;
     if(filter.mode == core::StoryFilter::filtering_in_fics)
     {
-        if(!tags.isEmpty())
+        if(!activeTags.isEmpty())
             queryString +=" and cfRegexp(:tags, tags) ";
         else
             queryString +=" and tags = ' none ' ";
@@ -240,43 +249,89 @@ QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
         else
             queryString += QString("");
     }
+    return queryString;
 }
 
 QString DefaultQueryBuilder::ProcessActiveTags(StoryFilter filter)
 {
     QString tags;
+    if(filter.activeTags.size() == 0)
+        return tags;
     for(auto tag : filter.activeTags)
         tags.push_back(WrapTag(tag) + "|");
 
     tags.chop(1);
-
+    return tags;
 }
 
-QString DefaultQueryBuilder::ProcessIdRandomization(StoryFilter)
+QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wherePart)
 {
-
+    QString result;
+    if(!filter.randomizeResults)
+        return result;
+    QStringList idList;
+    QString part = " and ID IN ( %1 ) ";
+    for(int i = 0; i < filter.maxFics; i++)
+    {
+        if(rng)
+        {
+            Query q;
+            q.bindings = query.bindings;
+            q.str = wherePart;
+            idList+=rng->Get(q);
+        }
+    }
+    if(idList.size() == 0)
+        return result;
+    result = part.arg(idList.join(","));
+    return result;
 }
 
-QString DefaultQueryBuilder::ProcessBindings(StoryFilter filter)
+void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, Query& q)
 {
     if(filter.minWords > 0)
-        query.bindings[":minwordcount"] = filter.minWords;
+        q.bindings[":minwordcount"] = filter.minWords;
     if(filter.maxWords > 0)
-        query.bindings[":maxwordcount"] = filter.maxWords;
+        q.bindings[":maxwordcount"] = filter.maxWords;
     if(filter.minFavourites> 0)
-        query.bindings[":favourites"] = filter.minFavourites;
-    query.bindings[":tags"] = filter.activeTags;
-    query.bindings[":rectag"] = filter.tagForRecommendations;
+        q.bindings[":favourites"] = filter.minFavourites;
+    if(!filter.activeTags.isEmpty())
+        q.bindings[":tags"] = activeTags;
+    //q.bindings[":rectag"] = filter.tagForRecommendations;
 }
 
-QString DefaultQueryBuilder::BuildSortMode(StoryFilter)
+QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)
 {
-
+    QString queryString;
+    diffField = ProcessDiffField(filter);
+    queryString+=" ORDER BY " + diffField;
+    return queryString;
 }
 
-QString DefaultQueryBuilder::BuildConditions(StoryFilter)
+QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
 {
+    QString result;
+    int maxFicCountValue = filter.maxFics;
+    if(maxFicCountValue > 0)
+        result+= QString(" LIMIT %1 COLLATE NOCASE ").arg(QString::number(maxFicCountValue));
+    return result;
+}
 
+
+QString DefaultRNGgenerator::Get(Query query)
+{
+    QString where = query.str;
+    if(!randomIdLists.contains(where))
+    {
+        auto idList = database::ObtainIdList(query);
+        if(idList.size() == 0)
+            return -1;
+        randomIdLists[where] = idList;
+    }
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 eng(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(0, randomIdLists[where].size()); // define the range
+    return randomIdLists[where][distr(eng)];
 }
 
 }
