@@ -983,7 +983,17 @@ QString MainWindow::CreateLimitQueryPart()
 void MainWindow::LoadMoreAuthors(bool reprocessCache)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
-    QStringList uniqueAuthors = GetUniqueAuthorsFromActiveRecommenderSet();
+    //QStringList uniqueAuthors = GetUniqueAuthorsFromActiveRecommenderSet();
+    QStringList uniqueAuthors ;
+    if(uniqueAuthors.size() == 0)
+    {
+        auto authors = database::GetAllAuthors("ffn");
+        uniqueAuthors.reserve(authors.size());
+        for(auto author: authors)
+        {
+            uniqueAuthors.push_back(author.url);
+        }
+    }
     AddToProgressLog("Authors: " + QString::number(uniqueAuthors.size()));
 
     ReinitProgressbar(uniqueAuthors.size());
@@ -1002,6 +1012,9 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     An<PageManager> pager;
     int cachedPages = 0;
     int loadedPages = 0;
+    QSqlDatabase db = QSqlDatabase::database();
+    bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
+    bool transOpen = db.transaction();
     do
     {
         futures.clear();
@@ -1021,6 +1034,8 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
         else
             cachedPages++;
 
+
+
         qDebug() << "Page loaded in: " << webPage.loadedIn;
         pbMain->setValue(pbMain->value()+1);
         pbMain->setTextVisible(true);
@@ -1029,9 +1044,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
         auto id = database::GetRecommenderId(webPage.url);
         if(id == -1 || reprocessCache)
         {
-            QSqlDatabase db = QSqlDatabase::database();
-            bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
-            bool transOpen = db.transaction();
+
             auto startRecLoad = std::chrono::high_resolution_clock::now();
 
 
@@ -1069,12 +1082,15 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
             }
             InsertLogIntoEditor(ui->edtResults, webPage.url);
             AddToProgressLog(" All Faves: " + QString::number(sum) + " ");
-            db.commit();
+
             elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
             qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
             ui->edtResults->ensureCursorVisible();
+
         }
     }while(!webPage.isLastPage);
+    db.commit();
+
     //parser.ClearDoneCache();
     ui->edtResults->clear();
     AddToProgressLog(" Pages read from cache: " + QString::number(cachedPages));
@@ -2072,8 +2088,9 @@ void MainWindow::on_pbOpenWholeList_clicked()
 
 void MainWindow::on_pbFirstWave_clicked()
 {
-    bool reprocessCache = !database::HasNoneTagInRecommendations();
-    LoadMoreAuthors(reprocessCache);
+    //!!! bool reprocessCache = !database::HasNoneTagInRecommendations();
+
+    LoadMoreAuthors(true);
 }
 
 void MainWindow::OnReloadRecLists()
@@ -2158,6 +2175,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
+    filter.useThisRecommenderOnly = database::GetRecommenderId(ui->leAuthorUrl->text());;
     return filter;
 }
 

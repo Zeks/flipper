@@ -4,6 +4,7 @@
 struct Section
 {
     int ID = -1;
+    int webId = -1;
     int start = 0;
     int end = 0;
 

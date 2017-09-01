@@ -81,7 +81,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     }
     if(!dataFound)
         return result;
-    qDebug() << q.record();
+    //qDebug() << q.record();
     result.url = url;
     result.isValid = true;
     if(q.value("COMPRESSED").toInt() == 1)

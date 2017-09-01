@@ -35,7 +35,7 @@ QList<Section> FavouriteStoryParser::ProcessPage(QString url, QString& str, int 
 
         GetStatSection(section, currentPosition, str);
 
-        GetTaggedSection(section.statSection.replace(",", ""), "([A-Za-z/\\-\\s&]+)\\s-\\sRated:", [&section](QString val){ section.fandom = val;});
+        GetTaggedSection(section.statSection.replace(",", ""), "(.*)(?=\\s-\\sRated:)", [&section](QString val){ section.fandom = val;});
         GetTaggedSection(section.statSection.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.wordCount = val;});
         GetTaggedSection(section.statSection.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.chapters = val;});
         GetTaggedSection(section.statSection.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.reviews = val;});
@@ -267,10 +267,18 @@ void FavouriteStoryParser::GetUrl(Section & section, int& startfrom, QString tex
     if(tempUrl.length() > 200)
     {
         QString currentSection = text.mid(startfrom);
-        qDebug() << currentSection;
-        qDebug() << currentSection;
+        //qDebug() << currentSection;
+        //qDebug() << currentSection;
     }
     section.url = text.mid(indexStart + 6,indexEnd - (indexStart + 6));
+    QRegExp rxWebId("/s/(\\d+)");
+    auto indexWeb = rxWebId.indexIn(section.url);
+    if(indexWeb != -1)
+    {
+        QString captured = rxWebId.cap(1);
+        section.webId = captured.toInt();
+        section.url=section.url.left(3 + captured.length());
+    }
     startfrom = indexEnd+2;
 }
 

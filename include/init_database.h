@@ -39,6 +39,7 @@ struct WriteStats
     void RemoveRecommender(const Recommender& recommender);
     void RemoveRecommender(int id);
     int GetFicIdByAuthorAndName(QString, QString);
+    int GetFicIdByWebId(int);
     int GetRecommenderId(QString url);
     int GetMatchCountForRecommenderOnTag(int recommender_id, QString tag);
     void DropFanficIndexes();
@@ -50,6 +51,7 @@ struct WriteStats
     void InstallCustomFunctions();
     void EnsureFandomsFilled();
     void EnsureWebIdsFilled();
+    void EnsureFFNUrlsShort();
     void ImportTags(QString anotherDatabase);
     bool EnsureTagForRecommendations();
     QStringList ReadAvailableRecTagGroups();
