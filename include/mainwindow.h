@@ -72,8 +72,8 @@ private:
     //QTableView* types_table = nullptr;
     FicModel* typetableModel = nullptr;
     QSharedPointer<TableDataInterface> typetableInterface;
-    TableDataListHolder<Section>* holder = nullptr;
-    QList<Section> fanfics;
+    TableDataListHolder<Fic>* holder = nullptr;
+    QList<Fic> fanfics;
     QSortFilterProxyModel* sortModel;
     int processedFics = 0;
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -99,7 +99,7 @@ private:
     QString BuildBias();
 
     //void LoadRecommendations(QString url);
-    void LoadIntoDB(Section&);
+    void LoadIntoDB(Fic&);
 
     QString WrapTag(QString tag);
     void HideCurrentID();

@@ -298,7 +298,7 @@ void database::BackupDatabase()
 
 }
 
-bool LoadIntoDB(Section & section)
+bool LoadIntoDB(Fic & section)
 {
     qDebug() << "Loading:" << section.title;
     QSqlDatabase db = QSqlDatabase::database();
@@ -339,7 +339,7 @@ bool LoadIntoDB(Section & section)
         QSqlQuery q(db);
         q.prepare(query);
         q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author);
+        q.bindValue(":author",section.author.name);
         q.bindValue(":title",section.title);
         q.bindValue(":wordcount",section.wordCount.toInt());
         q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
@@ -353,13 +353,13 @@ bool LoadIntoDB(Section & section)
         q.bindValue(":genres",section.genre);
         q.bindValue(":published",section.published);
         q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url);
+        q.bindValue(":url",section.url("ffn"));
         q.bindValue(":origin",section.origin);
         q.bindValue(":web_uid",section.webId);
         q.exec();
         if(q.lastError().isValid())
         {
-            qDebug() << "failed to insert: " << section.author << " " << section.title;
+            qDebug() << "failed to insert: " << section.author.name << " " << section.title;
             qDebug() << q.lastError();
         }
         loaded=true;
@@ -374,7 +374,7 @@ bool LoadIntoDB(Section & section)
         QSqlQuery q(db);
         q.prepare(query);
         q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author);
+        q.bindValue(":author",section.author.name);
         q.bindValue(":title",section.title);
 
         q.bindValue(":wordcount",section.wordCount.toInt());
@@ -389,12 +389,12 @@ bool LoadIntoDB(Section & section)
         q.bindValue(":genres",section.genre);
         q.bindValue(":published",section.published);
         q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url);
+        q.bindValue(":url",section.url("ffn"));
         q.bindValue(":web_uid",section.webId);
         q.exec();
         if(q.lastError().isValid())
         {
-            qDebug() << "failed to update: " << section.author << " " << section.title;
+            qDebug() << "failed to update: " << section.author.name << " " << section.title;
             qDebug() << q.lastError();
         }
         loaded=true;
@@ -402,7 +402,7 @@ bool LoadIntoDB(Section & section)
     return loaded;
 }
 
-bool LoadRecommendationIntoDB(Recommender &recommender,  Section &section)
+bool LoadRecommendationIntoDB(Recommender &recommender,  Fic &section)
 {
     // get recommender id from database if not write him
     // try to update fic inside the database via usual Load
@@ -654,7 +654,7 @@ void RebuildFanficIndexes()
     }
 }
 
-WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Section> & sections)
+WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Fic> & sections)
 {
     WriteStats result;
     result.requiresInsert.reserve(sections.size());
@@ -663,7 +663,7 @@ WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Section> & sections)
     QString getKeyQuery = "Select ( select count(*) from FANFICS where  web_uid = :web_uid) as COUNT_NAMED,"
                           " ( select count(*) from FANFICS where  web_uid = :web_uid and updated <> :updated) as count_updated"
                             " FROM FANFICS WHERE 1=1 ";
-    for(const Section& section : sections)
+    for(const Fic& section : sections)
     {
         QString filledQuery = getKeyQuery;
         QSqlQuery keyQ(db);
@@ -686,7 +686,7 @@ WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Section> & sections)
     return result;
 }
 
-bool UpdateInDB(Section &section)
+bool UpdateInDB(Fic &section)
 {
     bool loaded = false;
     QSqlDatabase db = QSqlDatabase::database();
@@ -697,7 +697,7 @@ bool UpdateInDB(Section &section)
     QSqlQuery q(db);
     q.prepare(query);
     q.bindValue(":fandom",section.fandom);
-    q.bindValue(":author",section.author);
+    q.bindValue(":author",section.author.name);
     q.bindValue(":title",section.title);
 
     q.bindValue(":wordcount",section.wordCount.toInt());
@@ -712,12 +712,12 @@ bool UpdateInDB(Section &section)
     q.bindValue(":genres",section.genre);
     q.bindValue(":published",section.published);
     q.bindValue(":updated",section.updated);
-    q.bindValue(":url",section.url);
+    q.bindValue(":url",section.url("ffn"));
     q.bindValue(":web_uid",section.webId);
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "failed to update: " << section.author << " " << section.title;
+        qDebug() << "failed to update: " << section.author.name << " " << section.title;
         qDebug() << q.lastError();
         return false;
     }
@@ -726,7 +726,7 @@ bool UpdateInDB(Section &section)
 
 }
 
-bool InsertIntoDB(Section &section)
+bool InsertIntoDB(Fic &section)
 {
     QString query = "INSERT INTO FANFICS (web_uid, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
                     "VALUES ( :web_uid,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
@@ -735,7 +735,7 @@ bool InsertIntoDB(Section &section)
     q.prepare(query);
     q.bindValue(":web_uid",section.webId);
     q.bindValue(":fandom",section.fandom);
-    q.bindValue(":author",section.author);
+    q.bindValue(":author",section.author.name);
     q.bindValue(":title",section.title);
     q.bindValue(":wordcount",section.wordCount.toInt());
     q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
@@ -749,12 +749,12 @@ bool InsertIntoDB(Section &section)
     q.bindValue(":genres",section.genre);
     q.bindValue(":published",section.published);
     q.bindValue(":updated",section.updated);
-    q.bindValue(":url",section.url);
+    q.bindValue(":url",section.url("ffn"));
     q.bindValue(":origin",section.origin);
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "failed to insert: " << section.author << " " << section.title;
+        qDebug() << "failed to insert: " << section.author.name << " " << section.title;
         qDebug() << q.lastError();
         return false;
     }

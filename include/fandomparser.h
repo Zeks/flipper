@@ -27,7 +27,7 @@ public:
     QString GetFandom(QString text);
 
     QStringList diagnostics;
-    QList<Section> processedStuff;
+    QList<Fic> processedStuff;
     database::WriteStats writeSections;
     Recommender recommender;
     QHash<QString, QString> alreadyDone;

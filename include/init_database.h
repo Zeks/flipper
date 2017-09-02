@@ -7,8 +7,8 @@ namespace database{
 
 struct WriteStats
 {
-    QList<Section> requiresInsert;
-    QList<Section> requiresUpdate;
+    QList<Fic> requiresInsert;
+    QList<Fic> requiresUpdate;
 };
     bool ReadDbFile(QString file, QString connectionName = "");
     bool ReindexTable(QString table);
@@ -27,12 +27,12 @@ struct WriteStats
     QStringList FetchTrackedFandoms();
     QStringList FetchTrackedCrossovers();
     void BackupDatabase();
-    bool LoadIntoDB(Section & section);
+    bool LoadIntoDB(Fic & section);
 
-    bool UpdateInDB(Section & section);
-    bool InsertIntoDB(Section & section);
+    bool UpdateInDB(Fic & section);
+    bool InsertIntoDB(Fic & section);
 
-    bool LoadRecommendationIntoDB(Recommender &recommender, Section &section);
+    bool LoadRecommendationIntoDB(Recommender &recommender, Fic &section);
     bool WriteRecommendation( Recommender& recommender, int id, QString tag = "none");
     void WriteRecommender(const Recommender& recommender);
     //void WriteRecommendersMetainfo(const Recommender& recommender);
@@ -46,7 +46,7 @@ struct WriteStats
     void RebuildFanficIndexes();
     void DropAllFanficIndexes();
     void RebuildAllFanficIndexes();
-    WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Section>&);
+    WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Fic>&);
     QDateTime GetMaxUpdateDateForSection(QStringList sections);
     void InstallCustomFunctions();
     void EnsureFandomsFilled();

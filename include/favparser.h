@@ -9,7 +9,7 @@ class FavouriteStoryParser
 {
 public:
 
-    QList<Section> ProcessPage(QString url,QString&, int authorWave = 0);
+    QList<Fic> ProcessPage(QString url,QString&, int authorWave = 0);
     Section GetSection( QString text, int start);
     QString ExtractRecommdenderNameFromUrl(QString url);
     void GetAuthor(Section& , int& startfrom, QString text);
@@ -34,7 +34,7 @@ public:
 
 
     QStringList diagnostics;
-    QList<Section> processedStuff;
+    QList<Fic> processedStuff;
     database::WriteStats writeSections;
     Recommender recommender;
     QHash<QString, QString> alreadyDone;
