@@ -68,4 +68,7 @@ struct WriteStats
     bool UpdateTagStatsPerFic(QString tag);
     int GetFicDBIdByDelimitedSiteId(QString id);
     QStringList ObtainIdList(core::Query);
+    void PassTagsIntoTagsTable();
+
+
 }

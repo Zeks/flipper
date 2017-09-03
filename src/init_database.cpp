@@ -18,6 +18,29 @@
 
 namespace database{
 
+bool ExecAndCheck(QSqlQuery& q)
+{
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+bool CheckExecution(QSqlQuery& q)
+{
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+
+
 void cfRegexp(sqlite3_context* ctx, int argc, sqlite3_value** argv)
 {
     QRegExp regex;
@@ -106,16 +129,11 @@ bool database::ReadDbFile(QString file, QString connectionName)
              else
                 db = QSqlDatabase::database();
              QSqlQuery q(db);
-             q.prepare(statement.trimmed());
-             q.exec();
-             if(q.lastError().isValid())
-             {
-                 qDebug() << q.lastError();
-                 qDebug() << q.lastQuery();
-             }
+             ExecAndCheck(q);
          }
      }
-     else return false;
+     else
+         return false;
      return true;
 }
 
@@ -144,11 +162,7 @@ void database::SetFandomTracked(QString fandom, bool crossover, bool tracked)
     qsl = qsl.arg(trackedPart).arg(QString(tracked ? "1" : "0")).arg(fandom);
     q1.prepare(qsl);
     q1.exec();
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    ExecAndCheck(q1);
 }
 
 void database::PushFandom(QString fandom)
@@ -159,21 +173,11 @@ void database::PushFandom(QString fandom)
     QSqlQuery q1(db);
     upsert1 = upsert1.arg(fandom);
     q1.prepare(upsert1);
-    q1.exec();
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    ExecAndCheck(q1);
     QSqlQuery q2(db);
     upsert2 = upsert2.arg(fandom);
     q2.prepare(upsert2);
-    q2.exec();
-    if(q2.lastError().isValid())
-    {
-        qDebug() << q2.lastError();
-        qDebug() << q2.lastQuery();
-    }
+    ExecAndCheck(q2);
 }
 
 void database::RebaseFandoms()
@@ -182,12 +186,7 @@ void database::RebaseFandoms()
     QSqlQuery q1(db);
     QString qsl = "UPDATE recent_fandoms SET seq_num = seq_num - (select min(seq_num) from recent_fandoms where fandom is not 'base') where fandom is not 'base'";
     q1.prepare(qsl);
-    q1.exec();
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    ExecAndCheck(q1);
 }
 
 QStringList database::FetchRecentFandoms()
@@ -202,11 +201,7 @@ QStringList database::FetchRecentFandoms()
     {
         result.push_back(q1.value(0).toString());
     }
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return result;
 }
 
@@ -220,12 +215,7 @@ bool database::FetchTrackStateForFandom( QString fandom, bool crossover)
     q1.prepare(qsl);
     q1.exec();
     q1.next();
-
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return q1.value(0).toBool();
 }
 
@@ -240,11 +230,7 @@ QStringList database::FetchTrackedFandoms()
     while(q1.next())
         result.push_back(q1.value(0).toString());
 
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return result;
 }
 
@@ -259,11 +245,8 @@ QStringList database::FetchTrackedCrossovers()
     while(q1.next())
         result.push_back(q1.value(0).toString());
 
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
+
     return result;
 }
 
@@ -314,9 +297,6 @@ bool LoadIntoDB(Section & section)
     keyQ.bindValue(":updated", section.updated);
     keyQ.exec();
     keyQ.next();
-    //qDebug() << keyQ.lastQuery();
-    //qDebug() << " named: " << keyQ.value(0).toInt();
-    //qDebug() << " updated: " << keyQ.value(1).toInt();
     if(keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0)
         isUpdate = true;
     if(keyQ.value(0).toInt() == 0)
@@ -332,7 +312,6 @@ bool LoadIntoDB(Section & section)
     if(isInsert)
     {
 
-        //qDebug() << "Inserting: " << section.author << " " << section.title << " " << section.fandom << " " << section.genre;
         QString query = "INSERT INTO FANFICS (web_uid FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
                         "VALUES (  :web_uid, :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
 
@@ -1396,6 +1375,47 @@ void EnsureFFNUrlsShort()
         qDebug() << q.lastError();
         qDebug() << q.lastQuery();
     }
+}
+
+void PassTagsIntoTagsTable()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    db.transaction();
+    QString qs = QString("select id, tags from fanfics where tags <> ' none ' order by tags");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+    while(q.next())
+    {
+        auto id = q.value("id").toInt();
+        auto tags = q.value("tags").toString();
+        if(tags.trimmed() == "none")
+            continue;
+        QStringList split = tags.split(" ", QString::SkipEmptyParts);
+        split.removeDuplicates();
+        split.removeAll("none");
+        qDebug() << split;
+        for(auto tag : split)
+        {
+            qs = QString("insert into fictags(fic_id, tag) values(:fic_id, :tag)");
+            QSqlQuery iq(db);
+            iq.prepare(qs);
+            iq.bindValue(":fic_id",id);
+            iq.bindValue(":tag", tag);
+            iq.exec();
+            if(iq.lastError().isValid())
+            {
+                qDebug() << iq.lastError();
+                qDebug() << iq.lastQuery();
+            }
+        }
+    }
+    db.commit();
 }
 
 

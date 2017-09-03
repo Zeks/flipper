@@ -12,7 +12,7 @@ QString WrapTag(QString tag)
 Query DefaultQueryBuilder::Build(StoryFilter filter)
 {
     query.Clear();
-    ProcessBindings(filter, query);
+
     queryString.clear();
     queryString = "ID, ";
     queryString+= CreateCustomFields(filter) + " f.* ";
@@ -22,6 +22,7 @@ Query DefaultQueryBuilder::Build(StoryFilter filter)
     queryString+= ProcessRandomization(filter, queryString);
     queryString+= BuildSortMode(filter);
     queryString+= CreateLimitQueryPart(filter);
+    ProcessBindings(filter, query);
     qDebug() << queryString;
     query.str = "select " + queryString;
     return query;
@@ -238,6 +239,8 @@ QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
     {
         if(!activeTags.isEmpty())
             queryString +=" and cfRegexp(:tags, tags) ";
+        if(filter.ignoreAlreadyTagged)
+            queryString += QString("");
         else
             queryString +=" and tags = ' none ' ";
 

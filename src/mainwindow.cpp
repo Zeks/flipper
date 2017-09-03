@@ -16,6 +16,7 @@
 #include <QSettings>
 #include <QSortFilterProxyModel>
 #include <QQuickWidget>
+#include <QDebug>
 #include <QQuickView>
 #include <QQuickItem>
 #include <QQmlContext>
@@ -1313,7 +1314,11 @@ void MainWindow::OnCopyAllUrls()
     QString result;
     for(int i = 0; i < typetableModel->rowCount(); i ++)
     {
-        result += "http://www.fanfiction.net" + typetableModel->index(i, 9).data().toString() + "\n";
+        if(ui->chkInfoForLinks->isChecked())
+        {
+            result += typetableModel->index(i, 2).data().toString() + "\n";
+        }
+        result += "http://www.fanfiction.net" + typetableModel->index(i, 9).data().toString() + "\n\n";
     }
     clipboard->setText(result);
 }
@@ -2148,6 +2153,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     };
     core::StoryFilter filter;
     filter.activeTags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    qDebug() << filter.activeTags;
     filter.allowNoGenre = ui->chkNoGenre->isChecked();
     filter.allowUnfinished = ui->chkShowUnfinished->isChecked();
     filter.ensureActive = ui->chkActive->isChecked();
@@ -2158,7 +2164,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.genreInclusion = valueIfChecked(ui->chkGenrePlus,core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text(), "###"));
     filter.wordExclusion = valueIfChecked(ui->chkWordsMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text(), "###"));
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
-    filter.ignoreAlreadyTagged = !ui->chkIgnoreTags->isChecked();
+    filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
     filter.includeCrossovers = ui->rbCrossovers->isChecked();
     filter.maxFics = valueIfChecked(ui->chkFicLimitActivated, ui->sbMaxFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
