@@ -1,27 +1,39 @@
 #pragma once
 #include <QString>
 #include <QDateTime>
-struct Section
-{
-    int ID = -1;
-    int webId = -1;
-    int start = 0;
-    int end = 0;
+struct Author{
+    QString name;
+    QHash<QString, QString> urls;
+    QDateTime firstPublishedFic;
+    QDateTime lastUpdated;
+    int ficCount;
+    int favCount;
+    bool isValid = false;
 
-    int summaryEnd = 0;
-    int wordCountStart = 0;
-    int statSectionStart=0;
-    int statSectionEnd=0;
+    void SetUrl(QString type, QString url)
+    {
+        urls[type] = url;
+    }
+    QString url(QString type)
+    {
+        if(urls.contains(type))
+            return urls[type];
+        return "";
+    }
+
+};
+
+struct Fic{
     int complete=0;
     int atChapter=0;
-    int recommendations=0;
+    int webId = -1;
+    int ID = -1;
 
     QString wordCount = 0;
     QString chapters = 0;
     QString reviews = 0;
     QString favourites= 0;
     QString rated= 0;
-
 
     QString fandom;
     QStringList fandoms;
@@ -30,15 +42,44 @@ struct Section
     QString genre;
     QString summary;
     QString statSection;
-    QString author;
-    QString authorUrl;
-    QString url;
+
     QString tags;
     QString origin;
     QString language;
     QDateTime published;
     QDateTime updated;
     QString characters;
+    bool isValid =false;
+    Author author;
+    QHash<QString, QString> urls;
+    QString url(QString type)
+    {
+        if(urls.contains(type))
+            return urls[type];
+        return "";
+    }
+    void SetUrl(QString type, QString url)
+    {
+        urls[type] = url;
+        urlFFN = url;
+    }
+    QString urlFFN;
+    int recommendations = 0;
+
+};
+
+struct Section
+{
+    int start = 0;
+    int end = 0;
+
+    int summaryEnd = 0;
+    int wordCountStart = 0;
+    int statSectionStart=0;
+    int statSectionEnd=0;
+    QString statSection;
+
+    Fic result;
     bool isValid =false;
 };
 struct Fandom

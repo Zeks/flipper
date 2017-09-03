@@ -265,7 +265,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const Section* data) \
+    [] (const Fic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -274,7 +274,7 @@ MainWindow::MainWindow(QWidget *parent) :
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (Section* data, QVariant value) \
+    [] (Fic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toString(); \
@@ -283,7 +283,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const Section* data) \
+    [] (const Fic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -292,7 +292,7 @@ MainWindow::MainWindow(QWidget *parent) :
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (Section* data, QVariant value) \
+    [] (Fic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toDateTime(); \
@@ -301,7 +301,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const Section* data) \
+    [] (const Fic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -310,7 +310,7 @@ MainWindow::MainWindow(QWidget *parent) :
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (Section* data, QVariant value) \
+    [] (Fic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toInt(); \
@@ -322,7 +322,7 @@ void MainWindow::SetupTableAccess()
     //    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated"
     //                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
     ADD_STRING_GETSET(holder, 0, 0, fandom);
-    ADD_STRING_GETSET(holder, 1, 0, author);
+    ADD_STRING_GETSET(holder, 1, 0, author.name);
     ADD_STRING_GETSET(holder, 2, 0, title);
     ADD_STRING_GETSET(holder, 3, 0, summary);
     ADD_STRING_GETSET(holder, 4, 0, genre);
@@ -330,7 +330,7 @@ void MainWindow::SetupTableAccess()
     ADD_STRING_GETSET(holder, 6, 0, rated);
     ADD_DATE_GETSET(holder, 7, 0, published);
     ADD_DATE_GETSET(holder, 8, 0, updated);
-    ADD_STRING_GETSET(holder, 9, 0, url);
+    ADD_STRING_GETSET(holder, 9, 0, urlFFN);
     ADD_STRING_GETSET(holder, 10, 0, tags);
     ADD_INTEGER_GETSET(holder, 11, 0, wordCount);
     ADD_INTEGER_GETSET(holder, 12, 0, favourites);
@@ -357,7 +357,7 @@ void MainWindow::SetupTableAccess()
 
 void MainWindow::SetupFanficTable()
 {
-    holder = new TableDataListHolder<Section>();
+    holder = new TableDataListHolder<Fic>();
     typetableModel = new FicModel();
 
     SetupTableAccess();
@@ -538,12 +538,12 @@ WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool auto
 
 
 
-inline Section LoadFanfic(QSqlQuery& q)
+inline Fic LoadFanfic(QSqlQuery& q)
 {
-    Section result;
+    Fic result;
     result.ID = q.value("ID").toInt();
     result.fandom = q.value("FANDOM").toString();
-    result.author = q.value("AUTHOR").toString();
+    result.author.name = q.value("AUTHOR").toString();
     result.title = q.value("TITLE").toString();
     result.summary = q.value("SUMMARY").toString();
     result.genre= q.value("GENRES").toString();
@@ -551,7 +551,7 @@ inline Section LoadFanfic(QSqlQuery& q)
     result.rated = q.value("RATED").toString();
     result.published = q.value("PUBLISHED").toDateTime();
     result.updated= q.value("UPDATED").toDateTime();
-    result.url = q.value("URL").toString();
+    result.SetUrl("ffn",q.value("URL").toString());
     result.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
@@ -1795,18 +1795,18 @@ QStringList MainWindow::ReverseSortedList(QStringList list)
 QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
 {
     QStringList result;
-    QList<Section> sections;
+    QList<Fic> sections;
     int counter = 0;
     auto list = ReverseSortedList(recommenders.keys());
     auto job = [](QString url, QString content){
-        QList<Section> sections;
+        QList<Fic> sections;
         FavouriteStoryParser parser;
         sections += parser.ProcessPage(url, content);
         return sections;
     };
-    QList<QFuture<QList<Section>>> futures;
+    QList<QFuture<QList<Fic>>> futures;
     An<PageManager> pager;
-    QHash<QString, Section> uniqueSections;
+    QHash<QString, Fic> uniqueSections;
     pager->SetDatabase(QSqlDatabase::database());
     for(auto recName: list)
     {
@@ -1816,7 +1816,7 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
         //        if(counter != 4)
         //            continue;
         Recommender recommender = recommenders[recName];
-        uniqueSections[recommender.url] = Section();
+        uniqueSections[recommender.url] = Fic();
         if(recommender.wave > 1)
             continue;
 
@@ -1847,7 +1847,7 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
 
 
     for(auto section: sections)
-        uniqueSections[section.authorUrl] = section;
+        uniqueSections[section.author.url("ffn")] = section;
     result = SortedList(uniqueSections.keys());
     return result;
 }
