@@ -36,7 +36,7 @@ public:
     QStringList diagnostics;
     QList<Fic> processedStuff;
     database::WriteStats writeSections;
-    Recommender recommender;
+    FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;

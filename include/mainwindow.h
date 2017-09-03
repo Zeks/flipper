@@ -160,7 +160,7 @@ private:
     QStringListModel* tagModel;
     QStringListModel* recentFandomsModel= nullptr;
     QStringListModel* recommendersModel = nullptr;
-    QHash<QString, Recommender> recommenders;
+    QHash<QString, FavouritesPage> recommenders;
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
@@ -183,7 +183,7 @@ private:
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
     //void ReprocessAuthorNameIntoDb();
-    void UpdateAllAuthorsWith(std::function<void (Recommender, WebPage)> updater);
+    void UpdateAllAuthorsWith(std::function<void (FavouritesPage, WebPage)> updater);
     //void UpdateTagStatsPerFic();
     void ReprocessAuthors();
     void ReprocessTagSumRecs();

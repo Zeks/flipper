@@ -93,7 +93,7 @@ QString FavouriteStoryParser::GetFandom(QString text)
 void FavouriteStoryParser::ClearProcessed()
 {
     processedStuff.clear();
-    recommender = Recommender();
+    recommender = FavouritesPage();
 }
 
 void FavouriteStoryParser::ClearDoneCache()
@@ -104,7 +104,7 @@ void FavouriteStoryParser::ClearDoneCache()
 void FavouriteStoryParser::WriteProcessed()
 {
     auto startRecLoad = std::chrono::high_resolution_clock::now();
-    writeSections = database::ProcessSectionsIntoUpdateAndInsert(processedStuff);
+    writeSections = database::ProcessFicsIntoUpdateAndInsert(processedStuff);
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
     qDebug() << "Filtering done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     auto startInsert = std::chrono::high_resolution_clock::now();
@@ -129,7 +129,7 @@ void FavouriteStoryParser::WriteProcessed()
     for(auto& section : processedStuff)
     {
         int fic_id = database::GetFicIdByWebId(section.webId);
-        database::WriteRecommendation(recommender, fic_id);
+        database::WriteRecommendation(recommender.author, fic_id);
     }
     elapsed = std::chrono::high_resolution_clock::now() - startRecommending;
     qDebug() << "Recommendations done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
@@ -140,12 +140,12 @@ void FavouriteStoryParser::WriteProcessed()
 
 void FavouriteStoryParser::WriteJustAuthorName()
 {
-    if(recommender.GetIdStatus() == ERecommenderIdStatus::unassigned)
-        recommender.AssignId(database::GetRecommenderId(recommender.url));
-    if(recommender.GetIdStatus() == ERecommenderIdStatus::not_found)
+    if(recommender.GetIdStatus() == AuthorIdStatus::unassigned)
+        recommender.AssignId(database::GetAuthorIdFromUrl(recommender.url));
+    if(recommender.GetIdStatus() == AuthorIdStatus::not_found)
     {
         database::WriteRecommender(recommender);
-        recommender.AssignId(database::GetRecommenderId(recommender.url));
+        recommender.AssignId(database::GetAuthorIdFromUrl(recommender.url));
     }
     database::AssignNewNameForRecommenderId(recommender);
 }

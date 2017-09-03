@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     database::EnsureFandomsFilled();
     database::EnsureWebIdsFilled();
     //database::EnsureFFNUrlsShort();
-    auto result = database::EnsureTagForRecommendations();
+    //auto result = database::EnsureTagForRecommendations();
     //database::PassTagsIntoTagsTable();
     Q_UNUSED(result);
     return a.exec();

@@ -1,7 +1,29 @@
 #pragma once
 #include <QString>
 #include <QDateTime>
+enum class AuthorIdStatus
+{
+    unassigned = -1,
+    not_found = -2,
+    valid = 0
+};
+
 struct Author{
+    int id= -1;
+    AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
+    void AssignId(int id){
+        if(id == -1)
+        {
+            this->id = -1;
+            this->idStatus = AuthorIdStatus::not_found;
+        }
+        if(id > -1)
+        {
+            this->id = id;
+            this->idStatus = AuthorIdStatus::valid;
+        }
+    }
+    AuthorIdStatus GetIdStatus() const {return idStatus;}
     QString name;
     QHash<QString, QString> urls;
     QDateTime firstPublishedFic;
@@ -9,6 +31,7 @@ struct Author{
     int ficCount;
     int favCount;
     bool isValid = false;
+    QString website;
 
     void SetUrl(QString type, QString url)
     {
@@ -20,8 +43,16 @@ struct Author{
             return urls[type];
         return "";
     }
+};
+
+struct FavouritesPage
+{
+    Author author;
+    QString pageData;
+    //type of website, ffn or ao3
 
 };
+
 
 struct Fic{
     int complete=0;
@@ -90,43 +121,12 @@ struct Fandom
     QString crossoverUrl;
 };
 
-enum class ERecommenderIdStatus
-{
-    unassigned = -1,
-    not_found = -2,
-    valid = 0
-};
 
-struct Recommender
-{
-    QString name;
-    QString url;
-    QString pageData;
-    //type of website, ffn or ao3
-    QString website;
-    QString tag = "core";
-    bool relevantForTag = true;
-    int wave = 0;
-    int id = -3;
-    ERecommenderIdStatus idStatus = ERecommenderIdStatus::unassigned;
-    void AssignId(int id){
-        if(id == -1)
-        {
-            this->id = -1;
-            this->idStatus = ERecommenderIdStatus::not_found;
-        }
-        if(id > -1)
-        {
-            this->id = id;
-            this->idStatus = ERecommenderIdStatus::valid;
-        }
-    }
-    ERecommenderIdStatus GetIdStatus() const {return idStatus;}
-};
 
-struct RecommenderStats
+
+struct AuthorRecommendationStats
 {
-    int recommenderId= -1;
+    int authorId= -1;
     int totalFics = -1;
     int matchesWithReferenceTag = -1;
     double matchRatio = -1;

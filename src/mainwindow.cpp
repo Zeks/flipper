@@ -1042,7 +1042,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
         pbMain->setTextVisible(true);
         pbMain->setFormat("%v");
 
-        auto id = database::GetRecommenderId(webPage.url);
+        auto id = database::GetAuthorIdFromUrl(webPage.url);
         if(id == -1 || reprocessCache)
         {
 
@@ -1103,7 +1103,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     EnableAllLoadButtons();
 }
 
-void MainWindow::UpdateAllAuthorsWith(std::function<void(Recommender, WebPage)> updater)
+void MainWindow::UpdateAllAuthorsWith(std::function<void(FavouritesPage, WebPage)> updater)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
     auto authors = database::GetAllAuthors("ffn");
@@ -1132,7 +1132,7 @@ void MainWindow::UpdateAllAuthorsWith(std::function<void(Recommender, WebPage)> 
 
 void MainWindow::ReprocessAuthors()
 {
-    auto functor = [](Recommender author, WebPage webPage){
+    auto functor = [](FavouritesPage author, WebPage webPage){
         //auto splittings = SplitJob(webPage.content);
         QString authorName = ParseAuthorNameFromFavouritePage(webPage.content);
         author.name = authorName;
@@ -1143,7 +1143,7 @@ void MainWindow::ReprocessAuthors()
 
 void MainWindow::ReprocessTagSumRecs()
 {
-    auto tags = database::ReadAvailableRecTagGroups();
+    auto tags = database::ReadAvailableRecommendationLists();
     for(auto tag : tags)
     {
         if(tag == "core" || tag == "none")
@@ -1239,7 +1239,7 @@ QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crosso
     if(crossoverState)
     {
         urls = GetCrossoverUrl(selectedFandom,ignoreTrackingState);
-        lastUpdated = database::GetMaxUpdateDateForSection(QStringList() << selectedFandom << "CROSSOVER");
+        lastUpdated = database::GetMaxUpdateDateForFandom(QStringList() << selectedFandom << "CROSSOVER");
         isCrossover = true;
         currentFandom = selectedFandom;
     }
@@ -1248,7 +1248,7 @@ QStringList MainWindow::GetCurrentFilterUrls(QString selectedFandom, bool crosso
 
         isCrossover = false;
         urls = GetNormalUrl(selectedFandom,ignoreTrackingState);
-        lastUpdated = database::GetMaxUpdateDateForSection(QStringList() << selectedFandom);
+        lastUpdated = database::GetMaxUpdateDateForFandom(QStringList() << selectedFandom);
         currentFandom = selectedFandom;
 
     }
@@ -1603,7 +1603,7 @@ void MainWindow::on_pbCrawl_clicked()
     {
         currentFilterUrl = url;
         QString crossOverAddin = ui->rbCrossovers->isChecked() ? "CROSSOVER" : "";
-        auto lastUpdated = database::GetMaxUpdateDateForSection(QStringList() << ui->cbNormals->currentText() << crossOverAddin);
+        auto lastUpdated = database::GetMaxUpdateDateForFandom(QStringList() << ui->cbNormals->currentText() << crossOverAddin);
         RequestAndProcessPage(ui->cbNormals->currentText(), lastUpdated, url);
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
@@ -1815,7 +1815,7 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
         counter++;
         //        if(counter != 4)
         //            continue;
-        Recommender recommender = recommenders[recName];
+        FavouritesPage recommender = recommenders[recName];
         uniqueSections[recommender.url] = Fic();
         if(recommender.wave > 1)
             continue;
@@ -1903,7 +1903,7 @@ void MainWindow::FillRecTagBuildCombobox()
 
 void MainWindow::FillRecTagCombobox()
 {
-    auto tags = database::ReadAvailableRecTagGroups();
+    auto tags = database::ReadAvailableRecommendationLists();
     if(!tags.contains("core"))
         tags.prepend("core");
     ui->cbRecGroup->setModel(new QStringListModel(tags));
@@ -1987,11 +1987,11 @@ void MainWindow::on_pbLoadPage_clicked()
     ui->edtResults->insertHtml(parser.diagnostics.join(""));
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
-    currentRecommenderId = database::GetRecommenderId(page.url);
+    currentRecommenderId = database::GetAuthorIdFromUrl(page.url);
     if(currentRecommenderId == -1)
     {
         database::WriteRecommender(parser.recommender);
-        currentRecommenderId = database::GetRecommenderId(page.url);
+        currentRecommenderId = database::GetAuthorIdFromUrl(page.url);
     }
 
     parser.WriteProcessed();
@@ -2013,7 +2013,7 @@ void MainWindow::on_pbRemoveRecommender_clicked()
     QString currentSelection = ui->lvRecommenders->selectionModel()->currentIndex().data().toString();
     if(recommenders.contains(currentSelection))
     {
-        database::RemoveRecommender(recommenders[currentSelection]);
+        database::RemoveAuthor(recommenders[currentSelection]);
         recommenders = database::FetchRecommenders();
         recommendersModel->setStringList(SortedList(recommenders.keys()));
     }
@@ -2025,7 +2025,7 @@ void MainWindow::on_pbOpenRecommendations_clicked()
 
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
-    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+    currentRecommenderId = database::GetAuthorIdFromUrl(ui->leAuthorUrl->text());
 
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
@@ -2060,7 +2060,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     }
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
-    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+    currentRecommenderId = database::GetAuthorIdFromUrl(ui->leAuthorUrl->text());
 
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
@@ -2079,7 +2079,7 @@ void MainWindow::on_pbOpenWholeList_clicked()
 
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
-    currentRecommenderId = database::GetRecommenderId(ui->leAuthorUrl->text());
+    currentRecommenderId = database::GetAuthorIdFromUrl(ui->leAuthorUrl->text());
     recommenders = database::FetchRecommenders();
     recommendersModel->setStringList(SortedList(recommenders.keys()));
 
@@ -2181,7 +2181,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
-    filter.useThisRecommenderOnly = database::GetRecommenderId(ui->leAuthorUrl->text());;
+    filter.useThisRecommenderOnly = database::GetAuthorIdFromUrl(ui->leAuthorUrl->text());;
     return filter;
 }
 
