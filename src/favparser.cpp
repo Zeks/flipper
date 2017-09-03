@@ -5,17 +5,16 @@
 #include <QSqlDatabase>
 #include <chrono>
 
-QList<Fic> FavouriteStoryParser::ProcessPage(QString url, QString& str, int authorWave)
+QList<core::Fic> FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
-    Section section;
+    core::Section section;
     int currentPosition = 0;
     int counter = 0;
-    QList<Fic> sections;
+    QList<core::Fic> sections;
     //recommender.name = ExtractRecommdenderNameFromUrl(url);
-    recommender.name = authorName;
-    recommender.url = url;
-    recommender.wave = authorWave;
-    recommender.website = "ffn";
+    recommender.author.name = authorName;
+    recommender.author.SetUrl("ffn", url);
+    recommender.author.website = "ffn";
     while(true)
     {
 
@@ -93,7 +92,7 @@ QString FavouriteStoryParser::GetFandom(QString text)
 void FavouriteStoryParser::ClearProcessed()
 {
     processedStuff.clear();
-    recommender = FavouritesPage();
+    recommender = core::FavouritesPage();
 }
 
 void FavouriteStoryParser::ClearDoneCache()
@@ -140,14 +139,14 @@ void FavouriteStoryParser::WriteProcessed()
 
 void FavouriteStoryParser::WriteJustAuthorName()
 {
-    if(recommender.GetIdStatus() == AuthorIdStatus::unassigned)
-        recommender.AssignId(database::GetAuthorIdFromUrl(recommender.url));
-    if(recommender.GetIdStatus() == AuthorIdStatus::not_found)
+    if(recommender.author.GetIdStatus() == core::AuthorIdStatus::unassigned)
+        recommender.author.AssignId(database::GetAuthorIdFromUrl(recommender.author.url("ffn")));
+    if(recommender.author.GetIdStatus() == core::AuthorIdStatus::not_found)
     {
-        database::WriteRecommender(recommender);
-        recommender.AssignId(database::GetAuthorIdFromUrl(recommender.url));
+        database::WriteRecommender(recommender.author);
+        recommender.author.AssignId(database::GetAuthorIdFromUrl(recommender.author.url("ffn")));
     }
-    database::AssignNewNameForRecommenderId(recommender);
+    database::AssignNewNameForRecommenderId(recommender.author);
 }
 
 void FavouriteStoryParser::WriteRecommenderInfo()
@@ -160,7 +159,7 @@ void FavouriteStoryParser::SetCurrentTag(QString value)
     currentTagMode = value;
 }
 
-void FavouriteStoryParser::GetAuthorUrl(Section & section, int &startfrom, QString text)
+void FavouriteStoryParser::GetAuthorUrl(core::Section & section, int &startfrom, QString text)
 {
     // looking for first href
     //QString currentSection = text.mid(startfrom);
@@ -174,7 +173,7 @@ void FavouriteStoryParser::GetAuthorUrl(Section & section, int &startfrom, QStri
     startfrom = indexEnd+2;
 }
 
-void FavouriteStoryParser::GetAuthor(Section & section, int& startfrom, QString text)
+void FavouriteStoryParser::GetAuthor(core::Section & section, int& startfrom, QString text)
 {
     //QString currentStart = text.mid(startfrom);
     //QRegExp rxBy("\">");
@@ -190,7 +189,7 @@ void FavouriteStoryParser::GetAuthor(Section & section, int& startfrom, QString 
 
 
 
-void FavouriteStoryParser::GetTitle(Section & section, int& startfrom, QString text)
+void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QString text)
 {
     QRegExp rxStart(QRegExp::escape("data-title=\""));
     QRegExp rxEnd(QRegExp::escape("\""));
@@ -202,7 +201,7 @@ void FavouriteStoryParser::GetTitle(Section & section, int& startfrom, QString t
     section.result.title=section.result.title.replace("\'","'");
 }
 
-void FavouriteStoryParser::GetStatSection(Section &section, int &startfrom, QString text)
+void FavouriteStoryParser::GetStatSection(core::Section &section, int &startfrom, QString text)
 {
     QRegExp rxStart("padtop2\\sxgray");
     QRegExp rxEnd("</div></div></div>");
@@ -214,7 +213,7 @@ void FavouriteStoryParser::GetStatSection(Section &section, int &startfrom, QStr
     //qDebug() << section.statSection;
 }
 
-void FavouriteStoryParser::GetSummary(Section & section, int& startfrom, QString text)
+void FavouriteStoryParser::GetSummary(core::Section & section, int& startfrom, QString text)
 {
     QRegExp rxStart(QRegExp::escape("padtop'>"));
     QRegExp rxEnd(QRegExp::escape("<div"));
@@ -226,7 +225,7 @@ void FavouriteStoryParser::GetSummary(Section & section, int& startfrom, QString
     startfrom = indexEnd;
 }
 
-void FavouriteStoryParser::GetCrossoverFandomList(Section & section, int &startfrom, QString text)
+void FavouriteStoryParser::GetCrossoverFandomList(core::Section & section, int &startfrom, QString text)
 {
     QRegExp rxStart("Crossover\\s-\\s");
     QRegExp rxEnd("\\s-\\sRated:");
@@ -245,7 +244,7 @@ void FavouriteStoryParser::GetCrossoverFandomList(Section & section, int &startf
     startfrom = indexEnd;
 }
 
-void FavouriteStoryParser::GetUrl(Section & section, int& startfrom, QString text)
+void FavouriteStoryParser::GetUrl(core::Section & section, int& startfrom, QString text)
 {
     // looking for first href
     QRegExp rxStart(QRegExp::escape("href=\""));
@@ -296,9 +295,9 @@ void FavouriteStoryParser::GetTaggedSection(QString text, QString rxString ,std:
 }
 
 
-Section FavouriteStoryParser::GetSection(QString text, int start)
+core::Section FavouriteStoryParser::GetSection(QString text, int start)
 {
-    Section section;
+    core::Section section;
     QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
 
     int index = rxStart.indexIn(text, start);

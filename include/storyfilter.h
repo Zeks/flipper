@@ -48,7 +48,7 @@ struct StoryFilter{
     bool allowUnfinished = true;
     bool allowNoGenre = true;
     ESortMode sortMode;
-    QString tagForRecommendations;
+    int listForRecommendations;
     EReviewBiasMode reviewBias;
     EBiasOperator biasOperator;
     double reviewBiasRatio = 0;

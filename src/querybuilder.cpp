@@ -19,10 +19,11 @@ Query DefaultQueryBuilder::Build(StoryFilter filter)
     queryString+=" from fanfics f where 1 = 1 " ;
     QString where = CreateWhere(filter);
     queryString+= where;
+    ProcessBindings(filter, query);
     queryString+= ProcessRandomization(filter, queryString);
     queryString+= BuildSortMode(filter);
     queryString+= CreateLimitQueryPart(filter);
-    ProcessBindings(filter, query);
+
     qDebug() << queryString;
     query.str = "select " + queryString;
     return query;
@@ -99,8 +100,8 @@ QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 {
-    QString currentRecTagValue = " (SELECT sumrecs FROM RecommendationFicStats rfs where rfs.fic_id = f.id and rfs.tag = '%1') as sumrecs, ";
-    currentRecTagValue=currentRecTagValue.arg(filter.tagForRecommendations);
+    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id) as sumrecs, ";
+    //currentRecTagValue=currentRecTagValue.arg(filter.listForRecommendations);
     return currentRecTagValue;
 }
 
@@ -298,6 +299,8 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, Query& q)
         q.bindings[":maxwordcount"] = filter.maxWords;
     if(filter.minFavourites> 0)
         q.bindings[":favourites"] = filter.minFavourites;
+    if(filter.listForRecommendations > -1)
+        q.bindings[":list_id"] = filter.listForRecommendations;
     if(!filter.activeTags.isEmpty())
         q.bindings[":tags"] = activeTags;
     //q.bindings[":rectag"] = filter.tagForRecommendations;
@@ -324,9 +327,10 @@ QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
 QString DefaultRNGgenerator::Get(Query query)
 {
     QString where = query.str;
+
     if(!randomIdLists.contains(where))
     {
-        auto idList = database::ObtainIdList(query);
+        auto idList = database::GetIdListForQuery(query);
         if(idList.size() == 0)
             return -1;
         randomIdLists[where] = idList;

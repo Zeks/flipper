@@ -924,6 +924,20 @@
                          </widget>
                         </item>
                         <item>
+                         <widget class="QLabel" name="label_15">
+                          <property name="text">
+                           <string>List Name</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QComboBox" name="cbRecListNames">
+                          <property name="editable">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
                          <widget class="QLabel" name="label_10">
                           <property name="text">
                            <string>Build recommendations on tag: </string>
@@ -938,6 +952,9 @@
                             <height>0</height>
                            </size>
                           </property>
+                          <property name="editable">
+                           <bool>false</bool>
+                          </property>
                          </widget>
                         </item>
                         <item>
@@ -950,7 +967,7 @@
                         <item>
                          <widget class="QSpinBox" name="sbMinRecMatch">
                           <property name="value">
-                           <number>3</number>
+                           <number>1</number>
                           </property>
                          </widget>
                         </item>
@@ -984,7 +1001,7 @@
                         <item>
                          <widget class="QSpinBox" name="sbAlwaysPickRecAt">
                           <property name="value">
-                           <number>10</number>
+                           <number>1</number>
                           </property>
                          </widget>
                         </item>
@@ -1156,6 +1173,9 @@
                  </property>
                  <property name="text">
                   <string>Randomize</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -1486,6 +1506,9 @@
              <widget class="QCheckBox" name="chkFicLimitActivated">
               <property name="text">
                <string>MaxFics</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>

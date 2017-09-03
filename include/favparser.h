@@ -9,21 +9,21 @@ class FavouriteStoryParser
 {
 public:
 
-    QList<Fic> ProcessPage(QString url,QString&, int authorWave = 0);
-    Section GetSection( QString text, int start);
+    QList<core::Fic> ProcessPage(QString url,QString&);
+    core::Section GetSection( QString text, int start);
     QString ExtractRecommdenderNameFromUrl(QString url);
-    void GetAuthor(Section& , int& startfrom, QString text);
-    void GetAuthorUrl(Section& , int& startfrom, QString text);
-    void GetTitle(Section& , int& startfrom, QString text);
-    void GetGenre(Section& , int& startfrom, QString text);
-    void GetSummary(Section& , int& startfrom, QString text);
-    void GetWordCount(Section& , int& startfrom, QString text);
-    void GetPublishedDate(Section& , int& startfrom, QString text);
-    void GetUpdatedDate(Section& , int& startfrom, QString text);
-    void GetUrl(Section& , int& startfrom, QString text);
-    void GetStatSection(Section& , int& startfrom, QString text);
+    void GetAuthor(core::Section& , int& startfrom, QString text);
+    void GetAuthorUrl(core::Section& , int& startfrom, QString text);
+    void GetTitle(core::Section& , int& startfrom, QString text);
+    void GetGenre(core::Section& , int& startfrom, QString text);
+    void GetSummary(core::Section& , int& startfrom, QString text);
+    void GetWordCount(core::Section& , int& startfrom, QString text);
+    void GetPublishedDate(core::Section& , int& startfrom, QString text);
+    void GetUpdatedDate(core::Section& , int& startfrom, QString text);
+    void GetUrl(core::Section& , int& startfrom, QString text);
+    void GetStatSection(core::Section& , int& startfrom, QString text);
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
-    void GetCrossoverFandomList(Section& , int& startfrom, QString text);
+    void GetCrossoverFandomList(core::Section& , int& startfrom, QString text);
     QString GetFandom(QString text);
     void ClearProcessed();
     void ClearDoneCache();
@@ -34,9 +34,9 @@ public:
 
 
     QStringList diagnostics;
-    QList<Fic> processedStuff;
+    QList<core::Fic> processedStuff;
     database::WriteStats writeSections;
-    FavouritesPage recommender;
+    core::FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;

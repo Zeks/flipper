@@ -1,6 +1,9 @@
 #pragma once
 #include <QString>
 #include <QDateTime>
+namespace core {
+
+
 enum class AuthorIdStatus
 {
     unassigned = -1,
@@ -37,7 +40,7 @@ struct Author{
     {
         urls[type] = url;
     }
-    QString url(QString type)
+    QString url(QString type) const
     {
         if(urls.contains(type))
             return urls[type];
@@ -131,6 +134,21 @@ struct AuthorRecommendationStats
     int matchesWithReferenceTag = -1;
     double matchRatio = -1;
     bool isValid = false;
-    QString tag;
+    QString listName;
+    QString usedTag;
     QString authorName;
 };
+
+struct RecommendationList{
+    int id = -1;
+    int ficCount =-1;
+    QString name;
+    QString tagToUse;
+    int minimumMatch = -1;
+    int alwaysPickAt = -2;
+    double pickRatio = -1;
+    QDateTime created;
+};
+
+}
+

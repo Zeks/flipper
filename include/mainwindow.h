@@ -40,7 +40,7 @@ class MainWindow;
 
 
 struct BuildRecommendationParams{
-    QString tag;
+    QString listName;
     int minTagCountMatch;
     int alwaysPickAuthorOnThisMatchCount;
     double threshholdRatio;
@@ -72,8 +72,8 @@ private:
     //QTableView* types_table = nullptr;
     FicModel* typetableModel = nullptr;
     QSharedPointer<TableDataInterface> typetableInterface;
-    TableDataListHolder<Fic>* holder = nullptr;
-    QList<Fic> fanfics;
+    TableDataListHolder<core::Fic>* holder = nullptr;
+    QList<core::Fic> fanfics;
     QSortFilterProxyModel* sortModel;
     int processedFics = 0;
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -99,13 +99,13 @@ private:
     QString BuildBias();
 
     //void LoadRecommendations(QString url);
-    void LoadIntoDB(Fic&);
+    void LoadIntoDB(core::Fic&);
 
     QString WrapTag(QString tag);
     void HideCurrentID();
 
-    void UpdateFandomList(std::function<QString(Fandom)> linkGetter);
-    void InsertFandomData(QMap<QPair<QString,QString>, Fandom> names);
+    void UpdateFandomList(std::function<QString(core::Fandom)> linkGetter);
+    void InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names);
     void PopulateComboboxes();
 
     QStringList GetCrossoverListFromDB();
@@ -116,7 +116,7 @@ private:
     void OpenTagWidget(QPoint, QString url);
     void ReadTags();
 
-    void SetTag(int id, QString tag);
+    void SetTag(int id, QString tag, bool silent = false);
     void UnsetTag(int id, QString tag);
 
     void ToggleTag();
@@ -145,11 +145,11 @@ private:
     QMenu browserMenu;
     int currentRecommenderId = -1;
     QEventLoop managerEventLoop;
-    QMap<QPair<QString,QString>, Fandom> names;
+    QMap<QPair<QString,QString>, core::Fandom> names;
     QString currentProcessedSection;
     QString dbName = "CrawlerDB.sqlite";
     QDateTime lastUpdated;
-    QHash<QString, Fandom> sections;
+    QHash<QString, core::Fandom> sections;
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
@@ -160,7 +160,7 @@ private:
     QStringListModel* tagModel;
     QStringListModel* recentFandomsModel= nullptr;
     QStringListModel* recommendersModel = nullptr;
-    QHash<QString, FavouritesPage> recommenders;
+    QHash<QString, core::Author> recommenders;
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
@@ -178,17 +178,19 @@ private:
     QList<WebPage> pageQueue;
     core::DefaultQueryBuilder queryBuilder;
     core::StoryFilter filter;
+    QHash<QString, core::RecommendationList> lists;
+    void ProcessRecommendationListsFromDB(QList<core::RecommendationList>);
 
     void LoadMoreAuthors(bool reprocessCache = false);
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
     //void ReprocessAuthorNameIntoDb();
-    void UpdateAllAuthorsWith(std::function<void (FavouritesPage, WebPage)> updater);
+    void UpdateAllAuthorsWith(std::function<void (core::Author, WebPage)> updater);
     //void UpdateTagStatsPerFic();
     void ReprocessAuthors();
-    void ReprocessTagSumRecs();
+    //void ReprocessTagSumRecs();
     void ProcessListIntoRecommendations(QString list);
-    void BuildRecommendations(BuildRecommendationParams params);
+    void BuildRecommendations(core::RecommendationList params);
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);
 public slots:
     void ProcessFandoms(WebPage webPage);
@@ -245,6 +247,8 @@ private slots:
     void on_pbOpenAuthorUrl_clicked();
 
     void on_pbReprocessAuthors_clicked();
+
+    void on_cbRecTagBuildGroup_currentTextChanged(const QString &arg1);
 
 signals:
     void pageTask(QString, QString, QDateTime, ECacheMode);

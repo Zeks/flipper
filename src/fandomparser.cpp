@@ -7,10 +7,10 @@ void FandomParser::ProcessPage(WebPage page)
     processedStuff.clear();
     minSectionUpdateDate = QDateTime::currentDateTimeUtc();
     QString& str = page.content;
-    Section section;
+    core::Section section;
     int currentPosition = 0;
     int counter = 0;
-    QList<Section> sections;
+    QList<core::Section> sections;
 
     while(true)
     {
@@ -80,7 +80,7 @@ QString FandomParser::GetFandom(QString text)
     return text.mid(indexStart + 28,indexEnd - (indexStart + 28));
 }
 
-void FandomParser::GetAuthor(Section & section, int& startfrom, QString text)
+void FandomParser::GetAuthor(core::Section & section, int& startfrom, QString text)
 {
     QRegExp rxBy("by\\s<");
     QRegExp rxStart(">");
@@ -93,7 +93,7 @@ void FandomParser::GetAuthor(Section & section, int& startfrom, QString text)
 
 }
 
-void FandomParser::GetTitle(Section & section, int& startfrom, QString text)
+void FandomParser::GetTitle(core::Section & section, int& startfrom, QString text)
 {
     QRegExp rxStart(QRegExp::escape(">"));
     QRegExp rxEnd(QRegExp::escape("</a>"));
@@ -104,7 +104,7 @@ void FandomParser::GetTitle(Section & section, int& startfrom, QString text)
     qDebug() << section.result.title;
 }
 
-void FandomParser::GetStatSection(Section &section, int &startfrom, QString text)
+void FandomParser::GetStatSection(core::Section &section, int &startfrom, QString text)
 {
     QRegExp rxStart("padtop2\\sxgray");
     QRegExp rxEnd("</div></div></div>");
@@ -116,7 +116,7 @@ void FandomParser::GetStatSection(Section &section, int &startfrom, QString text
     //qDebug() << section.statSection;
 }
 
-void FandomParser::GetSummary(Section & section, int& startfrom, QString text)
+void FandomParser::GetSummary(core::Section & section, int& startfrom, QString text)
 {
     QRegExp rxStart(QRegExp::escape("padtop'>"));
     QRegExp rxEnd(QRegExp::escape("<div"));
@@ -128,7 +128,7 @@ void FandomParser::GetSummary(Section & section, int& startfrom, QString text)
     startfrom = indexEnd;
 }
 
-void FandomParser::GetCrossoverFandomList(Section & section, int &startfrom, QString text)
+void FandomParser::GetCrossoverFandomList(core::Section & section, int &startfrom, QString text)
 {
     QRegExp rxStart("Crossover\\s-\\s");
     QRegExp rxEnd("\\s-\\sRated:");
@@ -142,7 +142,7 @@ void FandomParser::GetCrossoverFandomList(Section & section, int &startfrom, QSt
     startfrom = indexEnd;
 }
 
-void FandomParser::GetUrl(Section & section, int& startfrom, QString text)
+void FandomParser::GetUrl(core::Section & section, int& startfrom, QString text)
 {
     // looking for first href
     QRegExp rxStart(QRegExp::escape("href=\""));
@@ -153,7 +153,7 @@ void FandomParser::GetUrl(Section & section, int& startfrom, QString text)
     startfrom = indexEnd+2;
 }
 
-QString FandomParser::GetNext(Section & section, int &startfrom, QString text)
+QString FandomParser::GetNext(core::Section & section, int &startfrom, QString text)
 {
     QString nextUrl;
     QRegExp rxEnd(QRegExp::escape("Next &#187"));
@@ -195,9 +195,9 @@ QString FandomParser::GetLast(QString pageContent)
 }
 
 
-Section FandomParser::GetSection(QString text, int start)
+core::Section FandomParser::GetSection(QString text, int start)
 {
-    Section section;
+    core::Section section;
     QRegExp rxStart("<div\\sclass=\'z-list\\szhover\\szpointer\\s\'");
     int index = rxStart.indexIn(text, start);
     if(index != -1)

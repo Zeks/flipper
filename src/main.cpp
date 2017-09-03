@@ -50,6 +50,6 @@ int main(int argc, char *argv[])
     //database::EnsureFFNUrlsShort();
     //auto result = database::EnsureTagForRecommendations();
     //database::PassTagsIntoTagsTable();
-    Q_UNUSED(result);
+
     return a.exec();
 }
