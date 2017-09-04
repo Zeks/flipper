@@ -60,6 +60,8 @@ struct WriteStats
     void EnsureFandomsFilled();
     void EnsureWebIdsFilled();
     void EnsureFFNUrlsShort();
+    void CalculateFandomAverages();
+    void CalculateFandomFicCounts();
 
     void ImportTags(QString anotherDatabase);
 

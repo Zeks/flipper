@@ -115,6 +115,8 @@ void cfGetSecondFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
         result = "";
     else
         result = str.mid(index+1);
+    result = result.replace(" CROSSOVER", "");
+    result = result.replace("CROSSOVER", "");
     sqlite3_result_text(ctx, qPrintable(result), result.length(), SQLITE_TRANSIENT);
 }
 void InstallCustomFunctions()
@@ -789,7 +791,7 @@ QDateTime GetMaxUpdateDateForFandom(QStringList sections)
 void EnsureFandomsFilled()
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("update fanfics set fandom1 = cfGetFirstFandom(fandom), fandom2 = cfGetSecondfandom(fandom) where fandom1 is null and fandom2 is null");
+    QString qs = QString("update fanfics set fandom1 = cfGetFirstFandom(fandom), fandom2 = cfGetSecondfandom(fandom) /*where fandom1 is null and fandom2 is null*/");
     QSqlQuery q(db);
     q.prepare(qs);
     ExecAndCheck(q);
@@ -1299,6 +1301,31 @@ void DeleteTagfromDatabase(QString tag)
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":tag",tag);
+    if(!ExecAndCheck(q))
+        return;
+    return;
+}
+
+void CalculateFandomAverages()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update fandoms set average_faves_top_3 =  (select sum(favourites)/3 from fanfics f where f.fandom = fandoms.fandom and f.id "
+                         "in (select id from fanfics where fanfics.fandom = fandoms.fandom order by favourites desc limit 3))");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return;
+    return;
+}
+
+void CalculateFandomFicCounts()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update fandoms set fic_count = "
+                         "((select count(*) from fanfics f where fandom1 = fandoms.FANDOM) + "
+                         " (select count(*) from fanfics f where fandom2 = fandoms.FANDOM)) ");
+    QSqlQuery q(db);
+    q.prepare(qs);
     if(!ExecAndCheck(q))
         return;
     return;

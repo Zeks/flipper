@@ -98,12 +98,22 @@ QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter filter)
     return sumOfAuthorFavourites;
 }
 
+// not exactly what its supposed to do but okay query to save
+//QString currentRecTagValue = " ((SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = 1)* "
+//        " ( case when (select (select max(average_faves_top_3) from fandoms)/(select max(average_faves_top_3) from fandoms fs where fs.fandom in (f.fandom1, f.fandom2) )) > 3  then 1.5 "
+//        " when (select (select max(average_faves_top_3) from fandoms)/(select max(average_faves_top_3) from fandoms fs where fs.fandom in (f.fandom1, f.fandom2) )) > 15 then 2 "
+//        " else 1 end))  as sumrecs, ";
+
 QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 {
-    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id) as sumrecs, ";
-    //currentRecTagValue=currentRecTagValue.arg(filter.listForRecommendations);
+    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = 1) as sumrecs, ";
     return currentRecTagValue;
 }
+
+//QString DefaultQueryBuilder::ProcessFandomMultiplier(StoryFilter)
+//{
+
+//}
 
 QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
 {

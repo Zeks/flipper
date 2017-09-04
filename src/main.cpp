@@ -47,6 +47,8 @@ int main(int argc, char *argv[])
     database::InstallCustomFunctions();
     database::EnsureFandomsFilled();
     database::EnsureWebIdsFilled();
+//    database::CalculateFandomFicCounts();
+//    database::CalculateFandomAverages();
     //database::EnsureFFNUrlsShort();
     //auto result = database::EnsureTagForRecommendations();
     //database::PassTagsIntoTagsTable();

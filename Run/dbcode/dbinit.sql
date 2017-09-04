@@ -46,6 +46,8 @@ create table if not exists fandoms (FANDOM VARCHAR NOT NULL, SECTION VARCHAR NOT
  alter table fandoms add column last_update_crossover datetime; 
  alter table fandoms add column id integer; 
  alter table fandoms add column fandom_multiplier integer default 1; 
+ alter table fandoms add column fic_count integer default 0; 
+ alter table fandoms add column average_faves_top_3 real default 0; 
  
 CREATE  INDEX if  not exists main.I_FANDOMS_FANDOM ON FANDOMS (FANDOM ASC);
 CREATE  INDEX if  not exists main.I_FANDOMS_SECTION ON FANDOMS (SECTION ASC);
@@ -108,6 +110,13 @@ create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUT
 CREATE INDEX if not exists  I_RecommendationLists_ID ON RecommendationLists (id asc);
 CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (NAME asc);
 CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists (created asc);
+
+-- data for fandoms present in the list
+create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer deault 0, PRIMARY KEY (list_id, fandom_id))
+CREATE INDEX if not exists I_RecommendationListsFandoms_PK ON RecommendationListsFandoms (list_id ASC, fandom_id asc);
+CREATE INDEX if not exists  I_RecommendationListsFandoms_LIST_ID ON RecommendationListsFandoms (list_id asc);
+CREATE INDEX if not exists  I_RecommendationListsFandoms_fandom_id ON RecommendationListsFandoms (fandom_id asc);
+CREATE INDEX if not exists  I_RecommendationListsFandoms_IS_ORIGINAL_FANDOM ON RecommendationListsFandoms (is_original_fandom asc);
 
 -- data for recommendation lists;
 CREATE TABLE if not exists RecommendationListData(fic_id INTEGER NOT NULL, list_id integer, match_count integer default 0, PRIMARY KEY (fic_id asc, list_id asc));
