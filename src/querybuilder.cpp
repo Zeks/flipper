@@ -48,14 +48,14 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
     QString queryString;
     queryString+=ProcessSumFaves(filter);
     queryString+=ProcessSumRecs(filter);
+    queryString+=ProcessTags(filter);
+
     return queryString;
 }
 
 QString DefaultQueryBuilder::CreateWhere(StoryFilter filter)
 {
     QString queryString;
-
-    activeTags = ProcessActiveTags(filter)    ;
 
     queryString+= ProcessWordcount(filter);
     queryString+= ProcessGenreIncluson(filter);
@@ -108,6 +108,12 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 {
     QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = 1) as sumrecs, ";
     return currentRecTagValue;
+}
+
+QString DefaultQueryBuilder::ProcessTags(StoryFilter)
+{
+    QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, ";
+    return currentTagValue;
 }
 
 //QString DefaultQueryBuilder::ProcessFandomMultiplier(StoryFilter)
@@ -235,6 +241,8 @@ QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
 {
     QString queryString;
+    if(filter.fandom.trimmed().isEmpty())
+        return queryString;
     if(filter.includeCrossovers)
         queryString+=QString(" and  f.fandom like '%%1%' and f.fandom like '%CROSSOVER%'").arg(filter.fandom);
     else
@@ -246,37 +254,37 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
 {
     QString queryString;
+    QString part =  "'" + filter.activeTags.join("','") + "'";
     if(filter.mode == core::StoryFilter::filtering_in_fics)
     {
-        if(!activeTags.isEmpty())
-            queryString +=" and cfRegexp(:tags, tags) ";
-        if(filter.ignoreAlreadyTagged)
-            queryString += QString("");
+
+        if(!filter.activeTags.isEmpty())
+        {
+
+            queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = f.id) ").arg(part);
+        }
         else
-            queryString +=" and tags = ' none ' ";
+        {
+            if(filter.ignoreAlreadyTagged)
+                queryString += QString("");
+            else
+            {
+                queryString = QString(" and not exists (select fic_id from fictags where fic_id = f.id) ");
+            }
+        }
 
     }
     else
     {
         if(filter.ignoreAlreadyTagged)
-            queryString += QString(" and tags = ' none ' ");
-        else
             queryString += QString("");
+        else
+            queryString += QString(" and not exists  (select fic_id from fictags where fic_id = f.id) )");
+
     }
     return queryString;
 }
 
-QString DefaultQueryBuilder::ProcessActiveTags(StoryFilter filter)
-{
-    QString tags;
-    if(filter.activeTags.size() == 0)
-        return tags;
-    for(auto tag : filter.activeTags)
-        tags.push_back(WrapTag(tag) + "|");
-
-    tags.chop(1);
-    return tags;
-}
 
 QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wherePart)
 {
@@ -292,7 +300,10 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
             Query q;
             q.bindings = query.bindings;
             q.str = wherePart;
-            idList+=rng->Get(q);
+            auto value = rng->Get(q);
+            if(value == "-1")
+                return "";
+            idList+=value;
         }
     }
     if(idList.size() == 0)
@@ -311,8 +322,8 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, Query& q)
         q.bindings[":favourites"] = filter.minFavourites;
     if(filter.listForRecommendations > -1)
         q.bindings[":list_id"] = filter.listForRecommendations;
-    if(!filter.activeTags.isEmpty())
-        q.bindings[":tags"] = activeTags;
+//    if(!filter.activeTags.isEmpty())
+//        q.bindings[":tags"] = activeTags;
     //q.bindings[":rectag"] = filter.tagForRecommendations;
 }
 
@@ -342,13 +353,15 @@ QString DefaultRNGgenerator::Get(Query query)
     {
         auto idList = database::GetIdListForQuery(query);
         if(idList.size() == 0)
-            return -1;
+            idList.push_back("-1");
         randomIdLists[where] = idList;
     }
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 eng(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(0, randomIdLists[where].size()); // define the range
-    return randomIdLists[where][distr(eng)];
+    auto& currentList = randomIdLists[where];
+    std::uniform_int_distribution<> distr(0, currentList.size()); // define the range
+    auto value = distr(eng);
+    return currentList[value];
 }
 
 }

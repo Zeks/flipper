@@ -1166,6 +1166,8 @@ QStringList GetIdListForQuery(core::Query query)
 
     q.next();
     auto temp = q.value("merged").toString();
+    if(temp.trimmed().isEmpty())
+        return result;
     result = temp.split(",");
     return result;
 }

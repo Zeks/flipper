@@ -576,6 +576,7 @@ void MainWindow::LoadData()
         return;
     }
     auto q = BuildQuery();
+    q.setForwardOnly(true);
     q.exec();
     qDebug() << q.lastQuery();
     if(q.lastError().isValid())
@@ -595,7 +596,8 @@ void MainWindow::LoadData()
         fanfics.push_back(LoadFanfic(q));
 
         if(counter%10000 == 0)
-            qDebug() << "tick " << counter/100;
+            qDebug() << "tick " << counter/1000;
+        //qDebug() << "tick " << counter;
     }
     qDebug() << "loaded fics:" << counter;
 
