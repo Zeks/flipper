@@ -1,5 +1,5 @@
 --fanfics;
-create table if not exists FANFICS (FANDOM VARCHAR NOT NULL, AUTHOR VARCHAR NOT NULL,TITLE VARCHAR NOT NULL,SUMMARY VARCHAR NOT NULL,GENRES VARCHAR,CHARACTERS VARCHAR,RATED VARCHAR,PUBLISHED DATETIME NOT NULL,UPDATED DATETIME NOT NULL,URL VARCHAR NOT NULL,TAGS VARCHAR NOT NULL DEFAULT ' none ', WORDCOUNT INTEGER NOT NULL,FAVOURITES INTEGER NOT NULL,REVIEWS INTEGER NOT NULL,CHAPTERS INTEGER NOT NULL,COMPLETE INTEGER NOT NULL DEFAULT 0,AT_CHAPTER INTEGER NOT NULL,ORIGIN VARCHAR NOT NULL, ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);			
+create table if not exists FANFICS (FANDOM VARCHAR NOT NULL, AUTHOR VARCHAR NOT NULL,TITLE VARCHAR NOT NULL,SUMMARY VARCHAR NOT NULL,GENRES VARCHAR,CHARACTERS VARCHAR,RATED VARCHAR,PUBLISHED DATETIME NOT NULL,UPDATED DATETIME NOT NULL, WORDCOUNT INTEGER NOT NULL,FAVOURITES INTEGER NOT NULL,REVIEWS INTEGER NOT NULL,CHAPTERS INTEGER NOT NULL,COMPLETE INTEGER NOT NULL DEFAULT 0,AT_CHAPTER INTEGER NOT NULL,ORIGIN VARCHAR NOT NULL, ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);			
  alter table fanfics add column wcr real; 
  alter table fanfics add column wcr_adjusted real; 
  alter table fanfics add column reviewstofavourites real; 
@@ -7,8 +7,14 @@ create table if not exists FANFICS (FANDOM VARCHAR NOT NULL, AUTHOR VARCHAR NOT 
  alter table fanfics add column age integer default null; 
  alter table fanfics add column fandom1 VARCHAR; 
  alter table fanfics add column fandom2 VARCHAR;
- alter table fanfics add column web_id integer default null;
- alter table fanfics add column web_uid integer default null;
+ alter table fanfics add column ffn_id integer default null;
+ alter table fanfics add column ao3_id integer default null;
+ alter table fanfics add column sb_id integer default null;
+ alter table fanfics add column sv_id integer default null;
+ alter table fanfics add column alive integer default 1;
+ alter table fanfics add column author_id integer default null;
+ alter table fanfics add column date_added datetime default sysdate;
+ alter table fanfics add column date_deactivated datetime default null;
 
  update fanfics set wcr = wordcount*1.0/reviews where wcr is null and reviews > 0 and wordcount > 1000;
  update fanfics set wcr = 200000 where wcr is null and ( reviews = 0 or wordcount <=1000);
@@ -44,10 +50,11 @@ create table if not exists fandoms (FANDOM VARCHAR NOT NULL, SECTION VARCHAR NOT
  alter table fandoms add column tracked_crossovers integer default 0; 
  alter table fandoms add column last_update datetime; 
  alter table fandoms add column last_update_crossover datetime; 
- alter table fandoms add column id integer; 
+ alter table fandoms add column id integer AUTOINCREMENT default 0; 
  alter table fandoms add column fandom_multiplier integer default 1; 
  alter table fandoms add column fic_count integer default 0; 
  alter table fandoms add column average_faves_top_3 real default 0; 
+ alter table fandoms add column source varchar default 'ffn'; 
  
 CREATE  INDEX if  not exists main.I_FANDOMS_FANDOM ON FANDOMS (FANDOM ASC);
 CREATE  INDEX if  not exists main.I_FANDOMS_SECTION ON FANDOMS (SECTION ASC);
@@ -70,6 +77,17 @@ CREATE TABLE if not exists FicTags (fic_id INTEGER NOT NULL, tag varchar,  PRIMA
 CREATE INDEX if not exists  I_FIC_TAGS_PK ON FicTags (fic_id asc, tag ASC);
 CREATE INDEX if not exists  I_FIC_TAGS_TAG ON FicTags (tag ASC);
 CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicTags (fic_id ASC);
+
+CREATE TABLE if not exists Genres (id INTEGER PRIMARY KEY autoincrement NOT NULL default 0, genre varchar, website varchar);
+CREATE INDEX if not exists  I_GENRES_PK ON Genres (genre asc, website ASC);
+CREATE INDEX if not exists  I_GENRES_GENRE ON Genres (genre ASC);
+CREATE INDEX if not exists  I_GENRES_WEBSITE ON Genres (website ASC);
+
+-- fandoms for fics;
+CREATE TABLE if not exists FicFandoms (fic_id INTEGER NOT NULL, fandom_id integer,  PRIMARY KEY (fic_id asc, fandom_id asc));
+CREATE INDEX if not exists  I_FIC_FANDOMS_PK ON FicFandoms (fic_id asc, fandom_id ASC);
+CREATE INDEX if not exists  I_FIC_FANDOMS_FANDOM ON FicFandoms (fandom_id ASC);
+CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicFandoms (fic_id ASC);
 
  -- recent fandoms;
  CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);

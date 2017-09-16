@@ -1,8 +1,23 @@
 #include "url_utils.h"
 #include <QRegExp>
-namespace core{
+namespace url_utils{
 
-QString FFNUrlUtils::GetWebId(QString url)
+QString GetWebId(QString url, QString source)
+{
+   if(source == "ffn")
+       return ffn::GetWebId(url);
+   return "";
+}
+
+QString GetUrlFromWebId(int id, QString source)
+{
+    if(source == "ffn")
+        return ffn::GetUrlFromWebId(id);
+    return "";
+}
+
+namespace ffn{
+QString GetWebId(QString url)
 {
 
     QString result;
@@ -14,5 +29,14 @@ QString FFNUrlUtils::GetWebId(QString url)
     }
     return result;
 }
+
+QString GetUrlFromWebId(int id)
+{
+    return "https://www.fanfiction.net/s/" + QString::number(id);
+}
+
+}
+
+
 
 }

@@ -29,20 +29,6 @@ Query DefaultQueryBuilder::Build(StoryFilter filter)
     return query;
 }
 
-//Query DefaultQueryBuilder::BuildIdQuery(StoryFilter)
-//{
-//    idQuery.Clear();
-//    queryString.clear();
-//    ProcessBindings(filter, idQuery);
-//    queryString = "select ID, ";
-//    queryString+=" from fanfics f where 1 = 1 " ;
-//    queryString+= CreateWhere(filter);
-//    queryString+= CreateLimitQueryPart(filter);
-//    idQuery.str = queryString;
-//    return idQuery;
-
-//}
-
 QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
 {
     QString queryString;
@@ -106,7 +92,7 @@ QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 {
-    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = 1) as sumrecs, ";
+    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id) as sumrecs, ";
     return currentRecTagValue;
 }
 
@@ -115,11 +101,6 @@ QString DefaultQueryBuilder::ProcessTags(StoryFilter)
     QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, ";
     return currentTagValue;
 }
-
-//QString DefaultQueryBuilder::ProcessFandomMultiplier(StoryFilter)
-//{
-
-//}
 
 QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
 {
@@ -255,31 +236,14 @@ QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
 {
     QString queryString;
     QString part =  "'" + filter.activeTags.join("','") + "'";
-    if(filter.mode == core::StoryFilter::filtering_in_fics)
-    {
-
-        if(!filter.activeTags.isEmpty())
-        {
-
-            queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = f.id) ").arg(part);
-        }
-        else
-        {
-            if(filter.ignoreAlreadyTagged)
-                queryString += QString("");
-            else
-            {
-                queryString = QString(" and not exists (select fic_id from fictags where fic_id = f.id) ");
-            }
-        }
-
-    }
+    if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
+        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = f.id) ").arg(part);
     else
     {
         if(filter.ignoreAlreadyTagged)
             queryString += QString("");
         else
-            queryString += QString(" and not exists  (select fic_id from fictags where fic_id = f.id) )");
+            queryString += QString(" and not exists  (select fic_id from fictags where fic_id = f.id)");
 
     }
     return queryString;
@@ -322,9 +286,6 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, Query& q)
         q.bindings[":favourites"] = filter.minFavourites;
     if(filter.listForRecommendations > -1)
         q.bindings[":list_id"] = filter.listForRecommendations;
-//    if(!filter.activeTags.isEmpty())
-//        q.bindings[":tags"] = activeTags;
-    //q.bindings[":rectag"] = filter.tagForRecommendations;
 }
 
 QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)

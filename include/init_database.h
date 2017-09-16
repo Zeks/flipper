@@ -32,7 +32,7 @@ struct WriteStats
     void RemoveAuthor(int id);
 
     int GetFicIdByAuthorAndName(QString, QString);
-    int GetFicIdByWebId(int);
+    int GetFicIdByWebId(QString website, int);
     int GetAuthorIdFromUrl(QString url);
     int GetMatchCountForRecommenderOnList(int recommender_id, int list);
     QVector<int> GetAllFicIDsFromRecommendationList(QString tag);
@@ -60,6 +60,7 @@ struct WriteStats
     void EnsureFandomsFilled();
     void EnsureWebIdsFilled();
     void EnsureFFNUrlsShort();
+    bool EnsureFandomsNormalized();
     void CalculateFandomAverages();
     void CalculateFandomFicCounts();
 
@@ -78,6 +79,7 @@ struct WriteStats
     bool CopyAllAuthorRecommendationsToList(int recommenderId, QString listName);
     bool IncrementAllValuesInListMatchingAuthorFavourites(int recommenderId, QString tag);
     bool DeleteRecommendationList(QString listName);
+    //bool WriteListFandoms(int id, QList<>);
 
     void DeleteTagfromDatabase(QString);
 
@@ -87,6 +89,11 @@ struct WriteStats
     //void WriteRecommendersMetainfo(const Recommender& recommender);
     //bool EnsureTagForRecommendations();
     //int GetFicDBIdByDelimitedSiteId(QString id);
+    bool GetAllFandoms(QHash<QString, int>&);
+    int CreateIDForFandom(core::Fandom);
+    bool EnsureFandomExists(core::Fandom, QHash<QString, int>&);
+    int GetLastIdForTable(QString);
 
+    bool IsGenreList(QStringList, QString website);
 
 }

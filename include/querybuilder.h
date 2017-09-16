@@ -17,11 +17,9 @@ class DefaultQueryBuilder : public IQueryBuilder
 {
 public:
     Query Build(StoryFilter);
-    //Query BuildIdQuery(StoryFilter);
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
 
 private:
-    //QString CreateIndexField(StoryFilter);
     QString CreateCustomFields(StoryFilter);
     QString CreateWhere(StoryFilter);
 
@@ -29,7 +27,6 @@ private:
     QString ProcessSumFaves(StoryFilter);
     QString ProcessSumRecs(StoryFilter);
     QString ProcessTags(StoryFilter);
-    //QString ProcessFandomMultiplier(StoryFilter);
     QString ProcessWordcount(StoryFilter);
     QString ProcessGenreIncluson(StoryFilter);
     QString ProcessWordInclusion(StoryFilter);
@@ -47,7 +44,6 @@ private:
     QString BuildSortMode(StoryFilter);
     QString CreateLimitQueryPart(StoryFilter);
 
-    //select group_concat(id, ',') from recommenders order by id asc
     QString BuildIdListQuery(StoryFilter);
     bool HasIdListForQuery(QString);
     QString queryString;

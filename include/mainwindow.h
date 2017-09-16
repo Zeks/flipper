@@ -61,15 +61,12 @@ public:
     ~MainWindow();
     void Init();
     void InitConnections();
-    //void timerEvent(QTimerEvent *) override;
-
     bool CheckSectionAvailability();
 
 private:
 
     void SetupFanficTable();
     void SetupTableAccess();
-    //QTableView* types_table = nullptr;
     FicModel* typetableModel = nullptr;
     QSharedPointer<TableDataInterface> typetableInterface;
     TableDataListHolder<core::Fic>* holder = nullptr;
@@ -92,13 +89,10 @@ private:
     void DisableAllLoadButtons();
     void EnableAllLoadButtons();
 
-    //QString CreateURL(QString);
-
     void LoadData();
     QSqlQuery BuildQuery();
     QString BuildBias();
 
-    //void LoadRecommendations(QString url);
     void LoadIntoDB(core::Fic&);
 
     QString WrapTag(QString tag);
@@ -184,11 +178,8 @@ private:
     void LoadMoreAuthors(bool reprocessCache = false);
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
-    //void ReprocessAuthorNameIntoDb();
     void UpdateAllAuthorsWith(std::function<void (core::Author, WebPage)> updater);
-    //void UpdateTagStatsPerFic();
     void ReprocessAuthors();
-    //void ReprocessTagSumRecs();
     void ProcessListIntoRecommendations(QString list);
     void BuildRecommendations(core::RecommendationList params);
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);

@@ -328,8 +328,8 @@ void MainWindow::SetupTableAccess()
     ADD_STRING_GETSET(holder, 1, 0, author.name);
     ADD_STRING_GETSET(holder, 2, 0, title);
     ADD_STRING_GETSET(holder, 3, 0, summary);
-    ADD_STRING_GETSET(holder, 4, 0, genre);
-    ADD_STRING_GETSET(holder, 5, 0, characters);
+    ADD_STRING_GETSET(holder, 4, 0, genreString);
+    ADD_STRING_GETSET(holder, 5, 0, charactersFull);
     ADD_STRING_GETSET(holder, 6, 0, rated);
     ADD_DATE_GETSET(holder, 7, 0, published);
     ADD_DATE_GETSET(holder, 8, 0, updated);
@@ -549,8 +549,8 @@ inline core::Fic LoadFanfic(QSqlQuery& q)
     result.author.name = q.value("AUTHOR").toString();
     result.title = q.value("TITLE").toString();
     result.summary = q.value("SUMMARY").toString();
-    result.genre= q.value("GENRES").toString();
-    result.characters = q.value("CHARACTERS").toString().replace("not found", "");
+    result.genreString = q.value("GENRES").toString();
+    result.charactersFull = q.value("CHARACTERS").toString().replace("not found", "");
     result.rated = q.value("RATED").toString();
     result.published = q.value("PUBLISHED").toDateTime();
     result.updated= q.value("UPDATED").toDateTime();
@@ -1153,17 +1153,6 @@ void MainWindow::ReprocessAuthors()
     UpdateAllAuthorsWith(functor);
 }
 
-//void MainWindow::ReprocessTagSumRecs()
-//{
-//    auto tags = database::ReadAvailableRecommendationLists();
-//    for(auto tag : tags)
-//    {
-//        if(tag == "core" || tag == "none")
-//            continue;
-//        database::UpdateTagStatsPerFic(tag);
-//    }
-//}
-
 void MainWindow::ProcessListIntoRecommendations(QString list)
 {
     QFile data(list);
@@ -1190,10 +1179,12 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
             if(ficIdPart.isEmpty())
                 continue;
             //int id = database::GetFicDBIdByDelimitedSiteId(ficIdPart);
-            auto webId = core::FFNUrlUtils::GetWebId(ficIdPart);
-            if(webId.toInt() <= 0)
+
+            if(ficIdPart.toInt() <= 0)
                 continue;
-            int id = database::GetFicIdByWebId(webId.toInt());
+            auto webId = ficIdPart.toInt();
+            // at the moment works only for ffn and doesnt try to determine anything else
+            int id = database::GetFicIdByWebId("ffn", webId);
             if(id == -1)
                 continue;
             qDebug()<< "Settign tag: " << params.name << " to: " << id;

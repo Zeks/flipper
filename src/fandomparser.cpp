@@ -29,26 +29,27 @@ void FandomParser::ProcessPage(WebPage page)
 
         GetStatSection(section, currentPosition, str);
 
-        GetTaggedSection(section.statSection.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.result.wordCount = val;});
-        GetTaggedSection(section.statSection.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.result.chapters = val;});
-        GetTaggedSection(section.statSection.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.result.reviews = val;});
-        GetTaggedSection(section.statSection.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.result.favourites = val;});
-        GetTaggedSection(section.statSection, "Published:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
+        QString statText = section.statSection.text;
+        GetTaggedSection(statText.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.result.wordCount = val;});
+        GetTaggedSection(statText.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.result.chapters = val;});
+        GetTaggedSection(statText.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.result.reviews = val;});
+        GetTaggedSection(statText.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.result.favourites = val;});
+        GetTaggedSection(statText, "Published:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
             if(val != "not found")
                 section.result.published.setTime_t(val.toInt()); ;
         });
-        GetTaggedSection(section.statSection, "Updated:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
+        GetTaggedSection(statText, "Updated:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
             if(val != "not found")
                 section.result.updated.setTime_t(val.toInt());
             else
                 section.result.updated.setTime_t(0);
         });
-        GetTaggedSection(section.statSection, "Rated:\\s(.{1})", [&section](QString val){ section.result.rated = val;});
-        GetTaggedSection(section.statSection, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.result.genre = val;});
-        GetTaggedSection(section.statSection, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
-            section.result.characters = val.replace(" - Complete", "");
+        GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result.rated = val;});
+        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.result.SetGenres(val, "ffn");});
+        GetTaggedSection(statText, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
+            section.result.charactersFull = val.replace(" - Complete", "");
         });
-        GetTaggedSection(section.statSection, "(Complete)$", [&section](QString val){
+        GetTaggedSection(statText, "(Complete)$", [&section](QString val){
             if(val != "not found")
                 section.result.complete = 1;
         });
@@ -110,7 +111,7 @@ void FandomParser::GetStatSection(core::Section &section, int &startfrom, QStrin
     QRegExp rxEnd("</div></div></div>");
     int indexStart = rxStart.indexIn(text, startfrom + 1);
     int indexEnd = rxEnd.indexIn(text, indexStart);
-    section.statSection= text.mid(indexStart + 15,indexEnd - (indexStart + 15));
+    section.statSection.text = text.mid(indexStart + 15,indexEnd - (indexStart + 15));
     section.statSectionStart = indexStart + 15;
     section.statSectionEnd = indexEnd;
     //qDebug() << section.statSection;
