@@ -5,6 +5,7 @@
 #include <QScopedPointer>
 #include <QSqlDatabase>
 #include "GlobalHeaders/SingletonHolder.h"
+#include "ECacheMode.h"
 #include <atomic>
 
 enum class EPageType
@@ -40,13 +41,6 @@ struct WebPage
     bool isLastPage = false;
     bool isFromCache = false;
     int loadedIn = 0;
-};
-
-enum class ECacheMode
-{
-    dont_use_cache = 0,
-    use_cache = 1,
-    use_only_cache = 2
 };
 
 class PageGetterPrivate;

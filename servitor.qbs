@@ -4,7 +4,7 @@ import "BaseDefines.qbs" as App
 
 
 App{
-name: "ffsse"
+name: "servitor"
 consoleApplication:false
 type:"application"
 qbsSearchPaths: sourceDirectory + "/modules"
@@ -18,7 +18,6 @@ Depends { name: "Qt.quick" }
 Depends { name: "Qt.concurrent" }
 Depends { name: "Qt.quickwidgets" }
 Depends { name: "cpp" }
-Depends { name: "UniversalModels" }
 Depends { name: "logger" }
 
 cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
@@ -33,26 +32,22 @@ cpp.includePaths: [
 ]
 
 files: [
-        "forms.qrc",
-        "icons.qrc",
+        "UI/servitorwindow.ui",
         "include/fandomparser.h",
         "include/favparser.h",
         "include/ffnparserbase.h",
         "include/ficparser.h",
         "include/init_database.h",
-        "include/mainwindow.h",
         "include/pagegetter.h",
         "include/parse.h",
         "include/querybuilder.h",
         "include/queryinterfaces.h",
+        "include/regex_utils.h",
         "include/section.h",
         "include/service_functions.h",
+        "include/servitorwindow.h",
         "include/storyfilter.h",
-        "include/tagwidget.h",
-        "include/fanficdisplay.h",
         "include/url_utils.h",
-        "qml_ficmodel.cpp",
-        "qml_ficmodel.h",
         "sqlite/sqlite3.c",
         "sqlite/sqlite3.h",
         "src/fandomparser.cpp",
@@ -60,21 +55,15 @@ files: [
         "src/ffnparserbase.cpp",
         "src/ficparser.cpp",
         "src/init_database.cpp",
-        "src/main_ffsse.cpp",
+        "src/main_servitor.cpp",
         "src/pagegetter.cpp",
         "src/querybuilder.cpp",
         "src/regex_utils.cpp",
         "src/section.cpp",
         "src/service_functions.cpp",
-        "src/storyfilter.cpp",
+        "src/servitorwindow.cpp",
         "src/url_utils.cpp",
-        "ui/mainwindow.ui",
-        "ui/tagwidget.ui",
-        "ui/fanficdisplay.ui",
-        "src/mainwindow.cpp",
-        "src/tagwidget.cpp",
-        "src/fanficdisplay.cpp",
     ]
 
-cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]
+cpp.staticLibraries: ["logger", "zlib", "quazip"]
 }

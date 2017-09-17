@@ -9,27 +9,27 @@ class FandomParser
 {
 public:
     void ProcessPage(WebPage page);
-    Section GetSection( QString text, int start);
-    void GetAuthor(Section& , int& startfrom, QString text);
-    void GetTitle(Section& , int& startfrom, QString text);
-    void GetGenre(Section& , int& startfrom, QString text);
-    void GetSummary(Section& , int& startfrom, QString text);
-    void GetCrossoverFandomList(Section& , int& startfrom, QString text);
-    void GetWordCount(Section& , int& startfrom, QString text);
-    void GetPublishedDate(Section& , int& startfrom, QString text);
-    void GetUpdatedDate(Section& , int& startfrom, QString text);
-    void GetUrl(Section& , int& startfrom, QString text);
-    QString GetNext(Section& , int& startfrom, QString text);
-    void GetStatSection(Section& , int& startfrom, QString text);
+    core::Section GetSection( QString text, int start);
+    void GetAuthor(core::Section& , int& startfrom, QString text);
+    void GetTitle(core::Section& , int& startfrom, QString text);
+    void GetGenre(core::Section& , int& startfrom, QString text);
+    void GetSummary(core::Section& , int& startfrom, QString text);
+    void GetCrossoverFandomList(core::Section& , int& startfrom, QString text);
+    void GetWordCount(core::Section& , int& startfrom, QString text);
+    void GetPublishedDate(core::Section& , int& startfrom, QString text);
+    void GetUpdatedDate(core::Section& , int& startfrom, QString text);
+    void GetUrl(core::Section& , int& startfrom, QString text);
+    QString GetNext(core::Section& , int& startfrom, QString text);
+    void GetStatSection(core::Section& , int& startfrom, QString text);
     void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
     QString GetLast(QString pageContent);
     QString CreateURL(QString str);
     QString GetFandom(QString text);
 
     QStringList diagnostics;
-    QList<Section> processedStuff;
+    QList<core::Fic> processedStuff;
     database::WriteStats writeSections;
-    Recommender recommender;
+    core::FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString nextUrl;
     QDateTime minSectionUpdateDate;

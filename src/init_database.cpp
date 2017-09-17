@@ -1,4 +1,5 @@
 #include "include/init_database.h"
+#include "url_utils.h"
 #include <quazip/quazip.h>
 #include <quazip/JlCompress.h>
 
@@ -17,6 +18,52 @@
 #include "sqlite/sqlite3.h"
 
 namespace database{
+
+bool ExecAndCheck(QSqlQuery& q)
+{
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << "SQLERROR: " <<  q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+bool CheckExecution(QSqlQuery& q)
+{
+    if(q.lastError().isValid())
+    {
+        qDebug() << "SQLERROR: "<< q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+bool ExecuteQuery(QSqlQuery& q, QString query)
+{
+    QString qs = query;
+    q.prepare(qs);
+    q.exec();
+
+    if(q.lastError().isValid())
+    {
+        qDebug() << "SQLERROR: "<< q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
+
+bool ExecuteQueryChain(QSqlQuery& q, QStringList queries)
+{
+    for(auto query: queries)
+    {
+        if(!ExecuteQuery(q, query))
+            return false;
+    }
+    return true;
+}
 
 void cfRegexp(sqlite3_context* ctx, int argc, sqlite3_value** argv)
 {
@@ -69,6 +116,8 @@ void cfGetSecondFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
         result = "";
     else
         result = str.mid(index+1);
+    result = result.replace(" CROSSOVER", "");
+    result = result.replace("CROSSOVER", "");
     sqlite3_result_text(ctx, qPrintable(result), result.length(), SQLITE_TRANSIENT);
 }
 void InstallCustomFunctions()
@@ -79,39 +128,10 @@ void InstallCustomFunctions()
         sqlite3 *db_handle = *static_cast<sqlite3 **>(v.data());
         if (db_handle != 0) {
             sqlite3_initialize();
-            // check that it is not NULL
-            // This shows that the database handle is generally valid:
-            //qDebug() << sqlite3_db_filename(db_handle, "main");
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfReturnCapture", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfReturnCapture, NULL, NULL);
-
-//            qDebug() << "This won't be reached.";
-
-//            QSqlQuery query;
-//            query.prepare("select cfRegexp('p$','tap');");
-//            query.exec();
-//            query.next();
-//            qDebug() << query.value(0).toString();
-
-//            QSqlQuery firstFandom;
-//            firstFandom.prepare("select cfGetFirstFandom('tap');");
-//            firstFandom.exec();
-//            firstFandom.next();
-//            qDebug() << firstFandom.value(0).toString();
-
-//            QSqlQuery secondFandom;
-//            secondFandom.prepare("select cfGetSecondFandom('barrel');");
-//            secondFandom.exec();
-//            secondFandom.next();
-//            qDebug() << secondFandom.value(0).toString();
-
-//            QSqlQuery capture;
-//            capture.prepare("select cfReturnCapture('/s/(\\d+)','/s/8477381/1/Kamen-Rider-Blade-The-Battle-Royale');");
-//            capture.exec();
-//            capture.next();
-//            qDebug() << capture.value(0).toString();
         }
     }
 }
@@ -119,33 +139,34 @@ void InstallCustomFunctions()
 bool database::ReadDbFile(QString file, QString connectionName)
 {
     QFile data(file);
-     if (data.open(QFile::ReadOnly))
-     {
-         QTextStream in(&data);
-         QString db = in.readAll();
-         QStringList statements = db.split(";");
-         for(QString statement: statements)
-         {
-             if(statement.trimmed().isEmpty() || statement.trimmed().left(2) == "--")
-                 continue;
+    if (data.open(QFile::ReadOnly))
+    {
+        QTextStream in(&data);
+        QString db = in.readAll();
+        QStringList statements = db.split(";");
+        for(QString statement: statements)
+        {
+            statement = statement.replace(QRegExp("\\t"), " ");
+            statement = statement.replace(QRegExp("\\r"), " ");
+            statement = statement.replace(QRegExp("\\n"), " ");
 
-             QSqlDatabase db ;
-             if(!connectionName.isEmpty())
+            if(statement.trimmed().isEmpty() || statement.trimmed().left(2) == "--")
+                continue;
+
+            QSqlDatabase db ;
+            if(!connectionName.isEmpty())
                 db = QSqlDatabase::database(connectionName);
-             else
+            else
                 db = QSqlDatabase::database();
-             QSqlQuery q(db);
-             q.prepare(statement.trimmed());
-             q.exec();
-             if(q.lastError().isValid())
-             {
-                 qDebug() << q.lastError();
-                 qDebug() << q.lastQuery();
-             }
-         }
-     }
-     else return false;
-     return true;
+            QSqlQuery q(db);
+            q.prepare(statement.trimmed());
+            //qDebug() << statement;
+            ExecAndCheck(q);
+        }
+    }
+    else
+        return false;
+    return true;
 }
 
 bool database::ReindexTable(QString table)
@@ -173,11 +194,7 @@ void database::SetFandomTracked(QString fandom, bool crossover, bool tracked)
     qsl = qsl.arg(trackedPart).arg(QString(tracked ? "1" : "0")).arg(fandom);
     q1.prepare(qsl);
     q1.exec();
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    ExecAndCheck(q1);
 }
 
 void database::PushFandom(QString fandom)
@@ -188,21 +205,11 @@ void database::PushFandom(QString fandom)
     QSqlQuery q1(db);
     upsert1 = upsert1.arg(fandom);
     q1.prepare(upsert1);
-    q1.exec();
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    ExecAndCheck(q1);
     QSqlQuery q2(db);
     upsert2 = upsert2.arg(fandom);
     q2.prepare(upsert2);
-    q2.exec();
-    if(q2.lastError().isValid())
-    {
-        qDebug() << q2.lastError();
-        qDebug() << q2.lastQuery();
-    }
+    ExecAndCheck(q2);
 }
 
 void database::RebaseFandoms()
@@ -211,12 +218,7 @@ void database::RebaseFandoms()
     QSqlQuery q1(db);
     QString qsl = "UPDATE recent_fandoms SET seq_num = seq_num - (select min(seq_num) from recent_fandoms where fandom is not 'base') where fandom is not 'base'";
     q1.prepare(qsl);
-    q1.exec();
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    ExecAndCheck(q1);
 }
 
 QStringList database::FetchRecentFandoms()
@@ -231,11 +233,7 @@ QStringList database::FetchRecentFandoms()
     {
         result.push_back(q1.value(0).toString());
     }
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return result;
 }
 
@@ -249,12 +247,7 @@ bool database::FetchTrackStateForFandom( QString fandom, bool crossover)
     q1.prepare(qsl);
     q1.exec();
     q1.next();
-
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return q1.value(0).toBool();
 }
 
@@ -269,11 +262,7 @@ QStringList database::FetchTrackedFandoms()
     while(q1.next())
         result.push_back(q1.value(0).toString());
 
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return result;
 }
 
@@ -288,11 +277,8 @@ QStringList database::FetchTrackedCrossovers()
     while(q1.next())
         result.push_back(q1.value(0).toString());
 
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
+
     return result;
 }
 
@@ -327,25 +313,22 @@ void database::BackupDatabase()
 
 }
 
-bool LoadIntoDB(Section & section)
+bool LoadIntoDB(core::Fic & section)
 {
     qDebug() << "Loading:" << section.title;
     QSqlDatabase db = QSqlDatabase::database();
     bool loaded = false;
     bool isUpdate = false;
     bool isInsert = false;
-    QString getKeyQuery = "Select ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2') as COUNT_NAMED,"
-                          " ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2' and updated <> :updated) as count_updated"
-                            " FROM FANFICS WHERE 1=1 ";
-    getKeyQuery = getKeyQuery.arg(QString(section.author).replace("'","''")).arg(QString(section.title).replace("'","''"));
+    QString getKeyQuery = "Select ( select count(*) from FANFICS where %1_id = %2) as COUNT_NAMED,"
+                          " ( select count(*) from FANFICS where %1_id = %2 and updated <> :updated) as count_updated"
+                          " FROM FANFICS WHERE 1=1 ";
+    getKeyQuery = getKeyQuery.arg(section.webSite).arg(QString::number(section.webId));
     QSqlQuery keyQ(db);
     keyQ.prepare(getKeyQuery);
     keyQ.bindValue(":updated", section.updated);
     keyQ.exec();
     keyQ.next();
-    //qDebug() << keyQ.lastQuery();
-    //qDebug() << " named: " << keyQ.value(0).toInt();
-    //qDebug() << " updated: " << keyQ.value(1).toInt();
     if(keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0)
         isUpdate = true;
     if(keyQ.value(0).toInt() == 0)
@@ -353,43 +336,37 @@ bool LoadIntoDB(Section & section)
     if(isUpdate == false && isInsert == false)
         return false;
 
-    if(keyQ.lastError().isValid())
-    {
-        qDebug() << keyQ.lastQuery();
-        qDebug() << keyQ.lastError();
-    }
+    CheckExecution(keyQ);
     if(isInsert)
     {
 
-        //qDebug() << "Inserting: " << section.author << " " << section.title << " " << section.fandom << " " << section.genre;
-        QString query = "INSERT INTO FANFICS (FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
-                        "VALUES (  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
-
+        QString query = "INSERT INTO FANFICS (%1_id FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
+                        "VALUES (  :site_id, :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
+        query = query.arg(section.webSite);
         QSqlQuery q(db);
         q.prepare(query);
         q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author);
+        q.bindValue(":author",section.author.name);
         q.bindValue(":title",section.title);
         q.bindValue(":wordcount",section.wordCount.toInt());
         q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
         q.bindValue(":FAVOURITES",section.favourites.toInt());
         q.bindValue(":REVIEWS",section.reviews.toInt());
-        q.bindValue(":CHARACTERS",section.characters);
+        q.bindValue(":CHARACTERS",section.charactersFull);
         q.bindValue(":RATED",section.rated);
 
         q.bindValue(":summary",section.summary);
         q.bindValue(":COMPLETE",section.complete);
-        q.bindValue(":genres",section.genre);
+        q.bindValue(":genres",section.genres);
         q.bindValue(":published",section.published);
         q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url);
+        q.bindValue(":url",section.url("ffn"));
         q.bindValue(":origin",section.origin);
+        q.bindValue(":site_id",section.webId);
         q.exec();
-        if(q.lastError().isValid())
-        {
-            qDebug() << "failed to insert: " << section.author << " " << section.title;
-            qDebug() << q.lastError();
-        }
+        if(!CheckExecution(q))
+            qDebug() << "failed to insert: " << section.author.name << " " << section.title;
+
         loaded=true;
     }
 
@@ -397,48 +374,48 @@ bool LoadIntoDB(Section & section)
     {
         //qDebug() << "Updating: " << section.author << " " << section.title;
         QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, summary = :summary, genres= :genres, published = :published, updated = :updated, url = :url "
-                        " where author = :author and title = :title";
+                        " where %1_id = :site_id";
+        query = query.arg(section.webSite);
 
         QSqlQuery q(db);
         q.prepare(query);
         q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author);
+        q.bindValue(":author",section.author.name);
         q.bindValue(":title",section.title);
 
         q.bindValue(":wordcount",section.wordCount.toInt());
         q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
         q.bindValue(":FAVOURITES",section.favourites.toInt());
         q.bindValue(":REVIEWS",section.reviews.toInt());
-        q.bindValue(":CHARACTERS",section.characters);
+        q.bindValue(":CHARACTERS",section.charactersFull);
         q.bindValue(":RATED",section.rated);
 
         q.bindValue(":summary",section.summary);
         q.bindValue(":COMPLETE",section.complete);
-        q.bindValue(":genres",section.genre);
+        q.bindValue(":genres",section.genres);
         q.bindValue(":published",section.published);
         q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url);
+        q.bindValue(":url",section.url("ffn"));
+        q.bindValue(":site_id",section.webId);
         q.exec();
-        if(q.lastError().isValid())
-        {
-            qDebug() << "failed to update: " << section.author << " " << section.title;
-            qDebug() << q.lastError();
-        }
+        if(!CheckExecution(q))
+            qDebug() << "failed to update: " << section.author.name << " " << section.title;
+
         loaded=true;
     }
     return loaded;
 }
 
-bool LoadRecommendationIntoDB(Recommender &recommender,  Section &section)
+bool WriteRecommendationIntoDB(core::FavouritesPage &recommender,  core::Fic &section)
 {
     // get recommender id from database if not write him
     // try to update fic inside the database via usual Load
     // find id of the fic in question
     // insert if not exists recommender/ficid pair
     LoadIntoDB(section);
-    int fic_id = GetFicIdByAuthorAndName(section.author, section.title);
+    int fic_id = GetFicIdByWebId(section.webSite, section.webId);
     //int rec_id = GetRecommenderId(recommender.url);
-    if(!WriteRecommendation(recommender, fic_id))
+    if(!WriteRecommendation(recommender.author, fic_id))
         return false;
     return true;
 }
@@ -452,41 +429,60 @@ int GetFicIdByAuthorAndName(QString author, QString title)
     q1.bindValue(":author", author);
     q1.bindValue(":title", title);
     q1.exec();
-    int result;
+    int result = -1;
     while(q1.next())
         result = q1.value(0).toInt();
-
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return result;
 }
 
-bool WriteRecommendation(Recommender &recommender, int fic_id, QString tag)
-{
-    if(recommender.GetIdStatus() == ERecommenderIdStatus::unassigned)
-        recommender.AssignId(GetRecommenderId(recommender.url));
-    if(recommender.GetIdStatus() == ERecommenderIdStatus::not_found)
-    {
-        WriteRecommender(recommender);
-        recommender.AssignId(GetRecommenderId(recommender.url));
-    }
 
-    if(recommender.id < 0)
+int GetFicIdByWebId(QString website, int webId)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q1(db);
+    QString qsl = " select id from fanfics where %1_id = :site_id";
+    qsl = qsl.arg(website);
+    q1.prepare(qsl);
+    q1.bindValue(":site_id",webId);
+    q1.exec();
+    int result = -1;
+    while(q1.next())
+        result = q1.value(0).toInt();
+    CheckExecution(q1);
+
+    return result;
+}
+
+bool EnsureIdForAuthor(core::Author &author)
+{
+    if(author.GetIdStatus() == core::AuthorIdStatus::unassigned)
+        author.AssignId(GetAuthorIdFromUrl(author.url("ffn")));
+    if(author.GetIdStatus() == core::AuthorIdStatus::not_found)
+    {
+        WriteRecommender(author);
+        author.AssignId(GetAuthorIdFromUrl(author.url("ffn")));
+    }
+    if(author.id < 0)
+        return false;
+    return true;
+}
+
+bool WriteRecommendation(core::Author &author, int fic_id)
+{
+    if(!EnsureIdForAuthor(author))
         return false;
 
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = " insert into recommendations (recommender_id, fic_id, tag) values( :recommender_id,:fic_id,:tag); ";
+    // atm this pairs favourite story with an author
+    QString qsl = " insert into recommendations (recommender_id, fic_id) values(:recommender_id,:fic_id); ";
     q1.prepare(qsl);
-    q1.bindValue(":recommender_id", recommender.id);
+    q1.bindValue(":recommender_id", author.id);
     q1.bindValue(":fic_id", fic_id);
-    q1.bindValue(":tag", tag);
     q1.exec();
 
-    if(q1.lastError().isValid()&& !q1.lastError().text().contains("UNIQUE constraint failed"))
+    if(q1.lastError().isValid() && !q1.lastError().text().contains("UNIQUE constraint failed"))
     {
         qDebug() << q1.lastError();
         qDebug() << q1.lastQuery();
@@ -494,248 +490,158 @@ bool WriteRecommendation(Recommender &recommender, int fic_id, QString tag)
     return true;
 }
 
-int GetRecommenderId(QString url)
+int GetAuthorIdFromUrl(QString url)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = " select id from recommenders where url = :url ";
+    QString qsl = " select id from recommenders where url like '%%1%' ";
+    qsl = qsl.arg(url);
     q1.prepare(qsl);
-    q1.bindValue(":url", url);
+    //q1.bindValue(":url", url);
     q1.exec();
     int result = -1;
     while(q1.next())
         result = q1.value(0).toInt();
 
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
+    if(!CheckExecution(q1))
         return -2;
-    }
+
     return result;
 }
-void WriteRecommender(const Recommender& recommender)
+void WriteRecommender(const core::Author& recommender)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = " insert into recommenders(name, url, page_data, page_updated, wave) values(:name, :url, :page_data, date('now'), :wave)";
+    QString qsl = " insert into recommenders(name, url, page_updated) values(:name, :url,  date('now'))";
     q1.prepare(qsl);
     q1.bindValue(":name", recommender.name);
-    q1.bindValue(":url", recommender.url);
-    q1.bindValue(":page_data", recommender.pageData);
-    q1.bindValue(":wave", recommender.wave);
+    q1.bindValue(":url", recommender.url("ffn"));
     q1.exec();
-
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
 }
 
-QHash<QString, Recommender> FetchRecommenders(int limitingWave, QString tag)
+QHash<QString, core::Author> FetchRecommenders()
 {
-    limitingWave=1;
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = "select * from recommenders authors where wave <= :wave and exists (select distinct recommender_id from recommendations recs where authors.id = recs.recommender_id and tag = :tag) order by name asc";
+    QString qsl = "select * from recommenders authors order by name asc";
     q1.prepare(qsl);
-    q1.bindValue(":wave", limitingWave);
-    q1.bindValue(":tag", tag);
     q1.exec();
-    QHash<QString, Recommender> result;
+    QHash<QString, core::Author> result;
     while(q1.next())
     {
-        Recommender rec;
+        core::Author rec;
         rec.id = q1.value("ID").toInt();
         rec.name= q1.value("name").toString();
-        rec.url= q1.value("url").toString();
-        rec.wave= q1.value("wave").toInt();
+        rec.SetUrl("ffn", q1.value("url").toString());
         result[rec.name] = rec;
     }
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
+    CheckExecution(q1);
     return result;
 }
 
-void RemoveRecommender(const Recommender &recommender)
+void RemoveAuthor(const core::Author &recommender)
 {
-    int id = GetRecommenderId(recommender.url);
-    RemoveRecommender(id);
+    int id = GetAuthorIdFromUrl(recommender.url("ffn"));
+    RemoveAuthor(id);
 }
-void RemoveRecommender(int id)
+void RemoveAuthor(int id)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
     QString qsl = "delete from recommendations where recommender_id = %1";
     qsl=qsl.arg(QString::number(id));
     q1.prepare(qsl);
-    q1.exec();
+    ExecAndCheck(q1);
 
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
     QSqlQuery q2(db);
     qsl = "delete from recommenders where id = %1";
     qsl=qsl.arg(id);
     q2.prepare(qsl);
-    q2.exec();
-    if(q2.lastError().isValid())
-    {
-        qDebug() << q2.lastError();
-        qDebug() << q2.lastQuery();
-    }
+    ExecAndCheck(q2);
 }
 
-int GetMatchCountForRecommenderOnTag(int recommender_id, QString tag)
+int GetMatchCountForRecommenderOnList(int recommender_id, int list)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
-    QString qsl = "select count(id) from fanfics where tags like '% %1%' and id in (select fic_id from recommendations where recommender_id = %2)";
-    qsl=qsl.arg(tag).arg(QString::number(recommender_id));
+    QString qsl = "select fic_count from RecommendationListAuthorStats where list_id = :list_id and author_id = :author_id";
     q1.prepare(qsl);
+    q1.bindValue(":list_id", list);
+    q1.bindValue(":author_id", recommender_id);
     q1.exec();
     q1.next();
-    if(q1.lastError().isValid())
-    {
-        qDebug() << q1.lastError();
-        qDebug() << q1.lastQuery();
-    }
-
+    CheckExecution(q1);
     int matches  = q1.value(0).toInt();
     qDebug() << "Using query: " << q1.lastQuery();
     qDebug() << "Matches found: " << matches;
     return matches;
-    //bool passesOnLimitedFaves = favCount < 130 && (matches >= rec_threshhold - 1);
-//    if(!passesOnLimitedFaves && matches < rec_threshhold)
-//    {
-//        RemoveRecommender(recommender_id);
-//    }
-    //return matches;
-}
-//CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
-//CREATE INDEX if not exists  I_FIC_ID ON Recommendations (fic_id ASC);
-void DropFanficIndexes()
-{
-    QStringList commands;
-    //commands.push_back("Drop index if exists main.I_FANFICS_IDENTITY");
-    commands.push_back("Drop index if exists main.I_FANFICS_FANDOM");
-    commands.push_back("Drop index if exists main.I_FANFICS_WORDCOUNT");
-    commands.push_back("Drop index if exists main.I_FANFICS_TAGS");
-    //commands.push_back("Drop index if exists main.I_FANFICS_ID");
-    commands.push_back("Drop index if exists main.I_FANFICS_GENRES");
-    commands.push_back("Drop index if exists main.I_FIC_ID");
-    //commands.push_back("Drop index if exists main.I_RECOMMENDATIONS");
-
-    QSqlDatabase db = QSqlDatabase::database();
-    for(QString command: commands)
-    {
-        QSqlQuery q1(db);
-        q1.prepare(command);
-        q1.exec();
-        if(q1.lastError().isValid())
-        {
-            qDebug() << q1.lastError();
-            qDebug() << q1.lastQuery();
-        }
-    }
-
-}
-//CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
-//CREATE INDEX if not exists  I_FIC_ID ON Recommendations (fic_id ASC);
-void RebuildFanficIndexes()
-{
-    QStringList commands;
-    //commands.push_back("CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC)");
-    commands.push_back("CREATE  INDEX if  not exists  main.I_FANFICS_FANDOM ON FANFICS (FANDOM ASC)");
-    commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC)");
-    commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_TAGS ON FANFICS (TAGS ASC)");
-    //commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_ID ON FANFICS (ID ASC)");
-    commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC)");
-    //commands.push_back("CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC)");
-    commands.push_back("CREATE INDEX if not exists  I_FIC_ID ON Recommendations (fic_id ASC)");
-
-    QSqlDatabase db = QSqlDatabase::database();
-    for(QString command: commands)
-    {
-        QSqlQuery q1(db);
-        q1.prepare(command);
-        q1.exec();
-        if(q1.lastError().isValid())
-        {
-            qDebug() << q1.lastError();
-            qDebug() << q1.lastQuery();
-        }
-    }
 }
 
-WriteStats ProcessSectionsIntoUpdateAndInsert(const QList<Section> & sections)
+WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic> & sections, bool alwaysUpdateIfNotInsert)
 {
     WriteStats result;
     result.requiresInsert.reserve(sections.size());
     result.requiresUpdate.reserve(sections.size());
     QSqlDatabase db = QSqlDatabase::database();
-    QString getKeyQuery = "Select ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2') as COUNT_NAMED,"
-                          " ( select count(*) from FANFICS where AUTHOR = '%1' and TITLE = '%2' and updated <> :updated) as count_updated"
-                            " FROM FANFICS WHERE 1=1 ";
-    for(const Section& section : sections)
+    QString getKeyQuery = "Select ( select count(*) from FANFICS where  %1_id = :site_id) as COUNT_NAMED,"
+                          " ( select count(*) from FANFICS where  %1_id = :site_id and updated <> :updated) as count_updated"
+                          " FROM FANFICS WHERE 1=1 ";
+
+    for(const core::Fic& section : sections)
     {
-        QString filledQuery = getKeyQuery.arg(QString(section.author).replace("'","''")).arg(QString(section.title).replace("'","''"));
+        QString filledQuery = getKeyQuery.arg(section.webSite);
         QSqlQuery keyQ(db);
         keyQ.prepare(filledQuery);
         keyQ.bindValue(":updated", section.updated);
+        keyQ.bindValue(":site_id", section.webId);
         keyQ.exec();
         keyQ.next();
-        if(keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0)
-            result.requiresUpdate.push_back(section);
-        if(keyQ.value(0).toInt() == 0)
+        bool requiresInsert = keyQ.value(0).toInt() == 0;
+        if(requiresInsert)
             result.requiresInsert.push_back(section);
+        if(alwaysUpdateIfNotInsert || (keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0))
+            result.requiresUpdate.push_back(section);
 
-        if(keyQ.lastError().isValid())
-        {
-            qDebug() << keyQ.lastQuery();
-            qDebug() << keyQ.lastError();
-        }
+
+        CheckExecution(keyQ);
     }
     return result;
 }
 
-bool UpdateInDB(Section &section)
+bool UpdateInDB(core::Fic &section)
 {
     bool loaded = false;
     QSqlDatabase db = QSqlDatabase::database();
-    //qDebug() << "Updating: " << section.author << " " << section.title;
-    QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, summary = :summary, genres= :genres, published = :published, updated = :updated, url = :url "
-                    " where author = :author and title = :title";
-
+    QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
+                    "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
+                    "summary = :summary, genres= :genres, published = :published, updated = :updated, author_id = :author_id"
+                    " where %1_id = :site_id";
+    query=query.arg(section.webSite);
     QSqlQuery q(db);
     q.prepare(query);
     q.bindValue(":fandom",section.fandom);
-    q.bindValue(":author",section.author);
+    q.bindValue(":author",section.author.name);
+    q.bindValue(":author_id",section.author.id);
     q.bindValue(":title",section.title);
 
     q.bindValue(":wordcount",section.wordCount.toInt());
     q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
     q.bindValue(":FAVOURITES",section.favourites.toInt());
     q.bindValue(":REVIEWS",section.reviews.toInt());
-    q.bindValue(":CHARACTERS",section.characters);
+    q.bindValue(":CHARACTERS",section.charactersFull);
     q.bindValue(":RATED",section.rated);
 
     q.bindValue(":summary",section.summary);
     q.bindValue(":COMPLETE",section.complete);
-    q.bindValue(":genres",section.genre);
+    q.bindValue(":genres",section.genreString);
     q.bindValue(":published",section.published);
     q.bindValue(":updated",section.updated);
-    q.bindValue(":url",section.url);
+    q.bindValue(":site_id",section.webId);
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "failed to update: " << section.author << " " << section.title;
+        qDebug() << "failed to update: " << section.author.name << " " << section.title;
         qDebug() << q.lastError();
         return false;
     }
@@ -744,34 +650,36 @@ bool UpdateInDB(Section &section)
 
 }
 
-bool InsertIntoDB(Section &section)
+bool InsertIntoDB(core::Fic &section)
 {
-    QString query = "INSERT INTO FANFICS (FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
-                    "VALUES (  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
+    QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
+                    " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID) "
+                    "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
+                    " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id)";
+    query=query.arg(section.webSite);
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q(db);
     q.prepare(query);
+    q.bindValue(":site_id",section.webId); //?
     q.bindValue(":fandom",section.fandom);
-    q.bindValue(":author",section.author);
+    q.bindValue(":author",section.author.name); //?
+    q.bindValue(":author_id",section.author.id);
     q.bindValue(":title",section.title);
     q.bindValue(":wordcount",section.wordCount.toInt());
     q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
     q.bindValue(":FAVOURITES",section.favourites.toInt());
     q.bindValue(":REVIEWS",section.reviews.toInt());
-    q.bindValue(":CHARACTERS",section.characters);
+    q.bindValue(":CHARACTERS",section.charactersFull);
     q.bindValue(":RATED",section.rated);
-
     q.bindValue(":summary",section.summary);
     q.bindValue(":COMPLETE",section.complete);
-    q.bindValue(":genres",section.genre);
+    q.bindValue(":genres",section.genreString);
     q.bindValue(":published",section.published);
     q.bindValue(":updated",section.updated);
-    q.bindValue(":url",section.url);
-    q.bindValue(":origin",section.origin);
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "failed to insert: " << section.author << " " << section.title;
+        qDebug() << "failed to insert: " << section.author.name << " " << section.title;
         qDebug() << q.lastError();
         return false;
     }
@@ -789,18 +697,16 @@ void DropAllFanficIndexes()
     commands.push_back("Drop index if exists main.I_FANFICS_TAGS");
     commands.push_back("Drop index if exists main.I_FANFICS_ID");
     commands.push_back("Drop index if exists main.I_FANFICS_GENRES");
+    commands.push_back("Drop index if exists main.I_RECOMMENDATIONS_FIC_TAG");
+    commands.push_back("Drop index if exists main.I_RECOMMENDATIONS_TAG");
+    commands.push_back("Drop index if exists main.I_RECOMMENDATIONS_FIC");
 
     QSqlDatabase db = QSqlDatabase::database();
     for(QString command: commands)
     {
         QSqlQuery q1(db);
         q1.prepare(command);
-        q1.exec();
-        if(q1.lastError().isValid())
-        {
-            qDebug() << q1.lastError();
-            qDebug() << q1.lastQuery();
-        }
+        ExecAndCheck(q1);
     }
 }
 
@@ -816,17 +722,16 @@ void RebuildAllFanficIndexes()
     commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_ID ON FANFICS (ID ASC)");
     commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC)");
 
+    commands.push_back("CREATE INDEX if not exists I_RECOMMENDATIONS_REC_FIC ON Recommendations (recommender_id ASC, fic_id asc)");
+    commands.push_back("CREATE INDEX if not exists I_RECOMMENDATIONS_TAG ON Recommendations (tag ASC)");
+    commands.push_back("CREATE INDEX if not exists I_RECOMMENDATIONS_FIC ON Recommendations (fic_id ASC)");
+
     QSqlDatabase db = QSqlDatabase::database();
     for(QString command: commands)
     {
         QSqlQuery q1(db);
         q1.prepare(command);
-        q1.exec();
-        if(q1.lastError().isValid())
-        {
-            qDebug() << q1.lastError();
-            qDebug() << q1.lastQuery();
-        }
+        ExecAndCheck(q1);
     }
 }
 QStringList GetFandomListFromDB(QString section)
@@ -837,9 +742,9 @@ QStringList GetFandomListFromDB(QString section)
     QStringList result;
     result.append("");
     while(q.next())
-    {
         result.append(q.value(0).toString());
-    }
+    CheckExecution(q);
+
     return result;
 }
 
@@ -847,26 +752,28 @@ QStringList GetFandomListFromDB(QString section)
 void AssignTagToFandom(QString tag, QString fandom)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("update fanfics set tags = tags || ' ' || '%1' where fandom like '%%2%' and tags not like '%%1%'").arg(tag).arg(fandom);
+    //QString qs = QString("update fanfics set tags = tags || ' ' || '%1' where fandom like '%%2%' and tags not like '%%1%'").arg(tag).arg(fandom);QString qs =
+    //!!! check
+    QString qs = "INSERT INTO FicTags(fic_id, tag) SELECT id, %1 as tag from fanfics f WHERE fandom like '%%2%' and NOT EXISTS(SELECT 1 FROM FicTags WHERE fic_id = f.id and tag = %1)";
+    qs=qs.arg(tag).arg(fandom);
     QSqlQuery q(qs, db);
     q.exec();
-    if(q.lastError().isValid())
+    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
     {
         qDebug() << q.lastError();
         qDebug() << q.lastQuery();
     }
+
 }
 
 
-QDateTime GetMaxUpdateDateForSection(QStringList sections)
+QDateTime GetMaxUpdateDateForFandom(QStringList sections)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("Select max(updated) as updated from fanfics where 1 = 1 %1");
     QString append;
     if(sections.size() == 1)
-    {
         append+= QString(" and fandom = '%1' ").arg(sections.at(0));
-    }
     else
     {
         for(auto section : sections)
@@ -878,7 +785,7 @@ QDateTime GetMaxUpdateDateForSection(QStringList sections)
     qs=qs.arg(append);
     QSqlQuery q(qs, db);
     q.next();
-    qDebug() << q.lastQuery();
+    //qDebug() << q.lastQuery();
     //QDateTime result = q.value("updated").toDateTime();
     QString resultStr = q.value("updated").toString();
     QDateTime result;
@@ -890,141 +797,93 @@ QDateTime GetMaxUpdateDateForSection(QStringList sections)
 void EnsureFandomsFilled()
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("update fanfics set fandom1 = cfGetFirstFandom(fandom), fandom2 = cfGetSecondfandom(fandom) where fandom1 is null and fandom2 is null");
+    QString qs = QString("update fanfics set fandom1 = cfGetFirstFandom(fandom), fandom2 = cfGetSecondfandom(fandom) /*where fandom1 is null and fandom2 is null*/");
     QSqlQuery q(db);
     q.prepare(qs);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-    }
-}
-
-void ImportTags(QString anotherDatabase)
-{
-
+    ExecAndCheck(q);
 }
 
 void EnsureWebIdsFilled()
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("update fanfics set web_id = cfReturnCapture('/s/(\\d+)', url) where web_id is null");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-    }
-}
-
-//void WriteRecommendersMetainfo(const Recommender &recommender)
-//{
+    // this should not be called anymore as it doesn't make much sense
+    // or at least this should call the fill func that can determine which of the urls to use
 //    QSqlDatabase db = QSqlDatabase::database();
-//    QString qs = QString("insert into authors (name, url, website) select :name, :url, :website where not exists (SELECT 1 FROM authors where url = :url)");
+//    QString qs = QString("update fanfics set %1_id = cfReturnCapture('/s/(\\d+)', url) where %1_id is null");
 //    QSqlQuery q(db);
 //    q.prepare(qs);
-//    q.bindValue(":name",recommender.name);
-//    q.bindValue(":url",recommender.url);
-//    q.bindValue(":website",recommender.website);
+//    ExecAndCheck(q);
+}
+
+
+//bool EnsureTagForRecommendations()
+//{
+//    QSqlDatabase db = QSqlDatabase::database();
+//    QString qs = QString("PRAGMA table_info(recommendations)");
+//    QSqlQuery q(db);
+//    q.prepare(qs);
 //    q.exec();
+//    while(q.next())
+//    {
+//        if(q.value("name").toString() == "tag")
+//            return true;
+//    }
 //    if(q.lastError().isValid())
 //    {
 //        qDebug() << q.lastError();
 //        qDebug() << q.lastQuery();
+//        return false;
 //    }
+
+//    bool result =  ExecuteQueryChain(q,
+//                     {"CREATE TABLE if not exists Recommendations2(recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , tag varchar default 'core', PRIMARY KEY (recommender_id, fic_id, tag) );",
+//                      "insert into Recommendations2 (recommender_id,fic_id, tag) SELECT recommender_id, fic_id, 'core' from Recommendations;",
+//                      "DROP TABLE Recommendations;",
+//                      "ALTER TABLE Recommendations2 RENAME TO Recommendations;",
+//                      "drop index i_recommendations;",
+//                      "CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);"
+//                      "CREATE INDEX if not exists  I_RECOMMENDATIONS_TAG ON Recommendations (tag ASC);"
+//                      "CREATE INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);",
+//                      });
+//    return result;
 //}
 
-bool ExecuteQuery(QSqlQuery& q, QString query)
-{
-    QString qs = query;
-    q.prepare(qs);
-    q.exec();
-
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-        return false;
-    }
-    return true;
-}
-
-bool ExecuteQueryChain(QSqlQuery& q, QStringList queries)
-{
-    for(auto query: queries)
-    {
-        if(!ExecuteQuery(q, query))
-            return false;
-    }
-    return true;
-}
-
-bool EnsureTagForRecommendations()
+QList<core::RecommendationList> GetAvailableRecommendationLists()
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("PRAGMA table_info(recommendations)");
+    QString qs = QString("select * from RecommendationLists order by name");
     QSqlQuery q(db);
     q.prepare(qs);
-    q.exec();
+    QList<core::RecommendationList> result;
+    if(!ExecAndCheck(q))
+        return result;
+
     while(q.next())
     {
-        if(q.value("name").toString() == "tag")
-            return true;
-    }
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-        return false;
+        core::RecommendationList list;
+        list.alwaysPickAt = q.value("always_pick_at").toInt();
+        list.minimumMatch = q.value("minimum").toInt();
+        list.pickRatio= q.value("pick_ratio").toDouble();
+        list.id= q.value("id").toInt();
+        list.name= q.value("name").toString();
+        list.ficCount= q.value("fic_count").toInt();
+        result.push_back(list);
     }
 
-    bool result =  ExecuteQueryChain(q,
-                     {"CREATE TABLE if not exists Recommendations2(recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , tag varchar default 'core', PRIMARY KEY (recommender_id, fic_id, tag) );",
-                      "insert into Recommendations2 (recommender_id,fic_id, tag) SELECT recommender_id, fic_id, 'core' from Recommendations;",
-                      "DROP TABLE Recommendations;",
-                      "ALTER TABLE Recommendations2 RENAME TO Recommendations;",
-                      "drop index i_recommendations;",
-                      "CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);"
-                      "CREATE INDEX if not exists  I_RECOMMENDATIONS_TAG ON Recommendations (tag ASC);"
-                      "CREATE INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);",
-                      });
     return result;
 }
 
-QStringList ReadAvailableRecTagGroups()
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("select distinct tag from recommendations order by tag");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-    }
-    QStringList result;
-    while(q.next())
-    {
-        result.push_back(q.value(0).toString());
-    }
-    return result;
-}
-
-static QString WrapTag(QString tag)
-{
-    tag= "(.{0,}" + tag + ".{0,})";
-    return tag;
-}
+//static QString WrapTag(QString tag)
+//{
+//    tag= "(.{0,}" + tag + ".{0,})";
+//    return tag;
+//}
 
 
-RecommenderStats CreateRecommenderStats(int recommenderId, QString tag)
+core::AuthorRecommendationStats CreateRecommenderStats(int recommenderId, core::RecommendationList list)
 {
-    RecommenderStats result;
-    result.tag = tag;
+    core::AuthorRecommendationStats result;
+    result.listName = list.name;
+    result.usedTag = list.tagToUse;
     QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("select count(distinct fic_id) from recommendations where recommender_id = :id");
     QSqlQuery q(db);
@@ -1032,97 +891,100 @@ RecommenderStats CreateRecommenderStats(int recommenderId, QString tag)
     q.bindValue(":id",recommenderId);
     q.exec();
     q.next();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    if(!CheckExecution(q))
         return result;
-    }
-    result.recommenderId = recommenderId;
+
+    result.authorId = recommenderId;
     result.totalFics = q.value(0).toInt();
 
-    qs = QString("select count(distinct fic_id) from recommendations where recommender_id = :id and exists (select id from fanfics where id = recommendations.fic_id and cfRegexp(:wrappedTag, tags))");
+    //auto listId= GetRecommendationListIdForName(list.name);
+    //!!! проверить
+    qs = QString("select count(distinct fic_id) from FicTags ft where ft.tag = :tag and exists (select 1 from Recommendations where ft.fic_id = fic_id and recommender_id = :recommender_id)");
     q.prepare(qs);
-    q.bindValue(":id",recommenderId);
-    //q.bindValue(":tag",tag);
-    q.bindValue(":wrappedTag",WrapTag(tag));
+    q.bindValue(":tag",list.tagToUse);
+    q.bindValue(":recommender_id",recommenderId);
     q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    if(!CheckExecution(q))
         return result;
+
+    bool hasData = q.next();
+    //    if(!hasData)
+    //        return result;
+    if(q.value(0).toInt() != 0)
+    {
+        result.matchesWithReferenceTag = q.value(0).toInt();
     }
-    q.next();
     result.matchesWithReferenceTag = q.value(0).toInt();
-    result.matchRatio = (double)result.totalFics/(double)result.matchesWithReferenceTag;
+    if(result.matchesWithReferenceTag == 0)
+        result.matchRatio = 999999;
+    else
+        result.matchRatio = (double)result.totalFics/(double)result.matchesWithReferenceTag;
     result.isValid = true;
     return result;
 }
 
-bool HasNoneTagInRecommendations()
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("select count(fic_id) from recommendations where tag = 'none'");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-        return 1;
-    }
-    q.next();
-    auto result = q.value(0).toInt();
-    return result > 0;
-}
 
-bool WipeCurrentRecommenderRecsOnTag(QString tag)
+bool DeleteRecommendationList(QString listName)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("delete from recommendations where tag = :tag");
+    auto listId= GetRecommendationListIdForName(listName);
+    if(listId == 0)
+        return false;
+    QString qs = QString("delete from RecommendationLists where list_id = :list_id");
     QSqlQuery q(db);
     q.prepare(qs);
-    //q.bindValue(":id",recommenderId);
-    q.bindValue(":tag",tag);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
         return false;
-    }
-    qs = QString("delete from RecommendationTagStats where tag = :tag");
+
+    qs = QString("delete from RecommendationListAuthorStats where list_id = :list_id");
     q.prepare(qs);
-    q.bindValue(":tag",tag);
-    //q.bindValue(":author_id",tag);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
         return false;
-    }
+
+    qs = QString("delete from RecommendationFicStats where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+
     return true;
 }
 
-bool CopyAllRecommenderFicsToTag(int recommenderId, QString tag)
+bool CopyAllAuthorRecommendationsToList(int authorId, QString listName)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("insert into recommendations (fic_id, recommender_id, tag) select fic_id, recommender_id, '%1' as tag from recommendations where recommender_id = :id and tag = 'none' ");
-    qs=qs.arg(tag);
+    auto listId= GetRecommendationListIdForName(listName);
+
+    QString qs = QString("insert into RecommendationListData (fic_id, list_id)"
+                         " select fic_id, %1 as list_id from recommendations r where r.recommender_id = :author_id and "
+                         " not exists( select 1 from RecommendationListData where list_id=:list_id and fic_id = r.fic_id) ");
+    qs=qs.arg(listId);
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":id",recommenderId);
-    q.bindValue(":tag",tag);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    q.bindValue(":author_id",authorId);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
         return false;
-    }
+    return true;
+}
+
+//!!! проверить
+bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, QString listName)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    auto listId= GetRecommendationListIdForName(listName);
+
+    QString qs = QString(" update RecommendationListData set match_count = match_count+1 where "
+                         " list_id = :list_id "
+                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",authorId);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
     return true;
 }
 
@@ -1134,70 +996,57 @@ QList<int> GetFulLRecommenderList()
     QString qs = QString("select id from recommenders");
     QSqlQuery q(db);
     q.prepare(qs);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    if(!ExecAndCheck(q))
         return result;
-    }
+
     while(q.next())
-    {
         result.push_back(q.value(0).toInt());
-    }
+
     return result;
 }
 
-void WriteRecommenderStatsForTag(RecommenderStats stats)
+void WriteRecommenderStatsForTag(core::AuthorRecommendationStats stats, int listId)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("insert into RecommendationTagStats (author_id, fic_count, match_count, match_ratio, tag) "
-                         "values(:author_id, :fic_count, :match_count, :match_ratio, :tag)");
+    QString qs = QString("insert into RecommendationListAuthorStats (author_id, fic_count, match_count, match_ratio, list_id) "
+                         "values(:author_id, :fic_count, :match_count, :match_ratio, :list_id)");
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":author_id",stats.recommenderId);
+    q.bindValue(":author_id",stats.authorId);
     q.bindValue(":fic_count",stats.totalFics);
     q.bindValue(":match_count",stats.matchesWithReferenceTag);
     q.bindValue(":match_ratio",stats.matchRatio);
-    q.bindValue(":tag",stats.tag);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-    }
+    //auto listId= GetRecommendationListIdForName(stats.listName);
+    q.bindValue(":list_id",listId);
+    ExecAndCheck(q);
 }
 
-QList<RecommenderStats> GetRecommenderStatsForTag(QString tag, QString sortOn, QString order)
+QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listName, QString sortOn, QString order)
 {
-    QList<RecommenderStats> result;
-
+    QList<core::AuthorRecommendationStats> result;
+    auto listId= GetRecommendationListIdForName(listName);
     QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("select rts.match_count as match_count,"
                          "rts.match_ratio as match_ratio,"
                          "rts.author_id as author_id,"
                          "rts.fic_count as fic_count,"
                          "r.name as name"
-                         "  from RecommendationTagStats rts, recommenders r where rts.author_id = r.id and tag = :tag order by %1 %2");
+                         "  from RecommendationListAuthorStats rts, recommenders r where rts.author_id = r.id and list_id = :list_id order by %1 %2");
     qs=qs.arg(sortOn).arg(order);
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":tag",tag);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
         return result;
-    }
+
     while(q.next())
     {
-        RecommenderStats stats;
+        core::AuthorRecommendationStats stats;
         stats.isValid = true;
         stats.matchesWithReferenceTag = q.value("match_count").toInt();
         stats.matchRatio= q.value("match_ratio").toDouble();
-        stats.recommenderId= q.value("author_id").toInt();
-        stats.tag= tag;
+        stats.authorId= q.value("author_id").toInt();
+        stats.listName= listName;
         stats.totalFics= q.value("fic_count").toInt();
         stats.authorName = q.value("name").toString();
         result.push_back(stats);
@@ -1205,9 +1054,9 @@ QList<RecommenderStats> GetRecommenderStatsForTag(QString tag, QString sortOn, Q
     return result;
 }
 
-bool AssignNewNameForRecommenderId(Recommender recommender)
+bool AssignNewNameForRecommenderId(core::Author recommender)
 {
-    if(recommender.GetIdStatus() != ERecommenderIdStatus::valid)
+    if(recommender.GetIdStatus() != core::AuthorIdStatus::valid)
         return true;
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q(db);
@@ -1215,153 +1064,524 @@ bool AssignNewNameForRecommenderId(Recommender recommender)
     q.prepare(qsl);
     q.bindValue(":name",recommender.name);
     q.bindValue(":id",recommender.id);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    if(!ExecAndCheck(q))
         return false;
-    }
     return true;
 }
 
-QVector<Recommender> GetAllAuthors(QString website)
+QVector<core::Author> GetAllAuthors(QString website)
 {
-    QVector<Recommender> result;
+    QVector<core::Author> result;
     QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("select count(id) from recommenders where website_type = :site");
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":site",website);
-    q.exec();
-    q.next();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    if(!ExecAndCheck(q))
         return result;
-    }
+
+    q.next();
     int size = q.value(0).toInt();
 
     qs = QString("select id, url from recommenders where website_type = :site");
     q.prepare(qs);
     q.bindValue(":site",website);
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+    if(!ExecAndCheck(q))
         return result;
-    }
+
     result.reserve(size);
     while(q.next())
     {
-        Recommender rec;
+        core::Author rec;
         rec.AssignId(q.value("id").toInt());
-        rec.url = q.value("url").toString();
+        rec.SetUrl("ffn", q.value("url").toString());
         result.push_back(rec);
     }
     return result;
 }
 
-bool UpdateTagStatsPerFic(QString tag)
+QVector<int> GetAllFicIDsFromRecommendationList(QString listName)
 {
-    auto allFics = GetAllFicIDsFromRecommendations(tag);
+    QVector<int> result;
+    auto listId= GetRecommendationListIdForName(listName);
 
-    QString insertStatementPrototype = "INSERT INTO RecommendationFicStats(fic_id,tag, sumrecs) "
-            "SELECT %1, '%2', 0 "
-            "WHERE NOT EXISTS(SELECT 1 FROM RecommendationFicStats where fic_id = :fic_id AND tag = :tag)";
     QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select count(fic_id) from RecommendationListData where list_id = :list_id");
     QSqlQuery q(db);
-    db.transaction();
-    qDebug() << "processing tag: " << tag;
-    for(auto fic_id: allFics)
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+
+    q.next();
+    int size = q.value(0).toInt();
+
+    qs = QString("select fic_id from RecommendationListData where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+
+    result.reserve(size);
+    while(q.next())
+        result.push_back(q.value("fic_id").toInt());
+
+    return result;
+}
+
+//int GetFicDBIdByDelimitedSiteId(QString id)
+//{
+//    QSqlDatabase db = QSqlDatabase::database();
+//    QString qs = QString("select id from fanfics where url like '%%1%'");
+//    qs= qs.arg(id);
+//    QSqlQuery q(db);
+//    int result = -1;
+//    q.prepare(qs);
+//    q.exec();
+//    q.next();
+//    if(q.lastError().isValid())
+//    {
+//        qDebug() << q.lastError();
+//        qDebug() << q.lastQuery();
+//        return result;
+//    }
+//    result = q.value(0).toInt();
+//    return result;
+//}
+
+QStringList GetIdListForQuery(core::Query query)
+{
+    QString where = query.str;
+    QStringList result;
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select group_concat(id, ',') as merged, " + where);
+    //qs= qs.arg(where);
+    qDebug() << qs;
+    QSqlQuery q(db);
+    q.prepare(qs);
+    auto it = query.bindings.begin();
+    auto end = query.bindings.end();
+    while(it != end)
     {
+        qDebug() << it.key() << " " << it.value();
+        q.bindValue(it.key(), it.value());
+        ++it;
+    }
+    q.exec();
 
-        QString qs = insertStatementPrototype.arg(fic_id).arg(tag);
-        q.prepare(qs);
-        q.bindValue(":fic_id",fic_id);
-        q.bindValue(":tag",tag);
-        q.exec();
-        if(q.lastError().isValid())
-        {
-            qDebug() << q.lastError();
-            qDebug() << q.lastQuery();
-        }
+    if(!ExecAndCheck(q))
+        return result;
 
-        qs = "update RecommendationFicStats set sumrecs = (SELECT  count(recommender_id) FROM recommendations r "
-             " where r.fic_id = :fic_id"
-             " and r.tag = :tag) "
-             " where fic_id = :fic_id and tag = :tag";
-        q.prepare(qs);
-        q.bindValue(":fic_id",fic_id);
-        q.bindValue(":tag",tag);
-        q.exec();
-        if(q.lastError().isValid())
+    q.next();
+    auto temp = q.value("merged").toString();
+    if(temp.trimmed().isEmpty())
+        return result;
+    result = temp.split(",");
+    return result;
+}
+
+void EnsureFFNUrlsShort()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update fanfics set url = cfReturnCapture('(/s/\\d+/)', url)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    ExecAndCheck(q);
+}
+
+void PassTagsIntoTagsTable()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    db.transaction();
+    QString qs = QString("select id, tags from fanfics where tags <> ' none ' order by tags");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+    while(q.next())
+    {
+        auto id = q.value("id").toInt();
+        auto tags = q.value("tags").toString();
+        if(tags.trimmed() == "none")
+            continue;
+        QStringList split = tags.split(" ", QString::SkipEmptyParts);
+        split.removeDuplicates();
+        split.removeAll("none");
+        qDebug() << split;
+        for(auto tag : split)
         {
-            qDebug() << q.lastError();
-            qDebug() << q.lastQuery();
+            qs = QString("insert into fictags(fic_id, tag) values(:fic_id, :tag)");
+            QSqlQuery iq(db);
+            iq.prepare(qs);
+            iq.bindValue(":fic_id",id);
+            iq.bindValue(":tag", tag);
+            iq.exec();
+            if(iq.lastError().isValid())
+            {
+                qDebug() << iq.lastError();
+                qDebug() << iq.lastQuery();
+            }
         }
+    }
+    db.commit();
+}
+
+int GetRecommendationListIdForName(QString name)
+{
+    int result = 0;
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select id from RecommendationLists where name = :name");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":name",name);
+    if(!ExecAndCheck(q))
+        return result;
+    q.next();
+    result = q.value(0).toInt();
+    return result;
+}
+
+bool CreateOrUpdateRecommendationList(core::RecommendationList& list)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("insert into RecommendationLists(name) select '%1' where not exists(select 1 from RecommendationLists where name = '%1')");
+    qs= qs.arg(list.name);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
+
+    qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, always_pick_at = :always_pick_at,  created = CURRENT_TIMESTAMP where name = :name");
+    q.prepare(qs);
+    q.bindValue(":minimum",list.minimumMatch);
+    q.bindValue(":pick_ratio",list.pickRatio);
+    q.bindValue(":always_pick_at",list.alwaysPickAt);
+    q.bindValue(":name",list.name);
+    if(!ExecAndCheck(q))
+        return false;
+
+
+    qs = QString("select id from RecommendationLists where name = :name");
+    q.prepare(qs);
+    q.bindValue(":name",list.name);
+    if(!ExecAndCheck(q))
+        return false;
+
+    q.next();
+    list.id = q.value(0).toInt();
+    if(list.id > 0)
+        return true;
+    return false;
+}
+
+bool UpdateFicCountForRecommendationList(core::RecommendationList& list)
+{
+    if(list.id == -1)
+        return false;
+
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update RecommendationLists set fic_count=(select count(fic_id) from RecommendationListData where list_id = :list_id) where list_id = :list_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id",list.id);
+    if(!ExecAndCheck(q))
+        return false;
+
+    qs = QString("select fic_count from RecommendationLists where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",list.id);
+    if(!ExecAndCheck(q))
+        return false;
+
+    q.next();
+    list.id = q.value(0).toInt();
+    if(list.id > 0)
+        return true;
+    return false;
+}
+
+void DeleteTagfromDatabase(QString tag)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("delete from FicTags where tag = :tag");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    if(!ExecAndCheck(q))
+        return;
+    return;
+}
+
+void CalculateFandomAverages()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update fandoms set average_faves_top_3 =  (select sum(favourites)/3 from fanfics f where f.fandom = fandoms.fandom and f.id "
+                         "in (select id from fanfics where fanfics.fandom = fandoms.fandom order by favourites desc limit 3))");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return;
+    return;
+}
+
+void CalculateFandomFicCounts()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update fandoms set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return;
+    return;
+}
+
+bool EnsureFandomsNormalized()
+{
+    QHash<QString, int> fandoms;
+    auto result = GetAllFandoms(fandoms);
+    if(!result)
+        return false;
+    QSqlDatabase db = QSqlDatabase::database();
+    db.transaction();
+
+    QSqlQuery innerQ(db);
+    QString qs = QString(" delete from ficfandoms ");
+    innerQ.prepare(qs);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+
+
+    qs = QString("select id, fandom1, fandom2 from fanfics");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
+
+
+    int i = 0;
+    while(q.next())
+    {
+        QSqlQuery innerQ(db);
+        QString qs = QString(" insert into ficfandoms(fic_id, fandom_id) values(:fic_id, :fandom_id)  ");
+        innerQ.prepare(qs);
+
+        QString firstFandom = q.value("fandom1").toString().trimmed();
+        QString secondFandom = q.value("fandom2").toString().trimmed();
+
+        bool failureAtFirst = !firstFandom.isEmpty() && !EnsureFandomExists({firstFandom}, fandoms);
+        bool failureAtSecond= !secondFandom.isEmpty() && !EnsureFandomExists({secondFandom}, fandoms);
+        if(failureAtFirst || failureAtSecond)
+            return false;
+
+        innerQ.bindValue(":fandom_id", fandoms[firstFandom]);
+        innerQ.bindValue(":fic_id", q.value("id").toInt());
+        if(!ExecAndCheck(innerQ))
+        {
+            db.rollback();
+            return false;
+        }
+        if(!secondFandom.isEmpty() && firstFandom!=secondFandom)
+        {
+            innerQ.bindValue(":fandom_id", fandoms[secondFandom]);
+            innerQ.bindValue(":fic_id", q.value("id").toInt());
+            if(!ExecAndCheck(innerQ))
+            {
+                db.rollback();
+                return false;
+            }
+        }
+        i++;
+        if(i%1000 == 0)
+            qDebug() << "tick: " << i/1000;
     }
     db.commit();
     return true;
 }
 
-QVector<int> GetAllFicIDsFromRecommendations(QString tag)
+bool GetAllFandoms(QHash<QString, int>& fandoms)
 {
-    QVector<int> result;
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("select count(fic_id) from recommendations where tag = :tag");
+    QString qs = QString("select id, fandom from fandoms");
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":tag",tag);
-    q.exec();
-    q.next();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-        return result;
-    }
-    int size = q.value(0).toInt();
+    if(!ExecAndCheck(q))
+        return false;
 
-    qs = QString("select fic_id from recommendations where tag = :tag");
-    q.prepare(qs);
-    q.bindValue(":tag",tag);
-    q.exec();
-    if(q.lastError().isValid())
+    while(q.next())
+        fandoms[q.value("fandom").toString()] = q.value("id").toInt();
+    return true;
+}
+
+bool EnsureFandomExists(core::Fandom fandom, QHash<QString, int> & fandoms)
+{
+    if(!fandoms.contains(fandom.name))
     {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-        return result;
+        auto f1ID= CreateIDForFandom(fandom);
+        if(f1ID < 0)
+        {
+            qDebug() << fandom.name << " doesnt exist and ouldnt be created";
+            return false;
+        }
+
+        fandoms[fandom.name] = f1ID;
     }
-    result.reserve(size);
+    return true;
+}
+
+int CreateIDForFandom(core::Fandom fandom)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("insert into fandoms(fandom, section, normal_url, crossover_url) "
+                         " values(:fandom, :section, :normal_url, :crossover_url)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+
+    // I probably need to delete all the bullshit japanese stuff from fandom names
+    q.bindValue(":fandom", fandom.name);
+    q.bindValue(":section", fandom.section);
+    q.bindValue(":normal_url", fandom.url);
+    q.bindValue(":crossover_url", fandom.crossoverUrl);
+
+    if(!ExecAndCheck(q))
+        return -1;
+
+    return GetLastIdForTable("fandoms");
+}
+
+int GetLastIdForTable(QString tableName)
+{
+
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select seq from sqlite_sequence where name=:table_name");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":table_name", tableName);
+    if(!ExecAndCheck(q))
+        return -1;
+    q.next();
+    return q.value("seq").toInt();
+
+}
+
+//will need to add genre tracker on ffn in case it'sever expanded
+bool IsGenreList(QStringList list, QString website)
+{
+    // first we need to process hurt/comfort
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select count(id) from genres where genre in(%1) and website = :website");
+    qs = qs.arg("'" + list.join("','") + "'");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":website", website);
+    if(!ExecAndCheck(q))
+        return false;
+    q.next();
+    return q.value(0).toInt() > 0;
+
+}
+
+bool ReprocessFics(QString where, QString website, std::function<void(int)> f)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select id, %1_id from fanfics %2");
+    qs = qs.arg(website).arg(where);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
     while(q.next())
     {
-        result.push_back(q.value("fic_id").toInt());
+        auto id = q.value(1).toInt();
+        f(id);
     }
-    return result;
+    return true;
 }
 
-int GetFicDBIdByDelimitedSiteId(QString id)
+void TryDeactivate(QString url, QString website)
+{
+    auto id = url_utils::GetWebId(url, website);
+    DeactivateStory(id.toInt(), website);
+}
+
+void DeactivateStory(int id, QString website)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("select id from fanfics where url like '%%1%'");
-    qs= qs.arg(id);
+    QString qs = QString("update fanfics set alive = 0 where %1_id = :id");
+    qs=qs.arg(website);
     QSqlQuery q(db);
-    int result = -1;
     q.prepare(qs);
-    q.exec();
-    q.next();
-    if(q.lastError().isValid())
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-        return result;
-    }
-    result = q.value(0).toInt();
-    return result;
+    q.bindValue(":id", id);
+    ExecAndCheck(q);
 }
+
+bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery innerQ(db);
+    QString qs = QString(" delete from ficfandoms where fic_id = (select id from fanfics where %1_id = :fic_id)");
+    qs=qs.arg(section.webSite);
+    innerQ.prepare(qs);
+    innerQ.bindValue(":fic_id", section.webId);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+
+    qs = QString(" insert into ficfandoms(fic_id, fandom_id) "
+                 " values((select id from fanfics where %1_id = :fic_id), :fandom_id)  ");
+    qs=qs.arg(section.webSite);
+    innerQ.prepare(qs);
+
+    QString firstFandom = section.fandoms.size() > 0 ? section.fandoms.at(0).trimmed() : "";
+    QString secondFandom = section.fandoms.size() > 1 ? section.fandoms.at(1).trimmed() : "";
+
+    bool failureAtFirst = !firstFandom.isEmpty() && !EnsureFandomExists({firstFandom}, fandoms);
+    bool failureAtSecond= !secondFandom.isEmpty() && !EnsureFandomExists({secondFandom}, fandoms);
+    if(failureAtFirst || failureAtSecond)
+        return false;
+
+
+    innerQ.bindValue(":fandom_id", fandoms[firstFandom]);
+    innerQ.bindValue(":fic_id", section.webId);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+    if(!secondFandom.isEmpty() && firstFandom!=secondFandom)
+    {
+        innerQ.bindValue(":fandom_id", fandoms[secondFandom]);
+        innerQ.bindValue(":fic_id", section.webId);
+        if(!ExecAndCheck(innerQ))
+        {
+            db.rollback();
+            return false;
+        }
+    }
+
+    qs = QString(" update fanfics set fandom1 = :fandom1, fandom2 = :fandom2 "
+                     " where %1_id = :fic_id");
+    qs=qs.arg(section.webSite);
+    innerQ.prepare(qs);
+    innerQ.bindValue(":fandom1", firstFandom);
+    innerQ.bindValue(":fandom2", secondFandom);
+    innerQ.bindValue(":fic_id", section.webId);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+    return true;
+}
+
 
 
 }

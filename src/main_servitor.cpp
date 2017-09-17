@@ -1,4 +1,3 @@
-#include "mainwindow.h"
 #include <QApplication>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -8,23 +7,14 @@
 #include <QSqlQuery>
 #include <QPluginLoader>
 #include "include/init_database.h"
-
-
-void CreateIndex(QString value)
-{
-    QSqlDatabase db = QSqlDatabase::database("CrawlerDB.sqlite");
-    QSqlQuery q(db);
-    q.prepare(value);
-    q.exec();
-    qDebug() << q.lastError();
-}
+#include "include/servitorwindow.h"
 
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    a.setApplicationName("ffnet sane search engine");
-    database::BackupDatabase();
+    a.setApplicationName("servitor");
+    //database::BackupDatabase();
     QString path = "CrawlerDB.sqlite";
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(path);
@@ -39,15 +29,19 @@ int main(int argc, char *argv[])
 
     database::ReadDbFile("dbcode/dbinit.sql");
     database::ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
-    database::ReindexTable("tags");
-    MainWindow w;
-    w.show();
-    w.CheckSectionAvailability();
-
     database::InstallCustomFunctions();
-    database::EnsureFandomsFilled();
-    database::EnsureWebIdsFilled();
-    auto result = database::EnsureTagForRecommendations();
-    Q_UNUSED(result);
+
+    ServitorWindow w;
+    w.show();
+
+
+    //database::EnsureFandomsFilled();
+    //database::EnsureWebIdsFilled();
+//    database::CalculateFandomFicCounts();
+//    database::CalculateFandomAverages();
+    //database::EnsureFFNUrlsShort();
+    //auto result = database::EnsureTagForRecommendations();
+    //database::PassTagsIntoTagsTable();
+
     return a.exec();
 }
