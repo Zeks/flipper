@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     w.CheckSectionAvailability();
 
     database::InstallCustomFunctions();
-    database::EnsureFandomsNormalized();
+    //database::EnsureFandomsNormalized();
 
     //database::EnsureFandomsFilled();
     //database::EnsureWebIdsFilled();

@@ -63,6 +63,8 @@ files: [
         "src/main_ffsse.cpp",
         "src/pagegetter.cpp",
         "src/querybuilder.cpp",
+        "src/regex_utils.cpp",
+        "src/section.cpp",
         "src/service_functions.cpp",
         "src/storyfilter.cpp",
         "src/url_utils.cpp",
