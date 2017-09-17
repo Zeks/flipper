@@ -16,7 +16,7 @@ Query DefaultQueryBuilder::Build(StoryFilter filter)
     queryString.clear();
     queryString = "ID, ";
     queryString+= CreateCustomFields(filter) + " f.* ";
-    queryString+=" from fanfics f where 1 = 1 " ;
+    queryString+=" from fanfics f where 1 = 1 and alive = 1 " ;
     QString where = CreateWhere(filter);
     queryString+= where;
     ProcessBindings(filter, query);
@@ -97,6 +97,12 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 }
 
 QString DefaultQueryBuilder::ProcessTags(StoryFilter)
+{
+    QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, ";
+    return currentTagValue;
+}
+
+QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
 {
     QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, ";
     return currentTagValue;

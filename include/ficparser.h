@@ -14,13 +14,14 @@ class FicParser : public FFNParserBase
 public:
     core::Fic ProcessPage(QString url,QString&);
     void ClearProcessed();
-    void WriteProcessed();
+    void WriteProcessed(QHash<QString, int>& );
     void WriteJustAuthorName(core::Fic& fic);
     void SetRewriteAuthorNames(bool);
 private:
-    void ProcessMarkedSubsections(core::Section& , int& startfrom, QString text);
+    void ProcessUnmarkedSections(core::Section& );
+    void DetermineMarkedSubsectionPresence(core::Section& );
     core::Section GetSection( QString text, int start);
-    QString ExtractRecommdenderNameFromUrl(QString url);
+    QString ExtractRecommenderNameFromUrl(QString url);
     void GetAuthor(core::Section& , int& startfrom, QString text);
     void GetTitle(core::Section& , int& startfrom, QString text);
     void GetGenre(core::Section& , int& startfrom, QString text);

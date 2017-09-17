@@ -11,7 +11,7 @@ public:
 
     QList<core::Fic> ProcessPage(QString url,QString&);
     core::Section GetSection( QString text, int start);
-    QString ExtractRecommdenderNameFromUrl(QString url);
+    QString ExtractRecommenderNameFromUrl(QString url);
     void GetAuthor(core::Section& , int& startfrom, QString text);
     void GetAuthorUrl(core::Section& , int& startfrom, QString text);
     void GetTitle(core::Section& , int& startfrom, QString text);

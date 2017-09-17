@@ -312,7 +312,7 @@ core::Section FavouriteStoryParser::GetSection(QString text, int start)
     return section;
 }
 
-QString FavouriteStoryParser::ExtractRecommdenderNameFromUrl(QString url)
+QString FavouriteStoryParser::ExtractRecommenderNameFromUrl(QString url)
 {
     int pos = url.lastIndexOf("/");
     return url.mid(pos+1);

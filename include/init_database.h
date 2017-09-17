@@ -1,5 +1,6 @@
 #pragma once
 #include <QString>
+#include <functional>
 #include "section.h"
 #include "queryinterfaces.h"
 
@@ -9,6 +10,7 @@ struct WriteStats
 {
     QList<core::Fic> requiresInsert;
     QList<core::Fic> requiresUpdate;
+    bool HasData(){return requiresInsert.size() > 0 || requiresUpdate.size() > 0;}
 };
     void BackupDatabase();
 
@@ -23,6 +25,7 @@ struct WriteStats
     bool LoadIntoDB(core::Fic & section);
     bool UpdateInDB(core::Fic & section);
     bool InsertIntoDB(core::Fic & section);
+    bool WriteFandomsForStory(core::Fic & section, QHash<QString, int> &);
 
     bool WriteRecommendationIntoDB(core::FavouritesPage &recommender, core::Fic &section);
     bool WriteRecommendation(core::Author &recommender, int id);
@@ -54,7 +57,7 @@ struct WriteStats
     void DropAllFanficIndexes();
     void RebuildAllFanficIndexes();
 
-    WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic>&);
+    WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic>&, bool alwaysUpdateIfNotInsert = false);
 
     void InstallCustomFunctions();
     void EnsureFandomsFilled();
@@ -93,7 +96,9 @@ struct WriteStats
     int CreateIDForFandom(core::Fandom);
     bool EnsureFandomExists(core::Fandom, QHash<QString, int>&);
     int GetLastIdForTable(QString);
-
     bool IsGenreList(QStringList, QString website);
+    bool ReprocessFics(QString where,QString website, std::function<void(int)>);
+    void TryDeactivate(QString url, QString website);
+    void DeactivateStory(int id, QString website);
 
 }

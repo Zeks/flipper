@@ -12,9 +12,15 @@ core::Fic FicParser::ProcessPage(QString url, QString& str)
 {
     core::Section section;
     int currentPosition = 0;
+    if(str.contains("Unable to locate story. Code 1"))
+    {
+        database::TryDeactivate(url, "ffn");
+        return section.result;
+    }
 
     section = GetSection(str, currentPosition);
     section.result.webId = url_utils::GetWebId(url, "ffn").toInt();
+    qDebug() << "Processing fic: " << section.result.webId;
     currentPosition = section.start;
 
     GetAuthor(section, currentPosition, str);
@@ -24,9 +30,13 @@ core::Fic FicParser::ProcessPage(QString url, QString& str)
     GetTitle(section, currentPosition, str);
     GetSummary(section, currentPosition, str);
     GetStatSection(section, currentPosition, str);
-    ProcessMarkedSubsections(section, currentPosition, str);
+
+    DetermineMarkedSubsectionPresence(section);
+    ProcessUnmarkedSections(section);
+
     auto& stat = section.statSection;
 
+    // reading marked section data
     GetTaggedSection(stat.text, stat.rated, "target='rating'>Fiction\\s\\s([A-Z])", [&section](QString val){ section.result.rated = val;});
     GetTaggedSection(stat.text, stat.chapters, "Chapters:\\s(\\d+)", [&section](QString val){ section.result.chapters = val;});
     GetTaggedSection(stat.text, stat.words, "Words:\\s(\\d+,\\d+)", [&section](QString val){section.result.wordCount = val;});
@@ -51,12 +61,10 @@ core::Fic FicParser::ProcessPage(QString url, QString& str)
             qDebug() << val << section.result.published;
         }
     }, 1);
+    // if something doesn't have update date then we've read "published" incorrectly, fixing
     if(!section.statSection.updated.isValid)
-    {
         section.result.published = section.result.updated;
-    }
-
-
+    section.result.isValid = true;
     processedStuff = section.result;
     return section.result;
 }
@@ -89,20 +97,9 @@ void FicParser::GetTaggedSection(QString text, core::Section::Tag tag, QString r
         functor("not found");
 }
 
-void FicParser::ProcessMarkedSubsections(core::Section & section, int &startfrom, QString text)
+void FicParser::ProcessUnmarkedSections(core::Section & section)
 {
     auto& stat = section.statSection;
-    stat.rated = GetStatTag(stat.text, "Rated:");
-    stat.chapters = GetStatTag(stat.text, "Chapters:");
-    stat.favs = GetStatTag(stat.text, "Favs:");
-    stat.follows = GetStatTag(stat.text, "Follows:");
-    stat.reviews = GetStatTag(stat.text, "Reviews:");
-    stat.published = GetStatTag(stat.text, "Published:");
-    stat.updated = GetStatTag(stat.text, "Updated:");
-    stat.words= GetStatTag(stat.text, "Words:");
-    stat.status = GetStatTag(stat.text, "Status:");
-    stat.id = GetStatTag(stat.text, "Id:");
-
     // step 0, process rating to find the end of it
     QRegExp rxRated("'rating'>Fiction\\s\\s(.)");
     auto index = rxRated.indexIn(stat.text);
@@ -118,8 +115,8 @@ void FicParser::ProcessMarkedSubsections(core::Section & section, int &startfrom
     if(index == -1)
         return;
     stat.language = core::Section::Tag(rxlanguage.cap(1), index + separatorTagLength + rxlanguage.cap(1).length());
-    // step 2 decide if we have one or two sections between language and next found tagged position
 
+    // step 2 decide if we have one or two sections between language and next found tagged position
     int nextTaggedSectionPosition = -1;
     if(stat.chapters.position != -1)
         nextTaggedSectionPosition = stat.chapters.position;
@@ -131,7 +128,7 @@ void FicParser::ProcessMarkedSubsections(core::Section & section, int &startfrom
     temp=temp.trimmed();
     temp = temp.replace(QRegExp("(^-)|(-$)"), "");
     auto separatorCount = temp.count(" - ");
-    if(separatorCount == 1)
+    if(separatorCount >= 1)
     {
         // two separators means we are have both genre and characters (hopefully)
         // thus, we are splitting what we have on " - "
@@ -139,10 +136,19 @@ void FicParser::ProcessMarkedSubsections(core::Section & section, int &startfrom
         QStringList splittings = temp.split(" - ", QString::SkipEmptyParts);
         if(splittings.size() == 0)
             return;
-        ProcessGenres(section, splittings.at(0));
-        if(splittings.size() == 1)
+
+        QStringList genreCandidates = splittings.at(0).split("/");
+        bool isGenre = database::IsGenreList(genreCandidates, "ffn");
+        if(isGenre)
+        {
+            ProcessGenres(section, splittings.at(0));
+            splittings.pop_front();
+        }
+
+        if(splittings.size() == 0)
             return;
-        ProcessCharacters(section, splittings.at(1));
+
+        ProcessCharacters(section, splittings.join(" "));
     }
     else{
         // step 3 decide if it has whitespaces before the next " - "
@@ -170,6 +176,21 @@ void FicParser::ProcessMarkedSubsections(core::Section & section, int &startfrom
     }
 }
 
+void FicParser::DetermineMarkedSubsectionPresence(core::Section & section)
+{
+    auto& stat = section.statSection;
+    stat.rated = GetStatTag(stat.text, "Rated:");
+    stat.chapters = GetStatTag(stat.text, "Chapters:");
+    stat.favs = GetStatTag(stat.text, "Favs:");
+    stat.follows = GetStatTag(stat.text, "Follows:");
+    stat.reviews = GetStatTag(stat.text, "Reviews:");
+    stat.published = GetStatTag(stat.text, "Published:");
+    stat.updated = GetStatTag(stat.text, "Updated:");
+    stat.words= GetStatTag(stat.text, "Words:");
+    stat.status = GetStatTag(stat.text, "Status:");
+    stat.id = GetStatTag(stat.text, "Id:");
+}
+
 
 
 void FicParser::ClearProcessed()
@@ -177,16 +198,17 @@ void FicParser::ClearProcessed()
     processedStuff = decltype(processedStuff)();
 }
 
-void FicParser::WriteProcessed()
+void FicParser::WriteProcessed(QHash<QString, int> & knownFandoms)
 {
     auto startRecLoad = std::chrono::high_resolution_clock::now();
-    writeSections = database::ProcessFicsIntoUpdateAndInsert({processedStuff});
+    writeSections = database::ProcessFicsIntoUpdateAndInsert({processedStuff}, true);
     auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
     qDebug() << "Filtering done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     auto startInsert = std::chrono::high_resolution_clock::now();
     for(auto& section : writeSections.requiresUpdate)
     {
         database::UpdateInDB(section);
+        database::WriteFandomsForStory(section, knownFandoms);
     }
     elapsed = std::chrono::high_resolution_clock::now() - startInsert;
     qDebug() << "Update done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
@@ -195,9 +217,11 @@ void FicParser::WriteProcessed()
     for(auto& section : writeSections.requiresInsert)
     {
         database::InsertIntoDB(section);
+        database::WriteFandomsForStory(section, knownFandoms);
     }
     elapsed = std::chrono::high_resolution_clock::now() - startUpdate;
     qDebug() << "Inserts done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+
     ClearProcessed();
     elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
     qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
@@ -241,13 +265,17 @@ void FicParser::GetFandom(core::Section & section, int &, QString text)
 
 void FicParser::GetAuthor(core::Section & section, int &startfrom, QString text)
 {
+    auto full = GetDoubleNarrow(text,"/u/\\d+/", "</a>", true,
+                                "",  "'>", false,
+                                2);
+
     QRegExp rxEnd("(/u/\\d+/)(.*)(?='>)");
     rxEnd.setMinimal(true);
     auto index = rxEnd.indexIn(text);
     if(index == -1)
         return;
     section.result.author.SetUrl("ffn",rxEnd.cap(1));
-    section.result.author.name = rxEnd.cap(2);
+    section.result.author.name = full;
 }
 
 void FicParser::GetTitle(core::Section & section, int& startfrom, QString text)
@@ -290,7 +318,7 @@ core::Section FicParser::GetSection(QString text, int start)
     return section;
 }
 
-QString FicParser::ExtractRecommdenderNameFromUrl(QString url)
+QString FicParser::ExtractRecommenderNameFromUrl(QString url)
 {
     int pos = url.lastIndexOf("/");
     return url.mid(pos+1);

@@ -55,12 +55,15 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
             result.isFromCache = true;
         }
         else if(useCache == ECacheMode::use_cache)
+        {
             result = GetPageFromNetwork(url);
+            SavePageToDB(result);
+        }
     }
     else
     {
         result = GetPageFromNetwork(url);
-        //SavePageToDB(result);
+        SavePageToDB(result);
     }
     return result;
 }
@@ -122,6 +125,9 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    if(!settings.value("Settings/storeCache", false).toBool())
+        return;
     QSqlQuery q(QSqlDatabase::database("pagecache"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);

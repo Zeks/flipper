@@ -11,6 +11,7 @@
 class FFNParserBase
 {
 public:
+    virtual ~FFNParserBase(){}
     void ProcessGenres(core::Section & section, QString genreText);
     void ProcessCharacters(core::Section & section, QString genreText);
    

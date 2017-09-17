@@ -20,6 +20,10 @@ public:
 private slots:
     void on_pbLoadFic_clicked();
 
+    void on_pbReprocessFics_clicked();
+
+    void on_pushButton_clicked();
+
 private:
     Ui::servitorWindow *ui;
 };

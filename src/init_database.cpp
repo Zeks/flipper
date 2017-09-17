@@ -1,4 +1,5 @@
 #include "include/init_database.h"
+#include "url_utils.h"
 #include <quazip/quazip.h>
 #include <quazip/JlCompress.h>
 
@@ -23,7 +24,7 @@ bool ExecAndCheck(QSqlQuery& q)
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << q.lastError();
+        qDebug() << "SQLERROR: " <<  q.lastError();
         qDebug() << q.lastQuery();
         return false;
     }
@@ -33,7 +34,7 @@ bool CheckExecution(QSqlQuery& q)
 {
     if(q.lastError().isValid())
     {
-        qDebug() << q.lastError();
+        qDebug() << "SQLERROR: "<< q.lastError();
         qDebug() << q.lastQuery();
         return false;
     }
@@ -47,7 +48,7 @@ bool ExecuteQuery(QSqlQuery& q, QString query)
 
     if(q.lastError().isValid())
     {
-        qDebug() << q.lastError();
+        qDebug() << "SQLERROR: "<< q.lastError();
         qDebug() << q.lastQuery();
         return false;
     }
@@ -577,7 +578,7 @@ int GetMatchCountForRecommenderOnList(int recommender_id, int list)
     return matches;
 }
 
-WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic> & sections)
+WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic> & sections, bool alwaysUpdateIfNotInsert)
 {
     WriteStats result;
     result.requiresInsert.reserve(sections.size());
@@ -596,10 +597,12 @@ WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic> & sections)
         keyQ.bindValue(":site_id", section.webId);
         keyQ.exec();
         keyQ.next();
-        if(keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0)
-            result.requiresUpdate.push_back(section);
-        if(keyQ.value(0).toInt() == 0)
+        bool requiresInsert = keyQ.value(0).toInt() == 0;
+        if(requiresInsert)
             result.requiresInsert.push_back(section);
+        if(alwaysUpdateIfNotInsert || (keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0))
+            result.requiresUpdate.push_back(section);
+
 
         CheckExecution(keyQ);
     }
@@ -631,7 +634,7 @@ bool UpdateInDB(core::Fic &section)
 
     q.bindValue(":summary",section.summary);
     q.bindValue(":COMPLETE",section.complete);
-    q.bindValue(":genres",section.genres);
+    q.bindValue(":genres",section.genreString);
     q.bindValue(":published",section.published);
     q.bindValue(":updated",section.updated);
     q.bindValue(":site_id",section.webId);
@@ -670,7 +673,7 @@ bool InsertIntoDB(core::Fic &section)
     q.bindValue(":RATED",section.rated);
     q.bindValue(":summary",section.summary);
     q.bindValue(":COMPLETE",section.complete);
-    q.bindValue(":genres",section.genres);
+    q.bindValue(":genres",section.genreString);
     q.bindValue(":published",section.published);
     q.bindValue(":updated",section.updated);
     q.exec();
@@ -1328,9 +1331,7 @@ void CalculateFandomAverages()
 void CalculateFandomFicCounts()
 {
     QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("update fandoms set fic_count = "
-                         "((select count(*) from fanfics f where fandom1 = fandoms.FANDOM) + "
-                         " (select count(*) from fanfics f where fandom2 = fandoms.FANDOM)) ");
+    QString qs = QString("update fandoms set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id");
     QSqlQuery q(db);
     q.prepare(qs);
     if(!ExecAndCheck(q))
@@ -1344,19 +1345,31 @@ bool EnsureFandomsNormalized()
     auto result = GetAllFandoms(fandoms);
     if(!result)
         return false;
-
     QSqlDatabase db = QSqlDatabase::database();
     db.transaction();
-    QString qs = QString("select id, fandom1, fandom2 from fanfics");
+
+    QSqlQuery innerQ(db);
+    QString qs = QString(" delete from ficfandoms ");
+    innerQ.prepare(qs);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+
+
+    qs = QString("select id, fandom1, fandom2 from fanfics");
     QSqlQuery q(db);
     q.prepare(qs);
     if(!ExecAndCheck(q))
         return false;
 
+
+    int i = 0;
     while(q.next())
     {
         QSqlQuery innerQ(db);
-        qs = QString(" insert into ficfandoms(fic_id, fandom_id) values(:fic_id, :fandom_id)  ");
+        QString qs = QString(" insert into ficfandoms(fic_id, fandom_id) values(:fic_id, :fandom_id)  ");
         innerQ.prepare(qs);
 
         QString firstFandom = q.value("fandom1").toString().trimmed();
@@ -1367,14 +1380,26 @@ bool EnsureFandomsNormalized()
         if(failureAtFirst || failureAtSecond)
             return false;
 
-        innerQ.bindValue(":fandom_id", q.value("id").toInt());
+        innerQ.bindValue(":fandom_id", fandoms[firstFandom]);
         innerQ.bindValue(":fic_id", q.value("id").toInt());
         if(!ExecAndCheck(innerQ))
         {
             db.rollback();
             return false;
         }
-
+        if(!secondFandom.isEmpty() && firstFandom!=secondFandom)
+        {
+            innerQ.bindValue(":fandom_id", fandoms[secondFandom]);
+            innerQ.bindValue(":fic_id", q.value("id").toInt());
+            if(!ExecAndCheck(innerQ))
+            {
+                db.rollback();
+                return false;
+            }
+        }
+        i++;
+        if(i%1000 == 0)
+            qDebug() << "tick: " << i/1000;
     }
     db.commit();
     return true;
@@ -1445,6 +1470,7 @@ int GetLastIdForTable(QString tableName)
 
 }
 
+//will need to add genre tracker on ffn in case it'sever expanded
 bool IsGenreList(QStringList list, QString website)
 {
     // first we need to process hurt/comfort
@@ -1461,12 +1487,100 @@ bool IsGenreList(QStringList list, QString website)
 
 }
 
+bool ReprocessFics(QString where, QString website, std::function<void(int)> f)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("select id, %1_id from fanfics %2");
+    qs = qs.arg(website).arg(where);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
+    while(q.next())
+    {
+        auto id = q.value(1).toInt();
+        f(id);
+    }
+    return true;
+}
+
+void TryDeactivate(QString url, QString website)
+{
+    auto id = url_utils::GetWebId(url, website);
+    DeactivateStory(id.toInt(), website);
+}
+
+void DeactivateStory(int id, QString website)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QString qs = QString("update fanfics set alive = 0 where %1_id = :id");
+    qs=qs.arg(website);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id", id);
+    ExecAndCheck(q);
+}
+
+bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery innerQ(db);
+    QString qs = QString(" delete from ficfandoms where fic_id = (select id from fanfics where %1_id = :fic_id)");
+    qs=qs.arg(section.webSite);
+    innerQ.prepare(qs);
+    innerQ.bindValue(":fic_id", section.webId);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+
+    qs = QString(" insert into ficfandoms(fic_id, fandom_id) "
+                 " values((select id from fanfics where %1_id = :fic_id), :fandom_id)  ");
+    qs=qs.arg(section.webSite);
+    innerQ.prepare(qs);
+
+    QString firstFandom = section.fandoms.size() > 0 ? section.fandoms.at(0).trimmed() : "";
+    QString secondFandom = section.fandoms.size() > 1 ? section.fandoms.at(1).trimmed() : "";
+
+    bool failureAtFirst = !firstFandom.isEmpty() && !EnsureFandomExists({firstFandom}, fandoms);
+    bool failureAtSecond= !secondFandom.isEmpty() && !EnsureFandomExists({secondFandom}, fandoms);
+    if(failureAtFirst || failureAtSecond)
+        return false;
 
 
+    innerQ.bindValue(":fandom_id", fandoms[firstFandom]);
+    innerQ.bindValue(":fic_id", section.webId);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+    if(!secondFandom.isEmpty() && firstFandom!=secondFandom)
+    {
+        innerQ.bindValue(":fandom_id", fandoms[secondFandom]);
+        innerQ.bindValue(":fic_id", section.webId);
+        if(!ExecAndCheck(innerQ))
+        {
+            db.rollback();
+            return false;
+        }
+    }
 
-
-
-
+    qs = QString(" update fanfics set fandom1 = :fandom1, fandom2 = :fandom2 "
+                     " where %1_id = :fic_id");
+    qs=qs.arg(section.webSite);
+    innerQ.prepare(qs);
+    innerQ.bindValue(":fandom1", firstFandom);
+    innerQ.bindValue(":fandom2", secondFandom);
+    innerQ.bindValue(":fic_id", section.webId);
+    if(!ExecAndCheck(innerQ))
+    {
+        db.rollback();
+        return false;
+    }
+    return true;
+}
 
 
 

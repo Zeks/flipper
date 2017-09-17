@@ -27,6 +27,7 @@ private:
     QString ProcessSumFaves(StoryFilter);
     QString ProcessSumRecs(StoryFilter);
     QString ProcessTags(StoryFilter);
+    QString ProcessFandoms(StoryFilter);
     QString ProcessWordcount(StoryFilter);
     QString ProcessGenreIncluson(StoryFilter);
     QString ProcessWordInclusion(StoryFilter);
