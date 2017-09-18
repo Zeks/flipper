@@ -8,7 +8,7 @@ struct ParseToken
     QString matchedValue;
     QString fixedValue;
     QString valueAsVariant;
-    QStrign pattern;
+    QString pattern;
     int start = -1;
     int end = -1;
     bool isValid = false;

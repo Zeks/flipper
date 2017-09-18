@@ -1,6 +1,6 @@
 #pragma once
 #include "include/section.h"
-#include "include/init_database.h"
+#include "include/db_ffn.h"
 #include "include/ffnparserbase.h"
 #include <QString>
 #include <QSqlDatabase>

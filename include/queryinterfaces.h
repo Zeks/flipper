@@ -20,7 +20,6 @@ class IQueryBuilder
 public:
     virtual ~IQueryBuilder(){}
     virtual Query Build(StoryFilter) = 0;
-    //virtual Query BuildIdQuery(StoryFilter) = 0;
 };
 
 

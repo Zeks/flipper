@@ -1,5 +1,5 @@
 #include "querybuilder.h"
-#include "init_database.h"
+#include "db_ffn.h"
 #include <QDebug>
 
 namespace  core{
@@ -35,6 +35,7 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
     queryString+=ProcessSumFaves(filter);
     queryString+=ProcessSumRecs(filter);
     queryString+=ProcessTags(filter);
+    queryString+=ProcessUrl(filter);
 
     return queryString;
 }
@@ -102,9 +103,9 @@ QString DefaultQueryBuilder::ProcessTags(StoryFilter)
     return currentTagValue;
 }
 
-QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
+QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
 {
-    QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, ";
+    QString currentTagValue = " f.ffn_id as url, ";
     return currentTagValue;
 }
 

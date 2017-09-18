@@ -2,7 +2,7 @@
 #include <QString>
 #include "section.h"
 #include "pagegetter.h"
-#include "init_database.h"
+#include "db_ffn.h"
 #include <functional>
 
 class FandomParser

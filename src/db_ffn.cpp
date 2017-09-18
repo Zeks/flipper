@@ -1,4 +1,4 @@
-#include "include/init_database.h"
+#include "include/db_ffn.h"
 #include "url_utils.h"
 #include <quazip/quazip.h>
 #include <quazip/JlCompress.h>
@@ -120,11 +120,11 @@ void cfGetSecondFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
     result = result.replace("CROSSOVER", "");
     sqlite3_result_text(ctx, qPrintable(result), result.length(), SQLITE_TRANSIENT);
 }
-void InstallCustomFunctions()
+void FFN::InstallCustomFunctions()
 {
-    QSqlDatabase db = QSqlDatabase::database();
     QVariant v = db.driver()->handle();
-    if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0) {
+    if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
+    {
         sqlite3 *db_handle = *static_cast<sqlite3 **>(v.data());
         if (db_handle != 0) {
             sqlite3_initialize();
@@ -136,14 +136,14 @@ void InstallCustomFunctions()
     }
 }
 //"dbcode/dbinit.sql"
-bool database::ReadDbFile(QString file, QString connectionName)
+bool FFN::ReadDbFile(QString file, QString connectionName)
 {
     QFile data(file);
     if (data.open(QFile::ReadOnly))
     {
         QTextStream in(&data);
-        QString db = in.readAll();
-        QStringList statements = db.split(";");
+        QString dbCode = in.readAll();
+        QStringList statements = dbCode.split(";");
         for(QString statement: statements)
         {
             statement = statement.replace(QRegExp("\\t"), " ");
@@ -153,7 +153,6 @@ bool database::ReadDbFile(QString file, QString connectionName)
             if(statement.trimmed().isEmpty() || statement.trimmed().left(2) == "--")
                 continue;
 
-            QSqlDatabase db ;
             if(!connectionName.isEmpty())
                 db = QSqlDatabase::database(connectionName);
             else
@@ -169,59 +168,46 @@ bool database::ReadDbFile(QString file, QString connectionName)
     return true;
 }
 
-bool database::ReindexTable(QString table)
+///////////////////// TRACKED FANDOMS BLOCK ////////////////////////
+void FFN::SetFandomTracked(QString fandom, bool tracked)
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-    QString qs = "alter table %1 add column id integer";
-    q.prepare(qs.arg(table));
-    q.exec();
-
-
-    QSqlQuery q1(db);
-    QString qs1 = " UPDATE %1 SET id = rowid where id is null ";
-    q1.prepare(qs1.arg(table));
-    q1.exec();
-    return true;
+    data.fandoms->SetTracked(fandom, tracked, true);
+}
+bool FFN::FetchTrackStateForFandom( QString fandom)
+{
+    return data.fandoms->IsTracked(fandom);
 }
 
-void database::SetFandomTracked(QString fandom, bool crossover, bool tracked)
+QStringList FFN::FetchTrackedFandoms()
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QString trackedPart = crossover ? "_crossovers" : "";
-    QSqlQuery q1(db);
-    QString qsl = " UPDATE fandoms SET tracked%1 = %2 where fandom = '%3'";
-    qsl = qsl.arg(trackedPart).arg(QString(tracked ? "1" : "0")).arg(fandom);
-    q1.prepare(qsl);
-    q1.exec();
-    ExecAndCheck(q1);
+    return data.fandoms->AllTrackedStr();
 }
-
-void database::PushFandom(QString fandom)
+///////////////////// END TRACKED FANDOMS BLOCK ////////////////////////
+///
+///////////////////// RECENT FANDOMS BLOCK ////////////////////////
+//! todo move this to fandom IDs
+void FFN::PushFandom(QString fandom)
 {
-    QSqlDatabase db = QSqlDatabase::database();
     QString upsert1 ("UPDATE recent_fandoms SET seq_num= (select max(seq_num) +1 from  recent_fandoms ) WHERE fandom = '%1'; ");
     QString upsert2 ("INSERT INTO recent_fandoms(fandom, seq_num) select '%1',  (select max(seq_num)+1 from recent_fandoms) WHERE changes() = 0;");
     QSqlQuery q1(db);
     upsert1 = upsert1.arg(fandom);
     q1.prepare(upsert1);
     ExecAndCheck(q1);
-    QSqlQuery q2(db);
     upsert2 = upsert2.arg(fandom);
-    q2.prepare(upsert2);
-    ExecAndCheck(q2);
+    q1.prepare(upsert2);
+    ExecAndCheck(q1);
 }
 
-void database::RebaseFandoms()
+void FFN::RebaseFandoms()
 {
-    QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
     QString qsl = "UPDATE recent_fandoms SET seq_num = seq_num - (select min(seq_num) from recent_fandoms where fandom is not 'base') where fandom is not 'base'";
     q1.prepare(qsl);
     ExecAndCheck(q1);
 }
 
-QStringList database::FetchRecentFandoms()
+QStringList FFN::FetchRecentFandoms()
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
@@ -236,53 +222,9 @@ QStringList database::FetchRecentFandoms()
     CheckExecution(q1);
     return result;
 }
+///////////////////// END RECENT FANDOMS BLOCK ////////////////////////
 
-bool database::FetchTrackStateForFandom( QString fandom, bool crossover)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString trackedPart = crossover ? "_crossovers" : "";
-    QSqlQuery q1(db);
-    QString qsl = " select tracked%1 from fandoms where fandom = '%2' ";
-    qsl = qsl.arg(trackedPart).arg(fandom);
-    q1.prepare(qsl);
-    q1.exec();
-    q1.next();
-    CheckExecution(q1);
-    return q1.value(0).toBool();
-}
-
-QStringList database::FetchTrackedFandoms()
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q1(db);
-    QString qsl = " select fandom from fandoms where tracked = 1";
-    q1.prepare(qsl);
-    q1.exec();
-    QStringList result;
-    while(q1.next())
-        result.push_back(q1.value(0).toString());
-
-    CheckExecution(q1);
-    return result;
-}
-
-QStringList database::FetchTrackedCrossovers()
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q1(db);
-    QString qsl = " select fandom from fandoms where tracked_crossovers = 1";
-    q1.prepare(qsl);
-    q1.exec();
-    QStringList result;
-    while(q1.next())
-        result.push_back(q1.value(0).toString());
-
-    CheckExecution(q1);
-
-    return result;
-}
-
-void database::BackupDatabase()
+void FFN::BackupDatabase()
 {
     QDir dir("backups");
     QStringList filters;
@@ -292,118 +234,22 @@ void database::BackupDatabase()
     qSort(entries.begin(),entries.end());
     std::reverse(entries.begin(),entries.end());
     qDebug() << entries;
-
-    if(!QFile::exists("CrawlerDB.sqlite"))
-        QFile::copy("CrawlerDB.sqlite.default", "CrawlerDB.sqlite");
-    QString backupName = "backups/CrawlerDB." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
+    QString nameWithExtension = dbName + ".sqlite";
+    if(!QFile::exists(nameWithExtension))
+        QFile::copy(dbName+ ".default", nameWithExtension);
+    QString backupName = "backups/" + dbName + "." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
     if(!QFile::exists(backupName))
         JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
-
-
 
     int i = 0;
     for(QString entry : entries)
     {
         i++;
-        QFileInfo fi(entry);
         if(i < 10)
             continue;
         QFile::remove("backups/" + entry);
     };
 
-}
-
-bool LoadIntoDB(core::Fic & section)
-{
-    qDebug() << "Loading:" << section.title;
-    QSqlDatabase db = QSqlDatabase::database();
-    bool loaded = false;
-    bool isUpdate = false;
-    bool isInsert = false;
-    QString getKeyQuery = "Select ( select count(*) from FANFICS where %1_id = %2) as COUNT_NAMED,"
-                          " ( select count(*) from FANFICS where %1_id = %2 and updated <> :updated) as count_updated"
-                          " FROM FANFICS WHERE 1=1 ";
-    getKeyQuery = getKeyQuery.arg(section.webSite).arg(QString::number(section.webId));
-    QSqlQuery keyQ(db);
-    keyQ.prepare(getKeyQuery);
-    keyQ.bindValue(":updated", section.updated);
-    keyQ.exec();
-    keyQ.next();
-    if(keyQ.value(0).toInt() > 0 && keyQ.value(1).toInt() > 0)
-        isUpdate = true;
-    if(keyQ.value(0).toInt() == 0)
-        isInsert = true;
-    if(isUpdate == false && isInsert == false)
-        return false;
-
-    CheckExecution(keyQ);
-    if(isInsert)
-    {
-
-        QString query = "INSERT INTO FANFICS (%1_id FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, URL, ORIGIN) "
-                        "VALUES (  :site_id, :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :url, :origin)";
-        query = query.arg(section.webSite);
-        QSqlQuery q(db);
-        q.prepare(query);
-        q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author.name);
-        q.bindValue(":title",section.title);
-        q.bindValue(":wordcount",section.wordCount.toInt());
-        q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
-        q.bindValue(":FAVOURITES",section.favourites.toInt());
-        q.bindValue(":REVIEWS",section.reviews.toInt());
-        q.bindValue(":CHARACTERS",section.charactersFull);
-        q.bindValue(":RATED",section.rated);
-
-        q.bindValue(":summary",section.summary);
-        q.bindValue(":COMPLETE",section.complete);
-        q.bindValue(":genres",section.genres);
-        q.bindValue(":published",section.published);
-        q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url("ffn"));
-        q.bindValue(":origin",section.origin);
-        q.bindValue(":site_id",section.webId);
-        q.exec();
-        if(!CheckExecution(q))
-            qDebug() << "failed to insert: " << section.author.name << " " << section.title;
-
-        loaded=true;
-    }
-
-    if(isUpdate)
-    {
-        //qDebug() << "Updating: " << section.author << " " << section.title;
-        QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, summary = :summary, genres= :genres, published = :published, updated = :updated, url = :url "
-                        " where %1_id = :site_id";
-        query = query.arg(section.webSite);
-
-        QSqlQuery q(db);
-        q.prepare(query);
-        q.bindValue(":fandom",section.fandom);
-        q.bindValue(":author",section.author.name);
-        q.bindValue(":title",section.title);
-
-        q.bindValue(":wordcount",section.wordCount.toInt());
-        q.bindValue(":CHAPTERS",section.chapters.trimmed().toInt());
-        q.bindValue(":FAVOURITES",section.favourites.toInt());
-        q.bindValue(":REVIEWS",section.reviews.toInt());
-        q.bindValue(":CHARACTERS",section.charactersFull);
-        q.bindValue(":RATED",section.rated);
-
-        q.bindValue(":summary",section.summary);
-        q.bindValue(":COMPLETE",section.complete);
-        q.bindValue(":genres",section.genres);
-        q.bindValue(":published",section.published);
-        q.bindValue(":updated",section.updated);
-        q.bindValue(":url",section.url("ffn"));
-        q.bindValue(":site_id",section.webId);
-        q.exec();
-        if(!CheckExecution(q))
-            qDebug() << "failed to update: " << section.author.name << " " << section.title;
-
-        loaded=true;
-    }
-    return loaded;
 }
 
 bool WriteRecommendationIntoDB(core::FavouritesPage &recommender,  core::Fic &section)
@@ -807,11 +653,11 @@ void EnsureWebIdsFilled()
 {
     // this should not be called anymore as it doesn't make much sense
     // or at least this should call the fill func that can determine which of the urls to use
-//    QSqlDatabase db = QSqlDatabase::database();
-//    QString qs = QString("update fanfics set %1_id = cfReturnCapture('/s/(\\d+)', url) where %1_id is null");
-//    QSqlQuery q(db);
-//    q.prepare(qs);
-//    ExecAndCheck(q);
+    //    QSqlDatabase db = QSqlDatabase::database();
+    //    QString qs = QString("update fanfics set %1_id = cfReturnCapture('/s/(\\d+)', url) where %1_id is null");
+    //    QSqlQuery q(db);
+    //    q.prepare(qs);
+    //    ExecAndCheck(q);
 }
 
 
@@ -1568,7 +1414,7 @@ bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
     }
 
     qs = QString(" update fanfics set fandom1 = :fandom1, fandom2 = :fandom2 "
-                     " where %1_id = :fic_id");
+                 " where %1_id = :fic_id");
     qs=qs.arg(section.webSite);
     innerQ.prepare(qs);
     innerQ.bindValue(":fandom1", firstFandom);
@@ -1580,6 +1426,82 @@ bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
         return false;
     }
     return true;
+}
+
+QSqlDatabase FFN::GetDb() const
+{
+    return db;
+}
+
+void FFN::SetDb(const QSqlDatabase &value)
+{
+    db = value;
+}
+
+bool FFNFandoms::IsTracked(QString fandom)
+{
+    bool tracked = false;
+    if(IsDataLoaded())
+    {
+        if(fandoms.contains(fandom))
+            tracked = fandoms[fandom].tracked;
+    }
+    else
+    {
+        QSqlQuery q1(db);
+        QString qsl = " select tracked from fandoms where id = :id ";
+        auto id = GetID(fandom);
+        q1.prepare(qsl);
+        q1.bindValue(":id",id);
+        ExecAndCheck(q1);
+        q1.next();
+        tracked = q1.value(0).toBool();
+    }
+    return tracked;
+}
+
+QList<int> FFNFandoms::AllTracked()
+{
+    QList<int> result;
+    if(IsDataLoaded())
+    {
+        result.reserve(fandoms.size());
+        for(auto &fandom: fandoms)
+            if(fandom.tracked)
+                result.push_back(fandom.id);
+    }
+    else
+    {
+        QSqlQuery q1(db);
+        QString qsl = " select fandom from fandoms where tracked = 1";
+        q1.prepare(qsl);
+        q1.exec();
+        QStringList result;
+        while(q1.next())
+            result.push_back(q1.value(0).toString());
+
+        CheckExecution(q1);
+        return result;
+    }
+}
+
+void FFNFandoms::SetTracked(QString fandom, bool value, bool immediate)
+{
+    if(immediate)
+    {
+        QSqlQuery q1(db);
+        auto id = fandoms.GetID(fandom);
+        QString qsl = " UPDATE fandoms SET tracked = :tracked where id = :id";
+        q1.prepare(qsl);
+        q1.bindValue(":tracked",QString(tracked ? "1" : "0"));
+        q1.bindValue(":id",id);
+        ExecAndCheck(q1);
+    }
+    else
+    {
+        if(fandoms.contains(fandom))
+            fandoms[fandom].tracked = value;
+    }
 }
 
 

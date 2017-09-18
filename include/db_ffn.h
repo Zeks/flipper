@@ -1,22 +1,49 @@
 #pragma once
 #include <QString>
+#include <QSqlDatabase>
 #include <functional>
 #include "section.h"
+#include "db.h"
 #include "queryinterfaces.h"
 
 namespace database{
-
 struct WriteStats
 {
     QList<core::Fic> requiresInsert;
     QList<core::Fic> requiresUpdate;
     bool HasData(){return requiresInsert.size() > 0 || requiresUpdate.size() > 0;}
 };
+
+class FFNFandoms : public IDBFandoms{
+public:
+    virtual ~FFNFandoms(){}
+    virtual bool IsTracked(QString);
+    virtual QList<int> AllTracked();
+    virtual QList<int> AllTrackedStr();
+    virtual int GetID(QString);
+    virtual void SetTracked(QString, bool value, bool immediate);
+    virtual void IsTracked(QString);
+    virtual QStringList ListOfTracked();
+    virtual bool IsDataLoaded();
+    virtual void Sync();
+    QSqlDatabase db;
+};
+
+class FFNFanfics : public IDBFanfics{
+public:
+    virtual ~IDBFanfics(){}
+    virtual int GetIDFromWebID(int);
+    virtual int GetWebIDFromID(int);
+};
+
+class FFN : public IDB
+{
+    public:
     void BackupDatabase();
 
     bool ReadDbFile(QString file, QString connectionName = "");
     bool ReindexTable(QString table);
-    void SetFandomTracked(QString fandom, bool crossover, bool);
+    void SetFandomTracked(QString fandom, bool);
     void PushFandom(QString);
     void RebaseFandoms();
 
@@ -50,9 +77,8 @@ struct WriteStats
 
     QStringList FetchRecentFandoms();
     QHash<QString, core::Author> FetchRecommenders();
-    bool FetchTrackStateForFandom(QString fandom, bool crossover);
+    bool FetchTrackStateForFandom(QString fandom);
     QStringList FetchTrackedFandoms();
-    QStringList FetchTrackedCrossovers();
 
     void DropAllFanficIndexes();
     void RebuildAllFanficIndexes();
@@ -101,4 +127,10 @@ struct WriteStats
     void TryDeactivate(QString url, QString website);
     void DeactivateStory(int id, QString website);
 
+    DataInterfaces data;
+    QSqlDatabase db;
+    QString dbName = "CrawlerDB";
+    QSqlDatabase GetDb() const;
+    void SetDb(const QSqlDatabase &value);
+};
 }

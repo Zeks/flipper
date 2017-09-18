@@ -2,7 +2,12 @@
 #include <QString>
 #include <QDateTime>
 namespace core {
-
+enum class UpdateMode
+{
+    none = -1,
+    insert = 0,
+    update = 1
+};
 
 enum class AuthorIdStatus
 {
@@ -47,6 +52,7 @@ struct Author{
             return urls[type];
         return "";
     }
+    UpdateMode updateMode = UpdateMode::none;
 };
 
 struct FavouritesPage
@@ -119,6 +125,7 @@ struct Fic{
     QString urlFFN;
     int recommendations = 0;
     QString webSite = "ffn";
+    UpdateMode updateMode = UpdateMode::none;
 };
 
 struct Section
@@ -188,6 +195,7 @@ struct Fandom
     QString url = "none";
     QString crossoverUrl = "none";
     QString source = "ffn";
+    bool tracked = false;
 };
 
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "include/section.h"
-#include "include/init_database.h"
+#include "include/db_ffn.h"
 #include <QString>
 #include <QSqlDatabase>
 #include <QDateTime>

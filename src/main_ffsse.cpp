@@ -7,7 +7,7 @@
 #include <QSqlDriver>
 #include <QSqlQuery>
 #include <QPluginLoader>
-#include "include/init_database.h"
+#include "include/db_ffn.h"
 
 
 void CreateIndex(QString value)
@@ -39,7 +39,6 @@ int main(int argc, char *argv[])
 
     database::ReadDbFile("dbcode/dbinit.sql");
     database::ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
-    database::ReindexTable("tags");
     MainWindow w;
     w.show();
     w.CheckSectionAvailability();

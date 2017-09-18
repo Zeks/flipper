@@ -120,7 +120,7 @@ Rectangle {
                 width: 517
                 height: 21
                 textFormat: Text.RichText;
-                text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net" + url + "\">" + title + "</a></body></html>"
+                text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + title + "</a></body></html>"
                 verticalAlignment: Text.AlignVCenter
                 style: Text.Raised
                 font.pointSize: 16
@@ -141,7 +141,7 @@ Rectangle {
                     propagateComposedEvents : true
 
                     onClicked : {
-                        lvFics.urlCopyClicked("http://www.fanfiction.net" + url);
+                        lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
                     }
                 }
             }
