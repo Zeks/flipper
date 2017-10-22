@@ -35,6 +35,7 @@
 #include "include/favparser.h"
 #include "include/fandomparser.h"
 #include "include/url_utils.h"
+#include "include/pure_sql.h"
 
 struct SplitPart
 {
@@ -1160,6 +1161,7 @@ void MainWindow::ReprocessAuthors()
 void MainWindow::ProcessListIntoRecommendations(QString list)
 {
     QFile data(list);
+    QSqlDatabase db = QSqlDatabase::database();
     QStringList usedList;
     if (data.open(QFile::ReadOnly))
     {
@@ -1188,7 +1190,8 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
                 continue;
             auto webId = ficIdPart.toInt();
             // at the moment works only for ffn and doesnt try to determine anything else
-            int id = database::GetFicIdByWebId("ffn", webId);
+
+            int id = database::puresql::GetFicIdByWebId("ffn", section.webId, db);
             if(id == -1)
                 continue;
             qDebug()<< "Settign tag: " << params.name << " to: " << id;

@@ -7,6 +7,7 @@
 #include "queryinterfaces.h"
 
 namespace database{
+
 struct WriteStats
 {
     QList<core::Fic> requiresInsert;
@@ -17,88 +18,116 @@ struct WriteStats
 class FFNFandoms : public IDBFandoms{
 public:
     virtual ~FFNFandoms(){}
-    virtual bool IsTracked(QString);
-    virtual QList<int> AllTracked();
-    virtual QList<int> AllTrackedStr();
-    virtual int GetID(QString);
-    virtual void SetTracked(QString, bool value, bool immediate);
-    virtual void IsTracked(QString);
-    virtual QStringList ListOfTracked();
-    virtual bool IsDataLoaded();
-    virtual void Sync();
+    virtual bool IsTracked(QString) override;
+    virtual QList<int> AllTracked() override;
+    virtual QStringList AllTrackedStr() override;
+    virtual int GetID(QString) override;
+    virtual void SetTracked(QString, bool value, bool immediate) override;
+    virtual bool IsTracked(QString) override;
+    virtual QStringList ListOfTracked() override;
+    virtual bool IsDataLoaded() override;
+    virtual bool Sync(bool forcedSync = false) override;
+    virtual bool Load() override;
+    virtual void Clear() override;
+    QStringList PushFandomToTopOfRecent(QString) override;
+    virtual QSharedPointer<core::Fandom> GetFandom(QString) override;
+    void CalculateFandomAverages() override;
+    void CalculateFandomFicCounts() override;
+    bool LoadFandom(QString name) override;
+    bool AssignTagToFandom(QString, QString tag) override;
+    virtual bool CreateFandom(QSharedPointer<core::Fandom>);
+private:
+    virtual bool EnsureFandom(QString name);
+    QStringList GetRecentFandoms() const;
+    void AddToTopOfRecent(QString);
+
+    QString GetCurrentCrossoverUrl();
     QSqlDatabase db;
 };
 
 class FFNFanfics : public IDBFanfics{
 public:
-    virtual ~IDBFanfics(){}
+    virtual ~FFNFanfics(){}
     virtual int GetIDFromWebID(int);
     virtual int GetWebIDFromID(int);
+    QSqlDatabase db;
+
+    // IDBPersistentData interface
+public:
+    bool IsDataLoaded();
+    bool Sync(bool forcedSync);
+    bool Load();
+    void Clear();
+
+    // IDBFanfics interface
+public:
+    void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false);
+    void AddRecommendations(QList<core::FicRecommendation> recommendations);
+    void FlushDataQueues();
+};
+class FFNAuthors : public IDBAuthors
+{
+public:
+    virtual ~FFNAuthors(){}
+    bool EnsureId(QSharedPointer<core::Author>);
+    QSqlDatabase db;
+
+    // IDBPersistentData interface
+public:
+    bool IsDataLoaded();
+    bool Sync(bool forcedSync);
+    bool Load();
+    void Clear();
+
+
+    // IDBAuthors interface
+public:
+    bool LoadAuthors(QString website, bool additionMode);
 };
 
+
+class FFNRecommendationLists : public IDBRecommendationLists
+{
+  public:
+
+
+
+    // IDBPersistentData interface
+public:
+    bool IsDataLoaded();
+    bool Sync(bool forcedSync);
+    bool Load();
+    void Clear();
+
+    private:
+    void LoadAvailableRecommendationLists();
+    QSqlDatabase db;
+
+};
 class FFN : public IDB
 {
     public:
-    void BackupDatabase();
 
-    bool ReadDbFile(QString file, QString connectionName = "");
-    bool ReindexTable(QString table);
-    void SetFandomTracked(QString fandom, bool);
-    void PushFandom(QString);
-    void RebaseFandoms();
-
-
+    // already a wrapper
+    bool FetchTrackStateForFandom(QString fandom);
+    QStringList FetchTrackedFandoms();
+    //!!! already a wrapper
+    //!
+    //!
     // writing fics into database
     bool LoadIntoDB(core::Fic & section);
     bool UpdateInDB(core::Fic & section);
-    bool InsertIntoDB(core::Fic & section);
-    bool WriteFandomsForStory(core::Fic & section, QHash<QString, int> &);
+    bool InsertIntoDB(QSharedPointer<core::Fic> & section);
+    // need to implement
+    //bool WriteFandomsForStory(core::Fic & section, QHash<QString, int> &);
 
-    bool WriteRecommendationIntoDB(core::FavouritesPage &recommender, core::Fic &section);
-    bool WriteRecommendation(core::Author &recommender, int id);
-    void WriteRecommender(const core::Author &recommender);
-
-    void RemoveAuthor(const core::Author &recommender);
-    void RemoveAuthor(int id);
-
-    int GetFicIdByAuthorAndName(QString, QString);
-    int GetFicIdByWebId(QString website, int);
-    int GetAuthorIdFromUrl(QString url);
     int GetMatchCountForRecommenderOnList(int recommender_id, int list);
     QVector<int> GetAllFicIDsFromRecommendationList(QString tag);
-    QVector<core::Author> GetAllAuthors(QString website);
-    QList<int> GetFulLRecommenderList();
-    QList<core::RecommendationList> GetAvailableRecommendationLists();
-    QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString tag, QString sortOn = "author_id", QString order = "asc");
-    QStringList GetIdListForQuery(core::Query);
-    QDateTime GetMaxUpdateDateForFandom(QStringList sections);
-    QStringList GetFandomListFromDB(QString);
 
 
-    QStringList FetchRecentFandoms();
     QHash<QString, core::Author> FetchRecommenders();
-    bool FetchTrackStateForFandom(QString fandom);
-    QStringList FetchTrackedFandoms();
-
-    void DropAllFanficIndexes();
-    void RebuildAllFanficIndexes();
-
-    WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic>&, bool alwaysUpdateIfNotInsert = false);
-
-    void InstallCustomFunctions();
-    void EnsureFandomsFilled();
-    void EnsureWebIdsFilled();
-    void EnsureFFNUrlsShort();
-    bool EnsureFandomsNormalized();
-    void CalculateFandomAverages();
-    void CalculateFandomFicCounts();
-
-    void ImportTags(QString anotherDatabase);
-
-    // recommendation stats
     core::AuthorRecommendationStats CreateRecommenderStats(int recommenderId, core::RecommendationList list);
     void WriteRecommenderStatsForTag(core::AuthorRecommendationStats stats, int listId);
-    bool AssignNewNameForRecommenderId(core::Author recommender);
 
     // recommendation ists
     bool CreateOrUpdateRecommendationList(core::RecommendationList&);
@@ -108,19 +137,12 @@ class FFN : public IDB
     bool CopyAllAuthorRecommendationsToList(int recommenderId, QString listName);
     bool IncrementAllValuesInListMatchingAuthorFavourites(int recommenderId, QString tag);
     bool DeleteRecommendationList(QString listName);
-    //bool WriteListFandoms(int id, QList<>);
 
+    void ImportTags(QString anotherDatabase);
     void DeleteTagfromDatabase(QString);
-
-    void AssignTagToFandom(QString tag, QString fandom);
     void PassTagsIntoTagsTable();
     bool HasNoneTagInRecommendations();
-    //void WriteRecommendersMetainfo(const Recommender& recommender);
-    //bool EnsureTagForRecommendations();
-    //int GetFicDBIdByDelimitedSiteId(QString id);
-    bool GetAllFandoms(QHash<QString, int>&);
-    int CreateIDForFandom(core::Fandom);
-    bool EnsureFandomExists(core::Fandom, QHash<QString, int>&);
+
     int GetLastIdForTable(QString);
     bool IsGenreList(QStringList, QString website);
     bool ReprocessFics(QString where,QString website, std::function<void(int)>);

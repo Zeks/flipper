@@ -45,9 +45,11 @@ void FandomParser::ProcessPage(WebPage page)
                 section.result.updated.setTime_t(0);
         });
         GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result.rated = val;});
-        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.result.SetGenres(val, "ffn");});
+        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){
+            ProcessGenres(section, val);
+        });
         GetTaggedSection(statText, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
-            section.result.charactersFull = val.replace(" - Complete", "");
+            ProcessCharacters(section, val.replace(" - Complete", ""));
         });
         GetTaggedSection(statText, "(Complete)$", [&section](QString val){
             if(val != "not found")
@@ -79,6 +81,17 @@ QString FandomParser::GetFandom(QString text)
     int indexStart = rxStart.indexIn(text, 0);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     return text.mid(indexStart + 28,indexEnd - (indexStart + 28));
+}
+
+void FandomParser::WriteProcessed()
+{
+    interfaces->fanfics->ProcessIntoDataQueues(processedStuff);
+    interfaces->fanfics->FlushDataQueues();
+}
+
+void FandomParser::ClearProcessed()
+{
+    processedStuff = decltype(processedStuff)();
 }
 
 void FandomParser::GetAuthor(core::Section & section, int& startfrom, QString text)

@@ -12,3 +12,4 @@ void FFNParserBase::ProcessCharacters(core::Section &section, QString characters
     section.result.charactersFull = characters.trimmed();
     qDebug() << "Characters: " << characters;
 }
+

@@ -28,18 +28,21 @@ public:
     void ClearProcessed();
     void ClearDoneCache();
     void WriteProcessed();
-    void WriteJustAuthorName();
     void WriteRecommenderInfo();
     void SetCurrentTag(QString);
 
 
     QStringList diagnostics;
-    QList<core::Fic> processedStuff;
-    database::WriteStats writeSections;
+    QList<QSharedPointer<core::Fic>> processedStuff;
+
     core::FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;
+    //! todo needs to be filled
+    QSqlDatabase db;
+    QSharedPointer<database::IDBFanfics> fanfics;
+    QSharedPointer<database::DataInterfaces> interfaces;
 
 };
 

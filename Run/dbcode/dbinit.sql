@@ -52,12 +52,15 @@ create table if not exists fandoms (FANDOM VARCHAR NOT NULL, SECTION VARCHAR NOT
  alter table fandoms add column last_update datetime; 
  alter table fandoms add column last_update_crossover datetime; 
  alter table fandoms add column id integer AUTOINCREMENT default 0; 
+ alter table fandoms add column date_of_first_fic datetime; 
+ alter table fandoms add column date_of_last_fic datetime; 
+ 
  update fandoms set id = rowid where id is null;
  CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);
  INSERT INTO recent_fandoms(fandom, seq_num) SELECT 'base', 0 WHERE NOT EXISTS(SELECT 1 FROM fandom WHERE fandom = 'base');
  CREATE TABLE if not exists Recommenders (id INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE , name VARCHAR NOT NULL , url VARCHAR NOT NULL , page_data BLOB, page_updated DATETIME, author_updated DATETIME);
- CREATE  INDEX if not exists I_RECOMMENDERS_NAME ON Recommenders (name ASC);
- CREATE  INDEX if not exists I_RECOMMENDERS_URL ON Recommenders (URL ASC);
+ CREATE INDEX if not exists I_RECOMMENDERS_NAME ON Recommenders (name ASC);
+ CREATE INDEX if not exists I_RECOMMENDERS_URL ON Recommenders (URL ASC);
  CREATE TABLE if not exists Recommendations (recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , PRIMARY KEY (recommender_id, fic_id));
  CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
  CREATE INDEX if not exists I_RECOMMENDATIONS_FIC_TAG ON Recommendations (tag ASC, fic_id asc);

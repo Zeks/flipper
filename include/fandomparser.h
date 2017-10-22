@@ -4,15 +4,15 @@
 #include "pagegetter.h"
 #include "db_ffn.h"
 #include <functional>
+#include "include/ffnparserbase.h"
 
-class FandomParser
+class FandomParser : public FFNParserBase
 {
 public:
     void ProcessPage(WebPage page);
     core::Section GetSection( QString text, int start);
     void GetAuthor(core::Section& , int& startfrom, QString text);
     void GetTitle(core::Section& , int& startfrom, QString text);
-    void GetGenre(core::Section& , int& startfrom, QString text);
     void GetSummary(core::Section& , int& startfrom, QString text);
     void GetCrossoverFandomList(core::Section& , int& startfrom, QString text);
     void GetWordCount(core::Section& , int& startfrom, QString text);
@@ -27,10 +27,11 @@ public:
     QString GetFandom(QString text);
 
     QStringList diagnostics;
-    QList<core::Fic> processedStuff;
-    database::WriteStats writeSections;
-    core::FavouritesPage recommender;
-    QHash<QString, QString> alreadyDone;
     QString nextUrl;
     QDateTime minSectionUpdateDate;
+
+    // FFNParserBase interface
+public:
+    void WriteProcessed();
+    void ClearProcessed();
 };

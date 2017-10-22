@@ -15,3 +15,4 @@ void core::Author::Log()
     qDebug() << "firstPublishedFic: " << firstPublishedFic;
 }
 
+

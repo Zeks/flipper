@@ -12,10 +12,9 @@
 class FicParser : public FFNParserBase
 {
 public:
-    core::Fic ProcessPage(QString url,QString&);
+    QSharedPointer<core::Fic> ProcessPage(QString url,QString&);
     void ClearProcessed();
-    void WriteProcessed(QHash<QString, int>& );
-    void WriteJustAuthorName(core::Fic& fic);
+    void WriteProcessed();
     void SetRewriteAuthorNames(bool);
 private:
     void ProcessUnmarkedSections(core::Section& );
@@ -34,9 +33,8 @@ private:
     core::Section::Tag GetStatTag(QString text, QString tag);
     void GetStatSectionTag(QString, QString text, core::Section::Tag *);
     void GetFandom(core::Section &section, int &startfrom, QString text);
-    void EnsureAuthorAvailable(const core::Fic&);
 
-    database::WriteStats writeSections;
+
     bool rewriteAuthorName = false;
 };
 

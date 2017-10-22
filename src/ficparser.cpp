@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <chrono>
 
-core::Fic FicParser::ProcessPage(QString url, QString& str)
+QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
 {
     core::Section section;
     int currentPosition = 0;
@@ -24,8 +24,6 @@ core::Fic FicParser::ProcessPage(QString url, QString& str)
     currentPosition = section.start;
 
     GetAuthor(section, currentPosition, str);
-    WriteJustAuthorName(section.result);
-
     GetFandom(section, currentPosition, str);
     GetTitle(section, currentPosition, str);
     GetSummary(section, currentPosition, str);
@@ -65,8 +63,10 @@ core::Fic FicParser::ProcessPage(QString url, QString& str)
     if(!section.statSection.updated.isValid)
         section.result.published = section.result.updated;
     section.result.isValid = true;
-    processedStuff = section.result;
-    return section.result;
+    auto tempResult = QSharedPointer<core::Fic>(new core::Fic>);
+    *tempResult = section.result;
+    processedStuff = {tempResult};
+    return tempResult;
 }
 
 core::Section::Tag FicParser::GetStatTag(QString text, QString tag)
@@ -198,49 +198,10 @@ void FicParser::ClearProcessed()
     processedStuff = decltype(processedStuff)();
 }
 
-void FicParser::WriteProcessed(QHash<QString, int> & knownFandoms)
+void FicParser::WriteProcessed()
 {
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    writeSections = database::ProcessFicsIntoUpdateAndInsert({processedStuff}, true);
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Filtering done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    auto startInsert = std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresUpdate)
-    {
-        database::UpdateInDB(section);
-        database::WriteFandomsForStory(section, knownFandoms);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startInsert;
-    qDebug() << "Update done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    //database::DropAllFanficIndexes();
-    auto startUpdate= std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresInsert)
-    {
-        database::InsertIntoDB(section);
-        database::WriteFandomsForStory(section, knownFandoms);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startUpdate;
-    qDebug() << "Inserts done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-
-    ClearProcessed();
-    elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-}
-
-void FicParser::WriteJustAuthorName(core::Fic& fic)
-{
-    fic.author.Log();
-
-    if(fic.author.GetIdStatus() == core::AuthorIdStatus::unassigned)
-        fic.author.AssignId(database::GetAuthorIdFromUrl(fic.author.url("ffn")));
-
-    if(fic.author.GetIdStatus() == core::AuthorIdStatus::not_found)
-    {
-        database::WriteRecommender(fic.author);
-        fic.author.AssignId(database::GetAuthorIdFromUrl(fic.author.url("ffn")));
-    }
-    if(rewriteAuthorName)
-        database::AssignNewNameForRecommenderId(fic.author);
+    interfaces->fanfics->ProcessIntoDataQueues(processedStuff);
+    interfaces->fanfics->FlushDataQueues();
 }
 
 void FicParser::SetRewriteAuthorNames(bool value)
@@ -274,8 +235,22 @@ void FicParser::GetAuthor(core::Section & section, int &startfrom, QString text)
     auto index = rxEnd.indexIn(text);
     if(index == -1)
         return;
-    section.result.author.SetUrl("ffn",rxEnd.cap(1));
-    section.result.author.name = full;
+
+    if(interfaces->authors->ContainsName(full))
+    {
+        section.result.author = interfaces->authors->GetAuthorByname(full);
+        if(rewriteAuthorName)
+            section.result.author->SetName(full);
+    }
+    else
+    {
+        QSharedPointer<core::Author> author(new core::Author);
+        section.result.author = author;
+        section.result.author.SetUrl("ffn",rxEnd.cap(1));
+        section.result.author.name = full;
+        interfaces->authors->AddAuthor(author);
+        interfaces->authors->EnsureId(author);
+    }
 }
 
 void FicParser::GetTitle(core::Section & section, int& startfrom, QString text)

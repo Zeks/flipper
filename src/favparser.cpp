@@ -1,6 +1,7 @@
 #include "include/favparser.h"
 #include "include/section.h"
 #include "include/db_ffn.h"
+#include "include/pure_sql.h"
 #include <QDebug>
 #include <QSqlDatabase>
 #include <chrono>
@@ -101,52 +102,16 @@ void FavouriteStoryParser::ClearDoneCache()
 
 void FavouriteStoryParser::WriteProcessed()
 {
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    writeSections = database::ProcessFicsIntoUpdateAndInsert(processedStuff);
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Filtering done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    auto startInsert = std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresUpdate)
-    {
-        if(!alreadyDone.contains(section.url("ffn")))
-            database::UpdateInDB(section);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startInsert;
-    qDebug() << "Update done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    //database::DropAllFanficIndexes();
-    auto startUpdate= std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresInsert)
-    {
-        if(!alreadyDone.contains(section.url("ffn")))
-            database::InsertIntoDB(section);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startUpdate;
-    qDebug() << "Inserts done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    auto startRecommending = std::chrono::high_resolution_clock::now();
-    //database::RebuildAllFanficIndexes();
+    //requires
+    //database::WriteFandomsForStory(section, knownFandoms);
+    fanfics->ProcessIntoDataQueues(processedStuff);
+    QList<core::FicRecommendation> recommendations;
+    recommendations.reserve(processedStuff.size());
     for(auto& section : processedStuff)
-    {
-        int fic_id = database::GetFicIdByWebId(section.webSite, section.webId);
-        database::WriteRecommendation(recommender.author, fic_id);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startRecommending;
-    qDebug() << "Recommendations done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ClearProcessed();
-    elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        recommendations.push_back({section, recommender.author});
 }
 
-void FavouriteStoryParser::WriteJustAuthorName()
-{
-    if(recommender.author.GetIdStatus() == core::AuthorIdStatus::unassigned)
-        recommender.author.AssignId(database::GetAuthorIdFromUrl(recommender.author.url("ffn")));
-    if(recommender.author.GetIdStatus() == core::AuthorIdStatus::not_found)
-    {
-        database::WriteRecommender(recommender.author);
-        recommender.author.AssignId(database::GetAuthorIdFromUrl(recommender.author.url("ffn")));
-    }
-    database::AssignNewNameForRecommenderId(recommender.author);
-}
+
 
 void FavouriteStoryParser::WriteRecommenderInfo()
 {

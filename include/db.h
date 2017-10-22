@@ -2,13 +2,18 @@
 #include "section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
+#include "QSqlDatabase"
+#include "QReadWriteLock"
+
 
 namespace database {
 class IDBPersistentData{
   public:
     virtual ~IDBPersistentData(){}
     virtual bool IsDataLoaded() = 0;
-    virtual void Sync() = 0;
+    virtual bool Sync(bool forcedSync = false) = 0;
+    virtual bool Load() = 0;
+    virtual void Clear() = 0;
     bool isLoaded = false;
 };
 
@@ -21,38 +26,117 @@ class IDBWebIDIndex{
     QHash<int, int> indexWebIDByID;
 };
 
-class IDBFandoms{
+class IDbService
+{
+public:
+    void DropAllFanficIndexes() = 0;
+    void RebuildAllFanficIndexes() = 0;
+    void EnsureWebIdsFilled() = 0;
+    void EnsureFFNUrlsShort() = 0;
+
+};
+
+class IDBFandoms : public IDBPersistentData{
 public:
     virtual ~IDBFandoms(){}
     virtual bool IsTracked(QString) = 0;
     virtual QList<int> AllTracked() = 0;
-    virtual QList<int> AllTrackedStr() = 0;
+    virtual QStringList AllTrackedStr() = 0;
     virtual int GetID(QString) = 0;
     virtual void SetTracked(QString, bool value, bool immediate) = 0;
-    virtual void IsTracked(QString) = 0;
+    virtual bool IsTracked(QString) = 0;
     virtual QStringList ListOfTracked() = 0;
+    virtual QString LoadFandom(QString name) = 0;
+    virtual bool EnsureFandom(QString name) = 0;
+    virtual bool AssignTagToFandom(QString, QString tag) = 0;
+    //recent fandoms
+    virtual QStringList PushFandomToTopOfRecent(QString) = 0;
+    //virtual QStringList FetchRecentFandoms() = 0;
+    //virtual void RebaseFandomsToZero() = 0;
+    virtual QSharedPointer<core::Fandom> GetFandom(QString) = 0;
+    virtual bool CreateFandom(QSharedPointer<core::Fandom>) = 0;
+
+    virtual void CalculateFandomAverages() = 0;
+    virtual void CalculateFandomFicCounts() = 0;
+
     QHash<QString, int> indexFandomsByName;
     QHash<QString, QSharedPointer<core::Fandom>> fandoms;
     QList<QSharedPointer<core::Fandom>> updateQueue;
+    QList<QSharedPointer<core::Fandom>> recentFandoms;
+
 };
 
 
 class IDBFanfics : public IDBWebIDIndex, public IDBPersistentData {
 public:
     virtual ~IDBFanfics(){}
+    void ClearQueues() {
+        updateQueue.clear();
+        insertQueue.clear();
+    }
+    virtual void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false) = 0;
+    virtual void AddRecommendations(QList<core::FicRecommendation> recommendations) = 0;
+    virtual void FlushDataQueues() = 0;
+
+    virtual void EmptyQueues() { return !(updateQueue.size() || insertQueue.size());}
     // queued by webid
-    QHash<int, QSharedPointer<core::Fic>> queuedFics;
+    QReadWriteLock mutex;
+    QHash<int, QSharedPointer<core::Fic>> updateQueue;
+    QHash<int, QSharedPointer<core::Fic>> insertQueue;
+    QList<core::FicRecommendation> ficRecommendations;
+    QSharedPointer<IDBAuthors> authorInterface;
+
 
 };
 
-class IDBAuthors : public IDBWebIDIndex, public IDBPersistentData{
+class IDBAuthors : public IDBPersistentData{
 public:
     virtual ~IDBAuthors(){}
+    void Reindex();
+    void IndexAuthors();
+    void ClearIndex();
+    virtual bool EnsureId(QSharedPointer<core::Author>) = 0;
+    virtual bool LoadAuthors(QString website, bool additionMode = false) = 0;
+
+    //for the future, not strictly necessary atm
+//    bool LoadAdditionalInfo(QSharedPointer<core::Author>) = 0;
+//    bool LoadAdditionalInfo() = 0;
+
+    QSharedPointer<QSharedPointer<core::Author>> GetSingleByName(QString name, QString website);
+    QList<QSharedPointer<QSharedPointer<core::Author>>> GetAllByName(QString name);
+    QSharedPointer<QSharedPointer<core::Author>> GetByUrl(QString url);
+    QSharedPointer<QSharedPointer<core::Author>> GetById(int id);
+    QList<QSharedPointer<core::Author>> GetAllAuthors(QString website) = 0;
+
 
     // queued by webid
-    QHash<int, QSharedPointer<core::Author>> authors;
-    QList<QSharedPointer<core::Author>> queue;
-    QHash<int, QList<int>> queuedFicRecommendations; // author ID to fic WEB ID
+    QList<QSharedPointer<core::Author>> authors;
+
+    //QMultiHash<QString, QSharedPointer<core::Author>> authorsByName;
+    QHash<QString, QHash<QString, QSharedPointer<core::Author>>> authorsNamesByWebsite;
+    QHash<int, QSharedPointer<core::Author>> authorsById;
+    QHash<int, QSharedPointer<core::Author>> authorsByUrl;
+};
+
+class IDBRecommendationLists : public IDBPersistentData
+{
+public:
+    int GetListIdForName(QString name);
+    int GetListNameForId(int id);
+    void Reindex();
+    void IndexLists();
+    void ClearIndex();
+
+    QList<QSharedPointer<core::AuthorRecommendationStats>> GetAuthorStatsForList(int id);
+    QSharedPointer<core::AuthorRecommendationStats> GetIndividualAuthorStatsForList(int id, int authorId);
+
+    QList<QSharedPointer<core::RecommendationList>> lists;
+
+    QHash<int, QSharedPointer<core::RecommendationList>> idIndex;
+    QHash<QString, QSharedPointer<core::RecommendationList>> nameIndex;
+
+    QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorStats;
+
 };
 
 
@@ -75,7 +159,7 @@ public:
     virtual bool ReadDbFile(QString file, QString connectionName = "") = 0;
     virtual bool ReindexTable(QString table) = 0;
     virtual void SetFandomTracked(QString fandom, bool crossover, bool) = 0;
-    virtual void PushFandom(QString) = 0;
+    virtual void PushFandomToTopOfRecent(QString) = 0;
     virtual void RebaseFandoms() = 0;
 
 
@@ -111,9 +195,6 @@ public:
     virtual bool FetchTrackStateForFandom(QString fandom, bool crossover) = 0;
     virtual QStringList FetchTrackedFandoms() = 0;
     virtual QStringList FetchTrackedCrossovers() = 0;
-
-    virtual void DropAllFanficIndexes() = 0;
-    virtual void RebuildAllFanficIndexes() = 0;
 
     virtual WriteStats ProcessFicsIntoUpdateAndInsert(const QList<core::Fic>&, bool alwaysUpdateIfNotInsert = false) = 0;
 
@@ -162,4 +243,25 @@ public:
     DataInterfaces data;
 };
 
+}
+
+void RemoveAuthor(const core::Author &recommender)
+{
+    int id = GetAuthorIdFromUrl(recommender.url("ffn"));
+    RemoveAuthor(id);
+}
+void RemoveAuthor(int id)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q1(db);
+    QString qsl = "delete from recommendations where recommender_id = %1";
+    qsl=qsl.arg(QString::number(id));
+    q1.prepare(qsl);
+    ExecAndCheck(q1);
+
+    QSqlQuery q2(db);
+    qsl = "delete from recommenders where id = %1";
+    qsl=qsl.arg(id);
+    q2.prepare(qsl);
+    ExecAndCheck(q2);
 }

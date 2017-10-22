@@ -1,7 +1,15 @@
 #pragma once
 #include <QString>
 #include <QDateTime>
+#include <QSharedPointer>
 namespace core {
+
+class DBEntity{
+    bool HasChanges() const {return hasChanges;}
+public:
+    bool hasChanges = false;
+};
+
 enum class UpdateMode
 {
     none = -1,
@@ -16,7 +24,8 @@ enum class AuthorIdStatus
     valid = 0
 };
 
-struct Author{
+class Author : public DBEntity{
+    public:
     void Log();
     int id= -1;
     AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
@@ -55,20 +64,28 @@ struct Author{
     UpdateMode updateMode = UpdateMode::none;
 };
 
-struct FavouritesPage
+class FavouritesPage
 {
-    Author author;
+    public:
+    QSharedPointer<Author> author;
     QString pageData;
     //type of website, ffn or ao3
 
 };
 
 
-struct Fic{
+
+
+class Fic : public DBEntity{
+    public:
+    Fic() = default;
+    Fic(const Fic&) = default;
+    Fic& operator=(const Fic&) = default;
+    ~Fic(){}
     int complete=0;
     int atChapter=0;
     int webId = -1;
-    int ID = -1;
+    int id = -1;
 
     QString wordCount = 0;
     QString chapters = 0;
@@ -95,7 +112,7 @@ struct Fic{
     QString charactersFull;
     QStringList characters;
     bool isValid =false;
-    Author author;
+    QSharedPointer<Author> author;
     QHash<QString, QString> urls;
     void SetGenres(QString genreString, QString website){
 
@@ -128,8 +145,9 @@ struct Fic{
     UpdateMode updateMode = UpdateMode::none;
 };
 
-struct Section
+class Section : public DBEntity
 {
+    public:
     struct Tag
     {
         Tag(){}
@@ -178,8 +196,9 @@ struct Section
     Fic result;
     bool isValid =false;
 };
-struct Fandom
+class Fandom : public DBEntity
 {
+    public:
     Fandom(){}
     Fandom(QString name){this->name = name;}
     Fandom(QString name,QString section,QString url,QString crossoverUrl, QString source = "ffn"){
@@ -190,19 +209,28 @@ struct Fandom
         this->source = source.trimmed();
     }
     int id = -1;
+    int idInRecentFandoms = -1;
+    int ficCount = 0;
+    int averageFavesTop3 = 0;
     QString name;
     QString section = "none";
     QString url = "none";
     QString crossoverUrl = "none";
     QString source = "ffn";
+    QDateTime dateOfCreation;
+    QDateTime dateOfLastFic;
+    QDateTime lastUpdateDate;
+    QDateTime lastCrossoverUpdateDate;
+
     bool tracked = false;
 };
 
 
 
 
-struct AuthorRecommendationStats
+class AuthorRecommendationStats : public DBEntity
 {
+    public:
     int authorId= -1;
     int totalFics = -1;
     int matchesWithReferenceTag = -1;
@@ -213,7 +241,19 @@ struct AuthorRecommendationStats
     QString authorName;
 };
 
-struct RecommendationList{
+struct FicRecommendation
+{
+    QSharedPointer<core::Fic> fic;
+    QSharedPointer<core::Author> author;
+    bool IsValid(){
+        if(!fic || !author)
+            return false;
+        return true;
+    }
+};
+
+class RecommendationList : public DBEntity{
+    public:
     int id = -1;
     int ficCount =-1;
     QString name;
