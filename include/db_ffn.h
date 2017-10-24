@@ -78,8 +78,6 @@ public:
     bool Sync(bool forcedSync);
     bool Load();
     void Clear();
-
-
     // IDBAuthors interface
 public:
     bool LoadAuthors(QString website, bool additionMode);
@@ -89,10 +87,7 @@ public:
 class FFNRecommendationLists : public IDBRecommendationLists
 {
   public:
-
-
-
-    // IDBPersistentData interface
+  // IDBPersistentData interface
 public:
     bool IsDataLoaded();
     bool Sync(bool forcedSync);
@@ -104,43 +99,5 @@ public:
 
 
 };
-class FFN : public IDB
-{
-    public:
 
-    // already a wrapper
-    bool FetchTrackStateForFandom(QString fandom);
-    QStringList FetchTrackedFandoms();
-    //!!! already a wrapper
-    //!
-    //!
-
-    // need to implement
-    //bool WriteFandomsForStory(core::Fic & section, QHash<QString, int> &);
-
-    // recommendation ists
-    bool UpdateFicCountForRecommendationList(core::RecommendationList&);
-    int GetRecommendationListIdForName(QString name);
-    //bool WipeRecommendationList(QString tag);
-    bool CopyAllAuthorRecommendationsToList(int recommenderId, QString listName);
-    bool IncrementAllValuesInListMatchingAuthorFavourites(int recommenderId, QString tag);
-    bool DeleteRecommendationList(QString listName);
-
-    void ImportTags(QString anotherDatabase);
-    void DeleteTagfromDatabase(QString);
-    void PassTagsIntoTagsTable();
-    bool HasNoneTagInRecommendations();
-
-    int GetLastIdForTable(QString);
-    bool IsGenreList(QStringList, QString website);
-    bool ReprocessFics(QString where,QString website, std::function<void(int)>);
-    void TryDeactivate(QString url, QString website);
-    void DeactivateStory(int id, QString website);
-
-    DataInterfaces data;
-    QSqlDatabase db;
-    QString dbName = "CrawlerDB";
-    QSqlDatabase GetDb() const;
-    void SetDb(const QSqlDatabase &value);
-};
 }

@@ -1,6 +1,8 @@
 #include "include/db.h"
 #include "include/pure_sql.h"
-void database::IDBAuthors::Clear()
+
+namespace database{
+void IDBAuthors::Clear()
 {
 //    QList<QSharedPointer<core::Author>> authors;
 
@@ -16,13 +18,13 @@ void database::IDBAuthors::Clear()
     ClearIndex();
 }
 
-void database::IDBAuthors::Reindex()
+void IDBAuthors::Reindex()
 {
     ClearIndex();
     IndexAuthors();
 }
 
-void database::IDBAuthors::IndexAuthors()
+void IDBAuthors::IndexAuthors()
 {
     for(auto author : authors)
     {
@@ -33,7 +35,7 @@ void database::IDBAuthors::IndexAuthors()
     }
 }
 
-void database::IDBAuthors::ClearIndex()
+void IDBAuthors::ClearIndex()
 {
     authorsByName.clear();
     authorsNamesByWebsite.clear();
@@ -41,7 +43,7 @@ void database::IDBAuthors::ClearIndex()
     authorsById.clear();
 }
 
-QSharedPointer<QSharedPointer<core::Author> > database::IDBAuthors::GetSingleByName(QString name, QString website)
+QSharedPointer<QSharedPointer<core::Author> > IDBAuthors::GetSingleByName(QString name, QString website)
 {
     QSharedPointer<QSharedPointer<core::Author>> result;
     if(authorsNamesByWebsite.contains(website) && authorsNamesByWebsite[website].contains(name))
@@ -50,7 +52,7 @@ QSharedPointer<QSharedPointer<core::Author> > database::IDBAuthors::GetSingleByN
 
 }
 
-QList<QSharedPointer<QSharedPointer<core::Author>>> database::IDBAuthors::GetAllByName(QString name)
+QList<QSharedPointer<QSharedPointer<core::Author>>> IDBAuthors::GetAllByName(QString name)
 {
     QList<QSharedPointer<QSharedPointer<core::Author>>> result;
 
@@ -63,7 +65,7 @@ QList<QSharedPointer<QSharedPointer<core::Author>>> database::IDBAuthors::GetAll
     return result;
 }
 
-QSharedPointer<core::Author> database::IDBAuthors::GetByUrl(QString url)
+QSharedPointer<core::Author> IDBAuthors::GetByUrl(QString url)
 {
     QSharedPointer<QSharedPointer<core::Author>> result;
     if(!authorsByUrl.contains(url))
@@ -71,7 +73,7 @@ QSharedPointer<core::Author> database::IDBAuthors::GetByUrl(QString url)
     return authorsByUrl[url];
 }
 
-QSharedPointer<core::Author > database::IDBAuthors::GetById(int id)
+QSharedPointer<core::Author > IDBAuthors::GetById(int id)
 {
     QSharedPointer<QSharedPointer<core::Author>> result;
     if(!authorsById.contains(id))
@@ -79,7 +81,7 @@ QSharedPointer<core::Author > database::IDBAuthors::GetById(int id)
     return authorsById[id];
 }
 
-QList<QSharedPointer<core::Author> > database::IDBAuthors::GetAllAuthors(QString website)
+QList<QSharedPointer<core::Author> > IDBAuthors::GetAllAuthors(QString website)
 {
     if(website.isEmpty())
         return authors;
@@ -88,7 +90,7 @@ QList<QSharedPointer<core::Author> > database::IDBAuthors::GetAllAuthors(QString
     return authorsNamesByWebsite[website];
 }
 
-int database::IDBAuthors::GetFicCount(int authorId)
+int IDBAuthors::GetFicCount(int authorId)
 {
     auto author = GetById(authorId);
     if(!author)
@@ -96,13 +98,13 @@ int database::IDBAuthors::GetFicCount(int authorId)
     return author->ficCount;
 }
 
-int database::IDBAuthors::GetCountOfRecsForTag(int authorId, QString tag)
+int IDBAuthors::GetCountOfRecsForTag(int authorId, QString tag)
 {
-    auto result = database::puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db);
+    auto result = puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db);
     return result;
 }
 
-QSharedPointer<core::AuthorRecommendationStats> database::IDBAuthors::GetStatsForTag(authorId, core::RecommendationList list)
+QSharedPointer<core::AuthorRecommendationStats> IDBAuthors::GetStatsForTag(authorId, core::RecommendationList list)
 {
     QSharedPointer<core::AuthorRecommendationStats>result (new core::AuthorRecommendationStats);
     auto author = GetById(authorId);
@@ -115,7 +117,7 @@ QSharedPointer<core::AuthorRecommendationStats> database::IDBAuthors::GetStatsFo
     result->authorId= author->id;
     result->totalFics= author->ficCount;
 
-    result->matchesWithReference= database::puresql::GetCountOfTagInAuthorRecommendations(author->id, list.tagToUse, db);
+    result->matchesWithReference= puresql::GetCountOfTagInAuthorRecommendations(author->id, list.tagToUse, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
@@ -124,27 +126,27 @@ QSharedPointer<core::AuthorRecommendationStats> database::IDBAuthors::GetStatsFo
 }
 
 
-int database::IDBRecommendationLists::GetListIdForName(QString name)
+int IDBRecommendationLists::GetListIdForName(QString name)
 {
     if(nameIndex.contains(name))
         return nameIndex[name]->id;
     return -1;
 }
 
-int database::IDBRecommendationLists::GetListNameForId(int id)
+int IDBRecommendationLists::GetListNameForId(int id)
 {
     if(idIndex.contains(id))
         return idIndex[id]->name;
     return QString();
 }
 
-void database::IDBRecommendationLists::Reindex()
+void IDBRecommendationLists::Reindex()
 {
     ClearIndex();
     IndexLists();
 }
 
-void database::IDBRecommendationLists::IndexLists()
+void IDBRecommendationLists::IndexLists()
 {
     for(auto list: lists)
     {
@@ -155,13 +157,13 @@ void database::IDBRecommendationLists::IndexLists()
     }
 }
 
-void database::IDBRecommendationLists::ClearIndex()
+void IDBRecommendationLists::ClearIndex()
 {
     idIndex.clear();
     nameIndex.clear();
 }
 
-QList<QSharedPointer<core::AuthorRecommendationStats> > database::IDBRecommendationLists::GetAuthorStatsForList(int id)
+QList<QSharedPointer<core::AuthorRecommendationStats> > IDBRecommendationLists::GetAuthorStatsForList(int id)
 {
     QList<QSharedPointer<core::AuthorRecommendationStats> > result;
     if(!idIndex.contains(id))
@@ -169,13 +171,13 @@ QList<QSharedPointer<core::AuthorRecommendationStats> > database::IDBRecommendat
     if(cachedAuthorStats.contains(id))
         result = cachedAuthorStats[id];
     //otherwise, need to load it
-    auto stats = database::puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
+    auto stats = puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
     cachedAuthorStats[id] = stats;
     result = stats;
     return result;
 }
 
-QSharedPointer<core::AuthorRecommendationStats> database::IDBRecommendationLists::GetIndividualAuthorStatsForList(int id, int authorId)
+QSharedPointer<core::AuthorRecommendationStats> IDBRecommendationLists::GetIndividualAuthorStatsForList(int id, int authorId)
 {
     QSharedPointer<core::AuthorRecommendationStats> result;
     auto temp = GetAuthorStatsForList(id);
@@ -191,7 +193,7 @@ QSharedPointer<core::AuthorRecommendationStats> database::IDBRecommendationLists
     return result;
 }
 
-int database::IDBRecommendationLists::GetMatchCountForRecommenderOnList(int authorId, int listId)
+int IDBRecommendationLists::GetMatchCountForRecommenderOnList(int authorId, int listId)
 {
     auto data = GetIndividualAuthorStatsForList(listId, authorId);
     if(!data)
@@ -199,12 +201,12 @@ int database::IDBRecommendationLists::GetMatchCountForRecommenderOnList(int auth
     return data->matchesWithReference;
 }
 
-QVector<int> database::IDBRecommendationLists::GetAllFicIDs(int listId)
+QVector<int> IDBRecommendationLists::GetAllFicIDs(int listId)
 {
     QVector<int> result;
     if(!ficsCacheForLists.contains(listId))
     {
-        result = database::puresql::GetAllFicIDsFromRecommendationList(listId, db);
+        result = puresql::GetAllFicIDsFromRecommendationList(listId, db);
         ficsCacheForLists[listId] = result;
     }
     else
@@ -214,27 +216,27 @@ QVector<int> database::IDBRecommendationLists::GetAllFicIDs(int listId)
 
 }
 
-bool database::IDBRecommendationLists::DeleteList(int listId)
+bool IDBRecommendationLists::DeleteList(int listId)
 {
-    return database::puresql::DeleteRecommendationList(listId, db);
+    return puresql::DeleteRecommendationList(listId, db);
 }
 
-bool database::IDBRecommendationLists::ReloadList(int listId)
-{
-
-}
-
-void database::IDBRecommendationLists::AddList(QSharedPointer<core::RecommendationList>)
+bool IDBRecommendationLists::ReloadList(int listId)
 {
 
 }
 
-QSharedPointer<core::RecommendationList> database::IDBRecommendationLists::NewList()
+void IDBRecommendationLists::AddList(QSharedPointer<core::RecommendationList>)
+{
+
+}
+
+QSharedPointer<core::RecommendationList> IDBRecommendationLists::NewList()
 {
     return {new core::RecommendationList};
 }
 
-QSharedPointer<core::AuthorRecommendationStats> database::IDBRecommendationLists::CreateAuthorRecommendationStatsForList(int authorId,int listId)
+QSharedPointer<core::AuthorRecommendationStats> IDBRecommendationLists::CreateAuthorRecommendationStatsForList(int authorId,int listId)
 {
     auto preExisting = GetIndividualAuthorStatsForList(listId, authorId);
     if(preExisting)
@@ -249,7 +251,7 @@ QSharedPointer<core::AuthorRecommendationStats> database::IDBRecommendationLists
     result->authorId = author->id;
     result->totalFics = author->ficCount;
 
-    result.matchesWithReference = database::puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
+    result.matchesWithReference = puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
@@ -259,31 +261,31 @@ QSharedPointer<core::AuthorRecommendationStats> database::IDBRecommendationLists
     return result;
 }
 
-bool database::IDBRecommendationLists::LoadAuthorRecommendationsIntoList(int authorId, int listId)
+bool IDBRecommendationLists::LoadAuthorRecommendationsIntoList(int authorId, int listId)
 {
-    return database::puresql::CopyAllAuthorRecommendationsToList(authorId, listId, db);
+    return puresql::CopyAllAuthorRecommendationsToList(authorId, listId, db);
 }
 
-bool database::IDBRecommendationLists::LoadAuthorRecommendationStatsIntoDatabase(int listId, QSharedPointer<core::AuthorRecommendationStats> stats)
+bool IDBRecommendationLists::LoadAuthorRecommendationStatsIntoDatabase(int listId, QSharedPointer<core::AuthorRecommendationStats> stats)
 {
-    return database::puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
+    return puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
 }
 
-bool database::IDBRecommendationLists::LoadListIntoDatabase(QSharedPointer<core::RecommendationList> list)
+bool IDBRecommendationLists::LoadListIntoDatabase(QSharedPointer<core::RecommendationList> list)
 {
     AddList(list);
     auto timeStamp = portableDBInterface->GetCurrentDateTime();
-    return database::puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
+    return puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
 }
 
-bool database::IDBRecommendationLists::UpdateFicCountInDatabase(int listId)
+bool IDBRecommendationLists::UpdateFicCountInDatabase(int listId)
 {
-    return database::puresql::UpdateFicCountForRecommendationList(listId, db);
+    return puresql::UpdateFicCountForRecommendationList(listId, db);
 }
 
-bool database::IDBRecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData)
+bool IDBRecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData)
 {
-    auto result = database::puresql::AddAuthorFavouritesToList(authorId, listId, db);
+    auto result = puresql::AddAuthorFavouritesToList(authorId, listId, db);
     if(result)
         return false;
     if(reloadLocalData)
@@ -291,21 +293,23 @@ bool database::IDBRecommendationLists::AddAuthorFavouritesToList(int authorId, i
     return result;
 }
 
-bool database::ITags::DeleteTag(QString tag)
+bool ITags::DeleteTag(QString tag)
 {
-    database::puresql::DeleteTagfromDatabase(tag, db);
+    puresql::DeleteTagfromDatabase(tag, db);
 }
 
-bool database::IDBFanfics::ReprocessFics(QString where, QString website, std::function<void (int)> f)
+bool IDBFanfics::ReprocessFics(QString where, QString website, std::function<void (int)> f)
 {
-    auto list = database::puresql::GetWebIdList(where, website, db);
+    auto list = puresql::GetWebIdList(where, website, db);
     for(auto id : list)
     {
         f(id);
     }
 }
 
-bool database::IDBFanfics::DeactivateFic(int ficId)
+bool IDBFanfics::DeactivateFic(int ficId)
 {
-    return database::puresql::DeactivateStory(ficId, "ffn", db);
+    return puresql::DeactivateStory(ficId, "ffn", db);
+}
+
 }
