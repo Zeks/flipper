@@ -7,6 +7,10 @@
 
 
 namespace database {
+
+
+
+class IDBWrapper;
 class IDBPersistentData{
   public:
     virtual ~IDBPersistentData(){}
@@ -36,6 +40,17 @@ public:
 
 };
 
+
+class ITags{
+public:
+    bool DeleteTag(QString);
+    bool AddTag();
+    virtual bool AssignTagToFandom(QString, QString tag) = 0;
+
+    QSharedPointer<IDBFandoms> fandomInterface;
+    QSqlDatabase db;
+};
+
 class IDBFandoms : public IDBPersistentData{
 public:
     virtual ~IDBFandoms(){}
@@ -63,6 +78,7 @@ public:
     QHash<QString, QSharedPointer<core::Fandom>> fandoms;
     QList<QSharedPointer<core::Fandom>> updateQueue;
     QList<QSharedPointer<core::Fandom>> recentFandoms;
+    QSqlDatabase db;
 
 };
 
@@ -77,15 +93,17 @@ public:
     virtual void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false) = 0;
     virtual void AddRecommendations(QList<core::FicRecommendation> recommendations) = 0;
     virtual void FlushDataQueues() = 0;
-
     virtual void EmptyQueues() { return !(updateQueue.size() || insertQueue.size());}
+
+    bool ReprocessFics(QString where, QString website, std::function<void(int)> f);
+    bool DeactivateFic(int ficId);
     // queued by webid
     QReadWriteLock mutex;
     QHash<int, QSharedPointer<core::Fic>> updateQueue;
     QHash<int, QSharedPointer<core::Fic>> insertQueue;
     QList<core::FicRecommendation> ficRecommendations;
     QSharedPointer<IDBAuthors> authorInterface;
-
+    QSqlDatabase db;
 
 };
 
@@ -104,9 +122,12 @@ public:
 
     QSharedPointer<QSharedPointer<core::Author>> GetSingleByName(QString name, QString website);
     QList<QSharedPointer<QSharedPointer<core::Author>>> GetAllByName(QString name);
-    QSharedPointer<QSharedPointer<core::Author>> GetByUrl(QString url);
-    QSharedPointer<QSharedPointer<core::Author>> GetById(int id);
+    QSharedPointer<core::Author> GetByUrl(QString url);
+    QSharedPointer<core::Author> GetById(int id);
     QList<QSharedPointer<core::Author>> GetAllAuthors(QString website) = 0;
+    int GetFicCount(int authorId);
+    int GetCountOfRecsForTag(int authorId, QString tag);
+    QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(authorId, core::RecommendationList list);
 
 
     // queued by webid
@@ -116,27 +137,43 @@ public:
     QHash<QString, QHash<QString, QSharedPointer<core::Author>>> authorsNamesByWebsite;
     QHash<int, QSharedPointer<core::Author>> authorsById;
     QHash<int, QSharedPointer<core::Author>> authorsByUrl;
+
+    QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorToTagStats;
+    QSqlDatabase db;
 };
 
 class IDBRecommendationLists : public IDBPersistentData
 {
 public:
-    int GetListIdForName(QString name);
+    int GetListIdForName(QString name); //! todo do I need to fill index without filling lists
     int GetListNameForId(int id);
     void Reindex();
     void IndexLists();
     void ClearIndex();
-
+    bool DeleteList(int listId);
+    bool ReloadList(int listId);
+    void AddList(QSharedPointer<core::RecommendationList>);
+    QSharedPointer<core::RecommendationList> NewList();
     QList<QSharedPointer<core::AuthorRecommendationStats>> GetAuthorStatsForList(int id);
     QSharedPointer<core::AuthorRecommendationStats> GetIndividualAuthorStatsForList(int id, int authorId);
+    int GetMatchCountForRecommenderOnList(int authorId, int listId);
+    QVector<int> GetAllFicIDs(int listId);
+    QSharedPointer<core::AuthorRecommendationStats> CreateAuthorRecommendationStatsForList(int authorId, int listId);
+    bool LoadAuthorRecommendationsIntoList(int authorId, int listId);
+    bool LoadAuthorRecommendationStatsIntoDatabase(int listId, QSharedPointer<core::AuthorRecommendationStats> stats);
+    bool LoadListIntoDatabase(QSharedPointer<core::RecommendationList>);
+    bool UpdateFicCountInDatabase(int listId);
+    bool AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData = false);
 
     QList<QSharedPointer<core::RecommendationList>> lists;
-
     QHash<int, QSharedPointer<core::RecommendationList>> idIndex;
     QHash<QString, QSharedPointer<core::RecommendationList>> nameIndex;
-
     QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorStats;
+    QHash<int, QVector<int>> ficsCacheForLists;
+    QSqlDatabase db;
 
+    QSharedPointer<IDBAuthors> authorInterface;
+    QSharedPointer<IDBWrapper> portableDBInterface;
 };
 
 

@@ -233,7 +233,7 @@ class AuthorRecommendationStats : public DBEntity
     public:
     int authorId= -1;
     int totalFics = -1;
-    int matchesWithReferenceTag = -1;
+    int matchesWithReference = -1;
     double matchRatio = -1;
     bool isValid = false;
     QString listName;

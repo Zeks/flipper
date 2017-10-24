@@ -224,3 +224,115 @@ QList<int> GetFulLRecommenderList()
 
     return result;
 }
+
+
+
+void DropAllFanficIndexes()
+{
+    QStringList commands;
+    commands.push_back("Drop index if exists main.I_FANFICS_IDENTITY");
+    commands.push_back("Drop index if exists main.I_FANFICS_FANDOM");
+    commands.push_back("Drop index if exists main.I_FANFICS_AUTHOR");
+    commands.push_back("Drop index if exists main.I_FANFICS_TITLE");
+    commands.push_back("Drop index if exists main.I_FANFICS_WORDCOUNT");
+    commands.push_back("Drop index if exists main.I_FANFICS_TAGS");
+    commands.push_back("Drop index if exists main.I_FANFICS_ID");
+    commands.push_back("Drop index if exists main.I_FANFICS_GENRES");
+    commands.push_back("Drop index if exists main.I_RECOMMENDATIONS_FIC_TAG");
+    commands.push_back("Drop index if exists main.I_RECOMMENDATIONS_TAG");
+    commands.push_back("Drop index if exists main.I_RECOMMENDATIONS_FIC");
+
+    QSqlDatabase db = QSqlDatabase::database();
+    for(QString command: commands)
+    {
+        QSqlQuery q1(db);
+        q1.prepare(command);
+        ExecAndCheck(q1);
+    }
+}
+
+void RebuildAllFanficIndexes()
+{
+    QStringList commands;
+    commands.push_back("CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC)");
+    commands.push_back("CREATE  INDEX if  not exists  main.I_FANFICS_AUTHOR ON FANFICS (AUTHOR ASC)");
+    commands.push_back("CREATE  INDEX if  not exists  main.I_FANFICS_TITLE ON FANFICS (TITLE ASC)");
+    commands.push_back("CREATE  INDEX if  not exists  main.I_FANFICS_FANDOM ON FANFICS (FANDOM ASC)");
+    commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC)");
+    commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_TAGS ON FANFICS (TAGS ASC)");
+    commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_ID ON FANFICS (ID ASC)");
+    commands.push_back("CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC)");
+
+    commands.push_back("CREATE INDEX if not exists I_RECOMMENDATIONS_REC_FIC ON Recommendations (recommender_id ASC, fic_id asc)");
+    commands.push_back("CREATE INDEX if not exists I_RECOMMENDATIONS_TAG ON Recommendations (tag ASC)");
+    commands.push_back("CREATE INDEX if not exists I_RECOMMENDATIONS_FIC ON Recommendations (fic_id ASC)");
+
+    QSqlDatabase db = QSqlDatabase::database();
+    for(QString command: commands)
+    {
+        QSqlQuery q1(db);
+        q1.prepare(command);
+        ExecAndCheck(q1);
+    }
+}
+
+
+int GetMatchCountForRecommenderOnList(int recommender_id, int list)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q1(db);
+    QString qsl = "select fic_count from RecommendationListAuthorStats where list_id = :list_id and author_id = :author_id";
+    q1.prepare(qsl);
+    q1.bindValue(":list_id", list);
+    q1.bindValue(":author_id", recommender_id);
+    q1.exec();
+    q1.next();
+    CheckExecution(q1);
+    int matches  = q1.value(0).toInt();
+    qDebug() << "Using query: " << q1.lastQuery();
+    qDebug() << "Matches found: " << matches;
+    return matches;
+}
+
+
+
+void PassTagsIntoTagsTable()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    db.transaction();
+    QString qs = QString("select id, tags from fanfics where tags <> ' none ' order by tags");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(q.lastError().isValid())
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+    while(q.next())
+    {
+        auto id = q.value("id").toInt();
+        auto tags = q.value("tags").toString();
+        if(tags.trimmed() == "none")
+            continue;
+        QStringList split = tags.split(" ", QString::SkipEmptyParts);
+        split.removeDuplicates();
+        split.removeAll("none");
+        qDebug() << split;
+        for(auto tag : split)
+        {
+            qs = QString("insert into fictags(fic_id, tag) values(:fic_id, :tag)");
+            QSqlQuery iq(db);
+            iq.prepare(qs);
+            iq.bindValue(":fic_id",id);
+            iq.bindValue(":tag", tag);
+            iq.exec();
+            if(iq.lastError().isValid())
+            {
+                qDebug() << iq.lastError();
+                qDebug() << iq.lastQuery();
+            }
+        }
+    }
+    db.commit();
+}

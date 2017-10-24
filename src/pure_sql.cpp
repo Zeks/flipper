@@ -1,5 +1,7 @@
 #include "pure_sql.h"
+#include "section.h"
 #include <QSqlQuery>
+#include <QVector>
 namespace database {
 namespace puresql{
 
@@ -395,7 +397,7 @@ QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(int listId, QS
     {
         core::AuthorRecommendationStats stats;
         stats.isValid = true;
-        stats.matchesWithReferenceTag = q.value("match_count").toInt();
+        stats.matchesWithReference = q.value("match_count").toInt();
         stats.matchRatio= q.value("match_ratio").toDouble();
         stats.authorId= q.value("author_id").toInt();
         stats.listName= listName;
@@ -451,7 +453,7 @@ QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listNa
     {
         core::AuthorRecommendationStats stats;
         stats.isValid = true;
-        stats.matchesWithReferenceTag = q.value("match_count").toInt();
+        stats.matchesWithReference = q.value("match_count").toInt();
         stats.matchRatio= q.value("match_ratio").toDouble();
         stats.authorId= q.value("author_id").toInt();
         stats.listName= listName;
@@ -460,5 +462,300 @@ QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listNa
         result.push_back(stats);
     }
     return result;
+}
+
+int GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db)
+{
+    QSqlQuery q1(db);
+    QString qsl = "select fic_count from RecommendationListAuthorStats where list_id = :list_id and author_id = :author_id";
+    q1.prepare(qsl);
+    q1.bindValue(":list_id", list);
+    q1.bindValue(":author_id", authorId);
+    q1.exec();
+    if(ExecAndCheck(q1))
+        return -1;
+    q1.next();
+    int matches  = q1.value(0).toInt();
+    qDebug() << "Using query: " << q1.lastQuery();
+    qDebug() << "Matches found: " << matches;
+    return matches;
+}
+
+QVector<int> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db)
+{
+    QVector<int> result;
+    QString qs = QString("select count(fic_id) from RecommendationListData where list_id = :list_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+
+    q.next();
+    int size = q.value(0).toInt();
+
+    qs = QString("select fic_id from RecommendationListData where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+
+    result.reserve(size);
+    while(q.next())
+        result.push_back(q.value("fic_id").toInt());
+
+    return result;
+}
+
+
+int GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db)
+{
+    int result = 0;
+    QString qs = QString("select count(distinct fic_id) from FicTags ft where ft.tag = :tag and exists"
+                         " (select 1 from Recommendations where ft.fic_id = fic_id and recommender_id = :recommender_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    q.bindValue(":recommender_id",authorId);
+    if(!ExecAndCheck(q))
+        return result;
+    result = q.value(0).toInt();
+    return result;
+}
+
+//!todo needs check if the query actually works
+int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDatabase db)
+{
+    int result = 0;
+    QString qs = QString("select count(fic_id) from Recommendations r where recommender_id = :author_id and exists "
+                         " (select 1 from RecommendationListData rld where rld.list_id = :list_id and fic_id = rld.fic_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",authorId);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+    result = q.value(0).toInt();
+    return result;
+}
+
+bool DeleteRecommendationList(int listId, QSqlDatabase db )
+{
+    if(listId == 0)
+        return false;
+    QString qs = QString("delete from RecommendationLists where list_id = :list_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+
+    qs = QString("delete from RecommendationListAuthorStats where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+
+    qs = QString("delete from RecommendationFicStats where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+
+    return true;
+}
+bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db )
+{
+    QString qs = QString("insert into RecommendationListData (fic_id, list_id)"
+                         " select fic_id, %1 as list_id from recommendations r where r.recommender_id = :author_id and "
+                         " not exists( select 1 from RecommendationListData where list_id=:list_id and fic_id = r.fic_id) ");
+    qs=qs.arg(listId);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",authorId);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+bool WriteAuthorRecommendationStatsForList(int listId, QSharedPointer<core::AuthorRecommendationStats> stats, QSqlDatabase db)
+{
+    if(!stats)
+        return false;
+
+    QString qs = QString("insert into RecommendationListAuthorStats (author_id, fic_count, match_count, match_ratio, list_id) "
+                         "values(:author_id, :fic_count, :match_count, :match_ratio, :list_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",stats->authorId);
+    q.bindValue(":fic_count",stats->totalFics);
+    q.bindValue(":match_count",stats->matchesWithReference);
+    q.bindValue(":match_ratio",stats->matchRatio);
+    //auto listId= GetRecommendationListIdForName(stats->listName);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+bool CreateOrUpdateRecommendationList(core::RecommendationList& list, QDateTime creationTimestamp, QSqlDatabase db)
+{
+    QString qs = QString("insert into RecommendationLists(name) select '%1' where not exists(select 1 from RecommendationLists where name = '%1')");
+    qs= qs.arg(list.name);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
+    //CURRENT_TIMESTAMP not portable
+    qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, always_pick_at = :always_pick_at,  created = :created where name = :name");
+    q.prepare(qs);
+    q.bindValue(":minimum",list.minimumMatch);
+    q.bindValue(":pick_ratio",list.pickRatio);
+    q.bindValue(":created",creationTimestamp);
+    q.bindValue(":always_pick_at",list.alwaysPickAt);
+    q.bindValue(":name",list.name);
+    if(!ExecAndCheck(q))
+        return false;
+
+
+    qs = QString("select id from RecommendationLists where name = :name");
+    q.prepare(qs);
+    q.bindValue(":name",list.name);
+    if(!ExecAndCheck(q))
+        return false;
+
+    q.next();
+    list.id = q.value(0).toInt();
+    if(list.id > 0)
+        return true;
+    return false;
+}
+bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db)
+{
+    if(listId == -1)
+        return false;
+
+    QString qs = QString("update RecommendationLists set fic_count=(select count(fic_id) from RecommendationListData where list_id = :list_id) where list_id = :list_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id",list.id);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+bool DeleteTagfromDatabase(QString tag, QSqlDatabase db)
+{
+    QString qs = QString("delete from FicTags where tag = :tag");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    if(!ExecAndCheck(q))
+        return false;
+
+    qs = QString("delete from tags where tag = :tag");
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+int GetRecommendationListIdForName(QString name, QSqlDatabase db)
+{
+    int result = 0;
+    QString qs = QString("select id from RecommendationLists where name = :name");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":name",name);
+    if(!ExecAndCheck(q))
+        return result;
+    q.next();
+    result = q.value(0).toInt();
+    return result;
+}
+bool AddAuthorFavouritesToList(int authorId, int listId, QSqlDatabase db)
+{
+    QString qs = QString(" update RecommendationListData set match_count = match_count+1 where "
+                         " list_id = :list_id "
+                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",authorId);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+void ShortenFFNurlsForAllFics(QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set url = cfReturnCapture('(/s/\\d+/)', url)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    ExecAndCheck(q);
+}
+bool IsGenreList(QStringList list, QString website, QSqlDatabase db)
+{
+    // first we need to process hurt/comfort
+    QString qs = QString("select count(id) from genres where genre in(%1) and website = :website");
+    qs = qs.arg("'" + list.join("','") + "'");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":website", website);
+    if(!ExecAndCheck(q))
+        return false;
+    q.next();
+    return q.value(0).toInt() > 0;
+
+}
+QVector<int> GetIdList(QString where, QSqlDatabase db)
+{
+    QVector<int> result;
+
+    QString qs = QString("select count(id), id from fanfics %1");
+    qs = qs.arg(where);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
+
+    while(q.next())
+    {
+        if(result.empty())
+            result.reserve(q.value(0).toInt());
+        auto id = q.value(1).toInt();
+
+    }
+    return true;
+}
+
+QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db)
+{
+    QVector<int> result;
+
+    QString qs = QString("select count(id), %1_id from fanfics %2");
+    qs = qs.arg(website).arg(where);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
+
+    while(q.next())
+    {
+        if(result.empty())
+            result.reserve(q.value(0).toInt());
+        auto id = q.value(1).toInt();
+
+    }
+    return true;
+}
+
+bool DeactivateStory(int id, QString website, QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set alive = 0 where %1_id = :id");
+    qs=qs.arg(website);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id", id);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
 }
 }

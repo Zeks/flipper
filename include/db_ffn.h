@@ -101,7 +101,7 @@ public:
 
     private:
     void LoadAvailableRecommendationLists();
-    QSqlDatabase db;
+
 
 };
 class FFN : public IDB
@@ -114,23 +114,11 @@ class FFN : public IDB
     //!!! already a wrapper
     //!
     //!
-    // writing fics into database
-    bool LoadIntoDB(core::Fic & section);
-    bool UpdateInDB(core::Fic & section);
-    bool InsertIntoDB(QSharedPointer<core::Fic> & section);
+
     // need to implement
     //bool WriteFandomsForStory(core::Fic & section, QHash<QString, int> &);
 
-    int GetMatchCountForRecommenderOnList(int recommender_id, int list);
-    QVector<int> GetAllFicIDsFromRecommendationList(QString tag);
-
-
-    QHash<QString, core::Author> FetchRecommenders();
-    core::AuthorRecommendationStats CreateRecommenderStats(int recommenderId, core::RecommendationList list);
-    void WriteRecommenderStatsForTag(core::AuthorRecommendationStats stats, int listId);
-
     // recommendation ists
-    bool CreateOrUpdateRecommendationList(core::RecommendationList&);
     bool UpdateFicCountForRecommendationList(core::RecommendationList&);
     int GetRecommendationListIdForName(QString name);
     //bool WipeRecommendationList(QString tag);

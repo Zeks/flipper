@@ -93,8 +93,6 @@ private:
     QSqlQuery BuildQuery();
     QString BuildBias();
 
-    void LoadIntoDB(core::Fic&);
-
     QString WrapTag(QString tag);
     void HideCurrentID();
 

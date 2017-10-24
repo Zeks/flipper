@@ -64,7 +64,8 @@ void ServitorWindow::on_pbReprocessFics_clicked()
     QSqlDatabase db = QSqlDatabase::database();
     //db.transaction();
     database::ReprocessFics(" where fandom1 like '% CROSSOVER' and alive = 1 order by id asc", "ffn", [this,&pager, &parser, &fandoms](int ficId){
-        QString url = url_utils::GetUrlFromWebId(ficId, "ffn");
+        //todo, get web_id from fic_id
+        QString url = url_utils::GetUrlFromWebId(webId, "ffn");
         auto page = pager.GetPage(url, ECacheMode::use_only_cache);
         parser.SetRewriteAuthorNames(false);
         auto fic = parser.ProcessPage(url, page.content);

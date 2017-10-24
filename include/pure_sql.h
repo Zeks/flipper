@@ -42,6 +42,32 @@ QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(int listId, QS
 QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
 
 QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listName, QString sortOn, QString order, QSqlDatabase db);
+int GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
+
+QVector<int> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db);
+
+
+int GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db);
+int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDatabase db);
+
+
+bool DeleteRecommendationList(int listId, QSqlDatabase db );
+bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
+bool WriteAuthorRecommendationStatsForList(int listId, QSharedPointer<core::AuthorRecommendationStats> stats, QSqlDatabase db);
+bool CreateOrUpdateRecommendationList(core::RecommendationList& list, QDateTime creationTimestamp, QSqlDatabase db);
+bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
+bool DeleteTagfromDatabase(QString tag, QSqlDatabase db);
+bool AddAuthorFavouritesToList(int authorId, int listId, QSqlDatabase db);
+void ShortenFFNurlsForAllFics(QSqlDatabase db);
+
+//! todo  currently unused
+int GetRecommendationListIdForName(QString name, QSqlDatabase db);
+//will need to add genre tracker on ffn in case it'sever expanded
+bool IsGenreList(QStringList list, QString website, QSqlDatabase db);
+
+QVector<int> GetIdList(QString where, QSqlDatabase db);
+QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db);
+bool DeactivateStory(int id, QString website, QSqlDatabase db);
 
 
 
