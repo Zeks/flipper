@@ -1,0 +1,45 @@
+#pragma once
+#include "Interfaces/base.h"
+#include "section.h"
+#include "QScopedPointer"
+#include "QSharedPointer"
+#include "QSqlDatabase"
+#include "QReadWriteLock"
+
+
+namespace database {
+
+class DBFanficsBase : public IDBWebIDIndex, public IDBPersistentData {
+public:
+    virtual ~DBFanficsBase(){}
+    void ClearQueues() {
+        updateQueue.clear();
+        insertQueue.clear();
+    }
+
+    virtual int GetIDFromWebID(int, QString website);
+    virtual int GetWebIDFromID(int, QString website);
+
+    virtual void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false) = 0;
+    virtual void AddRecommendations(QList<core::FicRecommendation> recommendations) = 0;
+    virtual void FlushDataQueues() = 0;
+    virtual void EmptyQueues() { return !(updateQueue.size() || insertQueue.size());}
+
+    bool ReprocessFics(QString where, QString website, std::function<void(int)> f);
+    virtual bool DeactivateFic(int ficId, QString website);
+    virtual bool DeactivateFic(int ficId) = 0;
+    void AddRecommendations(QList<core::FicRecommendation> recommendations);
+    void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert);
+    void CalculateFandomAverages();
+    void CalculateFandomFicCounts();
+    void FlushDataQueues();
+    // queued by webid
+    QReadWriteLock mutex;
+    QHash<int, QSharedPointer<core::Fic>> updateQueue;
+    QHash<int, QSharedPointer<core::Fic>> insertQueue;
+    QList<core::FicRecommendation> ficRecommendations;
+    QSharedPointer<DBAuthorsBase> authorInterface;
+    QSqlDatabase db;
+
+};
+}

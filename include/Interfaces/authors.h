@@ -1,0 +1,50 @@
+#pragma once
+#include "Interfaces/base.h"
+#include "section.h"
+#include "QScopedPointer"
+#include "QSharedPointer"
+#include "QSqlDatabase"
+#include "QReadWriteLock"
+
+
+namespace database {
+class DBAuthorsBase : public IDBPersistentData{
+public:
+    virtual ~DBAuthorsBase(){}
+    void Reindex();
+    void IndexAuthors();
+    void ClearIndex();
+    virtual bool EnsureId(QSharedPointer<core::Author>) = 0;
+    bool LoadAuthors(QString website, bool additionMode);
+
+    //for the future, not strictly necessary atm
+//    bool LoadAdditionalInfo(QSharedPointer<core::Author>) = 0;
+//    bool LoadAdditionalInfo() = 0;
+
+    QSharedPointer<QSharedPointer<core::Author>> GetSingleByName(QString name, QString website);
+    QList<QSharedPointer<QSharedPointer<core::Author>>> GetAllByName(QString name);
+    QSharedPointer<core::Author> GetByUrl(QString url);
+    QSharedPointer<core::Author> GetById(int id);
+    QList<QSharedPointer<core::Author>> GetAllAuthors(QString website) = 0;
+    int GetFicCount(int authorId);
+    int GetCountOfRecsForTag(int authorId, QString tag);
+    QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(authorId, core::RecommendationList list);
+    virtual bool EnsureId(QSharedPointer<core::Author> author) = 0;
+    bool EnsureId(QSharedPointer<core::Author> author, QString website);
+    void  RemoveAuthor(int id);
+    virtual void  RemoveAuthor(QSharedPointer<core::Author>) = 0;
+    void  RemoveAuthor(QSharedPointer<core::Author>, QString website);
+
+    // queued by webid
+    QList<QSharedPointer<core::Author>> authors;
+
+    //QMultiHash<QString, QSharedPointer<core::Author>> authorsByName;
+    QHash<QString, QHash<QString, QSharedPointer<core::Author>>> authorsNamesByWebsite;
+    QHash<int, QSharedPointer<core::Author>> authorsById;
+    QHash<int, QSharedPointer<core::Author>> authorsByUrl;
+
+    QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorToTagStats;
+    QSqlDatabase db;
+};
+
+}
