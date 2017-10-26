@@ -2,6 +2,7 @@
 #include "section.h"
 #include <QSqlQuery>
 #include <QVector>
+#include <QVariant>
 namespace database {
 namespace puresql{
 
@@ -82,25 +83,27 @@ void CalculateFandomFicCounts(QSqlDatabase db)
     return;
 }
 
-void WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db)
+bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db)
 {
-    Internal::WriteMaxUpdateDateForFandom(fandom, "having count(*) = 1", db,
+    bool result = Internal::WriteMaxUpdateDateForFandom(fandom, "having count(*) = 1", db,
                                           [](QSharedPointer<core::Fandom> f, QDateTime dt){
         f->lastUpdateDate = dt;
     });
-    if(fandom->source = "ffn")
-        Internal::WriteMaxUpdateDateForFandom(fandom, "having count(*) > 1", db,
+
+    if(fandom->source == "ffn")
+        result = result && Internal::WriteMaxUpdateDateForFandom(fandom, "having count(*) > 1", db,
                                               [](QSharedPointer<core::Fandom> f, QDateTime dt){
             f->lastCrossoverUpdateDate = dt;
         });
+    return result;
 }
 
 
 
-void Internal::WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
+bool Internal::WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
                                            QString condition,
-                                           std::function<void(QSharedPointer<core::Fandom>,QDateTime)> writer,
-                                           QSqlDatabase db)
+                                           QSqlDatabase db,
+                                           std::function<void(QSharedPointer<core::Fandom>,QDateTime)> writer                                           )
 {
     QString qs = QString("Select max(updated) as updated from fanfics where id in (select distinct fic_id from FicFandoms where fandom_id = :fandom_id %1");
     qs=qs.arg(condition);
@@ -108,14 +111,14 @@ void Internal::WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
     QSqlQuery q(db);
     q.prepare(qs);
     if(!ExecAndCheck(q))
-        return;
+        return false;
 
     q.next();
     QString resultStr = q.value("updated").toString();
     QDateTime result;
     result = QDateTime::fromString(resultStr, "yyyy-MM-ddThh:mm:ss.000");
     writer(fandom, result);
-    return result;
+    return true;
 }
 //! todo  requires refactor. fandoms need to have a tag table attached to them instead of forced sections
 QStringList GetFandomListFromDB(QString section)
@@ -376,7 +379,7 @@ QList<QSharedPointer<core::Author>> GetAllAuthors(QString website,  QSqlDatabase
     }
     return result;
 }
-QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db)
+QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db)
 {
     QList<core::AuthorRecommendationStats> result;
     //auto listId= GetRecommendationListIdForName(listName);
@@ -395,14 +398,14 @@ QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(int listId, QS
 
     while(q.next())
     {
-        core::AuthorRecommendationStats stats;
-        stats.isValid = true;
-        stats.matchesWithReference = q.value("match_count").toInt();
-        stats.matchRatio= q.value("match_ratio").toDouble();
-        stats.authorId= q.value("author_id").toInt();
-        stats.listName= listName;
-        stats.totalFics= q.value("fic_count").toInt();
-        stats.authorName = q.value("name").toString();
+        QSharedPointer<core::AuthorRecommendationStats> stats(new core::AuthorRecommendationStats);
+        stats->isValid = true;
+        stats->matchesWithReference = q.value("match_count").toInt();
+        stats->matchRatio= q.value("match_ratio").toDouble();
+        stats->authorId= q.value("author_id").toInt();
+        stats->listName= listName;
+        stats->totalFics= q.value("fic_count").toInt();
+        stats->authorName = q.value("name").toString();
         result.push_back(stats);
     }
     return result;
@@ -431,7 +434,29 @@ QList<QSharedPointer<core::RecommendationList> > GetAvailableRecommendationLists
     return result;
 
 }
+QSharedPointer<core::RecommendationList> GetRecommendationList(int listId, QSqlDatabase db)
+{
+    QString qs = QString("select * from RecommendationLists where list_id = :list_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id", listId);
+    QSharedPointer<core::RecommendationList>  result;
+    if(!ExecAndCheck(q))
+        return result;
 
+    q.next();
+    {
+        QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
+        result = list;
+        list->alwaysPickAt = q.value("always_pick_at").toInt();
+        list->minimumMatch = q.value("minimum").toInt();
+        list->pickRatio= q.value("pick_ratio").toDouble();
+        list->id= q.value("id").toInt();
+        list->name= q.value("name").toString();
+        list->ficCount= q.value("fic_count").toInt();
+    }
+    return result;
+}
 QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listName, QString sortOn, QString order, QSqlDatabase db)
 {
     QList<core::AuthorRecommendationStats> result;
@@ -597,10 +622,10 @@ bool WriteAuthorRecommendationStatsForList(int listId, QSharedPointer<core::Auth
         return false;
     return true;
 }
-bool CreateOrUpdateRecommendationList(core::RecommendationList& list, QDateTime creationTimestamp, QSqlDatabase db)
+bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db)
 {
     QString qs = QString("insert into RecommendationLists(name) select '%1' where not exists(select 1 from RecommendationLists where name = '%1')");
-    qs= qs.arg(list.name);
+    qs= qs.arg(list->name);
     QSqlQuery q(db);
     q.prepare(qs);
     if(!ExecAndCheck(q))
@@ -608,24 +633,24 @@ bool CreateOrUpdateRecommendationList(core::RecommendationList& list, QDateTime 
     //CURRENT_TIMESTAMP not portable
     qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, always_pick_at = :always_pick_at,  created = :created where name = :name");
     q.prepare(qs);
-    q.bindValue(":minimum",list.minimumMatch);
-    q.bindValue(":pick_ratio",list.pickRatio);
+    q.bindValue(":minimum",list->minimumMatch);
+    q.bindValue(":pick_ratio",list->pickRatio);
     q.bindValue(":created",creationTimestamp);
-    q.bindValue(":always_pick_at",list.alwaysPickAt);
-    q.bindValue(":name",list.name);
+    q.bindValue(":always_pick_at",list->alwaysPickAt);
+    q.bindValue(":name",list->name);
     if(!ExecAndCheck(q))
         return false;
 
 
     qs = QString("select id from RecommendationLists where name = :name");
     q.prepare(qs);
-    q.bindValue(":name",list.name);
+    q.bindValue(":name",list->name);
     if(!ExecAndCheck(q))
         return false;
 
     q.next();
-    list.id = q.value(0).toInt();
-    if(list.id > 0)
+    list->id = q.value(0).toInt();
+    if(list->id > 0)
         return true;
     return false;
 }
@@ -772,5 +797,7 @@ bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlD
         return false;
     return true;
 }
+
+
 
 }

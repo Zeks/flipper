@@ -1,5 +1,8 @@
 #include "Interfaces/recommendation_lists.h"
+#include "Interfaces/authors.h"
+#include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
+#include <QVector>
 
 namespace database {
 
@@ -100,6 +103,7 @@ bool DBRecommendationListsBase::DeleteList(int listId)
 
 bool DBRecommendationListsBase::ReloadList(int listId)
 {
+    QSharedPointer<core::RecommendationList> list;
 
 }
 
@@ -110,7 +114,7 @@ void DBRecommendationListsBase::AddList(QSharedPointer<core::RecommendationList>
 
 QSharedPointer<core::RecommendationList> DBRecommendationListsBase::NewList()
 {
-    return {new core::RecommendationList};
+    return QSharedPointer<core::RecommendationList>(new core::RecommendationList);
 }
 
 QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::CreateAuthorRecommendationStatsForList(int authorId,int listId)
@@ -120,7 +124,10 @@ QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::Creat
         return preExisting;
 
     QSharedPointer<core::AuthorRecommendationStats> result (new core::AuthorRecommendationStats);
-    auto list = GetListById(listId);
+    if(!EnsureList(listId))
+        return result;
+
+    auto list = idIndex[listId];
     auto author = authorInterface->GetById(authorId);
     if(!list || !author)
         return result;
@@ -128,12 +135,12 @@ QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::Creat
     result->authorId = author->id;
     result->totalFics = author->ficCount;
 
-    result.matchesWithReference = puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
+    result->matchesWithReference = puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
         result->matchRatio = (double)result->totalFics/(double)result->matchesWithReference;
-    result.isValid = true;
+    result->isValid = true;
     cachedAuthorStats[listId].push_back(result);
     return result;
 }
@@ -179,5 +186,18 @@ void DBRecommendationListsBase::LoadAvailableRecommendationLists()
 {
     lists = database::puresql::GetAvailableRecommendationLists(db);
     Reindex();
+}
+
+bool DBRecommendationListsBase::EnsureList(int listId)
+{
+    if(idIndex.contains(listId) && !idIndex[listId])
+        return false;
+    if(idIndex.contains(listId))
+        return true;
+    auto list = database::puresql::GetRecommendationList(listId, db);
+    idIndex[listId] = list;
+    if(!list)
+        return false;
+    return true;
 }
 }

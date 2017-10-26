@@ -1,5 +1,7 @@
 #include "Interfaces/fanfics.h"
+#include "Interfaces/authors.h"
 #include "include/pure_sql.h"
+#include <QVector>
 
 namespace database {
 
@@ -35,6 +37,9 @@ void DBFanficsBase::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics,
 {
     for(QSharedPointer<core::Fic> fic: fics)
     {
+        if(!fic)
+            continue;
+        auto id = fic->id;
         database::puresql::SetUpdateOrInsert(fic, db, alwaysUpdateIfNotInsert);
         {
             QWriteLocker lock(&mutex);
@@ -60,17 +65,17 @@ void DBFanficsBase::FlushDataQueues()
 {
     db.transaction();
     for(auto fic: insertQueue)
-        database::InsertIntoDB(fic, db);
+        database::puresql::InsertIntoDB(fic, db);
 
     for(auto fic: insertQueue)
-        database::UpdateInDB(fic, db);
+        database::puresql::UpdateInDB(fic, db);
 
     for(auto recommendation: ficRecommendations)
     {
         if(!recommendation.IsValid() || !authorInterface->EnsureId(recommendation.author))
             continue;
-        auto id = GetIDFromWebID(recommendation.fic->webId);
-        database::WriteRecommendation(recommendation.author, id, db);
+        auto id = GetIDFromWebID(recommendation.fic->webId, recommendation.fic->webSite);
+        database::puresql::WriteRecommendation(recommendation.author, id, db);
     }
     db.commit();
 }

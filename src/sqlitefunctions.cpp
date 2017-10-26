@@ -7,6 +7,7 @@
 #include <QTextStream>
 #include <quazip/quazip.h>
 #include <quazip/JlCompress.h>
+#include "include/queryinterfaces.h"
 
 namespace database{
 
@@ -126,18 +127,17 @@ bool ReadDbFile(QString file, QString connectionName, QSqlDatabase db)
     return true;
 }
 
-QStringList GetIdListForQuery(core::Query query)
+QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db)
 {
-    QString where = query.str;
+    QString where = query->str;
     QStringList result;
-    QSqlDatabase db = QSqlDatabase::database();
     QString qs = QString("select group_concat(id, ',') as merged, " + where);
     //qs= qs.arg(where);
     qDebug() << qs;
     QSqlQuery q(db);
     q.prepare(qs);
-    auto it = query.bindings.begin();
-    auto end = query.bindings.end();
+    auto it = query->bindings.begin();
+    auto end = query->bindings.end();
     while(it != end)
     {
         qDebug() << it.key() << " " << it.value();
@@ -200,7 +200,6 @@ void PushFandomToTopOfRecent(QString fandom, QSqlDatabase db)
 
 QStringList FetchRecentFandoms(QSqlDatabase db)
 {
-    QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
     QString qsl = "select fandom from recent_fandoms where fandom is not 'base' order by seq_num desc";
     q1.prepare(qsl);

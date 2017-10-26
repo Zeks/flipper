@@ -1,5 +1,6 @@
 #include "querybuilder.h"
-#include "db_ffn.h"
+#include "pure_sql.h"
+#include "Interfaces/db_interface.h"
 #include <QDebug>
 
 namespace  core{
@@ -313,13 +314,13 @@ QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
 }
 
 
-QString DefaultRNGgenerator::Get(Query query)
+QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase db)
 {
-    QString where = query.str;
+    QString where = query->str;
 
     if(!randomIdLists.contains(where))
     {
-        auto idList = database::GetIdListForQuery(query);
+        auto idList = portableDBInterface->GetIdListForQuery(query, db);
         if(idList.size() == 0)
             idList.push_back("-1");
         randomIdLists[where] = idList;

@@ -33,6 +33,7 @@ public:
     bool UpdateFicCountInDatabase(int listId);
     bool AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData = false);
     void LoadAvailableRecommendationLists();
+    bool EnsureList(int listId);
     QList<QSharedPointer<core::RecommendationList>> lists;
     QHash<int, QSharedPointer<core::RecommendationList>> idIndex;
     QHash<QString, QSharedPointer<core::RecommendationList>> nameIndex;

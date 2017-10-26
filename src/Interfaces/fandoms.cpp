@@ -1,6 +1,9 @@
 #include "Interfaces/fandoms.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
+#include <QSqlQuery>
+#include <QVariant>
+#include <QDateTime>
 
 namespace database {
 
@@ -97,13 +100,15 @@ bool DBFandomsBase::IsDataLoaded()
 
 bool DBFandomsBase::Sync(bool forcedSync)
 {
+    bool ok = true;
     for(auto fandom: fandoms)
     {
         if(fandom->hasChanges || forcedSync)
         {
-            database::puresql::WriteMaxUpdateDateForFandom(fandom, db);
+            ok = ok && database::puresql::WriteMaxUpdateDateForFandom(fandom, db);
         }
     }
+    return ok;
 }
 
 bool DBFandomsBase::Load()
@@ -114,11 +119,12 @@ bool DBFandomsBase::Load()
     {
         bool fandomPresent = false;
         if(fandoms.contains(bit) || LoadFandom(bit))
-           fandomPresent = true;
+            fandomPresent = true;
 
         if(fandomPresent)
             this->recentFandoms.push_back(fandoms[bit]);
     }
+    return true;
 }
 
 bool DBFandomsBase::IsTracked(QString fandom)
@@ -126,8 +132,8 @@ bool DBFandomsBase::IsTracked(QString fandom)
     bool tracked = false;
     if(IsDataLoaded())
     {
-        if(fandoms.contains(fandom))
-            tracked = fandoms[fandom].tracked;
+        if(fandoms.contains(fandom) && fandoms[fandom])
+            tracked = fandoms[fandom]->tracked;
     }
     else
     {
@@ -136,7 +142,7 @@ bool DBFandomsBase::IsTracked(QString fandom)
         auto id = GetID(fandom);
         q1.prepare(qsl);
         q1.bindValue(":id",id);
-        ExecAndCheck(q1);
+        database::puresql::ExecAndCheck(q1);
         q1.next();
         tracked = q1.value(0).toBool();
     }
@@ -150,27 +156,26 @@ DBFandomsBase::~DBFandomsBase()
 
 QList<int> DBFandomsBase::AllTracked()
 {
-    QList<int> result;
+    using ResultType = QList<int>;
+    ResultType result;
     if(IsDataLoaded())
     {
         result.reserve(fandoms.size());
         for(auto &fandom: fandoms)
-            if(fandom.tracked)
-                result.push_back(fandom.id);
+            if(fandom->tracked)
+                result.push_back(fandom->id);
     }
     else
     {
         QSqlQuery q1(db);
         QString qsl = " select fandom from fandoms where tracked = 1";
         q1.prepare(qsl);
-        q1.exec();
-        QStringList result;
+        database::puresql::ExecAndCheck(q1);
         while(q1.next())
-            result.push_back(q1.value(0).toString());
+            result.push_back(q1.value(0).toInt());
 
-        CheckExecution(q1);
-        return result;
     }
+    return result;
 }
 
 QStringList DBFandomsBase::AllTrackedStr()
@@ -205,13 +210,6 @@ void DBFandomsBase::SetTracked(QString fandom, bool value, bool immediate)
     fandoms[fandom]->tracked = value;
 }
 
-bool DBFandomsBase::IsTracked(QString name)
-{
-    if(!fandoms.contains(name) || !fandoms[name])
-        return false;
-    return fandoms[name]->tracked;
-}
-
 QStringList DBFandomsBase::ListOfTracked()
 {
     QStringList names;
@@ -228,7 +226,7 @@ bool DBFandomsBase::LoadFandom(QString name)
     QSharedPointer<core::Fandom> fandom(new core::Fandom);
     QSqlQuery q(db);
     q.prepare("select * from fandoms where fandom = :fandom_name and source = 'ffn'");
-    if(!ExecAndCheck(q))
+    if(!database::puresql::ExecAndCheck(q))
         return false;
     q.next();
 
@@ -236,10 +234,10 @@ bool DBFandomsBase::LoadFandom(QString name)
     fandom->name = name;
     fandom->url = q.value("NORMAL_URL").toString();
     fandom->crossoverUrl = q.value("CROSSOVER_URL").toString() + "/0/"; //!todo fix it
-    fandom->dateOfCreation = q.value("date_of_first_fic").toString();
-    fandom->dateOfLastFic= q.value("date_of_last_fic").toString();
-    fandom->lastUpdateDate = q.value("last_update").toString();
-    fandom->lastCrossoverUpdateDate = q.value("last_update_crossover").toString();
+    fandom->dateOfCreation = q.value("date_of_first_fic").toDateTime();
+    fandom->dateOfLastFic= q.value("date_of_last_fic").toDateTime();
+    fandom->lastUpdateDate = q.value("last_update").toDateTime();
+    fandom->lastCrossoverUpdateDate = q.value("last_update_crossover").toDateTime();
     fandom->id = q.value("id").toInt();
     fandom->section = q.value("section").toString();
     fandom->tracked = q.value("tracked").toBool();
@@ -251,30 +249,11 @@ bool DBFandomsBase::LoadFandom(QString name)
 
 bool DBFandomsBase::AssignTagToFandom(QString fandom, QString tag)
 {
-    if(!EnsureFandom(name))
+    if(!EnsureFandom(fandom))
         return false;
     auto id = fandoms[fandom]->id;
     database::puresql::AssignTagToFandom(tag, id, db);
-}
-
-bool DBFandomsBase::CreateFandom(QSharedPointer<core::Fandom> fandom)
-{
-    if(fandoms.contains(fandom->name) && fandoms[fandom->name]->id != -1)
-        return true;
-
-    auto result = database::puresql::CreateFandomInDatabase(fandom, db);
-
-    if(!result)
-        return false;
-    fandom->id = portableDBInterface->GetLastIdForTable("fandoms", db);
-    EnsureFandom(fandom->name);
     return true;
-}
-
-
-QString DBFandomsBase::GetCurrentCrossoverUrl()
-{
-    //will need to parse the page for that
 }
 
 }

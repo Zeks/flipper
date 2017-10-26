@@ -1,6 +1,7 @@
 #include "Interfaces/authors.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
+#include <QSqlQuery>
 
 namespace database {
 DBAuthorsBase::~DBAuthorsBase(){}
@@ -159,18 +160,18 @@ void  DBAuthorsBase::RemoveAuthor(int id)
     QString qsl = "delete from recommendations where recommender_id = %1";
     qsl=qsl.arg(QString::number(id));
     q1.prepare(qsl);
-    ExecAndCheck(q1);
+    database::puresql::ExecAndCheck(q1);
 
     QSqlQuery q2(db);
     qsl = "delete from recommenders where id = %1";
     qsl=qsl.arg(id);
     q2.prepare(qsl);
-    ExecAndCheck(q2);
+    database::puresql::ExecAndCheck(q2);
 }
 
 void DBAuthorsBase::RemoveAuthor(QSharedPointer<core::Author> author, QString website)
 {
-    int id = GetAuthorIdFromUrl(author.url(website));
+    int id = database::puresql::GetAuthorIdFromUrl(author->url(website),db);
     RemoveAuthor(id);
 }
 }

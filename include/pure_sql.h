@@ -13,7 +13,7 @@ bool ExecuteQueryChain(QSqlQuery& q, QStringList queries);
 
 bool SetFandomTracked(int id, bool tracked, QSqlDatabase);
 
-void WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
+bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 QStringList GetFandomListFromDB(QString section);
 void CalculateFandomAverages(QSqlDatabase db);
@@ -38,8 +38,9 @@ bool AssignNewNameForRecommenderId(core::Author recommender, QSqlDatabase db);
 
 
 QList<QSharedPointer<core::Author> > GetAllAuthors(QString website,  QSqlDatabase db);
-QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
+QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
 QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
+QSharedPointer<core::RecommendationList> GetRecommendationList(int listid, QSqlDatabase db);
 
 QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listName, QString sortOn, QString order, QSqlDatabase db);
 int GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
@@ -54,7 +55,7 @@ int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDa
 bool DeleteRecommendationList(int listId, QSqlDatabase db );
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
 bool WriteAuthorRecommendationStatsForList(int listId, QSharedPointer<core::AuthorRecommendationStats> stats, QSqlDatabase db);
-bool CreateOrUpdateRecommendationList(core::RecommendationList& list, QDateTime creationTimestamp, QSqlDatabase db);
+bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 bool DeleteTagfromDatabase(QString tag, QSqlDatabase db);
 bool AddAuthorFavouritesToList(int authorId, int listId, QSqlDatabase db);
@@ -77,10 +78,11 @@ bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlD
 //void RemoveAuthor(int id);
 
 namespace Internal{
-void WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
+bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
                               QString condition,
                               QSqlDatabase db,
-                              std::function<void(QSharedPointer<core::Fandom>, QDateTime)> writer);
+                              std::function<void(QSharedPointer<core::Fandom>, QDateTime)> writer
+                              );
 }
 
 }

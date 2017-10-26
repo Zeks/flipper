@@ -31,6 +31,7 @@ public:
 
     //virtual QStringList FetchRecentFandoms() = 0;
     //virtual void RebaseFandomsToZero() = 0;
+    //QString DBFandomsBase::GetCurrentCrossoverUrl()
 
     virtual void CalculateFandomAverages() = 0;
     virtual void CalculateFandomFicCounts() = 0;
