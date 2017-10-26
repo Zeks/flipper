@@ -1,7 +1,9 @@
 #include "Interfaces/authors.h"
+#include "Interfaces/db_interface.h"
+#include "include/pure_sql.h"
 
 namespace database {
-
+DBAuthorsBase::~DBAuthorsBase(){}
 void DBAuthorsBase::Clear()
 {
 //    QList<QSharedPointer<core::Author>> authors;
@@ -29,7 +31,6 @@ void DBAuthorsBase::IndexAuthors()
     for(auto author : authors)
     {
         authorsById[author->id] = author;
-        authorsByName[author->name] = author;
         authorsNamesByWebsite[author->website][author->name] = author;
         authorsByUrl[author->url("ffn")] = author;
     }
@@ -37,7 +38,6 @@ void DBAuthorsBase::IndexAuthors()
 
 void DBAuthorsBase::ClearIndex()
 {
-    authorsByName.clear();
     authorsNamesByWebsite.clear();
     authorsByUrl.clear();
     authorsById.clear();
@@ -87,7 +87,7 @@ QList<QSharedPointer<core::Author> > DBAuthorsBase::GetAllAuthors(QString websit
         return authors;
     if(!authorsNamesByWebsite.contains(website))
         return authors;
-    return authorsNamesByWebsite[website];
+    return authorsNamesByWebsite[website].values();
 }
 
 int DBAuthorsBase::GetFicCount(int authorId)
@@ -108,8 +108,10 @@ bool DBAuthorsBase::LoadAuthors(QString website, bool additionMode)
     if(!additionMode)
         Clear();
     authors = database::puresql::GetAllAuthors(website, db);
+    if(authors.size() == 0)
+        return false;
     Reindex();
-
+    return true;
 }
 bool DBAuthorsBase::EnsureId(QSharedPointer<core::Author> author, QString website)
 {
@@ -120,7 +122,7 @@ bool DBAuthorsBase::EnsureId(QSharedPointer<core::Author> author, QString websit
         author->AssignId(database::puresql::GetAuthorIdFromUrl(author->url(website), db));
     if(author->GetIdStatus() == core::AuthorIdStatus::not_found)
     {
-        database::sqlite::WriteAuthor(author, db);
+        database::puresql::WriteAuthor(author,portableDBInterface->GetCurrentDateTime(), db);
         author->AssignId(database::puresql::GetAuthorIdFromUrl(author->url(website), db));
     }
     if(author->id < 0)
@@ -129,7 +131,7 @@ bool DBAuthorsBase::EnsureId(QSharedPointer<core::Author> author, QString websit
 }
 
 
-QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(authorId, core::RecommendationList list)
+QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(int authorId, core::RecommendationList list)
 {
     QSharedPointer<core::AuthorRecommendationStats>result (new core::AuthorRecommendationStats);
     auto author = GetById(authorId);

@@ -1,7 +1,13 @@
 #include "Interfaces/fanfics.h"
+#include "include/pure_sql.h"
 
 namespace database {
 
+
+DBFanficsBase::~DBFanficsBase()
+{
+
+}
 
 bool DBFanficsBase::ReprocessFics(QString where, QString website, std::function<void (int)> f)
 {
@@ -11,7 +17,10 @@ bool DBFanficsBase::ReprocessFics(QString where, QString website, std::function<
         f(id);
     }
 }
-
+bool DBFanficsBase::IsEmptyQueues()
+{
+    return !(updateQueue.size() || insertQueue.size());
+}
 bool DBFanficsBase::DeactivateFic(int ficId, QString website)
 {
     return puresql::DeactivateStory(ficId, website, db);

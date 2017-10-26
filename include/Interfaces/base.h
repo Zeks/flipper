@@ -14,7 +14,7 @@ struct WriteStats
 class IDBWrapper;
 class IDBPersistentData{
   public:
-    virtual ~IDBPersistentData(){}
+    virtual ~IDBPersistentData();
     virtual bool IsDataLoaded() = 0;
     virtual bool Sync(bool forcedSync = false) = 0;
     virtual bool Load() = 0;
@@ -24,9 +24,11 @@ class IDBPersistentData{
 
 class IDBWebIDIndex{
   public:
-    virtual ~IDBWebIDIndex(){}
+    virtual ~IDBWebIDIndex();
     virtual int GetIDFromWebID(int) = 0;
     virtual int GetWebIDFromID(int) = 0;
+    virtual int GetIDFromWebID(int, QString website) = 0;
+    virtual int GetWebIDFromID(int, QString website) = 0;
     QHash<int, int> indexIDByWebID;
     QHash<int, int> indexWebIDByID;
 };
@@ -34,10 +36,11 @@ class IDBWebIDIndex{
 class IDbService
 {
 public:
-    void DropAllFanficIndexes() = 0;
-    void RebuildAllFanficIndexes() = 0;
-    void EnsureWebIdsFilled() = 0;
-    void EnsureFFNUrlsShort() = 0;
+    virtual ~IDbService();
+    virtual void DropAllFanficIndexes() = 0;
+    virtual void RebuildAllFanficIndexes() = 0;
+    virtual void EnsureWebIdsFilled() = 0;
+    virtual void EnsureFFNUrlsShort() = 0;
 
 };
 class DBFandomsBase;
@@ -52,5 +55,6 @@ class DataInterfaces
     QSharedPointer<DBAuthorsBase> authors;
     QSharedPointer<IDBWrapper> portableDBInterface;
 };
+
 
 }

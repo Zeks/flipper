@@ -69,7 +69,7 @@ QVector<int> GetIdList(QString where, QSqlDatabase db);
 QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db);
 bool DeactivateStory(int id, QString website, QSqlDatabase db);
 
-
+bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlDatabase db);
 
 // those are required for managing recommendation lists and somewhat outdated
 // moved them to dump temporarily

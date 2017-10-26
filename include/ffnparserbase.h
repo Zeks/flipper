@@ -1,6 +1,7 @@
 #pragma once
 #include "include/section.h"
-#include "include/db_ffn.h"
+#include "include/Interfaces/base.h"
+
 #include <QString>
 #include <QSqlDatabase>
 #include <QDateTime>
@@ -11,7 +12,7 @@
 class FFNParserBase
 {
 public:
-    virtual ~FFNParserBase(){}
+    virtual ~FFNParserBase();
     void ProcessGenres(core::Section & section, QString genreText);
     void ProcessCharacters(core::Section & section, QString genreText);
     virtual void WriteProcessed() = 0;

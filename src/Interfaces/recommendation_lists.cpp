@@ -1,4 +1,5 @@
 #include "Interfaces/recommendation_lists.h"
+#include "include/pure_sql.h"
 
 namespace database {
 
@@ -9,7 +10,7 @@ int DBRecommendationListsBase::GetListIdForName(QString name)
     return -1;
 }
 
-int DBRecommendationListsBase::GetListNameForId(int id)
+QString DBRecommendationListsBase::GetListNameForId(int id)
 {
     if(idIndex.contains(id))
         return idIndex[id]->name;

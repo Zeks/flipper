@@ -13,7 +13,7 @@ class DBRecommendationListsBase : public IDBPersistentData
 {
 public:
     int GetListIdForName(QString name); //! todo do I need to fill index without filling lists
-    int GetListNameForId(int id);
+    QString GetListNameForId(int id);
     void Reindex();
     void IndexLists();
     void ClearIndex();

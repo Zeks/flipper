@@ -33,7 +33,10 @@ class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
 class QStringListModel;
-
+class DBFandomsBase;
+class DBFanficsBase;
+class DBAuthorsBase;
+class IDBWrapper;
 namespace Ui {
 class MainWindow;
 }
@@ -171,8 +174,14 @@ private:
     core::DefaultQueryBuilder queryBuilder;
     core::StoryFilter filter;
     QHash<QString, core::RecommendationList> lists;
-    void ProcessRecommendationListsFromDB(QList<core::RecommendationList>);
 
+
+    QSharedPointer<DBFandomsBase> fandoms;
+    QSharedPointer<DBFanficsBase> fanfics;
+    QSharedPointer<DBAuthorsBase> authors;
+    QSharedPointer<IDBWrapper> dbWrapper;
+
+    void ProcessRecommendationListsFromDB(QList<core::RecommendationList>);
     void LoadMoreAuthors(bool reprocessCache = false);
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);

@@ -1,5 +1,6 @@
 
 #include "Interfaces/ffn/ffn_fanfics.h"
+#include "pure_sql.h"
 
 namespace database {
 
@@ -7,12 +8,12 @@ namespace database {
 
 int FFNFanfics::GetIDFromWebID(int value)
 {
-    ::GetIDFromWebID(value, "ffn");
+    return DBFanficsBase::GetIDFromWebID(value, "ffn");
 }
 
 int FFNFanfics::GetWebIDFromID(int value)
 {
-    ::GetWebIDFromID(value, "ffn");
+    return DBFanficsBase::GetWebIDFromID(value, "ffn");
 }
 
 bool FFNFanfics::DeactivateFic(int ficId)

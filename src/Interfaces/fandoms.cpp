@@ -1,4 +1,6 @@
 #include "Interfaces/fandoms.h"
+#include "Interfaces/db_interface.h"
+#include "include/pure_sql.h"
 
 namespace database {
 
@@ -7,12 +9,12 @@ void DBFandomsBase::Clear()
     this->recentFandoms.clear();
     this->fandoms.clear();
     this->indexFandomsByName.clear();
-    this->updateQueue->clear();
+    this->updateQueue.clear();
 }
 
 bool DBFandomsBase::EnsureFandom(QString name)
 {
-    if(!fandoms.contains(fandom) && !LoadFandom(fandom))
+    if(!fandoms.contains(name) && !LoadFandom(name))
         return false;
     return true;
 }
@@ -139,6 +141,11 @@ bool DBFandomsBase::IsTracked(QString fandom)
         tracked = q1.value(0).toBool();
     }
     return tracked;
+}
+
+DBFandomsBase::~DBFandomsBase()
+{
+
 }
 
 QList<int> DBFandomsBase::AllTracked()

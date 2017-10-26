@@ -222,18 +222,7 @@ void RebaseFandomsToZero(QSqlDatabase db)
     ExecAndCheck(q1);
 }
 
-bool WriteAuthor(QSharedPointer<core::Author> author, QSqlDatabase db)
-{
-    QSqlQuery q1(db);
-    QString qsl = " insert into recommenders(name, url, page_updated) values(:name, :url,  date('now')) ";
-    q1.prepare(qsl);
-    q1.bindValue(":name", author->name);
-    q1.bindValue(":url", author->url("ffn"));
 
-    if(!ExecAndCheck(q1))
-        return false;
-    return true;
-}
 
 }
 }

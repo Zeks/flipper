@@ -1,6 +1,11 @@
 #include "include/ffnparserbase.h"
 #include <QDebug>
 
+FFNParserBase::~FFNParserBase()
+{
+
+}
+
 void FFNParserBase::ProcessGenres(core::Section &section, QString genreText)
 {
     section.result.SetGenres(genreText, "ffn");

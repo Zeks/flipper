@@ -5,31 +5,29 @@
 #include "QSharedPointer"
 #include "QSqlDatabase"
 #include "QReadWriteLock"
+#include <functional>
 
 
 namespace database {
 
 class DBFanficsBase : public IDBWebIDIndex, public IDBPersistentData {
 public:
-    virtual ~DBFanficsBase(){}
+    virtual ~DBFanficsBase();
     void ClearQueues() {
         updateQueue.clear();
         insertQueue.clear();
     }
 
-    virtual int GetIDFromWebID(int, QString website);
-    virtual int GetWebIDFromID(int, QString website);
+    virtual int GetIDFromWebID(int, QString website) override;
+    virtual int GetWebIDFromID(int, QString website) override;
 
-    virtual void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false) = 0;
-    virtual void AddRecommendations(QList<core::FicRecommendation> recommendations) = 0;
-    virtual void FlushDataQueues() = 0;
-    virtual void EmptyQueues() { return !(updateQueue.size() || insertQueue.size());}
+    virtual bool IsEmptyQueues();
 
     bool ReprocessFics(QString where, QString website, std::function<void(int)> f);
     virtual bool DeactivateFic(int ficId, QString website);
     virtual bool DeactivateFic(int ficId) = 0;
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
-    void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert);
+    void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false);
     void CalculateFandomAverages();
     void CalculateFandomFicCounts();
     void FlushDataQueues();

@@ -23,7 +23,7 @@ void BackupSqliteDatabase(QString dbname);
 void PushFandomToTopOfRecent(QString fandom, QSqlDatabase db);
 QStringList FetchRecentFandoms(QSqlDatabase db);
 void RebaseFandomsToZero(QSqlDatabase db);
-bool WriteAuthor(QSharedPointer<core::Author> author, QSqlDatabase db);
+
 
 
 }

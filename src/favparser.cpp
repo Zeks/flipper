@@ -1,12 +1,11 @@
 #include "include/favparser.h"
 #include "include/section.h"
-#include "include/db_ffn.h"
 #include "include/pure_sql.h"
 #include <QDebug>
 #include <QSqlDatabase>
 #include <chrono>
 
-QList<core::Fic> FavouriteStoryParser::ProcessPage(QString url, QString& str)
+QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
     core::Section section;
     int currentPosition = 0;

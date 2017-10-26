@@ -758,4 +758,19 @@ bool DeactivateStory(int id, QString website, QSqlDatabase db)
         return false;
     return true;
 }
+
+bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlDatabase db)
+{
+    QSqlQuery q1(db);
+    QString qsl = " insert into recommenders(name, url, page_updated) values(:name, :url,  :timestamp) ";
+    q1.prepare(qsl);
+    q1.bindValue(":name", author->name);
+    q1.bindValue(":time", timestamp);
+    q1.bindValue(":url", author->url("ffn"));
+
+    if(!ExecAndCheck(q1))
+        return false;
+    return true;
+}
+
 }

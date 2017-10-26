@@ -1,15 +1,16 @@
 #pragma once
 #include "include/section.h"
-#include "include/db_ffn.h"
+#include "include/Interfaces/fanfics.h"
+#include "include/ffnparserbase.h"
 #include <QString>
 #include <QSqlDatabase>
 #include <QDateTime>
 #include <functional>
-class FavouriteStoryParser
+class FavouriteStoryParser : public FFNParserBase
 {
 public:
 
-    QList<core::Fic> ProcessPage(QString url,QString&);
+    QList<QSharedPointer<core::Fic>> ProcessPage(QString url,QString&);
     core::Section GetSection( QString text, int start);
     QString ExtractRecommenderNameFromUrl(QString url);
     void GetAuthor(core::Section& , int& startfrom, QString text);

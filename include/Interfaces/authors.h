@@ -8,12 +8,14 @@
 
 
 namespace database {
+class IDBWrapper;
 class DBAuthorsBase : public IDBPersistentData{
 public:
-    virtual ~DBAuthorsBase(){}
+    virtual ~DBAuthorsBase();
     void Reindex();
     void IndexAuthors();
     void ClearIndex();
+    void Clear();
     virtual bool EnsureId(QSharedPointer<core::Author>) = 0;
     bool LoadAuthors(QString website, bool additionMode);
 
@@ -25,11 +27,10 @@ public:
     QList<QSharedPointer<QSharedPointer<core::Author>>> GetAllByName(QString name);
     QSharedPointer<core::Author> GetByUrl(QString url);
     QSharedPointer<core::Author> GetById(int id);
-    QList<QSharedPointer<core::Author>> GetAllAuthors(QString website) = 0;
+    QList<QSharedPointer<core::Author>> GetAllAuthors(QString website);
     int GetFicCount(int authorId);
     int GetCountOfRecsForTag(int authorId, QString tag);
-    QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(authorId, core::RecommendationList list);
-    virtual bool EnsureId(QSharedPointer<core::Author> author) = 0;
+    QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, core::RecommendationList list);
     bool EnsureId(QSharedPointer<core::Author> author, QString website);
     void  RemoveAuthor(int id);
     virtual void  RemoveAuthor(QSharedPointer<core::Author>) = 0;
@@ -41,10 +42,11 @@ public:
     //QMultiHash<QString, QSharedPointer<core::Author>> authorsByName;
     QHash<QString, QHash<QString, QSharedPointer<core::Author>>> authorsNamesByWebsite;
     QHash<int, QSharedPointer<core::Author>> authorsById;
-    QHash<int, QSharedPointer<core::Author>> authorsByUrl;
+    QHash<QString, QSharedPointer<core::Author>> authorsByUrl;
 
     QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorToTagStats;
     QSqlDatabase db;
+    QSharedPointer<IDBWrapper> portableDBInterface;
 };
 
 }
