@@ -18,17 +18,17 @@ public:
 private:
     void ProcessUnmarkedSections(core::Section& );
     void DetermineMarkedSubsectionPresence(core::Section& );
-    core::Section GetSection( QString text, int start);
+    core::Section GetSection(QString text);
     QString ExtractRecommenderNameFromUrl(QString url);
-    void GetAuthor(core::Section& , int& startfrom, QString text);
-    void GetTitle(core::Section& , int& startfrom, QString text);
+    void GetAuthor(core::Section& , QString text);
+    void GetTitle(core::Section& , QString text);
     void GetGenre(core::Section& , int& startfrom, QString text);
-    void GetSummary(core::Section& , int& startfrom, QString text);
+    void GetSummary(core::Section& , QString text);
     void GetWordCount(core::Section& , int& startfrom, QString text);
     void GetPublishedDate(core::Section& , int& startfrom, QString text);
     void GetUpdatedDate(core::Section& , int& startfrom, QString text);
-    void GetStatSection(core::Section& , int& startfrom, QString text);
-    void GetTaggedSection(QString text, core::Section::Tag tag, QString rxString, std::function<void (QString)> functor, int skipCount = 0);
+    void GetStatSection(core::Section& , QString text);
+    void GetTaggedSection(QString text, QString rxString, std::function<void (QString)> functor, int skipCount = 0);
     core::Section::Tag GetStatTag(QString text, QString tag);
     void GetStatSectionTag(QString, QString text, core::Section::Tag *);
     void GetFandom(core::Section &section, int &startfrom, QString text);

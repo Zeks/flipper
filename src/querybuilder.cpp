@@ -10,9 +10,15 @@ QString WrapTag(QString tag)
     return tag;
 }
 
-Query DefaultQueryBuilder::Build(StoryFilter filter)
+DefaultQueryBuilder::DefaultQueryBuilder()
 {
-    query.Clear();
+    query = NewQuery();
+    idQuery = NewQuery();
+}
+
+QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
+{
+    query = NewQuery();
 
     queryString.clear();
     queryString = "ID, ";
@@ -26,7 +32,7 @@ Query DefaultQueryBuilder::Build(StoryFilter filter)
     queryString+= CreateLimitQueryPart(filter);
 
     qDebug() << queryString;
-    query.str = "select " + queryString;
+    query->str = "select " + queryString;
     return query;
 }
 
@@ -269,10 +275,10 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     {
         if(rng)
         {
-            Query q;
-            q.bindings = query.bindings;
-            q.str = wherePart;
-            auto value = rng->Get(q);
+            auto q = NewQuery();
+            q->bindings = query->bindings;
+            q->str = wherePart;
+            auto value = rng->Get(q, db);
             if(value == "-1")
                 return "";
             idList+=value;
@@ -284,16 +290,16 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     return result;
 }
 
-void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, Query& q)
+void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, QSharedPointer<Query> q)
 {
     if(filter.minWords > 0)
-        q.bindings[":minwordcount"] = filter.minWords;
+        q->bindings[":minwordcount"] = filter.minWords;
     if(filter.maxWords > 0)
-        q.bindings[":maxwordcount"] = filter.maxWords;
+        q->bindings[":maxwordcount"] = filter.maxWords;
     if(filter.minFavourites> 0)
-        q.bindings[":favourites"] = filter.minFavourites;
+        q->bindings[":favourites"] = filter.minFavourites;
     if(filter.listForRecommendations > -1)
-        q.bindings[":list_id"] = filter.listForRecommendations;
+        q->bindings[":list_id"] = filter.listForRecommendations;
 }
 
 QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)
@@ -311,6 +317,11 @@ QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
     if(maxFicCountValue > 0)
         result+= QString(" LIMIT %1 COLLATE NOCASE ").arg(QString::number(maxFicCountValue));
     return result;
+}
+
+QSharedPointer<Query> DefaultQueryBuilder::NewQuery()
+{
+    return QSharedPointer<Query>(new Query);
 }
 
 

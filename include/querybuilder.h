@@ -18,7 +18,8 @@ struct DefaultRNGgenerator : public IRNGGenerator{
 class DefaultQueryBuilder : public IQueryBuilder
 {
 public:
-    Query Build(StoryFilter);
+    DefaultQueryBuilder();
+    QSharedPointer<Query> Build(StoryFilter);
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
 
 private:
@@ -42,19 +43,21 @@ private:
     QString ProcessFilteringMode(StoryFilter);
     QString ProcessActiveTags(StoryFilter);
     QString ProcessRandomization(StoryFilter, QString);
-    void ProcessBindings(StoryFilter, Query&);
+    void ProcessBindings(StoryFilter, QSharedPointer<Query>);
 
     QString BuildSortMode(StoryFilter);
     QString CreateLimitQueryPart(StoryFilter);
 
     QString BuildIdListQuery(StoryFilter);
     bool HasIdListForQuery(QString);
+    QSharedPointer<Query> NewQuery();
     QString queryString;
     QString diffField;
     QString activeTags;
     QString wherePart;
     QScopedPointer<IRNGGenerator> rng;
-    Query query;
-    Query idQuery;
+    QSharedPointer<Query> query;
+    QSharedPointer<Query> idQuery;
+    QSqlDatabase db;
 };
 }

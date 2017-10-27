@@ -2,7 +2,7 @@
 #define TAGWIDGET_H
 
 #include <QWidget>
-
+namespace database{ class DBFandomsBase; }
 
 namespace Ui {
 class TagWidget;
@@ -25,6 +25,7 @@ private:
     int currentId;
     QStringList selectedTags;
     QStringList allTags;
+    QSharedPointer<database::DBFandomsBase> fandomsInterface;
 
 
 signals:

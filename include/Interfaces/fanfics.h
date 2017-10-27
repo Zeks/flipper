@@ -22,6 +22,7 @@ public:
     virtual int GetWebIDFromID(int, QString website) override;
 
     virtual bool IsEmptyQueues();
+    virtual int GetIdForUrl(QString url) = 0;
 
     bool ReprocessFics(QString where, QString website, std::function<void(int)> f);
     virtual bool DeactivateFic(int ficId, QString website);

@@ -1,16 +1,18 @@
 #pragma once
 #include "Interfaces/base.h"
-#include "section.h"
-#include "QScopedPointer"
-#include "QSharedPointer"
-#include "QSqlDatabase"
-#include "QReadWriteLock"
+//#include "section.h"
+#include <QSharedPointer>
+#include <QSqlDatabase>
+#include <QList>
+#include <QVector>
+#include <QReadWriteLock>
 
 
 namespace database {
 
 class DBFandomsBase : public IDBPersistentData{
 public:
+    DBFandomsBase() = default;
     virtual ~DBFandomsBase();
     virtual int GetID(QString) ;
     virtual void SetTracked(QString, bool value, bool immediate);
@@ -26,8 +28,10 @@ public:
 
     virtual bool AssignTagToFandom(QString, QString tag) = 0;
     virtual QStringList PushFandomToTopOfRecent(QString);
-    QStringList GetRecentFandoms() const;
+    QStringList GetRecentFandoms();
+    QStringList GetFandomList();
     void AddToTopOfRecent(QString);
+
 
     //virtual QStringList FetchRecentFandoms() = 0;
     //virtual void RebaseFandomsToZero() = 0;

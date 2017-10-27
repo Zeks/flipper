@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "Interfaces/db_interface.h"
 #include <QApplication>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -7,8 +8,6 @@
 #include <QSqlDriver>
 #include <QSqlQuery>
 #include <QPluginLoader>
-#include "include/db_ffn.h"
-
 
 void CreateIndex(QString value)
 {
@@ -24,35 +23,30 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
-    database::BackupDatabase();
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(path);
-    db.open();
+    QSharedPointer<database::IDBWrapper> portableInterface; //! todo needs to be sqlite database with funcs
+    portableInterface->BackupDatabase("Crawler.sqlite");
 
+// these go to initdatabase
+//    QString path = "CrawlerDB.sqlite";
+//    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+//    db.setDatabaseName(path);
+//    db.open();
+//    path = "PageCache.sqlite";
+//    QSqlDatabase pcDb = QSqlDatabase::addDatabase("QSQLITE", "pagecache");
+//    pcDb.setDatabaseName(path);
+//    pcDb.open();
+//   database::InstallCustomFunctions();
 
-    path = "PageCache.sqlite";
-    QSqlDatabase pcDb = QSqlDatabase::addDatabase("QSQLITE", "pagecache");
-    pcDb.setDatabaseName(path);
-    pcDb.open();
+    portableInterface->InitDatabase();
+    portableInterface->InitDatabase("pagecache");
 
+    portableInterface->ReadDbFile("dbcode/dbinit.sql");
+    portableInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
 
-    database::ReadDbFile("dbcode/dbinit.sql");
-    database::ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
     MainWindow w;
     w.show();
-    w.CheckSectionAvailability();
-
-    database::InstallCustomFunctions();
-    //database::EnsureFandomsNormalized();
-
-    //database::EnsureFandomsFilled();
-    //database::EnsureWebIdsFilled();
-//    database::CalculateFandomFicCounts();
-//    database::CalculateFandomAverages();
-    //database::EnsureFFNUrlsShort();
-    //auto result = database::EnsureTagForRecommendations();
-    //database::PassTagsIntoTagsTable();
+    //!todo rethink
+    //w.CheckSectionAvailability();
 
     return a.exec();
 }

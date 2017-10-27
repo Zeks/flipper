@@ -1,10 +1,11 @@
 #include "Interfaces/tags.h"
+#include "pure_sql.h"
 
 namespace database {
 
 bool Tags::DeleteTag(QString tag)
 {
-    puresql::DeleteTagfromDatabase(tag, db);
+    return puresql::DeleteTagfromDatabase(tag, db);
 }
 
 

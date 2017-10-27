@@ -14,10 +14,13 @@ DBFanficsBase::~DBFanficsBase()
 bool DBFanficsBase::ReprocessFics(QString where, QString website, std::function<void (int)> f)
 {
     auto list = puresql::GetWebIdList(where, website, db);
+    if(list.empty())
+        return false;
     for(auto id : list)
     {
         f(id);
     }
+    return true;
 }
 bool DBFanficsBase::IsEmptyQueues()
 {

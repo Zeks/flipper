@@ -31,7 +31,6 @@
 #include "genericeventfilter.h"
 
 #include <algorithm>
-#include "include/db_ffn.h"
 #include "include/favparser.h"
 #include "include/fandomparser.h"
 #include "include/url_utils.h"

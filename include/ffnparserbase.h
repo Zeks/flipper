@@ -23,5 +23,6 @@ public:
     QSharedPointer<database::DataInterfaces> interfaces;
     QStringList diagnostics;
     QList<QSharedPointer<core::Fic>> processedStuff;
+    QSqlDatabase db;
 };
 

@@ -16,3 +16,8 @@ void core::Author::Log()
 }
 
 
+
+core::Section::Section():result(new core::Fic())
+{
+
+}

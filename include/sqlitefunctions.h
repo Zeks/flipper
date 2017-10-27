@@ -18,7 +18,7 @@ void cfReturnCapture(sqlite3_context* ctx, int argc, sqlite3_value** argv);
 void cfGetFirstFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv);
 void cfGetSecondFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv);
 void InstallCustomFunctions(QSqlDatabase db);
-bool ReadDbFile(QString file, QString connectionName, QSqlDatabase db);
+bool ReadDbFile(QString file, QString connectionName);
 QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db);
 void BackupSqliteDatabase(QString dbname);
 void PushFandomToTopOfRecent(QString fandom, QSqlDatabase db);

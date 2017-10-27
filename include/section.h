@@ -5,8 +5,9 @@
 namespace core {
 
 class DBEntity{
-    bool HasChanges() const {return hasChanges;}
 public:
+    bool HasChanges() const {return hasChanges;}
+    virtual ~DBEntity(){}
     bool hasChanges = false;
 };
 
@@ -26,6 +27,7 @@ enum class AuthorIdStatus
 
 class Author : public DBEntity{
     public:
+    ~Author(){}
     void Log();
     int id= -1;
     AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
@@ -148,6 +150,7 @@ class Fic : public DBEntity{
 class Section : public DBEntity
 {
     public:
+    Section();
     struct Tag
     {
         Tag(){}
@@ -193,7 +196,7 @@ class Section : public DBEntity
     int statSectionEnd=0;
 
     StatSection statSection;
-    Fic result;
+    QSharedPointer<Fic> result;
     bool isValid =false;
 };
 class Fandom : public DBEntity

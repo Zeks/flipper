@@ -23,8 +23,8 @@ public:
 //    bool LoadAdditionalInfo(QSharedPointer<core::Author>) = 0;
 //    bool LoadAdditionalInfo() = 0;
 
-    QSharedPointer<QSharedPointer<core::Author>> GetSingleByName(QString name, QString website);
-    QList<QSharedPointer<QSharedPointer<core::Author>>> GetAllByName(QString name);
+    QSharedPointer<core::Author> GetSingleByName(QString name, QString website);
+    QList<QSharedPointer<core::Author>> GetAllByName(QString name);
     QSharedPointer<core::Author> GetByUrl(QString url);
     QSharedPointer<core::Author> GetById(int id);
     QList<QSharedPointer<core::Author>> GetAllAuthors(QString website);
@@ -32,9 +32,10 @@ public:
     int GetCountOfRecsForTag(int authorId, QString tag);
     QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, core::RecommendationList list);
     bool EnsureId(QSharedPointer<core::Author> author, QString website);
-    void  RemoveAuthor(int id);
-    virtual void  RemoveAuthor(QSharedPointer<core::Author>) = 0;
-    void  RemoveAuthor(QSharedPointer<core::Author>, QString website);
+    void AddAuthorToIndex(QSharedPointer<core::Author>);
+    virtual bool  RemoveAuthor(int id);
+    virtual bool  RemoveAuthor(QSharedPointer<core::Author>) = 0;
+    bool RemoveAuthor(QSharedPointer<core::Author>, QString website);
 
     // queued by webid
     QList<QSharedPointer<core::Author>> authors;

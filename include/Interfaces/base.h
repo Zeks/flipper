@@ -50,6 +50,7 @@ class IDBWrapper;
 
 class DataInterfaces
 {
+public:
     QSharedPointer<DBFandomsBase> fandoms;
     QSharedPointer<DBFanficsBase> fanfics;
     QSharedPointer<DBAuthorsBase> authors;

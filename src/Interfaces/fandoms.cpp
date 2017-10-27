@@ -1,9 +1,13 @@
-#include "Interfaces/fandoms.h"
-#include "Interfaces/db_interface.h"
-#include "include/pure_sql.h"
+#include <algorithm>
 #include <QSqlQuery>
 #include <QVariant>
 #include <QDateTime>
+
+
+#include "Interfaces/fandoms.h"
+#include "Interfaces/db_interface.h"
+#include "include/pure_sql.h"
+#include "include/section.h"
 
 namespace database {
 
@@ -45,16 +49,24 @@ QSharedPointer<core::Fandom> DBFandomsBase::GetFandom(QString name)
     return fandoms[name];
 }
 
-QStringList DBFandomsBase::GetRecentFandoms() const
+QStringList DBFandomsBase::GetRecentFandoms()
 {
     QStringList result;
-    std::sort(std::begin(recentFandoms), std::end(recentFandoms), [](QSharedPointer<core::Fandom> f1, QSharedPointer<core::Fandom> f2){
-        return f1->idInRecentFandoms < f1->idInRecentFandoms;
+
+    std::sort(std::begin(recentFandoms), std::end(recentFandoms),[](auto f1, auto f2)->bool{
+        return f1->idInRecentFandoms < f2->idInRecentFandoms;
     });
+
     std::for_each(std::begin(recentFandoms), std::end(recentFandoms), [&result](QSharedPointer<core::Fandom> f){
         result.push_back(f->name);
     });
     return result;
+}
+
+QStringList DBFandomsBase::GetFandomList()
+{
+    QStringList result;
+    return result; //! todo
 }
 
 

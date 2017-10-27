@@ -760,7 +760,7 @@ QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db)
     QSqlQuery q(db);
     q.prepare(qs);
     if(!ExecAndCheck(q))
-        return false;
+        return result;
 
     while(q.next())
     {
@@ -769,7 +769,7 @@ QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db)
         auto id = q.value(1).toInt();
 
     }
-    return true;
+    return result;
 }
 
 bool DeactivateStory(int id, QString website, QSqlDatabase db)

@@ -13,7 +13,7 @@ class FFNAuthors : public DBAuthorsBase
 public:
     virtual ~FFNAuthors(){}
     bool EnsureId(QSharedPointer<core::Author>) override;
-    void RemoveAuthor(QSharedPointer<core::Author> author) override;
+    bool RemoveAuthor(QSharedPointer<core::Author> author) override;
 };
 
 }

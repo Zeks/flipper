@@ -1,8 +1,10 @@
 #include "include/ficparser.h"
 #include "include/section.h"
-#include "include/db_ffn.h"
 #include "include/regex_utils.h"
 #include "include/url_utils.h"
+#include "include/pure_sql.h"
+#include "Interfaces/fanfics.h"
+#include "Interfaces/authors.h"
 #include <QDebug>
 #include <QSqlDatabase>
 #include <algorithm>
@@ -14,20 +16,22 @@ QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
     int currentPosition = 0;
     if(str.contains("Unable to locate story. Code 1"))
     {
-        database::TryDeactivate(url, "ffn");
+        auto fics = interfaces->fanfics;
+        int ficId = fics->GetIdForUrl(url);
+        fics->DeactivateFic(ficId);
         return section.result;
     }
 
-    section = GetSection(str, currentPosition);
-    section.result.webId = url_utils::GetWebId(url, "ffn").toInt();
-    qDebug() << "Processing fic: " << section.result.webId;
+    section = GetSection(str);
+    section.result->webId = url_utils::GetWebId(url, "ffn").toInt();
+    qDebug() << "Processing fic: " << section.result->webId;
     currentPosition = section.start;
 
-    GetAuthor(section, currentPosition, str);
+    GetAuthor(section, str);
     GetFandom(section, currentPosition, str);
-    GetTitle(section, currentPosition, str);
-    GetSummary(section, currentPosition, str);
-    GetStatSection(section, currentPosition, str);
+    GetTitle(section,  str);
+    GetSummary(section,  str);
+    GetStatSection(section,  str);
 
     DetermineMarkedSubsectionPresence(section);
     ProcessUnmarkedSections(section);
@@ -35,38 +39,38 @@ QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
     auto& stat = section.statSection;
 
     // reading marked section data
-    GetTaggedSection(stat.text, stat.rated, "target='rating'>Fiction\\s\\s([A-Z])", [&section](QString val){ section.result.rated = val;});
-    GetTaggedSection(stat.text, stat.chapters, "Chapters:\\s(\\d+)", [&section](QString val){ section.result.chapters = val;});
-    GetTaggedSection(stat.text, stat.words, "Words:\\s(\\d+,\\d+)", [&section](QString val){section.result.wordCount = val;});
-    GetTaggedSection(stat.text, stat.reviews, "(\\d+)</a>", [&section](QString val){ section.result.reviews = val;});
-    GetTaggedSection(stat.text, stat.favs, "Favs:\\s(\\d+)", [&section](QString val){ section.result.favourites = val;});
-    GetTaggedSection(stat.text, stat.follows, "Follows:\\s(\\d+)", [&section](QString val){ section.result.follows = val;});
-    GetTaggedSection(stat.text, stat.status, "Status:\\s(\\d+)", [&section](QString val){
+    GetTaggedSection(stat.text, "target='rating'>Fiction\\s\\s([A-Z])", [&section](QString val){ section.result->rated = val;});
+    GetTaggedSection(stat.text, "Chapters:\\s(\\d+)", [&section](QString val){ section.result->chapters = val;});
+    GetTaggedSection(stat.text, "Words:\\s(\\d+,\\d+)", [&section](QString val){section.result->wordCount = val;});
+    GetTaggedSection(stat.text, "(\\d+)</a>", [&section](QString val){ section.result->reviews = val;});
+    GetTaggedSection(stat.text, "Favs:\\s(\\d+)", [&section](QString val){ section.result->favourites = val;});
+    GetTaggedSection(stat.text, "Follows:\\s(\\d+)", [&section](QString val){ section.result->follows = val;});
+    GetTaggedSection(stat.text, "Status:\\s(\\d+)", [&section](QString val){
         if(val != "not found")
-            section.result.complete = 1;}
+            section.result->complete = 1;}
     );
-    GetTaggedSection(stat.text, stat.updated, "data-xutime='(\\d+)'", [&section](QString val){
+    GetTaggedSection(stat.text, "data-xutime='(\\d+)'", [&section](QString val){
         if(val != "not found")
         {
-            section.result.updated.setTime_t(val.toInt());
-            qDebug() << val << section.result.updated;
+            section.result->updated.setTime_t(val.toInt());
+            qDebug() << val << section.result->updated;
         }
     });
-    GetTaggedSection(stat.text, stat.published, "data-xutime='(\\d+)'", [&section](QString val){
+    GetTaggedSection(stat.text, "data-xutime='(\\d+)'", [&section](QString val){
         if(val != "not found")
         {
-            section.result.published.setTime_t(val.toInt());
-            qDebug() << val << section.result.published;
+            section.result->published.setTime_t(val.toInt());
+            qDebug() << val << section.result->published;
         }
     }, 1);
     // if something doesn't have update date then we've read "published" incorrectly, fixing
     if(!section.statSection.updated.isValid)
-        section.result.published = section.result.updated;
-    section.result.isValid = true;
-    auto tempResult = QSharedPointer<core::Fic>(new core::Fic>);
-    *tempResult = section.result;
-    processedStuff = {tempResult};
-    return tempResult;
+        section.result->published = section.result->updated;
+    section.result->isValid = true;
+    //auto tempResult = QSharedPointer<core::Fic>(new core::Fic>);
+    //*tempResult = section.result;
+    //processedStuff = {tempResult};
+    return section.result;
 }
 
 core::Section::Tag FicParser::GetStatTag(QString text, QString tag)
@@ -82,7 +86,7 @@ core::Section::Tag FicParser::GetStatTag(QString text, QString tag)
     return result;
 }
 
-void FicParser::GetTaggedSection(QString text, core::Section::Tag tag, QString rxString, std::function<void (QString)> functor, int skipCount)
+void FicParser::GetTaggedSection(QString text,  QString rxString, std::function<void (QString)> functor, int skipCount)
 {
     QRegExp rx(rxString);
     int indexStart = rx.indexIn(text);
@@ -138,7 +142,7 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
             return;
 
         QStringList genreCandidates = splittings.at(0).split("/");
-        bool isGenre = database::IsGenreList(genreCandidates, "ffn");
+        bool isGenre = database::puresql::IsGenreList(genreCandidates, "ffn", db);
         if(isGenre)
         {
             ProcessGenres(section, splittings.at(0));
@@ -167,7 +171,7 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
             //       if no match is found its characters
 
             QStringList genreCandidates = splittings.at(0).split("/");
-            bool isGenre = database::IsGenreList(genreCandidates, "ffn");
+            bool isGenre = database::puresql::IsGenreList(genreCandidates, "ffn", db);
             if(isGenre)
                 ProcessGenres(section, splittings.at(0));
             else
@@ -217,14 +221,14 @@ void FicParser::GetFandom(core::Section & section, int &, QString text)
     full = full.replace(" Crossover", "");
     QStringList split = full.split(" + ", QString::SkipEmptyParts);
 
-    section.result.fandom = full;
-    section.result.fandoms = split;
-    qDebug() << section.result.fandoms;
-    qDebug() << section.result.fandom;
+    section.result->fandom = full;
+    section.result->fandoms = split;
+    qDebug() << section.result->fandoms;
+    qDebug() << section.result->fandom;
 }
 
 
-void FicParser::GetAuthor(core::Section & section, int &startfrom, QString text)
+void FicParser::GetAuthor(core::Section & section,  QString text)
 {
     auto full = GetDoubleNarrow(text,"/u/\\d+/", "</a>", true,
                                 "",  "'>", false,
@@ -235,25 +239,25 @@ void FicParser::GetAuthor(core::Section & section, int &startfrom, QString text)
     auto index = rxEnd.indexIn(text);
     if(index == -1)
         return;
-
-    if(interfaces->authors->ContainsName(full))
+    auto author = interfaces->authors->GetSingleByName(full, "ffn");
+    if(author)
     {
-        section.result.author = interfaces->authors->GetAuthorByname(full);
+        section.result->author = author;
         if(rewriteAuthorName)
-            section.result.author->SetName(full);
+            section.result->author->name = full;
     }
     else
     {
         QSharedPointer<core::Author> author(new core::Author);
-        section.result.author = author;
-        section.result.author.SetUrl("ffn",rxEnd.cap(1));
-        section.result.author.name = full;
-        interfaces->authors->AddAuthor(author);
-        interfaces->authors->EnsureId(author);
+        section.result->author = author;
+        section.result->author->SetUrl("ffn",rxEnd.cap(1));
+        section.result->author->name = full;
+        interfaces->authors->EnsureId(author, "ffn");
+
     }
 }
 
-void FicParser::GetTitle(core::Section & section, int& startfrom, QString text)
+void FicParser::GetTitle(core::Section & section,QString text)
 {
     QRegExp rx("Follow/Fav</button><b\\sclass='xcontrast[_]txt'>(.*)</");
     rx.setMinimal(true);
@@ -263,29 +267,29 @@ void FicParser::GetTitle(core::Section & section, int& startfrom, QString text)
         qDebug() << "failed to get title";
         return;
     }
-    section.result.title = rx.cap(1);
-    qDebug() << section.result.title;
+    section.result->title = rx.cap(1);
+    qDebug() << section.result->title;
 }
 
-void FicParser::GetStatSection(core::Section &section, int &startfrom, QString text)
+void FicParser::GetStatSection(core::Section &section,  QString text)
 {
     auto full = GetSingleNarrow(text,"Rated:", "\\sid:", true);
     qDebug() << full;
     section.statSection.text = full;
 }
 
-void FicParser::GetSummary(core::Section & section, int& startfrom, QString text)
+void FicParser::GetSummary(core::Section & section, QString text)
 {
     auto summary = GetDoubleNarrow(text,
                     "Private\\sMessage", "</div", true,
                     "", "'>", false,
                     2);
 
-    section.result.summary = summary;
+    section.result->summary = summary;
     qDebug() << summary;
 }
 
-core::Section FicParser::GetSection(QString text, int start)
+core::Section FicParser::GetSection(QString text)
 {
     core::Section section;
     section.start = 0;

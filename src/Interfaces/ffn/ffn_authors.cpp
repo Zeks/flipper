@@ -4,10 +4,10 @@ namespace database {
 
 bool FFNAuthors::EnsureId(QSharedPointer<core::Author> author)
 {
-    ::EnsureId(author, "ffn");
+    return DBAuthorsBase::EnsureId(author, "ffn");
 }
-void  FFNAuthors::RemoveAuthor(QSharedPointer<core::Author> author)
+bool FFNAuthors::RemoveAuthor(QSharedPointer<core::Author> author)
 {
-    ::RemoveAuthor(author, "ffn");
+    return DBAuthorsBase::RemoveAuthor(author, "ffn");
 }
 }

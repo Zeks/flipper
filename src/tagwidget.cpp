@@ -1,7 +1,8 @@
 #include "tagwidget.h"
 #include "ui_tagwidget.h"
+#include "Interfaces/fandoms.h"
 #include "genericeventfilter.h"
-#include "db_ffn.h"
+#include "pure_sql.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QStringListModel>
@@ -40,7 +41,7 @@ void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
         ui->edtTags->insertHtml(toInsert);
     }
     ui->cbAssignTag->setModel(new QStringListModel(allTags));
-    ui->cbFandom->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSection->currentText())));
+    ui->cbFandom->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
 }
 
 QStringList TagWidget::GetSelectedTags()
@@ -167,5 +168,5 @@ void TagWidget::OnRemoveTagFromEdit(QString tag)
 
 void TagWidget::on_pbAssignTagToFandom_clicked()
 {
-    database::AssignTagToFandom(ui->cbAssignTag->currentText(), ui->cbFandom->currentText());
+    fandomsInterface->AssignTagToFandom(ui->cbFandom->currentText(), ui->cbAssignTag->currentText());
 }

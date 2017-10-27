@@ -21,4 +21,9 @@ bool FFNFanfics::DeactivateFic(int ficId)
     return puresql::DeactivateStory(ficId, "ffn", db);
 }
 
+int FFNFanfics::GetIdForUrl(QString url)
+{
+    return -1; //! todo
+}
+
 }

@@ -16,5 +16,8 @@ public:
     QStringList FetchRecentFandoms(QSqlDatabase db);
     virtual QDateTime GetCurrentDateTime() = 0;
     QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db);
+    void BackupDatabase(QString dbname);
+    bool ReadDbFile(QString file, QString connectionName = "default");
+    QSqlDatabase InitDatabase(QString connectionName = "default");
 };
 }

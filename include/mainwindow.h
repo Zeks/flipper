@@ -73,7 +73,7 @@ private:
     FicModel* typetableModel = nullptr;
     QSharedPointer<TableDataInterface> typetableInterface;
     TableDataListHolder<core::Fic>* holder = nullptr;
-    QList<core::Fic> fanfics;
+    //QList<core::Fic> fanfics;
     QSortFilterProxyModel* sortModel;
     int processedFics = 0;
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;

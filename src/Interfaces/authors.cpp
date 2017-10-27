@@ -44,18 +44,18 @@ void DBAuthorsBase::ClearIndex()
     authorsById.clear();
 }
 
-QSharedPointer<QSharedPointer<core::Author> > DBAuthorsBase::GetSingleByName(QString name, QString website)
+QSharedPointer<core::Author> DBAuthorsBase::GetSingleByName(QString name, QString website)
 {
-    QSharedPointer<QSharedPointer<core::Author>> result;
+    QSharedPointer<core::Author> result;
     if(authorsNamesByWebsite.contains(website) && authorsNamesByWebsite[website].contains(name))
         result = {authorsNamesByWebsite[website][name]};
     return result;
 
 }
 
-QList<QSharedPointer<QSharedPointer<core::Author>>> DBAuthorsBase::GetAllByName(QString name)
+QList<QSharedPointer<core::Author>> DBAuthorsBase::GetAllByName(QString name)
 {
-    QList<QSharedPointer<QSharedPointer<core::Author>>> result;
+    QList<QSharedPointer<core::Author>> result;
 
     for(auto websiteHash : authorsNamesByWebsite)
     {
@@ -68,7 +68,7 @@ QList<QSharedPointer<QSharedPointer<core::Author>>> DBAuthorsBase::GetAllByName(
 
 QSharedPointer<core::Author> DBAuthorsBase::GetByUrl(QString url)
 {
-    QSharedPointer<QSharedPointer<core::Author>> result;
+    QSharedPointer<core::Author> result;
     if(!authorsByUrl.contains(url))
         return result;
     return authorsByUrl[url];
@@ -76,7 +76,7 @@ QSharedPointer<core::Author> DBAuthorsBase::GetByUrl(QString url)
 
 QSharedPointer<core::Author > DBAuthorsBase::GetById(int id)
 {
-    QSharedPointer<QSharedPointer<core::Author>> result;
+    QSharedPointer<core::Author> result;
     if(!authorsById.contains(id))
         return result;
     return authorsById[id];
@@ -128,7 +128,13 @@ bool DBAuthorsBase::EnsureId(QSharedPointer<core::Author> author, QString websit
     }
     if(author->id < 0)
         return false;
+    AddAuthorToIndex(author);
     return true;
+}
+
+void DBAuthorsBase::AddAuthorToIndex(QSharedPointer<core::Author>)
+{
+
 }
 
 
@@ -151,27 +157,34 @@ QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(in
     else
         result->matchRatio = (double)result->totalFics/(double)result->matchesWithReference;
     result->isValid = true;
+
+    return result;
 }
 
-void  DBAuthorsBase::RemoveAuthor(int id)
+bool  DBAuthorsBase::RemoveAuthor(int id)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
     QString qsl = "delete from recommendations where recommender_id = %1";
     qsl=qsl.arg(QString::number(id));
     q1.prepare(qsl);
-    database::puresql::ExecAndCheck(q1);
+    if(!database::puresql::ExecAndCheck(q1))
+        return false;
 
     QSqlQuery q2(db);
     qsl = "delete from recommenders where id = %1";
     qsl=qsl.arg(id);
     q2.prepare(qsl);
-    database::puresql::ExecAndCheck(q2);
+    if(!database::puresql::ExecAndCheck(q2))
+        return false;
+    return true;
 }
 
-void DBAuthorsBase::RemoveAuthor(QSharedPointer<core::Author> author, QString website)
+bool DBAuthorsBase::RemoveAuthor(QSharedPointer<core::Author> author, QString website)
 {
     int id = database::puresql::GetAuthorIdFromUrl(author->url(website),db);
-    RemoveAuthor(id);
+    if(id == -1)
+        return false;
+    return RemoveAuthor(id);
 }
 }

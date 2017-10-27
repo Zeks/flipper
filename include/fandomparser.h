@@ -1,8 +1,8 @@
 #pragma once
 #include <QString>
+#include <QSharedPointer>
 #include "section.h"
 #include "pagegetter.h"
-#include "db_ffn.h"
 #include <functional>
 #include "include/ffnparserbase.h"
 

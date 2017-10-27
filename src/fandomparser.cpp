@@ -1,4 +1,5 @@
-#include "fandomparser.h"\
+#include "fandomparser.h"
+#include "Interfaces/fanfics.h"
 
 
 
@@ -21,7 +22,7 @@ void FandomParser::ProcessPage(WebPage page)
             break;
         currentPosition = section.start;
 
-        section.result.fandom = page.crossover ? page.fandom + " CROSSOVER" : page.fandom;
+        section.result->fandom = page.crossover ? page.fandom + " CROSSOVER" : page.fandom;
         GetUrl(section, currentPosition, str);
         GetTitle(section, currentPosition, str);
         GetAuthor(section, currentPosition, str);
@@ -30,41 +31,41 @@ void FandomParser::ProcessPage(WebPage page)
         GetStatSection(section, currentPosition, str);
 
         QString statText = section.statSection.text;
-        GetTaggedSection(statText.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.result.wordCount = val;});
-        GetTaggedSection(statText.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.result.chapters = val;});
-        GetTaggedSection(statText.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.result.reviews = val;});
-        GetTaggedSection(statText.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.result.favourites = val;});
+        GetTaggedSection(statText.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.result->wordCount = val;});
+        GetTaggedSection(statText.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.result->chapters = val;});
+        GetTaggedSection(statText.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.result->reviews = val;});
+        GetTaggedSection(statText.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.result->favourites = val;});
         GetTaggedSection(statText, "Published:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
             if(val != "not found")
-                section.result.published.setTime_t(val.toInt()); ;
+                section.result->published.setTime_t(val.toInt()); ;
         });
         GetTaggedSection(statText, "Updated:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
             if(val != "not found")
-                section.result.updated.setTime_t(val.toInt());
+                section.result->updated.setTime_t(val.toInt());
             else
-                section.result.updated.setTime_t(0);
+                section.result->updated.setTime_t(0);
         });
-        GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result.rated = val;});
-        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){
+        GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result->rated = val;});
+        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [this,&section](QString val){
             ProcessGenres(section, val);
         });
-        GetTaggedSection(statText, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
+        GetTaggedSection(statText, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [this,&section](QString val){
             ProcessCharacters(section, val.replace(" - Complete", ""));
         });
         GetTaggedSection(statText, "(Complete)$", [&section](QString val){
             if(val != "not found")
-                section.result.complete = 1;
+                section.result->complete = 1;
         });
 
-        if(section.result.fandom.contains("CROSSOVER"))
+        if(section.result->fandom.contains("CROSSOVER"))
             GetCrossoverFandomList(section, currentPosition, str);
 
 
         if(section.isValid)
         {
-            if((section.result.updated < minSectionUpdateDate) && (section.result.updated.date().year() > 1990))
-                minSectionUpdateDate = section.result.updated;
-            section.result.origin = page.url;
+            if((section.result->updated < minSectionUpdateDate) && (section.result->updated.date().year() > 1990))
+                minSectionUpdateDate = section.result->updated;
+            section.result->origin = page.url;
             processedStuff.append(section.result);
         }
 
@@ -103,7 +104,7 @@ void FandomParser::GetAuthor(core::Section & section, int& startfrom, QString te
     int indexStart = rxStart.indexIn(text, indexBy + 3);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     startfrom = indexEnd;
-    section.result.author.name = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
+    section.result->author->name = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
 
 }
 
@@ -114,8 +115,8 @@ void FandomParser::GetTitle(core::Section & section, int& startfrom, QString tex
     int indexStart = rxStart.indexIn(text, startfrom + 1);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     startfrom = indexEnd;
-    section.result.title = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
-    qDebug() << section.result.title;
+    section.result->title = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
+    qDebug() << section.result->title;
 }
 
 void FandomParser::GetStatSection(core::Section &section, int &startfrom, QString text)
@@ -137,7 +138,7 @@ void FandomParser::GetSummary(core::Section & section, int& startfrom, QString t
     int indexStart = rxStart.indexIn(text,startfrom);
     int indexEnd = rxEnd.indexIn(text, indexStart);
 
-    section.result.summary = text.mid(indexStart + 8,indexEnd - (indexStart + 8));
+    section.result->summary = text.mid(indexStart + 8,indexEnd - (indexStart + 8));
     section.summaryEnd = indexEnd;
     startfrom = indexEnd;
 }
@@ -151,8 +152,8 @@ void FandomParser::GetCrossoverFandomList(core::Section & section, int &startfro
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
     QString tmp = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed();
-    section.result.fandom = tmp + QString(" CROSSOVER");
-    section.result.fandoms = tmp.split("&");
+    section.result->fandom = tmp + QString(" CROSSOVER");
+    section.result->fandoms = tmp.split("&");
     startfrom = indexEnd;
 }
 
@@ -163,7 +164,7 @@ void FandomParser::GetUrl(core::Section & section, int& startfrom, QString text)
     QRegExp rxEnd(QRegExp::escape("\"><img"));
     int indexStart = rxStart.indexIn(text,startfrom);
     int indexEnd = rxEnd.indexIn(text, indexStart);
-    section.result.SetUrl("ffn",text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
+    section.result->SetUrl("ffn",text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
     startfrom = indexEnd+2;
 }
 
@@ -211,7 +212,8 @@ QString FandomParser::GetLast(QString pageContent)
 
 core::Section FandomParser::GetSection(QString text, int start)
 {
-    core::Section section;
+    //QSharedPointer<core::Section> section (new core::Section);
+    core::Section section ;
     QRegExp rxStart("<div\\sclass=\'z-list\\szhover\\szpointer\\s\'");
     int index = rxStart.indexIn(text, start);
     if(index != -1)

@@ -96,7 +96,7 @@ void InstallCustomFunctions(QSqlDatabase db)
     }
 }
 
-bool ReadDbFile(QString file, QString connectionName, QSqlDatabase db)
+bool ReadDbFile(QString file, QString connectionName)
 {
     QFile data(file);
     if (data.open(QFile::ReadOnly))
@@ -112,7 +112,7 @@ bool ReadDbFile(QString file, QString connectionName, QSqlDatabase db)
 
             if(statement.trimmed().isEmpty() || statement.trimmed().left(2) == "--")
                 continue;
-
+            QSqlDatabase db;
             if(!connectionName.isEmpty())
                 db = QSqlDatabase::database(connectionName);
             else

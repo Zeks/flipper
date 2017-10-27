@@ -104,7 +104,7 @@ bool DBRecommendationListsBase::DeleteList(int listId)
 bool DBRecommendationListsBase::ReloadList(int listId)
 {
     QSharedPointer<core::RecommendationList> list;
-
+    return true; //! todo
 }
 
 void DBRecommendationListsBase::AddList(QSharedPointer<core::RecommendationList>)
