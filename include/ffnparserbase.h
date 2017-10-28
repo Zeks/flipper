@@ -1,6 +1,7 @@
 #pragma once
 #include "include/section.h"
-#include "include/Interfaces/base.h"
+#include "Interfaces/base.h"
+#include "Interfaces/db_interface.h"
 
 #include <QString>
 #include <QSqlDatabase>
@@ -20,7 +21,7 @@ public:
 
 
 
-    QSharedPointer<database::DataInterfaces> interfaces;
+    QSharedPointer<interfaces::DataInterfaces> interfaces;
     QStringList diagnostics;
     QList<QSharedPointer<core::Fic>> processedStuff;
     QSqlDatabase db;

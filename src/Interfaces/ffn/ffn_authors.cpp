@@ -1,6 +1,6 @@
 #include "Interfaces/ffn/ffn_authors.h"
 
-namespace database {
+namespace interfaces {
 
 FFNAuthors::~FFNAuthors()
 {

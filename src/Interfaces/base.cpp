@@ -1,5 +1,5 @@
 #include "Interfaces/base.h"
-namespace database {
+namespace interfaces {
 IDBPersistentData::~IDBPersistentData(){}
 
 IDBWebIDIndex::~IDBWebIDIndex()

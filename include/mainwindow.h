@@ -33,13 +33,15 @@ class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
 class QStringListModel;
-namespace database{
+namespace interfaces{
 class DBFandomsBase;
 class DBFanficsBase;
 class DBAuthorsBase;
-class IDBWrapper;
 class Tags;
 class DBRecommendationListsBase;
+}
+namespace database {
+class IDBWrapper;
 }
 namespace Ui {
 class MainWindow;
@@ -179,11 +181,11 @@ private:
     //QHash<QString, core::RecommendationList> lists;
 
 
-    QSharedPointer<database::DBFandomsBase> fandomsInterface;
-    QSharedPointer<database::DBFanficsBase> fanficsInterface;
-    QSharedPointer<database::DBAuthorsBase> authorsInterface;
-    QSharedPointer<database::Tags> tagsInterface;
-    QSharedPointer<database::DBRecommendationListsBase> recsInterface;
+    QSharedPointer<interfaces::DBFandomsBase> fandomsInterface;
+    QSharedPointer<interfaces::DBFanficsBase> fanficsInterface;
+    QSharedPointer<interfaces::DBAuthorsBase> authorsInterface;
+    QSharedPointer<interfaces::Tags> tagsInterface;
+    QSharedPointer<interfaces::DBRecommendationListsBase> recsInterface;
     QSharedPointer<database::IDBWrapper> dbWrapperInterface;
 
 

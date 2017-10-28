@@ -4,7 +4,7 @@
 #include "include/pure_sql.h"
 #include <QVector>
 
-namespace database {
+namespace interfaces {
 
 int DBRecommendationListsBase::GetListIdForName(QString name)
 {
@@ -51,7 +51,7 @@ QList<QSharedPointer<core::AuthorRecommendationStats> > DBRecommendationListsBas
     if(cachedAuthorStats.contains(id))
         result = cachedAuthorStats[id];
     //otherwise, need to load it
-    auto stats = puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
+    auto stats = database::puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
     cachedAuthorStats[id] = stats;
     result = stats;
     return result;
@@ -86,7 +86,7 @@ QVector<int> DBRecommendationListsBase::GetAllFicIDs(int listId)
     QVector<int> result;
     if(!ficsCacheForLists.contains(listId))
     {
-        result = puresql::GetAllFicIDsFromRecommendationList(listId, db);
+        result = database::puresql::GetAllFicIDsFromRecommendationList(listId, db);
         ficsCacheForLists[listId] = result;
     }
     else
@@ -103,7 +103,7 @@ QStringList DBRecommendationListsBase::GetNamesForListId(int listId)
 
 bool DBRecommendationListsBase::DeleteList(int listId)
 {
-    return puresql::DeleteRecommendationList(listId, db);
+    return database::puresql::DeleteRecommendationList(listId, db);
 }
 
 bool DBRecommendationListsBase::ReloadList(int listId)
@@ -140,7 +140,7 @@ QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::Creat
     result->authorId = author->id;
     result->totalFics = author->ficCount;
 
-    result->matchesWithReference = puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
+    result->matchesWithReference = database::puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
@@ -152,7 +152,7 @@ QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::Creat
 
 bool DBRecommendationListsBase::LoadAuthorRecommendationsIntoList(int authorId, int listId)
 {
-    return puresql::CopyAllAuthorRecommendationsToList(authorId, listId, db);
+    return database::puresql::CopyAllAuthorRecommendationsToList(authorId, listId, db);
 }
 
 bool DBRecommendationListsBase::IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId)
@@ -162,24 +162,24 @@ bool DBRecommendationListsBase::IncrementAllValuesInListMatchingAuthorFavourites
 
 bool DBRecommendationListsBase::LoadAuthorRecommendationStatsIntoDatabase(int listId, QSharedPointer<core::AuthorRecommendationStats> stats)
 {
-    return puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
+    return database::puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
 }
 
 bool DBRecommendationListsBase::LoadListIntoDatabase(QSharedPointer<core::RecommendationList> list)
 {
     AddList(list);
     auto timeStamp = portableDBInterface->GetCurrentDateTime();
-    return puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
+    return database::puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
 }
 
 bool DBRecommendationListsBase::UpdateFicCountInDatabase(int listId)
 {
-    return puresql::UpdateFicCountForRecommendationList(listId, db);
+    return database::puresql::UpdateFicCountForRecommendationList(listId, db);
 }
 
 bool DBRecommendationListsBase::AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData)
 {
-    auto result = puresql::AddAuthorFavouritesToList(authorId, listId, db);
+    auto result = database::puresql::AddAuthorFavouritesToList(authorId, listId, db);
     if(result)
         return false;
     if(reloadLocalData)

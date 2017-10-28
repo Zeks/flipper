@@ -7,7 +7,7 @@
 #include "QReadWriteLock"
 
 
-namespace database {
+namespace interfaces {
 
 class FFNFanfics : public DBFanficsBase{
 public:

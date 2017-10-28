@@ -7,7 +7,7 @@
 #include "QReadWriteLock"
 
 
-namespace database {
+namespace interfaces {
 class FFNAuthors : public DBAuthorsBase
 {
 public:

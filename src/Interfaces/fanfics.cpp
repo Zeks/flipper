@@ -3,7 +3,7 @@
 #include "include/pure_sql.h"
 #include <QVector>
 
-namespace database {
+namespace interfaces {
 
 
 DBFanficsBase::~DBFanficsBase()
@@ -23,7 +23,7 @@ int DBFanficsBase::GetWebIDFromID(int, QString website)
 
 bool DBFanficsBase::ReprocessFics(QString where, QString website, std::function<void (int)> f)
 {
-    auto list = puresql::GetWebIdList(where, website, db);
+    auto list = database::puresql::GetWebIdList(where, website, db);
     if(list.empty())
         return false;
     for(auto id : list)
@@ -38,7 +38,7 @@ bool DBFanficsBase::IsEmptyQueues()
 }
 bool DBFanficsBase::DeactivateFic(int ficId, QString website)
 {
-    return puresql::DeactivateStory(ficId, website, db);
+    return database::puresql::DeactivateStory(ficId, website, db);
 }
 void DBFanficsBase::AddRecommendations(QList<core::FicRecommendation> recommendations)
 {

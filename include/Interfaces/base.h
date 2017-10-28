@@ -1,7 +1,7 @@
 #pragma once
 #include "section.h"
 
-namespace database {
+namespace interfaces {
 
 struct WriteStats
 {

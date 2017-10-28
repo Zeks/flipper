@@ -2,7 +2,7 @@
 #include "Interfaces/ffn/ffn_fanfics.h"
 #include "pure_sql.h"
 
-namespace database {
+namespace interfaces {
 
 
 
@@ -18,7 +18,7 @@ int FFNFanfics::GetWebIDFromID(int value)
 
 bool FFNFanfics::DeactivateFic(int ficId)
 {
-    return puresql::DeactivateStory(ficId, "ffn", db);
+    return database::puresql::DeactivateStory(ficId, "ffn", db);
 }
 
 int FFNFanfics::GetIdForUrl(QString url)

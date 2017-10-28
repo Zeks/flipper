@@ -3,7 +3,7 @@
 #include "include/pure_sql.h"
 #include <QSqlQuery>
 
-namespace database {
+namespace interfaces {
 DBAuthorsBase::~DBAuthorsBase(){}
 void DBAuthorsBase::Clear()
 {
@@ -126,7 +126,7 @@ int DBAuthorsBase::GetFicCount(int authorId)
 
 int DBAuthorsBase::GetCountOfRecsForTag(int authorId, QString tag)
 {
-    auto result = puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db);
+    auto result = database::puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db);
     return result;
 }
 bool DBAuthorsBase::LoadAuthors(QString website, bool additionMode)
@@ -183,7 +183,7 @@ QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(in
     result->authorId= author->id;
     result->totalFics= author->ficCount;
 
-    result->matchesWithReference= puresql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db);
+    result->matchesWithReference= database::puresql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else

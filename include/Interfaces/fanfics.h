@@ -8,7 +8,7 @@
 #include <functional>
 
 
-namespace database {
+namespace interfaces {
 
 class DBFanficsBase : public IDBWebIDIndex, public IDBPersistentData {
 public:

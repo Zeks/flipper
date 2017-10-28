@@ -7,7 +7,7 @@
 #include "QReadWriteLock"
 
 
-namespace database {
+namespace interfaces {
 class Tags{
 public:
     bool DeleteTag(QString);

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Interfaces/base.h"
+#include "Interfaces/db_interface.h"
 #include "section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
@@ -7,7 +8,7 @@
 #include "QReadWriteLock"
 
 
-namespace database {
+namespace interfaces {
 
 class DBRecommendationListsBase : public IDBPersistentData
 {
@@ -53,7 +54,7 @@ public:
     QSqlDatabase db;
 
     QSharedPointer<DBAuthorsBase> authorInterface;
-    QSharedPointer<IDBWrapper> portableDBInterface;
+    QSharedPointer<database::IDBWrapper> portableDBInterface;
 
     QHash<QString, QSharedPointer<core::Author>> currentRecommenderSet;
     int currentRecommendationList = -1;

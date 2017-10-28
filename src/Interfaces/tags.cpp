@@ -1,11 +1,11 @@
 #include "Interfaces/tags.h"
 #include "pure_sql.h"
 
-namespace database {
+namespace interfaces {
 
 bool Tags::DeleteTag(QString tag)
 {
-    return puresql::DeleteTagfromDatabase(tag, db);
+    return database::puresql::DeleteTagfromDatabase(tag, db);
 }
 
 QStringList Tags::ReadUserTags()

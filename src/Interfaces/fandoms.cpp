@@ -9,7 +9,7 @@
 #include "include/pure_sql.h"
 #include "include/section.h"
 
-namespace database {
+namespace interfaces {
 
 void DBFandomsBase::Clear()
 {

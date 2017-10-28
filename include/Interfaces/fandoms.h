@@ -1,5 +1,6 @@
 #pragma once
 #include "Interfaces/base.h"
+#include "Interfaces/db_interface.h"
 //#include "section.h"
 #include <QSharedPointer>
 #include <QSqlDatabase>
@@ -9,7 +10,7 @@
 #include <functional>
 
 
-namespace database {
+namespace interfaces {
 
 class DBFandomsBase : public IDBPersistentData{
 public:
@@ -61,7 +62,7 @@ public:
     QList<QSharedPointer<core::Fandom>> recentFandoms;
     QList<QSharedPointer<core::Fandom>> trackedFandoms;
     QSqlDatabase db;
-    QSharedPointer<IDBWrapper> portableDBInterface;
+    QSharedPointer<database::IDBWrapper> portableDBInterface;
     QStringList fandomsList;
 private:
     void AddToTopOfRecent(QString);
