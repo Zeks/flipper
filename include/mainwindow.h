@@ -34,11 +34,11 @@ class QQuickWidget;
 class QQuickView;
 class QStringListModel;
 namespace interfaces{
-class DBFandomsBase;
-class DBFanficsBase;
-class DBAuthorsBase;
+class Fandoms;
+class Fanfics;
+class Authors;
 class Tags;
-class DBRecommendationListsBase;
+class RecommendationLists;
 }
 namespace database {
 class IDBWrapper;
@@ -181,11 +181,11 @@ private:
     //QHash<QString, core::RecommendationList> lists;
 
 
-    QSharedPointer<interfaces::DBFandomsBase> fandomsInterface;
-    QSharedPointer<interfaces::DBFanficsBase> fanficsInterface;
-    QSharedPointer<interfaces::DBAuthorsBase> authorsInterface;
+    QSharedPointer<interfaces::Fandoms> fandomsInterface;
+    QSharedPointer<interfaces::Fanfics> fanficsInterface;
+    QSharedPointer<interfaces::Authors> authorsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
-    QSharedPointer<interfaces::DBRecommendationListsBase> recsInterface;
+    QSharedPointer<interfaces::RecommendationLists> recsInterface;
     QSharedPointer<database::IDBWrapper> dbWrapperInterface;
 
 

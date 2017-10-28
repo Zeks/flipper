@@ -43,17 +43,17 @@ public:
     virtual void EnsureFFNUrlsShort() = 0;
 
 };
-class DBFandomsBase;
-class DBFanficsBase;
-class DBAuthorsBase;
+class Fandoms;
+class Fanfics;
+class Authors;
 class IDBWrapper;
 
 class DataInterfaces
 {
 public:
-    QSharedPointer<DBFandomsBase> fandoms;
-    QSharedPointer<DBFanficsBase> fanfics;
-    QSharedPointer<DBAuthorsBase> authors;
+    QSharedPointer<Fandoms> fandoms;
+    QSharedPointer<Fanfics> fanfics;
+    QSharedPointer<Authors> authors;
     QSharedPointer<IDBWrapper> portableDBInterface;
 };
 

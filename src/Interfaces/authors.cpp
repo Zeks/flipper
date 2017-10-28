@@ -4,8 +4,8 @@
 #include <QSqlQuery>
 
 namespace interfaces {
-DBAuthorsBase::~DBAuthorsBase(){}
-void DBAuthorsBase::Clear()
+Authors::~Authors(){}
+void Authors::Clear()
 {
 //    QList<QSharedPointer<core::Author>> authors;
 
@@ -21,13 +21,13 @@ void DBAuthorsBase::Clear()
     ClearIndex();
 }
 
-void DBAuthorsBase::Reindex()
+void Authors::Reindex()
 {
     ClearIndex();
     IndexAuthors();
 }
 
-void DBAuthorsBase::IndexAuthors()
+void Authors::IndexAuthors()
 {
     for(auto author : authors)
     {
@@ -37,14 +37,14 @@ void DBAuthorsBase::IndexAuthors()
     }
 }
 
-void DBAuthorsBase::ClearIndex()
+void Authors::ClearIndex()
 {
     authorsNamesByWebsite.clear();
     authorsByUrl.clear();
     authorsById.clear();
 }
 
-QSharedPointer<core::Author> DBAuthorsBase::GetSingleByName(QString name, QString website)
+QSharedPointer<core::Author> Authors::GetSingleByName(QString name, QString website)
 {
     QSharedPointer<core::Author> result;
     if(authorsNamesByWebsite.contains(website) && authorsNamesByWebsite[website].contains(name))
@@ -53,7 +53,7 @@ QSharedPointer<core::Author> DBAuthorsBase::GetSingleByName(QString name, QStrin
 
 }
 
-QList<QSharedPointer<core::Author>> DBAuthorsBase::GetAllByName(QString name)
+QList<QSharedPointer<core::Author>> Authors::GetAllByName(QString name)
 {
     QList<QSharedPointer<core::Author>> result;
 
@@ -66,7 +66,7 @@ QList<QSharedPointer<core::Author>> DBAuthorsBase::GetAllByName(QString name)
     return result;
 }
 
-QSharedPointer<core::Author> DBAuthorsBase::GetByUrl(QString url)
+QSharedPointer<core::Author> Authors::GetByUrl(QString url)
 {
     QSharedPointer<core::Author> result;
     if(!authorsByUrl.contains(url))
@@ -74,7 +74,7 @@ QSharedPointer<core::Author> DBAuthorsBase::GetByUrl(QString url)
     return authorsByUrl[url];
 }
 
-QSharedPointer<core::Author > DBAuthorsBase::GetById(int id)
+QSharedPointer<core::Author > Authors::GetById(int id)
 {
     QSharedPointer<core::Author> result;
     if(!authorsById.contains(id))
@@ -82,7 +82,7 @@ QSharedPointer<core::Author > DBAuthorsBase::GetById(int id)
     return authorsById[id];
 }
 
-QList<QSharedPointer<core::Author> > DBAuthorsBase::GetAllAuthors(QString website)
+QList<QSharedPointer<core::Author> > Authors::GetAllAuthors(QString website)
 {
     if(website.isEmpty())
         return authors;
@@ -91,7 +91,7 @@ QList<QSharedPointer<core::Author> > DBAuthorsBase::GetAllAuthors(QString websit
     return authorsNamesByWebsite[website].values();
 }
 
-QStringList DBAuthorsBase::GetAllAuthorsUrls(QString website)
+QStringList Authors::GetAllAuthorsUrls(QString website)
 {
     QStringList result;
     if(!cachedAuthorUrls.contains(website))
@@ -109,14 +109,14 @@ QStringList DBAuthorsBase::GetAllAuthorsUrls(QString website)
     return result;
 }
 
-QList<int> DBAuthorsBase::GetAllAuthorIds()
+QList<int> Authors::GetAllAuthorIds()
 {
     if(cachedAuthorIds.empty())
         cachedAuthorIds = database::puresql::GetAllAuthorIds(db);
     return cachedAuthorIds;
 }
 
-int DBAuthorsBase::GetFicCount(int authorId)
+int Authors::GetFicCount(int authorId)
 {
     auto author = GetById(authorId);
     if(!author)
@@ -124,12 +124,12 @@ int DBAuthorsBase::GetFicCount(int authorId)
     return author->ficCount;
 }
 
-int DBAuthorsBase::GetCountOfRecsForTag(int authorId, QString tag)
+int Authors::GetCountOfRecsForTag(int authorId, QString tag)
 {
     auto result = database::puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db);
     return result;
 }
-bool DBAuthorsBase::LoadAuthors(QString website, bool additionMode)
+bool Authors::LoadAuthors(QString website, bool additionMode)
 {
     if(!additionMode)
         Clear();
@@ -139,7 +139,7 @@ bool DBAuthorsBase::LoadAuthors(QString website, bool additionMode)
     Reindex();
     return true;
 }
-bool DBAuthorsBase::EnsureId(QSharedPointer<core::Author> author, QString website)
+bool Authors::EnsureId(QSharedPointer<core::Author> author, QString website)
 {
     if(!author)
         return false;
@@ -157,12 +157,12 @@ bool DBAuthorsBase::EnsureId(QSharedPointer<core::Author> author, QString websit
     return true;
 }
 
-void DBAuthorsBase::AddAuthorToIndex(QSharedPointer<core::Author>)
+void Authors::AddAuthorToIndex(QSharedPointer<core::Author>)
 {
 
 }
 
-bool DBAuthorsBase::AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name)
+bool Authors::AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name)
 {
     if(!author)
         return false;
@@ -170,7 +170,7 @@ bool DBAuthorsBase::AssignNewNameForAuthor(QSharedPointer<core::Author> author, 
 }
 
 
-QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list)
+QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list)
 {
     QSharedPointer<core::AuthorRecommendationStats>result (new core::AuthorRecommendationStats);
     auto author = GetById(authorId);
@@ -193,7 +193,7 @@ QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(in
     return result;
 }
 
-bool  DBAuthorsBase::RemoveAuthor(int id)
+bool  Authors::RemoveAuthor(int id)
 {
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q1(db);
@@ -212,7 +212,7 @@ bool  DBAuthorsBase::RemoveAuthor(int id)
     return true;
 }
 
-bool DBAuthorsBase::RemoveAuthor(QSharedPointer<core::Author> author, QString website)
+bool Authors::RemoveAuthor(QSharedPointer<core::Author> author, QString website)
 {
     int id = database::puresql::GetAuthorIdFromUrl(author->url(website),db);
     if(id == -1)

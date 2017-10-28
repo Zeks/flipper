@@ -10,9 +10,9 @@
 
 namespace interfaces {
 
-class DBFanficsBase : public IDBWebIDIndex, public IDBPersistentData {
+class Fanfics : public IDBWebIDIndex, public IDBPersistentData {
 public:
-    virtual ~DBFanficsBase();
+    virtual ~Fanfics();
     void ClearQueues() {
         updateQueue.clear();
         insertQueue.clear();
@@ -38,7 +38,7 @@ public:
     QHash<int, QSharedPointer<core::Fic>> updateQueue;
     QHash<int, QSharedPointer<core::Fic>> insertQueue;
     QList<core::FicRecommendation> ficRecommendations;
-    QSharedPointer<DBAuthorsBase> authorInterface;
+    QSharedPointer<Authors> authorInterface;
     QList<core::Fic> currentSet;
     QSqlDatabase db;
 

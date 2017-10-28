@@ -10,9 +10,9 @@
 
 namespace interfaces {
 class IDBWrapper;
-class DBAuthorsBase : public IDBPersistentData{
+class Authors : public IDBPersistentData{
 public:
-    virtual ~DBAuthorsBase();
+    virtual ~Authors();
     void Reindex();
     void IndexAuthors();
     void ClearIndex();

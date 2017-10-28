@@ -6,27 +6,27 @@
 
 namespace interfaces {
 
-int DBRecommendationListsBase::GetListIdForName(QString name)
+int RecommendationLists::GetListIdForName(QString name)
 {
     if(!EnsureList(name))
         return -1;
     return nameIndex[name]->id;
 }
 
-QString DBRecommendationListsBase::GetListNameForId(int id)
+QString RecommendationLists::GetListNameForId(int id)
 {
     if(idIndex.contains(id))
         return idIndex[id]->name;
     return QString();
 }
 
-void DBRecommendationListsBase::Reindex()
+void RecommendationLists::Reindex()
 {
     ClearIndex();
     IndexLists();
 }
 
-void DBRecommendationListsBase::IndexLists()
+void RecommendationLists::IndexLists()
 {
     for(auto list: lists)
     {
@@ -37,13 +37,13 @@ void DBRecommendationListsBase::IndexLists()
     }
 }
 
-void DBRecommendationListsBase::ClearIndex()
+void RecommendationLists::ClearIndex()
 {
     idIndex.clear();
     nameIndex.clear();
 }
 
-QList<QSharedPointer<core::AuthorRecommendationStats> > DBRecommendationListsBase::GetAuthorStatsForList(int id)
+QList<QSharedPointer<core::AuthorRecommendationStats> > RecommendationLists::GetAuthorStatsForList(int id)
 {
     QList<QSharedPointer<core::AuthorRecommendationStats> > result;
     if(!idIndex.contains(id))
@@ -57,7 +57,7 @@ QList<QSharedPointer<core::AuthorRecommendationStats> > DBRecommendationListsBas
     return result;
 }
 
-QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::GetIndividualAuthorStatsForList(int id, int authorId)
+QSharedPointer<core::AuthorRecommendationStats> RecommendationLists::GetIndividualAuthorStatsForList(int id, int authorId)
 {
     QSharedPointer<core::AuthorRecommendationStats> result;
     auto temp = GetAuthorStatsForList(id);
@@ -73,7 +73,7 @@ QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::GetIn
     return result;
 }
 
-int DBRecommendationListsBase::GetMatchCountForRecommenderOnList(int authorId, int listId)
+int RecommendationLists::GetMatchCountForRecommenderOnList(int authorId, int listId)
 {
     auto data = GetIndividualAuthorStatsForList(listId, authorId);
     if(!data)
@@ -81,7 +81,7 @@ int DBRecommendationListsBase::GetMatchCountForRecommenderOnList(int authorId, i
     return data->matchesWithReference;
 }
 
-QVector<int> DBRecommendationListsBase::GetAllFicIDs(int listId)
+QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 {
     QVector<int> result;
     if(!ficsCacheForLists.contains(listId))
@@ -96,33 +96,33 @@ QVector<int> DBRecommendationListsBase::GetAllFicIDs(int listId)
 
 }
 
-QStringList DBRecommendationListsBase::GetNamesForListId(int listId)
+QStringList RecommendationLists::GetNamesForListId(int listId)
 {
     return QStringList(); //! todo
 }
 
-bool DBRecommendationListsBase::DeleteList(int listId)
+bool RecommendationLists::DeleteList(int listId)
 {
     return database::puresql::DeleteRecommendationList(listId, db);
 }
 
-bool DBRecommendationListsBase::ReloadList(int listId)
+bool RecommendationLists::ReloadList(int listId)
 {
     QSharedPointer<core::RecommendationList> list;
     return true; //! todo
 }
 
-void DBRecommendationListsBase::AddList(QSharedPointer<core::RecommendationList>)
+void RecommendationLists::AddList(QSharedPointer<core::RecommendationList>)
 {
 
 }
 
-QSharedPointer<core::RecommendationList> DBRecommendationListsBase::NewList()
+QSharedPointer<core::RecommendationList> RecommendationLists::NewList()
 {
     return QSharedPointer<core::RecommendationList>(new core::RecommendationList);
 }
 
-QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::CreateAuthorRecommendationStatsForList(int authorId,int listId)
+QSharedPointer<core::AuthorRecommendationStats> RecommendationLists::CreateAuthorRecommendationStatsForList(int authorId,int listId)
 {
     auto preExisting = GetIndividualAuthorStatsForList(listId, authorId);
     if(preExisting)
@@ -150,34 +150,34 @@ QSharedPointer<core::AuthorRecommendationStats> DBRecommendationListsBase::Creat
     return result;
 }
 
-bool DBRecommendationListsBase::LoadAuthorRecommendationsIntoList(int authorId, int listId)
+bool RecommendationLists::LoadAuthorRecommendationsIntoList(int authorId, int listId)
 {
     return database::puresql::CopyAllAuthorRecommendationsToList(authorId, listId, db);
 }
 
-bool DBRecommendationListsBase::IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId)
+bool RecommendationLists::IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId)
 {
     return database::puresql::IncrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db);
 }
 
-bool DBRecommendationListsBase::LoadAuthorRecommendationStatsIntoDatabase(int listId, QSharedPointer<core::AuthorRecommendationStats> stats)
+bool RecommendationLists::LoadAuthorRecommendationStatsIntoDatabase(int listId, QSharedPointer<core::AuthorRecommendationStats> stats)
 {
     return database::puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
 }
 
-bool DBRecommendationListsBase::LoadListIntoDatabase(QSharedPointer<core::RecommendationList> list)
+bool RecommendationLists::LoadListIntoDatabase(QSharedPointer<core::RecommendationList> list)
 {
     AddList(list);
     auto timeStamp = portableDBInterface->GetCurrentDateTime();
     return database::puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
 }
 
-bool DBRecommendationListsBase::UpdateFicCountInDatabase(int listId)
+bool RecommendationLists::UpdateFicCountInDatabase(int listId)
 {
     return database::puresql::UpdateFicCountForRecommendationList(listId, db);
 }
 
-bool DBRecommendationListsBase::AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData)
+bool RecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData)
 {
     auto result = database::puresql::AddAuthorFavouritesToList(authorId, listId, db);
     if(result)
@@ -186,19 +186,19 @@ bool DBRecommendationListsBase::AddAuthorFavouritesToList(int authorId, int list
         ReloadList(listId);
     return result;
 }
-void DBRecommendationListsBase::Clear()
+void RecommendationLists::Clear()
 {
     ClearIndex();
     lists.clear();
 }
 
-void DBRecommendationListsBase::LoadAvailableRecommendationLists()
+void RecommendationLists::LoadAvailableRecommendationLists()
 {
     lists = database::puresql::GetAvailableRecommendationLists(db);
     Reindex();
 }
 
-bool DBRecommendationListsBase::EnsureList(int listId)
+bool RecommendationLists::EnsureList(int listId)
 {
     if(idIndex.contains(listId) && !idIndex[listId])
         return false;
@@ -212,7 +212,7 @@ bool DBRecommendationListsBase::EnsureList(int listId)
     return true;
 }
 
-bool DBRecommendationListsBase::EnsureList(QString name)
+bool RecommendationLists::EnsureList(QString name)
 {
     if(nameIndex.contains(name) && !nameIndex[name])
         return false;
@@ -226,21 +226,21 @@ bool DBRecommendationListsBase::EnsureList(QString name)
     return true;
 }
 
-bool DBRecommendationListsBase::LoadAuthorsForRecommendationList(int listId)
+bool RecommendationLists::LoadAuthorsForRecommendationList(int listId)
 {
     currentRecommendationList = listId;
 // todo implement
     return true;
 }
 
-QList<QSharedPointer<core::Author> > DBRecommendationListsBase::GetAuthorsForRecommendationList(int listId)
+QList<QSharedPointer<core::Author> > RecommendationLists::GetAuthorsForRecommendationList(int listId)
 {
     if(currentRecommendationList != listId)
         LoadAuthorsForRecommendationList(listId);
     return currentRecommenderSet.values();
 }
 
-QSharedPointer<core::RecommendationList> DBRecommendationListsBase::GetList(int id)
+QSharedPointer<core::RecommendationList> RecommendationLists::GetList(int id)
 {
     QSharedPointer<core::RecommendationList> result;
     if(!EnsureList(id))
@@ -249,23 +249,23 @@ QSharedPointer<core::RecommendationList> DBRecommendationListsBase::GetList(int 
     return result;
 }
 
-QSharedPointer<core::RecommendationList> DBRecommendationListsBase::GetList(QString name)
+QSharedPointer<core::RecommendationList> RecommendationLists::GetList(QString name)
 {
     auto id = GetListIdForName(name);
     return GetList(id);
 }
 
-void DBRecommendationListsBase::SetCurrentRecommendationList(int value)
+void RecommendationLists::SetCurrentRecommendationList(int value)
 {
     currentRecommendationList = value;
 }
 
-int DBRecommendationListsBase::GetCurrentRecommendationList() const
+int RecommendationLists::GetCurrentRecommendationList() const
 {
     return currentRecommendationList;
 }
 
-QStringList DBRecommendationListsBase::GetAllRecommendationListNames()
+QStringList RecommendationLists::GetAllRecommendationListNames()
 {
     if(lists.empty())
         LoadAvailableRecommendationLists();

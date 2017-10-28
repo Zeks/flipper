@@ -9,7 +9,7 @@
 
 namespace interfaces {
 
-class FFNFanfics : public DBFanficsBase{
+class FFNFanfics : public Fanfics{
 public:
     virtual ~FFNFanfics(){}
     virtual int GetIDFromWebID(int);

@@ -10,7 +10,7 @@
 
 namespace interfaces {
 
-class DBRecommendationListsBase : public IDBPersistentData
+class RecommendationLists : public IDBPersistentData
 {
 public:
     int GetListIdForName(QString name); //! todo do I need to fill index without filling lists
@@ -53,7 +53,7 @@ public:
     QHash<int, QVector<int>> ficsCacheForLists;
     QSqlDatabase db;
 
-    QSharedPointer<DBAuthorsBase> authorInterface;
+    QSharedPointer<Authors> authorInterface;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
 
     QHash<QString, QSharedPointer<core::Author>> currentRecommenderSet;

@@ -42,7 +42,7 @@ public:
     QString authorName;
     //! todo needs to be filled
     QSqlDatabase db;
-    QSharedPointer<interfaces::DBFanficsBase> fanfics;
+    QSharedPointer<interfaces::Fanfics> fanfics;
     QSharedPointer<interfaces::DataInterfaces> interfaces;
 
 };

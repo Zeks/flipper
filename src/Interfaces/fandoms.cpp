@@ -11,7 +11,7 @@
 
 namespace interfaces {
 
-void DBFandomsBase::Clear()
+void Fandoms::Clear()
 {
     this->recentFandoms.clear();
     this->fandoms.clear();
@@ -19,14 +19,14 @@ void DBFandomsBase::Clear()
     this->updateQueue.clear();
 }
 
-bool DBFandomsBase::EnsureFandom(QString name)
+bool Fandoms::EnsureFandom(QString name)
 {
     if(!EnsureFandom(name))
         return false;
     return true;
 }
 
-bool DBFandomsBase::CreateFandom(QSharedPointer<core::Fandom> fandom)
+bool Fandoms::CreateFandom(QSharedPointer<core::Fandom> fandom)
 {
     if(nameIndex.contains(fandom->name) && nameIndex[fandom->name]->id != -1)
         return true;
@@ -35,12 +35,12 @@ bool DBFandomsBase::CreateFandom(QSharedPointer<core::Fandom> fandom)
 
     if(!result)
         return false;
-    fandom->id = portableDBInterface->GetLastIdForTable("fandoms", db);
+    fandom->id = portableDBInterface->GetLastIdForTable("fandoms");
     EnsureFandom(fandom->name);
     return true;
 }
 
-QSharedPointer<core::Fandom> DBFandomsBase::GetFandom(QString name)
+QSharedPointer<core::Fandom> Fandoms::GetFandom(QString name)
 {
     QSharedPointer<core::Fandom> result;
     if(!EnsureFandom(name))
@@ -49,7 +49,7 @@ QSharedPointer<core::Fandom> DBFandomsBase::GetFandom(QString name)
     return nameIndex[name];
 }
 
-QStringList DBFandomsBase::GetRecentFandoms()
+QStringList Fandoms::GetRecentFandoms()
 {
     QStringList result;
 
@@ -63,7 +63,7 @@ QStringList DBFandomsBase::GetRecentFandoms()
     return result;
 }
 
-QStringList DBFandomsBase::GetFandomList()
+QStringList Fandoms::GetFandomList()
 {
     QStringList result;
     if(fandomsList.isEmpty())
@@ -76,7 +76,7 @@ QStringList DBFandomsBase::GetFandomList()
 }
 
 
-void DBFandomsBase::AddToTopOfRecent(QString fandom)
+void Fandoms::AddToTopOfRecent(QString fandom)
 {
     if(!EnsureFandom(fandom))
         return;
@@ -96,32 +96,32 @@ void DBFandomsBase::AddToTopOfRecent(QString fandom)
 }
 
 
-QStringList DBFandomsBase::PushFandomToTopOfRecent(QString fandom)
+QStringList Fandoms::PushFandomToTopOfRecent(QString fandom)
 {
     QStringList result = GetRecentFandoms();
     if(!EnsureFandom(fandom))
         return result;
     // needs to be done on Sync ideally
-    portableDBInterface->PushFandomToTopOfRecent(fandom, db);
-    portableDBInterface->RebaseFandomsToZero(db);
+    portableDBInterface->PushFandomToTopOfRecent(fandom);
+    portableDBInterface->RebaseFandomsToZero();
     AddToTopOfRecent(fandom);
     result = GetRecentFandoms();
     return result;
 
 }
 
-void DBFandomsBase::RebaseFandomsToZero()
+void Fandoms::RebaseFandomsToZero()
 {
-    portableDBInterface->RebaseFandomsToZero(db);
+    portableDBInterface->RebaseFandomsToZero();
 }
 
 
-bool DBFandomsBase::IsDataLoaded()
+bool Fandoms::IsDataLoaded()
 {
     return isLoaded;
 }
 
-QList<QSharedPointer<core::Fandom> > DBFandomsBase::FilterFandoms(std::function<bool (QSharedPointer<core::Fandom>)> f)
+QList<QSharedPointer<core::Fandom> > Fandoms::FilterFandoms(std::function<bool (QSharedPointer<core::Fandom>)> f)
 {
     QList<QSharedPointer<core::Fandom> > result;
     if(fandoms.isEmpty())
@@ -135,7 +135,7 @@ QList<QSharedPointer<core::Fandom> > DBFandomsBase::FilterFandoms(std::function<
     return result;
 }
 
-bool DBFandomsBase::Sync(bool forcedSync)
+bool Fandoms::Sync(bool forcedSync)
 {
     bool ok = true;
     for(auto fandom: fandoms)
@@ -148,10 +148,10 @@ bool DBFandomsBase::Sync(bool forcedSync)
     return ok;
 }
 
-bool DBFandomsBase::Load()
+bool Fandoms::Load()
 {
     Clear();
-    auto recentFandoms = portableDBInterface->FetchRecentFandoms(db);
+    auto recentFandoms = portableDBInterface->FetchRecentFandoms();
     for(auto bit: recentFandoms)
     {
         bool fandomPresent = false;
@@ -164,17 +164,17 @@ bool DBFandomsBase::Load()
     return true;
 }
 
-bool DBFandomsBase::LoadTrackedFandoms()
+bool Fandoms::LoadTrackedFandoms()
 {
     return true;
 }
 
-bool DBFandomsBase::LoadAllFandoms()
+bool Fandoms::LoadAllFandoms()
 {
     return true;
 }
 
-bool DBFandomsBase::IsTracked(QString fandom)
+bool Fandoms::IsTracked(QString fandom)
 {
     if(!EnsureFandom(fandom))
         return false;
@@ -190,17 +190,17 @@ bool DBFandomsBase::IsTracked(QString fandom)
 //        tracked = q1.value(0).toBool();
 }
 
-void DBFandomsBase::Reindex()
+void Fandoms::Reindex()
 {
 
 }
 
-void DBFandomsBase::AddToIndex(QSharedPointer<core::Fandom>)
+void Fandoms::AddToIndex(QSharedPointer<core::Fandom>)
 {
 
 }
 
-DBFandomsBase::~DBFandomsBase()
+Fandoms::~Fandoms()
 {
 
 }
@@ -237,7 +237,7 @@ DBFandomsBase::~DBFandomsBase()
 //    return result;
 //}
 
-int DBFandomsBase::GetIDForName(QString fandom)
+int Fandoms::GetIDForName(QString fandom)
 {
 
     if(!EnsureFandom(fandom))
@@ -245,7 +245,7 @@ int DBFandomsBase::GetIDForName(QString fandom)
     return nameIndex[fandom]->id;
 }
 
-void DBFandomsBase::SetTracked(QString fandom, bool value, bool immediate)
+void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
 {
     if(!EnsureFandom(fandom))
         return;
@@ -261,7 +261,7 @@ void DBFandomsBase::SetTracked(QString fandom, bool value, bool immediate)
     nameIndex[fandom]->tracked = value;
 }
 
-QStringList DBFandomsBase::ListOfTrackedNames()
+QStringList Fandoms::ListOfTrackedNames()
 {
     QStringList names;
     for(auto fandom: fandoms)
@@ -270,7 +270,7 @@ QStringList DBFandomsBase::ListOfTrackedNames()
     return names;
 }
 
-QList<QSharedPointer<core::Fandom> > DBFandomsBase::ListOfTrackedFandoms()
+QList<QSharedPointer<core::Fandom> > Fandoms::ListOfTrackedFandoms()
 {
     if(trackedFandoms.empty())
         LoadTrackedFandoms();
@@ -279,7 +279,7 @@ QList<QSharedPointer<core::Fandom> > DBFandomsBase::ListOfTrackedFandoms()
 
 
 
-bool DBFandomsBase::LoadFandom(QString name)
+bool Fandoms::LoadFandom(QString name)
 {
     QSharedPointer<core::Fandom> fandom(new core::Fandom);
     QSqlQuery q(db);
@@ -306,7 +306,7 @@ bool DBFandomsBase::LoadFandom(QString name)
     return true;
 }
 
-bool DBFandomsBase::AssignTagToFandom(QString fandom, QString tag)
+bool Fandoms::AssignTagToFandom(QString fandom, QString tag)
 {
     if(!EnsureFandom(fandom))
         return false;

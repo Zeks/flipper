@@ -325,13 +325,13 @@ QSharedPointer<Query> DefaultQueryBuilder::NewQuery()
 }
 
 
-QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase db)
+QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
 {
     QString where = query->str;
 
     if(!randomIdLists.contains(where))
     {
-        auto idList = portableDBInterface->GetIdListForQuery(query, db);
+        auto idList = portableDBInterface->GetIdListForQuery(query);
         if(idList.size() == 0)
             idList.push_back("-1");
         randomIdLists[where] = idList;

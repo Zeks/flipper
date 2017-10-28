@@ -26,7 +26,7 @@ int GetLastIdForTable(QString tableName, QSqlDatabase db)
     return q.value("seq").toInt();
 }
 
-void cfRegexp(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+void cfRegexp(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QRegExp regex;
     QString str1((const char*)sqlite3_value_text(argv[0]));
@@ -46,7 +46,7 @@ void cfRegexp(sqlite3_context* ctx, int argc, sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
     }
 }
-void cfReturnCapture(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+void cfReturnCapture(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QString pattern((const char*)sqlite3_value_text(argv[0]));
     QString str((const char*)sqlite3_value_text(argv[1]));
@@ -55,7 +55,7 @@ void cfReturnCapture(sqlite3_context* ctx, int argc, sqlite3_value** argv)
     QString cap = regex.cap(1);
     sqlite3_result_text(ctx, qPrintable(cap), cap.length(), SQLITE_TRANSIENT);
 }
-void cfGetFirstFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+void cfGetFirstFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QRegExp regex("&");
     QString result;
@@ -67,7 +67,7 @@ void cfGetFirstFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
         result = str.left(index);
     sqlite3_result_text(ctx, qPrintable(result), result.length(), SQLITE_TRANSIENT);
 }
-void cfGetSecondFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
+void cfGetSecondFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QRegExp regex("&");
     QString result;
@@ -82,7 +82,7 @@ void cfGetSecondFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv)
     sqlite3_result_text(ctx, qPrintable(result), result.length(), SQLITE_TRANSIENT);
 }
 
-void InstallCustomFunctions(QSqlDatabase db)
+bool InstallCustomFunctions(QSqlDatabase db)
 {
     QVariant v = db.driver()->handle();
     if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
@@ -94,8 +94,10 @@ void InstallCustomFunctions(QSqlDatabase db)
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfReturnCapture", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfReturnCapture, NULL, NULL);
+            return true;
         }
     }
+    return false;
 }
 
 bool ReadDbFile(QString file, QString connectionName)
@@ -146,8 +148,6 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
         q.bindValue(it.key(), it.value());
         ++it;
     }
-    q.exec();
-
     if(!database::puresql::ExecAndCheck(q))
         return result;
 
@@ -160,8 +160,9 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
 }
 
 
-void BackupSqliteDatabase(QString dbName)
+bool BackupSqliteDatabase(QString dbName)
 {
+    bool success = true;
     QDir dir("backups");
     QStringList filters;
     filters << "*.zip";
@@ -172,10 +173,10 @@ void BackupSqliteDatabase(QString dbName)
     qDebug() << entries;
     QString nameWithExtension = dbName + ".sqlite";
     if(!QFile::exists(nameWithExtension))
-        QFile::copy(dbName+ ".default", nameWithExtension);
+        success = success && QFile::copy(dbName+ ".default", nameWithExtension);
     QString backupName = "backups/" + dbName + "." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
     if(!QFile::exists(backupName))
-        JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
+        success = success && JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
 
     int i = 0;
     for(QString entry : entries)
@@ -183,21 +184,25 @@ void BackupSqliteDatabase(QString dbName)
         i++;
         if(i < 10)
             continue;
-        QFile::remove("backups/" + entry);
+        success = success && QFile::remove("backups/" + entry);
     };
+    return success;
 }
 
-void PushFandomToTopOfRecent(QString fandom, QSqlDatabase db)
+bool PushFandomToTopOfRecent(QString fandom, QSqlDatabase db)
 {
     QString upsert1 ("UPDATE recent_fandoms SET seq_num= (select max(seq_num) +1 from  recent_fandoms ) WHERE fandom = '%1'; ");
     QString upsert2 ("INSERT INTO recent_fandoms(fandom, seq_num) select '%1',  (select max(seq_num)+1 from recent_fandoms) WHERE changes() = 0;");
     QSqlQuery q1(db);
     upsert1 = upsert1.arg(fandom);
     q1.prepare(upsert1);
-    database::puresql::ExecAndCheck(q1);
+    if(!database::puresql::ExecAndCheck(q1))
+        return false;
     upsert2 = upsert2.arg(fandom);
     q1.prepare(upsert2);
-    database::puresql::ExecAndCheck(q1);
+    if(!database::puresql::ExecAndCheck(q1))
+        return false;
+    return true;
 }
 
 QStringList FetchRecentFandoms(QSqlDatabase db)
@@ -215,13 +220,38 @@ QStringList FetchRecentFandoms(QSqlDatabase db)
     return result;
 }
 
-void RebaseFandomsToZero(QSqlDatabase db)
+bool RebaseFandomsToZero(QSqlDatabase db)
 {
     QSqlQuery q1(db);
     QString qsl = "UPDATE recent_fandoms SET seq_num = seq_num - (select min(seq_num) from recent_fandoms where fandom is not 'base') where fandom is not 'base'";
     q1.prepare(qsl);
-    database::puresql::ExecAndCheck(q1);
+    if(!database::puresql::ExecAndCheck(q1))
+        return false;
+    return true;
 }
+
+QDateTime GetCurrentDateTime(QSqlDatabase db)
+{
+    QDateTime dt;
+    QSqlQuery q(db);
+    QString qsl = "select CURRENT_TIMESTAMP";
+    q.prepare(qsl);
+    if(!database::puresql::ExecAndCheck(q))
+        return dt;
+    dt = q.value(0).toDateTime();
+    return dt;
+}
+
+QSqlDatabase InitDatabase(QString name)
+{
+    QString path = name;
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName(path);
+    db.open();
+    InstallCustomFunctions(db);
+    return db;
+}
+
 
 
 

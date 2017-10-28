@@ -18,7 +18,7 @@ public:
 private:
     QStringList CreateDefaultTagList();
 
-    QSharedPointer<DBFandomsBase> fandomInterface;
+    QSharedPointer<Fandoms> fandomInterface;
     QSqlDatabase db;
 };
 

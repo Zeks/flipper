@@ -12,12 +12,12 @@
 
 namespace interfaces {
 
-class DBFandomsBase : public IDBPersistentData{
+class Fandoms : public IDBPersistentData{
 public:
-    DBFandomsBase() = default;
+    Fandoms() = default;
     void Reindex();
     void AddToIndex(QSharedPointer<core::Fandom>);
-    virtual ~DBFandomsBase();
+    virtual ~Fandoms();
     virtual int GetIDForName(QString) ;
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);

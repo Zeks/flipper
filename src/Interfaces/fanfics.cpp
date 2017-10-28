@@ -6,22 +6,22 @@
 namespace interfaces {
 
 
-DBFanficsBase::~DBFanficsBase()
+Fanfics::~Fanfics()
 {
 
 }
 
-int DBFanficsBase::GetIDFromWebID(int, QString website)
-{
-    return -1;
-}
-
-int DBFanficsBase::GetWebIDFromID(int, QString website)
+int Fanfics::GetIDFromWebID(int, QString website)
 {
     return -1;
 }
 
-bool DBFanficsBase::ReprocessFics(QString where, QString website, std::function<void (int)> f)
+int Fanfics::GetWebIDFromID(int, QString website)
+{
+    return -1;
+}
+
+bool Fanfics::ReprocessFics(QString where, QString website, std::function<void (int)> f)
 {
     auto list = database::puresql::GetWebIdList(where, website, db);
     if(list.empty())
@@ -32,21 +32,21 @@ bool DBFanficsBase::ReprocessFics(QString where, QString website, std::function<
     }
     return true;
 }
-bool DBFanficsBase::IsEmptyQueues()
+bool Fanfics::IsEmptyQueues()
 {
     return !(updateQueue.size() || insertQueue.size());
 }
-bool DBFanficsBase::DeactivateFic(int ficId, QString website)
+bool Fanfics::DeactivateFic(int ficId, QString website)
 {
     return database::puresql::DeactivateStory(ficId, website, db);
 }
-void DBFanficsBase::AddRecommendations(QList<core::FicRecommendation> recommendations)
+void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
 {
     QWriteLocker lock(&mutex);
     ficRecommendations.reserve(ficRecommendations.size() + recommendations.size());
     ficRecommendations += recommendations;
 }
-void DBFanficsBase::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
+void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
 {
     for(QSharedPointer<core::Fic> fic: fics)
     {
@@ -64,17 +64,17 @@ void DBFanficsBase::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics,
     }
 
 }
-void DBFanficsBase::CalculateFandomAverages()
+void Fanfics::CalculateFandomAverages()
 {
     database::puresql::CalculateFandomAverages(db);
 }
 
-void DBFanficsBase::CalculateFandomFicCounts()
+void Fanfics::CalculateFandomFicCounts()
 {
     database::puresql::CalculateFandomFicCounts(db);
 }
 
-void DBFanficsBase::FlushDataQueues()
+void Fanfics::FlushDataQueues()
 {
     db.transaction();
     for(auto fic: insertQueue)
@@ -93,7 +93,7 @@ void DBFanficsBase::FlushDataQueues()
     db.commit();
 }
 
-QList<core::Fic> DBFanficsBase::GetCurrentFicSet()
+QList<core::Fic> Fanfics::GetCurrentFicSet()
 {
     return currentSet;
 }

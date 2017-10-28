@@ -8,7 +8,7 @@
 
 
 namespace interfaces {
-class FFNAuthors : public DBAuthorsBase
+class FFNAuthors : public Authors
 {
 public:
     virtual ~FFNAuthors();

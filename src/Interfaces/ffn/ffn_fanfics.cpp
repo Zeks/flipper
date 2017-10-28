@@ -8,12 +8,12 @@ namespace interfaces {
 
 int FFNFanfics::GetIDFromWebID(int value)
 {
-    return DBFanficsBase::GetIDFromWebID(value, "ffn");
+    return Fanfics::GetIDFromWebID(value, "ffn");
 }
 
 int FFNFanfics::GetWebIDFromID(int value)
 {
-    return DBFanficsBase::GetWebIDFromID(value, "ffn");
+    return Fanfics::GetWebIDFromID(value, "ffn");
 }
 
 bool FFNFanfics::DeactivateFic(int ficId)
