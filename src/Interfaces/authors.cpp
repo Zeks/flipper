@@ -177,7 +177,7 @@ QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(in
     if(!author)
         return result;
 
-    result->listName = list->name;
+    result->listId = list->id;
     result->usedTag = list->tagToUse;;
     result->authorName = author->name;
     result->authorId= author->id;

@@ -14,14 +14,16 @@ namespace database {
 class DBFandomsBase : public IDBPersistentData{
 public:
     DBFandomsBase() = default;
+    void Reindex();
+    void AddToIndex(QSharedPointer<core::Fandom>);
     virtual ~DBFandomsBase();
-    virtual int GetID(QString) ;
+    virtual int GetIDForName(QString) ;
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);
     virtual QStringList ListOfTrackedNames();
     virtual QList<QSharedPointer<core::Fandom>> ListOfTrackedFandoms();
-    virtual QList<int> AllTracked();
-    virtual QStringList AllTrackedStr();
+//    virtual QList<int> AllTracked();
+//    virtual QStringList AllTrackedStr();
 
     virtual bool CreateFandom(QSharedPointer<core::Fandom>);
     virtual bool LoadFandom(QString name);

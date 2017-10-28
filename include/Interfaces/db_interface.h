@@ -11,13 +11,13 @@ class IDBWrapper{
 public:
     virtual ~IDBWrapper();
     virtual int GetLastIdForTable(QString tableName, QSqlDatabase db) = 0;
-    bool PushFandomToTopOfRecent(QString fandom, QSqlDatabase db);
-    bool RebaseFandomsToZero(QSqlDatabase db);
-    QStringList FetchRecentFandoms(QSqlDatabase db);
+    virtual bool PushFandomToTopOfRecent(QString fandom, QSqlDatabase db) = 0;
+    virtual bool RebaseFandomsToZero(QSqlDatabase db) = 0;
+    virtual QStringList FetchRecentFandoms(QSqlDatabase db) = 0;
     virtual QDateTime GetCurrentDateTime() = 0;
-    QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db);
-    void BackupDatabase(QString dbname);
-    bool ReadDbFile(QString file, QString connectionName = "default");
-    QSqlDatabase InitDatabase(QString connectionName = "default");
+    virtual QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db) = 0;
+    virtual void BackupDatabase(QString dbname) = 0;
+    virtual bool ReadDbFile(QString file, QString connectionName = "default") = 0;
+    virtual QSqlDatabase InitDatabase(QString connectionName = "default") = 0;
 };
 }

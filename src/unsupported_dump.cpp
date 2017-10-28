@@ -349,3 +349,24 @@ void MainWindow::on_pbRemoveRecommender_clicked()
 //        recommendersModel->setStringList(SortedList(recommenders.keys()));
 //    }
 }
+
+QVector<int> GetIdList(QString where, QSqlDatabase db)
+{
+    QVector<int> result;
+
+    QString qs = QString("select count(id), id from fanfics %1");
+    qs = qs.arg(where);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+
+    while(q.next())
+    {
+        if(result.empty())
+            result.reserve(q.value(0).toInt());
+        auto id = q.value(1).toInt();
+
+    }
+    return result;
+}

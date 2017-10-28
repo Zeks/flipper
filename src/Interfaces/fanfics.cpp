@@ -11,6 +11,16 @@ DBFanficsBase::~DBFanficsBase()
 
 }
 
+int DBFanficsBase::GetIDFromWebID(int, QString website)
+{
+    return -1;
+}
+
+int DBFanficsBase::GetWebIDFromID(int, QString website)
+{
+    return -1;
+}
+
 bool DBFanficsBase::ReprocessFics(QString where, QString website, std::function<void (int)> f)
 {
     auto list = puresql::GetWebIdList(where, website, db);

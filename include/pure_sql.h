@@ -28,7 +28,7 @@ int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 // probbaly needs to return whole fic
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
 
-void SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
+bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool WriteRecommendation(QSharedPointer<core::Author> author, int fic_id, QSqlDatabase db);
@@ -44,7 +44,6 @@ QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(
 QSharedPointer<core::RecommendationList> GetRecommendationList(int listid, QSqlDatabase db);
 QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSqlDatabase db);
 
-QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listName, QString sortOn, QString order, QSqlDatabase db);
 int GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
 
 QVector<int> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db);

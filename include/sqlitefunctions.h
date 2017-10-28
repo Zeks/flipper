@@ -2,15 +2,11 @@
 #include <QSqlQuery>
 #include "include/section.h"
 #include "include/queryinterfaces.h"
-class sqlite3_context;
-class sqlite3_value;
+#include "sqlite/sqlite3.h"
 
 
 namespace database{
-bool ExecAndCheck(QSqlQuery& q);
-bool CheckExecution(QSqlQuery& q);
-bool ExecuteQuery(QSqlQuery& q, QString query);
-bool ExecuteQueryChain(QSqlQuery& q, QStringList queries);
+
 namespace sqlite {
 int GetLastIdForTable(QString tableName, QSqlDatabase db);
 void cfRegexp(sqlite3_context* ctx, int argc, sqlite3_value** argv);

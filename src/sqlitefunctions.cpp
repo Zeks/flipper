@@ -1,13 +1,15 @@
 #include "sqlitefunctions.h"
-#include "sqlite/sqlite3.h"
+
 #include "pure_sql.h"
 #include <QSqlError>
+#include <QSqlDriver>
 #include <QFile>
 #include <QDebug>
 #include <QTextStream>
 #include <quazip/quazip.h>
 #include <quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
+#include "pure_sql.h"
 
 namespace database{
 
@@ -18,7 +20,7 @@ int GetLastIdForTable(QString tableName, QSqlDatabase db)
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":table_name", tableName);
-    if(!ExecAndCheck(q))
+    if(!database::puresql::ExecAndCheck(q))
         return -1;
     q.next();
     return q.value("seq").toInt();
@@ -119,7 +121,7 @@ bool ReadDbFile(QString file, QString connectionName)
                 db = QSqlDatabase::database();
             QSqlQuery q(db);
             q.prepare(statement.trimmed());
-            ExecAndCheck(q);
+            database::puresql::ExecAndCheck(q);
         }
     }
     else
@@ -146,7 +148,7 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
     }
     q.exec();
 
-    if(!ExecAndCheck(q))
+    if(!database::puresql::ExecAndCheck(q))
         return result;
 
     q.next();
@@ -192,10 +194,10 @@ void PushFandomToTopOfRecent(QString fandom, QSqlDatabase db)
     QSqlQuery q1(db);
     upsert1 = upsert1.arg(fandom);
     q1.prepare(upsert1);
-    ExecAndCheck(q1);
+    database::puresql::ExecAndCheck(q1);
     upsert2 = upsert2.arg(fandom);
     q1.prepare(upsert2);
-    ExecAndCheck(q1);
+    database::puresql::ExecAndCheck(q1);
 }
 
 QStringList FetchRecentFandoms(QSqlDatabase db)
@@ -209,7 +211,7 @@ QStringList FetchRecentFandoms(QSqlDatabase db)
     {
         result.push_back(q1.value(0).toString());
     }
-    CheckExecution(q1);
+    database::puresql::CheckExecution(q1);
     return result;
 }
 
@@ -218,7 +220,7 @@ void RebaseFandomsToZero(QSqlDatabase db)
     QSqlQuery q1(db);
     QString qsl = "UPDATE recent_fandoms SET seq_num = seq_num - (select min(seq_num) from recent_fandoms where fandom is not 'base') where fandom is not 'base'";
     q1.prepare(qsl);
-    ExecAndCheck(q1);
+    database::puresql::ExecAndCheck(q1);
 }
 
 

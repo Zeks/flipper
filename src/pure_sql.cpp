@@ -61,7 +61,10 @@ bool SetFandomTracked(int id, bool tracked,  QSqlDatabase db)
     q1.prepare(qsl);
     q1.bindValue(":tracked",QString(tracked ? "1" : "0"));
     q1.bindValue(":id",id);
-    ExecAndCheck(q1);
+    if(!ExecAndCheck(q1))
+        return false;
+
+    return true;
 }
 
 void CalculateFandomAverages(QSqlDatabase db)
@@ -160,10 +163,10 @@ bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db
     q.prepare(qs);
 
     // I probably need to delete all the bullshit japanese stuff from fandom names
-    q.bindValue(":fandom", fandom.name);
-    q.bindValue(":section", fandom.section);
-    q.bindValue(":normal_url", fandom.url);
-    q.bindValue(":crossover_url", fandom.crossoverUrl);
+    q.bindValue(":fandom", fandom->name);
+    q.bindValue(":section", fandom->section);
+    q.bindValue(":normal_url", fandom->url);
+    q.bindValue(":crossover_url", fandom->crossoverUrl);
 
     if(!ExecAndCheck(q))
         return false;
@@ -199,10 +202,10 @@ int GetFicIdByWebId(QString website, int webId, QSqlDatabase db)
     return result;
 }
 
-void SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
+bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
     if(!fic)
-        return;
+        return false;
 
     QString getKeyQuery = "Select ( select count(*) from FANFICS where  %1_id = :site_id) as COUNT_NAMED,"
                           " ( select count(*) from FANFICS where  %1_id = :site_id and updated <> :updated) as count_updated"
@@ -214,7 +217,7 @@ void SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
     q.bindValue(":updated", fic->updated);
     q.bindValue(":site_id", fic->webId);
     if(!ExecAndCheck(q))
-        return;
+        return false;
 
     q.next();
     bool requiresInsert = q.value(0).toInt() == 0;
@@ -222,7 +225,7 @@ void SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
         fic->updateMode = core::UpdateMode::update;
     if(requiresInsert)
         fic->updateMode = core::UpdateMode::insert;
-    return result;
+    return true;
 }
 
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
@@ -236,8 +239,8 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.prepare(query);
     q.bindValue(":site_id",section->webId); //?
     q.bindValue(":fandom",section->fandom);
-    q.bindValue(":author",section->author.name); //?
-    q.bindValue(":author_id",section->author.id);
+    q.bindValue(":author",section->author->name); //?
+    q.bindValue(":author_id",section->author->id);
     q.bindValue(":title",section->title);
     q.bindValue(":wordcount",section->wordCount.toInt());
     q.bindValue(":CHAPTERS",section->chapters.trimmed().toInt());
@@ -253,7 +256,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "failed to insert: " << section->author.name << " " << section->title;
+        qDebug() << "failed to insert: " << section->author->name << " " << section->title;
         qDebug() << q.lastError();
         return false;
     }
@@ -271,8 +274,8 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     QSqlQuery q(db);
     q.prepare(query);
     q.bindValue(":fandom",section->fandom);
-    q.bindValue(":author",section->author.name);
-    q.bindValue(":author_id",section->author.id);
+    q.bindValue(":author",section->author->name);
+    q.bindValue(":author_id",section->author->id);
     q.bindValue(":title",section->title);
 
     q.bindValue(":wordcount",section->wordCount.toInt());
@@ -291,7 +294,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "failed to update: " << section->author.name << " " << section->title;
+        qDebug() << "failed to update: " << section->author->name << " " << section->title;
         qDebug() << q.lastError();
         return false;
     }
@@ -307,7 +310,7 @@ bool WriteRecommendation(QSharedPointer<core::Author> author, int fic_id, QSqlDa
     // atm this pairs favourite story with an author
     QString qsl = " insert into recommendations (recommender_id, fic_id) values(:recommender_id,:fic_id); ";
     q1.prepare(qsl);
-    q1.bindValue(":recommender_id", author.id);
+    q1.bindValue(":recommender_id", author->id);
     q1.bindValue(":fic_id", fic_id);
     q1.exec();
 
@@ -380,37 +383,7 @@ QList<QSharedPointer<core::Author>> GetAllAuthors(QString website,  QSqlDatabase
     }
     return result;
 }
-QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db)
-{
-    QList<core::AuthorRecommendationStats> result;
-    //auto listId= GetRecommendationListIdForName(listName);
-    QString qs = QString("select rts.match_count as match_count,"
-                         "rts.match_ratio as match_ratio,"
-                         "rts.author_id as author_id,"
-                         "rts.fic_count as fic_count,"
-                         "r.name as name"
-                         "  from RecommendationListAuthorStats rts, recommenders r where rts.author_id = r.id and list_id = :list_id order by %1 %2");
-    qs=qs.arg(sortOn).arg(order);
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":list_id",listId);
-    if(!ExecAndCheck(q))
-        return result;
 
-    while(q.next())
-    {
-        QSharedPointer<core::AuthorRecommendationStats> stats(new core::AuthorRecommendationStats);
-        stats->isValid = true;
-        stats->matchesWithReference = q.value("match_count").toInt();
-        stats->matchRatio= q.value("match_ratio").toDouble();
-        stats->authorId= q.value("author_id").toInt();
-        stats->listName= listName;
-        stats->totalFics= q.value("fic_count").toInt();
-        stats->authorName = q.value("name").toString();
-        result.push_back(stats);
-    }
-    return result;
-}
 
 QList<QSharedPointer<core::RecommendationList> > GetAvailableRecommendationLists(QSqlDatabase db)
 {
@@ -481,10 +454,10 @@ QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSq
     }
     return result;
 }
-QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listName, QString sortOn, QString order, QSqlDatabase db)
+QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db)
 {
-    QList<core::AuthorRecommendationStats> result;
-    auto listId= GetRecommendationListIdForName(listName);
+    QList<QSharedPointer<core::AuthorRecommendationStats>> result;
+    //auto listId= GetRecommendationListIdForName(listName);
     QString qs = QString("select rts.match_count as match_count,"
                          "rts.match_ratio as match_ratio,"
                          "rts.author_id as author_id,"
@@ -500,14 +473,14 @@ QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listNa
 
     while(q.next())
     {
-        core::AuthorRecommendationStats stats;
-        stats.isValid = true;
-        stats.matchesWithReference = q.value("match_count").toInt();
-        stats.matchRatio= q.value("match_ratio").toDouble();
-        stats.authorId= q.value("author_id").toInt();
-        stats.listName= listName;
-        stats.totalFics= q.value("fic_count").toInt();
-        stats.authorName = q.value("name").toString();
+        QSharedPointer<core::AuthorRecommendationStats> stats(new core::AuthorRecommendationStats);
+        stats->isValid = true;
+        stats->matchesWithReference = q.value("match_count").toInt();
+        stats->matchRatio= q.value("match_ratio").toDouble();
+        stats->authorId= q.value("author_id").toInt();
+        stats->listId= listId;
+        stats->totalFics= q.value("fic_count").toInt();
+        stats->authorName = q.value("name").toString();
         result.push_back(stats);
     }
     return result;
@@ -686,7 +659,7 @@ bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db)
     QString qs = QString("update RecommendationLists set fic_count=(select count(fic_id) from RecommendationListData where list_id = :list_id) where list_id = :list_id");
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":list_id",list.id);
+    q.bindValue(":list_id",listId);
     if(!ExecAndCheck(q))
         return false;
     return true;
@@ -753,26 +726,6 @@ bool IsGenreList(QStringList list, QString website, QSqlDatabase db)
     q.next();
     return q.value(0).toInt() > 0;
 
-}
-QVector<int> GetIdList(QString where, QSqlDatabase db)
-{
-    QVector<int> result;
-
-    QString qs = QString("select count(id), id from fanfics %1");
-    qs = qs.arg(where);
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!ExecAndCheck(q))
-        return false;
-
-    while(q.next())
-    {
-        if(result.empty())
-            result.reserve(q.value(0).toInt());
-        auto id = q.value(1).toInt();
-
-    }
-    return true;
 }
 
 QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db)
@@ -900,8 +853,5 @@ bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, 
     return true;
 }
 
-
-
-
-
+}
 }
