@@ -60,6 +60,12 @@ public:
     int currentRecommendationList = -1;
 
 
+
+    // IDBPersistentData interface
+public:
+    bool IsDataLoaded();
+    bool Sync(bool forcedSync);
+    bool Load();
 };
 
 }

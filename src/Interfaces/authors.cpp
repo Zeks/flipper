@@ -219,4 +219,19 @@ bool Authors::RemoveAuthor(QSharedPointer<core::Author> author, QString website)
         return false;
     return RemoveAuthor(id);
 }
+
+bool Authors::IsDataLoaded()
+{
+    return true;
+}
+
+bool Authors::Sync(bool forcedSync)
+{
+    return true;
+}
+
+bool Authors::Load()
+{
+    return true;
+}
 }

@@ -11,6 +11,9 @@
 class FicParser : public FFNParserBase
 {
 public:
+    FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
+              QSharedPointer<interfaces::Authors> authors,
+              QSqlDatabase db);
     QSharedPointer<core::Fic> ProcessPage(QString url,QString&);
     void ClearProcessed();
     void WriteProcessed();

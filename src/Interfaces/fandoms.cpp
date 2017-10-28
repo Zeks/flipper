@@ -314,5 +314,14 @@ bool Fandoms::AssignTagToFandom(QString fandom, QString tag)
     database::puresql::AssignTagToFandom(tag, id, db);
     return true;
 }
+void Fandoms::CalculateFandomAverages()
+{
+    database::puresql::CalculateFandomAverages(db);
+}
+
+void Fandoms::CalculateFandomFicCounts()
+{
+    database::puresql::CalculateFandomFicCounts(db);
+}
 
 }

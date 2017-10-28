@@ -9,6 +9,9 @@
 class FandomParser : public FFNParserBase
 {
 public:
+    FandomParser(QSharedPointer<interfaces::Fanfics> fanfics,
+                 QSharedPointer<interfaces::Authors> authors,
+                 QSqlDatabase db);
     void ProcessPage(WebPage page);
     core::Section GetSection( QString text, int start);
     void GetAuthor(core::Section& , int& startfrom, QString text);

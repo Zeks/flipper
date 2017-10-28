@@ -19,6 +19,14 @@
 #include <QSqlDatabase>
 #include <chrono>
 
+FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics,
+                                           QSharedPointer<interfaces::Authors> authors,
+                                           QSqlDatabase db)
+                    : FFNParserBase(fanfics, authors, db)
+{
+
+}
+
 QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
     core::Section section;

@@ -26,4 +26,24 @@ int FFNFanfics::GetIdForUrl(QString url)
     return -1; //! todo
 }
 
+bool FFNFanfics::IsDataLoaded()
+{
+    return true;
+}
+
+bool FFNFanfics::Sync(bool forcedSync)
+{
+    return true;
+}
+
+bool FFNFanfics::Load()
+{
+    return true;
+}
+
+void FFNFanfics::Clear()
+{
+
+}
+
 }

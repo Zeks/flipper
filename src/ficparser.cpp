@@ -10,13 +10,21 @@
 #include <algorithm>
 #include <chrono>
 
+FicParser::FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
+                     QSharedPointer<interfaces::Authors> authors,
+                     QSqlDatabase db)
+: FFNParserBase(fanfics, authors, db)
+{
+
+}
+
 QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
 {
     core::Section section;
     int currentPosition = 0;
     if(str.contains("Unable to locate story. Code 1"))
     {
-        auto fics = interfaces->fanfics;
+        auto fics = fanfics;
         int ficId = fics->GetIdForUrl(url);
         fics->DeactivateFic(ficId);
         return section.result;
@@ -204,8 +212,8 @@ void FicParser::ClearProcessed()
 
 void FicParser::WriteProcessed()
 {
-    interfaces->fanfics->ProcessIntoDataQueues(processedStuff);
-    interfaces->fanfics->FlushDataQueues();
+    fanfics->ProcessIntoDataQueues(processedStuff);
+    fanfics->FlushDataQueues();
 }
 
 void FicParser::SetRewriteAuthorNames(bool value)
@@ -239,7 +247,7 @@ void FicParser::GetAuthor(core::Section & section,  QString text)
     auto index = rxEnd.indexIn(text);
     if(index == -1)
         return;
-    auto author = interfaces->authors->GetSingleByName(full, "ffn");
+    auto author = authors->GetSingleByName(full, "ffn");
     if(author)
     {
         section.result->author = author;
@@ -252,7 +260,7 @@ void FicParser::GetAuthor(core::Section & section,  QString text)
         section.result->author = author;
         section.result->author->SetUrl("ffn",rxEnd.cap(1));
         section.result->author->name = full;
-        interfaces->authors->EnsureId(author, "ffn");
+        authors->EnsureId(author, "ffn");
 
     }
 }

@@ -255,6 +255,21 @@ QSharedPointer<core::RecommendationList> RecommendationLists::GetList(QString na
     return GetList(id);
 }
 
+bool RecommendationLists::IsDataLoaded()
+{
+    return true;
+}
+
+bool RecommendationLists::Sync(bool forcedSync)
+{
+    return true;
+}
+
+bool RecommendationLists::Load()
+{
+    return true;
+}
+
 void RecommendationLists::SetCurrentRecommendationList(int value)
 {
     currentRecommendationList = value;

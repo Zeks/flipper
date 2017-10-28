@@ -18,5 +18,12 @@ public:
     virtual int GetIdForUrl(QString url);
     void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false);
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
+
+    // IDBPersistentData interface
+public:
+    bool IsDataLoaded();
+    bool Sync(bool forcedSync);
+    bool Load();
+    void Clear();
 };
 }

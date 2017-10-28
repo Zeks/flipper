@@ -57,6 +57,12 @@ public:
 
     QSqlDatabase db;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
+
+    // IDBPersistentData interface
+public:
+    bool IsDataLoaded();
+    bool Sync(bool forcedSync);
+    bool Load();
 };
 
 }

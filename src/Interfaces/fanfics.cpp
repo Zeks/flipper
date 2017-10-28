@@ -64,15 +64,6 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
     }
 
 }
-void Fanfics::CalculateFandomAverages()
-{
-    database::puresql::CalculateFandomAverages(db);
-}
-
-void Fanfics::CalculateFandomFicCounts()
-{
-    database::puresql::CalculateFandomFicCounts(db);
-}
 
 void Fanfics::FlushDataQueues()
 {

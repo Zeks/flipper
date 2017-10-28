@@ -481,7 +481,9 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdat
     auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
     qDebug() << "will request url:" << nextUrl;
     WebPage currentPage = pager->GetPage(nextUrl, cacheMode);
-    FandomParser parser;
+    FandomParser parser(fanficsInterface,
+                        authorsInterface,
+                        QSqlDatabase::database());
     QString lastUrl = parser.GetLast(currentPage.content);
     int pageCount = lastUrl.mid(lastUrl.lastIndexOf("=")+1).toInt();
     if(pageCount != 0)
@@ -1008,8 +1010,12 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     emit pageTaskList(authorUrls, cacheMode);
     DisableAllLoadButtons();
     WebPage webPage;
-    auto job = [&](QString url, QString content){
-        FavouriteStoryParser parser;
+    auto fanfics = fanficsInterface;
+    auto authors = authorsInterface;
+    auto job = [fanfics,authors](QString url, QString content){
+        FavouriteStoryParser parser(fanfics,
+                                    authors,
+                                    QSqlDatabase::database());
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -1790,9 +1796,13 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
     QList<QSharedPointer<core::Fic>> sections;
     int counter = 0;
     auto list = ReverseSortedList(recsInterface->GetAuthorsForRecommendationList(recsInterface->GetCurrentRecommendationList()));
-    auto job = [](QString url, QString content){
+    auto fanfics = fanficsInterface;
+    auto authors = authorsInterface;
+    auto job = [fanfics,authors](QString url, QString content){
         QList<QSharedPointer<core::Fic> > sections;
-        FavouriteStoryParser parser;
+        FavouriteStoryParser parser(fanfics,
+                                    authors,
+                                    QSqlDatabase::database());
         sections += parser.ProcessPage(url, content);
         return sections;
     };
@@ -1941,7 +1951,9 @@ void MainWindow::on_pbLoadPage_clicked()
     auto page = RequestPage(ui->leAuthorUrl->text(),  ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache);
     auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
     qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    FavouriteStoryParser parser;
+    FavouriteStoryParser parser(fanficsInterface,
+                                authorsInterface,
+                                QSqlDatabase::database());
     auto startPageProcess = std::chrono::high_resolution_clock::now();
     QString name = ParseAuthorNameFromFavouritePage(page.content);
     parser.authorName = name;
@@ -2002,7 +2014,9 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
         auto page = RequestPage(recommender->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-        FavouriteStoryParser parser;
+        FavouriteStoryParser parser(fanficsInterface,
+                                    authorsInterface,
+                                    QSqlDatabase::database());
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         parser.ProcessPage(page.url, page.content);
         parser.WriteProcessed();

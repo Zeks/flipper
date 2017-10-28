@@ -3,6 +3,14 @@
 
 
 
+FandomParser::FandomParser(QSharedPointer<interfaces::Fanfics> fanfics,
+                           QSharedPointer<interfaces::Authors> authors,
+                           QSqlDatabase db)
+    : FFNParserBase(fanfics, authors, db)
+{
+
+}
+
 void FandomParser::ProcessPage(WebPage page)
 {
     processedStuff.clear();
@@ -86,8 +94,8 @@ QString FandomParser::GetFandom(QString text)
 
 void FandomParser::WriteProcessed()
 {
-    interfaces->fanfics->ProcessIntoDataQueues(processedStuff);
-    interfaces->fanfics->FlushDataQueues();
+    fanfics->ProcessIntoDataQueues(processedStuff);
+    fanfics->FlushDataQueues();
 }
 
 void FandomParser::ClearProcessed()

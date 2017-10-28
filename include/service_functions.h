@@ -5,5 +5,5 @@
 class PageManager;
 namespace service{
 
-    void ReprocessFic(core::Fic, ECacheMode cacheMode);
+    //void ReprocessFic(core::Fic, ECacheMode cacheMode);
 }

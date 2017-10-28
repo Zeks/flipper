@@ -29,8 +29,8 @@ public:
     virtual bool DeactivateFic(int ficId) = 0;
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
     void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false);
-    void CalculateFandomAverages();
-    void CalculateFandomFicCounts();
+//    void CalculateFandomAverages();
+//    void CalculateFandomFicCounts();
     void FlushDataQueues();
     QList<core::Fic>  GetCurrentFicSet();
     // queued by webid

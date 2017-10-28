@@ -186,7 +186,7 @@ private:
     QSharedPointer<interfaces::Authors> authorsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
     QSharedPointer<interfaces::RecommendationLists> recsInterface;
-    QSharedPointer<database::IDBWrapper> dbWrapperInterface;
+    QSharedPointer<database::IDBWrapper> portableInterface;
 
 
     void LoadMoreAuthors(bool reprocessCache = false);

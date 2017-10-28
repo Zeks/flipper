@@ -1,6 +1,13 @@
 #include "mainwindow.h"
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
+
+#include "Interfaces/ffn/ffn_authors.h"
+#include "Interfaces/ffn/ffn_fanfics.h"
+#include "Interfaces/fandoms.h"
+#include "Interfaces/recommendation_lists.h"
+#include "Interfaces/tags.h"
+
 #include "include/sqlitefunctions.h"
 #include <QApplication>
 #include <QSqlDatabase>
@@ -25,7 +32,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
-    QSharedPointer<database::IDBWrapper> portableInterface (new database::SqliteInterface()); //! todo needs to be sqlite database with funcs
+    QSharedPointer<database::IDBWrapper> portableInterface (new database::SqliteInterface());
     portableInterface->BackupDatabase("Crawler.sqlite");
 
     portableInterface->InitDatabase();
@@ -33,6 +40,13 @@ int main(int argc, char *argv[])
 
     portableInterface->ReadDbFile("dbcode/dbinit.sql");
     portableInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
+
+
+    QSharedPointer<interfaces::Authors> authors (new interfaces::FFNAuthors());
+    QSharedPointer<interfaces::Fanfics> fanfics (new interfaces::FFNFanfics());
+    QSharedPointer<interfaces::RecommendationLists> recommendations (new interfaces::RecommendationLists());
+    QSharedPointer<interfaces::Fandoms> fandoms (new interfaces::Fandoms());
+    QSharedPointer<interfaces::Tags> tags (new interfaces::Tags());
 
     MainWindow w;
     w.show();

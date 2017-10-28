@@ -31,7 +31,7 @@ public:
     virtual bool EnsureFandom(QString name);
     virtual QSharedPointer<core::Fandom> GetFandom(QString);
 
-    virtual bool AssignTagToFandom(QString, QString tag) = 0;
+    virtual bool AssignTagToFandom(QString, QString tag);
     virtual QStringList PushFandomToTopOfRecent(QString);
     void RebaseFandomsToZero();
     QStringList GetRecentFandoms();
@@ -43,8 +43,8 @@ public:
     //virtual void RebaseFandomsToZero() = 0;
     //QString DBFandomsBase::GetCurrentCrossoverUrl()
 
-    virtual void CalculateFandomAverages() = 0;
-    virtual void CalculateFandomFicCounts() = 0;
+    virtual void CalculateFandomAverages();
+    virtual void CalculateFandomFicCounts();
 
     virtual bool Load() override;
     bool LoadTrackedFandoms();
