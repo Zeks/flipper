@@ -10,9 +10,7 @@ class FavouriteStoryParser : public FFNParserBase
 {
 public:
     FavouriteStoryParser(){}
-    FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics,
-                         QSharedPointer<interfaces::Authors> authors,
-                         QSqlDatabase db);
+    FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics);
     QList<QSharedPointer<core::Fic>> ProcessPage(QString url,QString&);
     core::Section GetSection( QString text, int start);
     QString ExtractRecommenderNameFromUrl(QString url);
@@ -44,7 +42,7 @@ public:
     QString currentTagMode = "core";
     QString authorName;
     //! todo needs to be filled
-    QSqlDatabase db;
+
 //    QSharedPointer<interfaces::Fanfics> fanfics;
 //    QSharedPointer<interfaces::DataInterfaces> interfaces;
 

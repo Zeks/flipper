@@ -38,6 +38,7 @@ class Fandoms;
 class Fanfics;
 class Authors;
 class Tags;
+class Genres;
 class RecommendationLists;
 }
 namespace database {
@@ -69,9 +70,16 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void Init();
+    void InitInterfaces();
     void InitConnections();
     bool CheckSectionAvailability();
-
+    QSharedPointer<interfaces::Fandoms> fandomsInterface;
+    QSharedPointer<interfaces::Fanfics> fanficsInterface;
+    QSharedPointer<interfaces::Authors> authorsInterface;
+    QSharedPointer<interfaces::Tags> tagsInterface;
+    QSharedPointer<interfaces::Genres> genresInterface;
+    QSharedPointer<interfaces::RecommendationLists> recsInterface;
+    QSharedPointer<database::IDBWrapper> portableInterface;
 private:
 
     void SetupFanficTable();
@@ -181,12 +189,7 @@ private:
     //QHash<QString, core::RecommendationList> lists;
 
 
-    QSharedPointer<interfaces::Fandoms> fandomsInterface;
-    QSharedPointer<interfaces::Fanfics> fanficsInterface;
-    QSharedPointer<interfaces::Authors> authorsInterface;
-    QSharedPointer<interfaces::Tags> tagsInterface;
-    QSharedPointer<interfaces::RecommendationLists> recsInterface;
-    QSharedPointer<database::IDBWrapper> portableInterface;
+
 
 
     void LoadMoreAuthors(bool reprocessCache = false);

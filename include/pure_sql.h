@@ -75,6 +75,7 @@ bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlD
 QStringList ReadUserTags(QSqlDatabase db);
 bool PushTaglistIntoDatabase(QStringList, QSqlDatabase);
 bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db);
+QSet<QString> GetAllGenres(QSqlDatabase db);
 // those are required for managing recommendation lists and somewhat outdated
 // moved them to dump temporarily
 //void RemoveAuthor(const core::Author &recommender);

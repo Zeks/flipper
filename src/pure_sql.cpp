@@ -853,5 +853,18 @@ bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, 
     return true;
 }
 
+QSet<QString> GetAllGenres(QSqlDatabase db)
+{
+    QSet<QString> result;
+    QString qs = QString("select genre from genres");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+    while(q.next())
+        result.insert(q.value(0).toString());
+    return result;
+}
+
 }
 }

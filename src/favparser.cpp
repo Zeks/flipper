@@ -19,10 +19,8 @@
 #include <QSqlDatabase>
 #include <chrono>
 
-FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics,
-                                           QSharedPointer<interfaces::Authors> authors,
-                                           QSqlDatabase db)
-                    : FFNParserBase(fanfics, authors, db)
+FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics)
+                    : FFNParserBase(fanfics)
 {
 
 }

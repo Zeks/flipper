@@ -3,10 +3,8 @@
 
 
 
-FandomParser::FandomParser(QSharedPointer<interfaces::Fanfics> fanfics,
-                           QSharedPointer<interfaces::Authors> authors,
-                           QSqlDatabase db)
-    : FFNParserBase(fanfics, authors, db)
+FandomParser::FandomParser(QSharedPointer<interfaces::Fanfics> fanfics)
+    : FFNParserBase(fanfics)
 {
 
 }

@@ -6,14 +6,19 @@
 #include <QDateTime>
 #include <functional>
 
-
-
+namespace interfaces {
+class Genres;
+}
+struct AuthorMemo
+{
+    QSharedPointer<core::Author> author;
+    QString newName;
+};
 class FicParser : public FFNParserBase
 {
 public:
     FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
-              QSharedPointer<interfaces::Authors> authors,
-              QSqlDatabase db);
+              QSharedPointer<interfaces::Genres> genres);
     QSharedPointer<core::Fic> ProcessPage(QString url,QString&);
     void ClearProcessed();
     void WriteProcessed();
@@ -36,7 +41,8 @@ private:
     void GetStatSectionTag(QString, QString text, core::Section::Tag *);
     void GetFandom(core::Section &section, int &startfrom, QString text);
 
-
+    QSharedPointer<core::Author> queuedAuthor; //! todo will need to write this
+    QSharedPointer<interfaces::Genres> genres;
     bool rewriteAuthorName = false;
 };
 

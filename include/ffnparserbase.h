@@ -17,12 +17,8 @@ class FFNParserBase
 {
 public:
     FFNParserBase(){}
-    FFNParserBase(QSharedPointer<interfaces::Fanfics> fanfics,
-                  QSharedPointer<interfaces::Authors> authors,
-                  QSqlDatabase db){
+    FFNParserBase(QSharedPointer<interfaces::Fanfics> fanfics){
         this->fanfics = fanfics;
-        this->authors = authors;
-        this->db = db;
     }
     virtual ~FFNParserBase();
     void ProcessGenres(core::Section & section, QString genreText);
@@ -33,9 +29,7 @@ public:
 
 
     QSharedPointer<interfaces::Fanfics> fanfics;
-    QSharedPointer<interfaces::Authors> authors;
     QList<QSharedPointer<core::Fic>> processedStuff;
     QStringList diagnostics;
-    QSqlDatabase db;
 };
 

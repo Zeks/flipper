@@ -5,16 +5,15 @@
 #include "include/pure_sql.h"
 #include "Interfaces/fanfics.h"
 #include "Interfaces/authors.h"
+#include "Interfaces/genres.h"
 #include <QDebug>
 #include <QSqlDatabase>
 #include <algorithm>
 #include <chrono>
 
 FicParser::FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
-                     QSharedPointer<interfaces::Authors> authors,
-                     QSqlDatabase db)
-: FFNParserBase(fanfics, authors, db)
-{
+                     QSharedPointer<interfaces::Genres> genres)
+: FFNParserBase(fanfics), genres(genres){
 
 }
 
@@ -150,7 +149,9 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
             return;
 
         QStringList genreCandidates = splittings.at(0).split("/");
-        bool isGenre = database::puresql::IsGenreList(genreCandidates, "ffn", db);
+        bool isGenre = false;
+        if(genres)
+            isGenre = genres->IsGenreList(genreCandidates);
         if(isGenre)
         {
             ProcessGenres(section, splittings.at(0));
@@ -179,7 +180,9 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
             //       if no match is found its characters
 
             QStringList genreCandidates = splittings.at(0).split("/");
-            bool isGenre = database::puresql::IsGenreList(genreCandidates, "ffn", db);
+            bool isGenre = false;
+            if(genres)
+                isGenre = genres->IsGenreList(genreCandidates);
             if(isGenre)
                 ProcessGenres(section, splittings.at(0));
             else
@@ -247,22 +250,12 @@ void FicParser::GetAuthor(core::Section & section,  QString text)
     auto index = rxEnd.indexIn(text);
     if(index == -1)
         return;
-    auto author = authors->GetSingleByName(full, "ffn");
-    if(author)
-    {
-        section.result->author = author;
-        if(rewriteAuthorName)
-            section.result->author->name = full;
-    }
-    else
-    {
-        QSharedPointer<core::Author> author(new core::Author);
-        section.result->author = author;
-        section.result->author->SetUrl("ffn",rxEnd.cap(1));
-        section.result->author->name = full;
-        authors->EnsureId(author, "ffn");
 
-    }
+    QSharedPointer<core::Author> author(new core::Author);
+    section.result->author = author;
+    section.result->author->SetUrl("ffn",rxEnd.cap(1));
+    section.result->author->name = full;
+    queuedAuthor = author;
 }
 
 void FicParser::GetTitle(core::Section & section,QString text)

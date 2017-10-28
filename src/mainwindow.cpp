@@ -42,6 +42,13 @@
 #include "include/url_utils.h"
 #include "include/pure_sql.h"
 
+#include "Interfaces/ffn/ffn_authors.h"
+#include "Interfaces/ffn/ffn_fanfics.h"
+#include "Interfaces/fandoms.h"
+#include "Interfaces/recommendation_lists.h"
+#include "Interfaces/tags.h"
+#include "Interfaces/genres.h"
+
 struct SplitPart
 {
     QString data;
@@ -455,6 +462,23 @@ void MainWindow::Init()
     ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 
+void MainWindow::InitInterfaces()
+{
+    QSharedPointer<interfaces::Authors> authors (new interfaces::FFNAuthors());
+    QSharedPointer<interfaces::Fanfics> fanfics (new interfaces::FFNFanfics());
+    QSharedPointer<interfaces::RecommendationLists> recommendations (new interfaces::RecommendationLists());
+    QSharedPointer<interfaces::Fandoms> fandoms (new interfaces::Fandoms());
+    QSharedPointer<interfaces::Tags> tags (new interfaces::Tags());
+    QSharedPointer<interfaces::Genres> genres (new interfaces::Genres());
+
+    authorsInterface = authors;
+    fanficsInterface = fanfics;
+    recsInterface = recommendations;
+    fandomsInterface = fandoms;
+    tagsInterface = tags;
+    genresInterface = genres;
+}
+
 void MainWindow::InitConnections()
 {
     connect(ui->chkCustomFilter, &QCheckBox::clicked, this, &MainWindow::OnCustomFilterClicked);
@@ -481,9 +505,7 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdat
     auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
     qDebug() << "will request url:" << nextUrl;
     WebPage currentPage = pager->GetPage(nextUrl, cacheMode);
-    FandomParser parser(fanficsInterface,
-                        authorsInterface,
-                        QSqlDatabase::database());
+    FandomParser parser(fanficsInterface);
     QString lastUrl = parser.GetLast(currentPage.content);
     int pageCount = lastUrl.mid(lastUrl.lastIndexOf("=")+1).toInt();
     if(pageCount != 0)
@@ -1013,9 +1035,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     auto fanfics = fanficsInterface;
     auto authors = authorsInterface;
     auto job = [fanfics,authors](QString url, QString content){
-        FavouriteStoryParser parser(fanfics,
-                                    authors,
-                                    QSqlDatabase::database());
+        FavouriteStoryParser parser(fanfics);
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -1800,9 +1820,7 @@ QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
     auto authors = authorsInterface;
     auto job = [fanfics,authors](QString url, QString content){
         QList<QSharedPointer<core::Fic> > sections;
-        FavouriteStoryParser parser(fanfics,
-                                    authors,
-                                    QSqlDatabase::database());
+        FavouriteStoryParser parser(fanfics);
         sections += parser.ProcessPage(url, content);
         return sections;
     };
@@ -1951,9 +1969,7 @@ void MainWindow::on_pbLoadPage_clicked()
     auto page = RequestPage(ui->leAuthorUrl->text(),  ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache);
     auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
     qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    FavouriteStoryParser parser(fanficsInterface,
-                                authorsInterface,
-                                QSqlDatabase::database());
+    FavouriteStoryParser parser(fanficsInterface);
     auto startPageProcess = std::chrono::high_resolution_clock::now();
     QString name = ParseAuthorNameFromFavouritePage(page.content);
     parser.authorName = name;
@@ -2014,9 +2030,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
         auto page = RequestPage(recommender->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-        FavouriteStoryParser parser(fanficsInterface,
-                                    authorsInterface,
-                                    QSqlDatabase::database());
+        FavouriteStoryParser parser(fanficsInterface);
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         parser.ProcessPage(page.url, page.content);
         parser.WriteProcessed();
