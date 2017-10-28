@@ -336,3 +336,16 @@ void PassTagsIntoTagsTable()
     }
     db.commit();
 }
+
+void MainWindow::on_pbRemoveRecommender_clicked()
+{
+    //!!!!!!!!!!!
+    //! intentionally empty because recommendations != favourites
+//    QString currentSelection = ui->lvRecommenders->selectionModel()->currentIndex().data().toString();
+//    if(recommenders.contains(currentSelection))
+//    {
+//        database::RemoveAuthor(recommenders[currentSelection]);
+//        recommenders = database::FetchRecommenders();
+//        recommendersModel->setStringList(SortedList(recommenders.keys()));
+//    }
+}

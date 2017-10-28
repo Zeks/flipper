@@ -11,9 +11,13 @@ namespace database {
 class FFNAuthors : public DBAuthorsBase
 {
 public:
-    virtual ~FFNAuthors(){}
+    virtual ~FFNAuthors();
     bool EnsureId(QSharedPointer<core::Author>) override;
     bool RemoveAuthor(QSharedPointer<core::Author> author) override;
+
+    // DBAuthorsBase interface
+//public:
+//    bool EnsureAuthor(int);
 };
 
 }

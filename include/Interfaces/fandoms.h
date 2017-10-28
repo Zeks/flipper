@@ -6,6 +6,7 @@
 #include <QList>
 #include <QVector>
 #include <QReadWriteLock>
+#include <functional>
 
 
 namespace database {
@@ -15,9 +16,10 @@ public:
     DBFandomsBase() = default;
     virtual ~DBFandomsBase();
     virtual int GetID(QString) ;
-    virtual void SetTracked(QString, bool value, bool immediate);
+    virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);
-    virtual QStringList ListOfTracked();
+    virtual QStringList ListOfTrackedNames();
+    virtual QList<QSharedPointer<core::Fandom>> ListOfTrackedFandoms();
     virtual QList<int> AllTracked();
     virtual QStringList AllTrackedStr();
 
@@ -28,9 +30,10 @@ public:
 
     virtual bool AssignTagToFandom(QString, QString tag) = 0;
     virtual QStringList PushFandomToTopOfRecent(QString);
+    void RebaseFandomsToZero();
     QStringList GetRecentFandoms();
     QStringList GetFandomList();
-    void AddToTopOfRecent(QString);
+
 
 
     //virtual QStringList FetchRecentFandoms() = 0;
@@ -41,18 +44,25 @@ public:
     virtual void CalculateFandomFicCounts() = 0;
 
     virtual bool Load() override;
+    bool LoadTrackedFandoms();
+    bool LoadAllFandoms();
     virtual void Clear() override;
     virtual bool Sync(bool forcedSync = false) override;
     virtual bool IsDataLoaded() override;
 
+    QList<QSharedPointer<core::Fandom>> FilterFandoms(std::function<bool(QSharedPointer<core::Fandom>)>);
 
+    QList<QSharedPointer<core::Fandom>> fandoms;
     QHash<QString, int> indexFandomsByName;
-    QHash<QString, QSharedPointer<core::Fandom>> fandoms;
+    QHash<QString, QSharedPointer<core::Fandom>> nameIndex;
     QList<QSharedPointer<core::Fandom>> updateQueue;
     QList<QSharedPointer<core::Fandom>> recentFandoms;
+    QList<QSharedPointer<core::Fandom>> trackedFandoms;
     QSqlDatabase db;
     QSharedPointer<IDBWrapper> portableDBInterface;
-
+    QStringList fandomsList;
+private:
+    void AddToTopOfRecent(QString);
 };
 
 }

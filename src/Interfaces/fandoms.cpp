@@ -66,6 +66,12 @@ QStringList DBFandomsBase::GetRecentFandoms()
 QStringList DBFandomsBase::GetFandomList()
 {
     QStringList result;
+    if(fandomsList.isEmpty())
+    {
+        result = database::puresql::GetFandomListFromDB(db);
+        fandomsList = result;
+    }
+    result = fandomsList;
     return result; //! todo
 }
 
@@ -104,10 +110,28 @@ QStringList DBFandomsBase::PushFandomToTopOfRecent(QString fandom)
 
 }
 
+void DBFandomsBase::RebaseFandomsToZero()
+{
+    portableDBInterface->RebaseFandomsToZero(db);
+}
+
 
 bool DBFandomsBase::IsDataLoaded()
 {
     return isLoaded;
+}
+
+QList<QSharedPointer<core::Fandom> > DBFandomsBase::FilterFandoms(std::function<bool (QSharedPointer<core::Fandom>)> f)
+{
+    QList<QSharedPointer<core::Fandom> > result;
+    if(fandoms.isEmpty())
+        LoadAllFandoms();
+    result.reserve(fandoms.size()/2);
+    for(auto fandom: fandoms)
+    {
+        if(f(fandom))
+            result.push_back(fandom);
+    }
 }
 
 bool DBFandomsBase::Sync(bool forcedSync)
@@ -136,6 +160,16 @@ bool DBFandomsBase::Load()
         if(fandomPresent)
             this->recentFandoms.push_back(fandoms[bit]);
     }
+    return true;
+}
+
+bool DBFandomsBase::LoadTrackedFandoms()
+{
+    return true;
+}
+
+bool DBFandomsBase::LoadAllFandoms()
+{
     return true;
 }
 
@@ -222,13 +256,20 @@ void DBFandomsBase::SetTracked(QString fandom, bool value, bool immediate)
     fandoms[fandom]->tracked = value;
 }
 
-QStringList DBFandomsBase::ListOfTracked()
+QStringList DBFandomsBase::ListOfTrackedNames()
 {
     QStringList names;
     for(auto fandom: fandoms)
         if(fandom && fandom->tracked)
             names.push_back(fandom->name);
     return names;
+}
+
+QList<QSharedPointer<core::Fandom> > DBFandomsBase::ListOfTrackedFandoms()
+{
+    if(trackedFandoms.empty())
+        LoadTrackedFandoms();
+    return trackedFandoms;
 }
 
 

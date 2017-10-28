@@ -98,7 +98,7 @@ class Fic : public DBEntity{
 
     QString fandom;
     QStringList fandoms;
-    QString isCrossover = false;
+    bool isCrossover = false;
     QString title;
     //QString genres;
     QStringList genres;
@@ -211,6 +211,14 @@ class Fandom : public DBEntity
         this->crossoverUrl = crossoverUrl.trimmed();
         this->source = source.trimmed();
     }
+    QStringList GetUrls(){
+        QStringList  result;
+        if(!url.isEmpty() && url != "none")
+            result.push_back(url);
+        if(!crossoverUrl.isEmpty() && crossoverUrl != "none")
+            result.push_back(crossoverUrl);
+        return result;
+    };
     int id = -1;
     int idInRecentFandoms = -1;
     int ficCount = 0;

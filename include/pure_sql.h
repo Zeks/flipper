@@ -15,7 +15,7 @@ bool SetFandomTracked(int id, bool tracked, QSqlDatabase);
 
 bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
-QStringList GetFandomListFromDB(QString section);
+QStringList GetFandomListFromDB(QSqlDatabase db);
 void CalculateFandomAverages(QSqlDatabase db);
 void CalculateFandomFicCounts(QSqlDatabase db);
 void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db);
@@ -33,14 +33,16 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool WriteRecommendation(QSharedPointer<core::Author> author, int fic_id, QSqlDatabase db);
 int GetAuthorIdFromUrl(QString url, QSqlDatabase db);
-bool AssignNewNameForRecommenderId(core::Author recommender, QSqlDatabase db);
+bool AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name, QSqlDatabase db);
 
+QList<int> GetAllAuthorIds(QSqlDatabase db);
 
 
 QList<QSharedPointer<core::Author> > GetAllAuthors(QString website,  QSqlDatabase db);
 QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
 QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
 QSharedPointer<core::RecommendationList> GetRecommendationList(int listid, QSqlDatabase db);
+QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSqlDatabase db);
 
 QList<core::AuthorRecommendationStats> GetRecommenderStatsForList(QString listName, QString sortOn, QString order, QSqlDatabase db);
 int GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
@@ -71,7 +73,9 @@ QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db);
 bool DeactivateStory(int id, QString website, QSqlDatabase db);
 
 bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlDatabase db);
-
+QStringList ReadUserTags(QSqlDatabase db);
+bool PushTaglistIntoDatabase(QStringList, QSqlDatabase);
+bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db);
 // those are required for managing recommendation lists and somewhat outdated
 // moved them to dump temporarily
 //void RemoveAuthor(const core::Author &recommender);

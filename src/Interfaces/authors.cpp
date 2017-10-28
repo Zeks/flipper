@@ -91,6 +91,31 @@ QList<QSharedPointer<core::Author> > DBAuthorsBase::GetAllAuthors(QString websit
     return authorsNamesByWebsite[website].values();
 }
 
+QStringList DBAuthorsBase::GetAllAuthorsUrls(QString website)
+{
+    QStringList result;
+    if(!cachedAuthorUrls.contains(website))
+    {
+        auto authors = GetAllAuthors(website);
+        result.reserve(authors.size());
+        for(auto author: authors)
+        {
+            result.push_back(author->url("ffn"));
+        }
+        cachedAuthorUrls[website] = result;
+    }
+    else
+        result = cachedAuthorUrls[website];
+    return result;
+}
+
+QList<int> DBAuthorsBase::GetAllAuthorIds()
+{
+    if(cachedAuthorIds.empty())
+        cachedAuthorIds = database::puresql::GetAllAuthorIds(db);
+    return cachedAuthorIds;
+}
+
 int DBAuthorsBase::GetFicCount(int authorId)
 {
     auto author = GetById(authorId);
@@ -137,21 +162,28 @@ void DBAuthorsBase::AddAuthorToIndex(QSharedPointer<core::Author>)
 
 }
 
+bool DBAuthorsBase::AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name)
+{
+    if(!author)
+        return false;
+    return database::puresql::AssignNewNameForAuthor(author, name, db);
+}
 
-QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(int authorId, core::RecommendationList list)
+
+QSharedPointer<core::AuthorRecommendationStats> DBAuthorsBase::GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list)
 {
     QSharedPointer<core::AuthorRecommendationStats>result (new core::AuthorRecommendationStats);
     auto author = GetById(authorId);
     if(!author)
         return result;
 
-    result->listName = list.name;
-    result->usedTag = list.tagToUse;;
+    result->listName = list->name;
+    result->usedTag = list->tagToUse;;
     result->authorName = author->name;
     result->authorId= author->id;
     result->totalFics= author->ficCount;
 
-    result->matchesWithReference= puresql::GetCountOfTagInAuthorRecommendations(author->id, list.tagToUse, db);
+    result->matchesWithReference= puresql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else

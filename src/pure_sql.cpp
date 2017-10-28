@@ -1,8 +1,10 @@
 #include "pure_sql.h"
 #include "section.h"
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QVector>
 #include <QVariant>
+#include <QDebug>
 namespace database {
 namespace puresql{
 
@@ -121,10 +123,9 @@ bool Internal::WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
     return true;
 }
 //! todo  requires refactor. fandoms need to have a tag table attached to them instead of forced sections
-QStringList GetFandomListFromDB(QString section)
+QStringList GetFandomListFromDB(QSqlDatabase db)
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("Select fandom from fandoms where section ='%1' and normal_url is not null").arg(section);
+    QString qs = QString("Select fandom from fandoms where normal_url is not null");
     QSqlQuery q(qs, db);
     QStringList result;
     result.append("");
@@ -436,10 +437,33 @@ QList<QSharedPointer<core::RecommendationList> > GetAvailableRecommendationLists
 }
 QSharedPointer<core::RecommendationList> GetRecommendationList(int listId, QSqlDatabase db)
 {
-    QString qs = QString("select * from RecommendationLists where list_id = :list_id");
+    QString qs = QString("select * from RecommendationLists where id = :list_id");
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":list_id", listId);
+    QSharedPointer<core::RecommendationList>  result;
+    if(!ExecAndCheck(q))
+        return result;
+
+    q.next();
+    {
+        QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
+        result = list;
+        list->alwaysPickAt = q.value("always_pick_at").toInt();
+        list->minimumMatch = q.value("minimum").toInt();
+        list->pickRatio= q.value("pick_ratio").toDouble();
+        list->id= q.value("id").toInt();
+        list->name= q.value("name").toString();
+        list->ficCount= q.value("fic_count").toInt();
+    }
+    return result;
+}
+QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSqlDatabase db)
+{
+    QString qs = QString("select * from RecommendationLists where name = :list_name");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_name", name);
     QSharedPointer<core::RecommendationList>  result;
     if(!ExecAndCheck(q))
         return result;
@@ -797,6 +821,86 @@ bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlD
         return false;
     return true;
 }
+
+QStringList ReadUserTags(QSqlDatabase db)
+{
+    QStringList tagList;
+    QString qs = QString("Select tag from tags ");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return tagList;
+    while(q.next())
+    {
+        tagList.append(q.value(0).toString());
+    }
+    return tagList;
+}
+
+bool PushTaglistIntoDatabase(QStringList tagList, QSqlDatabase db)
+{
+    bool success = true;
+    for(QString tag : tagList)
+    {
+        QString qs = QString("INSERT INTO TAGS (TAG) VALUES (:tag)");
+        QSqlQuery q(db);
+        q.prepare(qs);
+        q.bindValue(":tag", tag);
+        q.exec();
+        if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
+        {
+            success = false;
+            qDebug() << q.lastError().text();
+        }
+    }
+    return success;
+}
+
+bool AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name, QSqlDatabase db)
+{
+    if(author->GetIdStatus() != core::AuthorIdStatus::valid)
+        return true;
+    QSqlQuery q(db);
+    QString qsl = " UPDATE recommenders SET name = :name where id = :id";
+    q.prepare(qsl);
+    q.bindValue(":name",name);
+    q.bindValue(":id",author->id);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+
+QList<int> GetAllAuthorIds(QSqlDatabase db)
+{
+    QList<int> result;
+
+    QString qs = QString("select id from recommenders");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+
+    while(q.next())
+        result.push_back(q.value(0).toInt());
+
+    return result;
+}
+
+bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db)
+{
+    QString qs = QString(" update RecommendationListData set match_count = match_count+1 where "
+                         " list_id = :list_id "
+                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",authorId);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+
+
 
 
 

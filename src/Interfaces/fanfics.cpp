@@ -83,4 +83,9 @@ void DBFanficsBase::FlushDataQueues()
     db.commit();
 }
 
+QList<core::Fic> DBFanficsBase::GetCurrentFicSet()
+{
+    return currentSet;
+}
+
 }

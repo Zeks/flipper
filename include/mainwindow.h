@@ -33,10 +33,14 @@ class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
 class QStringListModel;
+namespace database{
 class DBFandomsBase;
 class DBFanficsBase;
 class DBAuthorsBase;
 class IDBWrapper;
+class Tags;
+class DBRecommendationListsBase;
+}
 namespace Ui {
 class MainWindow;
 }
@@ -73,7 +77,7 @@ private:
     FicModel* typetableModel = nullptr;
     QSharedPointer<TableDataInterface> typetableInterface;
     TableDataListHolder<core::Fic>* holder = nullptr;
-    //QList<core::Fic> fanfics;
+    QList<core::Fic> fanfics;
     QSortFilterProxyModel* sortModel;
     int processedFics = 0;
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -82,11 +86,13 @@ private:
     void ReadSettings();
     void WriteSettings();
 
-    void RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString url, bool useLastIndex = false);
+    QString GetCurrentFandomName();
+
+    void RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString url);
     WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 
 
-    QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
+
     QString GetFandom(QString text);
 
     void DisableAllLoadButtons();
@@ -105,11 +111,11 @@ private:
 
     QStringList GetCrossoverListFromDB();
 
-    QStringList GetCrossoverUrl(QString, bool ignoreTrackingState = false);
-    QStringList GetNormalUrl(QString, bool ignoreTrackingState = false);
+    QStringList GetCrossoverUrl(QString);
+    QStringList GetNormalUrl(QString);
 
     void OpenTagWidget(QPoint, QString url);
-    void ReadTags();
+    void ProcessTagsIntoGui();
 
     void SetTag(int id, QString tag, bool silent = false);
     void UnsetTag(int id, QString tag);
@@ -118,7 +124,7 @@ private:
     void CallExpandedWidget();
 
     QStringList SortedList(QStringList);
-    QStringList ReverseSortedList(QStringList list);
+    QList<QSharedPointer<core::Author> > ReverseSortedList(QList<QSharedPointer<core::Author> > list);
     QStringList GetUniqueAuthorsFromActiveRecommenderSet();
 
     void CreatePageThreadWorker();
@@ -131,6 +137,7 @@ private:
     void FillRecTagBuildCombobox();
     void FillRecTagCombobox();
 
+    QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -138,7 +145,6 @@ private:
     int timerId = -1;
     int pageCounter = 0;
     QMenu browserMenu;
-    int currentRecommenderId = -1;
     QEventLoop managerEventLoop;
     QMap<QPair<QString,QString>, core::Fandom> names;
     QString currentProcessedSection;
@@ -148,19 +154,16 @@ private:
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
-    QStringList currentFilterUrls;
+    //QStringList currentFilterUrls;
     QString currentFilterUrl;
     bool ignoreUpdateDate = false;
     QStringList tagList;
     QStringListModel* tagModel;
     QStringListModel* recentFandomsModel= nullptr;
     QStringListModel* recommendersModel = nullptr;
-    QHash<QString, core::Author> recommenders;
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
-    QString currentFandom;
-    bool isCrossover = false;
     void PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate = false);
     QString AddIdList(QString query, int count);
     QString CreateLimitQueryPart();
@@ -173,22 +176,24 @@ private:
     QList<WebPage> pageQueue;
     core::DefaultQueryBuilder queryBuilder;
     core::StoryFilter filter;
-    QHash<QString, core::RecommendationList> lists;
+    //QHash<QString, core::RecommendationList> lists;
 
 
-    QSharedPointer<DBFandomsBase> fandoms;
-    QSharedPointer<DBFanficsBase> fanfics;
-    QSharedPointer<DBAuthorsBase> authors;
-    QSharedPointer<IDBWrapper> dbWrapper;
+    QSharedPointer<database::DBFandomsBase> fandomsInterface;
+    QSharedPointer<database::DBFanficsBase> fanficsInterface;
+    QSharedPointer<database::DBAuthorsBase> authorsInterface;
+    QSharedPointer<database::Tags> tagsInterface;
+    QSharedPointer<database::DBRecommendationListsBase> recsInterface;
+    QSharedPointer<database::IDBWrapper> dbWrapperInterface;
 
-    void ProcessRecommendationListsFromDB(QList<core::RecommendationList>);
+
     void LoadMoreAuthors(bool reprocessCache = false);
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
-    void UpdateAllAuthorsWith(std::function<void (core::Author, WebPage)> updater);
+    void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
     void ReprocessAuthors();
     void ProcessListIntoRecommendations(QString list);
-    void BuildRecommendations(core::RecommendationList params);
+    void BuildRecommendations(QSharedPointer<core::RecommendationList> params);
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);
 public slots:
     void ProcessFandoms(WebPage webPage);

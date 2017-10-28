@@ -17,6 +17,7 @@ public:
     void ClearIndex();
     void Clear();
     virtual bool EnsureId(QSharedPointer<core::Author>) = 0;
+    //virtual bool EnsureAuthor(int) = 0;
     bool LoadAuthors(QString website, bool additionMode);
 
     //for the future, not strictly necessary atm
@@ -28,11 +29,15 @@ public:
     QSharedPointer<core::Author> GetByUrl(QString url);
     QSharedPointer<core::Author> GetById(int id);
     QList<QSharedPointer<core::Author>> GetAllAuthors(QString website);
+    QStringList GetAllAuthorsUrls(QString website);
+    QList<int> GetAllAuthorIds();
     int GetFicCount(int authorId);
     int GetCountOfRecsForTag(int authorId, QString tag);
-    QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, core::RecommendationList list);
+    QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list);
     bool EnsureId(QSharedPointer<core::Author> author, QString website);
     void AddAuthorToIndex(QSharedPointer<core::Author>);
+    bool AssignNewNameForAuthor(QSharedPointer<core::Author>, QString name);
+    //void AssignNewNameForAuthor(int id, QString name);
     virtual bool  RemoveAuthor(int id);
     virtual bool  RemoveAuthor(QSharedPointer<core::Author>) = 0;
     bool RemoveAuthor(QSharedPointer<core::Author>, QString website);
@@ -44,8 +49,11 @@ public:
     QHash<QString, QHash<QString, QSharedPointer<core::Author>>> authorsNamesByWebsite;
     QHash<int, QSharedPointer<core::Author>> authorsById;
     QHash<QString, QSharedPointer<core::Author>> authorsByUrl;
+    QHash<QString, QStringList> cachedAuthorUrls;
+    QList<int> cachedAuthorIds;
 
     QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorToTagStats;
+
     QSqlDatabase db;
     QSharedPointer<IDBWrapper> portableDBInterface;
 };

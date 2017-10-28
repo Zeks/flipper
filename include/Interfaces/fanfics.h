@@ -32,12 +32,14 @@ public:
     void CalculateFandomAverages();
     void CalculateFandomFicCounts();
     void FlushDataQueues();
+    QList<core::Fic>  GetCurrentFicSet();
     // queued by webid
     QReadWriteLock mutex;
     QHash<int, QSharedPointer<core::Fic>> updateQueue;
     QHash<int, QSharedPointer<core::Fic>> insertQueue;
     QList<core::FicRecommendation> ficRecommendations;
     QSharedPointer<DBAuthorsBase> authorInterface;
+    QList<core::Fic> currentSet;
     QSqlDatabase db;
 
 };

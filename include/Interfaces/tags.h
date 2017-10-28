@@ -13,6 +13,10 @@ public:
     bool DeleteTag(QString);
     bool AddTag();
     virtual bool AssignTagToFandom(QString, QString tag) = 0;
+    QStringList ReadUserTags();
+
+private:
+    QStringList CreateDefaultTagList();
 
     QSharedPointer<DBFandomsBase> fandomInterface;
     QSqlDatabase db;
