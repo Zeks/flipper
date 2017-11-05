@@ -92,14 +92,8 @@ bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDataba
 {
     bool result = Internal::WriteMaxUpdateDateForFandom(fandom, "having count(*) = 1", db,
                                           [](QSharedPointer<core::Fandom> f, QDateTime dt){
-        f->lastUpdateDate = dt;
+        f->lastUpdateDate = dt.date();
     });
-
-    if(fandom->source == "ffn")
-        result = result && Internal::WriteMaxUpdateDateForFandom(fandom, "having count(*) > 1", db,
-                                              [](QSharedPointer<core::Fandom> f, QDateTime dt){
-            f->lastCrossoverUpdateDate = dt;
-        });
     return result;
 }
 
@@ -865,6 +859,82 @@ QSet<QString> GetAllGenres(QSqlDatabase db)
         result.insert(q.value(0).toString());
     return result;
 }
+
+static core::FandomPtr FandomfromQuery (QSqlQuery& q)
+{
+    auto fandom = core::Fandom::NewFandom();
+    fandom->id = q.value("ID").toInt();
+    fandom->url = q.value("NORMAL_URL").toString();
+    fandom->crossoverUrl = q.value("CROSSOVER_URL").toString();
+    fandom->ficCount = q.value("fic_count").toInt();
+    fandom->averageFavesTop3 = q.value("average_faves_top_3").toDouble();
+    fandom->name = q.value("name").toString();
+    fandom->source = q.value("source").toString();
+    fandom->dateOfCreation = q.value("date_of_creation").toDate();
+    fandom->dateOfFirstFic = q.value("date_of_first_fic").toDate();
+    fandom->dateOfLastFic = q.value("date_of_last_fic").toDate();
+    fandom->lastUpdateDate = q.value("last_update").toDate();
+    fandom->tracked = q.value("tracked").toInt();
+    return fandom;
+};
+
+QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db)
+{
+    QList<core::FandomPtr> result;
+
+    QString qs = QString(" select count(id) from fandoms ");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+
+    result.reserve(q.value(0).toInt());
+
+    qs = QString(" select * from fandoms ");
+    q.prepare(qs);
+
+    if(!ExecAndCheck(q))
+        return result;
+
+    while(q.next())
+        result.push_back(FandomfromQuery(q));
+
+    return result;
+}
+
+core::FandomPtr GetFandom(QString name, QSqlDatabase db)
+{
+    core::FandomPtr result;
+
+    QString qs = QString(" select * from fandoms where name = :fandom ");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fandom", name);
+    if(!ExecAndCheck(q))
+        return result;
+    q.next();
+    result = FandomfromQuery(q);
+    return result;
+}
+
+
+QStringList GetTrackedFandomList(QSqlDatabase db)
+{
+    QStringList result;
+
+    QString qs = QString(" select * from fandoms where tracked = 1 order by name asc");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+    while(q.next())
+        result.push_back(q.value(0).toString());
+    return result;
+}
+
 
 }
 }

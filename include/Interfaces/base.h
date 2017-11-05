@@ -1,6 +1,7 @@
 #pragma once
 #include "section.h"
 
+
 namespace interfaces {
 
 struct WriteStats
@@ -12,15 +13,15 @@ struct WriteStats
 
 
 class IDBWrapper;
-class IDBPersistentData{
-  public:
-    virtual ~IDBPersistentData();
-    virtual bool IsDataLoaded() = 0;
-    virtual bool Sync(bool forcedSync = false) = 0;
-    virtual bool Load() = 0;
-    virtual void Clear() = 0;
-    bool isLoaded = false;
-};
+//class IDBPersistentData{
+//  public:
+//    virtual ~IDBPersistentData();
+//    virtual bool IsDataLoaded() = 0;
+//    virtual bool Sync(bool forcedSync = false) = 0;
+//    virtual bool Load() = 0;
+//    virtual void Clear() = 0;
+//    bool isLoaded = false;
+//};
 
 class IDBWebIDIndex{
   public:

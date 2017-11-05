@@ -12,7 +12,7 @@ FandomParser::FandomParser(QSharedPointer<interfaces::Fanfics> fanfics)
 void FandomParser::ProcessPage(WebPage page)
 {
     processedStuff.clear();
-    minSectionUpdateDate = QDateTime::currentDateTimeUtc();
+    minSectionUpdateDate = QDateTime::currentDateTimeUtc().date();
     QString& str = page.content;
     core::Section section;
     int currentPosition = 0;
@@ -69,8 +69,9 @@ void FandomParser::ProcessPage(WebPage page)
 
         if(section.isValid)
         {
-            if((section.result->updated < minSectionUpdateDate) && (section.result->updated.date().year() > 1990))
-                minSectionUpdateDate = section.result->updated;
+            auto updateDate = section.result->updated.date();
+            if((updateDate < minSectionUpdateDate) && (updateDate.year() > 1990))
+                minSectionUpdateDate = updateDate;
             section.result->origin = page.url;
             processedStuff.append(section.result);
         }

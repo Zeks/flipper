@@ -10,8 +10,8 @@
 
 namespace interfaces {
 
-class Fanfics : public IDBWebIDIndex, public IDBPersistentData {
-public:
+class Fanfics : public IDBWebIDIndex {
+    public:
     virtual ~Fanfics();
     void ClearQueues() {
         updateQueue.clear();

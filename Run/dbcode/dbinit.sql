@@ -47,13 +47,12 @@ CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
 
 --fandoms;
 create table if not exists fandoms (FANDOM VARCHAR NOT NULL, SECTION VARCHAR NOT NULL, NORMAL_URL VARCHAR NOT NULL, CROSSOVER_URL VARCHAR NOT NULL);
- alter table fandoms add column tracked integer default 0; 
- alter table fandoms add column tracked_crossovers integer default 0; 
- alter table fandoms add column last_update datetime; 
- alter table fandoms add column last_update_crossover datetime; 
  alter table fandoms add column id integer AUTOINCREMENT default 0; 
+ alter table fandoms add column tracked integer default 0; 
+ alter table fandoms add column last_update datetime; 
  alter table fandoms add column date_of_first_fic datetime; 
  alter table fandoms add column date_of_last_fic datetime; 
+ alter table fandoms add column date_of_creation datetime; 
  
  update fandoms set id = rowid where id is null;
  CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);

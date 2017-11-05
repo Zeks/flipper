@@ -14,9 +14,9 @@ public:
     
     bool IsGenreList(QStringList list);
     bool LoadGenres();
-
-private:
     QSqlDatabase db;
+private:
+
     QSet<QString> genres;
 };
 

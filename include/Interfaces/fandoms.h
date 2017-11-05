@@ -1,7 +1,7 @@
 #pragma once
 #include "Interfaces/base.h"
 #include "Interfaces/db_interface.h"
-//#include "section.h"
+#include "section.h"
 #include <QSharedPointer>
 #include <QSqlDatabase>
 #include <QList>
@@ -12,60 +12,62 @@
 
 namespace interfaces {
 
-class Fandoms : public IDBPersistentData{
+class Fandoms{
 public:
     Fandoms() = default;
-    void Reindex();
-    void AddToIndex(QSharedPointer<core::Fandom>);
     virtual ~Fandoms();
+
+    virtual void Clear() ;
+    virtual void ClearIndex() ;
+    virtual bool Sync(bool forcedSync = false) ;
+    virtual bool IsDataLoaded() ;
+
+    virtual bool Load() ;
+    bool LoadTrackedFandoms(bool forced = false);
+    bool LoadAllFandoms(bool forced = false);
+    virtual bool LoadFandom(QString name);
+    virtual bool EnsureFandom(QString name);
+
+    void Reindex();
+    void AddToIndex(core::FandomPtr);
+
     virtual int GetIDForName(QString) ;
+    virtual core::FandomPtr GetFandom(QString);
+
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);
     virtual QStringList ListOfTrackedNames();
-    virtual QList<QSharedPointer<core::Fandom>> ListOfTrackedFandoms();
-//    virtual QList<int> AllTracked();
-//    virtual QStringList AllTrackedStr();
+    virtual QList<core::FandomPtr> ListOfTrackedFandoms();
 
-    virtual bool CreateFandom(QSharedPointer<core::Fandom>);
-    virtual bool LoadFandom(QString name);
-    virtual bool EnsureFandom(QString name);
-    virtual QSharedPointer<core::Fandom> GetFandom(QString);
-
+    virtual bool CreateFandom(core::FandomPtr);
     virtual bool AssignTagToFandom(QString, QString tag);
-    virtual QStringList PushFandomToTopOfRecent(QString);
-    void RebaseFandomsToZero();
+    virtual void PushFandomToTopOfRecent(QString);
+
     QStringList GetRecentFandoms();
     QStringList GetFandomList();
-
-
-
-    //virtual QStringList FetchRecentFandoms() = 0;
-    //virtual void RebaseFandomsToZero() = 0;
-    //QString DBFandomsBase::GetCurrentCrossoverUrl()
 
     virtual void CalculateFandomAverages();
     virtual void CalculateFandomFicCounts();
 
-    virtual bool Load() override;
-    bool LoadTrackedFandoms();
-    bool LoadAllFandoms();
-    virtual void Clear() override;
-    virtual bool Sync(bool forcedSync = false) override;
-    virtual bool IsDataLoaded() override;
+    QList<core::FandomPtr> FilterFandoms(std::function<bool(core::FandomPtr)>);
 
-    QList<QSharedPointer<core::Fandom>> FilterFandoms(std::function<bool(QSharedPointer<core::Fandom>)>);
-
-    QList<QSharedPointer<core::Fandom>> fandoms;
-    QHash<QString, int> indexFandomsByName;
-    QHash<QString, QSharedPointer<core::Fandom>> nameIndex;
-    QList<QSharedPointer<core::Fandom>> updateQueue;
-    QList<QSharedPointer<core::Fandom>> recentFandoms;
-    QList<QSharedPointer<core::Fandom>> trackedFandoms;
     QSqlDatabase db;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
-    QStringList fandomsList;
 private:
-    void AddToTopOfRecent(QString);
+    bool AddToTopOfRecent(QString);
+    void FillFandomList(bool forced = false);
+
+    QList<core::FandomPtr> fandoms;
+    QHash<QString, int> indexFandomsByName;
+    QHash<QString, core::FandomPtr> nameIndex;
+    QHash<int, core::FandomPtr> idIndex;
+    QList<core::FandomPtr> updateQueue;
+    QList<core::FandomPtr> recentFandoms;
+    QList<core::FandomPtr> trackedFandoms;
+    QStringList fandomsList;
+
+    QSharedPointer<database::IDBWrapper> portableDBInterface;
+
+    bool isLoaded = false;
 };
 
 }

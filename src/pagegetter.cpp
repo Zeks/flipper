@@ -223,7 +223,7 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
     qDebug() << "worker is alive";
 }
 
-void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit, ECacheMode cacheMode)
+void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
     working = true;
@@ -303,7 +303,7 @@ QString PageThreadWorker::GetNext(QString text)
     return nextUrl;
 }
 
-QDateTime PageThreadWorker::GrabMinUpdate(QString text)
+QDate PageThreadWorker::GrabMinUpdate(QString text)
 {
     QDateTime minDate;
     QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
@@ -311,6 +311,6 @@ QDateTime PageThreadWorker::GrabMinUpdate(QString text)
     if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
         minDate.setTime_t(rx.cap(1).toInt());
 
-    return minDate;
+    return minDate.date();
 }
 

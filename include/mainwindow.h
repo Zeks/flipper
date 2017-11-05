@@ -79,7 +79,8 @@ public:
     QSharedPointer<interfaces::Tags> tagsInterface;
     QSharedPointer<interfaces::Genres> genresInterface;
     QSharedPointer<interfaces::RecommendationLists> recsInterface;
-    QSharedPointer<database::IDBWrapper> portableInterface;
+    QSharedPointer<database::IDBWrapper> dbInterface;
+    QSharedPointer<database::IDBWrapper> pageCacheInterface;
 private:
 
     void SetupFanficTable();
@@ -98,7 +99,7 @@ private:
 
     QString GetCurrentFandomName();
 
-    void RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString url);
+    void RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
     WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 
 
@@ -259,7 +260,7 @@ private slots:
     void on_cbRecTagBuildGroup_currentTextChanged(const QString &arg1);
 
 signals:
-    void pageTask(QString, QString, QDateTime, ECacheMode);
+    void pageTask(QString, QString, QDate, ECacheMode);
     void pageTaskList(QStringList, ECacheMode);
 };
 

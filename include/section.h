@@ -199,6 +199,9 @@ class Section : public DBEntity
     QSharedPointer<Fic> result;
     bool isValid =false;
 };
+class Fandom;
+typedef  QSharedPointer<Fandom> FandomPtr;
+
 class Fandom : public DBEntity
 {
     public:
@@ -211,6 +214,7 @@ class Fandom : public DBEntity
         this->crossoverUrl = crossoverUrl.trimmed();
         this->source = source.trimmed();
     }
+    static FandomPtr NewFandom() { return QSharedPointer<Fandom>(new Fandom);}
     QStringList GetUrls(){
         QStringList  result;
         if(!url.isEmpty() && url != "none")
@@ -222,16 +226,17 @@ class Fandom : public DBEntity
     int id = -1;
     int idInRecentFandoms = -1;
     int ficCount = 0;
-    int averageFavesTop3 = 0;
+    double averageFavesTop3 = 0.0;
     QString name;
     QString section = "none";
     QString url = "none";
     QString crossoverUrl = "none";
     QString source = "ffn";
-    QDateTime dateOfCreation;
-    QDateTime dateOfLastFic;
-    QDateTime lastUpdateDate;
-    QDateTime lastCrossoverUpdateDate;
+    QDate dateOfCreation;
+    QDate dateOfFirstFic;
+    QDate dateOfLastFic;
+    QDate lastUpdateDate;
+
 
     bool tracked = false;
 };

@@ -10,7 +10,7 @@
 
 namespace interfaces {
 class IDBWrapper;
-class Authors : public IDBPersistentData{
+class Authors {
 public:
     virtual ~Authors();
     void Reindex();

@@ -267,7 +267,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ReadSettings();
     SetupFanficTable();
     InitConnections();
-    fandomsInterface->RebaseFandomsToZero();
+    //fandomsInterface->RebaseFandomsToZero();
 
     recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
@@ -464,19 +464,24 @@ void MainWindow::Init()
 
 void MainWindow::InitInterfaces()
 {
-    QSharedPointer<interfaces::Authors> authors (new interfaces::FFNAuthors());
-    QSharedPointer<interfaces::Fanfics> fanfics (new interfaces::FFNFanfics());
-    QSharedPointer<interfaces::RecommendationLists> recommendations (new interfaces::RecommendationLists());
-    QSharedPointer<interfaces::Fandoms> fandoms (new interfaces::Fandoms());
-    QSharedPointer<interfaces::Tags> tags (new interfaces::Tags());
-    QSharedPointer<interfaces::Genres> genres (new interfaces::Genres());
+    authorsInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    recsInterface    = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
+    fandomsInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
+    tagsInterface    = QSharedPointer<interfaces::Tags> (new interfaces::Tags());
+    genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
 
-    authorsInterface = authors;
-    fanficsInterface = fanfics;
-    recsInterface = recommendations;
-    fandomsInterface = fandoms;
-    tagsInterface = tags;
-    genresInterface = genres;
+    // probably need to change this to db accessor
+    // to ensure db availability for later
+
+    authorsInterface->db = dbInterface->GetDatabase();
+    fanficsInterface->db = dbInterface->GetDatabase();
+    recsInterface->db    = dbInterface->GetDatabase();
+    fandomsInterface->db = dbInterface->GetDatabase();
+    tagsInterface->db    = dbInterface->GetDatabase();
+    genresInterface->db  = dbInterface->GetDatabase();
+
+    fandomsInterface->Load();
 }
 
 void MainWindow::InitConnections()
@@ -487,14 +492,14 @@ void MainWindow::InitConnections()
 
 }
 
-void MainWindow::RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString page)
+void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString page)
 {
     nextUrl = page;
     //qDebug() << "will request url:" << nextUrl;
     if(ui->cbUseDateCutoff->isChecked())
-        lastFandomUpdatedate = QDateTime(ui->deCutoffLimit->date());
+        lastFandomUpdatedate = ui->deCutoffLimit->date();
     if(ui->chkIgnoreUpdateDate->isChecked())
-        lastFandomUpdatedate = QDateTime();
+        lastFandomUpdatedate = QDate();
 
 
     StartPageWorker();
@@ -1957,7 +1962,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         ignoreUpdateDate = false;
         nextUrl = QString();
         for(QString url: urls)
-            RequestAndProcessPage(fandom->name, lastUpdated, url);
+            RequestAndProcessPage(fandom->name, lastUpdated.date(), url);
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
 }

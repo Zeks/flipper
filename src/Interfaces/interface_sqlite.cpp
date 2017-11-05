@@ -48,12 +48,13 @@ bool SqliteInterface::BackupDatabase(QString dbname)
 
 bool SqliteInterface::ReadDbFile(QString file, QString connectionName)
 {
-        return sqlite::ReadDbFile(file, connectionName);
+    return sqlite::ReadDbFile(file, connectionName);
 }
 
 QSqlDatabase SqliteInterface::InitDatabase(QString connectionName)
 {
-    return sqlite::InitDatabase(connectionName);
+    db = sqlite::InitDatabase(connectionName);
+    return db;
 }
 
 }

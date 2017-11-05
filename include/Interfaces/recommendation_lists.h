@@ -10,7 +10,7 @@
 
 namespace interfaces {
 
-class RecommendationLists : public IDBPersistentData
+class RecommendationLists
 {
 public:
     int GetListIdForName(QString name); //! todo do I need to fill index without filling lists

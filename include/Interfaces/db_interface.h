@@ -19,6 +19,9 @@ public:
     virtual bool BackupDatabase(QString dbname) = 0;
     virtual bool ReadDbFile(QString file, QString connectionName = "default") = 0;
     virtual QSqlDatabase InitDatabase(QString connectionName = "default") = 0;
+    QSqlDatabase GetDatabase() {return db;}
+protected:
+
     QSqlDatabase db;
 };
 }

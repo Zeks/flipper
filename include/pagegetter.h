@@ -65,11 +65,11 @@ public:
     ~PageThreadWorker();
     virtual void timerEvent(QTimerEvent *);
     QString GetNext(QString);
-    QDateTime GrabMinUpdate(QString text);
+    QDate GrabMinUpdate(QString text);
     int timeout = 500;
     std::atomic<bool> working;
 public slots:
-    void Task(QString url, QString lastUrl, QDateTime updateLimit, ECacheMode cacheMode);
+    void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode);
     void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
     void pageReady(WebPage);

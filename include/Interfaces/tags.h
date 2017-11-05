@@ -13,12 +13,12 @@ public:
     bool DeleteTag(QString);
     bool AddTag();
     QStringList ReadUserTags();
-
+QSqlDatabase db;
 private:
     QStringList CreateDefaultTagList();
 
     QSharedPointer<Fandoms> fandomInterface;
-    QSqlDatabase db;
+
 };
 
 

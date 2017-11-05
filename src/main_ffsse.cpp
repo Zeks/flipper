@@ -9,17 +9,19 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
-    QSharedPointer<database::IDBWrapper> portableInterface (new database::SqliteInterface());
-    portableInterface->BackupDatabase("Crawler.sqlite");
+    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
+    dbInterface->BackupDatabase("Crawler.sqlite");
 
-    portableInterface->InitDatabase();
-    portableInterface->InitDatabase("pagecache");
+    dbInterface->InitDatabase();
+    pageCacheInterface->InitDatabase("pagecache");
 
-    portableInterface->ReadDbFile("dbcode/dbinit.sql");
-    portableInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
+    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
 
     MainWindow w;
-    w.portableInterface = portableInterface;
+    w.dbInterface = dbInterface;
+    w.pageCacheInterface = pageCacheInterface;
     w.InitInterfaces();
     w.show();
 

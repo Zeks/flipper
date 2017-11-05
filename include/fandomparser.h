@@ -29,7 +29,7 @@ public:
 
     QStringList diagnostics;
     QString nextUrl;
-    QDateTime minSectionUpdateDate;
+    QDate minSectionUpdateDate;
 
     // FFNParserBase interface
 public:
