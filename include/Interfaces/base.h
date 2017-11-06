@@ -30,8 +30,7 @@ class IDBWebIDIndex{
     virtual int GetWebIDFromID(int) = 0;
     virtual int GetIDFromWebID(int, QString website) = 0;
     virtual int GetWebIDFromID(int, QString website) = 0;
-    QHash<int, int> indexIDByWebID;
-    QHash<int, int> indexWebIDByID;
+
 };
 
 class IDbService

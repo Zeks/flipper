@@ -27,10 +27,8 @@ QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db);
 core::FandomPtr GetFandom(QString name, QSqlDatabase db);
 
 int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
-
-// needs not exist? better read from fics?
-// probbaly needs to return whole fic
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
+core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db);
 
 bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
@@ -43,10 +41,12 @@ QList<int> GetAllAuthorIds(QSqlDatabase db);
 
 
 QList<core::AuthorPtr > GetAllAuthors(QString website,  QSqlDatabase db);
+QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
+
 core::AuthorPtr  GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
 core::AuthorPtr  GetAuthorByUrl(QString url,  QSqlDatabase db);
 core::AuthorPtr  GetAuthorById(int id,  QSqlDatabase db);
-QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
+QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
 QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
 QSharedPointer<core::RecommendationList> GetRecommendationList(int listid, QSqlDatabase db);
 QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSqlDatabase db);
@@ -54,7 +54,7 @@ QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSq
 int GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
 
 QVector<int> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db);
-
+QStringList GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db);
 
 int GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db);
 int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDatabase db);
@@ -62,7 +62,7 @@ int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDa
 
 bool DeleteRecommendationList(int listId, QSqlDatabase db );
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
-bool WriteAuthorRecommendationStatsForList(int listId, QSharedPointer<core::AuthorRecommendationStats> stats, QSqlDatabase db);
+bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db);
 bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 bool DeleteTagfromDatabase(QString tag, QSqlDatabase db);

@@ -223,7 +223,7 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         ui->edtResults->setUpdatesEnabled(true);
         ui->edtResults->setReadOnly(true);
-        holder->SetData(fanficsInterface->GetCurrentFicSet());
+        holder->SetData(fanfics);
         typetableModel->OnReloadDataFromInterface();
         qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
     });

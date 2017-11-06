@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QSqlDatabase>
+#include <QReadWriteLock>
+#include <QSet>
 
 namespace database{
 class Transaction{
@@ -12,6 +14,8 @@ public:
     bool finalize();
     QSqlDatabase db;
     bool isOpen = false;
+    static QReadWriteLock lock;
+    static QSet<QString> transactionSet;
 };
 
 }

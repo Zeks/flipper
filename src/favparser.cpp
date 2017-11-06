@@ -79,7 +79,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         });
         if(statText.contains("CROSSOVER", Qt::CaseInsensitive))
             GetCrossoverFandomList(section, currentPosition, str);
-        section.result->origin = url;
+
         if(section.isValid)
         {
             sections.append(section.result);

@@ -2,6 +2,7 @@
 #include "Interfaces/base.h"
 #include "section.h"
 #include "QScopedPointer"
+#include <QSet>
 #include "QSharedPointer"
 #include "QSqlDatabase"
 #include "QReadWriteLock"
@@ -18,29 +19,72 @@ class Fanfics : public IDBWebIDIndex {
         insertQueue.clear();
     }
 
-    virtual int GetIDFromWebID(int, QString website) override;
-    virtual int GetWebIDFromID(int, QString website) override;
+    void ClearIndex();
+    void ClearIndexWithIdIndex();
+    void Reindex();
+    void AddFicToIndex(core::FicPtr);
+
+    int EnsureId(core::FicPtr fic);
+    void EnsureId(QString website, int webId);
+
+    bool EnsureFicLoaded(int id, QString website);
+    bool LoadFicFromDB(int id, QString website);
+    bool LoadFicToDB(core::FicPtr);
+
+
+    virtual int GetIDFromWebID(int, QString website);
+    virtual int GetWebIDFromID(int, QString website);
 
     virtual bool IsEmptyQueues();
     virtual int GetIdForUrl(QString url) = 0;
+//    QList<core::Fic>  GetCurrentFicSetForQML();
 
     bool ReprocessFics(QString where, QString website, std::function<void(int)> f);
+
+    void AddRecommendations(QList<core::FicRecommendation> recommendations);
+
+    void ProcessIntoDataQueues(QList<core::FicPtr> fics, bool alwaysUpdateIfNotInsert = false);
+    void FlushDataQueues();
+
     virtual bool DeactivateFic(int ficId, QString website);
     virtual bool DeactivateFic(int ficId) = 0;
-    void AddRecommendations(QList<core::FicRecommendation> recommendations);
-    void ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert = false);
-//    void CalculateFandomAverages();
-//    void CalculateFandomFicCounts();
-    void FlushDataQueues();
-    QList<core::Fic>  GetCurrentFicSet();
-    // queued by webid
+    // update interface
     QReadWriteLock mutex;
-    QHash<int, QSharedPointer<core::Fic>> updateQueue;
-    QHash<int, QSharedPointer<core::Fic>> insertQueue;
+
+    QHash<int, core::FicPtr> updateQueue;
+    QHash<int, core::FicPtr> insertQueue;
+
     QList<core::FicRecommendation> ficRecommendations;
+
+
+    QList<core::FicPtr> fics;
+    QHash<int, core::FicPtr> idIndex;
+    QHash<QString, QHash<int, core::FicPtr>> webIdIndex;
+
     QSharedPointer<Authors> authorInterface;
-    QList<core::Fic> currentSet;
     QSqlDatabase db;
+private:
+    int GetIdFromDatabase(QString website, int id);
+    // index for ids only, for cases where I don't need to operate on whole fics
+    struct IdResult
+    {
+        bool exists = false;
+        bool valid = false;
+        int id = -1;
+    };
+    struct FicIds{
+        void Clear();
+        IdResult GetIdByWebId(QString, int);
+        IdResult GetWebIdById(QString, int);
+        void Add(QString website, int webId, int id);
+//        void AddToAccessedWebIds(QString website, int webId);
+//        void AddToAccessedIds(int id);
+        //QSet<QPair<QString, int>> accessedWebIDs;
+        //QSet<int> accessedIDs;
+        QHash<int, QHash<QString, int>> idIndex;
+        QHash<QString, QHash<int, int>> webIdIndex;
+    };
+    FicIds idOnly;
 
 };
 }

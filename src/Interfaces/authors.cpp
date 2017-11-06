@@ -33,6 +33,15 @@ void Authors::ClearCache()
     cachedAuthorToTagStats.clear();
 }
 
+void Authors::AddPreloadedAuthor(core::AuthorPtr author)
+{
+    if(!author)
+        return;
+    if(authorsById.contains(author->id))
+        return;
+    AddAuthorToIndex(author);
+}
+
 void Authors::IndexAuthors()
 {
     for(auto author : authors)

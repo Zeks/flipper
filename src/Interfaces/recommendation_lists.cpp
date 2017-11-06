@@ -6,28 +6,31 @@
 
 namespace interfaces {
 
-int RecommendationLists::GetListIdForName(QString name)
+
+void RecommendationLists::Clear()
 {
-    if(!EnsureList(name))
-        return -1;
-    return nameIndex[name]->id;
+    ClearIndex();
+    ClearCache();
+    lists.clear();
+    currentRecommenderSet.clear();
 }
 
-QString RecommendationLists::GetListNameForId(int id)
+void RecommendationLists::ClearIndex()
 {
-    if(idIndex.contains(id))
-        return idIndex[id]->name;
-    return QString();
+    idIndex.clear();
+    nameIndex.clear();
 }
+
+void RecommendationLists::ClearCache()
+{
+    cachedAuthorStats.clear();
+    ficsCacheForLists.clear();
+}
+
 
 void RecommendationLists::Reindex()
 {
     ClearIndex();
-    IndexLists();
-}
-
-void RecommendationLists::IndexLists()
-{
     for(auto list: lists)
     {
         if(!list)
@@ -37,33 +40,111 @@ void RecommendationLists::IndexLists()
     }
 }
 
-void RecommendationLists::ClearIndex()
+void RecommendationLists::AddToIndex(core::RecPtr)
 {
-    idIndex.clear();
-    nameIndex.clear();
+
 }
 
-QList<QSharedPointer<core::AuthorRecommendationStats> > RecommendationLists::GetAuthorStatsForList(int id)
+bool RecommendationLists::EnsureList(int listId)
 {
-    QList<QSharedPointer<core::AuthorRecommendationStats> > result;
-    if(!idIndex.contains(id))
-        return result;
-    if(cachedAuthorStats.contains(id))
-        result = cachedAuthorStats[id];
-    //otherwise, need to load it
-    auto stats = database::puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
-    cachedAuthorStats[id] = stats;
-    result = stats;
+    // means there was an attept to access the list and it was not found
+    // hence an empty record was inserted
+    // needed so that I don't try to access non existing lists repeatedly
+    if(idIndex.contains(listId) && !idIndex[listId])
+        return false;
+
+    if(idIndex.contains(listId))
+        return true;
+
+    auto list = database::puresql::GetRecommendationList(listId, db);
+
+    AddToIndex(list);
+
+    if(!list)
+        return false;
+
+    return true;
+}
+
+bool RecommendationLists::EnsureList(QString name)
+{
+    // means there was an attept to access the list and it was not found
+    // hence an empty record was inserted
+    // needed so that I don't try to access non existing lists repeatedly
+
+    if(nameIndex.contains(name) && !nameIndex[name])
+        return false;
+    if(nameIndex.contains(name))
+        return true;
+    auto list = database::puresql::GetRecommendationList(name, db);
+
+    AddToIndex(list);
+
+    if(!list)
+        return false;
+
+    return true;
+}
+
+core::RecPtr RecommendationLists::GetList(int id)
+{
+    core::RecPtr result;
+    if(EnsureList(id))
+        result = idIndex[id];
     return result;
 }
 
-QSharedPointer<core::AuthorRecommendationStats> RecommendationLists::GetIndividualAuthorStatsForList(int id, int authorId)
+core::RecPtr RecommendationLists::GetList(QString name)
 {
-    QSharedPointer<core::AuthorRecommendationStats> result;
+    core::RecPtr result;
+    if(EnsureList(name))
+        result = nameIndex[name];
+    return result;
+}
+
+int RecommendationLists::GetListIdForName(QString name)
+{
+    int result = -1;
+    if(EnsureList(name))
+        result = nameIndex[name]->id;
+
+    return result;
+}
+
+QString RecommendationLists::GetListNameForId(int id)
+{
+
+    QString result;
+    if(EnsureList(id))
+        result = idIndex[id]->name;
+
+    return result;
+}
+
+QList<core::AuhtorStatsPtr > RecommendationLists::GetAuthorStatsForList(int id)
+{
+    QList<core::AuhtorStatsPtr > result;
+    if(!EnsureList(id))
+        return result;
+    if(cachedAuthorStats.contains(id))
+        result = cachedAuthorStats[id];
+    else
+    {
+        //otherwise, need to load it
+        auto stats = database::puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
+        cachedAuthorStats[id] = stats;
+        result = stats;
+    }
+    return result;
+}
+
+core::AuhtorStatsPtr RecommendationLists::GetIndividualAuthorStatsForList(int id, int authorId)
+{
+    core::AuhtorStatsPtr result;
     auto temp = GetAuthorStatsForList(id);
     if(temp.size() == 0)
         return result;
-    auto it = std::find_if(std::begin(temp),std::end(temp),[authorId](QSharedPointer<core::AuthorRecommendationStats> st){
+    auto it = std::find_if(std::begin(temp),std::end(temp),[authorId](core::AuhtorStatsPtr st){
         if(st && st->authorId == authorId)
             return true;
         return false;
@@ -84,6 +165,9 @@ int RecommendationLists::GetMatchCountForRecommenderOnList(int authorId, int lis
 QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 {
     QVector<int> result;
+    if(!EnsureList(listId))
+        return result;
+
     if(!ficsCacheForLists.contains(listId))
     {
         result = database::puresql::GetAllFicIDsFromRecommendationList(listId, db);
@@ -98,39 +182,74 @@ QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 
 QStringList RecommendationLists::GetNamesForListId(int listId)
 {
-    return QStringList(); //! todo
+    QStringList result;
+    if(!EnsureList(listId))
+        return result;
+
+    if(!authorsCacheForLists.contains(listId))
+    {
+        result = database::puresql::GetAllAuthorNamesForRecommendationList(listId, db);
+        authorsCacheForLists[listId] = result;
+    }
+    else
+        result = authorsCacheForLists[listId];
+
+    return result;
+
 }
 
 bool RecommendationLists::DeleteList(int listId)
 {
-    return database::puresql::DeleteRecommendationList(listId, db);
+    if(!EnsureList(listId))
+        return true;
+
+    bool result = database::puresql::DeleteRecommendationList(listId, db);
+    DeleteLocalList(listId);
+    return result;
+
 }
+
+void RecommendationLists::DeleteLocalList(int listId)
+{
+    if(!idIndex.contains(listId))
+        return;
+
+    auto list = idIndex[listId];
+    idIndex.remove(list->id);
+    nameIndex.remove(list->name);
+    ficsCacheForLists.remove(list->id);
+    authorsCacheForLists.remove(list->id);
+    cachedAuthorStats.remove(list->id);
+    if(currentRecommendationList == list->id)
+        currentRecommendationList = -1;
+
+    auto it = std::remove_if(std::begin(lists), std::end(lists), [listId](auto item){
+                                 return item && item->id == listId;});
+    lists.erase(it, std::end(lists));
+}
+
+
 
 bool RecommendationLists::ReloadList(int listId)
 {
-    QSharedPointer<core::RecommendationList> list;
-    return true; //! todo
+    DeleteLocalList(listId);
+    if(EnsureList(listId))
+        return true;
+    return false;
 }
 
-void RecommendationLists::AddList(QSharedPointer<core::RecommendationList>)
+core::AuhtorStatsPtr RecommendationLists::CreateAuthorRecommendationStatsForList(int authorId,int listId)
 {
+    core::AuhtorStatsPtr  result;
+    if(!EnsureList(listId) || !authorInterface->EnsureAuthorLoaded(authorId))
+        return result;
 
-}
 
-QSharedPointer<core::RecommendationList> RecommendationLists::NewList()
-{
-    return QSharedPointer<core::RecommendationList>(new core::RecommendationList);
-}
-
-QSharedPointer<core::AuthorRecommendationStats> RecommendationLists::CreateAuthorRecommendationStatsForList(int authorId,int listId)
-{
     auto preExisting = GetIndividualAuthorStatsForList(listId, authorId);
     if(preExisting)
         return preExisting;
 
-    QSharedPointer<core::AuthorRecommendationStats> result (new core::AuthorRecommendationStats);
-    if(!EnsureList(listId))
-        return result;
+    result = core::AuthorRecommendationStats::NewAuthorStats();
 
     auto list = idIndex[listId];
     auto author = authorInterface->GetById(authorId);
@@ -144,7 +263,7 @@ QSharedPointer<core::AuthorRecommendationStats> RecommendationLists::CreateAutho
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
-        result->matchRatio = (double)result->totalFics/(double)result->matchesWithReference;
+        result->matchRatio = static_cast<double>(result->totalFics)/static_cast<double>(result->matchesWithReference);
     result->isValid = true;
     cachedAuthorStats[listId].push_back(result);
     return result;
@@ -160,14 +279,14 @@ bool RecommendationLists::IncrementAllValuesInListMatchingAuthorFavourites(int a
     return database::puresql::IncrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db);
 }
 
-bool RecommendationLists::LoadAuthorRecommendationStatsIntoDatabase(int listId, QSharedPointer<core::AuthorRecommendationStats> stats)
+bool RecommendationLists::LoadAuthorRecommendationStatsIntoDatabase(int listId, core::AuhtorStatsPtr stats)
 {
     return database::puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
 }
 
-bool RecommendationLists::LoadListIntoDatabase(QSharedPointer<core::RecommendationList> list)
+bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
 {
-    AddList(list);
+    AddToIndex(list);
     auto timeStamp = portableDBInterface->GetCurrentDateTime();
     return database::puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
 }
@@ -177,6 +296,7 @@ bool RecommendationLists::UpdateFicCountInDatabase(int listId)
     return database::puresql::UpdateFicCountForRecommendationList(listId, db);
 }
 
+// currently unused
 bool RecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData)
 {
     auto result = database::puresql::AddAuthorFavouritesToList(authorId, listId, db);
@@ -186,11 +306,7 @@ bool RecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bo
         ReloadList(listId);
     return result;
 }
-void RecommendationLists::Clear()
-{
-    ClearIndex();
-    lists.clear();
-}
+
 
 void RecommendationLists::LoadAvailableRecommendationLists()
 {
@@ -198,38 +314,19 @@ void RecommendationLists::LoadAvailableRecommendationLists()
     Reindex();
 }
 
-bool RecommendationLists::EnsureList(int listId)
-{
-    if(idIndex.contains(listId) && !idIndex[listId])
-        return false;
-    if(idIndex.contains(listId))
-        return true;
-    auto list = database::puresql::GetRecommendationList(listId, db);
-    if(!list)
-        return false;
-    idIndex[listId] = list;
-    Reindex();
-    return true;
-}
-
-bool RecommendationLists::EnsureList(QString name)
-{
-    if(nameIndex.contains(name) && !nameIndex[name])
-        return false;
-    if(nameIndex.contains(name))
-        return true;
-    auto list = database::puresql::GetRecommendationList(name, db);
-    if(!list)
-        return false;
-    idIndex[list->id] = list;
-    Reindex();
-    return true;
-}
-
 bool RecommendationLists::LoadAuthorsForRecommendationList(int listId)
 {
     currentRecommendationList = listId;
-// todo implement
+    currentRecommenderSet.clear();
+    auto authors = database::puresql::GetAuthorsForRecommendationList(listId, db);
+
+    for(auto author: authors)
+    {
+        if(!author)
+            continue;
+        currentRecommenderSet.insert(author->id, author);
+        authorInterface->AddPreloadedAuthor(author);
+    }
     return true;
 }
 
@@ -238,36 +335,6 @@ QList<QSharedPointer<core::Author> > RecommendationLists::GetAuthorsForRecommend
     if(currentRecommendationList != listId)
         LoadAuthorsForRecommendationList(listId);
     return currentRecommenderSet.values();
-}
-
-QSharedPointer<core::RecommendationList> RecommendationLists::GetList(int id)
-{
-    QSharedPointer<core::RecommendationList> result;
-    if(!EnsureList(id))
-        return result;
-    result = idIndex[id];
-    return result;
-}
-
-QSharedPointer<core::RecommendationList> RecommendationLists::GetList(QString name)
-{
-    auto id = GetListIdForName(name);
-    return GetList(id);
-}
-
-bool RecommendationLists::IsDataLoaded()
-{
-    return true;
-}
-
-bool RecommendationLists::Sync(bool forcedSync)
-{
-    return true;
-}
-
-bool RecommendationLists::Load()
-{
-    return true;
 }
 
 void RecommendationLists::SetCurrentRecommendationList(int value)

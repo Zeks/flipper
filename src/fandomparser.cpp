@@ -72,7 +72,7 @@ void FandomParser::ProcessPage(WebPage page)
             auto updateDate = section.result->updated.date();
             if((updateDate < minSectionUpdateDate) && (updateDate.year() > 1990))
                 minSectionUpdateDate = updateDate;
-            section.result->origin = page.url;
+
             processedStuff.append(section.result);
         }
 

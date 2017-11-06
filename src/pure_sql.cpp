@@ -180,6 +180,7 @@ int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db)
     CheckExecution(q1);
     return result;
 }
+
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db)
 {
     QSqlQuery q1(db);
@@ -194,6 +195,51 @@ int GetFicIdByWebId(QString website, int webId, QSqlDatabase db)
     CheckExecution(q1);
 
     return result;
+}
+
+core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db)
+{
+    core::FicPtr fic;
+    QSqlQuery q1(db);
+    QString qsl = " select * from fanfics where %1_id = :site_id";
+    qsl = qsl.arg(website);
+    q1.prepare(qsl);
+    q1.bindValue(":site_id",webId);
+
+    if(!ExecAndCheck(q1))
+        return fic;
+
+    if(!q1.next())
+        return fic;
+
+    fic = core::Fic::NewFanfic();
+    fic->atChapter = q1.value("AT_CHAPTER").toInt();
+    fic->complete  = q1.value("COMPLETE").toInt();
+    fic->webId     = q1.value(website + "_ID").toInt();
+    fic->id        = q1.value("ID").toInt();
+    fic->wordCount = q1.value("WORDCOUNT").toString();
+    fic->chapters = q1.value("CHAPTERS").toString();
+    fic->reviews = q1.value("REVIEWS").toString();
+    fic->favourites = q1.value("FAVOURITES").toString();
+    fic->follows = q1.value("FOLLOWS").toString();
+    fic->rated = q1.value("RATED").toString();
+    fic->fandoms = q1.value("FANDOMS").toString().split("##");
+    fic->title = q1.value("TITLE").toString();
+    fic->genres = q1.value("GENRES").toString().split("##");
+    fic->summary = q1.value("SUMMARY").toString();
+    fic->tags = q1.value("TAGS").toString();
+    fic->language = q1.value("LANGUAGE").toString();
+    fic->published = q1.value("PULISHED").toDateTime();
+    fic->updated = q1.value("UPDATED").toDateTime();
+    fic->characters = q1.value("CHARACTERS").toString().split(",");
+    fic->authorId = q1.value("AUTHOR_ID").toInt();
+    fic->webSite = website;
+    fic->ffn_id = q1.value("FFN_ID").toInt();
+    fic->ao3_id = q1.value("AO3_ID").toInt();
+    fic->sb_id = q1.value("SB_ID").toInt();
+    fic->sv_id = q1.value("SV_ID").toInt();
+
+    return fic;
 }
 
 bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
@@ -385,6 +431,28 @@ QList<core::AuthorPtr> GetAllAuthors(QString website,  QSqlDatabase db)
     return result;
 }
 
+
+
+QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db)
+{
+    QList<core::AuthorPtr> result;
+
+    QSqlQuery q(db);
+    QString qs = QString("select id,name, url from recommenders where id in ( select id from RecommendationListAuthorStats where list_id = :list_id )");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+
+    while(q.next())
+    {
+        auto author = AuthorFromQuery(q);
+        result.push_back(author);
+    }
+    return result;
+}
+
+
 core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website, QSqlDatabase db)
 {
     core::AuthorPtr result;
@@ -511,9 +579,9 @@ QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSq
     }
     return result;
 }
-QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db)
+QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db)
 {
-    QList<QSharedPointer<core::AuthorRecommendationStats>> result;
+    QList<core::AuhtorStatsPtr> result;
     //auto listId= GetRecommendationListIdForName(listName);
     QString qs = QString("select rts.match_count as match_count,"
                          "rts.match_ratio as match_ratio,"
@@ -530,7 +598,7 @@ QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForLis
 
     while(q.next())
     {
-        QSharedPointer<core::AuthorRecommendationStats> stats(new core::AuthorRecommendationStats);
+        core::AuhtorStatsPtr stats(new core::AuthorRecommendationStats);
         stats->isValid = true;
         stats->matchesWithReference = q.value("match_count").toInt();
         stats->matchRatio= q.value("match_ratio").toDouble();
@@ -586,6 +654,22 @@ QVector<int> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db)
     return result;
 }
 
+QStringList GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db)
+{
+    QStringList result;
+
+    QString qs = QString("select name from recommenders where id in (select author_id from RecommendationListAuthorStats where list_id = :list_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+
+    while(q.next())
+        result.push_back(q.value("name").toString());
+
+    return result;
+}
 
 int GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db)
 {
@@ -657,7 +741,7 @@ bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase d
         return false;
     return true;
 }
-bool WriteAuthorRecommendationStatsForList(int listId, QSharedPointer<core::AuthorRecommendationStats> stats, QSqlDatabase db)
+bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db)
 {
     if(!stats)
         return false;
@@ -997,6 +1081,8 @@ QStringList GetTrackedFandomList(QSqlDatabase db)
         result.push_back(q.value(0).toString());
     return result;
 }
+
+
 
 
 

@@ -21,6 +21,8 @@ public:
     void ClearIndex();
     void ClearCache();
 
+    void AddPreloadedAuthor(core::AuthorPtr);
+
     virtual bool EnsureId(core::AuthorPtr author) = 0;
     bool EnsureId(core::AuthorPtr author, QString website);
 

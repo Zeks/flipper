@@ -77,8 +77,8 @@ class FavouritesPage
 
 };
 
-
-
+class Fic;
+typedef QSharedPointer<Fic> FicPtr;
 
 class Fic : public DBEntity{
     public:
@@ -86,6 +86,8 @@ class Fic : public DBEntity{
     Fic(const Fic&) = default;
     Fic& operator=(const Fic&) = default;
     ~Fic(){}
+
+    static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
     int complete=0;
     int atChapter=0;
     int webId = -1;
@@ -109,15 +111,19 @@ class Fic : public DBEntity{
     QString statSection;
 
     QString tags;
-    QString origin;
+    //QString origin;
     QString language;
+
     QDateTime published;
     QDateTime updated;
     QString charactersFull;
     QStringList characters;
     bool isValid =false;
+    int authorId = -1;
     QSharedPointer<Author> author;
+
     QHash<QString, QString> urls;
+
     void SetGenres(QString genreString, QString website){
 
         this->genreString = genreString;
@@ -143,10 +149,15 @@ class Fic : public DBEntity{
         urls[type] = url;
         urlFFN = url;
     }
+    int ffn_id = -1;
+    int ao3_id = -1;
+    int sb_id = -1;
+    int sv_id = -1;
     QString urlFFN;
     int recommendations = 0;
     QString webSite = "ffn";
     UpdateMode updateMode = UpdateMode::none;
+
 };
 
 class Section : public DBEntity
@@ -244,11 +255,13 @@ class Fandom : public DBEntity
 };
 
 
-
+class AuthorRecommendationStats;
+typedef QSharedPointer<AuthorRecommendationStats> AuhtorStatsPtr;
 
 class AuthorRecommendationStats : public DBEntity
 {
     public:
+    static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}
     int authorId= -1;
     int totalFics = -1;
     int matchesWithReference = -1;
@@ -271,8 +284,13 @@ struct FicRecommendation
     }
 };
 
+class RecommendationList;
+typedef QSharedPointer<RecommendationList> RecPtr;
+
+
 class RecommendationList : public DBEntity{
     public:
+    static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
     int id = -1;
     int ficCount =-1;
     QString name;
