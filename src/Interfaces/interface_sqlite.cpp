@@ -51,9 +51,9 @@ bool SqliteInterface::ReadDbFile(QString file, QString connectionName)
     return sqlite::ReadDbFile(file, connectionName);
 }
 
-QSqlDatabase SqliteInterface::InitDatabase(QString connectionName)
+QSqlDatabase SqliteInterface::InitDatabase(QString connectionName, bool setDefault)
 {
-    db = sqlite::InitDatabase(connectionName);
+    db = sqlite::InitDatabase(connectionName, setDefault);
     return db;
 }
 

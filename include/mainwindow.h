@@ -68,6 +68,7 @@ public:
         lfbp_recs = 1
     };
     explicit MainWindow(QWidget *parent = 0);
+    void Init();
     ~MainWindow();
     void ReInitFandoms();
     void InitInterfaces();

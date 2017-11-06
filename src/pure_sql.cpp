@@ -14,8 +14,10 @@ bool ExecAndCheck(QSqlQuery& q)
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "SQLERROR: " <<  q.lastError();
+        qDebug() << "Error while performing a query: ";
         qDebug() << q.lastQuery();
+        qDebug() << "Error was: " <<  q.lastError();
+        qDebug() << "Native code: " << q.lastError().nativeErrorCode();
         return false;
     }
     return true;

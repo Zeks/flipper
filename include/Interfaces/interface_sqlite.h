@@ -17,7 +17,7 @@ public:
     QStringList GetIdListForQuery(QSharedPointer<core::Query> query);
     bool BackupDatabase(QString dbname);
     bool ReadDbFile(QString file, QString connectionName);
-    QSqlDatabase InitDatabase(QString connectionName);
+    QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false);
 
 };
 

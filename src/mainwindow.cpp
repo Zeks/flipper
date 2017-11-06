@@ -153,6 +153,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+
+}
+
+void MainWindow::Init()
+{
     queryBuilder.SetIdRNGgenerator(new core::DefaultRNGgenerator());
     ui->chkShowDirectRecs->setVisible(false);
     ui->pbFirstWave->setVisible(false);
@@ -171,6 +177,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //ProcessRecommendationListsFromDB(database::GetAvailableRecommendationLists());
     recsInterface->LoadAvailableRecommendationLists();
 
+    ui->wdgTagsPlaceholder->fandomsInterface = fandomsInterface;
+    tagWidgetDynamic->fandomsInterface = fandomsInterface;
     ProcessTagsIntoGui();
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
@@ -212,6 +220,7 @@ MainWindow::MainWindow(QWidget *parent) :
     GenericEventFilter* eventFilter = new GenericEventFilter(this);
     eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagWidgetDynamic));
     tagWidgetDynamic->installEventFilter(eventFilter);
+
     connect(tagWidgetDynamic, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
 
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
@@ -266,7 +275,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
     CreatePageThreadWorker();
-
 }
 
 
@@ -460,6 +468,7 @@ void MainWindow::InitInterfaces()
     fandomsInterface->portableDBInterface = dbInterface;
     tagsInterface->fandomInterface = fandomsInterface;
 
+    bool isOpen = dbInterface->GetDatabase().isOpen();
     authorsInterface->db = dbInterface->GetDatabase();
     fanficsInterface->db = dbInterface->GetDatabase();
     recsInterface->db    = dbInterface->GetDatabase();
@@ -588,6 +597,7 @@ inline core::Fic LoadFanfic(QSqlQuery& q)
     core::Fic result;
     result.id = q.value("ID").toInt();
     result.fandom = q.value("FANDOM").toString();
+    result.author = core::Author::NewAuthor();
     result.author->name = q.value("AUTHOR").toString();
     result.title = q.value("TITLE").toString();
     result.summary = q.value("SUMMARY").toString();
@@ -666,6 +676,7 @@ QSqlQuery MainWindow::BuildQuery()
 
 void MainWindow::ProcessTagsIntoGui()
 {
+
     auto tagList = tagsInterface->ReadUserTags();
     QList<QPair<QString, QString>> tagPairs;
 

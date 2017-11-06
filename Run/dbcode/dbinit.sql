@@ -1,6 +1,6 @@
 --fanfics;
 create table if not exists FANFICS (FANDOM VARCHAR NOT NULL, AUTHOR VARCHAR NOT NULL,TITLE VARCHAR NOT NULL,SUMMARY VARCHAR NOT NULL,GENRES VARCHAR,CHARACTERS VARCHAR,RATED VARCHAR,PUBLISHED DATETIME NOT NULL,UPDATED DATETIME NOT NULL, WORDCOUNT INTEGER NOT NULL,FAVOURITES INTEGER NOT NULL,REVIEWS INTEGER NOT NULL,CHAPTERS INTEGER NOT NULL,COMPLETE INTEGER NOT NULL DEFAULT 0,AT_CHAPTER INTEGER NOT NULL, ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);			
--- ORIGIN VARCHAR NOT NULL, NEEDS TO BE DROPPED
+ alter table fanfics add column alive integer default 1;
  alter table fanfics add column wcr real; 
  alter table fanfics add column wcr_adjusted real; 
  alter table fanfics add column reviewstofavourites real; 
@@ -14,9 +14,8 @@ create table if not exists FANFICS (FANDOM VARCHAR NOT NULL, AUTHOR VARCHAR NOT 
  alter table fanfics add column ao3_id integer default null;
  alter table fanfics add column sb_id integer default null;
  alter table fanfics add column sv_id integer default null;
- alter table fanfics add column alive integer default 1;
  alter table fanfics add column author_id integer default null;
- alter table fanfics add column date_added datetime default sysdate;
+ alter table fanfics add column date_added datetime default;
  alter table fanfics add column date_deactivated datetime default null;
 
  update fanfics set wcr = wordcount*1.0/reviews where wcr is null and reviews > 0 and wordcount > 1000;

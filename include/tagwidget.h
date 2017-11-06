@@ -19,13 +19,13 @@ public:
     QStringList GetSelectedTags();
     QStringList GetAllTags();
     void SetAddDialogVisibility(bool);
-
+    QSharedPointer<interfaces::Fandoms> fandomsInterface;
 private:
     Ui::TagWidget *ui;
     int currentId;
     QStringList selectedTags;
     QStringList allTags;
-    QSharedPointer<interfaces::Fandoms> fandomsInterface;
+
 
 
 signals:

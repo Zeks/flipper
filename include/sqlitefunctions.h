@@ -22,7 +22,7 @@ bool PushFandomToTopOfRecent(QString fandom, QSqlDatabase db);
 QStringList FetchRecentFandoms(QSqlDatabase db);
 bool RebaseFandomsToZero(QSqlDatabase db);
 QDateTime GetCurrentDateTime(QSqlDatabase db);
-QSqlDatabase InitDatabase(QString name);
+QSqlDatabase InitDatabase(QString name, bool setDefault = false);
 }
 
 }

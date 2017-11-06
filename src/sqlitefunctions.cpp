@@ -103,6 +103,8 @@ bool InstallCustomFunctions(QSqlDatabase db)
 bool ReadDbFile(QString file, QString connectionName)
 {
     QFile data(file);
+
+    qDebug() << "Reading init file: " << file;
     if (data.open(QFile::ReadOnly))
     {
         QTextStream in(&data);
@@ -121,6 +123,7 @@ bool ReadDbFile(QString file, QString connectionName)
                 db = QSqlDatabase::database(connectionName);
             else
                 db = QSqlDatabase::database();
+            bool isOpen = db.isOpen();
             QSqlQuery q(db);
             q.prepare(statement.trimmed());
             database::puresql::ExecAndCheck(q);
@@ -242,13 +245,19 @@ QDateTime GetCurrentDateTime(QSqlDatabase db)
     return dt;
 }
 
-QSqlDatabase InitDatabase(QString name)
+QSqlDatabase InitDatabase(QString name, bool setDefault)
 {
     QString path = name;
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(path);
-    db.open();
+    QSqlDatabase db;
+    if(setDefault)
+        db = QSqlDatabase::addDatabase("QSQLITE");
+    else
+        db = QSqlDatabase::addDatabase("QSQLITE", name);
+    db.setDatabaseName(path + ".sqlite");
+    bool isOpen = db.open();
+    qDebug() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
+
     return db;
 }
 

@@ -17,8 +17,8 @@ public:
     virtual QDateTime GetCurrentDateTime() = 0;
     virtual QStringList GetIdListForQuery(QSharedPointer<core::Query> query) = 0;
     virtual bool BackupDatabase(QString dbname) = 0;
-    virtual bool ReadDbFile(QString file, QString connectionName = "default") = 0;
-    virtual QSqlDatabase InitDatabase(QString connectionName = "default") = 0;
+    virtual bool ReadDbFile(QString file, QString connectionName = "") = 0;
+    virtual QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false) = 0;
     QSqlDatabase GetDatabase() {return db;}
 protected:
 
