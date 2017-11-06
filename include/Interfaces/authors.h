@@ -14,55 +14,67 @@ class Authors {
 public:
     virtual ~Authors();
     void Reindex();
+    void AddAuthorToIndex(core::AuthorPtr);
     void IndexAuthors();
-    void ClearIndex();
+
     void Clear();
-    virtual bool EnsureId(QSharedPointer<core::Author>) = 0;
-    //virtual bool EnsureAuthor(int) = 0;
-    bool LoadAuthors(QString website, bool additionMode);
+    void ClearIndex();
+    void ClearCache();
+
+    virtual bool EnsureId(core::AuthorPtr author) = 0;
+    bool EnsureId(core::AuthorPtr author, QString website);
+
+    bool EnsureAuthorLoaded(QString name, QString website);
+    bool EnsureAuthorLoaded(QString url);
+    bool EnsureAuthorLoaded(int id);
+
+    bool LoadAuthors(QString website, bool forced = false);
 
     //for the future, not strictly necessary atm
-//    bool LoadAdditionalInfo(QSharedPointer<core::Author>) = 0;
+//    bool LoadAdditionalInfo(core::AuthorPtr) = 0;
 //    bool LoadAdditionalInfo() = 0;
 
-    QSharedPointer<core::Author> GetSingleByName(QString name, QString website);
-    QList<QSharedPointer<core::Author>> GetAllByName(QString name);
-    QSharedPointer<core::Author> GetByUrl(QString url);
-    QSharedPointer<core::Author> GetById(int id);
-    QList<QSharedPointer<core::Author>> GetAllAuthors(QString website);
-    QStringList GetAllAuthorsUrls(QString website);
+    core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website);
+    QList<core::AuthorPtr> GetAllByName(QString name);
+    core::AuthorPtr GetByUrl(QString url);
+    core::AuthorPtr GetById(int id);
+    QList<core::AuthorPtr> GetAllAuthors(QString website, bool forced = false);
+    QStringList GetAllAuthorsUrls(QString website, bool forced = false);
     QList<int> GetAllAuthorIds();
     int GetFicCount(int authorId);
     int GetCountOfRecsForTag(int authorId, QString tag);
     QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list);
-    bool EnsureId(QSharedPointer<core::Author> author, QString website);
-    void AddAuthorToIndex(QSharedPointer<core::Author>);
-    bool AssignNewNameForAuthor(QSharedPointer<core::Author>, QString name);
-    //void AssignNewNameForAuthor(int id, QString name);
-    virtual bool  RemoveAuthor(int id);
-    virtual bool  RemoveAuthor(QSharedPointer<core::Author>) = 0;
-    bool RemoveAuthor(QSharedPointer<core::Author>, QString website);
+
+    bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
+
+    //! todo those are required for managing recommendation lists and somewhat outdated
+    // moved them to dump temporarily
+//    virtual bool  RemoveAuthor(int id);
+//    virtual bool  RemoveAuthor(core::AuthorPtr) = 0;
+//    bool RemoveAuthor(core::AuthorPtr, QString website);
 
     // queued by webid
-    QList<QSharedPointer<core::Author>> authors;
+    QList<core::AuthorPtr> authors;
 
-    //QMultiHash<QString, QSharedPointer<core::Author>> authorsByName;
-    QHash<QString, QHash<QString, QSharedPointer<core::Author>>> authorsNamesByWebsite;
-    QHash<int, QSharedPointer<core::Author>> authorsById;
-    QHash<QString, QSharedPointer<core::Author>> authorsByUrl;
+    // index
+    QHash<QString, QHash<QString, core::AuthorPtr>> authorsNamesByWebsite;
+    QHash<int, core::AuthorPtr> authorsById;
+    QHash<QString, core::AuthorPtr> authorsByUrl;
+
+    // cache
     QHash<QString, QStringList> cachedAuthorUrls;
     QList<int> cachedAuthorIds;
-
     QHash<int, QList<QSharedPointer<core::AuthorRecommendationStats>>> cachedAuthorToTagStats;
 
     QSqlDatabase db;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
 
-    // IDBPersistentData interface
 public:
-    bool IsDataLoaded();
-    bool Sync(bool forcedSync);
-    bool Load();
+    bool LoadAuthor(QString name, QString website);
+    bool LoadAuthor(QString url);
+    bool LoadAuthor(int id);
+
+    QStringList ListWebsites();
 };
 
 }

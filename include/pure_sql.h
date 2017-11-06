@@ -35,14 +35,17 @@ int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
 bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
-bool WriteRecommendation(QSharedPointer<core::Author> author, int fic_id, QSqlDatabase db);
+bool WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
 int GetAuthorIdFromUrl(QString url, QSqlDatabase db);
-bool AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name, QSqlDatabase db);
+bool AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 QList<int> GetAllAuthorIds(QSqlDatabase db);
 
 
-QList<QSharedPointer<core::Author> > GetAllAuthors(QString website,  QSqlDatabase db);
+QList<core::AuthorPtr > GetAllAuthors(QString website,  QSqlDatabase db);
+core::AuthorPtr  GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
+core::AuthorPtr  GetAuthorByUrl(QString url,  QSqlDatabase db);
+core::AuthorPtr  GetAuthorById(int id,  QSqlDatabase db);
 QList<QSharedPointer<core::AuthorRecommendationStats>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
 QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
 QSharedPointer<core::RecommendationList> GetRecommendationList(int listid, QSqlDatabase db);
@@ -75,7 +78,7 @@ QVector<int> GetIdList(QString where, QSqlDatabase db);
 QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db);
 bool DeactivateStory(int id, QString website, QSqlDatabase db);
 
-bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlDatabase db);
+bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
 QStringList ReadUserTags(QSqlDatabase db);
 bool PushTaglistIntoDatabase(QStringList, QSqlDatabase);
 bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db);

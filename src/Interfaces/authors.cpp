@@ -7,24 +7,30 @@ namespace interfaces {
 Authors::~Authors(){}
 void Authors::Clear()
 {
-//    QList<QSharedPointer<core::Author>> authors;
-
-//    QHash<QString, QSharedPointer<core::Author>> authorsByname;
-//    QHash<QString, QHash<QString, QSharedPointer<core::Author>>> authorsByWebsite;
-//    QHash<int, QSharedPointer<core::Author>> authorsByWebId;
-//    QHash<int, QSharedPointer<core::Author>> authorsById;
-
-
-//    QList<QSharedPointer<core::Author>> queue;
-//    QHash<int, QSharedPointer<core::Fic>> queuedFicRecommendations;
     authors.clear();
     ClearIndex();
+    ClearCache();
 }
+
 
 void Authors::Reindex()
 {
     ClearIndex();
     IndexAuthors();
+}
+
+void Authors::ClearIndex()
+{
+    authorsNamesByWebsite.clear();
+    authorsByUrl.clear();
+    authorsById.clear();
+}
+
+void Authors::ClearCache()
+{
+    cachedAuthorUrls.clear();
+    cachedAuthorIds.clear();
+    cachedAuthorToTagStats.clear();
 }
 
 void Authors::IndexAuthors()
@@ -37,71 +43,134 @@ void Authors::IndexAuthors()
     }
 }
 
-void Authors::ClearIndex()
+bool Authors::EnsureAuthorLoaded(QString name, QString website)
 {
-    authorsNamesByWebsite.clear();
-    authorsByUrl.clear();
-    authorsById.clear();
-}
-
-QSharedPointer<core::Author> Authors::GetSingleByName(QString name, QString website)
-{
-    QSharedPointer<core::Author> result;
     if(authorsNamesByWebsite.contains(website) && authorsNamesByWebsite[website].contains(name))
-        result = {authorsNamesByWebsite[website][name]};
+        return true;
+
+    if(!LoadAuthor(name, website))
+        return false;
+
+    return true;
+}
+
+bool Authors::EnsureAuthorLoaded(QString url)
+{
+    if(authorsByUrl.contains(url))
+        return true;
+
+    if(!LoadAuthor(url))
+        return false;
+
+    return true;
+}
+
+bool Authors::EnsureAuthorLoaded(int id)
+{
+    if(authorsById.contains(id))
+        return true;
+
+    if(!LoadAuthor(id))
+        return false;
+
+    return true;
+}
+
+bool Authors::LoadAuthor(QString name, QString website)
+{
+    auto author = database::puresql::GetAuthorByNameAndWebsite(name, website,db);
+    if(!author)
+        return false;
+    AddAuthorToIndex(author);
+    return true;
+}
+
+bool Authors::LoadAuthor(QString url)
+{
+    auto author = database::puresql::GetAuthorByUrl(url,db);
+    if(!author)
+        return false;
+    AddAuthorToIndex(author);
+    return true;
+}
+
+bool Authors::LoadAuthor(int id)
+{
+    auto author = database::puresql::GetAuthorById(id,db);
+    if(!author)
+        return false;
+    AddAuthorToIndex(author);
+    return true;
+}
+
+
+
+
+core::AuthorPtr Authors::GetAuthorByNameAndWebsite(QString name, QString website)
+{
+    core::AuthorPtr result;
+    if(EnsureAuthorLoaded(name, website))
+        result = authorsNamesByWebsite[website][name];
     return result;
 
 }
 
-QList<QSharedPointer<core::Author>> Authors::GetAllByName(QString name)
+QList<core::AuthorPtr> Authors::GetAllByName(QString name)
 {
-    QList<QSharedPointer<core::Author>> result;
+    QList<core::AuthorPtr> result;
+    auto websites = ListWebsites();
 
-    for(auto websiteHash : authorsNamesByWebsite)
+    for(auto bit : websites)
     {
-        if(websiteHash.contains(name))
-            result.push_back(websiteHash[name]);
+        if(EnsureAuthorLoaded(name, bit))
+            result.push_back(authorsNamesByWebsite[bit][name]);
     }
-
     return result;
 }
 
-QSharedPointer<core::Author> Authors::GetByUrl(QString url)
+core::AuthorPtr Authors::GetByUrl(QString url)
 {
-    QSharedPointer<core::Author> result;
-    if(!authorsByUrl.contains(url))
-        return result;
-    return authorsByUrl[url];
+    core::AuthorPtr result;
+    if(EnsureAuthorLoaded(url))
+        result = authorsByUrl[url];
+
+    return result;
 }
 
 QSharedPointer<core::Author > Authors::GetById(int id)
 {
-    QSharedPointer<core::Author> result;
-    if(!authorsById.contains(id))
-        return result;
-    return authorsById[id];
+    core::AuthorPtr result;
+    if(EnsureAuthorLoaded(id))
+        result = authorsById[id];
+
+    return result;
 }
 
-QList<QSharedPointer<core::Author> > Authors::GetAllAuthors(QString website)
+QList<core::AuthorPtr > Authors::GetAllAuthors(QString website, bool forced)
 {
+    QList<core::AuthorPtr> result;
+    if(!LoadAuthors(website, forced))
+        return result;
+
     if(website.isEmpty())
         return authors;
-    if(!authorsNamesByWebsite.contains(website))
-        return authors;
-    return authorsNamesByWebsite[website].values();
+
+    if(authorsNamesByWebsite.contains(website))
+        result = authorsNamesByWebsite[website].values();
+
+    return result;
 }
 
-QStringList Authors::GetAllAuthorsUrls(QString website)
+QStringList Authors::GetAllAuthorsUrls(QString website, bool forced)
 {
     QStringList result;
     if(!cachedAuthorUrls.contains(website))
     {
-        auto authors = GetAllAuthors(website);
+        auto authors = GetAllAuthors(website, forced);
         result.reserve(authors.size());
         for(auto author: authors)
-        {
-            result.push_back(author->url("ffn"));
-        }
+            result.push_back(author->url(website));
+
         cachedAuthorUrls[website] = result;
     }
     else
@@ -111,6 +180,7 @@ QStringList Authors::GetAllAuthorsUrls(QString website)
 
 QList<int> Authors::GetAllAuthorIds()
 {
+    //! todo need to regenerate cache
     if(cachedAuthorIds.empty())
         cachedAuthorIds = database::puresql::GetAllAuthorIds(db);
     return cachedAuthorIds;
@@ -118,10 +188,13 @@ QList<int> Authors::GetAllAuthorIds()
 
 int Authors::GetFicCount(int authorId)
 {
-    auto author = GetById(authorId);
-    if(!author)
-        return 0;
-    return author->ficCount;
+    int result = 0;
+
+    if(EnsureAuthorLoaded(authorId))
+        result = authorsById[authorId]->id;
+
+    return result;
+
 }
 
 int Authors::GetCountOfRecsForTag(int authorId, QString tag)
@@ -129,20 +202,24 @@ int Authors::GetCountOfRecsForTag(int authorId, QString tag)
     auto result = database::puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db);
     return result;
 }
-bool Authors::LoadAuthors(QString website, bool additionMode)
+
+bool Authors::LoadAuthors(QString website, bool )
 {
-    if(!additionMode)
-        Clear();
     authors = database::puresql::GetAllAuthors(website, db);
     if(authors.size() == 0)
         return false;
     Reindex();
     return true;
 }
-bool Authors::EnsureId(QSharedPointer<core::Author> author, QString website)
+
+bool Authors::EnsureId(core::AuthorPtr author, QString website)
 {
     if(!author)
         return false;
+
+    QString url = author->url(website);
+    if(authorsByUrl.contains(url) && authorsByUrl[url])
+        author = authorsByUrl[url];
 
     if(author->GetIdStatus() == core::AuthorIdStatus::unassigned)
         author->AssignId(database::puresql::GetAuthorIdFromUrl(author->url(website), db));
@@ -153,19 +230,25 @@ bool Authors::EnsureId(QSharedPointer<core::Author> author, QString website)
     }
     if(author->id < 0)
         return false;
+
     AddAuthorToIndex(author);
     return true;
 }
 
-void Authors::AddAuthorToIndex(QSharedPointer<core::Author>)
+void Authors::AddAuthorToIndex(core::AuthorPtr author)
 {
+    authors.push_back(author);
 
+    authorsNamesByWebsite[author->website][author->name] = author;
+    authorsById[author->id] = author;
+    authorsByUrl[author->url(author->website)] = author;
 }
 
-bool Authors::AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name)
+bool Authors::AssignNewNameForAuthor(core::AuthorPtr author, QString name)
 {
     if(!author)
         return false;
+
     return database::puresql::AssignNewNameForAuthor(author, name, db);
 }
 
@@ -173,9 +256,11 @@ bool Authors::AssignNewNameForAuthor(QSharedPointer<core::Author> author, QStrin
 QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list)
 {
     QSharedPointer<core::AuthorRecommendationStats>result (new core::AuthorRecommendationStats);
-    auto author = GetById(authorId);
-    if(!author)
+
+    if(!EnsureAuthorLoaded(authorId))
         return result;
+
+    auto author = authorsById[authorId];
 
     result->listId = list->id;
     result->usedTag = list->tagToUse;;
@@ -187,51 +272,42 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
-        result->matchRatio = (double)result->totalFics/(double)result->matchesWithReference;
+        result->matchRatio = static_cast<double>(result->totalFics)/static_cast<double>(result->matchesWithReference);
     result->isValid = true;
 
     return result;
 }
+// those are required for managing recommendation lists and somewhat outdated
+// moved them to dump temporarily
+//bool  Authors::RemoveAuthor(int id)
+//{
+//    QSqlDatabase db = QSqlDatabase::database();
+//    QSqlQuery q1(db);
+//    QString qsl = "delete from recommendations where recommender_id = %1";
+//    qsl=qsl.arg(QString::number(id));
+//    q1.prepare(qsl);
+//    if(!database::puresql::ExecAndCheck(q1))
+//        return false;
 
-bool  Authors::RemoveAuthor(int id)
+//    QSqlQuery q2(db);
+//    qsl = "delete from recommenders where id = %1";
+//    qsl=qsl.arg(id);
+//    q2.prepare(qsl);
+//    if(!database::puresql::ExecAndCheck(q2))
+//        return false;
+//    return true;
+//}
+
+//bool Authors::RemoveAuthor(core::AuthorPtr author, QString website)
+//{
+//    int id = database::puresql::GetAuthorIdFromUrl(author->url(website),db);
+//    if(id == -1)
+//        return false;
+//    return RemoveAuthor(id);
+//}
+
+QStringList Authors::ListWebsites()
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q1(db);
-    QString qsl = "delete from recommendations where recommender_id = %1";
-    qsl=qsl.arg(QString::number(id));
-    q1.prepare(qsl);
-    if(!database::puresql::ExecAndCheck(q1))
-        return false;
-
-    QSqlQuery q2(db);
-    qsl = "delete from recommenders where id = %1";
-    qsl=qsl.arg(id);
-    q2.prepare(qsl);
-    if(!database::puresql::ExecAndCheck(q2))
-        return false;
-    return true;
-}
-
-bool Authors::RemoveAuthor(QSharedPointer<core::Author> author, QString website)
-{
-    int id = database::puresql::GetAuthorIdFromUrl(author->url(website),db);
-    if(id == -1)
-        return false;
-    return RemoveAuthor(id);
-}
-
-bool Authors::IsDataLoaded()
-{
-    return true;
-}
-
-bool Authors::Sync(bool forcedSync)
-{
-    return true;
-}
-
-bool Authors::Load()
-{
-    return true;
+    return {"ffn"};//{"ffn", "ao3", "sb", "sv"};
 }
 }

@@ -1771,7 +1771,7 @@ void MainWindow::OnNewSelectionInRecentList(const QModelIndex &current, const QM
 void MainWindow::OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &)
 {
     QString recommender = current.data().toString();
-    auto author = authorsInterface->GetSingleByName(recommender, "ffn");
+    auto author = authorsInterface->GetAuthorByNameAndWebsite(recommender, "ffn");
     if(author)
         ui->leAuthorUrl->setText(author->url("ffn"));
 }

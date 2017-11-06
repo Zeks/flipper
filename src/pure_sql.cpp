@@ -295,7 +295,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     return true;
 }
 
-bool WriteRecommendation(QSharedPointer<core::Author> author, int fic_id, QSqlDatabase db)
+bool WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db)
 {
     if(!author || author->id < 0)
         return false;
@@ -333,7 +333,7 @@ int GetAuthorIdFromUrl(QString url, QSqlDatabase db)
     return result;
 }
 
-bool AssignNewNameToAuthorWithId(QSharedPointer<core::Author> author, QSqlDatabase db)
+bool AssignNewNameToAuthorWithId(core::AuthorPtr author, QSqlDatabase db)
 {
     if(author->GetIdStatus() != core::AuthorIdStatus::valid)
         return true;
@@ -347,9 +347,19 @@ bool AssignNewNameToAuthorWithId(QSharedPointer<core::Author> author, QSqlDataba
     return true;
 }
 
-QList<QSharedPointer<core::Author>> GetAllAuthors(QString website,  QSqlDatabase db)
+core::AuthorPtr AuthorFromQuery(QSqlQuery& q)
 {
-    QList<QSharedPointer<core::Author>> result;
+    core::AuthorPtr result(new core::Author);
+    result->AssignId(q.value("id").toInt());
+    result->name = q.value("name").toString();
+    result->SetUrl("ffn", q.value("url").toString());
+    return result;
+}
+
+
+QList<core::AuthorPtr> GetAllAuthors(QString website,  QSqlDatabase db)
+{
+    QList<core::AuthorPtr> result;
     QString qs = QString("select count(id) from recommenders where website_type = :site");
     QSqlQuery q(db);
     q.prepare(qs);
@@ -369,15 +379,68 @@ QList<QSharedPointer<core::Author>> GetAllAuthors(QString website,  QSqlDatabase
     result.reserve(size);
     while(q.next())
     {
-        QSharedPointer<core::Author> rec(new core::Author);
-        rec->AssignId(q.value("id").toInt());
-        rec->name = q.value("name").toString();
-        rec->SetUrl("ffn", q.value("url").toString());
-        result.push_back(rec);
+        auto author = AuthorFromQuery(q);
+        result.push_back(author);
     }
     return result;
 }
 
+core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website, QSqlDatabase db)
+{
+    core::AuthorPtr result;
+    QString qs = QString("select id,name, url from recommenders where website_type = :site and name = :name");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":site",website);
+    q.bindValue(":name",name);
+    if(!ExecAndCheck(q))
+        return result;
+
+    if(!q.next())
+        return result;
+
+        result = AuthorFromQuery(q);
+    return result;
+}
+
+core::AuthorPtr GetAuthorByUrl(QString url, QSqlDatabase db)
+{
+    core::AuthorPtr result;
+    QString qs = QString("select id,name, url from recommenders where url = :url");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":url",url);
+
+    if(!ExecAndCheck(q))
+        return result;
+
+    if(!q.next())
+        return result;
+
+        result = AuthorFromQuery(q);
+    return result;
+}
+
+core::AuthorPtr GetAuthorById(int id, QSqlDatabase db)
+{
+    core::AuthorPtr result;
+    QString qs = QString("select id,name, url from recommenders where id = :id");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id",id);
+
+    if(!ExecAndCheck(q))
+        return result;
+
+    if(!q.next())
+        return result;
+
+        result = AuthorFromQuery(q);
+    return result;
+}
 
 QList<QSharedPointer<core::RecommendationList> > GetAvailableRecommendationLists(QSqlDatabase db)
 {
@@ -755,7 +818,7 @@ bool DeactivateStory(int id, QString website, QSqlDatabase db)
     return true;
 }
 
-bool WriteAuthor(QSharedPointer<core::Author> author, QDateTime timestamp, QSqlDatabase db)
+bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
     QSqlQuery q1(db);
     QString qsl = " insert into recommenders(name, url, page_updated) values(:name, :url,  :timestamp) ";
@@ -803,7 +866,7 @@ bool PushTaglistIntoDatabase(QStringList tagList, QSqlDatabase db)
     return success;
 }
 
-bool AssignNewNameForAuthor(QSharedPointer<core::Author> author, QString name, QSqlDatabase db)
+bool AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db)
 {
     if(author->GetIdStatus() != core::AuthorIdStatus::valid)
         return true;
@@ -934,6 +997,9 @@ QStringList GetTrackedFandomList(QSqlDatabase db)
         result.push_back(q.value(0).toString());
     return result;
 }
+
+
+
 
 
 }

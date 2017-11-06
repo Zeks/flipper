@@ -24,9 +24,11 @@ enum class AuthorIdStatus
     not_found = -2,
     valid = 0
 };
-
+class Author;
+typedef QSharedPointer<Author> AuthorPtr;
 class Author : public DBEntity{
     public:
+    static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
     ~Author(){}
     void Log();
     int id= -1;
