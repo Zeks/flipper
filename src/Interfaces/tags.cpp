@@ -3,9 +3,19 @@
 
 namespace interfaces {
 
+void Tags::LoadAlltags()
+{
+    allTags = ReadUserTags();
+}
+
 bool Tags::DeleteTag(QString tag)
 {
-    return database::puresql::DeleteTagfromDatabase(tag, db);
+    return database::puresql::DeleteTagFromDatabase(tag, db);
+}
+
+bool Tags::CreateTag(QString tag)
+{
+    return database::puresql::CreateTagInDatabase(tag, db);
 }
 
 QStringList Tags::ReadUserTags()
@@ -17,6 +27,21 @@ QStringList Tags::ReadUserTags()
         database::puresql::PushTaglistIntoDatabase(tags,db);
     }
     return tags;
+}
+
+bool Tags::SetTagForFic(int ficId, QString tag)
+{
+    tag = tag.trimmed();
+    if(!allTags.contains(tag))
+        CreateTag(tag);
+    allTags.push_back(tag);
+    database::puresql::AssignTagToFanfic(tag, ficId, db);
+    return true;
+}
+
+bool Tags::RemoveTagFromFic(int ficId, QString tag)
+{
+    return database::puresql::RemoveTagFromFanfic(tag, ficId, db);
 }
 
 QStringList Tags::CreateDefaultTagList()

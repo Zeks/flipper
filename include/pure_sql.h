@@ -20,11 +20,17 @@ QStringList GetFandomListFromDB(QSqlDatabase db);
 void CalculateFandomAverages(QSqlDatabase db);
 void CalculateFandomFicCounts(QSqlDatabase db);
 void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db);
+void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
+bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
+bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
 
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db);
 core::FandomPtr GetFandom(QString name, QSqlDatabase db);
+bool CleanuFandom(int fandom_id,  QSqlDatabase db);
+int GetFandomCountInDatabase(QSqlDatabase db);
+
 
 int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
@@ -65,7 +71,9 @@ bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase d
 bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db);
 bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
-bool DeleteTagfromDatabase(QString tag, QSqlDatabase db);
+bool DeleteTagFromDatabase(QString tag, QSqlDatabase db);
+bool CreateTagInDatabase(QString tag, QSqlDatabase db);
+
 bool AddAuthorFavouritesToList(int authorId, int listId, QSqlDatabase db);
 void ShortenFFNurlsForAllFics(QSqlDatabase db);
 

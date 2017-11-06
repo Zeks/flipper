@@ -151,6 +151,11 @@ bool Fanfics::DeactivateFic(int ficId, QString website)
     return database::puresql::DeactivateStory(ficId, website, db);
 }
 
+bool Fanfics::AssignChapter(int ficId, int chapter)
+{
+    return database::puresql::AssignChapterToFanfic(chapter, ficId, db);
+}
+
 void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
 {
     QWriteLocker lock(&mutex);

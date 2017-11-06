@@ -69,7 +69,7 @@ public:
     };
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void Init();
+    void ReInitFandoms();
     void InitInterfaces();
     void InitConnections();
     bool CheckSectionAvailability();
@@ -111,19 +111,13 @@ private:
 
     void LoadData();
     QSqlQuery BuildQuery();
-    QString BuildBias();
-
-    QString WrapTag(QString tag);
-    void HideCurrentID();
 
     void UpdateFandomList(std::function<QString(core::Fandom)> linkGetter);
     void InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names);
     void PopulateComboboxes();
 
-    QStringList GetCrossoverListFromDB();
-
-    QStringList GetCrossoverUrl(QString);
-    QStringList GetNormalUrl(QString);
+    //QStringList GetCrossoverUrl(QString);
+    //QStringList GetNormalUrl(QString);
 
     void OpenTagWidget(QPoint, QString url);
     void ProcessTagsIntoGui();
@@ -175,8 +169,6 @@ private:
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
-    void PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate = false);
-    QString AddIdList(QString query, int count);
     QString CreateLimitQueryPart();
     QHash<QString, QList<int>> randomIdLists;
     QDialog* expanderWidget = nullptr;
@@ -204,16 +196,16 @@ private:
 public slots:
     void ProcessFandoms(WebPage webPage);
     void ProcessCrossovers(WebPage webPage);
-    void OnChapterUpdated(QVariant, QVariant, QVariant);
+
+    void OnChapterUpdated(QVariant, QVariant);
     void OnTagAdd(QVariant tag, QVariant row);
     void OnTagRemove(QVariant tag, QVariant row);
-    void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
+
     void WipeSelectedFandom(bool);
     void OnNewPage(WebPage);
     void OnCopyFicUrl(QString);
     void OnCopyAllUrls();
 private slots:
-    void OnSetTag(QString);
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);
     void OnCheckboxFilter(int);

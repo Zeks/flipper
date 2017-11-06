@@ -48,6 +48,10 @@ class Fanfics : public IDBWebIDIndex {
 
     virtual bool DeactivateFic(int ficId, QString website);
     virtual bool DeactivateFic(int ficId) = 0;
+
+
+    bool AssignChapter(int, int);
+
     // update interface
     QReadWriteLock mutex;
 

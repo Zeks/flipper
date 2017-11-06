@@ -7,6 +7,7 @@ import "Funcs.js" as Funcs
 Rectangle {
     property string delTitle : title
     property string delAuthor : author
+    //property string delFicId: ficId
     property int delRow : rownum
     property int indexOfThisDelegate: index
     signal mouseClicked
@@ -230,7 +231,7 @@ Rectangle {
 
                 onActivated:  {
                     //print("Current text: " + index)
-                    lvFics.chapterChanged(index, author, title)
+                    lvFics.chapterChanged(index, ID)
                 }
                 onModelChanged: {currentIndex = atChapter}
 

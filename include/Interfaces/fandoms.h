@@ -31,6 +31,9 @@ public:
     void Reindex();
     void AddToIndex(core::FandomPtr);
 
+    bool WipeFandom(QString name);
+    int GetFandomCount();
+
     virtual int GetIDForName(QString) ;
     virtual core::FandomPtr GetFandom(QString);
 
@@ -52,6 +55,7 @@ public:
     QList<core::FandomPtr> FilterFandoms(std::function<bool(core::FandomPtr)>);
 
     QSqlDatabase db;
+    QSharedPointer<database::IDBWrapper> portableDBInterface;
 private:
     bool AddToTopOfRecent(QString);
     void FillFandomList(bool forced = false);
@@ -64,8 +68,8 @@ private:
     QList<core::FandomPtr> recentFandoms;
     QList<core::FandomPtr> trackedFandoms;
     QStringList fandomsList;
+    int fandomCount = 0;
 
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
 
     bool isLoaded = false;
 };

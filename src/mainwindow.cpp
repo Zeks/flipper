@@ -41,6 +41,7 @@
 #include "include/fandomparser.h"
 #include "include/url_utils.h"
 #include "include/pure_sql.h"
+#include "include/transaction.h"
 
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/ffn/ffn_fanfics.h"
@@ -233,29 +234,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
         if(tagList.contains(tag))
         {
-            QSqlDatabase db = QSqlDatabase::database();
-
-            QSqlQuery q(db);
-            q.prepare("DELETE FROM TAGS where tag = :tag");
-            q.bindValue(":tag", tag);
-            q.exec();
-            if(q.lastError().isValid())
-                qDebug() << q.lastError();
+            tagsInterface->DeleteTag(tag);
+            tagList.removeAll(tag);
             qwFics->rootContext()->setContextProperty("tagModel", tagList);
         }
     });
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagAdded, [&](QString tag){
-        //ui->wdgTagsPlaceholder->OnNewTag(tag, false);
         if(!tagList.contains(tag))
         {
-            QSqlDatabase db = QSqlDatabase::database();
-
-            QSqlQuery q(db);
-            q.prepare("INSERT INTO TAGS(TAG) VALUES(:tag)");
-            q.bindValue(":tag", tag);
-            q.exec();
-            if(q.lastError().isValid())
-                qDebug() << q.lastError();
+            tagsInterface->CreateTag(tag);
             tagList.append(tag);
             qwFics->rootContext()->setContextProperty("tagModel", tagList);
             FillRecTagBuildCombobox();
@@ -426,6 +413,7 @@ void MainWindow::SetupFanficTable()
 
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
     connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
@@ -452,15 +440,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::Init()
-{
-    names.clear();
-    UpdateFandomList([](core::Fandom f){return f.url;});
-    UpdateFandomList([](core::Fandom f){return f.crossoverUrl;});
-    InsertFandomData(names);
-    ui->cbNormals->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
-    ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
-}
 
 void MainWindow::InitInterfaces()
 {
@@ -473,6 +452,13 @@ void MainWindow::InitInterfaces()
 
     // probably need to change this to db accessor
     // to ensure db availability for later
+
+    authorsInterface->portableDBInterface = dbInterface;
+    fanficsInterface->authorInterface = authorsInterface;
+    recsInterface->portableDBInterface = dbInterface;
+    recsInterface->authorInterface = authorsInterface;
+    fandomsInterface->portableDBInterface = dbInterface;
+    tagsInterface->fandomInterface = fandomsInterface;
 
     authorsInterface->db = dbInterface->GetDatabase();
     fanficsInterface->db = dbInterface->GetDatabase();
@@ -501,9 +487,7 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
     if(ui->chkIgnoreUpdateDate->isChecked())
         lastFandomUpdatedate = QDate();
 
-
     StartPageWorker();
-
     DisableAllLoadButtons();
 
     An<PageManager> pager;
@@ -557,7 +541,8 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
         else
             pbMain->setValue(counter++);
         QSqlDatabase db = QSqlDatabase::database();
-        db.transaction();
+        database::Transaction transaction(db);
+
         auto startPageRequest = std::chrono::high_resolution_clock::now();
 
         fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
@@ -566,7 +551,7 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
 
         elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-        db.commit();
+        transaction.finalize();
     }while(!webPage.isLastPage);
     StopPageWorker();
     ShutdownProgressbar();
@@ -677,230 +662,7 @@ QSqlQuery MainWindow::BuildQuery()
     return q;
 }
 
-QString MainWindow::BuildBias()
-{
-    QString result;
-    if(ui->cbBiasFavor->currentText() == "None")
-        return result;
-    if(ui->cbBiasFavor->currentText() == "Favor")
-        result += QString(" and ");
-    else
-        result += QString(" and not ");
-    if(ui->cbBiasOperator->currentText() == ">")
-        result += QString(" reviewstofavourites > ");
-    else
-        result += QString(" reviewstofavourites < ");
-    result += ui->leBiasValue->text();
-    return result;
-}
 
-void MainWindow::OnSetTag(QString tag)
-{
-    bool ok = false;
-    int value = ui->edtResults->textCursor().selectedText().trimmed().toInt(&ok);
-    if(ok)
-    {
-        QString path = "CrawlerDB.sqlite";
-        QSqlDatabase db = QSqlDatabase::database(path);//not dbConnection
-        QSqlQuery q(db);
-        q.prepare(QString("update fanfics set tags = tags || :tag where ID = :id and not cfRegexp(:wrappedTag, tags)"));
-        q.bindValue(":id", value);
-        q.bindValue(":tag", " " + tag + " ");
-        q.bindValue(":wrappedTag", WrapTag(tag));
-        q.exec();
-        if(q.lastError().isValid())
-            qDebug() << q.lastError();
-    }
-    HideCurrentID();
-}
-
-void MainWindow::InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QHash<QPair<QString, QString>, core::Fandom> knownValues;
-    for(auto value : sections)
-    {
-
-        QString qs = QString("Select section, fandom, normal_url, crossover_url from fandoms where section = '%1'").
-                arg(value.name.replace("'","''"));
-        QSqlQuery q(qs, db);
-
-
-        while(q.next())
-        {
-            knownValues[{q.value("section").toString(),
-                    q.value("fandom").toString()}] =
-                    core::Fandom{q.value("fandom").toString(),
-                    q.value("section").toString(),
-                    q.value("normal_url").toString(),
-                    q.value("crossover_url").toString(),};
-        }
-        qDebug() << q.lastError();
-    }
-    auto make_key = [](core::Fandom f){return QPair<QString, QString>(f.section, f.name);} ;
-    pbMain->setMinimum(0);
-    pbMain->setMaximum(names.size());
-
-    int counter = 0;
-    QString prevSection;
-    for(auto fandom : names)
-    {
-        counter++;
-        if(prevSection != fandom.section)
-        {
-            lblCurrentOperation->setText("Currently loading: " + fandom.section);
-            prevSection = fandom.section;
-        }
-        auto key = make_key(fandom);
-        bool hasFandom = knownValues.contains(key);
-        if(!hasFandom)
-        {
-            QString insert = "INSERT INTO FANDOMS (FANDOM, NORMAL_URL, CROSSOVER_URL, SECTION) "
-                             "VALUES (:FANDOM, :URL, :CROSS, :SECTION)";
-            QSqlQuery q(db);
-            q.prepare(insert);
-            q.bindValue(":FANDOM",fandom.name.replace("'","''"));
-            q.bindValue(":URL",fandom.url.replace("'","''"));
-            q.bindValue(":CROSS",fandom.crossoverUrl.replace("'","''"));
-            q.bindValue(":SECTION",fandom.section.replace("'","''"));
-            q.exec();
-            if(q.lastError().isValid())
-                qDebug() << q.lastError();
-        }
-        if(hasFandom && (
-                    (knownValues[key].crossoverUrl.isEmpty() && !fandom.crossoverUrl.isEmpty())
-                    || (knownValues[key].url.isEmpty() && !fandom.url.isEmpty())))
-        {
-            QString insert = "UPDATE FANDOMS set normal_url = :normal, crossover_url = :cross "
-                             "where section = :section and fandom = :fandom";
-            QSqlQuery q(db);
-            q.prepare(insert);
-            q.bindValue(":fandom",fandom.name.replace("'","''"));
-            q.bindValue(":normal",fandom.url.replace("'","''"));
-            q.bindValue(":cross",fandom.crossoverUrl.replace("'","''"));
-            q.bindValue(":section",fandom.section.replace("'","''"));
-            q.exec();
-            if(q.lastError().isValid())
-                qDebug() << q.lastError();
-        }
-
-        if(counter%100 == 0)
-        {
-            pbMain->setValue(counter);
-            QApplication::processEvents();
-        }
-    }
-    pbMain->setValue(pbMain->maximum());
-    QApplication::processEvents();
-}
-
-
-void MainWindow::UpdateFandomList(std::function<QString(core::Fandom)> linkGetter)
-{
-    for(auto value : sections)
-    {
-        currentProcessedSection = value.name;
-
-        An<PageManager> pager;
-        WebPage result = pager->GetPage(linkGetter(value), ECacheMode::dont_use_cache);
-        ProcessFandoms(result);
-
-        //manager.get(QNetworkRequest(QUrl(linkGetter(value))));
-        managerEventLoop.exec();
-    }
-}
-
-
-QStringList MainWindow::GetCrossoverListFromDB()
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("Select fandom from fandoms where section = '%1' and crossover_url is not null").arg(ui->cbSectionTypes->currentText());
-    QSqlQuery q(qs, db);
-    QStringList result;
-    result.append("");
-    while(q.next())
-    {
-        result.append(q.value(0).toString());
-    }
-    return result;
-}
-
-QStringList MainWindow::GetCrossoverUrl(QString fandom)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("Select crossover_url from fandoms where fandom = '%1' ").arg(fandom);
-    if(false)
-        qs+=" and (tracked = 1 or tracked_crossovers = 1)";
-    QSqlQuery q(qs, db);
-    QStringList result;
-    while(q.next())
-    {
-        QString rebindName = q.value(0).toString();
-        QStringList temp = rebindName.split("/");
-
-        rebindName = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
-        QString lastPart = "/0/?&srt=1&lan=1&r=10&len=%1";
-        QSettings settings("settings.ini", QSettings::IniFormat);
-        settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-        int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
-        lastPart=lastPart.arg(lengthCutoff);
-        QString resultString =  "https://www.fanfiction.net" + rebindName + lastPart;
-        result.push_back(resultString);
-    }
-    qDebug() << result;
-    return result;
-}
-
-QStringList MainWindow::GetNormalUrl(QString fandom)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("Select normal_url from fandoms where fandom = '%1' ").arg(fandom);
-    if(false)
-        qs+=" and (tracked = 1 or tracked_crossovers = 1)";
-    QSqlQuery q(qs, db);
-    QStringList result;
-    while(q.next())
-    {
-        QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
-        QSettings settings("settings.ini", QSettings::IniFormat);
-        settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-        int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
-        lastPart=lastPart.arg(lengthCutoff);
-        QString resultString = "https://www.fanfiction.net" + q.value(0).toString() + lastPart;
-        result.push_back(resultString);
-        qDebug() << result;
-    }
-    return result;
-}
-
-void MainWindow::OpenTagWidget(QPoint pos, QString url)
-{
-    url = url.replace(" none ", "");
-    QStringList temp = url.split("TAGS");
-    QString id = temp.at(0);
-    QString tags= temp.at(1);
-
-    QList<QPair<QString, QString>> tagPairs;
-
-    for(QString tag: ui->wdgTagsPlaceholder->GetAllTags())
-    {
-        if(tags.contains(tag))
-            tagPairs.push_back({"1", tag});
-        else
-            tagPairs.push_back({"0", tag});
-    }
-
-    tagWidgetDynamic->InitFromTags(id.toInt(), tagPairs);
-    tagWidgetDynamic->resize(500,200);
-    QPoint tempPoint(ui->edtResults->x(), 0);
-    tempPoint = mapToGlobal(ui->twMain->mapTo(this, tempPoint));
-    tagWidgetDynamic->move(tempPoint.x(), pos.y());
-    tagWidgetDynamic->setWindowFlags(Qt::FramelessWindowHint);
-
-
-    tagWidgetDynamic->show();
-    tagWidgetDynamic->setFocus();
-}
 
 void MainWindow::ProcessTagsIntoGui()
 {
@@ -916,104 +678,14 @@ void MainWindow::ProcessTagsIntoGui()
 
 void MainWindow::SetTag(int id, QString tag, bool silent)
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("insert into fictags(fic_id, tag) values(:fic_id, :tag)");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":tag", tag);
-    q.bindValue(":fic_id",id);
-    q.exec();
-    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
-        qDebug() << q.lastError();
-
-
-    if(!silent && !tagList.contains(tag))
-    {
-        q.prepare("INSERT INTO TAGS(TAG) VALUES(:tag)");
-        q.bindValue(":tag", tag);
-        q.exec();
-        if(q.lastError().isValid())
-            qDebug() << q.lastError();
-        tagList.push_back(tag);
-    }
+    tagsInterface->SetTagForFic(id, tag);
+    tagList = tagsInterface->ReadUserTags();
 }
 
 void MainWindow::UnsetTag(int id, QString tag)
 {
-    QSqlDatabase db = QSqlDatabase::database();
-
-    QString qs = QString("select tags from fanfics where ID = :id");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
-    q.exec();
-    q.next();
-
-    if(q.lastError().isValid())
-        qDebug() << q.lastError();
-
-    QStringList originaltags = q.value(0).toString().split(" ");
-    originaltags.removeAll("none");
-    originaltags.removeAll("");
-    originaltags.removeAll(tag);
-
-
-    qs = QString("update fanfics set tags = :tags where ID = :id");
-
-    QSqlQuery q1(db);
-    q1.prepare(qs);
-    q1.bindValue(":tags", " none " + originaltags.join(" "));
-    q1.bindValue(":id", id);
-    q1.exec();
-    if(q1.lastError().isValid())
-        qDebug() << q1.lastError();
-}
-
-
-
-void MainWindow::PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate)
-{
-    if(randomIdLists.contains(query) && !forceUpdate)
-        return;
-    randomIdLists.remove(query);
-    randomIdLists.insert(query, QList<int>());
-    QString qS = query;
-
-    //int posFrom= qS.indexOf("from fanfics f where 1 = 1");
-    //QString temp = qS.right(qS.length() - posFrom);
-    //temp = temp.remove(CreateLimitQueryPart());
-    int posOfLIMIT= qS.indexOf("LIMIT");
-
-    //qS = "select id " + temp;
-    if(posOfLIMIT != -1)
-          qS=qS.left(posOfLIMIT);
-    qDebug() << qS;
-    QSqlQuery q = bindQuery(qS);
-    q.exec();
-    while(q.next())
-        randomIdLists[query].push_back(q.value("ID").toInt());
-}
-
-QString MainWindow::AddIdList(QString query, int count)
-{
-    QString idList;
-    if(!ui->chkRandomizeSelection->isChecked() || !randomIdLists.contains(query) || randomIdLists[query].isEmpty())
-        return query;
-    std::random_shuffle (randomIdLists[query].begin(), randomIdLists[query].end());
-    for(int i(0); i < count && i < randomIdLists[query].size(); i++)
-    {
-        idList+=QString::number(randomIdLists[query].at(i)) + ",";
-    }
-    if(idList.isEmpty())
-        return idList;
-    if(idList.contains(","))
-        idList.chop(1);
-    idList = "ID IN ( " + idList + " ) ";
-    query=query.replace("1 = 1", "1 = 1 AND " + idList + " ");
-
-    return query;
+    tagsInterface->RemoveTagFromFic(id, tag);
+    tagList = tagsInterface->ReadUserTags();
 }
 
 QString MainWindow::CreateLimitQueryPart()
@@ -1052,6 +724,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     QSqlDatabase db = QSqlDatabase::database();
 //    bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
 //    bool transOpen = db.transaction();
+    database::Transaction transaction(db);
     do
     {
         futures.clear();
@@ -1070,8 +743,6 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
         }
         else
             cachedPages++;
-
-
 
         qDebug() << "Page loaded in: " << webPage.loadedIn;
         pbMain->setValue(pbMain->value()+1);
@@ -1126,7 +797,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
 
         }
     }while(!webPage.isLastPage);
-    db.commit();
+    transaction.finalize();
 
     //parser.ClearDoneCache();
     ui->edtResults->clear();
@@ -1238,37 +909,6 @@ void MainWindow::ProcessTagIntoRecommenders(QString listName)
     recommendersModel->setStringList(result);
 }
 
-QString MainWindow::WrapTag(QString tag)
-{
-    tag= "(.{0,}" + tag + ".{0,})";
-    return tag;
-}
-
-void MainWindow::HideCurrentID()
-{
-    auto cursorPosition = ui->edtResults->textCursor().position();
-    auto cursor = ui->edtResults->textCursor();
-
-    QString text = ui->edtResults->toPlainText();
-    int posPrevious = text.midRef(0, cursorPosition - 70).lastIndexOf("ID:");
-
-    int posNewline = text.indexOf("\n", posPrevious);
-    if(posNewline == -1)
-        posNewline = text.length();
-    if(posPrevious == -1)
-    {
-        posPrevious = 0;
-        posNewline = 0;
-    }
-    int posCurrent = text.indexOf("\n", cursorPosition);
-    if(posCurrent == -1)
-        posCurrent = text.length();
-
-    cursor.setPosition(posNewline, QTextCursor::MoveAnchor);
-    cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,posCurrent - posNewline + 1);
-    cursor.deleteChar();
-    ui->edtResults->setTextCursor(cursor);
-}
 
 
 void MainWindow::DisableAllLoadButtons()
@@ -1288,21 +928,6 @@ void MainWindow::EnableAllLoadButtons()
     ui->pbLoadAllRecommenders->setEnabled(true);
 }
 
-void MainWindow::WipeSelectedFandom(bool)
-{
-    QString fandom;
-
-    fandom = GetCurrentFandomName();
-
-    if(!fandom.isEmpty())
-    {
-        QSqlDatabase db = QSqlDatabase::database();
-        QString qs = QString("delete from fanfics where fandom like '%%1%'");
-        qs=qs.arg(fandom);
-        QSqlQuery q(qs, db);
-        q.exec();
-    }
-}
 
 void MainWindow::OnNewPage(WebPage page)
 {
@@ -1333,23 +958,6 @@ void MainWindow::OnCopyAllUrls()
 }
 
 
-bool MainWindow::CheckSectionAvailability()
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("Select count(fandom) from fandoms");
-    QSqlQuery q(qs, db);
-    q.next();
-    if(q.value(0).toInt() == 0)
-    {
-        lblCurrentOperation->setText("Please, wait");
-        QMessageBox::information(nullptr, "Attention!", "Section information is not available, the app will now load it from the internet.\nThis is a one time operation, unless you want to update it with \"Reload section data\"\nPlease wait until it finishes before doing anything.");
-        Init();
-        QMessageBox::information(nullptr, "Attention!", "Section data is initialized, the app is usable. Have fun searching.");
-        pbMain->hide();
-        lblCurrentOperation->hide();
-    }
-    return true;
-}
 
 void MainWindow::ReadSettings()
 {
@@ -1455,132 +1063,12 @@ QString MainWindow::GetCurrentFandomName()
     return ui->cbNormals->currentText().trimmed();
 }
 
-void MainWindow::ProcessFandoms(WebPage webPage)
+void MainWindow::OnChapterUpdated(QVariant id, QVariant chapter)
 {
+    fanficsInterface->AssignChapter(id.toInt(), chapter.toInt());
 
-    QString str(webPage.content);
-    // getting to the start of fandom section
-    QRegExp rxStartFandoms("list_output");
-    int indexStart = rxStartFandoms.indexIn(str);
-    if(indexStart == -1)
-    {
-        QMessageBox::warning(0, "warning!", "failed to find the start of fandom section");
-        return;
-    }
-
-    QRegExp rxEndFandoms("</TABLE>");
-    int indexEnd= rxEndFandoms.indexIn(str);
-    if(indexEnd == -1)
-    {
-        QMessageBox::warning(0, "warning!", "failed to find the end of fandom section");
-        return;
-    }
-    while(true)
-    {
-        QRegExp rxStartLink("href=\"");
-        QRegExp rxEndLink("/\"");
-
-        int linkStart = rxStartLink.indexIn(str, indexStart);
-        if(linkStart == -1)
-            break;
-        int linkEnd= rxEndLink.indexIn(str, linkStart);
-        if(linkStart == -1 || linkEnd == -1)
-        {
-            QMessageBox::warning(0, "warning!", "failed to fetch link at: ", str.mid(linkStart, str.size() - linkStart));
-        }
-        QString link = str.mid(linkStart + rxStartLink.pattern().length(),
-                               linkEnd - (linkStart + rxStartLink.pattern().length()));
-
-        QRegExp rxStartName(">");
-        QRegExp rxEndName("</a");
-
-        int nameStart = rxStartName.indexIn(str, linkEnd);
-        int nameEnd= rxEndName.indexIn(str, nameStart);
-        if(nameStart == -1 || nameEnd == -1)
-        {
-            QMessageBox::warning(0, "warning!", "failed to fetch name at: ", str.mid(nameStart, str.size() - nameStart));
-        }
-        QString name = str.mid(nameStart + rxStartName.pattern().length(),
-                               nameEnd - (nameStart + rxStartName.pattern().length()));
-
-        //qDebug()  << name << " " << link << " " << counter++;
-        indexStart = linkEnd;
-        names.insert({currentProcessedSection,name}, core::Fandom{name, currentProcessedSection, link, ""});
-    }
-    managerEventLoop.quit();
 }
 
-void MainWindow::ProcessCrossovers(WebPage webPage)
-{
-    QString str(webPage.content);
-    //QString pattern = sections[currentProcessedSection].section;//.mid(indexOfSlash + 1, currentProcessedSection.length() - (indexOfSlash +1)) + "\\sCrossovers";
-    QRegExp rxStartFandoms("<TABLE\\sWIDTH='100%'><TR>");
-    int indexStart = rxStartFandoms.indexIn(str);
-    if(indexStart == -1)
-    {
-        QMessageBox::warning(0, "warning!", "failed to find the start of fandom section");
-        return;
-    }
-
-    QRegExp rxEndFandoms("</TABLE>");
-    int indexEnd= rxEndFandoms.indexIn(str);
-    if(indexEnd == -1)
-    {
-        QMessageBox::warning(0, "warning!", "failed to find the end of fandom section");
-        return;
-    }
-    while(true)
-    {
-        QRegExp rxStartLink("href=[\"]");
-        QRegExp rxEndLink("/\"");
-
-        int linkStart = rxStartLink.indexIn(str, indexStart);
-        if(linkStart == -1)
-            break;
-        int linkEnd= rxEndLink.indexIn(str, linkStart);
-        if(linkStart == -1 || linkEnd == -1)
-        {
-            QMessageBox::warning(0, "warning!", "failed to fetch link at: ", str.mid(linkStart, str.size() - linkStart));
-        }
-        QString link = str.mid(linkStart + rxStartLink.pattern().length()-2,
-                               linkEnd - (linkStart + rxStartLink.pattern().length())+2);
-
-        QRegExp rxStartName(">");
-        QRegExp rxEndName("</a");
-
-        int nameStart = rxStartName.indexIn(str, linkEnd);
-        int nameEnd= rxEndName.indexIn(str, nameStart);
-        if(nameStart == -1 || nameEnd == -1)
-        {
-            QMessageBox::warning(0, "warning!", "failed to fetch name at: ", str.mid(nameStart, str.size() - nameStart));
-        }
-        QString name = str.mid(nameStart + rxStartName.pattern().length(),
-                               nameEnd - (nameStart + rxStartName.pattern().length()));
-
-        indexStart = linkEnd;
-        if(!names.contains({currentProcessedSection,name}))
-            names.insert({currentProcessedSection,name},core::Fandom{name, currentProcessedSection,  "",link});
-        else
-            names[{currentProcessedSection,name}].crossoverUrl = link;
-    }
-    managerEventLoop.quit();
-}
-
-void MainWindow::OnChapterUpdated(QVariant chapter, QVariant author, QVariant title)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QString qs = QString("update fanfics set at_chapter = :chapter where author = :author and title = :title");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":chapter", chapter.toInt());
-    q.bindValue(":author", author.toString());
-    q.bindValue(":title", title.toString());
-    q.exec();
-    qDebug() << chapter.toInt() << " " << author.toString() << " " <<  title.toString();
-    if(q.lastError().isValid())
-        qDebug() << q.lastError();
-
-}
 
 void MainWindow::OnTagAdd(QVariant tag, QVariant row)
 {
@@ -1601,10 +1089,6 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
     data = data.replace(tag.toString(), "");
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
-}
-
-void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
-{
 }
 
 void MainWindow::on_pbCrawl_clicked()
@@ -1698,7 +1182,7 @@ void MainWindow::on_pbLoadDatabase_clicked()
 
 void MainWindow::on_pbInit_clicked()
 {
-    Init();
+    ReInitFandoms();
 }
 
 

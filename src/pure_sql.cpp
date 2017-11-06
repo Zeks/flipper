@@ -1,4 +1,5 @@
 #include "pure_sql.h"
+#include "transaction.h"
 #include "section.h"
 #include <QSqlQuery>
 #include <QSqlError>
@@ -149,6 +150,53 @@ void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db)
     }
 
 }
+
+
+
+void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db)
+{
+    QString qs = "INSERT INTO FicTags(fic_id, tag) values(:fic_id, :tag)";
+    qs=qs.arg(tag);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fic_id", fic_id);
+    q.bindValue(":tag", tag);
+    q.exec();
+    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+    }
+}
+
+
+bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db)
+{
+    QString qs = "delete from FicTags where fic_id = :fic_id and tag = :tag)";
+    qs=qs.arg(tag);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fic_id", fic_id);
+    q.bindValue(":tag", tag);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+
+bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set at_chapter = :chapter where id = :fic_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":chapter", chapter);
+    q.bindValue(":fic_id", fic_id);
+
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+
+}
+
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db)
 {
     QString qs = QString("insert into fandoms(fandom, section, normal_url, crossover_url) "
@@ -805,7 +853,7 @@ bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db)
         return false;
     return true;
 }
-bool DeleteTagfromDatabase(QString tag, QSqlDatabase db)
+bool DeleteTagFromDatabase(QString tag, QSqlDatabase db)
 {
     QString qs = QString("delete from FicTags where tag = :tag");
     QSqlQuery q(db);
@@ -821,6 +869,18 @@ bool DeleteTagfromDatabase(QString tag, QSqlDatabase db)
         return false;
     return true;
 }
+
+bool CreateTagInDatabase(QString tag, QSqlDatabase db)
+{
+    QString qs = QString("INSERT INTO TAGS(TAG) VALUES(:tag)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":tag",tag);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+
 int GetRecommendationListIdForName(QString name, QSqlDatabase db)
 {
     int result = 0;
@@ -1067,6 +1127,44 @@ core::FandomPtr GetFandom(QString name, QSqlDatabase db)
 }
 
 
+bool CleanuFandom(int fandom_id, QSqlDatabase db)
+{
+    QString qs = QString("delete from fanfics where id in (select distinct fic_id from ficfandoms where fandom_id = :fandom_id)");
+
+    Transaction transaction(db);
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fandom_id", fandom_id);
+    if(!ExecAndCheck(q))
+        return false;
+
+    qs = QString("delete from fictags where fic_id in (select distinct fic_id from ficfandoms where fandom_id = :fandom_id)");
+    q.prepare(qs);
+    q.bindValue(":fandom_id", fandom_id);
+    if(!ExecAndCheck(q))
+        return false;
+
+
+    qs = QString("delete from recommendationlistdata where fic_id in (select distinct fic_id from ficfandoms where fandom_id = :fandom_id)");
+    q.prepare(qs);
+    q.bindValue(":fandom_id", fandom_id);
+    if(!ExecAndCheck(q))
+        return false;
+
+
+    qs = QString("delete from ficfandoms where fandom_id = :fandom_id");
+    q.prepare(qs);
+    q.bindValue(":fandom_id", fandom_id);
+    if(!ExecAndCheck(q))
+        return false;
+
+    transaction.finalize();
+    return true;
+
+}
+
+
 QStringList GetTrackedFandomList(QSqlDatabase db)
 {
     QStringList result;
@@ -1081,6 +1179,20 @@ QStringList GetTrackedFandomList(QSqlDatabase db)
         result.push_back(q.value(0).toString());
     return result;
 }
+
+int GetFandomCountInDatabase(QSqlDatabase db)
+{
+    QString qs = QString("Select count(fandom) from fandoms");
+    QSqlQuery q(qs, db);
+    if(!ExecAndCheck(q))
+        return 0;
+    if(!q.next())
+        return  0;
+    return q.value(0).toInt();
+}
+
+
+
 
 
 

@@ -201,6 +201,7 @@ bool Fandoms::Load()
         if(fandomPresent)
             this->recentFandoms.push_back(nameIndex[bit]);
     }
+    fandomCount = database::puresql::GetFandomCountInDatabase(db);
     return hadErrors;
 }
 
@@ -266,6 +267,18 @@ void Fandoms::AddToIndex(core::FandomPtr fandom)
     fandomsList.push_back(fandom->name);
     if(fandom->tracked)
         trackedFandoms.push_back(fandom);
+}
+
+bool Fandoms::WipeFandom(QString name)
+{
+    if(!EnsureFandom(name))
+        return false;
+    return database::puresql::CleanuFandom(nameIndex[name]->id, db);
+}
+
+int Fandoms::GetFandomCount()
+{
+    return fandomCount;
 }
 
 Fandoms::~Fandoms()

@@ -83,6 +83,7 @@ files: [
         "src/ffnparserbase.cpp",
         "src/ficparser.cpp",
         "src/main_ffsse.cpp",
+        "src/mainwindow_utility.cpp",
         "src/pagegetter.cpp",
         "src/pure_sql.cpp",
         "src/querybuilder.cpp",
