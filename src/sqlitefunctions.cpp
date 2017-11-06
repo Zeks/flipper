@@ -123,7 +123,7 @@ bool ReadDbFile(QString file, QString connectionName)
                 db = QSqlDatabase::database(connectionName);
             else
                 db = QSqlDatabase::database();
-            bool isOpen = db.isOpen();
+            //bool isOpen = db.isOpen();
             QSqlQuery q(db);
             q.prepare(statement.trimmed());
             database::puresql::ExecAndCheck(q);

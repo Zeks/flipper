@@ -24,18 +24,18 @@ Item {
         allChoices: tagModel
     }
     function makeSelection(){
-        //console.log(tsTags.currentChoices);
+        console.log(tsTags.currentChoices);
         lvFics.currentIndex = delegateItem.indexOfThisDelegate
         if(tsTags.currentChoices.length === 0)
         {
-            //console.log("Activating genres");
+            console.debug("Activating genres");
             tsTags.deactivateIntoAllChoices();
             tsGenre.activate();
             tsGenre.activated(delegateItem.indexOfThisDelegate)
         }
         else
         {
-            //console.log("Activating tags");
+            console.debug("Activating tags");
             tsTags.activate();
             tsGenre.deactivate();
             tsTags.activated(delegateItem.indexOfThisDelegate)
@@ -51,6 +51,7 @@ Item {
             tsTags.tagToggled.connect(delegateItem.tagToggled)
             tagColumn.y = tsTags.y + tsTags.height + 20
             tagColumn.x = tagGenreList.x
+            //tagGenreList.makeSelection();
         }
 }
 

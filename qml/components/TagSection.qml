@@ -16,19 +16,23 @@ Rectangle{
     property bool canAdd: false
     property string tagSelectorColor: '#ABB6D3'
     function deactivate(index) {
+        console.log("deactivating" + tagName);
         root.active = false
         //root.selectionMode = false;
         //list.model = allChoices;
     }
     function deactivateIntoAllChoices(index) {
+        console.log("deactivating" + tagName);
         root.active = false
         root.selectionMode = false;
         list.model = allChoices;
     }
     function activate(index) {
+        console.log("activating" + tagName);
         root.active = true
     }
     function showCurrrentTags() {
+        console.log("showing " + tagName);
         root.selectionMode = false;
         list.model = currentChoices;
     }
@@ -75,6 +79,7 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
+                    console.log("height is" );
                     console.log(mainWindow.height);
                     //console.log(plus.mapToItem(mainWindow,0,0));
 
@@ -182,22 +187,6 @@ Rectangle{
                         tagToggled(modelData, false)
                     }
                 }
-//                onWheel: {
-
-//                    var angleDelta = root.parent.rotation === 0 ? -1* wheel.angleDelta.y : wheel.angleDelta.y;
-
-//                    if(angleDelta > 0)
-//                    {
-//                        list.positionViewAtIndex(list.currentIndex+1,ListView.Beginning )
-//                        if(list.currentIndex < list.count)
-//                            list.currentIndex=list.currentIndex+1
-//                    }
-//                    else{
-//                        list.positionViewAtIndex(list.currentIndex-1,ListView.Beginning )
-//                        if(list.currentIndex >=0)
-//                            list.currentIndex=list.currentIndex-1
-//                    }
-//                }
 
             }
         }

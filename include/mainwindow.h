@@ -206,6 +206,7 @@ public slots:
     void OnNewPage(WebPage);
     void OnCopyFicUrl(QString);
     void OnCopyAllUrls();
+    void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
 private slots:
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);

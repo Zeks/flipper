@@ -411,6 +411,7 @@ void MainWindow::SetupFanficTable()
     qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
     qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
 
+    tagList = tagsInterface->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
@@ -441,7 +442,9 @@ bool MainWindow::event(QEvent * e)
     return QMainWindow::event(e) ;
 }
 
-
+void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
+{
+}
 MainWindow::~MainWindow()
 {
     WriteSettings();
@@ -468,7 +471,7 @@ void MainWindow::InitInterfaces()
     fandomsInterface->portableDBInterface = dbInterface;
     tagsInterface->fandomInterface = fandomsInterface;
 
-    bool isOpen = dbInterface->GetDatabase().isOpen();
+    //bool isOpen = dbInterface->GetDatabase().isOpen();
     authorsInterface->db = dbInterface->GetDatabase();
     fanficsInterface->db = dbInterface->GetDatabase();
     recsInterface->db    = dbInterface->GetDatabase();

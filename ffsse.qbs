@@ -14,6 +14,7 @@ Depends { name: "Qt.core" }
 Depends { name: "Qt.widgets" }
 Depends { name: "Qt.network" }
 Depends { name: "Qt.gui" }
+
 Depends { name: "Qt.quick" }
 Depends { name: "Qt.concurrent" }
 Depends { name: "Qt.quickwidgets" }
@@ -21,7 +22,10 @@ Depends { name: "cpp" }
 Depends { name: "UniversalModels" }
 Depends { name: "logger" }
 
-cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
+cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY",
+                          "QT_QML_DEBUG"
+                         // ,"QT_LOGGING_TO_CONSOLE=1"
+                         ])
 cpp.includePaths: [
                 sourceDirectory,
                 sourceDirectory + "/include",
