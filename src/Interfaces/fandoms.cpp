@@ -97,7 +97,7 @@ bool Fandoms::CreateFandom(QString fandom)
     return CreateFandom(fandomPtr);
 }
 
-core::FandomPtr Fandoms::GetFandom(QString name)
+core::FandomPtr Fandoms::GetFandom(QString name, bool mergeUrls)
 {
     core::FandomPtr result;
     if(!name.trimmed().isEmpty() && EnsureFandom(name))

@@ -31,8 +31,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     queryString+= BuildSortMode(filter);
     queryString+= CreateLimitQueryPart(filter);
 
-    qDebug() << queryString;
     query->str = "select " + queryString;
+    qDebug() << query->str;
     return query;
 }
 

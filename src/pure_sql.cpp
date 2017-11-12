@@ -1106,21 +1106,31 @@ QSet<QString> GetAllGenres(QSqlDatabase db)
     return result;
 }
 
-static core::FandomPtr FandomfromQuery (QSqlQuery& q)
+static core::FandomPtr FandomfromQuery (QSqlQuery& q, core::FandomPtr fandom = core::FandomPtr())
 {
-    auto fandom = core::Fandom::NewFandom();
-    fandom->id = q.value("ID").toInt();
-    fandom->url = q.value("NORMAL_URL").toString();
-    fandom->crossoverUrl = q.value("CROSSOVER_URL").toString();
-    fandom->ficCount = q.value("fic_count").toInt();
-    fandom->averageFavesTop3 = q.value("average_faves_top_3").toDouble();
-    fandom->name = q.value("fandom").toString();
-    fandom->source = q.value("source").toString();
-    fandom->dateOfCreation = q.value("date_of_creation").toDate();
-    fandom->dateOfFirstFic = q.value("date_of_first_fic").toDate();
-    fandom->dateOfLastFic = q.value("date_of_last_fic").toDate();
-    fandom->lastUpdateDate = q.value("last_update").toDate();
-    fandom->tracked = q.value("tracked").toInt();
+    if(!fandom)
+    {
+        fandom = core::Fandom::NewFandom();
+        fandom->id = q.value("ID").toInt();
+        fandom->url = q.value("NORMAL_URL").toString();
+        fandom->crossoverUrl = q.value("CROSSOVER_URL").toString();
+        fandom->ficCount = q.value("fic_count").toInt();
+        fandom->averageFavesTop3 = q.value("average_faves_top_3").toDouble();
+        fandom->name = q.value("fandom").toString();
+        fandom->source = q.value("source").toString();
+        fandom->dateOfCreation = q.value("date_of_creation").toDate();
+        fandom->dateOfFirstFic = q.value("date_of_first_fic").toDate();
+        fandom->dateOfLastFic = q.value("date_of_last_fic").toDate();
+        fandom->lastUpdateDate = q.value("last_update").toDate();
+        fandom->tracked = q.value("tracked").toInt();
+        fandom->mergedUrls.push_back(fandom->url);
+        fandom->mergedUrls.push_back(fandom->crossoverUrl);
+    }
+    else
+    {
+        fandom->mergedUrls.push_back(q.value("NORMAL_URL").toString());
+        fandom->mergedUrls.push_back(q.value("CROSSOVER_URL").toString());
+    }
     return fandom;
 };
 
@@ -1128,7 +1138,7 @@ QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db)
 {
     QList<core::FandomPtr> result;
 
-    QString qs = QString(" select count(id) from fandoms ");
+    QString qs = QString(" select count(id) from fandoms");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1137,14 +1147,25 @@ QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db)
 
     result.reserve(q.value(0).toInt());
 
-    qs = QString(" select * from fandoms ");
+    qs = QString(" select * from fandoms order by fandom");
     q.prepare(qs);
 
     if(!ExecAndCheck(q))
         return result;
-
+    QString lastName;
+    core::FandomPtr currentFandom;
     while(q.next())
-        result.push_back(FandomfromQuery(q));
+    {
+        auto currentName = q.value("fandom").toString();
+        if(lastName != currentName)
+        {
+            currentFandom = FandomfromQuery(q);
+            result.push_back(currentFandom);
+        }
+        else
+            currentFandom = FandomfromQuery(q, currentFandom);
+        lastName = currentName;
+    }
 
     return result;
 }
@@ -1160,8 +1181,21 @@ core::FandomPtr GetFandom(QString name, QSqlDatabase db)
     q.bindValue(":fandom", name);
     if(!ExecAndCheck(q))
         return result;
-    q.next();
-    result = FandomfromQuery(q);
+
+    QString lastName;
+    core::FandomPtr currentFandom;
+    while(q.next())
+    {
+        auto currentName = q.value("fandom").toString();
+        if(lastName != currentName)
+        {
+            currentFandom = FandomfromQuery(q);
+        }
+        else
+            currentFandom = FandomfromQuery(q, currentFandom);
+        lastName = currentName;
+    }
+    result = currentFandom;
     return result;
 }
 

@@ -162,6 +162,8 @@ void MainWindow::Init()
     queryBuilder.SetIdRNGgenerator(new core::DefaultRNGgenerator());
     ui->chkShowDirectRecs->setVisible(false);
     ui->pbFirstWave->setVisible(false);
+    ui->rbCrossovers->setVisible(false);
+    ui->cbSectionTypes->setVisible(false);
 
     this->setWindowTitle("ffnet sane search engine");
     QSettings settings("settings.ini", QSettings::IniFormat);
@@ -179,6 +181,7 @@ void MainWindow::Init()
 
     ui->wdgTagsPlaceholder->fandomsInterface = fandomsInterface;
     tagWidgetDynamic->fandomsInterface = fandomsInterface;
+    fandomsInterface->FillFandomList(true);
     ProcessTagsIntoGui();
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;

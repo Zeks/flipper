@@ -242,12 +242,13 @@ class Fandom : public DBEntity
     }
     static FandomPtr NewFandom() { return QSharedPointer<Fandom>(new Fandom);}
     QStringList GetUrls(){
-        QStringList  result;
-        if(!url.isEmpty() && url != "none")
-            result.push_back(url);
-        if(!crossoverUrl.isEmpty() && crossoverUrl != "none")
-            result.push_back(crossoverUrl);
-        return result;
+//        QStringList  result;
+//        if(!url.isEmpty() && url != "none")
+//            result.push_back(url);
+//        if(!crossoverUrl.isEmpty() && crossoverUrl != "none")
+//            result.push_back(crossoverUrl);
+//        return result;
+        return mergedUrls;
     };
     int id = -1;
     int idInRecentFandoms = -1;
@@ -258,6 +259,7 @@ class Fandom : public DBEntity
     QString url = "none";
     QString crossoverUrl = "none";
     QString source = "ffn";
+    QStringList mergedUrls;
     QDate dateOfCreation;
     QDate dateOfFirstFic;
     QDate dateOfLastFic;

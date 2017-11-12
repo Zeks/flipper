@@ -31,12 +31,13 @@ public:
     bool RecalculateFandomStats(QStringList fandoms);
     void Reindex();
     void AddToIndex(core::FandomPtr);
+    void FillFandomList(bool forced = false);
 
     bool WipeFandom(QString name);
     int GetFandomCount();
 
     virtual int GetIDForName(QString) ;
-    virtual core::FandomPtr GetFandom(QString);
+    virtual core::FandomPtr GetFandom(QString, bool mergeUrls = false);
 
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);
@@ -60,7 +61,7 @@ public:
     QSharedPointer<database::IDBWrapper> portableDBInterface;
 private:
     bool AddToTopOfRecent(QString);
-    void FillFandomList(bool forced = false);
+
 
     QList<core::FandomPtr> fandoms;
     QHash<QString, int> indexFandomsByName;

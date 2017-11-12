@@ -211,7 +211,7 @@ bool Fanfics::FlushDataQueues()
             database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
     }
 
-    for(auto fic: insertQueue)
+    for(auto fic: updateQueue)
         database::puresql::UpdateInDB(fic, db);
 
     for(auto recommendation: ficRecommendations)
