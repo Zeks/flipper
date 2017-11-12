@@ -42,7 +42,7 @@ bool database::Transaction::cancel()
 
 bool database::Transaction::finalize()
 {
-    if(!db.isOpen())
+    if(!db.isOpen() || !isOpen)
         return false;
     if(!db.commit())
         return false;

@@ -194,6 +194,8 @@ private:
     void ProcessListIntoRecommendations(QString list);
     void BuildRecommendations(QSharedPointer<core::RecommendationList> params);
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);
+    QString AppendCurrentSearchParameters(QString url);
+
 public slots:
     void ProcessFandoms(WebPage webPage);
     void ProcessCrossovers(WebPage webPage);

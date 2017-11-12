@@ -1,5 +1,7 @@
 #include "fandomparser.h"
 #include "Interfaces/fanfics.h"
+#include "url_utils.h"
+#include "regex_utils.h"
 
 
 
@@ -29,8 +31,12 @@ void FandomParser::ProcessPage(WebPage page)
         currentPosition = section.start;
 
         section.result->fandom = page.crossover ? page.fandom + " CROSSOVER" : page.fandom;
+        section.result->author->website = "ffn";
+
         GetUrl(section, currentPosition, str);
+        section.result->webId = section.result->ffn_id = url_utils::GetWebId(section.result->url("ffn"), "ffn").toInt();
         GetTitle(section, currentPosition, str);
+        //GetAuthor(section, currentPosition, str);
         GetAuthor(section, currentPosition, str);
         GetSummary(section, currentPosition, str);
 
@@ -65,6 +71,8 @@ void FandomParser::ProcessPage(WebPage page)
 
         if(section.result->fandom.contains("CROSSOVER"))
             GetCrossoverFandomList(section, currentPosition, str);
+        else
+            section.result->fandoms.push_back(section.result->fandom);
 
 
         if(section.isValid)
@@ -74,6 +82,7 @@ void FandomParser::ProcessPage(WebPage page)
                 minSectionUpdateDate = updateDate;
 
             processedStuff.append(section.result);
+            sections.push_back(section);
         }
 
     }
@@ -102,18 +111,40 @@ void FandomParser::ClearProcessed()
     processedStuff = decltype(processedStuff)();
 }
 
-void FandomParser::GetAuthor(core::Section & section, int& startfrom, QString text)
+//void FandomParser::GetAuthor(core::Section & section, int& startfrom, QString text)
+//{
+//    QRegExp rxBy("by\\s<");
+//    QRegExp rxStart(">");
+//    QRegExp rxEnd(QRegExp::escape("</a>"));
+//    int indexBy = rxBy.indexIn(text, startfrom);
+//    int indexStart = rxStart.indexIn(text, indexBy + 3);
+//    int indexEnd = rxEnd.indexIn(text, indexStart);
+//    startfrom = indexEnd;
+//    section.result->author->name = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
+
+//}
+
+void FandomParser::GetAuthor(core::Section & section, int &startfrom,  QString text)
 {
-    QRegExp rxBy("by\\s<");
-    QRegExp rxStart(">");
-    QRegExp rxEnd(QRegExp::escape("</a>"));
-    int indexBy = rxBy.indexIn(text, startfrom);
-    int indexStart = rxStart.indexIn(text, indexBy + 3);
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    startfrom = indexEnd;
-    section.result->author->name = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
+    text = text.mid(startfrom);
+    auto full = GetDoubleNarrow(text,"/u/\\d+/", "</a>", true,
+                                "",  "\">", false,
+                                2);
+
+    QRegExp rxEnd("(/u/(\\d+)/)(.*)(?='>)");
+    rxEnd.setMinimal(true);
+    auto index = rxEnd.indexIn(text);
+    if(index == -1)
+        return;
+
+    QSharedPointer<core::Author> author(new core::Author);
+    section.result->author = author;
+    section.result->author->SetUrl("ffn",rxEnd.cap(1));
+    section.result->author->webId = rxEnd.cap(2).toInt();
+    section.result->author->name = full;
 
 }
+
 
 void FandomParser::GetTitle(core::Section & section, int& startfrom, QString text)
 {

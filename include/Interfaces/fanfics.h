@@ -44,6 +44,7 @@ class Fanfics : public IDBWebIDIndex {
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
 
     void ProcessIntoDataQueues(QList<core::FicPtr> fics, bool alwaysUpdateIfNotInsert = false);
+    void CalcStatsForFics(QList<QSharedPointer<core::Fic>>);
     void FlushDataQueues();
 
     virtual bool DeactivateFic(int ficId, QString website);
@@ -65,6 +66,7 @@ class Fanfics : public IDBWebIDIndex {
     QHash<int, core::FicPtr> idIndex;
     QHash<QString, QHash<int, core::FicPtr>> webIdIndex;
 
+    QSharedPointer<Fandoms> fandomInterface;
     QSharedPointer<Authors> authorInterface;
     QSqlDatabase db;
 private:

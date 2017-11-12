@@ -1,4 +1,5 @@
 #include "Interfaces/fanfics.h"
+#include "Interfaces/fandoms.h"
 #include "Interfaces/authors.h"
 #include "include/pure_sql.h"
 #include "include/transaction.h"
@@ -163,8 +164,27 @@ void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
     ficRecommendations += recommendations;
 }
 
+void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fic>> fics)
+{
+    for(QSharedPointer<core::Fic> fic: fics)
+    {
+        if(!fic)
+            continue;
+
+        fic->calcStats.wcr = 200000; // default
+        if(fic->wordCount.toInt() > 1000 && fic->reviews > 0)
+            fic->calcStats.wcr = fic->wordCount.toDouble()/fic->reviews.toDouble();
+        fic->calcStats.reviewsTofavourites = 0;
+        if(fic->favourites.toInt())
+            fic->calcStats.reviewsTofavourites = fic->reviews.toDouble()/fic->favourites.toDouble();
+        fic->calcStats.age = std::abs(QDateTime::currentDateTimeUtc().daysTo(fic->published));
+        fic->calcStats.daysRunning = std::abs(fic->updated.daysTo(fic->published));
+    }
+}
+
 void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
 {
+    CalcStatsForFics(fics);
     for(QSharedPointer<core::Fic> fic: fics)
     {
         if(!fic)
@@ -179,14 +199,17 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
                 insertQueue[id] = fic;
         }
     }
-
 }
 
 void Fanfics::FlushDataQueues()
 {
     database::Transaction transaction(db);
     for(auto fic: insertQueue)
+    {
         database::puresql::InsertIntoDB(fic, db);
+        for(auto fandom: fic->fandoms)
+            database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+    }
 
     for(auto fic: insertQueue)
         database::puresql::UpdateInDB(fic, db);

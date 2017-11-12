@@ -273,6 +273,7 @@ void MainWindow::Init()
     //ui->lvRecommenders->setModel(recommendersModel);
 
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
+    //! todo currently null
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
     CreatePageThreadWorker();
 }
@@ -421,9 +422,9 @@ void MainWindow::SetupFanficTable()
     qwFics->setSource(source);
 
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
-    connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
+    //connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
-    connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
+    //connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
@@ -466,6 +467,7 @@ void MainWindow::InitInterfaces()
 
     authorsInterface->portableDBInterface = dbInterface;
     fanficsInterface->authorInterface = authorsInterface;
+    fanficsInterface->fandomInterface = fandomsInterface;
     recsInterface->portableDBInterface = dbInterface;
     recsInterface->authorInterface = authorsInterface;
     fandomsInterface->portableDBInterface = dbInterface;
@@ -518,6 +520,9 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
     emit pageTask(nextUrl, lastUrl, lastFandomUpdatedate, ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
     int counter = 0;
     WebPage webPage;
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    QSet<QString> updatedFandoms;
     do
     {
         while(pageQueue.isEmpty())
@@ -531,7 +536,7 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
 
         webPage = pageQueue.at(0);
         pageQueue.pop_front();
-        webPage.crossover = ui->rbCrossovers->isChecked();
+        webPage.crossover = webPage.url.contains("Crossovers");
         webPage.fandom =  fandom;
         webPage.type = EPageType::sorted_ficlist;
         auto startPageProcessing= std::chrono::high_resolution_clock::now();
@@ -541,30 +546,38 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
         if(webPage.source == EPageSource::network)
             pager->SavePageToDB(webPage);
 
-        if(parser.minSectionUpdateDate < lastFandomUpdatedate && !ui->chkIgnoreUpdateDate->isChecked())
-        {
-            ui->edtResults->append("Already have updates past this point. Aborting.");
-            break;
-        }
         QCoreApplication::processEvents();
 
         if(pageCount == 0)
             pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
         else
             pbMain->setValue(counter++);
-        QSqlDatabase db = QSqlDatabase::database();
-        database::Transaction transaction(db);
+
+
 
         auto startPageRequest = std::chrono::high_resolution_clock::now();
 
-        fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
-        fanficsInterface->FlushDataQueues();
+        {
+            fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
+
+            auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
+            updatedFandoms.intersect(fandoms);
+
+            fanficsInterface->FlushDataQueues();
+        }
         processedFics+=parser.processedStuff.size();
 
         elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-        transaction.finalize();
+
+        if(parser.minSectionUpdateDate < lastFandomUpdatedate && !ui->chkIgnoreUpdateDate->isChecked())
+        {
+            ui->edtResults->append("Already have updates past this point. Aborting.");
+            break;
+        }
     }while(!webPage.isLastPage);
+    fandomsInterface->RecalculateFandomStats(updatedFandoms.values());
+    transaction.finalize();
     StopPageWorker();
     ShutdownProgressbar();
     EnableAllLoadButtons();
@@ -1105,6 +1118,19 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
     typetableModel->updateAll();
 }
 
+QString MainWindow::AppendCurrentSearchParameters(QString url)
+{
+    QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
+    lastPart=lastPart.arg(lengthCutoff);
+    QString resultString = "https://www.fanfiction.net" + url + lastPart;
+    qDebug() << resultString;
+    return resultString;
+}
+
+
 void MainWindow::on_pbCrawl_clicked()
 {
     processedFics = 0;
@@ -1123,7 +1149,7 @@ void MainWindow::on_pbCrawl_clicked()
     {
         currentFilterUrl = url;
         auto lastUpdated = fandom->lastUpdateDate;
-        RequestAndProcessPage(GetCurrentFandomName(), lastUpdated, url);
+        RequestAndProcessPage(fandom->name, lastUpdated, AppendCurrentSearchParameters(url));
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     fandomsInterface->PushFandomToTopOfRecent(fandom->name);

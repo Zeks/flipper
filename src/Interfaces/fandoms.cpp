@@ -41,6 +41,32 @@ bool Fandoms::EnsureFandom(QString name)
     return false;
 }
 
+QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
+{
+    QSet<QString> uniqueFandoms;
+    for(auto fic: fics)
+    {
+        if(!fic)
+            continue;
+        for(auto fandom : fic->fandoms)
+            if(!uniqueFandoms.contains(fandom))
+                uniqueFandoms.insert(fandom);
+    }
+    for(auto fandom: uniqueFandoms)
+    {
+        CreateFandom(fandom);
+    }
+    return uniqueFandoms;
+}
+
+bool Fandoms::RecalculateFandomStats(QStringList fandoms)
+{
+    bool success = true;
+    for(auto fandom : fandoms)
+        success = success && database::puresql::UpdateFandomStats(GetIDForName(fandom), db);
+    return success;
+}
+
 bool Fandoms::CreateFandom(core::FandomPtr fandom)
 {
     if(!fandom)
@@ -64,10 +90,17 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom)
     return true;
 }
 
+bool Fandoms::CreateFandom(QString fandom)
+{
+    core::FandomPtr fandomPtr (new core::Fandom());
+    fandomPtr->name = fandom;
+    return CreateFandom(fandomPtr);
+}
+
 core::FandomPtr Fandoms::GetFandom(QString name)
 {
     core::FandomPtr result;
-    if(EnsureFandom(name))
+    if(!name.trimmed().isEmpty() && EnsureFandom(name))
         result = nameIndex[name];
 
     return result;
@@ -184,6 +217,7 @@ bool Fandoms::Load()
     Clear();
     // type makes it clearer
     QStringList recentFandoms = portableDBInterface->FetchRecentFandoms();
+    recentFandoms.removeAll("");
     bool hadErrors = false;
 
     // not loading every fandom in this function
@@ -350,14 +384,14 @@ bool Fandoms::AssignTagToFandom(QString fandom, QString tag)
     return true;
 }
 
-void Fandoms::CalculateFandomAverages()
+void Fandoms::CalculateFandomsAverages()
 {
-    database::puresql::CalculateFandomAverages(db);
+    database::puresql::CalculateFandomsAverages(db);
 }
 
-void Fandoms::CalculateFandomFicCounts()
+void Fandoms::CalculateFandomsFicCounts()
 {
-    database::puresql::CalculateFandomFicCounts(db);
+    database::puresql::CalculateFandomsFicCounts(db);
 }
 
 }

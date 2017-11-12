@@ -12,7 +12,8 @@ public:
     FandomParser(QSharedPointer<interfaces::Fanfics> fanfics);
     void ProcessPage(WebPage page);
     core::Section GetSection( QString text, int start);
-    void GetAuthor(core::Section& , int& startfrom, QString text);
+    //void GetAuthor(core::Section& , int& startfrom, QString text);
+    void GetAuthor(core::Section&,int& startfrom, QString text);
     void GetTitle(core::Section& , int& startfrom, QString text);
     void GetSummary(core::Section& , int& startfrom, QString text);
     void GetCrossoverFandomList(core::Section& , int& startfrom, QString text);

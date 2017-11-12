@@ -17,8 +17,9 @@ QStringList GetTrackedFandomList(QSqlDatabase db);
 bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 QStringList GetFandomListFromDB(QSqlDatabase db);
-void CalculateFandomAverages(QSqlDatabase db);
-void CalculateFandomFicCounts(QSqlDatabase db);
+void CalculateFandomsAverages(QSqlDatabase db);
+void CalculateFandomsFicCounts(QSqlDatabase db);
+bool UpdateFandomStats(int fandomId, QSqlDatabase db);
 void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db);
 void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
@@ -30,7 +31,7 @@ QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db);
 core::FandomPtr GetFandom(QString name, QSqlDatabase db);
 bool CleanuFandom(int fandom_id,  QSqlDatabase db);
 int GetFandomCountInDatabase(QSqlDatabase db);
-
+bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db);
 
 int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);

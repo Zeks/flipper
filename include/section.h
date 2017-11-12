@@ -54,6 +54,7 @@ class Author : public DBEntity{
     int favCount = -1;
     bool isValid = false;
     QString website = "";
+    int webId = -1;
 
     void SetUrl(QString type, QString url)
     {
@@ -82,7 +83,19 @@ typedef QSharedPointer<Fic> FicPtr;
 
 class Fic : public DBEntity{
     public:
-    Fic() = default;
+    class FicCalcStats
+    {
+    public:
+        double wcr;
+        double wcr_adjusted;
+        double reviewsTofavourites;
+        int age;
+        int daysRunning;
+
+    };
+    Fic(){
+        author = QSharedPointer<Author>(new Author);
+    };
     Fic(const Fic&) = default;
     Fic& operator=(const Fic&) = default;
     ~Fic(){}
@@ -157,7 +170,7 @@ class Fic : public DBEntity{
     int recommendations = 0;
     QString webSite = "ffn";
     UpdateMode updateMode = UpdateMode::none;
-
+    FicCalcStats calcStats;
 };
 
 class Section : public DBEntity

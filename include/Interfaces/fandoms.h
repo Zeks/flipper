@@ -27,7 +27,8 @@ public:
     bool LoadAllFandoms(bool forced = false);
     virtual bool LoadFandom(QString name);
     virtual bool EnsureFandom(QString name);
-
+    QSet<QString> EnsureFandoms(QList<core::FicPtr>);
+    bool RecalculateFandomStats(QStringList fandoms);
     void Reindex();
     void AddToIndex(core::FandomPtr);
 
@@ -43,14 +44,15 @@ public:
     virtual QList<core::FandomPtr> ListOfTrackedFandoms();
 
     virtual bool CreateFandom(core::FandomPtr);
+    virtual bool CreateFandom(QString);
     virtual bool AssignTagToFandom(QString, QString tag);
     virtual void PushFandomToTopOfRecent(QString);
 
     QStringList GetRecentFandoms();
     QStringList GetFandomList();
 
-    virtual void CalculateFandomAverages();
-    virtual void CalculateFandomFicCounts();
+    virtual void CalculateFandomsAverages();
+    virtual void CalculateFandomsFicCounts();
 
     QList<core::FandomPtr> FilterFandoms(std::function<bool(core::FandomPtr)>);
 

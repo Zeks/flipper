@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
+    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
 
 
     MainWindow w;

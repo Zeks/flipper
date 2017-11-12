@@ -79,7 +79,7 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    console.log("height is" );
+                    console.log(" height  is" );
                     console.log(mainWindow.height);
                     //console.log(plus.mapToItem(mainWindow,0,0));
 

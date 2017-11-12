@@ -15,16 +15,9 @@ create table if not exists FANFICS (FANDOM VARCHAR NOT NULL, AUTHOR VARCHAR NOT 
  alter table fanfics add column sb_id integer default null;
  alter table fanfics add column sv_id integer default null;
  alter table fanfics add column author_id integer default null;
+ alter table fanfics add column author_web_id integer default null;
  alter table fanfics add column date_added datetime default;
  alter table fanfics add column date_deactivated datetime default null;
-
- update fanfics set wcr = wordcount*1.0/reviews where wcr is null and reviews > 0 and wordcount > 1000;
- update fanfics set wcr = 200000 where wcr is null and ( reviews = 0 or wordcount <=1000);
- update fanfics set wcr_adjusted = wcr where reviews/favourites < 2.5 and wcr_adjusted is null;
- update fanfics set wcr_adjusted = 200000 where reviews/favourites >= 2.5 and wcr_adjusted is null;
- update fanfics set reviewstofavourites = reviews*1.0/favourites where reviewstofavourites is null;
- update fanfics set age= abs(cast((strftime('%s',CURRENT_TIMESTAMP)-strftime('%s',published) ) AS real )/60/60/24) where daysrunning is null;
- update fanfics set daysrunning= abs(cast((strftime('%s',updated)-strftime('%s',published) ) AS real )/60/60/24) where daysrunning is null;
 
  CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC);
 CREATE  INDEX if  not exists  main.I_FANFICS_FANDOM ON FANFICS (FANDOM ASC);
