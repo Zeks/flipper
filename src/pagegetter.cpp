@@ -249,8 +249,11 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
 
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-        qDebug() << "thread will sleep for " << timeout;
-        QThread::msleep(timeout);
+        if(!result.isFromCache)
+        {
+            qDebug() << "thread will sleep for " << timeout;
+            QThread::msleep(timeout);
+        }
     }while(url != lastUrl && result.isValid && !result.isLastPage);
     qDebug() << "leaving task1";
 }

@@ -315,11 +315,13 @@ bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
     if(!fic)
         return false;
 
-    QString getKeyQuery = "Select ( select count(*) from FANFICS where  %1_id = :site_id) as COUNT_NAMED,"
-                          " ( select count(*) from FANFICS where  %1_id = :site_id and updated <> :updated) as count_updated"
+    QString getKeyQuery = "Select ( select count(id) from FANFICS where  %1_id = :site_id) as COUNT_NAMED,"
+                          " ( select count(id) from FANFICS where  %1_id = :site_id and updated <> :updated) as count_updated"
                           ;
 
     QString filledQuery = getKeyQuery.arg(fic->webSite);
+    if(fic->title.contains("Zanpak"))
+        qDebug() << filledQuery;
     QSqlQuery q(db);
     q.prepare(filledQuery);
     q.bindValue(":updated", fic->updated);
@@ -372,6 +374,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":age",section->calcStats.age);
     q.bindValue(":daysrunning",section->calcStats.daysRunning);
     q.exec();
+    //qDebug() << "Inserting:" << section->title;
     if(q.lastError().isValid())
     {
         qDebug() << "failed to insert: " << section->author->name << " " << section->title;
@@ -415,6 +418,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":age",section->calcStats.age);
     q.bindValue(":daysrunning",section->calcStats.daysRunning);
     q.exec();
+    //qDebug() << "Updating:" << section->title;
     if(q.lastError().isValid())
     {
         qDebug() << "failed to update: " << section->author->name << " " << section->title;

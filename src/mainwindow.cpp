@@ -521,10 +521,12 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
     int counter = 0;
     WebPage webPage;
     QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
+
     QSet<QString> updatedFandoms;
+    database::Transaction transaction(db);
     do
     {
+
         while(pageQueue.isEmpty())
         {
             QThread::msleep(500);
@@ -558,12 +560,21 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
         auto startPageRequest = std::chrono::high_resolution_clock::now();
 
         {
-            fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
+            auto startQueue= std::chrono::high_resolution_clock::now();
 
+            fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
+            auto elapsedQueue = std::chrono::high_resolution_clock::now() - startQueue;
+            qDebug() << "Queue processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedQueue).count();
+            auto startFandoms= std::chrono::high_resolution_clock::now();
             auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
+            auto elapsedFandoms = std::chrono::high_resolution_clock::now() - startFandoms;
+            qDebug() << "Fandoms processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedFandoms).count();
             updatedFandoms.intersect(fandoms);
 
+            auto startFlush= std::chrono::high_resolution_clock::now();
             fanficsInterface->FlushDataQueues();
+            auto elapsedFlush= std::chrono::high_resolution_clock::now() - startFlush;
+            qDebug() << "Flush processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedFlush).count();
         }
         processedFics+=parser.processedStuff.size();
 
@@ -575,6 +586,7 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
             ui->edtResults->append("Already have updates past this point. Aborting.");
             break;
         }
+
     }while(!webPage.isLastPage);
     fandomsInterface->RecalculateFandomStats(updatedFandoms.values());
     transaction.finalize();
@@ -1120,12 +1132,23 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
 
 QString MainWindow::AppendCurrentSearchParameters(QString url)
 {
+    if(url.contains("/crossovers/"))
+    {
+        QStringList temp = url.split("/");
+        url = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
+        url= url + "/0/";
+    }
     QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
     lastPart=lastPart.arg(lengthCutoff);
     QString resultString = "https://www.fanfiction.net" + url + lastPart;
+
+
+
+
+
     qDebug() << resultString;
     return resultString;
 }
@@ -1145,6 +1168,7 @@ void MainWindow::on_pbCrawl_clicked()
     processedCount = 0;
     ignoreUpdateDate = false;
     nextUrl = QString();
+    //urls.pop_front();
     for(QString url: urls)
     {
         currentFilterUrl = url;

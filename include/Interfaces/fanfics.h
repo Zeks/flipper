@@ -45,7 +45,7 @@ class Fanfics : public IDBWebIDIndex {
 
     void ProcessIntoDataQueues(QList<core::FicPtr> fics, bool alwaysUpdateIfNotInsert = false);
     void CalcStatsForFics(QList<QSharedPointer<core::Fic>>);
-    void FlushDataQueues();
+    bool FlushDataQueues();
 
     virtual bool DeactivateFic(int ficId, QString website);
     virtual bool DeactivateFic(int ficId) = 0;

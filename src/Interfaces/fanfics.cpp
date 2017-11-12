@@ -201,7 +201,7 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
     }
 }
 
-void Fanfics::FlushDataQueues()
+bool Fanfics::FlushDataQueues()
 {
     database::Transaction transaction(db);
     for(auto fic: insertQueue)
@@ -221,7 +221,12 @@ void Fanfics::FlushDataQueues()
         auto id = GetIDFromWebID(recommendation.fic->webId, recommendation.fic->webSite);
         database::puresql::WriteRecommendation(recommendation.author, id, db);
     }
-    transaction.finalize();
+
+    if(!transaction.finalize())
+        return false;
+    insertQueue.clear();
+    updateQueue.clear();
+    return true;
 }
 
 int Fanfics::GetIdFromDatabase(QString website, int id)
