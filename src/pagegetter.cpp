@@ -231,6 +231,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
+    int counter = 0;
     do
     {
         qDebug() << "loading page: " << url;
@@ -238,9 +239,12 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         result = pager->GetPage(url, cacheMode);
         auto minUpdate = GrabMinUpdate(result.content);
         url = GetNext(result.content);
-        if((url == lastUrl || lastUrl.trimmed().isEmpty())|| (updateLimit.isValid() && (minUpdate < updateLimit)))
+        bool updateLimitReached = false;
+        if(counter > 0)
+            updateLimitReached = minUpdate < updateLimit;
+        if((url == lastUrl || lastUrl.trimmed().isEmpty())|| (updateLimit.isValid() && updateLimitReached))
         {
-            result.error = "Already have the stuff past this point. borting.";
+            result.error = "Already have the stuff past this point. Aborting.";
             result.isLastPage = true;
         }
         if(!result.isValid || url.isEmpty())
@@ -254,6 +258,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
             qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
         }
+        counter++;
     }while(url != lastUrl && result.isValid && !result.isLastPage);
     qDebug() << "leaving task1";
 }
