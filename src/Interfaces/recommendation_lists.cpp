@@ -40,9 +40,10 @@ void RecommendationLists::Reindex()
     }
 }
 
-void RecommendationLists::AddToIndex(core::RecPtr)
+void RecommendationLists::AddToIndex(core::RecPtr list)
 {
-
+    idIndex[list->id] = list;
+    nameIndex[list->name] = list;
 }
 
 bool RecommendationLists::EnsureList(int listId)
@@ -77,7 +78,8 @@ bool RecommendationLists::EnsureList(QString name)
     if(nameIndex.contains(name))
         return true;
     auto list = database::puresql::GetRecommendationList(name, db);
-
+    if(!list)
+        return false;
     AddToIndex(list);
 
     if(!list)
@@ -200,7 +202,7 @@ QStringList RecommendationLists::GetNamesForListId(int listId)
 
 bool RecommendationLists::DeleteList(int listId)
 {
-    if(!EnsureList(listId))
+    if(listId == -1 || !EnsureList(listId))
         return true;
 
     bool result = database::puresql::DeleteRecommendationList(listId, db);
@@ -257,13 +259,13 @@ core::AuhtorStatsPtr RecommendationLists::CreateAuthorRecommendationStatsForList
         return result;
 
     result->authorId = author->id;
-    result->totalFics = author->ficCount;
+    result->totalRecommendations= author->recCount;
 
     result->matchesWithReference = database::puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
-        result->matchRatio = static_cast<double>(result->totalFics)/static_cast<double>(result->matchesWithReference);
+        result->matchRatio = static_cast<double>(result->totalRecommendations)/static_cast<double>(result->matchesWithReference);
     result->isValid = true;
     cachedAuthorStats[listId].push_back(result);
     return result;

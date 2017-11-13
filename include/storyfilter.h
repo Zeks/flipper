@@ -32,7 +32,7 @@ struct StoryFilter{
         filtering_in_recommendations = 1
     };
     //do I even need that?
-    QString ficCategory;
+    //QString ficCategory;
     QString fandom;
     QString website;
     int useThisRecommenderOnly = -1;

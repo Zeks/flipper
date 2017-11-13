@@ -2,6 +2,7 @@
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
 #include <QSqlQuery>
+#include <QDebug>
 
 namespace interfaces {
 Authors::~Authors(){}
@@ -269,19 +270,24 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     if(!EnsureAuthorLoaded(authorId))
         return result;
 
+
+
     auto author = authorsById[authorId];
 
     result->listId = list->id;
     result->usedTag = list->tagToUse;;
     result->authorName = author->name;
     result->authorId= author->id;
-    result->totalFics= author->ficCount;
+    result->totalRecommendations= author->recCount;
 
     result->matchesWithReference= database::puresql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db);
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
-        result->matchRatio = static_cast<double>(result->totalFics)/static_cast<double>(result->matchesWithReference);
+    {
+        //qDebug() << "Have matches for: " << author->name;
+        result->matchRatio = static_cast<double>(result->totalRecommendations)/static_cast<double>(result->matchesWithReference);
+    }
     result->isValid = true;
 
     return result;

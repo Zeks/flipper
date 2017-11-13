@@ -142,6 +142,7 @@ private:
     void AddToProgressLog(QString);
     void FillRecTagBuildCombobox();
     void FillRecTagCombobox();
+    void FillRecommederListView();
 
     QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
 
@@ -195,6 +196,7 @@ private:
     void BuildRecommendations(QSharedPointer<core::RecommendationList> params);
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);
     QString AppendCurrentSearchParameters(QString url);
+    void ReinitRecent(QString name);
 
 public slots:
     void ProcessFandoms(WebPage webPage);
@@ -233,8 +235,6 @@ private slots:
     void OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous);
 
     void on_chkTrackedFandom_toggled(bool checked);
-    void on_rbNormal_clicked();
-    void on_rbCrossovers_clicked();
     void on_pbLoadTrackedFandoms_clicked();
     void on_pbLoadPage_clicked();
     void on_pbRemoveRecommender_clicked();

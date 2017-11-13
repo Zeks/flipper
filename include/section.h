@@ -51,6 +51,7 @@ class Author : public DBEntity{
     QDateTime firstPublishedFic;
     QDateTime lastUpdated;
     int ficCount = -1;
+    int recCount = -1;
     int favCount = -1;
     bool isValid = false;
     QString website = "";
@@ -278,7 +279,7 @@ class AuthorRecommendationStats : public DBEntity
     public:
     static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}
     int authorId= -1;
-    int totalFics = -1;
+    int totalRecommendations = -1;
     int matchesWithReference = -1;
     double matchRatio = -1;
     bool isValid = false;

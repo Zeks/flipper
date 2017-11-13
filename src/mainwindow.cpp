@@ -162,8 +162,7 @@ void MainWindow::Init()
     queryBuilder.SetIdRNGgenerator(new core::DefaultRNGgenerator());
     ui->chkShowDirectRecs->setVisible(false);
     ui->pbFirstWave->setVisible(false);
-    ui->rbCrossovers->setVisible(false);
-    ui->cbSectionTypes->setVisible(false);
+
 
     this->setWindowTitle("ffnet sane search engine");
     QSettings settings("settings.ini", QSettings::IniFormat);
@@ -182,16 +181,16 @@ void MainWindow::Init()
     ui->wdgTagsPlaceholder->fandomsInterface = fandomsInterface;
     tagWidgetDynamic->fandomsInterface = fandomsInterface;
     fandomsInterface->FillFandomList(true);
-    ProcessTagsIntoGui();
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
+    ProcessTagsIntoGui();
+
     qRegisterMetaType<WebPage>("WebPage");
     qRegisterMetaType<ECacheMode>("ECacheMode");
 
 
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->edtResults, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(OnShowContextMenu(QPoint)));
-    connect(ui->cbSectionTypes, SIGNAL(currentTextChanged(QString)), this, SLOT(OnSectionChanged(QString)));
     connect(ui->pbWipeFandom, SIGNAL(clicked(bool)), this, SLOT(WipeSelectedFandom(bool)));
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
 
@@ -274,6 +273,7 @@ void MainWindow::Init()
     //recommenders = database::FetchRecommenders();
     //recommendersModel->setStringList(SortedList(recommenders.keys()));
     //ui->lvRecommenders->setModel(recommendersModel);
+    FillRecommederListView();
 
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     //! todo currently null
@@ -915,7 +915,7 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
             QString ficIdPart;
             if(pos != -1)
             {
-                ficIdPart = rx.cap(0);
+                ficIdPart = rx.cap(1);
             }
             if(ficIdPart.isEmpty())
                 continue;
@@ -929,7 +929,7 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
             auto id = fanficsInterface->GetIDFromWebID(webId, "ffn");
             if(id == -1)
                 continue;
-            qDebug()<< "Settign tag: " << params->name << " to: " << id;
+            qDebug()<< "Settign tag: " << "generictag" << " to: " << id;
             usedList.push_back(str);
             SetTag(id, "generictag");
         }while(!str.isEmpty());
@@ -994,7 +994,7 @@ void MainWindow::OnCopyAllUrls()
         {
             result += typetableModel->index(i, 2).data().toString() + "\n";
         }
-        result += "http://www.fanfiction.net" + typetableModel->index(i, 9).data().toString() + "\n\n";
+        result += "http://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";
     }
     clipboard->setText(result);
 }
@@ -1072,7 +1072,6 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/minusGenre", ui->leNotContainsGenre->text());
     settings.setValue("Settings/plusWords", ui->leContainsWords->text());
     settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
-    settings.setValue("Settings/section", ui->cbSectionTypes->currentText());
 
 
     settings.setValue("Settings/chkGenrePlus", ui->chkGenrePlus->isChecked());
@@ -1156,6 +1155,12 @@ QString MainWindow::AppendCurrentSearchParameters(QString url)
     return resultString;
 }
 
+void MainWindow::ReinitRecent(QString name)
+{
+    fandomsInterface->PushFandomToTopOfRecent(name);
+    recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
+}
+
 
 void MainWindow::on_pbCrawl_clicked()
 {
@@ -1179,8 +1184,7 @@ void MainWindow::on_pbCrawl_clicked()
         RequestAndProcessPage(fandom->name, lastUpdated, AppendCurrentSearchParameters(url));
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
-    fandomsInterface->PushFandomToTopOfRecent(fandom->name);
-    recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
+    ReinitRecent(fandom->name);
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
 
 }
@@ -1245,6 +1249,7 @@ void MainWindow::on_pbLoadDatabase_clicked()
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
+    ReinitRecent(ui->cbNormals->currentText());
 }
 
 void MainWindow::on_pbInit_clicked()
@@ -1476,28 +1481,26 @@ void MainWindow::FillRecTagCombobox()
     ui->cbRecTagGroup->setModel(new QStringListModel(lists));
 }
 
+void MainWindow::FillRecommederListView()
+{
+    QStringList result;
+    auto allStats = recsInterface->GetAuthorStatsForList(recsInterface->GetCurrentRecommendationList());
+    std::sort(std::begin(allStats),std::end(allStats), [](auto s1, auto s2){
+        return s1->matchRatio < s2->matchRatio;
+    });
+    for(auto stat : allStats)
+        result.push_back(stat->authorName);
+    recommendersModel->setStringList(result);
+    ui->lvRecommenders->setModel(recommendersModel);
+}
+
 
 void MainWindow::on_chkTrackedFandom_toggled(bool checked)
 {
     fandomsInterface->SetTracked(GetCurrentFandomName(),checked);
 }
 
-void MainWindow::on_rbNormal_clicked()
-{
-    ui->chkTrackedFandom->blockSignals(true);
-    auto fandom = fandomsInterface->GetFandom(GetCurrentFandomName());
-    if(fandom)
-        ui->chkTrackedFandom->setChecked(fandom->tracked);
-    ui->chkTrackedFandom->blockSignals(false);
-}
 
-void MainWindow::on_rbCrossovers_clicked()
-{
-    // getting rid of crossovers altogether
-    //    ui->chkTrackedFandom->blockSignals(true);
-//    ui->chkTrackedFandom->setChecked(database::FetchTrackStateForFandom(GetCurrentFandomName(),ui->rbCrossovers->isChecked()));
-//    ui->chkTrackedFandom->blockSignals(false);
-}
 
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
@@ -1647,14 +1650,22 @@ void MainWindow::on_cbUseDateCutoff_clicked()
 void MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    db.transaction();
+    database::Transaction transaction(db);
 
+    authorsInterface->Clear();
+    authorsInterface->LoadAuthors("ffn");
+    recsInterface->Clear();
+    //fanficsInterface->ClearIndex()
     QList<int> allAuthors = authorsInterface->GetAllAuthorIds();;
     std::sort(std::begin(allAuthors),std::end(allAuthors));
+    qDebug() << "count of author ids: " << allAuthors.size();
     QList<int> filteredAuthors;
     filteredAuthors.reserve(allAuthors.size()/10);
-    recsInterface->DeleteList(recsInterface->GetListIdForName(params->name));
+    auto listId = recsInterface->GetListIdForName(params->name);
+    recsInterface->DeleteList(listId);
     recsInterface->LoadListIntoDatabase(params);
+    int counter = 0;
+    int alLCounter = 0;
     for(auto authorId: allAuthors)
     {
         auto stats = authorsInterface->GetStatsForTag(authorId, params);
@@ -1663,25 +1674,33 @@ void MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> p
         if( stats->matchesWithReference >= params->alwaysPickAt
                 || (stats->matchRatio <= params->pickRatio && stats->matchesWithReference >= params->minimumMatch) )
         {
+            alLCounter++;
+            auto author = authorsInterface->GetById(authorId);
+            if(author)
+                qDebug() << "Fit for criteria: " << author->name;
             recsInterface->LoadAuthorRecommendationsIntoList(authorId, params->id);
-            recsInterface->LoadAuthorRecommendationStatsIntoDatabase(authorId, stats);
+            recsInterface->LoadAuthorRecommendationStatsIntoDatabase(params->id, stats);
             recsInterface->IncrementAllValuesInListMatchingAuthorFavourites(authorId,params->id);
             filteredAuthors.push_back(authorId);
+            counter++;
         }
     }
-    recsInterface->UpdateFicCountInDatabase(params->id);
 
+    recsInterface->UpdateFicCountInDatabase(params->id);
+    recsInterface->SetCurrentRecommendationList(params->id);
     if(filteredAuthors.size() > 0)
     {
         FillRecTagCombobox();
-        QStringList result;
-        auto allStats = recsInterface->GetAuthorStatsForList(params->id);
-        for(auto stat : allStats)
-            result.push_back(stat->authorName);
-        recommendersModel->setStringList(result);
+        FillRecommederListView();
     }
-    recsInterface->SetCurrentRecommendationList(params->id);
-    db.commit();
+
+    //recsInterface->GetAuthorStatsForList()
+    //recommenders = database::FetchRecommenders();
+    //recommendersModel->setStringList(SortedList(recommenders.keys()));
+    //ui->lvRecommenders->setModel(recommendersModel);
+    transaction.finalize();
+    qDebug() << "processed authors: " << counter;
+    qDebug() << "all authors: " << alLCounter;
 }
 
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode)
@@ -1699,13 +1718,13 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureActive = ui->chkActive->isChecked();
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomName();
-    filter.ficCategory = ui->cbSectionTypes->currentText();
+
     filter.genreExclusion = valueIfChecked(ui->chkGenreMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text(), "###"));
     filter.genreInclusion = valueIfChecked(ui->chkGenrePlus,core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text(), "###"));
     filter.wordExclusion = valueIfChecked(ui->chkWordsMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text(), "###"));
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
-    filter.includeCrossovers = ui->rbCrossovers->isChecked();
+    filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.maxFics = valueIfChecked(ui->chkFicLimitActivated, ui->sbMaxFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
@@ -1717,7 +1736,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex());
-    filter.listForRecommendations = recsInterface->GetCurrentRecommendationList();
+    //if(ui->cbSortMode->currentText())
+    filter.listForRecommendations = recsInterface->GetListIdForName(ui->cbRecGroup->currentText());
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
@@ -1747,7 +1767,9 @@ void MainWindow::on_pbBuildRecs_clicked()
 
 void MainWindow::on_cbRecTagGroup_currentIndexChanged(const QString &tag)
 {
-    ProcessTagIntoRecommenders(tag);    ;
+    //ProcessTagIntoRecommenders(tag);
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
+    FillRecommederListView();
 }
 
 void MainWindow::on_pbOpenAuthorUrl_clicked()
