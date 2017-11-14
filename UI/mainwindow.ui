@@ -50,15 +50,15 @@
           </property>
           <widget class="QWidget" name="layoutWidget">
            <layout class="QGridLayout" name="gridLayout_7">
-            <item row="11" column="0" colspan="4">
-             <widget class="QWidget" name="widget_4" native="true">
+            <item row="9" column="0" colspan="4">
+             <widget class="QWidget" name="widget_3" native="true">
               <property name="minimumSize">
                <size>
                 <width>0</width>
                 <height>0</height>
                </size>
               </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_8">
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
                <property name="leftMargin">
                 <number>0</number>
                </property>
@@ -72,209 +72,82 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QLabel" name="label_4">
+                <widget class="QCheckBox" name="chkComplete">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>Only shows complete fics.</string>
+                 </property>
                  <property name="text">
-                  <string>FavrateCut: </string>
+                  <string>Complete</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QDateEdit" name="dteFavRateCut">
-                 <property name="calendarPopup">
+                <widget class="QCheckBox" name="chkActive">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>Only shows fics that had activity in the last year.</string>
+                 </property>
+                 <property name="text">
+                  <string>Active</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkShowUnfinished">
+                 <property name="text">
+                  <string>Unfinished</string>
+                 </property>
+                 <property name="checked">
                   <bool>true</bool>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QLabel" name="label_5">
+                <widget class="QCheckBox" name="chkNoGenre">
                  <property name="text">
-                  <string>FavRatio</string>
+                  <string>No Genre</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QSpinBox" name="sbFavrateValue">
-                 <property name="value">
-                  <number>4</number>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_6">
+                <spacer name="horizontalSpacer_5">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>
                  <property name="sizeHint" stdset="0">
                   <size>
-                   <width>1028</width>
+                   <width>860</width>
                    <height>20</height>
                   </size>
                  </property>
                 </spacer>
                </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="10" column="3">
-             <widget class="QWidget" name="widget_2" native="true">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>30</height>
-               </size>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_6">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
                <item>
-                <widget class="QComboBox" name="cbRecGroup">
-                 <property name="minimumSize">
-                  <size>
-                   <width>150</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_7">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
+                <widget class="QCheckBox" name="chkRandomizeSelection">
+                 <property name="toolTip">
+                  <string>Together with &quot;Max fics&quot; checkbox, allow random navigation for a fandom if you feel like it.</string>
                  </property>
                  <property name="text">
-                  <string>Bias:</string>
+                  <string>Randomize</string>
+                 </property>
+                 <property name="checked">
+                  <bool>false</bool>
                  </property>
                 </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="cbBiasFavor">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="currentText">
-                  <string>None</string>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>None</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>Favor</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>Hide</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_8">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Review/Fav ratio</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="cbBiasOperator">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>40</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>&gt;</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>&lt;</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLineEdit" name="leBiasValue">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>30</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="inputMask">
-                  <string>dd.d</string>
-                 </property>
-                 <property name="text">
-                  <string>2.</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_4">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
                </item>
               </layout>
              </widget>
@@ -365,19 +238,6 @@
                    </item>
                    <item row="3" column="0" colspan="8">
                     <layout class="QHBoxLayout" name="horizontalLayout_5">
-                     <item>
-                      <widget class="QCheckBox" name="chkIgnoreTags">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="text">
-                        <string>Ignore tags</string>
-                       </property>
-                      </widget>
-                     </item>
                      <item>
                       <widget class="QPushButton" name="pbLoadDatabase">
                        <property name="sizePolicy">
@@ -710,6 +570,13 @@
                       </spacer>
                      </item>
                      <item>
+                      <widget class="QPushButton" name="pbCopyFavUrls">
+                       <property name="text">
+                        <string>Copy Urls</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QPushButton" name="pbOpenWholeList">
                        <property name="text">
                         <string>Open Whole List</string>
@@ -995,15 +862,15 @@
               </layout>
              </widget>
             </item>
-            <item row="9" column="0" colspan="4">
-             <widget class="QWidget" name="widget_3" native="true">
+            <item row="11" column="0" colspan="4">
+             <widget class="QWidget" name="widget_4" native="true">
               <property name="minimumSize">
                <size>
                 <width>0</width>
                 <height>0</height>
                </size>
               </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_7">
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
                <property name="leftMargin">
                 <number>0</number>
                </property>
@@ -1017,84 +884,264 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QCheckBox" name="chkComplete">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="toolTip">
-                  <string>Only shows complete fics.</string>
-                 </property>
+                <widget class="QLabel" name="label_4">
                  <property name="text">
-                  <string>Complete</string>
+                  <string>FavrateCut: </string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="chkActive">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="toolTip">
-                  <string>Only shows fics that had activity in the last year.</string>
-                 </property>
-                 <property name="text">
-                  <string>Active</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="chkShowUnfinished">
-                 <property name="text">
-                  <string>Unfinished</string>
-                 </property>
-                 <property name="checked">
+                <widget class="QDateEdit" name="dteFavRateCut">
+                 <property name="calendarPopup">
                   <bool>true</bool>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="chkNoGenre">
+                <widget class="QLabel" name="label_5">
                  <property name="text">
-                  <string>No Genre</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
+                  <string>FavRatio</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <spacer name="horizontalSpacer_5">
+                <widget class="QSpinBox" name="sbFavrateValue">
+                 <property name="value">
+                  <number>4</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_6">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>
                  <property name="sizeHint" stdset="0">
                   <size>
-                   <width>860</width>
+                   <width>1028</width>
                    <height>20</height>
                   </size>
                  </property>
                 </spacer>
                </item>
                <item>
-                <widget class="QCheckBox" name="chkRandomizeSelection">
-                 <property name="toolTip">
-                  <string>Together with &quot;Max fics&quot; checkbox, allow random navigation for a fandom if you feel like it.</string>
+                <widget class="QCheckBox" name="chkIgnoreTags">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>Randomize</string>
-                 </property>
-                 <property name="checked">
-                  <bool>false</bool>
+                  <string>Ignore tags</string>
                  </property>
                 </widget>
                </item>
               </layout>
+             </widget>
+            </item>
+            <item row="10" column="3">
+             <widget class="QWidget" name="widget_2" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>30</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QComboBox" name="cbRecGroup">
+                 <property name="minimumSize">
+                  <size>
+                   <width>150</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_7">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Bias:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="cbBiasFavor">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="currentText">
+                  <string>None</string>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Favor</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Hide</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_8">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Review/Fav ratio</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="cbBiasOperator">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>40</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>&gt;</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>&lt;</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="leBiasValue">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>30</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="inputMask">
+                  <string>dd.d</string>
+                 </property>
+                 <property name="text">
+                  <string>2.</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_4">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="6" column="2">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>Max. Words</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="3">
+             <widget class="QComboBox" name="cbMaxWordCount">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="editable">
+               <bool>true</bool>
+              </property>
+              <item>
+               <property name="text">
+                <string/>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1000000</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>300000</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>700000</string>
+               </property>
+              </item>
              </widget>
             </item>
             <item row="13" column="0" colspan="4">
@@ -1272,76 +1319,6 @@
               </item>
              </layout>
             </item>
-            <item row="18" column="0">
-             <widget class="QCheckBox" name="chkActivateReloadSectionData">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Is only necessary if there appears a new growing fandom that hasnt been in the database when the app was created.&lt;/p&gt;&lt;p&gt;Reloads the fandom lists for categories.&lt;/p&gt;&lt;p&gt;I've disabled the button so that it isn't pressed accidentally.This checkbox enables it back.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Activate</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="1">
-             <widget class="QSpinBox" name="sbMaxFicCount">
-              <property name="toolTip">
-               <string>Limits te amount of fics to display. Needed for randomization due to the way it selects random fics from the database.</string>
-              </property>
-              <property name="maximum">
-               <number>50</number>
-              </property>
-              <property name="value">
-               <number>10</number>
-              </property>
-             </widget>
-            </item>
-            <item row="14" column="1" colspan="3">
-             <widget class="QComboBox" name="cbCustomFilters">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <item>
-               <property name="text">
-                <string>Longest Running</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Behemoth Chapters</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Splinched</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Catch'Em'All</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>One Liners</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Dumped</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item row="14" column="0">
-             <widget class="QCheckBox" name="chkCustomFilter">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;A list of custom filters of varying usefulness.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Longest Running&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; will show fics that have been going for ages.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Behemoth Chapters &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;picks up stuff that's been dumped in HUGE chunks.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Splinched &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;shows fics that have tiny teeny chapters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Catch'Em'All  &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;is for stuff that really had a field day with characters section of thedescription.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;One liners &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;will display stuff that wasnt... eh... described very well.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dumped &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Shows fanfics that were dumped whole in a veryshorttime.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;New From Popular &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;are recent fics from authors that have ton of faves on their other fics.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Custom</string>
-              </property>
-             </widget>
-            </item>
             <item row="10" column="1" colspan="2">
              <widget class="QComboBox" name="cbSortMode">
               <property name="toolTip">
@@ -1401,46 +1378,6 @@
               </property>
              </widget>
             </item>
-            <item row="18" column="1" colspan="3">
-             <widget class="QPushButton" name="pbInit">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Reload Section Data</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="0">
-             <widget class="QCheckBox" name="chkFicLimitActivated">
-              <property name="text">
-               <string>MaxFics</string>
-              </property>
-              <property name="checked">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="10" column="0">
-             <widget class="QLabel" name="label">
-              <property name="text">
-               <string>Order by:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="2">
-             <widget class="QLabel" name="label_11">
-              <property name="text">
-               <string>Max. Words</string>
-              </property>
-             </widget>
-            </item>
             <item row="7" column="2">
              <widget class="QCheckBox" name="chkFaveLimitActivated">
               <property name="sizePolicy">
@@ -1457,6 +1394,86 @@
               </property>
              </widget>
             </item>
+            <item row="14" column="1" colspan="3">
+             <widget class="QComboBox" name="cbCustomFilters">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <item>
+               <property name="text">
+                <string>Longest Running</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Behemoth Chapters</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Splinched</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Catch'Em'All</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>One Liners</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Dumped</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="18" column="0">
+             <widget class="QCheckBox" name="chkActivateReloadSectionData">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Is only necessary if there appears a new growing fandom that hasnt been in the database when the app was created.&lt;/p&gt;&lt;p&gt;Reloads the fandom lists for categories.&lt;/p&gt;&lt;p&gt;I've disabled the button so that it isn't pressed accidentally.This checkbox enables it back.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Activate</string>
+              </property>
+             </widget>
+            </item>
+            <item row="14" column="0">
+             <widget class="QCheckBox" name="chkCustomFilter">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;A list of custom filters of varying usefulness.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Longest Running&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; will show fics that have been going for ages.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Behemoth Chapters &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;picks up stuff that's been dumped in HUGE chunks.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Splinched &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;shows fics that have tiny teeny chapters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Catch'Em'All  &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;is for stuff that really had a field day with characters section of thedescription.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;One liners &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;will display stuff that wasnt... eh... described very well.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dumped &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Shows fanfics that were dumped whole in a veryshorttime.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;New From Popular &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;are recent fics from authors that have ton of faves on their other fics.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Custom</string>
+              </property>
+             </widget>
+            </item>
+            <item row="18" column="1" colspan="3">
+             <widget class="QPushButton" name="pbInit">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Reload Section Data</string>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="0">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>Order by:</string>
+              </property>
+             </widget>
+            </item>
             <item row="7" column="3">
              <widget class="QSpinBox" name="sbMinimumFavourites">
               <property name="toolTip">
@@ -1470,37 +1487,24 @@
               </property>
              </widget>
             </item>
-            <item row="6" column="3">
-             <widget class="QComboBox" name="cbMaxWordCount">
+            <item row="19" column="0" colspan="4">
+             <widget class="QPushButton" name="pbReprocessAuthors">
+              <property name="text">
+               <string>Rebuild Tag Stats</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_3">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
-              <property name="editable">
-               <bool>true</bool>
+              <property name="text">
+               <string>Min. Words</string>
               </property>
-              <item>
-               <property name="text">
-                <string/>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>1000000</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>300000</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>700000</string>
-               </property>
-              </item>
              </widget>
             </item>
             <item row="6" column="1">
@@ -1534,23 +1538,26 @@
               </item>
              </widget>
             </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
+            <item row="7" column="0">
+             <widget class="QCheckBox" name="chkFicLimitActivated">
               <property name="text">
-               <string>Min. Words</string>
+               <string>MaxFics</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
-            <item row="19" column="0" colspan="4">
-             <widget class="QPushButton" name="pbReprocessAuthors">
-              <property name="text">
-               <string>Rebuild Tag Stats</string>
+            <item row="7" column="1">
+             <widget class="QSpinBox" name="sbMaxFicCount">
+              <property name="toolTip">
+               <string>Limits te amount of fics to display. Needed for randomization due to the way it selects random fics from the database.</string>
+              </property>
+              <property name="maximum">
+               <number>50</number>
+              </property>
+              <property name="value">
+               <number>10</number>
               </property>
              </widget>
             </item>
@@ -1622,7 +1629,4 @@
  </customwidgets>
  <resources/>
  <connections/>
- <buttongroups>
-  <buttongroup name="buttonGroup"/>
- </buttongroups>
 </ui>

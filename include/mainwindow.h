@@ -254,6 +254,7 @@ private slots:
     void on_pbReprocessAuthors_clicked();
 
     void on_cbRecTagBuildGroup_currentTextChanged(const QString &arg1);
+    void OnCopyFavUrls();
 
 signals:
     void pageTask(QString, QString, QDate, ECacheMode);

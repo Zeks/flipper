@@ -21,7 +21,7 @@ public:
     DefaultQueryBuilder();
     QSharedPointer<Query> Build(StoryFilter);
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
-
+    QScopedPointer<IRNGGenerator> rng;
 private:
     QString CreateCustomFields(StoryFilter);
     QString CreateWhere(StoryFilter);
@@ -55,7 +55,7 @@ private:
     QString diffField;
     QString activeTags;
     QString wherePart;
-    QScopedPointer<IRNGGenerator> rng;
+
     QSharedPointer<Query> query;
     QSharedPointer<Query> idQuery;
     QSqlDatabase db;

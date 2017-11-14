@@ -159,7 +159,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::Init()
 {
-    queryBuilder.SetIdRNGgenerator(new core::DefaultRNGgenerator());
+    std::unique_ptr<core::DefaultRNGgenerator> rng (new core::DefaultRNGgenerator());
+    rng->portableDBInterface = dbInterface;
+    queryBuilder.SetIdRNGgenerator(rng.release());
     ui->chkShowDirectRecs->setVisible(false);
     ui->pbFirstWave->setVisible(false);
 
@@ -224,7 +226,7 @@ void MainWindow::Init()
     tagWidgetDynamic->installEventFilter(eventFilter);
 
     connect(tagWidgetDynamic, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
-
+    connect(ui->pbCopyFavUrls, &QPushButton::clicked, this, &MainWindow::OnCopyFavUrls);
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
 
@@ -483,7 +485,7 @@ void MainWindow::InitInterfaces()
     fandomsInterface->db = dbInterface->GetDatabase();
     tagsInterface->db    = dbInterface->GetDatabase();
     genresInterface->db  = dbInterface->GetDatabase();
-
+    queryBuilder.portableDBInterface = dbInterface;
     fandomsInterface->Load();
 }
 
@@ -635,8 +637,11 @@ inline core::Fic LoadFanfic(QSqlQuery& q)
     result.genreString = q.value("GENRES").toString();
     result.charactersFull = q.value("CHARACTERS").toString().replace("not found", "");
     result.rated = q.value("RATED").toString();
-    result.published = q.value("PUBLISHED").toDateTime();
-    result.updated= q.value("UPDATED").toDateTime();
+    auto published = q.value("PUBLISHED").toDateTime();
+    auto updated   = q.value("UPDATED").toDateTime();
+    result.published = published;
+    //result.updated= updated.date().year() > 1970 ? updated : published;
+    result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
     result.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
@@ -644,7 +649,6 @@ inline core::Fic LoadFanfic(QSqlQuery& q)
     result.reviews = q.value("REVIEWS").toString();
     result.chapters = q.value("CHAPTERS").toString();
     result.complete= q.value("COMPLETE").toInt();
-    result.wordCount = q.value("WORDCOUNT").toString();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     result.recommendations= q.value("SUMRECS").toInt();
     //result.recommendations= 1;
@@ -1799,4 +1803,18 @@ void MainWindow::on_cbRecTagBuildGroup_currentTextChanged(const QString &newText
         ui->sbAlwaysPickRecAt->setValue(1);
         ui->cbRecListNames->setCurrentText("lupine");
     }
+}
+
+void MainWindow::OnCopyFavUrls()
+{
+    QClipboard *clipboard = QApplication::clipboard();
+    QString result;
+    for(int i = 0; i < recommendersModel->rowCount(); i ++)
+    {
+        auto author = authorsInterface->GetAuthorByNameAndWebsite(recommendersModel->index(i, 0).data().toString(), "ffn");
+        if(!author)
+            continue;
+        result += author->url("ffn") + "\n";
+    }
+    clipboard->setText(result);
 }

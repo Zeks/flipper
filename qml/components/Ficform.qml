@@ -81,6 +81,12 @@ Rectangle {
             id: txtUpdated
             height: 24
             z: 1
+            visible: {
+                var result
+                result = updated.getYear() > 70
+                //console.debug('year: ' + updated.getYear())
+                return result
+            }
             text: qsTr("Upd:") + Qt.formatDate(updated, "dd/MM/yyyy")
             font.pixelSize: 12
         }
@@ -283,7 +289,7 @@ Rectangle {
                 id: txtWords
                 width: 70
                 height: 24
-                text: { return "Words:" + words}
+                text: { return "Words: " + Funcs.thousandSeparator(words)}
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 16
             }
