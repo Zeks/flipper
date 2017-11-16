@@ -53,7 +53,7 @@ public:
     QVector<int> GetAllFicIDs(int listId);
     QStringList GetNamesForListId(int listId);
     QList<QSharedPointer<core::Author>> GetAuthorsForRecommendationList(int listId);
-
+    QList<int> GetRecommendersForFicId(int ficId);
 
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);

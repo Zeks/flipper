@@ -32,6 +32,8 @@ Rectangle {
     signal tagClicked(var tag, var currentMode, var title, var author)
     signal callTagWindow()
     signal urlCopyClicked(string msg)
+    signal recommenderCopyClicked(string msg)
+
     }
     }
 }

@@ -433,6 +433,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
+    connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
     ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
@@ -986,6 +987,20 @@ void MainWindow::OnCopyFicUrl(QString text)
     clipboard->setText(text);
     ui->edtResults->insertPlainText(text + "\n");
 
+}
+
+void MainWindow::OnOpenRecommenderLinks(QString url)
+{
+    auto webId = url_utils::GetWebId(url, "ffn");
+    auto id = fanficsInterface->GetIDFromWebID(webId.toInt(), "ffn");
+    auto recommenders = recsInterface->GetRecommendersForFicId(id);
+    for(auto recommender : recommenders)
+    {
+        auto author = authorsInterface->GetById(recommender);
+        if(!author || !recsInterface->GetMatchCountForRecommenderOnList(author->id, recsInterface->GetCurrentRecommendationList()))
+            continue;
+        QDesktopServices::openUrl(author->url("ffn"));
+    }
 }
 
 void MainWindow::OnCopyAllUrls()

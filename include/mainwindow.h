@@ -209,6 +209,7 @@ public slots:
     void WipeSelectedFandom(bool);
     void OnNewPage(WebPage);
     void OnCopyFicUrl(QString);
+    void OnOpenRecommenderLinks(QString);
     void OnCopyAllUrls();
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
 private slots:

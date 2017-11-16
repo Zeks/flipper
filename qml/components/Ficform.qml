@@ -275,6 +275,13 @@ Rectangle {
                 sourceSize.width: 24
                 visible: recommendations > 0
                 source: "qrc:/icons/icons/heart.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
+                    }
+                }
             }
             Text {
                 id: txtRecCount

@@ -21,11 +21,11 @@ QString GetWebId(QString url)
 {
 
     QString result;
-    QRegExp rxWebId("/s|u/(\\d+)");
+    QRegExp rxWebId("/(s|u)/(\\d+)");
     auto indexWeb = rxWebId.indexIn(url);
     if(indexWeb != -1)
     {
-        result = rxWebId.cap(1);
+        result = rxWebId.cap(2);
     }
     return result;
 }

@@ -339,6 +339,13 @@ QList<QSharedPointer<core::Author> > RecommendationLists::GetAuthorsForRecommend
     return currentRecommenderSet.values();
 }
 
+QList<int> RecommendationLists::GetRecommendersForFicId(int ficId)
+{
+    QList<int> result;
+    result = database::puresql::GetRecommendersForFicIdAndListId(ficId, db);
+    return result;
+}
+
 void RecommendationLists::SetCurrentRecommendationList(int value)
 {
     currentRecommendationList = value;

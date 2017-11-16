@@ -1293,6 +1293,20 @@ bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db)
     return true;
 }
 
+QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
+{
+    QList<int> result;
+    QString qs = QString("Select distinct recommender_id from recommendations where fic_id = :fic_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fic_id",ficId);
+    if(!ExecAndCheck(q))
+        return result;
+    while(q.next())
+        result.push_back(q.value(0).toInt());
+    return result;
+}
+
 
 
 
