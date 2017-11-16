@@ -100,7 +100,12 @@ QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 {
-    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id) as sumrecs, ";
+    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id %1) as sumrecs, ";
+    if(filter.showOriginsInLists)
+        currentRecTagValue=currentRecTagValue.arg("");
+    else
+        currentRecTagValue=currentRecTagValue.arg("and is_origin <> 1");
+
     return currentRecTagValue;
 }
 

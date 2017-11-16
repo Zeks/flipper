@@ -158,8 +158,9 @@ CREATE INDEX if not exists  I_RecommendationListsFandoms_fic_count ON Recommenda
 CREATE INDEX if not exists  I_RecommendationListsFandoms_IS_ORIGINAL_FANDOM ON RecommendationListsFandoms (is_original_fandom asc);
 
 -- data for recommendation lists;
-CREATE TABLE if not exists RecommendationListData(fic_id INTEGER NOT NULL, list_id integer, match_count integer default 0, PRIMARY KEY (fic_id asc, list_id asc));
+CREATE TABLE if not exists RecommendationListData(fic_id INTEGER NOT NULL, list_id integer, is_origin integer default 0, match_count integer default 0, PRIMARY KEY (fic_id asc, list_id asc));
 CREATE INDEX if not exists  I_LIST_TAGS_PK ON RecommendationListData (list_id asc, fic_id asc, match_count asc);
 CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC);
+CREATE INDEX if not exists  I_IS_ORIGIN ON RecommendationListData (is_origin ASC);
 CREATE INDEX if not exists  I_LISTDATA_FIC ON RecommendationListData (fic_id ASC);
 CREATE INDEX if not exists  I_LISTDATA_MATCHCOUNT ON RecommendationListData (match_count ASC);

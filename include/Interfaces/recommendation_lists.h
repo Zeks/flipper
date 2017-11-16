@@ -44,6 +44,7 @@ public:
     bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId);
     bool UpdateFicCountInDatabase(int listId);
     bool AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData = false);
+    bool SetFicsAsListOrigin(QList<int> ficIds, int listId);
     bool IsAuthorInCurrentRecommendationSet(QString author);
 
     QStringList GetAllRecommendationListNames();

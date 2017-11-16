@@ -49,6 +49,7 @@ struct StoryFilter{
     bool ensureActive = false;
     bool allowUnfinished = true;
     bool allowNoGenre = true;
+    bool showOriginsInLists = false;
     ESortMode sortMode;
     int listForRecommendations;
     EReviewBiasMode reviewBias;

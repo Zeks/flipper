@@ -309,6 +309,13 @@ bool RecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bo
     return result;
 }
 
+bool RecommendationLists::SetFicsAsListOrigin(QList<int> ficIds, int listId)
+{
+    if(listId == -1)
+        return false;
+    return database::puresql::SetFicsAsListOrigin(ficIds,listId, db);
+}
+
 
 void RecommendationLists::LoadAvailableRecommendationLists()
 {

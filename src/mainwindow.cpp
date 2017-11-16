@@ -902,6 +902,7 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
     QFile data(list);
     QSqlDatabase db = QSqlDatabase::database();
     QStringList usedList;
+    QList<int> usedIdList;
     if (data.open(QFile::ReadOnly))
     {
         QTextStream in(&data);
@@ -911,7 +912,7 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
         params->pickRatio = in.readLine().split("#").at(1).toDouble();
         params->alwaysPickAt = in.readLine().split("#").at(1).toInt();
         recsInterface->LoadListIntoDatabase(params);
-
+        database::Transaction transaction(db);
         QString str;
         do{
             str = in.readLine();
@@ -936,11 +937,14 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
                 continue;
             qDebug()<< "Settign tag: " << "generictag" << " to: " << id;
             usedList.push_back(str);
+            usedIdList.push_back(id);
             SetTag(id, "generictag");
         }while(!str.isEmpty());
         params->tagToUse ="generictag";
         BuildRecommendations(params);
         tagsInterface->DeleteTag("generictag");
+        recsInterface->SetFicsAsListOrigin(usedIdList, params->id);
+        transaction.finalize();
         qDebug() << "using list: " << usedList;
     }
 }
@@ -1696,7 +1700,7 @@ void MainWindow::on_cbUseDateCutoff_clicked()
 }
 
 
-void MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params)
+int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params)
 {
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
@@ -1750,6 +1754,7 @@ void MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> p
     transaction.finalize();
     qDebug() << "processed authors: " << counter;
     qDebug() << "all authors: " << alLCounter;
+    return params->id;
 }
 
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode, bool useAuthorLink)
@@ -1785,6 +1790,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex());
+    filter.showOriginsInLists = ui->chkShowOrigins->isChecked();
     filter.minRecommendations = ui->sbMinRecommendations->value();
     //if(ui->cbSortMode->currentText())
     filter.listForRecommendations = recsInterface->GetListIdForName(ui->cbRecGroup->currentText());

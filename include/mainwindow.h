@@ -193,7 +193,7 @@ private:
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
     void ReprocessAuthors();
     void ProcessListIntoRecommendations(QString list);
-    void BuildRecommendations(QSharedPointer<core::RecommendationList> params);
+    int BuildRecommendations(QSharedPointer<core::RecommendationList> params);
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false);
     QString AppendCurrentSearchParameters(QString url);
     void ReinitRecent(QString name);

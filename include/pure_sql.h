@@ -73,6 +73,7 @@ bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stat
 bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
+bool SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
 
 bool DeleteTagFromDatabase(QString tag, QSqlDatabase db);
 bool CreateTagInDatabase(QString tag, QSqlDatabase db);

@@ -1307,6 +1307,21 @@ QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
     return result;
 }
 
+bool SetFicsAsListOrigin(QList<int> ficIds, int listId, QSqlDatabase db)
+{
+    QString qs = QString("update RecommendationListData set is_origin = 1 where fic_id = :fic_id and list_id = :list_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    for(auto ficId :ficIds)
+    {
+        q.bindValue(":fic_id",ficId);
+        q.bindValue(":list_id",listId);
+        if(!ExecAndCheck(q))
+            return false;
+    }
+    return true;
+}
+
 
 
 
