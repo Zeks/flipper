@@ -137,6 +137,9 @@
                 </spacer>
                </item>
                <item>
+                <widget class="QSpinBox" name="sbMinRecommendations"/>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="chkRandomizeSelection">
                  <property name="toolTip">
                   <string>Together with &quot;Max fics&quot; checkbox, allow random navigation for a fandom if you feel like it.</string>
@@ -1342,6 +1345,11 @@
               <item>
                <property name="text">
                 <string>Update Date</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Publish Date</string>
                </property>
               </item>
               <item>

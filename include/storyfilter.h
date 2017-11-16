@@ -15,8 +15,9 @@ struct StoryFilter{
         favourites = 1,
         favrate =    2,
         updatedate = 3,
-        reccount=    4,
-        wcrcr =      5
+        publisdate = 4,
+        reccount=    5,
+        wcrcr =      6
     };
     enum EReviewBiasMode{
         bias_none    = 0,
@@ -43,6 +44,7 @@ struct StoryFilter{
     int maxFics = 0;
     bool randomizeResults = false;
     int minFavourites = 0;
+    int minRecommendations = 0;
     bool ensureCompleted = false;
     bool ensureActive = false;
     bool allowUnfinished = true;

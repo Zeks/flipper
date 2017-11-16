@@ -182,6 +182,23 @@ void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fic>> fics)
     }
 }
 
+bool Fanfics::WriteRecommendations()
+{
+    database::Transaction transaction(db);
+    for(auto recommendation: ficRecommendations)
+    {
+        if(!recommendation.IsValid() || !authorInterface->EnsureId(recommendation.author))
+            continue;
+        auto id = GetIDFromWebID(recommendation.fic->webId, recommendation.fic->webSite);
+        database::puresql::WriteRecommendation(recommendation.author, id, db);
+    }
+
+    if(!transaction.finalize())
+        return false;
+    ficRecommendations.clear();
+    return true;
+}
+
 void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
 {
     CalcStatsForFics(fics);
@@ -214,13 +231,7 @@ bool Fanfics::FlushDataQueues()
     for(auto fic: updateQueue)
         database::puresql::UpdateInDB(fic, db);
 
-    for(auto recommendation: ficRecommendations)
-    {
-        if(!recommendation.IsValid() || !authorInterface->EnsureId(recommendation.author))
-            continue;
-        auto id = GetIDFromWebID(recommendation.fic->webId, recommendation.fic->webSite);
-        database::puresql::WriteRecommendation(recommendation.author, id, db);
-    }
+    WriteRecommendations();
 
     if(!transaction.finalize())
         return false;

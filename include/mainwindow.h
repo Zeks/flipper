@@ -194,7 +194,7 @@ private:
     void ReprocessAuthors();
     void ProcessListIntoRecommendations(QString list);
     void BuildRecommendations(QSharedPointer<core::RecommendationList> params);
-    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);
+    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false);
     QString AppendCurrentSearchParameters(QString url);
     void ReinitRecent(QString name);
 

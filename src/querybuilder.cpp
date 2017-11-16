@@ -166,14 +166,16 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessActiveRecommendationsPart(StoryFilter filter)
 {
     QString queryString;
-    if(filter.mode == core::StoryFilter::filtering_in_recommendations)
+    if(filter.mode == core::StoryFilter::filtering_in_recommendations && filter.useThisRecommenderOnly != -1)
     {
         QString qsl = " and id in (select fic_id from recommendations %1)";
-
-        if(filter.useThisRecommenderOnly != -1)
-            qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(filter.useThisRecommenderOnly)));
-        else
-            qsl=qsl.arg(QString(""));
+        qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(filter.useThisRecommenderOnly)));
+        queryString+=qsl;
+    }
+    else if(filter.mode == core::StoryFilter::filtering_in_recommendations)
+    {
+        QString qsl = " and id in (select fic_id from RecommendationListData where list_id = %1)";
+        qsl=qsl.arg(QString::number(filter.listForRecommendations));
         queryString+=qsl;
     }
     return queryString;
@@ -184,9 +186,11 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
     QString queryString;
     if(filter.sortMode == StoryFilter::favrate)
         queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
-
     if(filter.sortMode == StoryFilter::reccount)
-        queryString += QString(" AND sumrecs > 0 ");
+        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
+    else if(filter.minRecommendations > 0)
+        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
+
     if(filter.sortMode == StoryFilter::favrate)
         queryString+= " and published <> updated and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
     return queryString;
@@ -203,6 +207,8 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
         diffField = " FAVOURITES DESC";
     else if(filter.sortMode == StoryFilter::updatedate)
         diffField = " updated DESC";
+    else if(filter.sortMode == StoryFilter::publisdate)
+        diffField = " published DESC";
     else if(filter.sortMode == StoryFilter::reccount)
         diffField = " sumrecs desc";
     else if(filter.sortMode == StoryFilter::favrate)

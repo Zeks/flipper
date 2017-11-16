@@ -1527,7 +1527,8 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
 
 void MainWindow::on_pbLoadPage_clicked()
 {
-    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+    //! todo rec list needs source fics saved
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
     auto startPageRequest = std::chrono::high_resolution_clock::now();
     auto page = RequestPage(ui->leAuthorUrl->text(),  ECacheMode::dont_use_cache);
     auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
@@ -1582,7 +1583,7 @@ void MainWindow::on_pbRemoveRecommender_clicked()
 
 void MainWindow::on_pbOpenRecommendations_clicked()
 {
-    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
 
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     LoadData();
@@ -1599,22 +1600,39 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
 
     auto startPageRequest = std::chrono::high_resolution_clock::now();
-    auto authors = recsInterface->GetAuthorsForRecommendationList(recsInterface->GetCurrentRecommendationList());
-    for(auto recommender: authors)
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
+    auto recList = recsInterface->GetCurrentRecommendationList();
+    auto authors = recsInterface->GetAuthorsForRecommendationList(recList);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    QSet<QString> fandoms;
+    QList<core::FicRecommendation> recommendations;
+    for(auto author: authors)
     {
-        auto page = RequestPage(recommender->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache);
+        auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
         FavouriteStoryParser parser(fanficsInterface);
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         parser.ProcessPage(page.url, page.content);
-        parser.WriteProcessed();
+        {
+            fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
+            fandoms.intersect(fandomsInterface->EnsureFandoms(parser.processedStuff));
+            QList<core::FicRecommendation> tempRecommendations;
+            tempRecommendations.reserve(parser.processedStuff.size());
+            for(auto& section : parser.processedStuff)
+                tempRecommendations.push_back({section, author});
+            fanficsInterface->AddRecommendations(tempRecommendations);
+            fanficsInterface->FlushDataQueues();
+        }
         elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
         qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
         ui->edtResults->clear();
         ui->edtResults->insertHtml(parser.diagnostics.join(""));
 
     }
+    fandomsInterface->RecalculateFandomStats(fandoms.values());
+    transaction.finalize();
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     LoadData();
@@ -1719,7 +1737,7 @@ void MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> p
     qDebug() << "all authors: " << alLCounter;
 }
 
-core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode)
+core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode, bool useAuthorLink)
 {
     auto valueIfChecked = [](QCheckBox* box, auto value){
         if(box->isChecked())
@@ -1752,6 +1770,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex());
+    filter.minRecommendations = ui->sbMinRecommendations->value();
     //if(ui->cbSortMode->currentText())
     filter.listForRecommendations = recsInterface->GetListIdForName(ui->cbRecGroup->currentText());
     //filter.titleInclusion = nothing for now
@@ -1759,7 +1778,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.mode = mode;
     QString authorUrl = ui->leAuthorUrl->text();
     auto author = authorsInterface->GetByUrl(authorUrl);
-    if(author)
+    if(author && useAuthorLink)
         filter.useThisRecommenderOnly = author->id;
     return filter;
 }

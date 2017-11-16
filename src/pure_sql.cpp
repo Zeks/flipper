@@ -530,7 +530,7 @@ QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase
     QList<core::AuthorPtr> result;
 
     QSqlQuery q(db);
-    QString qs = QString("select id,name, url, website_type as website from recommenders where id in ( select id from RecommendationListAuthorStats where list_id = :list_id )");
+    QString qs = QString("select id,name, url, website_type as website from recommenders where id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id )");
     q.prepare(qs);
     q.bindValue(":list_id",listId);
     if(!ExecAndCheck(q))

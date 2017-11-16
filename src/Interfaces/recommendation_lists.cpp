@@ -334,7 +334,7 @@ bool RecommendationLists::LoadAuthorsForRecommendationList(int listId)
 
 QList<QSharedPointer<core::Author> > RecommendationLists::GetAuthorsForRecommendationList(int listId)
 {
-    if(currentRecommendationList != listId)
+    if(currentRecommendationList != listId || currentRecommenderSet.isEmpty())
         LoadAuthorsForRecommendationList(listId);
     return currentRecommenderSet.values();
 }
