@@ -15,6 +15,7 @@
 #include "include/favparser.h"
 #include "include/section.h"
 #include "include/pure_sql.h"
+#include "include/url_utils.h"
 #include <QDebug>
 #include <QSqlDatabase>
 #include <chrono>
@@ -27,13 +28,19 @@ FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> f
 
 QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
+    QList<QSharedPointer<core::Fic>> sections;
     core::Section section;
     int currentPosition = 0;
     int counter = 0;
-    QList<QSharedPointer<core::Fic>> sections;
+
+    core::AuthorPtr author(new core::Author);
+    section.result->author = author;
+    recommender.author = author;
+
     recommender.author->name = authorName;
     recommender.author->SetUrl("ffn", url);
     recommender.author->website = "ffn";
+    recommender.author->webId = url_utils::GetWebId(url, "ffn").toInt();
     while(true)
     {
 
@@ -79,12 +86,11 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         });
         if(statText.contains("CROSSOVER", Qt::CaseInsensitive))
             GetCrossoverFandomList(section, currentPosition, str);
+        else
+            section.result->fandoms.push_back(section.result->fandom);
 
         if(section.isValid)
-        {
             sections.append(section.result);
-        }
-
     }
 
     if(sections.size() == 0)
@@ -123,11 +129,12 @@ void FavouriteStoryParser::WriteProcessed()
 {
     //requires
     //database::WriteFandomsForStory(section, knownFandoms);
-    fanfics->ProcessIntoDataQueues(processedStuff);
-    QList<core::FicRecommendation> recommendations;
-    recommendations.reserve(processedStuff.size());
-    for(auto& section : processedStuff)
-        recommendations.push_back({section, recommender.author});
+//    fanfics->ProcessIntoDataQueues(processedStuff);
+//    fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
+//    QList<core::FicRecommendation> recommendations;
+//    recommendations.reserve(processedStuff.size());
+//    for(auto& section : processedStuff)
+//        recommendations.push_back({section, recommender.author});
 }
 
 
@@ -223,7 +230,9 @@ void FavouriteStoryParser::GetCrossoverFandomList(core::Section & section, int &
 
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
-    section.result->fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed() + QString(" CROSSOVER");
+    QString tmp = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed();
+    section.result->fandom = tmp + QString(" CROSSOVER");
+    section.result->fandoms = tmp.split(" & ", QString::SkipEmptyParts);
     startfrom = indexEnd;
 }
 

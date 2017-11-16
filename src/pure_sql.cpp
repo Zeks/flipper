@@ -97,10 +97,11 @@ bool UpdateFandomStats(int fandomId, QSqlDatabase db)
 {
     if(fandomId == -1)
         return false;
-    QString qs = QString("update fandoms set "
-                         " fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id, "
-                         " average_faves_top_3 =  (select sum(favourites)/3 from fanfics f where f.fandom = fandoms.fandom and f.id "
-                         "in (select id from fanfics where fanfics.fandom = fandoms.fandom order by favourites desc limit 3)) where fandoms.fandom_id = :fandom_id");
+    QString qs = QString("update fandoms set fic_count = "
+                         " (select count(fic_id) from ficfandoms where fandom_id = fandoms.id),"
+                         " average_faves_top_3 = (select sum(favourites)/3 from fanfics f where f.fandom = fandoms.fandom and f.id "
+                         " in (select id from fanfics where fanfics.fandom = fandoms.fandom order by favourites desc limit 3))"
+                         " where fandoms.id = :fandom_id");
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":fandom_id",fandomId);
@@ -192,7 +193,7 @@ void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db)
 
 bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db)
 {
-    QString qs = "delete from FicTags where fic_id = :fic_id and tag = :tag)";
+    QString qs = "delete from FicTags where fic_id = :fic_id and tag = :tag";
     qs=qs.arg(tag);
     QSqlQuery q(db);
     q.prepare(qs);
@@ -320,7 +321,7 @@ bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
                           ;
 
     QString filledQuery = getKeyQuery.arg(fic->webSite);
-    if(fic->title.contains("Zanpak"))
+    if(fic->title.contains("Fire Princess"))
         qDebug() << filledQuery;
     QSqlQuery q(db);
     q.prepare(filledQuery);
@@ -374,7 +375,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":age",section->calcStats.age);
     q.bindValue(":daysrunning",section->calcStats.daysRunning);
     q.exec();
-    //qDebug() << "Inserting:" << section->title;
+    qDebug() << "Inserting:" << section->title;
     if(q.lastError().isValid())
     {
         qDebug() << "failed to insert: " << section->author->name << " " << section->title;
@@ -418,7 +419,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":age",section->calcStats.age);
     q.bindValue(":daysrunning",section->calcStats.daysRunning);
     q.exec();
-    //qDebug() << "Updating:" << section->title;
+    qDebug() << "Updating:" << section->title;
     if(q.lastError().isValid())
     {
         qDebug() << "failed to update: " << section->author->name << " " << section->title;
@@ -485,6 +486,7 @@ core::AuthorPtr AuthorFromQuery(QSqlQuery& q)
     core::AuthorPtr result(new core::Author);
     result->AssignId(q.value("id").toInt());
     result->name = q.value("name").toString();
+    result->website = q.value("website").toString();
     result->recCount = q.value("rec_count").toInt();
     result->SetUrl("ffn", q.value("url").toString());
     return result;
@@ -504,7 +506,7 @@ QList<core::AuthorPtr> GetAllAuthors(QString website,  QSqlDatabase db)
     q.next();
     int size = q.value(0).toInt();
 
-    qs = QString("select distinct id,name, url,"
+    qs = QString("select distinct id,name, url, website_type as website, "
                  "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
                  " from recommenders where website_type = :site");
     q.prepare(qs);
@@ -528,7 +530,7 @@ QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase
     QList<core::AuthorPtr> result;
 
     QSqlQuery q(db);
-    QString qs = QString("select id,name, url from recommenders where id in ( select id from RecommendationListAuthorStats where list_id = :list_id )");
+    QString qs = QString("select id,name, url, website_type as website from recommenders where id in ( select id from RecommendationListAuthorStats where list_id = :list_id )");
     q.prepare(qs);
     q.bindValue(":list_id",listId);
     if(!ExecAndCheck(q))
@@ -546,7 +548,7 @@ QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase
 core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url from recommenders where website_type = :site and name = :name");
+    QString qs = QString("select id,name, url, website_type as website from recommenders where website_type = :site and name = :name");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -566,7 +568,7 @@ core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website, QSqlDat
 core::AuthorPtr GetAuthorByUrl(QString url, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url from recommenders where url = :url");
+    QString qs = QString("select id,name, url, website_type as website from recommenders where url = :url");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -585,7 +587,7 @@ core::AuthorPtr GetAuthorByUrl(QString url, QSqlDatabase db)
 core::AuthorPtr GetAuthorById(int id, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url, "
+    QString qs = QString("select id,name, url, website_type as website,  "
                          "(select count(fic_id) from recommendations where recommender_id = :id) as rec_count "
                          "from recommenders where id = :id");
 

@@ -21,7 +21,7 @@ QString GetWebId(QString url)
 {
 
     QString result;
-    QRegExp rxWebId("/s/(\\d+)");
+    QRegExp rxWebId("/s|u/(\\d+)");
     auto indexWeb = rxWebId.indexIn(url);
     if(indexWeb != -1)
     {

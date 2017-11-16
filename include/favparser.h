@@ -41,9 +41,10 @@ public:
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;
+    QSet<QString> fandoms;
     //! todo needs to be filled
 
-//    QSharedPointer<interfaces::Fanfics> fanfics;
+    //QSharedPointer<interfaces::Fandoms> fandomInterface;
 //    QSharedPointer<interfaces::DataInterfaces> interfaces;
 
 };

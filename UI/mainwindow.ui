@@ -185,7 +185,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>2</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -210,32 +210,6 @@
                    <property name="bottomMargin">
                     <number>0</number>
                    </property>
-                   <item row="0" column="0" colspan="8">
-                    <widget class="QPushButton" name="pbWipeFandom">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Completely wipes the selected fandom from the database. All the tags you've set to fics in it will be lost.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string>WIPE selected fandom</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QCheckBox" name="chkTrackedFandom">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="toolTip">
-                      <string>Sets teh fandom status to &quot;Tracked&quot;. Tracked fandoms are automatically downloaded when &quot;Load All Tracked Fandoms&quot; button is pressed&quot;</string>
-                     </property>
-                     <property name="text">
-                      <string>Track</string>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="3" column="0" colspan="8">
                     <layout class="QHBoxLayout" name="horizontalLayout_5">
                      <item>
@@ -261,6 +235,127 @@
                       </widget>
                      </item>
                     </layout>
+                   </item>
+                   <item row="1" column="7">
+                    <widget class="QCheckBox" name="chkInfoForLinks">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="text">
+                      <string>With Info</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QLabel" name="label_9">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="text">
+                      <string>Fandom</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QCheckBox" name="chkTrackedFandom">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="toolTip">
+                      <string>Sets teh fandom status to &quot;Tracked&quot;. Tracked fandoms are automatically downloaded when &quot;Load All Tracked Fandoms&quot; button is pressed&quot;</string>
+                     </property>
+                     <property name="text">
+                      <string>Track</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="6">
+                    <widget class="QPushButton" name="pbCopyAllUrls">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="text">
+                      <string>Copy Urls</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0" colspan="8">
+                    <widget class="QPushButton" name="pbWipeFandom">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Completely wipes the selected fandom from the database. All the tags you've set to fics in it will be lost.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>WIPE selected fandom</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="2" colspan="4">
+                    <widget class="QComboBox" name="cbNormals">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>200</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="toolTip">
+                      <string>A list of all fandoms for category. Uses auto-complete so you just have to start typing.</string>
+                     </property>
+                     <property name="editable">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="0" colspan="8">
+                    <widget class="QListView" name="lvTrackedFandoms">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This keeps a list of your last accessed fandoms for quick navigation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="selectionMode">
+                      <enum>QAbstractItemView::NoSelection</enum>
+                     </property>
+                     <property name="selectionBehavior">
+                      <enum>QAbstractItemView::SelectRows</enum>
+                     </property>
+                    </widget>
                    </item>
                    <item row="2" column="0" colspan="8">
                     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -367,101 +462,6 @@
                       </spacer>
                      </item>
                     </layout>
-                   </item>
-                   <item row="1" column="2" colspan="4">
-                    <widget class="QComboBox" name="cbNormals">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="minimumSize">
-                      <size>
-                       <width>200</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>16777215</width>
-                       <height>16777215</height>
-                      </size>
-                     </property>
-                     <property name="toolTip">
-                      <string>A list of all fandoms for category. Uses auto-complete so you just have to start typing.</string>
-                     </property>
-                     <property name="editable">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QLabel" name="label_9">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="text">
-                      <string>Fandom</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="6">
-                    <widget class="QPushButton" name="pbCopyAllUrls">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="text">
-                      <string>Copy Urls</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="7">
-                    <widget class="QCheckBox" name="chkInfoForLinks">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="text">
-                      <string>With Info</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="4" column="0" colspan="8">
-                    <widget class="QListView" name="lvTrackedFandoms">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>16777215</width>
-                       <height>16777215</height>
-                      </size>
-                     </property>
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This keeps a list of your last accessed fandoms for quick navigation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="selectionMode">
-                      <enum>QAbstractItemView::NoSelection</enum>
-                     </property>
-                     <property name="selectionBehavior">
-                      <enum>QAbstractItemView::SelectRows</enum>
-                     </property>
-                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -669,7 +669,7 @@
                      <item>
                       <widget class="QPushButton" name="pbOpenAuthorUrl">
                        <property name="text">
-                        <string>Open</string>
+                        <string>URL</string>
                        </property>
                       </widget>
                      </item>
@@ -823,7 +823,7 @@
                            <string>Cache only</string>
                           </property>
                           <property name="checked">
-                           <bool>true</bool>
+                           <bool>false</bool>
                           </property>
                          </widget>
                         </item>

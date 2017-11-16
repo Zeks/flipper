@@ -153,7 +153,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+    ui->cbNormals->lineEdit()->setClearButtonEnabled(true);
 
 }
 
@@ -1529,7 +1529,7 @@ void MainWindow::on_pbLoadPage_clicked()
 {
     filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
     auto startPageRequest = std::chrono::high_resolution_clock::now();
-    auto page = RequestPage(ui->leAuthorUrl->text(),  ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache);
+    auto page = RequestPage(ui->leAuthorUrl->text(),  ECacheMode::dont_use_cache);
     auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
     qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     FavouriteStoryParser parser(fanficsInterface);
@@ -1543,12 +1543,24 @@ void MainWindow::on_pbLoadPage_clicked()
     ui->edtResults->insertHtml(parser.diagnostics.join(""));
     auto startRecLoad = std::chrono::high_resolution_clock::now();
 
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    QSet<QString> fandoms;
+    authorsInterface->EnsureId(parser.recommender.author); // assuming ffn
     auto author = authorsInterface->GetByUrl(ui->leAuthorUrl->text());
+    {
+        fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
+        fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
+        QList<core::FicRecommendation> recommendations;
+        recommendations.reserve(parser.processedStuff.size());
+        for(auto& section : parser.processedStuff)
+            recommendations.push_back({section, author});
+        fanficsInterface->AddRecommendations(recommendations);
+        fanficsInterface->FlushDataQueues();
 
-    if(!author)
-        authorsInterface->EnsureId(parser.recommender.author); // assuming ffn
-
-    parser.WriteProcessed();
+        fandomsInterface->RecalculateFandomStats(fandoms.values());
+    }
+    transaction.finalize();
     // this seems to be loading all authors, I don't need it
     //recommenders = database::FetchRecommenders();
     //recommendersModel->setStringList(SortedList(recommenders.keys()));
@@ -1745,7 +1757,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
-    auto author = authorsInterface->GetByUrl(ui->leAuthorUrl->text());
+    QString authorUrl = ui->leAuthorUrl->text();
+    auto author = authorsInterface->GetByUrl(authorUrl);
     if(author)
         filter.useThisRecommenderOnly = author->id;
     return filter;
