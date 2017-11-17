@@ -747,12 +747,13 @@ QString MainWindow::CreateLimitQueryPart()
 void MainWindow::LoadMoreAuthors(bool reprocessCache)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
-    QStringList authorUrls = GetUniqueAuthorsFromActiveRecommenderSet();
-    //QStringList authorUrls =  authorsInterface->GetAllAuthorsUrls("ffn");
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
+    QStringList authorUrls = recsInterface->GetLinkedPagesForList(recsInterface->GetCurrentRecommendationList());
+
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
     ReinitProgressbar(authorUrls.size());
     StartPageWorker();
-    auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::use_cache;
+    auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
     emit pageTaskList(authorUrls, cacheMode);
     DisableAllLoadButtons();
     WebPage webPage;
@@ -769,9 +770,12 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     int cachedPages = 0;
     int loadedPages = 0;
     QSqlDatabase db = QSqlDatabase::database();
+    QSqlDatabase pcDb = QSqlDatabase::database("PageCache");
 //    bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
 //    bool transOpen = db.transaction();
     database::Transaction transaction(db);
+
+    QSet<QString> fandoms;
     do
     {
         futures.clear();
@@ -795,6 +799,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
         pbMain->setValue(pbMain->value()+1);
         pbMain->setTextVisible(true);
         pbMain->setFormat("%v");
+        QCoreApplication::processEvents();
 
         auto author = authorsInterface->GetByUrl(webPage.url);
         if(!author || reprocessCache)
@@ -831,7 +836,17 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
                 sum+=actualParser.processedStuff.count() ;
                 if(actualParser.processedStuff.size() < 2000)
                 {
-                    actualParser.WriteProcessed();
+                    {
+                        fanficsInterface->ProcessIntoDataQueues(actualParser.processedStuff);
+                        fandoms.intersect(fandomsInterface->EnsureFandoms(actualParser.processedStuff));
+                        QList<core::FicRecommendation> tempRecommendations;
+                        tempRecommendations.reserve(actualParser.processedStuff.size());
+                        for(auto& section : actualParser.processedStuff)
+                            tempRecommendations.push_back({section, author});
+                        fanficsInterface->AddRecommendations(tempRecommendations);
+                        fanficsInterface->FlushDataQueues();
+                        qDebug() << "skipped: " << fanficsInterface->skippedCounter;
+                    }
                     //actualParser.WriteJustAuthorName();
                 }
             }
@@ -844,7 +859,10 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
 
         }
     }while(!webPage.isLastPage);
+    fandomsInterface->RecalculateFandomStats(fandoms.values());
+    fanficsInterface->ClearProcessedHash();
     transaction.finalize();
+    //pcTransaction.finalize();
 
     //parser.ClearDoneCache();
     ui->edtResults->clear();
@@ -1644,7 +1662,8 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     {
         QList<QSharedPointer<core::Fic>> sections;
         QList<QFuture<QList<QSharedPointer<core::Fic>>>> futures;
-
+        QSet<QString> uniqueAuthors;
+        authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
         auto startPageRequest = std::chrono::high_resolution_clock::now();
         auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
@@ -1670,10 +1689,16 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
             fandoms.intersect(fandomsInterface->EnsureFandoms(parser.processedStuff));
             QList<core::FicRecommendation> tempRecommendations;
             tempRecommendations.reserve(parser.processedStuff.size());
+            uniqueAuthors.reserve(parser.processedStuff.size());
             for(auto& section : parser.processedStuff)
+            {
                 tempRecommendations.push_back({section, author});
+                if(!uniqueAuthors.contains(section->author->url("ffn")))
+                    uniqueAuthors.insert(section->author->url("ffn"));
+            }
             fanficsInterface->AddRecommendations(tempRecommendations);
             fanficsInterface->FlushDataQueues();
+            authorsInterface->UploadLinkedAuthorsForAuthor(author->id, uniqueAuthors.values());
             qDebug() << "skipped: " << fanficsInterface->skippedCounter;
         }
 
@@ -1717,8 +1742,6 @@ void MainWindow::on_pbOpenWholeList_clicked()
 
 void MainWindow::on_pbFirstWave_clicked()
 {
-    //!!! bool reprocessCache = !database::HasNoneTagInRecommendations();
-
     LoadMoreAuthors(true);
 }
 

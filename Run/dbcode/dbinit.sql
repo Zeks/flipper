@@ -134,6 +134,10 @@ CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicFandoms (fic_id ASC);
  CREATE INDEX if not exists I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
  CREATE INDEX if not exists I_RECOMMENDATIONS_REC_FIC ON Recommendations (recommender_id ASC, fic_id asc);
  CREATE INDEX if not exists I_RECOMMENDATIONS_FIC ON Recommendations (fic_id ASC);
+ 
+ -- linked authors table;
+ CREATE TABLE if not exists LinkedAuthors (recommender_id INTEGER NOT NULL, url VARCHAR);
+ CREATE INDEX if not exists I_LINKED_AUTHORS_PK ON LinkedAuthors (recommender_id ASC);
 
 -- per author stats for specific recommendation list;
 CREATE TABLE if not exists RecommendationListAuthorStats (author_id INTEGER NOT NULL , fic_count INTEGER, match_count integer, match_ratio double, list_id integer,  PRIMARY KEY (list_id, author_id));
@@ -149,7 +153,7 @@ CREATE INDEX if not exists  I_RecommendationLists_ID ON RecommendationLists (id 
 CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (NAME asc);
 CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists (created asc);
 
--- data for fandoms present in the list
+-- data for fandoms present in the list;
 create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer deault 0, fic_count integer, PRIMARY KEY (list_id, fandom_id))
 CREATE INDEX if not exists I_RecommendationListsFandoms_PK ON RecommendationListsFandoms (list_id ASC, fandom_id asc);
 CREATE INDEX if not exists  I_RecommendationListsFandoms_LIST_ID ON RecommendationListsFandoms (list_id asc);

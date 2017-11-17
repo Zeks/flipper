@@ -292,6 +292,20 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
 
     return result;
 }
+
+bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QStringList list)
+{
+    if(!EnsureAuthorLoaded(authorId) || list.isEmpty())
+        return false;
+    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
+}
+
+bool Authors::DeleteLinkedAuthorsForAuthor(int authorId)
+{
+    if(!EnsureAuthorLoaded(authorId))
+        return false;
+    return database::puresql::DeleteLinkedAuthorsForAuthor(authorId, db);
+}
 // those are required for managing recommendation lists and somewhat outdated
 // moved them to dump temporarily
 //bool  Authors::RemoveAuthor(int id)

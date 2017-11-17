@@ -353,6 +353,15 @@ QList<int> RecommendationLists::GetRecommendersForFicId(int ficId)
     return result;
 }
 
+QStringList RecommendationLists::GetLinkedPagesForList(int listId)
+{
+    QStringList result;
+    if(!EnsureList(listId))
+        return result;
+    result = database::puresql::GetLinkedPagesForList(listId, db);
+    return result;
+}
+
 void RecommendationLists::SetCurrentRecommendationList(int value)
 {
     currentRecommendationList = value;

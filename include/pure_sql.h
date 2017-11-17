@@ -70,9 +70,12 @@ int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDa
 bool DeleteRecommendationList(int listId, QSqlDatabase db );
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
 bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db);
+bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db);
+bool DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db);
 bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
+QStringList GetLinkedPagesForList(int listId, QSqlDatabase db);
 bool SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
 
 bool DeleteTagFromDatabase(QString tag, QSqlDatabase db);

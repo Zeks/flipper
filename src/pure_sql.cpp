@@ -1303,7 +1303,7 @@ QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
     if(!ExecAndCheck(q))
         return result;
     while(q.next())
-        result.push_back(q.value(0).toInt());
+        result.push_back(q.value("recommender_id").toInt());
     return result;
 }
 
@@ -1320,6 +1320,52 @@ bool SetFicsAsListOrigin(QList<int> ficIds, int listId, QSqlDatabase db)
             return false;
     }
     return true;
+}
+
+bool DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db)
+{
+    QString qs = QString("delete from LinkedAuthors where recommender_id = :author_id");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id", authorId);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+
+bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db)
+{
+    QSqlQuery q(db);
+    QString qs = QString("insert into  LinkedAuthors(recommender_id, url) values(:author_id, :url)");
+    q.prepare(qs);
+    for(auto url :list)
+    {
+        q.bindValue(":author_id",authorId);
+        q.bindValue(":url",url);
+        q.exec();
+        if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
+        {
+            qDebug() << q.lastError();
+            qDebug() << q.lastQuery();
+            return false;
+        }
+    }
+    return true;
+}
+
+QStringList GetLinkedPagesForList(int listId, QSqlDatabase db)
+{
+    QStringList result;
+    QString qs = QString("Select distinct url from LinkedAuthors where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return result;
+    while(q.next())
+        result.push_back(q.value("url").toString());
+    return result;
 }
 
 

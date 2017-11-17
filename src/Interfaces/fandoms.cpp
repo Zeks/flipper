@@ -54,7 +54,8 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
     }
     for(auto fandom: uniqueFandoms)
     {
-        CreateFandom(fandom);
+        if(!EnsureFandom(fandom))
+            CreateFandom(fandom);
     }
     return uniqueFandoms;
 }

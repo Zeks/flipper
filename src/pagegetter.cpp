@@ -1,4 +1,5 @@
 #include "include/pagegetter.h"
+#include "include/transaction.h"
 #include "GlobalHeaders/run_once.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -7,6 +8,7 @@
 #include <QObject>
 #include <QSqlQuery>
 #include <QSqlRecord>
+#include <QSqlDatabase>
 #include <QDebug>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -228,6 +230,8 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
 void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
+
+    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
@@ -260,12 +264,14 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         }
         counter++;
     }while(url != lastUrl && result.isValid && !result.isLastPage);
+    pcTransaction.finalize();
     qDebug() << "leaving task1";
 }
 
 void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
+    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
@@ -291,6 +297,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
             QThread::msleep(timeout);
         }
     }
+    pcTransaction.finalize();
     qDebug() << "leaving task2";
 }
 static QString CreateURL(QString str)

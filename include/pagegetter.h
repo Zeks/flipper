@@ -66,7 +66,7 @@ public:
     virtual void timerEvent(QTimerEvent *);
     QString GetNext(QString);
     QDate GrabMinUpdate(QString text);
-    int timeout = 500;
+    int timeout = 300;
     std::atomic<bool> working;
 public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode);
