@@ -46,6 +46,12 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
         counter++;
         section = GetSection(str, currentPosition);
+        if(sections.size() == 0 && section.isValid)
+        {
+            int parts = str.length()/(section.end-section.start);
+            qDebug() << "reserving parts: " << parts;
+            sections.reserve(parts);
+        }
         if(!section.isValid)
             break;
         currentPosition = section.start;

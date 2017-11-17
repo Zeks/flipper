@@ -1617,23 +1617,54 @@ void MainWindow::on_pbOpenRecommendations_clicked()
 void MainWindow::on_pbLoadAllRecommenders_clicked()
 {
     filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
 
-    auto startPageRequest = std::chrono::high_resolution_clock::now();
     recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
     auto recList = recsInterface->GetCurrentRecommendationList();
     auto authors = recsInterface->GetAuthorsForRecommendationList(recList);
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
+    pbMain->setMaximum(authors.size());
+    pbMain->show();
+    pbMain->setValue(0);
+    pbMain->setTextVisible(true);
+    pbMain->setFormat("%v");
+
     QSet<QString> fandoms;
     QList<core::FicRecommendation> recommendations;
+    auto fanficsInterface = this->fanficsInterface;
+    auto authorsInterface = this->authorsInterface;
+    auto job = [fanficsInterface,authorsInterface](QString url, QString content){
+        QList<QSharedPointer<core::Fic> > sections;
+        FavouriteStoryParser parser(fanficsInterface);
+        sections += parser.ProcessPage(url, content);
+        return sections;
+    };
+
     for(auto author: authors)
     {
+        QList<QSharedPointer<core::Fic>> sections;
+        QList<QFuture<QList<QSharedPointer<core::Fic>>>> futures;
+
+        auto startPageRequest = std::chrono::high_resolution_clock::now();
         auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-        FavouriteStoryParser parser(fanficsInterface);
+        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
-        parser.ProcessPage(page.url, page.content);
+        FavouriteStoryParser parser(fanficsInterface);
+        //parser.ProcessPage(page.url, page.content);
+
+        auto splittings = SplitJob(page.content);
+        for(auto part: splittings.parts)
+        {
+            futures.push_back(QtConcurrent::run(job, page.url, part.data));
+        }
+        for(auto future: futures)
+        {
+            future.waitForFinished();
+        }
+        for(auto future: futures)
+            parser.processedStuff += future.result();
+
         {
             fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
             fandoms.intersect(fandomsInterface->EnsureFandoms(parser.processedStuff));
@@ -1643,15 +1674,23 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
                 tempRecommendations.push_back({section, author});
             fanficsInterface->AddRecommendations(tempRecommendations);
             fanficsInterface->FlushDataQueues();
+            qDebug() << "skipped: " << fanficsInterface->skippedCounter;
         }
-        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
-        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+
         ui->edtResults->clear();
         ui->edtResults->insertHtml(parser.diagnostics.join(""));
+        pbMain->setValue(pbMain->value()+1);
+        pbMain->setTextVisible(true);
+        pbMain->setFormat("%v");
+        QCoreApplication::processEvents();
 
+        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     }
     fandomsInterface->RecalculateFandomStats(fandoms.values());
     transaction.finalize();
+    fanficsInterface->ClearProcessedHash();
+    pbMain->hide();
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     LoadData();

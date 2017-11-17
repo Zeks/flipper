@@ -50,7 +50,7 @@ class Fanfics : public IDBWebIDIndex {
 
     virtual bool DeactivateFic(int ficId, QString website);
     virtual bool DeactivateFic(int ficId) = 0;
-
+    void ClearProcessedHash();
 
     bool AssignChapter(int, int);
 
@@ -62,7 +62,9 @@ class Fanfics : public IDBWebIDIndex {
 
     QList<core::FicRecommendation> ficRecommendations;
 
+    QSet<int> processedHash;
 
+    int skippedCounter = 0;
     QList<core::FicPtr> fics;
     QHash<int, core::FicPtr> idIndex;
     QHash<QString, QHash<int, core::FicPtr>> webIdIndex;

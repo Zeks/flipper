@@ -375,7 +375,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":age",section->calcStats.age);
     q.bindValue(":daysrunning",section->calcStats.daysRunning);
     q.exec();
-    qDebug() << "Inserting:" << section->title;
+    //qDebug() << "Inserting:" << section->title;
     if(q.lastError().isValid())
     {
         qDebug() << "failed to insert: " << section->author->name << " " << section->title;
@@ -419,7 +419,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":age",section->calcStats.age);
     q.bindValue(":daysrunning",section->calcStats.daysRunning);
     q.exec();
-    qDebug() << "Updating:" << section->title;
+    //qDebug() << "Updating:" << section->title;
     if(q.lastError().isValid())
     {
         qDebug() << "failed to update: " << section->author->name << " " << section->title;

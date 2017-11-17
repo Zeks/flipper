@@ -4,6 +4,7 @@
 #include "include/pure_sql.h"
 #include "include/transaction.h"
 #include <QVector>
+#include <QDebug>
 
 namespace interfaces {
 
@@ -152,6 +153,11 @@ bool Fanfics::DeactivateFic(int ficId, QString website)
     return database::puresql::DeactivateStory(ficId, website, db);
 }
 
+void Fanfics::ClearProcessedHash()
+{
+    processedHash.clear();
+}
+
 bool Fanfics::AssignChapter(int ficId, int chapter)
 {
     return database::puresql::AssignChapterToFanfic(chapter, ficId, db);
@@ -202,37 +208,52 @@ bool Fanfics::WriteRecommendations()
 void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
 {
     CalcStatsForFics(fics);
+    skippedCounter = 0;
     for(QSharedPointer<core::Fic> fic: fics)
     {
         if(!fic)
             continue;
         auto id = fic->webId;
-        database::puresql::SetUpdateOrInsert(fic, db, alwaysUpdateIfNotInsert);
+
+        if(!processedHash.contains(fic->webId))
         {
-            QWriteLocker lock(&mutex);
-            if(fic->updateMode == core::UpdateMode::update && !updateQueue.contains(id))
-                updateQueue[id] = fic;
-            if(fic->updateMode == core::UpdateMode::insert && !insertQueue.contains(id))
-                insertQueue[id] = fic;
+            database::puresql::SetUpdateOrInsert(fic, db, alwaysUpdateIfNotInsert);
+            {
+                QWriteLocker lock(&mutex);
+                if(fic->updateMode == core::UpdateMode::update && !updateQueue.contains(id))
+                    updateQueue[id] = fic;
+                if(fic->updateMode == core::UpdateMode::insert && !insertQueue.contains(id))
+                    insertQueue[id] = fic;
+            }
         }
+        else
+            skippedCounter++;
+        processedHash.insert(fic->webId);
     }
 }
 
 bool Fanfics::FlushDataQueues()
 {
     database::Transaction transaction(db);
+    int insertCounter = 0;
+    int updateCounter = 0;
     for(auto fic: insertQueue)
     {
+        insertCounter++;
         database::puresql::InsertIntoDB(fic, db);
         for(auto fandom: fic->fandoms)
             database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
     }
 
     for(auto fic: updateQueue)
+    {
         database::puresql::UpdateInDB(fic, db);
+        updateCounter++;
+    }
 
     WriteRecommendations();
-
+    qDebug() << "inserted: " << insertCounter;
+    qDebug() << "updated: " << updateCounter;
     if(!transaction.finalize())
         return false;
     insertQueue.clear();
