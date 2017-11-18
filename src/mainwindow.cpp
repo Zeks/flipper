@@ -1,3 +1,21 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "GlobalHeaders/SingletonHolder.h"
@@ -186,6 +204,11 @@ void MainWindow::Init()
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
     ProcessTagsIntoGui();
+
+    //QSettings settings("settings.ini", QSettings::IniFormat);
+    //settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    ui->cbRecGroup->setCurrentText(settings.value("Settings/currentList").toString());
+
 
     qRegisterMetaType<WebPage>("WebPage");
     qRegisterMetaType<ECacheMode>("ECacheMode");
@@ -721,6 +744,7 @@ void MainWindow::ProcessTagsIntoGui()
     ui->wdgTagsPlaceholder->InitFromTags(-1, tagPairs);
     FillRecTagBuildCombobox();
     FillRecTagCombobox();
+
 }
 
 void MainWindow::SetTag(int id, QString tag, bool silent)
@@ -747,7 +771,7 @@ QString MainWindow::CreateLimitQueryPart()
 void MainWindow::LoadMoreAuthors(bool reprocessCache)
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
-    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecGroup->currentText()));
     QStringList authorUrls = recsInterface->GetLinkedPagesForList(recsInterface->GetCurrentRecommendationList());
 
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
@@ -1048,7 +1072,7 @@ void MainWindow::ReadSettings()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ui->chkShowDirectRecs->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->wdgWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
-    ui->cbRecTagGroup->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
+    //ui->cbRecTagGroup->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbFirstWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbWipeFandom->setVisible(settings.value("Settings/pbWipeFandom", false).toBool());
 
@@ -1087,7 +1111,7 @@ void MainWindow::ReadSettings()
     ui->cbCustomFilters->blockSignals(true);
     ui->chkCustomFilter->blockSignals(true);
     ui->leAuthorUrl->setText(settings.value("Settings/currentRecommender", "").toString());
-    ui->chkShowRecsRegardlessOfTags->setChecked(settings.value("Settings/ignoreTagsOnRecommendations", false).toBool());
+    //ui->chkShowRecsRegardlessOfTags->setChecked(settings.value("Settings/ignoreTagsOnRecommendations", false).toBool());
     ui->cbSortMode->setCurrentText(settings.value("Settings/currentSortFilter", "Update Date").toString());
     ui->cbCustomFilters->setCurrentText(settings.value("Settings/currentSortFilter", "Longest Running").toString());
     ui->cbWordCutoff->setCurrentText(settings.value("Settings/lengthCutoff", "100k Words").toString());
@@ -1131,12 +1155,13 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/currentSortFilter", ui->cbSortMode->currentText());
     settings.setValue("Settings/currentCustomFilter", ui->cbCustomFilters->currentText());
     settings.setValue("Settings/currentRecommender", ui->leAuthorUrl->text());
-    settings.setValue("Settings/ignoreTagsOnRecommendations", ui->chkShowRecsRegardlessOfTags->isChecked());
+    //settings.setValue("Settings/ignoreTagsOnRecommendations", ui->chkShowRecsRegardlessOfTags->isChecked());
     settings.setValue("Settings/customFilterEnabled", ui->chkCustomFilter->isChecked());
     settings.setValue("Settings/biasMode", ui->cbBiasFavor->currentText());
     settings.setValue("Settings/biasOperator", ui->cbBiasOperator->currentText());
     settings.setValue("Settings/biasValue", ui->leBiasValue->text());
     settings.setValue("Settings/lengthCutoff", ui->cbWordCutoff->currentText());
+    settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.sync();
 }
 
@@ -1370,7 +1395,11 @@ void MainWindow::OnNewSelectionInRecommenderList(const QModelIndex &current, con
     QString recommender = current.data().toString();
     auto author = authorsInterface->GetAuthorByNameAndWebsite(recommender, "ffn");
     if(author)
+    {
         ui->leAuthorUrl->setText(author->url("ffn"));
+        ui->cbAuthorNames->setCurrentText(author->name);
+    }
+
 }
 
 void MainWindow::CallExpandedWidget()
@@ -1519,7 +1548,8 @@ void MainWindow::FillRecTagCombobox()
 {
     auto lists = recsInterface->GetAllRecommendationListNames();
     ui->cbRecGroup->setModel(new QStringListModel(lists));
-    ui->cbRecTagGroup->setModel(new QStringListModel(lists));
+    ui->cbAuthorNames->setModel(new QStringListModel(lists));
+    //ui->cbRecTagGroup->setModel(new QStringListModel(lists));
 }
 
 void MainWindow::FillRecommederListView()
@@ -1533,6 +1563,7 @@ void MainWindow::FillRecommederListView()
         result.push_back(stat->authorName);
     recommendersModel->setStringList(result);
     ui->lvRecommenders->setModel(recommendersModel);
+    ui->cbAuthorNames->setModel(recommendersModel);
 }
 
 
@@ -1638,7 +1669,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
 
-    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecGroup->currentText()));
     auto recList = recsInterface->GetCurrentRecommendationList();
     auto authors = recsInterface->GetAuthorsForRecommendationList(recList);
     pbMain->setMaximum(authors.size());
@@ -1884,12 +1915,12 @@ void MainWindow::on_pbBuildRecs_clicked()
     recsInterface->LoadAvailableRecommendationLists();
 }
 
-void MainWindow::on_cbRecTagGroup_currentIndexChanged(const QString &tag)
-{
-    //ProcessTagIntoRecommenders(tag);
-    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
-    FillRecommederListView();
-}
+//void MainWindow::on_cbRecTagGroup_currentIndexChanged(const QString &tag)
+//{
+//    //ProcessTagIntoRecommenders(tag);
+//    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecTagGroup->currentText()));
+//    FillRecommederListView();
+//}
 
 void MainWindow::on_pbOpenAuthorUrl_clicked()
 {
@@ -1899,7 +1930,7 @@ void MainWindow::on_pbOpenAuthorUrl_clicked()
 void MainWindow::on_pbReprocessAuthors_clicked()
 {
     //ReprocessTagSumRecs();
-    ProcessListIntoRecommendations("lists/sneaky.txt");
+    ProcessListIntoRecommendations("lists/source.txt");
 }
 
 void MainWindow::on_cbRecTagBuildGroup_currentTextChanged(const QString &newText)
@@ -1932,4 +1963,40 @@ void MainWindow::OnCopyFavUrls()
         result += author->url("ffn") + "\n";
     }
     clipboard->setText(result);
+}
+
+void MainWindow::on_cbRecGroup_currentIndexChanged(const QString &arg1)
+{
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecGroup->currentText()));
+    ui->leCurrentListName->setText(ui->cbRecGroup->currentText());
+    FillRecommederListView();
+}
+
+void MainWindow::on_pbCreateNewList_clicked()
+{
+    QSharedPointer<core::RecommendationList> params;
+    auto listName = ui->leCurrentListName->text().trimmed();
+    auto listId = recsInterface->GetListIdForName(listName);
+    if(listId != -1)
+    {
+        QMessageBox::warning(nullptr, "Warning!", "Can't create a list with a name that already exists, choose another name");
+        return;
+    }
+    params->name = listName;
+    recsInterface->LoadListIntoDatabase(params);
+    FillRecTagCombobox();
+
+}
+
+void MainWindow::on_pbRemoveList_clicked()
+{
+    auto listName = ui->leCurrentListName->text().trimmed();
+    auto listId = recsInterface->GetListIdForName(listName);
+    if(listId == -1)
+        return;
+    auto button = QMessageBox::question(nullptr, "Question", "Do you really want to delete the recommendation list?");
+    if(button == QMessageBox::No)
+        return;
+    recsInterface->DeleteList(listId);
+    FillRecTagCombobox();
 }

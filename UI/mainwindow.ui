@@ -564,134 +564,6 @@
                    <string>Recommendations</string>
                   </attribute>
                   <layout class="QGridLayout" name="gridLayout_10">
-                   <item row="5" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_3">
-                     <item>
-                      <widget class="QPushButton" name="pbLoadAllRecommenders">
-                       <property name="text">
-                        <string>Reload Whole List</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="horizontalSpacer_3">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbCopyFavUrls">
-                       <property name="text">
-                        <string>Copy Urls</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbOpenWholeList">
-                       <property name="text">
-                        <string>Open Whole List</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="0" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_2">
-                     <item>
-                      <widget class="QPushButton" name="pbLoadPage">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="text">
-                        <string>Load</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QComboBox" name="cbRecTagGroup">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="chkShowRecsRegardlessOfTags">
-                       <property name="toolTip">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will show fics regardless of if you have tagged them already.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                       <property name="text">
-                        <string>Show Everything</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbOpenRecommendations">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="text">
-                        <string>Open</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbRemoveRecommender">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="text">
-                        <string>Remove</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="3" column="0">
-                    <widget class="QListView" name="lvRecommenders"/>
-                   </item>
-                   <item row="1" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_4">
-                     <item>
-                      <widget class="QLabel" name="label_6">
-                       <property name="text">
-                        <string>Url:</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLineEdit" name="leAuthorUrl"/>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbOpenAuthorUrl">
-                       <property name="text">
-                        <string>URL</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
                    <item row="2" column="0">
                     <widget class="QWidget" name="wdgWave" native="true">
                      <layout class="QGridLayout" name="gridLayout_5">
@@ -871,6 +743,194 @@
                       </item>
                      </layout>
                     </widget>
+                   </item>
+                   <item row="4" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_3">
+                     <item>
+                      <widget class="QPushButton" name="pbLoadAllRecommenders">
+                       <property name="text">
+                        <string>Reload Whole List</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_3">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbCopyFavUrls">
+                       <property name="text">
+                        <string>Copy Urls</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbOpenWholeList">
+                       <property name="text">
+                        <string>Open Whole List</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QListView" name="lvRecommenders"/>
+                   </item>
+                   <item row="0" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_2">
+                     <item>
+                      <widget class="QPushButton" name="pbCreateNewList">
+                       <property name="text">
+                        <string>Create</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_18">
+                       <property name="text">
+                        <string>List Name</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="leCurrentListName">
+                       <property name="maximumSize">
+                        <size>
+                         <width>200</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbAddAuthorToList">
+                       <property name="text">
+                        <string>Add Current Author</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbRemoveRecommender">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Remove Current Author</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_2">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbRemoveList">
+                       <property name="text">
+                        <string>Remove List</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="1" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_4">
+                     <item>
+                      <widget class="QPushButton" name="pbLoadPage">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>ReLoad</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_17">
+                       <property name="text">
+                        <string>Author:   </string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="cbAuthorNames">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="minimumSize">
+                        <size>
+                         <width>200</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>200</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="editable">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_6">
+                       <property name="text">
+                        <string>Url:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="leAuthorUrl"/>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbOpenRecommendations">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Open Faves</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbOpenAuthorUrl">
+                       <property name="text">
+                        <string>URL</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
                    </item>
                   </layout>
                  </widget>

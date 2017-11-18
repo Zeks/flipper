@@ -180,7 +180,9 @@ Rectangle {
                     height: 24
                     source: {
 
-                        var count = Funcs.dateDiffInDays(updated,new Date, _MS_PER_DAY)
+                        var countUpdated = Funcs.dateDiffInDays(updated,new Date, _MS_PER_DAY)
+                        var countPublished = Funcs.dateDiffInDays(published,new Date, _MS_PER_DAY)
+                        var count = Math.min(countUpdated,countPublished)
                         if(count < 30)
                             return "qrc:/icons/icons/updating_fresh.png"
                         else if(count < 365)
