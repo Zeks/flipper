@@ -159,8 +159,8 @@ private:
     void AddToProgressLog(QString);
     void FillRecTagBuildCombobox();
     void FillRecTagCombobox();
-    void FillRecommederListView();
-
+    void FillRecommenderListView(bool forceRefresh = false);
+    bool LoadAuthor(QString url);
     QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
 
     Ui::MainWindow *ui;
@@ -255,7 +255,6 @@ private slots:
     void on_chkTrackedFandom_toggled(bool checked);
     void on_pbLoadTrackedFandoms_clicked();
     void on_pbLoadPage_clicked();
-    void on_pbRemoveRecommender_clicked();
     void on_pbOpenRecommendations_clicked();
     void on_pbLoadAllRecommenders_clicked();
     void on_pbOpenWholeList_clicked();
@@ -279,6 +278,10 @@ private slots:
     void on_pbCreateNewList_clicked();
 
     void on_pbRemoveList_clicked();
+
+    void on_pbAddAuthorToList_clicked();
+
+    void on_pbRemoveAuthorFromList_clicked();
 
 signals:
     void pageTask(QString, QString, QDate, ECacheMode);

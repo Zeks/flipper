@@ -140,20 +140,20 @@ QString RecommendationLists::GetListNameForId(int id)
     return result;
 }
 
-QList<core::AuhtorStatsPtr > RecommendationLists::GetAuthorStatsForList(int id)
+QList<core::AuhtorStatsPtr > RecommendationLists::GetAuthorStatsForList(int id, bool forced)
 {
     QList<core::AuhtorStatsPtr > result;
     if(!EnsureList(id))
         return result;
-    if(cachedAuthorStats.contains(id))
-        result = cachedAuthorStats[id];
-    else
+    if(forced || !cachedAuthorStats.contains(id))
     {
         //otherwise, need to load it
         auto stats = database::puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
         cachedAuthorStats[id] = stats;
         result = stats;
     }
+    else
+        result = cachedAuthorStats[id];
     return result;
 }
 
@@ -298,16 +298,27 @@ bool RecommendationLists::IncrementAllValuesInListMatchingAuthorFavourites(int a
     return database::puresql::IncrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db);
 }
 
+bool RecommendationLists::DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId)
+{
+    return database::puresql::DecrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db);
+}
+
 bool RecommendationLists::LoadAuthorRecommendationStatsIntoDatabase(int listId, core::AuhtorStatsPtr stats)
 {
     return database::puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
 }
 
+bool RecommendationLists::RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId)
+{
+    return database::puresql::RemoveAuthorRecommendationStatsFromDatabase(listId, authorId, db);
+}
+
 bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
 {
-    AddToIndex(list);
     auto timeStamp = portableDBInterface->GetCurrentDateTime();
-    return database::puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
+    auto result = database::puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
+    AddToIndex(list);
+    return result;
 }
 
 bool RecommendationLists::UpdateFicCountInDatabase(int listId)
@@ -389,9 +400,9 @@ int RecommendationLists::GetCurrentRecommendationList() const
     return currentRecommendationList;
 }
 
-QStringList RecommendationLists::GetAllRecommendationListNames()
+QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
 {
-    if(lists.empty())
+    if(forced || lists.empty())
         LoadAvailableRecommendationLists();
     return nameIndex.keys();
 

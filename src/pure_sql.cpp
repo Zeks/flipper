@@ -678,7 +678,7 @@ QSharedPointer<core::RecommendationList> GetRecommendationList(QString name, QSq
     if(!ExecAndCheck(q))
         return result;
 
-    q.next();
+    if(q.next())
     {
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         result = list;
@@ -1119,6 +1119,27 @@ bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, 
     return true;
 }
 
+
+bool DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db)
+{
+    QString qs = QString(" update RecommendationListData set match_count = match_count-1 where "
+                         " list_id = :list_id "
+                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",authorId);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+
+
+    qs = QString(" delete from RecommendationListData where match_count <= 0");
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+
 QSet<QString> GetAllGenres(QSqlDatabase db)
 {
     QSet<QString> result;
@@ -1384,6 +1405,20 @@ QStringList GetLinkedPagesForList(int listId, QSqlDatabase db)
         result.push_back(q.value("url").toString());
     return result;
 }
+
+bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db)
+{
+    QString qs = QString("delete from recommendationlistauthorstats where list_id = :list_id and author_id = :author_id");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":list_id", listId);
+    q.bindValue(":author_id", authorId);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
+
 
 
 

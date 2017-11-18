@@ -55,17 +55,19 @@ public:
     bool LoadAuthorsForRecommendationList(int listId);
     void LoadAvailableRecommendationLists();
     bool LoadAuthorRecommendationStatsIntoDatabase(int listId, core::AuhtorStatsPtr stats);
+    bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId);
     bool LoadListIntoDatabase(core::RecPtr);
 
     core::AuhtorStatsPtr CreateAuthorRecommendationStatsForList(int authorId, int listId);
     bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId);
+    bool DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId);
     bool UpdateFicCountInDatabase(int listId);
     bool AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData = false);
     bool SetFicsAsListOrigin(QList<int> ficIds, int listId);
     bool IsAuthorInCurrentRecommendationSet(QString author);
 
-    QStringList GetAllRecommendationListNames();
-    QList<core::AuhtorStatsPtr> GetAuthorStatsForList(int id);
+    QStringList GetAllRecommendationListNames(bool forced = false);
+    QList<core::AuhtorStatsPtr> GetAuthorStatsForList(int id, bool forced = false);
     core::AuhtorStatsPtr GetIndividualAuthorStatsForList(int id, int authorId);
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId);

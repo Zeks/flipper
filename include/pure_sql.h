@@ -70,6 +70,7 @@ int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDa
 bool DeleteRecommendationList(int listId, QSqlDatabase db );
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
 bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db);
+bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db);
 bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db);
 bool DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db);
 bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
@@ -97,6 +98,7 @@ bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
 QStringList ReadUserTags(QSqlDatabase db);
 bool PushTaglistIntoDatabase(QStringList, QSqlDatabase);
 bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db);
+bool DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db);
 QSet<QString> GetAllGenres(QSqlDatabase db);
 // those are required for managing recommendation lists and somewhat outdated
 // moved them to dump temporarily

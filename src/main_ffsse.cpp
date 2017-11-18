@@ -30,7 +30,9 @@ int main(int argc, char *argv[])
     a.setApplicationName("ffnet sane search engine");
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    //dbInterface->BackupDatabase("Crawler.sqlite");
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    if(settings.value("Settings/doBackups", true).toBool())
+        dbInterface->BackupDatabase("CrawlerDB");
     qDebug() << "current appPath is: " << QDir::currentPath();
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
     auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");

@@ -137,23 +137,6 @@
                 </spacer>
                </item>
                <item>
-                <widget class="QCheckBox" name="chkShowOrigins">
-                 <property name="text">
-                  <string>Show Origins</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_16">
-                 <property name="text">
-                  <string>Min Recs</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QSpinBox" name="sbMinRecommendations"/>
-               </item>
-               <item>
                 <widget class="QCheckBox" name="chkRandomizeSelection">
                  <property name="toolTip">
                   <string>Together with &quot;Max fics&quot; checkbox, allow random navigation for a fandom if you feel like it.</string>
@@ -202,7 +185,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>2</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -767,6 +750,23 @@
                       </spacer>
                      </item>
                      <item>
+                      <widget class="QCheckBox" name="chkShowOrigins">
+                       <property name="text">
+                        <string>Show Origins</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_16">
+                       <property name="text">
+                        <string>Min Recs</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QSpinBox" name="sbMinRecommendations"/>
+                     </item>
+                     <item>
                       <widget class="QPushButton" name="pbCopyFavUrls">
                        <property name="text">
                         <string>Copy Urls</string>
@@ -809,6 +809,16 @@
                          <height>16777215</height>
                         </size>
                        </property>
+                       <property name="text">
+                        <string>Favourites</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="chkSyncListNameToView">
+                       <property name="text">
+                        <string>Sync to view</string>
+                       </property>
                       </widget>
                      </item>
                      <item>
@@ -819,7 +829,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QPushButton" name="pbRemoveRecommender">
+                      <widget class="QPushButton" name="pbRemoveAuthorFromList">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                          <horstretch>0</horstretch>

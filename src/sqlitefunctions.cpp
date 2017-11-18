@@ -193,7 +193,7 @@ bool BackupSqliteDatabase(QString dbName)
     qDebug() << entries;
     QString nameWithExtension = dbName + ".sqlite";
     if(!QFile::exists(nameWithExtension))
-        success = success && QFile::copy(dbName+ ".default", nameWithExtension);
+        success = success && QFile::copy(nameWithExtension+ ".default", nameWithExtension);
     QString backupName = "backups/" + dbName + "." + QDateTime::currentDateTime().date().toString("yyyy-MM-dd") + ".sqlite.zip";
     if(!QFile::exists(backupName))
         success = success && JlCompress::compressFile(backupName, "CrawlerDB.sqlite");
