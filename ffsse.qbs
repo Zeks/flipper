@@ -14,6 +14,7 @@ Depends { name: "Qt.core" }
 Depends { name: "Qt.widgets" }
 Depends { name: "Qt.network" }
 Depends { name: "Qt.gui" }
+
 Depends { name: "Qt.quick" }
 Depends { name: "Qt.concurrent" }
 Depends { name: "Qt.quickwidgets" }
@@ -21,7 +22,10 @@ Depends { name: "cpp" }
 Depends { name: "UniversalModels" }
 Depends { name: "logger" }
 
-cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
+cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY",
+                          "QT_QML_DEBUG"
+                         // ,"QT_LOGGING_TO_CONSOLE=1"
+                         ])
 cpp.includePaths: [
                 sourceDirectory,
                 sourceDirectory + "/include",
@@ -35,11 +39,22 @@ cpp.includePaths: [
 files: [
         "forms.qrc",
         "icons.qrc",
+        "include/Interfaces/authors.h",
+        "include/Interfaces/base.h",
+        "include/Interfaces/db_interface.h",
+        "include/Interfaces/fandoms.h",
+        "include/Interfaces/fanfics.h",
+        "include/Interfaces/ffn/ffn_authors.h",
+        "include/Interfaces/ffn/ffn_fanfics.h",
+        "include/Interfaces/genres.h",
+        "include/Interfaces/interface_sqlite.h",
+        "include/Interfaces/recommendation_lists.h",
+        "include/Interfaces/tags.h",
+        "include/container_utils.h",
         "include/fandomparser.h",
         "include/favparser.h",
         "include/ffnparserbase.h",
         "include/ficparser.h",
-        "include/init_database.h",
         "include/mainwindow.h",
         "include/pagegetter.h",
         "include/parse.h",
@@ -50,23 +65,38 @@ files: [
         "include/storyfilter.h",
         "include/tagwidget.h",
         "include/fanficdisplay.h",
+        "include/transaction.h",
         "include/url_utils.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
         "sqlite/sqlite3.c",
         "sqlite/sqlite3.h",
+        "src/Interfaces/authors.cpp",
+        "src/Interfaces/base.cpp",
+        "src/Interfaces/db_interface.cpp",
+        "src/Interfaces/fandoms.cpp",
+        "src/Interfaces/fanfics.cpp",
+        "src/Interfaces/ffn/ffn_authors.cpp",
+        "src/Interfaces/ffn/ffn_fanfics.cpp",
+        "src/Interfaces/genres.cpp",
+        "src/Interfaces/interface_sqlite.cpp",
+        "src/Interfaces/recommendation_lists.cpp",
+        "src/Interfaces/tags.cpp",
         "src/fandomparser.cpp",
         "src/favparser.cpp",
         "src/ffnparserbase.cpp",
         "src/ficparser.cpp",
-        "src/init_database.cpp",
         "src/main_ffsse.cpp",
+        "src/mainwindow_utility.cpp",
         "src/pagegetter.cpp",
+        "src/pure_sql.cpp",
         "src/querybuilder.cpp",
         "src/regex_utils.cpp",
         "src/section.cpp",
         "src/service_functions.cpp",
+        "src/sqlitefunctions.cpp",
         "src/storyfilter.cpp",
+        "src/transaction.cpp",
         "src/url_utils.cpp",
         "ui/mainwindow.ui",
         "ui/tagwidget.ui",

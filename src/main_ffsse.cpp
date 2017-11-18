@@ -1,59 +1,52 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #include "mainwindow.h"
+#include "Interfaces/db_interface.h"
+#include "Interfaces/interface_sqlite.h"
+#include "include/sqlitefunctions.h"
+
 #include <QApplication>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlError>
-#include <QMetaType>
-#include <QSqlDriver>
-#include <QSqlQuery>
-#include <QPluginLoader>
-#include "include/init_database.h"
-
-
-void CreateIndex(QString value)
-{
-    QSqlDatabase db = QSqlDatabase::database("CrawlerDB.sqlite");
-    QSqlQuery q(db);
-    q.prepare(value);
-    q.exec();
-    qDebug() << q.lastError();
-}
-
+#include <QDir>
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
-    database::BackupDatabase();
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(path);
-    db.open();
+    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    if(settings.value("Settings/doBackups", true).toBool())
+        dbInterface->BackupDatabase("CrawlerDB");
+    qDebug() << "current appPath is: " << QDir::currentPath();
+    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+    auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+
+    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
 
 
-    path = "PageCache.sqlite";
-    QSqlDatabase pcDb = QSqlDatabase::addDatabase("QSQLITE", "pagecache");
-    pcDb.setDatabaseName(path);
-    pcDb.open();
-
-
-    database::ReadDbFile("dbcode/dbinit.sql");
-    database::ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
-    database::ReindexTable("tags");
     MainWindow w;
+    w.dbInterface = dbInterface;
+    w.pageCacheInterface = pageCacheInterface;
+    w.InitInterfaces();
+    w.Init();
     w.show();
-    w.CheckSectionAvailability();
-
-    database::InstallCustomFunctions();
-    //database::EnsureFandomsNormalized();
-
-    //database::EnsureFandomsFilled();
-    //database::EnsureWebIdsFilled();
-//    database::CalculateFandomFicCounts();
-//    database::CalculateFandomAverages();
-    //database::EnsureFFNUrlsShort();
-    //auto result = database::EnsureTagForRecommendations();
-    //database::PassTagsIntoTagsTable();
 
     return a.exec();
 }

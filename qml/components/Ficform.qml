@@ -7,6 +7,7 @@ import "Funcs.js" as Funcs
 Rectangle {
     property string delTitle : title
     property string delAuthor : author
+    //property string delFicId: ficId
     property int delRow : rownum
     property int indexOfThisDelegate: index
     signal mouseClicked
@@ -80,6 +81,12 @@ Rectangle {
             id: txtUpdated
             height: 24
             z: 1
+            visible: {
+                var result
+                result = updated.getYear() > 70
+                //console.debug('year: ' + updated.getYear())
+                return result
+            }
             text: qsTr("Upd:") + Qt.formatDate(updated, "dd/MM/yyyy")
             font.pixelSize: 12
         }
@@ -120,7 +127,7 @@ Rectangle {
                 width: 517
                 height: 21
                 textFormat: Text.RichText;
-                text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net" + url + "\">" + title + "</a></body></html>"
+                text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + title + "</a></body></html>"
                 verticalAlignment: Text.AlignVCenter
                 style: Text.Raised
                 font.pointSize: 16
@@ -141,7 +148,7 @@ Rectangle {
                     propagateComposedEvents : true
 
                     onClicked : {
-                        lvFics.urlCopyClicked("http://www.fanfiction.net" + url);
+                        lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
                     }
                 }
             }
@@ -173,7 +180,9 @@ Rectangle {
                     height: 24
                     source: {
 
-                        var count = Funcs.dateDiffInDays(updated,new Date, _MS_PER_DAY)
+                        var countUpdated = Funcs.dateDiffInDays(updated,new Date, _MS_PER_DAY)
+                        var countPublished = Funcs.dateDiffInDays(published,new Date, _MS_PER_DAY)
+                        var count = Math.min(countUpdated,countPublished)
                         if(count < 30)
                             return "qrc:/icons/icons/updating_fresh.png"
                         else if(count < 365)
@@ -230,7 +239,7 @@ Rectangle {
 
                 onActivated:  {
                     //print("Current text: " + index)
-                    lvFics.chapterChanged(index, author, title)
+                    lvFics.chapterChanged(index, ID)
                 }
                 onModelChanged: {currentIndex = atChapter}
 
@@ -268,6 +277,13 @@ Rectangle {
                 sourceSize.width: 24
                 visible: recommendations > 0
                 source: "qrc:/icons/icons/heart.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
+                    }
+                }
             }
             Text {
                 id: txtRecCount
@@ -282,7 +298,7 @@ Rectangle {
                 id: txtWords
                 width: 70
                 height: 24
-                text: { return "Words:" + words}
+                text: { return "Words: " + Funcs.thousandSeparator(words)}
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 16
             }

@@ -1,5 +1,23 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #include "querybuilder.h"
-#include "init_database.h"
+#include "pure_sql.h"
+#include "Interfaces/db_interface.h"
 #include <QDebug>
 
 namespace  core{
@@ -9,9 +27,15 @@ QString WrapTag(QString tag)
     return tag;
 }
 
-Query DefaultQueryBuilder::Build(StoryFilter filter)
+DefaultQueryBuilder::DefaultQueryBuilder()
 {
-    query.Clear();
+    query = NewQuery();
+    idQuery = NewQuery();
+}
+
+QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
+{
+    query = NewQuery();
 
     queryString.clear();
     queryString = "ID, ";
@@ -24,8 +48,8 @@ Query DefaultQueryBuilder::Build(StoryFilter filter)
     queryString+= BuildSortMode(filter);
     queryString+= CreateLimitQueryPart(filter);
 
-    qDebug() << queryString;
-    query.str = "select " + queryString;
+    query->str = "select " + queryString;
+    qDebug() << query->str;
     return query;
 }
 
@@ -35,6 +59,7 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
     queryString+=ProcessSumFaves(filter);
     queryString+=ProcessSumRecs(filter);
     queryString+=ProcessTags(filter);
+    queryString+=ProcessUrl(filter);
 
     return queryString;
 }
@@ -92,7 +117,12 @@ QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 {
-    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id) as sumrecs, ";
+    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id %1) as sumrecs, ";
+    if(filter.showOriginsInLists)
+        currentRecTagValue=currentRecTagValue.arg("");
+    else
+        currentRecTagValue=currentRecTagValue.arg("and is_origin <> 1");
+
     return currentRecTagValue;
 }
 
@@ -102,9 +132,9 @@ QString DefaultQueryBuilder::ProcessTags(StoryFilter)
     return currentTagValue;
 }
 
-QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
+QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
 {
-    QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, ";
+    QString currentTagValue = " f.ffn_id as url, ";
     return currentTagValue;
 }
 
@@ -158,14 +188,16 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessActiveRecommendationsPart(StoryFilter filter)
 {
     QString queryString;
-    if(filter.mode == core::StoryFilter::filtering_in_recommendations)
+    if(filter.mode == core::StoryFilter::filtering_in_recommendations && filter.useThisRecommenderOnly != -1)
     {
         QString qsl = " and id in (select fic_id from recommendations %1)";
-
-        if(filter.useThisRecommenderOnly != -1)
-            qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(filter.useThisRecommenderOnly)));
-        else
-            qsl=qsl.arg(QString(""));
+        qsl=qsl.arg(QString(" where recommender_id = %1 ").arg(QString::number(filter.useThisRecommenderOnly)));
+        queryString+=qsl;
+    }
+    else if(filter.mode == core::StoryFilter::filtering_in_recommendations)
+    {
+        QString qsl = " and id in (select fic_id from RecommendationListData where list_id = %1)";
+        qsl=qsl.arg(QString::number(filter.listForRecommendations));
         queryString+=qsl;
     }
     return queryString;
@@ -176,9 +208,11 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
     QString queryString;
     if(filter.sortMode == StoryFilter::favrate)
         queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
-
     if(filter.sortMode == StoryFilter::reccount)
-        queryString += QString(" AND sumrecs > 0 ");
+        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
+    else if(filter.minRecommendations > 0)
+        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
+
     if(filter.sortMode == StoryFilter::favrate)
         queryString+= " and published <> updated and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
     return queryString;
@@ -195,6 +229,8 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
         diffField = " FAVOURITES DESC";
     else if(filter.sortMode == StoryFilter::updatedate)
         diffField = " updated DESC";
+    else if(filter.sortMode == StoryFilter::publisdate)
+        diffField = " published DESC";
     else if(filter.sortMode == StoryFilter::reccount)
         diffField = " sumrecs desc";
     else if(filter.sortMode == StoryFilter::favrate)
@@ -267,10 +303,10 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     {
         if(rng)
         {
-            Query q;
-            q.bindings = query.bindings;
-            q.str = wherePart;
-            auto value = rng->Get(q);
+            auto q = NewQuery();
+            q->bindings = query->bindings;
+            q->str = wherePart;
+            auto value = rng->Get(q, db);
             if(value == "-1")
                 return "";
             idList+=value;
@@ -282,16 +318,16 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     return result;
 }
 
-void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, Query& q)
+void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, QSharedPointer<Query> q)
 {
     if(filter.minWords > 0)
-        q.bindings[":minwordcount"] = filter.minWords;
+        q->bindings[":minwordcount"] = filter.minWords;
     if(filter.maxWords > 0)
-        q.bindings[":maxwordcount"] = filter.maxWords;
+        q->bindings[":maxwordcount"] = filter.maxWords;
     if(filter.minFavourites> 0)
-        q.bindings[":favourites"] = filter.minFavourites;
+        q->bindings[":favourites"] = filter.minFavourites;
     if(filter.listForRecommendations > -1)
-        q.bindings[":list_id"] = filter.listForRecommendations;
+        q->bindings[":list_id"] = filter.listForRecommendations;
 }
 
 QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)
@@ -311,14 +347,19 @@ QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
     return result;
 }
 
-
-QString DefaultRNGgenerator::Get(Query query)
+QSharedPointer<Query> DefaultQueryBuilder::NewQuery()
 {
-    QString where = query.str;
+    return QSharedPointer<Query>(new Query);
+}
+
+
+QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
+{
+    QString where = query->str;
 
     if(!randomIdLists.contains(where))
     {
-        auto idList = database::GetIdListForQuery(query);
+        auto idList = portableDBInterface->GetIdListForQuery(query);
         if(idList.size() == 0)
             idList.push_back("-1");
         randomIdLists[where] = idList;
@@ -326,7 +367,7 @@ QString DefaultRNGgenerator::Get(Query query)
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 eng(rd()); // seed the generator
     auto& currentList = randomIdLists[where];
-    std::uniform_int_distribution<> distr(0, currentList.size()); // define the range
+    std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
     auto value = distr(eng);
     return currentList[value];
 }

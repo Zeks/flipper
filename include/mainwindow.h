@@ -1,3 +1,20 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #pragma once
 
 #include <QMainWindow>
@@ -33,7 +50,17 @@ class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
 class QStringListModel;
-
+namespace interfaces{
+class Fandoms;
+class Fanfics;
+class Authors;
+class Tags;
+class Genres;
+class RecommendationLists;
+}
+namespace database {
+class IDBWrapper;
+}
 namespace Ui {
 class MainWindow;
 }
@@ -58,11 +85,20 @@ public:
         lfbp_recs = 1
     };
     explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
     void Init();
+    ~MainWindow();
+    void ReInitFandoms();
+    void InitInterfaces();
     void InitConnections();
     bool CheckSectionAvailability();
-
+    QSharedPointer<interfaces::Fandoms> fandomsInterface;
+    QSharedPointer<interfaces::Fanfics> fanficsInterface;
+    QSharedPointer<interfaces::Authors> authorsInterface;
+    QSharedPointer<interfaces::Tags> tagsInterface;
+    QSharedPointer<interfaces::Genres> genresInterface;
+    QSharedPointer<interfaces::RecommendationLists> recsInterface;
+    QSharedPointer<database::IDBWrapper> dbInterface;
+    QSharedPointer<database::IDBWrapper> pageCacheInterface;
 private:
 
     void SetupFanficTable();
@@ -79,11 +115,13 @@ private:
     void ReadSettings();
     void WriteSettings();
 
-    void RequestAndProcessPage(QString fandom, QDateTime lastFandomUpdatedate, QString url, bool useLastIndex = false);
+    QString GetCurrentFandomName();
+
+    void RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
     WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 
 
-    QStringList GetCurrentFilterUrls(QString selectedFandom, bool crossoverState, bool ignoreTrackingState = false);
+
     QString GetFandom(QString text);
 
     void DisableAllLoadButtons();
@@ -91,24 +129,16 @@ private:
 
     void LoadData();
     QSqlQuery BuildQuery();
-    QString BuildBias();
-
-    void LoadIntoDB(core::Fic&);
-
-    QString WrapTag(QString tag);
-    void HideCurrentID();
 
     void UpdateFandomList(std::function<QString(core::Fandom)> linkGetter);
     void InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names);
     void PopulateComboboxes();
 
-    QStringList GetCrossoverListFromDB();
-
-    QStringList GetCrossoverUrl(QString, bool ignoreTrackingState = false);
-    QStringList GetNormalUrl(QString, bool ignoreTrackingState = false);
+    //QStringList GetCrossoverUrl(QString);
+    //QStringList GetNormalUrl(QString);
 
     void OpenTagWidget(QPoint, QString url);
-    void ReadTags();
+    void ProcessTagsIntoGui();
 
     void SetTag(int id, QString tag, bool silent = false);
     void UnsetTag(int id, QString tag);
@@ -117,7 +147,7 @@ private:
     void CallExpandedWidget();
 
     QStringList SortedList(QStringList);
-    QStringList ReverseSortedList(QStringList list);
+    QList<QSharedPointer<core::Author> > ReverseSortedList(QList<QSharedPointer<core::Author> > list);
     QStringList GetUniqueAuthorsFromActiveRecommenderSet();
 
     void CreatePageThreadWorker();
@@ -129,7 +159,9 @@ private:
     void AddToProgressLog(QString);
     void FillRecTagBuildCombobox();
     void FillRecTagCombobox();
-
+    void FillRecommenderListView(bool forceRefresh = false);
+    bool LoadAuthor(QString url);
+    QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
 
     Ui::MainWindow *ui;
     int processedCount = 0;
@@ -137,7 +169,6 @@ private:
     int timerId = -1;
     int pageCounter = 0;
     QMenu browserMenu;
-    int currentRecommenderId = -1;
     QEventLoop managerEventLoop;
     QMap<QPair<QString,QString>, core::Fandom> names;
     QString currentProcessedSection;
@@ -147,21 +178,16 @@ private:
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
-    QStringList currentFilterUrls;
+    //QStringList currentFilterUrls;
     QString currentFilterUrl;
     bool ignoreUpdateDate = false;
     QStringList tagList;
     QStringListModel* tagModel;
     QStringListModel* recentFandomsModel= nullptr;
     QStringListModel* recommendersModel = nullptr;
-    QHash<QString, core::Author> recommenders;
     QLineEdit* currentExpandedEdit = nullptr;
     TagWidget* tagWidgetDynamic = new TagWidget;
     QQuickWidget* qwFics = nullptr;
-    QString currentFandom;
-    bool isCrossover = false;
-    void PopulateIdList(std::function<QSqlQuery(QString)> bindQuery, QString query, bool forceUpdate = false);
-    QString AddIdList(QString query, int count);
     QString CreateLimitQueryPart();
     QHash<QString, QList<int>> randomIdLists;
     QDialog* expanderWidget = nullptr;
@@ -172,30 +198,38 @@ private:
     QList<WebPage> pageQueue;
     core::DefaultQueryBuilder queryBuilder;
     core::StoryFilter filter;
-    QHash<QString, core::RecommendationList> lists;
-    void ProcessRecommendationListsFromDB(QList<core::RecommendationList>);
+    //QHash<QString, core::RecommendationList> lists;
+
+
+
+
 
     void LoadMoreAuthors(bool reprocessCache = false);
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
-    void UpdateAllAuthorsWith(std::function<void (core::Author, WebPage)> updater);
+    void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
     void ReprocessAuthors();
     void ProcessListIntoRecommendations(QString list);
-    void BuildRecommendations(core::RecommendationList params);
-    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode);
+    int BuildRecommendations(QSharedPointer<core::RecommendationList> params);
+    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false);
+    QString AppendCurrentSearchParameters(QString url);
+    void ReinitRecent(QString name);
+
 public slots:
     void ProcessFandoms(WebPage webPage);
     void ProcessCrossovers(WebPage webPage);
-    void OnChapterUpdated(QVariant, QVariant, QVariant);
+
+    void OnChapterUpdated(QVariant, QVariant);
     void OnTagAdd(QVariant tag, QVariant row);
     void OnTagRemove(QVariant tag, QVariant row);
-    void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
+
     void WipeSelectedFandom(bool);
     void OnNewPage(WebPage);
     void OnCopyFicUrl(QString);
+    void OnOpenRecommenderLinks(QString);
     void OnCopyAllUrls();
+    void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
 private slots:
-    void OnSetTag(QString);
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);
     void OnCheckboxFilter(int);
@@ -219,11 +253,8 @@ private slots:
     void OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous);
 
     void on_chkTrackedFandom_toggled(bool checked);
-    void on_rbNormal_clicked();
-    void on_rbCrossovers_clicked();
     void on_pbLoadTrackedFandoms_clicked();
     void on_pbLoadPage_clicked();
-    void on_pbRemoveRecommender_clicked();
     void on_pbOpenRecommendations_clicked();
     void on_pbLoadAllRecommenders_clicked();
     void on_pbOpenWholeList_clicked();
@@ -233,16 +264,27 @@ private slots:
 
     void on_pbBuildRecs_clicked();
 
-    void on_cbRecTagGroup_currentIndexChanged(const QString &arg1);
+    //void on_cbRecTagGroup_currentIndexChanged(const QString &arg1);
 
     void on_pbOpenAuthorUrl_clicked();
 
     void on_pbReprocessAuthors_clicked();
 
     void on_cbRecTagBuildGroup_currentTextChanged(const QString &arg1);
+    void OnCopyFavUrls();
+
+    void on_cbRecGroup_currentIndexChanged(const QString &arg1);
+
+    void on_pbCreateNewList_clicked();
+
+    void on_pbRemoveList_clicked();
+
+    void on_pbAddAuthorToList_clicked();
+
+    void on_pbRemoveAuthorFromList_clicked();
 
 signals:
-    void pageTask(QString, QString, QDateTime, ECacheMode);
+    void pageTask(QString, QString, QDate, ECacheMode);
     void pageTaskList(QStringList, ECacheMode);
 };
 

@@ -6,7 +6,7 @@
 #include <QSqlDriver>
 #include <QSqlQuery>
 #include <QPluginLoader>
-#include "include/init_database.h"
+
 #include "include/servitorwindow.h"
 
 

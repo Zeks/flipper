@@ -1,15 +1,34 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #pragma once
 #include "include/section.h"
-#include "include/init_database.h"
+#include "include/Interfaces/fanfics.h"
+#include "include/ffnparserbase.h"
 #include <QString>
 #include <QSqlDatabase>
 #include <QDateTime>
 #include <functional>
-class FavouriteStoryParser
+class FavouriteStoryParser : public FFNParserBase
 {
 public:
-
-    QList<core::Fic> ProcessPage(QString url,QString&);
+    FavouriteStoryParser(){}
+    FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics);
+    QList<QSharedPointer<core::Fic>> ProcessPage(QString url,QString&);
     core::Section GetSection( QString text, int start);
     QString ExtractRecommenderNameFromUrl(QString url);
     void GetAuthor(core::Section& , int& startfrom, QString text);
@@ -28,18 +47,22 @@ public:
     void ClearProcessed();
     void ClearDoneCache();
     void WriteProcessed();
-    void WriteJustAuthorName();
     void WriteRecommenderInfo();
     void SetCurrentTag(QString);
 
 
     QStringList diagnostics;
-    QList<core::Fic> processedStuff;
-    database::WriteStats writeSections;
+    QList<QSharedPointer<core::Fic>> processedStuff;
+
     core::FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;
+    QSet<QString> fandoms;
+    //! todo needs to be filled
+
+    //QSharedPointer<interfaces::Fandoms> fandomInterface;
+//    QSharedPointer<interfaces::DataInterfaces> interfaces;
 
 };
 

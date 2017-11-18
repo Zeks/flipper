@@ -1,7 +1,25 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #include "tagwidget.h"
 #include "ui_tagwidget.h"
+#include "Interfaces/fandoms.h"
 #include "genericeventfilter.h"
-#include "init_database.h"
+#include "pure_sql.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QStringListModel>
@@ -40,7 +58,7 @@ void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
         ui->edtTags->insertHtml(toInsert);
     }
     ui->cbAssignTag->setModel(new QStringListModel(allTags));
-    ui->cbFandom->setModel(new QStringListModel(database::GetFandomListFromDB(ui->cbSection->currentText())));
+    ui->cbFandom->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
 }
 
 QStringList TagWidget::GetSelectedTags()
@@ -167,5 +185,5 @@ void TagWidget::OnRemoveTagFromEdit(QString tag)
 
 void TagWidget::on_pbAssignTagToFandom_clicked()
 {
-    database::AssignTagToFandom(ui->cbAssignTag->currentText(), ui->cbFandom->currentText());
+    fandomsInterface->AssignTagToFandom(ui->cbFandom->currentText(), ui->cbAssignTag->currentText());
 }

@@ -1,35 +1,61 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #include "include/ficparser.h"
 #include "include/section.h"
-#include "include/init_database.h"
 #include "include/regex_utils.h"
 #include "include/url_utils.h"
+#include "include/pure_sql.h"
+#include "Interfaces/fanfics.h"
+#include "Interfaces/authors.h"
+#include "Interfaces/genres.h"
 #include <QDebug>
 #include <QSqlDatabase>
 #include <algorithm>
 #include <chrono>
 
-core::Fic FicParser::ProcessPage(QString url, QString& str)
+FicParser::FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
+                     QSharedPointer<interfaces::Genres> genres)
+: FFNParserBase(fanfics), genres(genres){
+
+}
+
+QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
 {
     core::Section section;
     int currentPosition = 0;
     if(str.contains("Unable to locate story. Code 1"))
     {
-        database::TryDeactivate(url, "ffn");
+        auto fics = fanfics;
+        int ficId = fics->GetIdForUrl(url);
+        fics->DeactivateFic(ficId);
         return section.result;
     }
 
-    section = GetSection(str, currentPosition);
-    section.result.webId = url_utils::GetWebId(url, "ffn").toInt();
-    qDebug() << "Processing fic: " << section.result.webId;
+    section = GetSection(str);
+    section.result->webId = url_utils::GetWebId(url, "ffn").toInt();
+    qDebug() << "Processing fic: " << section.result->webId;
     currentPosition = section.start;
 
-    GetAuthor(section, currentPosition, str);
-    WriteJustAuthorName(section.result);
-
+    GetAuthor(section, str);
     GetFandom(section, currentPosition, str);
-    GetTitle(section, currentPosition, str);
-    GetSummary(section, currentPosition, str);
-    GetStatSection(section, currentPosition, str);
+    GetTitle(section,  str);
+    GetSummary(section,  str);
+    GetStatSection(section,  str);
 
     DetermineMarkedSubsectionPresence(section);
     ProcessUnmarkedSections(section);
@@ -37,35 +63,37 @@ core::Fic FicParser::ProcessPage(QString url, QString& str)
     auto& stat = section.statSection;
 
     // reading marked section data
-    GetTaggedSection(stat.text, stat.rated, "target='rating'>Fiction\\s\\s([A-Z])", [&section](QString val){ section.result.rated = val;});
-    GetTaggedSection(stat.text, stat.chapters, "Chapters:\\s(\\d+)", [&section](QString val){ section.result.chapters = val;});
-    GetTaggedSection(stat.text, stat.words, "Words:\\s(\\d+,\\d+)", [&section](QString val){section.result.wordCount = val;});
-    GetTaggedSection(stat.text, stat.reviews, "(\\d+)</a>", [&section](QString val){ section.result.reviews = val;});
-    GetTaggedSection(stat.text, stat.favs, "Favs:\\s(\\d+)", [&section](QString val){ section.result.favourites = val;});
-    GetTaggedSection(stat.text, stat.follows, "Follows:\\s(\\d+)", [&section](QString val){ section.result.follows = val;});
-    GetTaggedSection(stat.text, stat.status, "Status:\\s(\\d+)", [&section](QString val){
+    GetTaggedSection(stat.text, "target='rating'>Fiction\\s\\s([A-Z])", [&section](QString val){ section.result->rated = val;});
+    GetTaggedSection(stat.text, "Chapters:\\s(\\d+)", [&section](QString val){ section.result->chapters = val;});
+    GetTaggedSection(stat.text, "Words:\\s(\\d+,\\d+)", [&section](QString val){section.result->wordCount = val;});
+    GetTaggedSection(stat.text, "(\\d+)</a>", [&section](QString val){ section.result->reviews = val;});
+    GetTaggedSection(stat.text, "Favs:\\s(\\d+)", [&section](QString val){ section.result->favourites = val;});
+    GetTaggedSection(stat.text, "Follows:\\s(\\d+)", [&section](QString val){ section.result->follows = val;});
+    GetTaggedSection(stat.text, "Status:\\s(\\d+)", [&section](QString val){
         if(val != "not found")
-            section.result.complete = 1;}
+            section.result->complete = 1;}
     );
-    GetTaggedSection(stat.text, stat.updated, "data-xutime='(\\d+)'", [&section](QString val){
+    GetTaggedSection(stat.text, "data-xutime='(\\d+)'", [&section](QString val){
         if(val != "not found")
         {
-            section.result.updated.setTime_t(val.toInt());
-            qDebug() << val << section.result.updated;
+            section.result->updated.setTime_t(val.toInt());
+            qDebug() << val << section.result->updated;
         }
     });
-    GetTaggedSection(stat.text, stat.published, "data-xutime='(\\d+)'", [&section](QString val){
+    GetTaggedSection(stat.text, "data-xutime='(\\d+)'", [&section](QString val){
         if(val != "not found")
         {
-            section.result.published.setTime_t(val.toInt());
-            qDebug() << val << section.result.published;
+            section.result->published.setTime_t(val.toInt());
+            qDebug() << val << section.result->published;
         }
     }, 1);
     // if something doesn't have update date then we've read "published" incorrectly, fixing
     if(!section.statSection.updated.isValid)
-        section.result.published = section.result.updated;
-    section.result.isValid = true;
-    processedStuff = section.result;
+        section.result->published = section.result->updated;
+    section.result->isValid = true;
+    //auto tempResult = QSharedPointer<core::Fic>(new core::Fic>);
+    //*tempResult = section.result;
+    //processedStuff = {tempResult};
     return section.result;
 }
 
@@ -82,7 +110,7 @@ core::Section::Tag FicParser::GetStatTag(QString text, QString tag)
     return result;
 }
 
-void FicParser::GetTaggedSection(QString text, core::Section::Tag tag, QString rxString, std::function<void (QString)> functor, int skipCount)
+void FicParser::GetTaggedSection(QString text,  QString rxString, std::function<void (QString)> functor, int skipCount)
 {
     QRegExp rx(rxString);
     int indexStart = rx.indexIn(text);
@@ -138,7 +166,9 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
             return;
 
         QStringList genreCandidates = splittings.at(0).split("/");
-        bool isGenre = database::IsGenreList(genreCandidates, "ffn");
+        bool isGenre = false;
+        if(genres)
+            isGenre = genres->IsGenreList(genreCandidates);
         if(isGenre)
         {
             ProcessGenres(section, splittings.at(0));
@@ -167,7 +197,9 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
             //       if no match is found its characters
 
             QStringList genreCandidates = splittings.at(0).split("/");
-            bool isGenre = database::IsGenreList(genreCandidates, "ffn");
+            bool isGenre = false;
+            if(genres)
+                isGenre = genres->IsGenreList(genreCandidates);
             if(isGenre)
                 ProcessGenres(section, splittings.at(0));
             else
@@ -198,49 +230,10 @@ void FicParser::ClearProcessed()
     processedStuff = decltype(processedStuff)();
 }
 
-void FicParser::WriteProcessed(QHash<QString, int> & knownFandoms)
+void FicParser::WriteProcessed()
 {
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    writeSections = database::ProcessFicsIntoUpdateAndInsert({processedStuff}, true);
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Filtering done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    auto startInsert = std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresUpdate)
-    {
-        database::UpdateInDB(section);
-        database::WriteFandomsForStory(section, knownFandoms);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startInsert;
-    qDebug() << "Update done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    //database::DropAllFanficIndexes();
-    auto startUpdate= std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresInsert)
-    {
-        database::InsertIntoDB(section);
-        database::WriteFandomsForStory(section, knownFandoms);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startUpdate;
-    qDebug() << "Inserts done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-
-    ClearProcessed();
-    elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-}
-
-void FicParser::WriteJustAuthorName(core::Fic& fic)
-{
-    fic.author.Log();
-
-    if(fic.author.GetIdStatus() == core::AuthorIdStatus::unassigned)
-        fic.author.AssignId(database::GetAuthorIdFromUrl(fic.author.url("ffn")));
-
-    if(fic.author.GetIdStatus() == core::AuthorIdStatus::not_found)
-    {
-        database::WriteRecommender(fic.author);
-        fic.author.AssignId(database::GetAuthorIdFromUrl(fic.author.url("ffn")));
-    }
-    if(rewriteAuthorName)
-        database::AssignNewNameForRecommenderId(fic.author);
+    fanfics->ProcessIntoDataQueues(processedStuff);
+    fanfics->FlushDataQueues();
 }
 
 void FicParser::SetRewriteAuthorNames(bool value)
@@ -256,14 +249,14 @@ void FicParser::GetFandom(core::Section & section, int &, QString text)
     full = full.replace(" Crossover", "");
     QStringList split = full.split(" + ", QString::SkipEmptyParts);
 
-    section.result.fandom = full;
-    section.result.fandoms = split;
-    qDebug() << section.result.fandoms;
-    qDebug() << section.result.fandom;
+    section.result->fandom = full;
+    section.result->fandoms = split;
+    qDebug() << section.result->fandoms;
+    qDebug() << section.result->fandom;
 }
 
 
-void FicParser::GetAuthor(core::Section & section, int &startfrom, QString text)
+void FicParser::GetAuthor(core::Section & section,  QString text)
 {
     auto full = GetDoubleNarrow(text,"/u/\\d+/", "</a>", true,
                                 "",  "'>", false,
@@ -274,11 +267,15 @@ void FicParser::GetAuthor(core::Section & section, int &startfrom, QString text)
     auto index = rxEnd.indexIn(text);
     if(index == -1)
         return;
-    section.result.author.SetUrl("ffn",rxEnd.cap(1));
-    section.result.author.name = full;
+
+    QSharedPointer<core::Author> author(new core::Author);
+    section.result->author = author;
+    section.result->author->SetUrl("ffn",rxEnd.cap(1));
+    section.result->author->name = full;
+    queuedAuthor = author;
 }
 
-void FicParser::GetTitle(core::Section & section, int& startfrom, QString text)
+void FicParser::GetTitle(core::Section & section,QString text)
 {
     QRegExp rx("Follow/Fav</button><b\\sclass='xcontrast[_]txt'>(.*)</");
     rx.setMinimal(true);
@@ -288,29 +285,29 @@ void FicParser::GetTitle(core::Section & section, int& startfrom, QString text)
         qDebug() << "failed to get title";
         return;
     }
-    section.result.title = rx.cap(1);
-    qDebug() << section.result.title;
+    section.result->title = rx.cap(1);
+    qDebug() << section.result->title;
 }
 
-void FicParser::GetStatSection(core::Section &section, int &startfrom, QString text)
+void FicParser::GetStatSection(core::Section &section,  QString text)
 {
     auto full = GetSingleNarrow(text,"Rated:", "\\sid:", true);
     qDebug() << full;
     section.statSection.text = full;
 }
 
-void FicParser::GetSummary(core::Section & section, int& startfrom, QString text)
+void FicParser::GetSummary(core::Section & section, QString text)
 {
     auto summary = GetDoubleNarrow(text,
                     "Private\\sMessage", "</div", true,
                     "", "'>", false,
                     2);
 
-    section.result.summary = summary;
+    section.result->summary = summary;
     qDebug() << summary;
 }
 
-core::Section FicParser::GetSection(QString text, int start)
+core::Section FicParser::GetSection(QString text)
 {
     core::Section section;
     section.start = 0;

@@ -1,8 +1,39 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #pragma once
 #include <QString>
 #include <QDateTime>
+#include <QSharedPointer>
 namespace core {
 
+class DBEntity{
+public:
+    bool HasChanges() const {return hasChanges;}
+    virtual ~DBEntity(){}
+    bool hasChanges = false;
+};
+
+enum class UpdateMode
+{
+    none = -1,
+    insert = 0,
+    update = 1
+};
 
 enum class AuthorIdStatus
 {
@@ -10,8 +41,12 @@ enum class AuthorIdStatus
     not_found = -2,
     valid = 0
 };
-
-struct Author{
+class Author;
+typedef QSharedPointer<Author> AuthorPtr;
+class Author : public DBEntity{
+    public:
+    static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
+    ~Author(){}
     void Log();
     int id= -1;
     AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
@@ -33,9 +68,11 @@ struct Author{
     QDateTime firstPublishedFic;
     QDateTime lastUpdated;
     int ficCount = -1;
+    int recCount = -1;
     int favCount = -1;
     bool isValid = false;
     QString website = "";
+    int webId = -1;
 
     void SetUrl(QString type, QString url)
     {
@@ -47,22 +84,45 @@ struct Author{
             return urls[type];
         return "";
     }
+    UpdateMode updateMode = UpdateMode::none;
 };
 
-struct FavouritesPage
+class FavouritesPage
 {
-    Author author;
+    public:
+    QSharedPointer<Author> author;
     QString pageData;
     //type of website, ffn or ao3
 
 };
 
+class Fic;
+typedef QSharedPointer<Fic> FicPtr;
 
-struct Fic{
+class Fic : public DBEntity{
+    public:
+    class FicCalcStats
+    {
+    public:
+        double wcr;
+        double wcr_adjusted;
+        double reviewsTofavourites;
+        int age;
+        int daysRunning;
+
+    };
+    Fic(){
+        author = QSharedPointer<Author>(new Author);
+    };
+    Fic(const Fic&) = default;
+    Fic& operator=(const Fic&) = default;
+    ~Fic(){}
+
+    static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
     int complete=0;
     int atChapter=0;
     int webId = -1;
-    int ID = -1;
+    int id = -1;
 
     QString wordCount = 0;
     QString chapters = 0;
@@ -73,7 +133,7 @@ struct Fic{
 
     QString fandom;
     QStringList fandoms;
-    QString isCrossover = false;
+    bool isCrossover = false;
     QString title;
     //QString genres;
     QStringList genres;
@@ -82,15 +142,19 @@ struct Fic{
     QString statSection;
 
     QString tags;
-    QString origin;
+    //QString origin;
     QString language;
+
     QDateTime published;
     QDateTime updated;
     QString charactersFull;
     QStringList characters;
     bool isValid =false;
-    Author author;
+    int authorId = -1;
+    QSharedPointer<Author> author;
+
     QHash<QString, QString> urls;
+
     void SetGenres(QString genreString, QString website){
 
         this->genreString = genreString;
@@ -116,13 +180,21 @@ struct Fic{
         urls[type] = url;
         urlFFN = url;
     }
+    int ffn_id = -1;
+    int ao3_id = -1;
+    int sb_id = -1;
+    int sv_id = -1;
     QString urlFFN;
     int recommendations = 0;
     QString webSite = "ffn";
+    UpdateMode updateMode = UpdateMode::none;
+    FicCalcStats calcStats;
 };
 
-struct Section
+class Section : public DBEntity
 {
+    public:
+    Section();
     struct Tag
     {
         Tag(){}
@@ -168,11 +240,15 @@ struct Section
     int statSectionEnd=0;
 
     StatSection statSection;
-    Fic result;
+    QSharedPointer<Fic> result;
     bool isValid =false;
 };
-struct Fandom
+class Fandom;
+typedef  QSharedPointer<Fandom> FandomPtr;
+
+class Fandom : public DBEntity
 {
+    public:
     Fandom(){}
     Fandom(QString name){this->name = name;}
     Fandom(QString name,QString section,QString url,QString crossoverUrl, QString source = "ffn"){
@@ -182,30 +258,72 @@ struct Fandom
         this->crossoverUrl = crossoverUrl.trimmed();
         this->source = source.trimmed();
     }
+    static FandomPtr NewFandom() { return QSharedPointer<Fandom>(new Fandom);}
+    QStringList GetUrls(){
+//        QStringList  result;
+//        if(!url.isEmpty() && url != "none")
+//            result.push_back(url);
+//        if(!crossoverUrl.isEmpty() && crossoverUrl != "none")
+//            result.push_back(crossoverUrl);
+//        return result;
+        return mergedUrls;
+    };
     int id = -1;
+    int idInRecentFandoms = -1;
+    int ficCount = 0;
+    double averageFavesTop3 = 0.0;
     QString name;
     QString section = "none";
     QString url = "none";
     QString crossoverUrl = "none";
     QString source = "ffn";
+    QStringList mergedUrls;
+    QDate dateOfCreation;
+    QDate dateOfFirstFic;
+    QDate dateOfLastFic;
+    QDate lastUpdateDate;
+
+
+    bool tracked = false;
 };
 
 
+class AuthorRecommendationStats;
+typedef QSharedPointer<AuthorRecommendationStats> AuhtorStatsPtr;
 
-
-struct AuthorRecommendationStats
+class AuthorRecommendationStats : public DBEntity
 {
+    public:
+    static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}
     int authorId= -1;
-    int totalFics = -1;
-    int matchesWithReferenceTag = -1;
+    int totalRecommendations = -1;
+    int matchesWithReference = -1;
     double matchRatio = -1;
     bool isValid = false;
-    QString listName;
+    //QString listName;
+    int listId = -1;
     QString usedTag;
     QString authorName;
 };
 
-struct RecommendationList{
+struct FicRecommendation
+{
+    QSharedPointer<core::Fic> fic;
+    QSharedPointer<core::Author> author;
+    bool IsValid(){
+        if(!fic || !author)
+            return false;
+        return true;
+    }
+};
+
+class RecommendationList;
+typedef QSharedPointer<RecommendationList> RecPtr;
+
+
+class RecommendationList : public DBEntity{
+    public:
+    static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
     int id = -1;
     int ficCount =-1;
     QString name;

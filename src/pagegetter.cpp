@@ -1,4 +1,22 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #include "include/pagegetter.h"
+#include "include/transaction.h"
 #include "GlobalHeaders/run_once.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -7,6 +25,7 @@
 #include <QObject>
 #include <QSqlQuery>
 #include <QSqlRecord>
+#include <QSqlDatabase>
 #include <QDebug>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -71,7 +90,9 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-    QSqlQuery q(QSqlDatabase::database("pagecache"));
+    auto db = QSqlDatabase::database("PageCache");
+    bool dbOpen = db.isOpen();
+    QSqlQuery q(db);
     q.prepare("select * from PageCache where url = :URL");
     q.bindValue(":URL", url);
     q.exec();
@@ -128,7 +149,7 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     QSettings settings("settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/storeCache", false).toBool())
         return;
-    QSqlQuery q(QSqlDatabase::database("pagecache"));
+    QSqlQuery q(QSqlDatabase::database("PageCache"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
@@ -223,12 +244,15 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
     qDebug() << "worker is alive";
 }
 
-void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit, ECacheMode cacheMode)
+void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
+
+    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
+    int counter = 0;
     do
     {
         qDebug() << "loading page: " << url;
@@ -236,9 +260,12 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit
         result = pager->GetPage(url, cacheMode);
         auto minUpdate = GrabMinUpdate(result.content);
         url = GetNext(result.content);
-        if((url == lastUrl || lastUrl.trimmed().isEmpty())|| (updateLimit.isValid() && (minUpdate < updateLimit)))
+        bool updateLimitReached = false;
+        if(counter > 0)
+            updateLimitReached = minUpdate < updateLimit;
+        if((url == lastUrl || lastUrl.trimmed().isEmpty())|| (updateLimit.isValid() && updateLimitReached))
         {
-            result.error = "Already have the stuff past this point. borting.";
+            result.error = "Already have the stuff past this point. Aborting.";
             result.isLastPage = true;
         }
         if(!result.isValid || url.isEmpty())
@@ -247,15 +274,21 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDateTime updateLimit
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
 
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-        qDebug() << "thread will sleep for " << timeout;
-        QThread::msleep(timeout);
+        if(!result.isFromCache)
+        {
+            qDebug() << "thread will sleep for " << timeout;
+            QThread::msleep(timeout);
+        }
+        counter++;
     }while(url != lastUrl && result.isValid && !result.isLastPage);
+    pcTransaction.finalize();
     qDebug() << "leaving task1";
 }
 
 void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
+    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
@@ -281,6 +314,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
             QThread::msleep(timeout);
         }
     }
+    pcTransaction.finalize();
     qDebug() << "leaving task2";
 }
 static QString CreateURL(QString str)
@@ -303,7 +337,7 @@ QString PageThreadWorker::GetNext(QString text)
     return nextUrl;
 }
 
-QDateTime PageThreadWorker::GrabMinUpdate(QString text)
+QDate PageThreadWorker::GrabMinUpdate(QString text)
 {
     QDateTime minDate;
     QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
@@ -311,6 +345,6 @@ QDateTime PageThreadWorker::GrabMinUpdate(QString text)
     if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
         minDate.setTime_t(rx.cap(1).toInt());
 
-    return minDate;
+    return minDate.date();
 }
 

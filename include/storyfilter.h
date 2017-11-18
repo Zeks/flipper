@@ -1,3 +1,20 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 #pragma once
 #include <QStringList>
 #include <QDateTime>
@@ -15,8 +32,9 @@ struct StoryFilter{
         favourites = 1,
         favrate =    2,
         updatedate = 3,
-        reccount=    4,
-        wcrcr =      5
+        publisdate = 4,
+        reccount=    5,
+        wcrcr =      6
     };
     enum EReviewBiasMode{
         bias_none    = 0,
@@ -32,7 +50,7 @@ struct StoryFilter{
         filtering_in_recommendations = 1
     };
     //do I even need that?
-    QString ficCategory;
+    //QString ficCategory;
     QString fandom;
     QString website;
     int useThisRecommenderOnly = -1;
@@ -43,10 +61,12 @@ struct StoryFilter{
     int maxFics = 0;
     bool randomizeResults = false;
     int minFavourites = 0;
+    int minRecommendations = 0;
     bool ensureCompleted = false;
     bool ensureActive = false;
     bool allowUnfinished = true;
     bool allowNoGenre = true;
+    bool showOriginsInLists = false;
     ESortMode sortMode;
     int listForRecommendations;
     EReviewBiasMode reviewBias;

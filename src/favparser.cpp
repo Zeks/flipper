@@ -1,24 +1,62 @@
+/*
+FFSSE is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+
+
 #include "include/favparser.h"
 #include "include/section.h"
-#include "include/init_database.h"
+#include "include/pure_sql.h"
+#include "include/url_utils.h"
 #include <QDebug>
 #include <QSqlDatabase>
 #include <chrono>
 
-QList<core::Fic> FavouriteStoryParser::ProcessPage(QString url, QString& str)
+FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics)
+                    : FFNParserBase(fanfics)
 {
+
+}
+
+QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
+{
+    QList<QSharedPointer<core::Fic>> sections;
     core::Section section;
     int currentPosition = 0;
     int counter = 0;
-    QList<core::Fic> sections;
-    recommender.author.name = authorName;
-    recommender.author.SetUrl("ffn", url);
-    recommender.author.website = "ffn";
+
+    core::AuthorPtr author(new core::Author);
+    section.result->author = author;
+    recommender.author = author;
+
+    recommender.author->name = authorName;
+    recommender.author->SetUrl("ffn", url);
+    recommender.author->website = "ffn";
+    recommender.author->webId = url_utils::GetWebId(url, "ffn").toInt();
     while(true)
     {
 
         counter++;
         section = GetSection(str, currentPosition);
+        if(sections.size() == 0 && section.isValid)
+        {
+            int parts = str.length()/(section.end-section.start);
+            qDebug() << "reserving parts: " << parts;
+            sections.reserve(parts);
+        }
         if(!section.isValid)
             break;
         currentPosition = section.start;
@@ -33,38 +71,37 @@ QList<core::Fic> FavouriteStoryParser::ProcessPage(QString url, QString& str)
 
         GetStatSection(section, currentPosition, str);
         auto statText = section.statSection.text;
-        GetTaggedSection(statText.replace(",", ""), "(.*)(?=\\s-\\sRated:)", [&section](QString val){ section.result.fandom = val;});
-        GetTaggedSection(statText.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.result.wordCount = val;});
-        GetTaggedSection(statText.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.result.chapters = val;});
-        GetTaggedSection(statText.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.result.reviews = val;});
-        GetTaggedSection(statText.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.result.favourites = val;});
+        GetTaggedSection(statText.replace(",", ""), "(.*)(?=\\s-\\sRated:)", [&section](QString val){ section.result->fandom = val;});
+        GetTaggedSection(statText.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.result->wordCount = val;});
+        GetTaggedSection(statText.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.result->chapters = val;});
+        GetTaggedSection(statText.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.result->reviews = val;});
+        GetTaggedSection(statText.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.result->favourites = val;});
         GetTaggedSection(statText, "Published:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
             if(val != "not found")
-                section.result.published.setTime_t(val.toInt()); ;
+                section.result->published.setTime_t(val.toInt()); ;
         });
         GetTaggedSection(statText, "Updated:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
             if(val != "not found")
-                section.result.updated.setTime_t(val.toInt());
+                section.result->updated.setTime_t(val.toInt());
             else
-                section.result.updated.setTime_t(0);
+                section.result->updated.setTime_t(0);
         });
-        GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result.rated = val;});
-        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.result.SetGenres(val, "ffn");});
+        GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result->rated = val;});
+        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.result->SetGenres(val, "ffn");});
         GetTaggedSection(statText, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
-            section.result.charactersFull = val.replace(" - Complete", "");
+            section.result->charactersFull = val.replace(" - Complete", "");
         });
         GetTaggedSection(statText, "(Complete)$", [&section](QString val){
             if(val != "not found")
-                section.result.complete = 1;
+                section.result->complete = 1;
         });
         if(statText.contains("CROSSOVER", Qt::CaseInsensitive))
             GetCrossoverFandomList(section, currentPosition, str);
-        section.result.origin = url;
-        if(section.isValid)
-        {
-            sections.append(section.result);
-        }
+        else
+            section.result->fandoms.push_back(section.result->fandom);
 
+        if(section.isValid)
+            sections.append(section.result);
     }
 
     if(sections.size() == 0)
@@ -101,52 +138,17 @@ void FavouriteStoryParser::ClearDoneCache()
 
 void FavouriteStoryParser::WriteProcessed()
 {
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    writeSections = database::ProcessFicsIntoUpdateAndInsert(processedStuff);
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Filtering done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    auto startInsert = std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresUpdate)
-    {
-        if(!alreadyDone.contains(section.url("ffn")))
-            database::UpdateInDB(section);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startInsert;
-    qDebug() << "Update done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    //database::DropAllFanficIndexes();
-    auto startUpdate= std::chrono::high_resolution_clock::now();
-    for(auto& section : writeSections.requiresInsert)
-    {
-        if(!alreadyDone.contains(section.url("ffn")))
-            database::InsertIntoDB(section);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startUpdate;
-    qDebug() << "Inserts done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    auto startRecommending = std::chrono::high_resolution_clock::now();
-    //database::RebuildAllFanficIndexes();
-    for(auto& section : processedStuff)
-    {
-        int fic_id = database::GetFicIdByWebId(section.webSite, section.webId);
-        database::WriteRecommendation(recommender.author, fic_id);
-    }
-    elapsed = std::chrono::high_resolution_clock::now() - startRecommending;
-    qDebug() << "Recommendations done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ClearProcessed();
-    elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Write cycle done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    //requires
+    //database::WriteFandomsForStory(section, knownFandoms);
+//    fanfics->ProcessIntoDataQueues(processedStuff);
+//    fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
+//    QList<core::FicRecommendation> recommendations;
+//    recommendations.reserve(processedStuff.size());
+//    for(auto& section : processedStuff)
+//        recommendations.push_back({section, recommender.author});
 }
 
-void FavouriteStoryParser::WriteJustAuthorName()
-{
-    if(recommender.author.GetIdStatus() == core::AuthorIdStatus::unassigned)
-        recommender.author.AssignId(database::GetAuthorIdFromUrl(recommender.author.url("ffn")));
-    if(recommender.author.GetIdStatus() == core::AuthorIdStatus::not_found)
-    {
-        database::WriteRecommender(recommender.author);
-        recommender.author.AssignId(database::GetAuthorIdFromUrl(recommender.author.url("ffn")));
-    }
-    database::AssignNewNameForRecommenderId(recommender.author);
-}
+
 
 void FavouriteStoryParser::WriteRecommenderInfo()
 {
@@ -168,7 +170,7 @@ void FavouriteStoryParser::GetAuthorUrl(core::Section & section, int &startfrom,
 //    if(indexStart == -1)
 //        qDebug() << currentSection;
     int indexEnd = rxEnd.indexIn(text, indexStart);
-    section.result.author.SetUrl("ffn","https://www.fanfiction.net" + text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
+    section.result->author->SetUrl("ffn","https://www.fanfiction.net" + text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
     startfrom = indexEnd+2;
 }
 
@@ -182,7 +184,7 @@ void FavouriteStoryParser::GetAuthor(core::Section & section, int& startfrom, QS
     int indexStart = startfrom;
     int indexEnd = rxEnd.indexIn(text, indexStart);
     startfrom = indexEnd;
-    section.result.author.name = text.mid(indexStart,indexEnd - (indexStart));
+    section.result->author->name = text.mid(indexStart,indexEnd - (indexStart));
 
 }
 
@@ -195,9 +197,9 @@ void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QSt
     int indexStart = rxStart.indexIn(text, startfrom + 1);
     int indexEnd = rxEnd.indexIn(text, indexStart+13);
     startfrom = indexEnd;
-    section.result.title = text.mid(indexStart + 12,indexEnd - (indexStart + 12));
-    section.result.title=section.result.title.replace("\\'","'");
-    section.result.title=section.result.title.replace("\'","'");
+    section.result->title = text.mid(indexStart + 12,indexEnd - (indexStart + 12));
+    section.result->title=section.result->title.replace("\\'","'");
+    section.result->title=section.result->title.replace("\'","'");
 }
 
 void FavouriteStoryParser::GetStatSection(core::Section &section, int &startfrom, QString text)
@@ -219,7 +221,7 @@ void FavouriteStoryParser::GetSummary(core::Section & section, int& startfrom, Q
     int indexStart = rxStart.indexIn(text,startfrom);
     int indexEnd = rxEnd.indexIn(text, indexStart);
 
-    section.result.summary = text.mid(indexStart + 8,indexEnd - (indexStart + 8));
+    section.result->summary = text.mid(indexStart + 8,indexEnd - (indexStart + 8));
     section.summaryEnd = indexEnd;
     startfrom = indexEnd;
 }
@@ -233,13 +235,15 @@ void FavouriteStoryParser::GetCrossoverFandomList(core::Section & section, int &
     int indexStart = rxStart.indexIn(text, startfrom);
     if(indexStart != -1 )
     {
-        section.result.fandom.replace("Crossover - ", "");
-        section.result.fandom += " CROSSOVER";
+        section.result->fandom.replace("Crossover - ", "");
+        section.result->fandom += " CROSSOVER";
     }
 
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
-    section.result.fandom = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed() + QString(" CROSSOVER");
+    QString tmp = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed();
+    section.result->fandom = tmp + QString(" CROSSOVER");
+    section.result->fandoms = tmp.split(" & ", QString::SkipEmptyParts);
     startfrom = indexEnd;
 }
 
@@ -268,14 +272,14 @@ void FavouriteStoryParser::GetUrl(core::Section & section, int& startfrom, QStri
         //qDebug() << currentSection;
         //qDebug() << currentSection;
     }
-    section.result.SetUrl("ffn",text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
+    section.result->SetUrl("ffn",text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
     QRegExp rxWebId("/s/(\\d+)");
-    auto indexWeb = rxWebId.indexIn(section.result.url("ffn"));
+    auto indexWeb = rxWebId.indexIn(section.result->url("ffn"));
     if(indexWeb != -1)
     {
         QString captured = rxWebId.cap(1);
-        section.result.webId = captured.toInt();
-        section.result.SetUrl("ffn", section.result.url("ffn").left(3 + captured.length()));
+        section.result->webId = captured.toInt();
+        section.result->SetUrl("ffn", section.result->url("ffn").left(3 + captured.length()));
     }
     startfrom = indexEnd+2;
 }
