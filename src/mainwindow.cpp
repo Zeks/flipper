@@ -1042,9 +1042,12 @@ void MainWindow::OnCopyFicUrl(QString text)
 
 void MainWindow::OnOpenRecommenderLinks(QString url)
 {
+    if(!ui->chkHeartProfile->isChecked())
+        return;
     auto webId = url_utils::GetWebId(url, "ffn");
     auto id = fanficsInterface->GetIDFromWebID(webId.toInt(), "ffn");
     auto recommenders = recsInterface->GetRecommendersForFicId(id);
+
     for(auto recommender : recommenders)
     {
         auto author = authorsInterface->GetById(recommender);
@@ -1108,6 +1111,7 @@ void MainWindow::ReadSettings()
     ui->leNotContainsWords->setText(settings.value("Settings/minusWords", "").toString());
     ui->leContainsWords->setText(settings.value("Settings/plusWords", "").toString());
 
+    ui->chkHeartProfile->setChecked(settings.value("Settings/chkHeartProfile", false).toBool());
     ui->chkGenrePlus->setChecked(settings.value("Settings/chkGenrePlus", false).toBool());
     ui->chkGenreMinus->setChecked(settings.value("Settings/chkGenreMinus", false).toBool());
     ui->chkWordsPlus->setChecked(settings.value("Settings/chkWordsPlus", false).toBool());
@@ -1153,6 +1157,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
 
 
+    settings.setValue("Settings/chkHeartProfile", ui->chkHeartProfile->isChecked());
     settings.setValue("Settings/chkGenrePlus", ui->chkGenrePlus->isChecked());
     settings.setValue("Settings/chkGenreMinus", ui->chkGenreMinus->isChecked());
     settings.setValue("Settings/chkWordsPlus", ui->chkWordsPlus->isChecked());
