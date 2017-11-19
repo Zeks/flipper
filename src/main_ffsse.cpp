@@ -35,10 +35,14 @@ int main(int argc, char *argv[])
         dbInterface->BackupDatabase("CrawlerDB");
     qDebug() << "current appPath is: " << QDir::currentPath();
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-    auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+    if(settings.value("Settings/storeCache", false).toBool())
+    {
+        auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+        pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+    }
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+
 
 
     MainWindow w;

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>528</width>
+    <width>554</width>
     <height>680</height>
    </rect>
   </property>
@@ -105,55 +105,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="cbSection">
-       <item>
-        <property name="text">
-         <string>Anime/Manga</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Books</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Cartoons</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Comics</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Games</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Misc</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Movies</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Plays/Musicals</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>TV Shows</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item>
       <widget class="QComboBox" name="cbFandom">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -182,11 +133,6 @@
   <zorder>edtTags</zorder>
   <zorder>wdgControls</zorder>
   <zorder></zorder>
-  <zorder>label</zorder>
-  <zorder>cbAssignTag</zorder>
-  <zorder>label_2</zorder>
-  <zorder>cbFandom</zorder>
-  <zorder>horizontalSpacer</zorder>
  </widget>
  <resources/>
  <connections/>

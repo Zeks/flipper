@@ -174,8 +174,8 @@ QStringList GetFandomListFromDB(QSqlDatabase db)
 
 void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO FicTags(fic_id, tag) SELECT fic_id, %1 as tag from FicFandoms f WHERE fandom_id = :fandom_id "
-                 " and NOT EXISTS(SELECT 1 FROM FicTags WHERE fic_id = f.id and tag = %1)";
+    QString qs = "INSERT INTO FicTags(fic_id, tag) SELECT fic_id, '%1' as tag from FicFandoms f WHERE fandom_id = :fandom_id "
+                 " and NOT EXISTS(SELECT 1 FROM FicTags WHERE fic_id = f.fic_id and tag = '%1')";
     qs=qs.arg(tag);
     QSqlQuery q(db);
     q.prepare(qs);

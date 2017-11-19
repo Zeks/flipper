@@ -241,6 +241,9 @@ void MainWindow::Init()
     ui->statusBar->addPermanentWidget(pbMain,0);
 
     ui->edtResults->setOpenLinks(false);
+    auto showTagWidget = settings.value("Settings/showNewTagsWidget", false).toBool();
+    if(!showTagWidget)
+        ui->tagWidget->removeTab(1);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnLinkClicked);
 
     // should refer to new tag widget instead
@@ -1074,6 +1077,7 @@ void MainWindow::ReadSettings()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ui->chkShowDirectRecs->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbReprocessAuthors->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
+    ui->wdgLower->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
     ui->wdgWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     //ui->cbRecTagGroup->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbFirstWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
