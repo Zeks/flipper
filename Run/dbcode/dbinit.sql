@@ -49,6 +49,8 @@ create table if not exists fandoms (FANDOM VARCHAR NOT NULL, SECTION VARCHAR NOT
  alter table fandoms add column id integer AUTOINCREMENT default 0; 
  alter table fandoms add column tracked integer default 0; 
  alter table fandoms add column last_update datetime; 
+ alter table fandoms add column last_parse_limit datetime; 
+ alter table fandoms add column second_last_parse_limit datetime; 
  alter table fandoms add column date_of_first_fic datetime; 
  alter table fandoms add column date_of_last_fic datetime; 
  alter table fandoms add column date_of_creation datetime; 
