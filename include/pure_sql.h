@@ -33,9 +33,12 @@ bool CleanuFandom(int fandom_id,  QSqlDatabase db);
 int GetFandomCountInDatabase(QSqlDatabase db);
 bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db);
 
+QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db);
+
 int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
 core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db);
+core::FicPtr GetFicById(int ficId, QSqlDatabase db);
 
 bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);

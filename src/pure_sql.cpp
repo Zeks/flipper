@@ -283,6 +283,37 @@ int GetFicIdByWebId(QString website, int webId, QSqlDatabase db)
     return result;
 }
 
+core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
+{
+    auto fic = core::Fic::NewFanfic();
+    fic->atChapter = q1.value("AT_CHAPTER").toInt();
+    fic->complete  = q1.value("COMPLETE").toInt();
+    fic->webId     = q1.value(website + "_ID").toInt();
+    fic->id        = q1.value("ID").toInt();
+    fic->wordCount = q1.value("WORDCOUNT").toString();
+    fic->chapters = q1.value("CHAPTERS").toString();
+    fic->reviews = q1.value("REVIEWS").toString();
+    fic->favourites = q1.value("FAVOURITES").toString();
+    fic->follows = q1.value("FOLLOWS").toString();
+    fic->rated = q1.value("RATED").toString();
+    fic->fandom = q1.value("FANDOM").toString();
+    fic->title = q1.value("TITLE").toString();
+    fic->genres = q1.value("GENRES").toString().split("##");
+    fic->summary = q1.value("SUMMARY").toString();
+    //fic->tags = q1.value("TAGS").toString();
+    //fic->language = q1.value("LANGUAGE").toString();
+    fic->published = q1.value("PUBLISHED").toDateTime();
+    fic->updated = q1.value("UPDATED").toDateTime();
+    fic->characters = q1.value("CHARACTERS").toString().split(",");
+    fic->authorId = q1.value("AUTHOR_ID").toInt();
+    fic->author->name = q1.value("AUTHOR").toString();
+    fic->ffn_id = q1.value("FFN_ID").toInt();
+    fic->ao3_id = q1.value("AO3_ID").toInt();
+    fic->sb_id = q1.value("SB_ID").toInt();
+    fic->sv_id = q1.value("SV_ID").toInt();
+    return fic;
+}
+
 core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db)
 {
     core::FicPtr fic;
@@ -298,35 +329,32 @@ core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db)
     if(!q1.next())
         return fic;
 
-    fic = core::Fic::NewFanfic();
-    fic->atChapter = q1.value("AT_CHAPTER").toInt();
-    fic->complete  = q1.value("COMPLETE").toInt();
-    fic->webId     = q1.value(website + "_ID").toInt();
-    fic->id        = q1.value("ID").toInt();
-    fic->wordCount = q1.value("WORDCOUNT").toString();
-    fic->chapters = q1.value("CHAPTERS").toString();
-    fic->reviews = q1.value("REVIEWS").toString();
-    fic->favourites = q1.value("FAVOURITES").toString();
-    fic->follows = q1.value("FOLLOWS").toString();
-    fic->rated = q1.value("RATED").toString();
-    fic->fandoms = q1.value("FANDOMS").toString().split("##");
-    fic->title = q1.value("TITLE").toString();
-    fic->genres = q1.value("GENRES").toString().split("##");
-    fic->summary = q1.value("SUMMARY").toString();
-    fic->tags = q1.value("TAGS").toString();
-    fic->language = q1.value("LANGUAGE").toString();
-    fic->published = q1.value("PULISHED").toDateTime();
-    fic->updated = q1.value("UPDATED").toDateTime();
-    fic->characters = q1.value("CHARACTERS").toString().split(",");
-    fic->authorId = q1.value("AUTHOR_ID").toInt();
+    fic = LoadFicFromQuery(q1, website);
     fic->webSite = website;
-    fic->ffn_id = q1.value("FFN_ID").toInt();
-    fic->ao3_id = q1.value("AO3_ID").toInt();
-    fic->sb_id = q1.value("SB_ID").toInt();
-    fic->sv_id = q1.value("SV_ID").toInt();
+    return fic;
+}
+
+core::FicPtr GetFicById( int ficId, QSqlDatabase db)
+{
+    core::FicPtr fic;
+    QSqlQuery q1(db);
+    QString qsl = " select * from fanfics where id = :fic_id";
+    q1.prepare(qsl);
+    q1.bindValue(":fic_id",ficId);
+
+    if(!ExecAndCheck(q1))
+        return fic;
+
+    if(!q1.next())
+        return fic;
+
+    fic = LoadFicFromQuery(q1);
+
+
 
     return fic;
 }
+
 
 bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
@@ -1223,6 +1251,9 @@ core::FandomPtr GetFandom(QString name, QSqlDatabase db)
 
     QString qs = QString(" select * from fandoms where fandom = :fandom ");
 
+    if(name == "Voltron: Legendary Defender")
+        qDebug() << "ensuring voltron";
+
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":fandom", name);
@@ -1330,7 +1361,23 @@ bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db)
     }
     return true;
 }
-
+QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db)
+{
+    QStringList result;
+    QString qs = QString("select fandom from fandoms where fandoms.id in (select fandom_id from ficfandoms ff where ff.fic_id = :fic_id)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fic_id",ficId);
+    if(!ExecAndCheck(q))
+        return result;
+    while(q.next())
+    {
+       auto fandom = q.value("fandom").toString().trimmed();
+        if(!fandom.contains("????"))
+            result.push_back(fandom);
+    }
+    return result;
+}
 QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
 {
     QList<int> result;
@@ -1418,6 +1465,9 @@ bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlD
         return false;
     return true;
 }
+
+
+
 
 
 

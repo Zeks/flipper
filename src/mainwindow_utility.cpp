@@ -365,3 +365,16 @@ void MainWindow::ProcessCrossovers(WebPage webPage)
     managerEventLoop.quit();
 }
 
+// I don't like the idea of alive validation on this list creation
+//seems wrong place to do it
+//            QString url = "https://www.fanfiction.net/s/" + QString::number(ficPtr->webId);
+//            auto page = pager->GetPage(url, ECacheMode::dont_use_cache);
+//            if(page.content.contains("Unable to locate story."))
+//            {
+//                qDebug() << "skipping deleted story:" <<url;
+//                continue;
+//            }
+
+//            QThread::msleep(500);
+
+//authorsInterface->GetById(ficPtr->authorId);

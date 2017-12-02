@@ -20,8 +20,8 @@ CREATE TABLE if not exists PageTask (
  ignore_cache integer default 0,
  refresh_if_needed integer default 0,
  task_comment varchar,
- success integer deault 0,
- PRIMARY KEY (id));
+ success integer default 0
+ );
  CREATE INDEX if not exists I_PT_ID ON PageTask (id asc);
 CREATE INDEX if not exists I_PT_TYPE ON PageTask (type asc);
 CREATE INDEX if not exists I_PT_CREATED ON PageTask (created asc);
@@ -53,9 +53,8 @@ CREATE TABLE if not exists PageTaskFailedPages (
  task_id integer NOT NULL ,
  URL VARCHAR,
  process_attempt datetime,
- last_seen datetime,
- PRIMARY KEY (operation_id)
-);
+ last_seen datetime
+ );
 CREATE INDEX if not exists I_PTF_OPERATION_ID ON PageTaskFailedPages (operation_id asc);
 CREATE INDEX if not exists I_PTF_TASK_ID ON PageTaskFailedPages (task_id asc);
 
@@ -64,8 +63,7 @@ CREATE TABLE if not exists PageTaskWarnings(
  operation_id integer NOT NULL primary key autoincrement,
  task_id integer not null,
  process_attempt datetime,
- warning VARCHAR,
- PRIMARY KEY (warning_id)
+ warning VARCHAR
 );
 CREATE INDEX if not exists I_PTW_operation_id ON PageTaskWarnings (operation_id asc);
 CREATE INDEX if not exists I_PTW_TASK_ID ON PageTaskWarnings (task_id asc);

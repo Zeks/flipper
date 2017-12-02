@@ -37,12 +37,10 @@ int main(int argc, char *argv[])
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
     if(settings.value("Settings/storeCache", false).toBool())
     {
-        auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
-        pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+        auto pageCacheDb = pageCacheInterface->InitDatabase("Service");
+        pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "Service");
     }
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
-
-
 
 
     MainWindow w;
@@ -54,3 +52,4 @@ int main(int argc, char *argv[])
 
     return a.exec();
 }
+

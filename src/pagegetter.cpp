@@ -90,7 +90,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-    auto db = QSqlDatabase::database("PageCache");
+    auto db = QSqlDatabase::database("Service");
     bool dbOpen = db.isOpen();
     QSqlQuery q(db);
     q.prepare("select * from PageCache where url = :URL");
@@ -132,12 +132,14 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     }
     QByteArray data=reply->readAll();
+
     error = reply->error();
     reply->deleteLater();
     if(error != QNetworkReply::NoError)
         return result;
     //QString str(data);
     result.content = data;
+
     result.isValid = true;
     result.url = currentRequest.url().toString();
     result.source = EPageSource::network;
@@ -149,22 +151,17 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     QSettings settings("settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/storeCache", false).toBool())
         return;
-    QSqlQuery q(QSqlDatabase::database("PageCache"));
+    QSqlQuery q(QSqlDatabase::database("Service"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
-    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT, FANDOM, CROSSOVER, PAGE_TYPE, COMPRESSED) "
-                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :FANDOM, :CROSSOVER, :PAGE_TYPE, :COMPRESSED)";
+    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
+                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
     q.prepare(insert);
     q.bindValue(":URL", page.url);
     q.bindValue(":GENERATION_DATE", QDateTime::currentDateTime());
     q.bindValue(":CONTENT", qCompress(page.content.toUtf8()));
     q.bindValue(":COMPRESSED", 1);
-    //q.bindValue(":CONTENT", page.content);
-    //q.bindValue(":COMPRESSED", 1);
-    q.bindValue(":FANDOM", page.fandom);
-    q.bindValue(":CROSSOVER", page.crossover);
-
     q.bindValue(":PAGE_TYPE", static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
@@ -248,7 +245,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
 {
     FuncCleanup f([&](){working = false;});
 
-    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+    database::Transaction pcTransaction(QSqlDatabase::database("Service"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
@@ -288,7 +285,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
 void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
-    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+    database::Transaction pcTransaction(QSqlDatabase::database("Service"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;

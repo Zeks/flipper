@@ -350,6 +350,20 @@
                        </widget>
                       </item>
                       <item>
+                       <widget class="QPushButton" name="pbFormattedList">
+                        <property name="text">
+                         <string>Formatted List</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QCheckBox" name="chkGroupFandoms">
+                        <property name="text">
+                         <string>Group Fandoms</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
                        <widget class="QCheckBox" name="chkInfoForLinks">
                         <property name="sizePolicy">
                          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -1077,7 +1091,7 @@
                    <number>50</number>
                   </property>
                   <property name="value">
-                   <number>10</number>
+                   <number>6</number>
                   </property>
                  </widget>
                 </item>

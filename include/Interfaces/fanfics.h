@@ -48,6 +48,7 @@ class Fanfics : public IDBWebIDIndex {
     bool LoadFicFromDB(int id, QString website);
     bool LoadFicToDB(core::FicPtr);
 
+    core::FicPtr GetFicById(int);
 
     virtual int GetIDFromWebID(int, QString website);
     virtual int GetWebIDFromID(int, QString website);
@@ -68,6 +69,8 @@ class Fanfics : public IDBWebIDIndex {
     virtual bool DeactivateFic(int ficId, QString website);
     virtual bool DeactivateFic(int ficId) = 0;
     void ClearProcessedHash();
+
+    QStringList GetFandomsForFicAsNames(int ficId);
 
     bool AssignChapter(int, int);
 

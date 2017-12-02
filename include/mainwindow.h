@@ -228,6 +228,7 @@ public slots:
     void OnCopyFicUrl(QString);
     void OnOpenRecommenderLinks(QString);
     void OnCopyAllUrls();
+    void OnDoFormattedList();
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
 private slots:
     void OnShowContextMenu(QPoint);

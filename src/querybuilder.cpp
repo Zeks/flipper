@@ -214,7 +214,10 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
         queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
 
     if(filter.sortMode == StoryFilter::favrate)
-        queryString+= " and published <> updated and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
+        queryString+= " and published <> updated "
+                      " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
+                      " and published < date('now', '-" + QString::number(45) + " days') "
+                      " and updated > date('now', '-60 days') ";
     return queryString;
 }
 
