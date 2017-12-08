@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "include/sqlitefunctions.h"
+#include "include/db_fixers.h"
 
 #include <QApplication>
 #include <QDir>
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
     }
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
-
+    //dbfix::EnsureFandomIndexExists(mainDb);
     MainWindow w;
     w.dbInterface = dbInterface;
     w.pageCacheInterface = pageCacheInterface;

@@ -57,6 +57,7 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
 {
     QString queryString;
     queryString+=ProcessSumFaves(filter);
+    queryString+=ProcessFandoms(filter);
     queryString+=ProcessSumRecs(filter);
     queryString+=ProcessTags(filter);
     queryString+=ProcessUrl(filter);
@@ -103,10 +104,17 @@ QString DefaultQueryBuilder::ProcessBias(StoryFilter filter)
     return result;
 }
 
-QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter filter)
+QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter)
 {
     QString sumOfAuthorFavourites = " (SELECT sumfaves FROM recommenders where name = f.author) as sumfaves, ";
     return sumOfAuthorFavourites;
+}
+
+QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
+{
+    //return QString();
+    QString fandoms = " ( select group_concat(name, ' & ') from fandomindex where id in (select fic_id from ficfandoms where fic_id = f.id)) as fandom, ";
+    return fandoms;
 }
 
 // not exactly what its supposed to do but okay query to save

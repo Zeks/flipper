@@ -1209,6 +1209,35 @@ static core::FandomPtr FandomfromQuery (QSqlQuery& q, core::FandomPtr fandom = c
     return fandom;
 };
 
+static core::FandomPtr FandomfromOldSingleTableQuery (QSqlQuery& q, core::FandomPtr fandom = core::FandomPtr())
+{
+    if(!fandom)
+    {
+        fandom = core::Fandom::NewFandom();
+        fandom->id = q.value("ID").toInt();
+        fandom->url = q.value("NORMAL_URL").toString();
+        fandom->crossoverUrl = q.value("CROSSOVER_URL").toString();
+        fandom->ficCount = q.value("fic_count").toInt();
+        fandom->averageFavesTop3 = q.value("average_faves_top_3").toDouble();
+        fandom->name = q.value("fandom").toString();
+        fandom->source = q.value("source").toString();
+        fandom->dateOfCreation = q.value("date_of_creation").toDate();
+        fandom->dateOfFirstFic = q.value("date_of_first_fic").toDate();
+        fandom->dateOfLastFic = q.value("date_of_last_fic").toDate();
+        fandom->lastUpdateDate = q.value("last_update").toDate();
+        fandom->tracked = q.value("tracked").toInt();
+        fandom->mergedUrls.push_back(fandom->url);
+        fandom->mergedUrls.push_back(fandom->crossoverUrl);
+    }
+    else
+    {
+        fandom->mergedUrls.push_back(q.value("NORMAL_URL").toString());
+        fandom->mergedUrls.push_back(q.value("CROSSOVER_URL").toString());
+    }
+    return fandom;
+};
+
+
 QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db)
 {
     QList<core::FandomPtr> result;
@@ -1239,6 +1268,42 @@ QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db)
         }
         else
             currentFandom = FandomfromQuery(q, currentFandom);
+        lastName = currentName;
+    }
+
+    return result;
+}
+
+QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db)
+{
+    QList<core::FandomPtr> result;
+
+    QString qs = QString(" select count(id) from fandoms");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+    q.next();
+    result.reserve(q.value(0).toInt());
+
+    qs = QString(" select * from fandoms order by fandom");
+    q.prepare(qs);
+
+    if(!ExecAndCheck(q))
+        return result;
+    QString lastName;
+    core::FandomPtr currentFandom;
+    while(q.next())
+    {
+        auto currentName = q.value("fandom").toString();
+        if(lastName != currentName)
+        {
+            currentFandom = FandomfromOldSingleTableQuery(q);
+            result.push_back(currentFandom);
+        }
+        else
+            currentFandom = FandomfromOldSingleTableQuery(q, currentFandom);
         lastName = currentName;
     }
 
@@ -1466,17 +1531,67 @@ bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlD
     return true;
 }
 
+bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db)
+{
+    QString qs = QString("insert into fandomindex(id, name) values(:id, :name)");
 
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id", id);
+    q.bindValue(":name", name);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
 
+bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
+{
+    QString qs = QString("select * from fandoms where id = :old_id");
 
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":old_id", oldId);
+    if(!ExecAndCheck(q))
+        return false;
+    q.next();
+    QStringList urls;
+    urls << q.value("normal_url").toString();
+    urls << q.value("crossover_url").toString();
+    QString custom = q.value("section").toString();
+    for(auto url : urls)
+    {
+        if(url.trimmed().isEmpty())
+            continue;
 
+        qs = QString("insert into fandomurls (global_id, url, website, custom) values(:new_id, :url, 'ffn', :custom)");
+        q.prepare(qs);
+        q.bindValue(":new_id", newId);
+        q.bindValue(":url", url);
+        q.bindValue(":custom", custom);
+        if(!ExecAndCheck(q))
+            return false;
+    }
+    return true;
+}
 
+bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db)
+{
+    QString qs = QString("update ficfandoms set fandom_id = :new_id where fandom_id = :old_id");
 
-
-
-
-
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":old_id", oldId);
+    q.bindValue(":new_id", newId);
+    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        return false;
+    }
+    return true;
+}
 
 
 }
+
 }

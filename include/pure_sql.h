@@ -28,10 +28,15 @@ bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db);
+QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db);
 core::FandomPtr GetFandom(QString name, QSqlDatabase db);
 bool CleanuFandom(int fandom_id,  QSqlDatabase db);
 int GetFandomCountInDatabase(QSqlDatabase db);
 bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db);
+bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db);
+bool AddFandomLink(int oldId, int newId, QSqlDatabase db);
+bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db);
+
 
 QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db);
 

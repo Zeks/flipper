@@ -45,6 +45,7 @@ private:
 
     QString ProcessBias(StoryFilter);
     QString ProcessSumFaves(StoryFilter);
+    QString ProcessFandoms(StoryFilter);
     QString ProcessSumRecs(StoryFilter);
     QString ProcessTags(StoryFilter);
     QString ProcessUrl(StoryFilter);
