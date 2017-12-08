@@ -36,6 +36,8 @@ bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db);
 bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db);
 bool AddFandomLink(int oldId, int newId, QSqlDatabase db);
 bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db);
+QHash<int, QList<int> > GetWholeFicFandomsTable(QSqlDatabase db);
+bool EraseFicFandomsTable(QSqlDatabase db);
 
 
 QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db);

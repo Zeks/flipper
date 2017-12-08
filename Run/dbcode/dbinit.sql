@@ -129,9 +129,10 @@ CREATE INDEX if not exists  I_GENRES_WEBSITE ON Genres (website ASC);
 
 -- fandoms for fics;
 CREATE TABLE if not exists FicFandoms (fic_id INTEGER NOT NULL, fandom_id integer,  PRIMARY KEY (fic_id asc, fandom_id asc));
-CREATE INDEX if not exists  I_FIC_FANDOMS_PK ON FicFandoms (fic_id asc, fandom_id ASC);
+REATE INDEX if not exists  I_FIC_FANDOMS_PK ON FicFandoms (fic_id asc, fandom_id ASC);
 CREATE INDEX if not exists  I_FIC_FANDOMS_FANDOM ON FicFandoms (fandom_id ASC);
-CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicFandoms (fic_id ASC);
+CREATE INDEX if not exists  I_FIC_FANDOMS_FIC ON FicFandoms (fic_id ASC);
+
 
  -- recent fandoms;
  CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);

@@ -1555,8 +1555,11 @@ bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
         return false;
     q.next();
     QStringList urls;
-    urls << q.value("normal_url").toString();
-    urls << q.value("crossover_url").toString();
+    urls << q.value("normal_url").toString().trimmed();
+    urls << q.value("crossover_url").toString().trimmed();
+    urls.removeAll("");
+//    if(urls.size())
+//        qDebug() << urls;
     QString custom = q.value("section").toString();
     for(auto url : urls)
     {
@@ -1576,7 +1579,7 @@ bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
 
 bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db)
 {
-    QString qs = QString("update ficfandoms set fandom_id = :new_id where fandom_id = :old_id");
+    QString qs = QString("update ficfandoms set fandom_id = :new_id, reassigned = 1 where fandom_id = :old_id and reassigned != 1");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1588,6 +1591,29 @@ bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db)
         qDebug() << q.lastQuery();
         return false;
     }
+    return true;
+}
+
+QHash<int, QList<int>> GetWholeFicFandomsTable(QSqlDatabase db)
+{
+    QHash<int, QList<int>> result;
+    QString qs = QString("select fic_id, fandom_id from ficfandoms");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+    while(q.next())
+        result[q.value("fandom_id").toInt()].push_back(q.value("fic_id").toInt());
+    return result;
+}
+
+bool EraseFicFandomsTable(QSqlDatabase db)
+{
+    QString qs = QString("delete from ficfandoms");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return false;
     return true;
 }
 

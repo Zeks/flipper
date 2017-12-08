@@ -15,7 +15,7 @@ QString ConvertName(QString name)
         result = cache[name];
     else
     {
-        QRegExp rx = QRegExp("/[A-Za-z0-9.]{0,}[^A-Z0-9.]");
+        QRegExp rx = QRegExp("/[A-Za-z0-9.\\s]{0,}[^A-Za-z0-9.\\s]");
         rx.setMinimal(true);
         int index = name.indexOf(rx);
         if(index != -1)
@@ -27,52 +27,24 @@ QString ConvertName(QString name)
     return result;
 }
 
-void EnsureFandomIndexExists(QSqlDatabase db, bool forcedReload)
+void EnsureFandomIndexExists(QSqlDatabase db)
 {
-    // get the state of curent tables.
-    // if fandomindex is empty load all the fandoms locally and merge the links into single table
-    // for every fandom that has ???? atatmpt to cut the part prior to / and amtch it to something
-    // track the list of merged fandoms and to wchi they ahave been merged
-    // reassign ficfandoms of merged ones to merged fandoms
-    // recalculate fandom statistics
-
     auto fandoms = database::puresql::GetAllFandomsFromSingleTable(db);
     for(auto fandom: fandoms)
         fandom->name = ConvertName(fandom->name);
-    //QString badToken = "????";
-    //I need to sort fandoms in such a way that every fandom containing ???? goes after its proper counterpart
-//    std::sort(std::begin(fandoms),std::end(fandoms),[badToken](core::FandomPtr f1, core::FandomPtr f2) -> bool {
-
-//        bool f1BadToken = f1->name.contains(QRegExp());
-//        bool f2BadToken = f2->name.contains(badToken);
-//        if(!f1BadToken && f2BadToken)
-//            return true;
-//        if(f1BadToken && !f2BadToken)
-//            return false;
-//        if(f1BadToken && f2BadToken)
-//            return f1->name < f2->name;
-//        if(f1BadToken || f2BadToken)
-//            return f1BadToken < f2BadToken;
-//        return f1->name < f2->name;
-//    });
 
     int currentId = 0;
     QMap<QString,int> fandomNameToNewId;
-    //qDebug() << fandomNameToNewId.keys();
-    //QHash<int,core::FandomPtr> idToFandom;
+    QHash<int,core::FandomPtr> idToFandom;
+    for(auto fandom : fandoms)
+        idToFandom[fandom->id] = fandom;
+
     QHash<int,int> fandomIdToNewId;
     QSet<int> affectedFics;
-//    for(auto fandom : fandoms)
-//    {
-//        if(fandom)
-//            qDebug() << fandom->name;
-//    }
-
     for(auto fandom : fandoms)
     {
         if(!fandom)
             continue;
-        //idToFandom[fandom->id] = fandom;
         auto convertedName = ConvertName(fandom->name);
         if(!fandomNameToNewId.contains(fandom->name))
         {
@@ -83,13 +55,34 @@ void EnsureFandomIndexExists(QSqlDatabase db, bool forcedReload)
         else
             fandomIdToNewId[fandom->id] = fandomNameToNewId[fandom->name];
     }
-//    for(auto fandom : fandomNameToNewId.keys())
-//        qDebug() << fandom;
+    QMap<QString, QList<int>> rebinds;
+    for(auto fandom : fandoms)
+    {
+        rebinds[fandom->name].push_back(fandomIdToNewId[fandom->id]);
+
+    }
+    QHash<int, QList<int>> ficfandoms = database::puresql::GetWholeFicFandomsTable(db);
+    QHash<int, QList<int>> resultingList;
+    for(int fandom : ficfandoms.keys())
+        resultingList[fandomIdToNewId[fandom]] += ficfandoms[fandom];
 
     database::Transaction transaction(db);
-    // create records for each id = newId in the index table
-    bool result = true;
     try {
+
+        bool result = true;
+        result = result && database::puresql::EraseFicFandomsTable(db);
+        for(auto key : resultingList.keys())
+        {
+            auto list = resultingList[key];
+            auto last = std::unique(list.begin(), list.end());
+            list.erase(last, list.end());
+            for(auto id : list)
+                result = result && database::puresql::AddFandomForFic(id, key, db);
+        }
+        if(!result)
+            throw std::logic_error("");
+
+
         for(auto key: fandomNameToNewId.keys())
             result = result && database::puresql::CreateFandomIndexRecord(fandomNameToNewId[key], key, db);
         if(!result)
@@ -97,13 +90,11 @@ void EnsureFandomIndexExists(QSqlDatabase db, bool forcedReload)
         for(auto id: fandomIdToNewId.keys())
         {
             result = result && database::puresql::AddFandomLink(id,fandomIdToNewId[id], db);
-            result = result && database::puresql::RebindFicsToIndex(id,fandomIdToNewId[id], db);
-            //qDebug() << " rebinding  " << id << " to: " << fandomIdToNewId[id];
         }
         if(!result)
             throw std::logic_error("");
     }
-     catch (const std::logic_error&) {
+    catch (const std::logic_error&) {
         transaction.cancel();
     }
     transaction.finalize();
