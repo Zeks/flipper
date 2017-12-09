@@ -40,7 +40,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     queryString.clear();
     queryString = "ID, ";
     queryString+= CreateCustomFields(filter) + " f.* ";
-    queryString+=" from fanfics f where 1 = 1 and alive = 1 " ;
+    queryString+=" from vFanfics f where 1 = 1 and alive = 1 " ;
     QString where = CreateWhere(filter);
     queryString+= where;
     ProcessBindings(filter, query);

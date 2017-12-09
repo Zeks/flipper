@@ -1303,10 +1303,12 @@ QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db)
             result.push_back(currentFandom);
         }
         else
-            currentFandom = FandomfromOldSingleTableQuery(q, currentFandom);
+        {
+            currentFandom = FandomfromOldSingleTableQuery(q);
+            result.push_back(currentFandom);
+        }
         lastName = currentName;
     }
-
     return result;
 }
 
@@ -1558,6 +1560,7 @@ bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
     urls << q.value("normal_url").toString().trimmed();
     urls << q.value("crossover_url").toString().trimmed();
     urls.removeAll("");
+    urls.removeAll("none");
 //    if(urls.size())
 //        qDebug() << urls;
     QString custom = q.value("section").toString();

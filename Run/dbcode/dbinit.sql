@@ -16,6 +16,11 @@ create table if not exists FANFICS (AUTHOR VARCHAR NOT NULL,TITLE VARCHAR NOT NU
  alter table fanfics add column author_web_id integer default null;
  alter table fanfics add column date_added datetime default;
  alter table fanfics add column date_deactivated datetime default null;
+ 
+ CREATE VIEW vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
+wordcount, favourites, chapters, complete, at_chapter, faves, ffn_id, author_id,
+wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows
+ from fanfics;
 
 CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC);

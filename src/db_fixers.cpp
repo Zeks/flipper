@@ -15,7 +15,7 @@ QString ConvertName(QString name)
         result = cache[name];
     else
     {
-        QRegExp rx = QRegExp("/[A-Za-z0-9.\\s]{0,}[^A-Za-z0-9.\\s]");
+        QRegExp rx = QRegExp("(/(.|\\s){0,}[^\\x0000-\\x007F])|(/(.|\\s){0,}[?][?][?])");
         rx.setMinimal(true);
         int index = name.indexOf(rx);
         if(index != -1)
@@ -41,6 +41,9 @@ void EnsureFandomIndexExists(QSqlDatabase db)
 
     QHash<int,int> fandomIdToNewId;
     QSet<int> affectedFics;
+    QSet<int> trackedNewFandomIds;
+    QSet<int> trackedOldFandomIds;
+    QSet<QString> trackedFandomNames = {"railgun", "Alex Rider", "Diary of a Wimpy Kid"};
     for(auto fandom : fandoms)
     {
         if(!fandom)
@@ -54,17 +57,51 @@ void EnsureFandomIndexExists(QSqlDatabase db)
         }
         else
             fandomIdToNewId[fandom->id] = fandomNameToNewId[fandom->name];
+        if(convertedName.contains("railgun", Qt::CaseInsensitive))
+        {
+            //qDebug() << "railgun is converted to: " << fandomIdToNewId[fandom->id];
+            trackedNewFandomIds.insert(fandomIdToNewId[fandom->id]);
+            trackedOldFandomIds.insert(fandom->id);
+        }
+        if(convertedName.contains("Alex Rider", Qt::CaseInsensitive))
+        {
+            //qDebug() << "Alex rider is converted to: " << fandomIdToNewId[fandom->id];
+            trackedNewFandomIds.insert(fandomIdToNewId[fandom->id]);
+            trackedOldFandomIds.insert(fandom->id);
+        }
+        if(convertedName.contains("Diary of a Wimpy Kid", Qt::CaseInsensitive))
+        {
+            trackedNewFandomIds.insert(fandomIdToNewId[fandom->id]);
+            trackedOldFandomIds.insert(fandom->id);
+//            qDebug() << "Wimpy was" << fandom->id;
+//            qDebug() << "Wimpy is converted to: " << fandomIdToNewId[fandom->id];
+        }
+        fandom->name = convertedName;
     }
     QMap<QString, QList<int>> rebinds;
     for(auto fandom : fandoms)
     {
-        rebinds[fandom->name].push_back(fandomIdToNewId[fandom->id]);
-
+        //auto convertedName = ConvertName(fandom->name);
+        auto newFandomId = fandomIdToNewId[fandom->id];
+//        if(trackedOldFandomIds.contains(fandom->id))
+//            qDebug() << "pushing fandom" <<  fandom->name << "to" << newFandomId;
+        rebinds[fandom->name].push_back(newFandomId);
     }
+
     QHash<int, QList<int>> ficfandoms = database::puresql::GetWholeFicFandomsTable(db);
     QHash<int, QList<int>> resultingList;
     for(int fandom : ficfandoms.keys())
+    {
+//        if(idToFandom.contains(fandom))
+//        {
+//            auto fandomPtr = idToFandom[fandom];
+//            if(trackedOldFandomIds.contains(fandomPtr->id))
+//                qDebug() << "registering ficlist: " << fandomPtr->name << ":" << ficfandoms[fandom];
+        //}
+//        else if(ficfandoms[fandom].contains(1189773))
+//            qDebug() << "fandom id not found in fandom list" << fandom;
         resultingList[fandomIdToNewId[fandom]] += ficfandoms[fandom];
+    }
 
     database::Transaction transaction(db);
     try {
