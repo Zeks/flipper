@@ -87,10 +87,12 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void Init();
     ~MainWindow();
-    void ReInitFandoms();
+    // currently broken, need to refator the whole procedure
+    //void ReInitFandoms();
+    //bool CheckSectionAvailability();
     void InitInterfaces();
     void InitConnections();
-    bool CheckSectionAvailability();
+
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;
@@ -174,7 +176,7 @@ private:
     QString currentProcessedSection;
     QString dbName = "CrawlerDB.sqlite";
     QDateTime lastUpdated;
-    QHash<QString, core::Fandom> sections;
+    //QHash<QString, core::Fandom> sections;
     QSignalMapper* mapper = nullptr;
     QProgressBar* pbMain = nullptr;
     QLabel* lblCurrentOperation = nullptr;
@@ -216,9 +218,10 @@ private:
     void ReinitRecent(QString name);
 
 public slots:
-    void ProcessFandoms(WebPage webPage);
-    void ProcessCrossovers(WebPage webPage);
-
+    //broken and needs refactoring anyway
+    //void ProcessFandoms(WebPage webPage);
+    //void ProcessCrossovers(WebPage webPage);
+    //void on_pbInit_clicked();
     void OnChapterUpdated(QVariant, QVariant);
     void OnTagAdd(QVariant tag, QVariant row);
     void OnTagRemove(QVariant tag, QVariant row);
@@ -235,7 +238,8 @@ private slots:
     void OnSectionChanged(QString);
     void OnCheckboxFilter(int);
     void on_pbLoadDatabase_clicked();
-    void on_pbInit_clicked();
+
+
     void on_pbCrawl_clicked();
     void OnLinkClicked(const QUrl &);
 

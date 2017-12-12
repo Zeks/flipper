@@ -36,7 +36,7 @@ public:
 
     virtual void Clear() ;
     virtual void ClearIndex() ;
-    virtual bool Sync(bool forcedSync = false) ;
+    //virtual bool Sync(bool forcedSync = false) ;
     virtual bool IsDataLoaded() ;
 
     virtual bool Load() ;
@@ -54,7 +54,7 @@ public:
     int GetFandomCount();
 
     virtual int GetIDForName(QString) ;
-    virtual core::FandomPtr GetFandom(QString, bool mergeUrls = false);
+    virtual core::FandomPtr GetFandom(QString);
 
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);

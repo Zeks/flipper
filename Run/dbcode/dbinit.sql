@@ -63,7 +63,7 @@ CREATE INDEX if not exists I_FANDOMINDEX ON fandomindex (id ASC, name asc);
 CREATE INDEX if not exists I_FANDOMINDEX_ID ON fandomindex (id ASC);
 CREATE INDEX if not exists I_FANDOMINDEX_NAME ON fandomindex (name ASC);
 
-create table if not exists fandomurls (global_id integer, url VARCHAR NOT NULL, website varchar not null, custom VARCHAR);
+create table if not exists fandomurls (global_id integer, url VARCHAR NOT NULL, website varchar not null, custom VARCHAR, primary key(global_id, url));
 CREATE INDEX if not exists I_FURL_ID ON fandomurls (global_id ASC);
 CREATE INDEX if not exists I_FURL_URL ON fandomurls (url ASC);
 CREATE INDEX if not exists I_FURL_CUSTOM ON fandomurls (custom ASC);

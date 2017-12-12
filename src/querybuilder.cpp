@@ -277,10 +277,8 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
     QString queryString;
     if(filter.fandom.trimmed().isEmpty())
         return queryString;
-    if(filter.includeCrossovers)
-        queryString+=QString(" and  f.fandom like '%%1%' and f.fandom like '%CROSSOVER%'").arg(filter.fandom);
-    else
-        queryString+=QString(" and  f.fandom like '%%1%'").arg(filter.fandom);
+    QString add = " and id in (select fic_id from ficfandoms where fandom_id = (select id from fandomindex where name = '%1')) ";
+    queryString+=add.arg(filter.fandom);
     return queryString;
 
 }

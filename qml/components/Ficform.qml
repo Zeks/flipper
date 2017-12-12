@@ -121,21 +121,6 @@ Rectangle {
         RowLayout {
             id: rowTitle
 
-
-            Text {
-                id: lblTitle
-                width: 517
-                height: 21
-                textFormat: Text.RichText;
-                text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + title + "</a></body></html>"
-                verticalAlignment: Text.AlignVCenter
-                style: Text.Raised
-                font.pointSize: 16
-                font.family: "Verdana"
-                font.bold: true
-                color: "red"
-                onLinkActivated: Qt.openUrlExternally(link)
-            }
             Image {
                 id: imgCopy
                 width: 24
@@ -151,6 +136,20 @@ Rectangle {
                         lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
                     }
                 }
+            }
+            Text {
+                id: lblTitle
+                width: 517
+                height: 21
+                textFormat: Text.RichText;
+                text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + title + "</a></body></html>"
+                verticalAlignment: Text.AlignVCenter
+                style: Text.Raised
+                font.pointSize: 16
+                font.family: "Verdana"
+                font.bold: true
+                color: "red"
+                onLinkActivated: Qt.openUrlExternally(link)
             }
         }
 
