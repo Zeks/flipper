@@ -185,5 +185,7 @@ void TagWidget::OnRemoveTagFromEdit(QString tag)
 
 void TagWidget::on_pbAssignTagToFandom_clicked()
 {
-    fandomsInterface->AssignTagToFandom(ui->cbFandom->currentText(), ui->cbAssignTag->currentText());
+    fandomsInterface->AssignTagToFandom(ui->cbFandom->currentText(),
+                                        ui->cbAssignTag->currentText(),
+                                        ui->chkTagIncludingCrosses->isChecked());
 }

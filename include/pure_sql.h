@@ -20,7 +20,7 @@ QStringList GetFandomListFromDB(QSqlDatabase db);
 //void CalculateFandomsAverages(QSqlDatabase db);
 void CalculateFandomsFicCounts(QSqlDatabase db);
 bool UpdateFandomStats(int fandomId, QSqlDatabase db);
-void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db);
+void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers = false);
 void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);

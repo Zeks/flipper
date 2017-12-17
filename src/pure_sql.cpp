@@ -175,10 +175,12 @@ QStringList GetFandomListFromDB(QSqlDatabase db)
     return result;
 }
 
-void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db)
+void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers)
 {
     QString qs = "INSERT INTO FicTags(fic_id, tag) SELECT fic_id, '%1' as tag from FicFandoms f WHERE fandom_id = :fandom_id "
                  " and NOT EXISTS(SELECT 1 FROM FicTags WHERE fic_id = f.fic_id and tag = '%1')";
+    if(includeCrossovers)
+        qs+=" and (select count(distinct fandom_id) from ficfandoms where fic_id = f.fic_id) = 1";
     qs=qs.arg(tag);
     QSqlQuery q(db);
     q.prepare(qs);
@@ -214,7 +216,7 @@ void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db)
 bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db)
 {
     QString qs = "delete from FicTags where fic_id = :fic_id and tag = :tag";
-    qs=qs.arg(tag);
+    //qs=qs.arg(tag);
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":fic_id", fic_id);

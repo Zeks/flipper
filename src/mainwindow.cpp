@@ -445,6 +445,7 @@ void MainWindow::SetupFanficTable()
     qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
     qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
 
+    tagsInterface->LoadAlltags();
     tagList = tagsInterface->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
     QSettings settings("settings.ini", QSettings::IniFormat);

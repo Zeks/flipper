@@ -408,14 +408,14 @@ bool Fandoms::LoadFandom(QString name)
     return true;
 }
 
-bool Fandoms::AssignTagToFandom(QString fandom, QString tag)
+bool Fandoms::AssignTagToFandom(QString fandom, QString tag, bool includeCrosses)
 {
     fandom = core::Fandom::ConvertName(fandom);
     if(!EnsureFandom(fandom))
         return false;
 
     auto id = nameIndex[fandom]->id;
-    database::puresql::AssignTagToFandom(tag, id, db);
+    database::puresql::AssignTagToFandom(tag, id, db, includeCrosses);
     return true;
 }
 
