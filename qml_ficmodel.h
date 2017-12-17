@@ -48,6 +48,7 @@ public:
         AtChapterRole,
         RownumRole,
         RecommendationsRole,
+        FicIdRole,
         EndRole = RecommendationsRole
 
     };

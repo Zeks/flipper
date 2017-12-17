@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QString>
 #include <QDateTime>
 #include <QSharedPointer>
+#include <QRegExp>
+#include <QHash>
 namespace core {
 
 class DBEntity{
@@ -246,45 +248,76 @@ class Section : public DBEntity
 class Fandom;
 typedef  QSharedPointer<Fandom> FandomPtr;
 
+class Url
+{
+public:
+    Url(QString url, QString source, QString type = "default"){
+        this->url = url;
+        this->source = source;
+        this->type = type;
+    }
+    QString GetUrl(){return url;}
+    private:
+    QString url;
+    QString source;
+    QString type;
+};
+
 class Fandom : public DBEntity
 {
     public:
     Fandom(){}
-    Fandom(QString name){this->name = name;}
-    Fandom(QString name,QString section,QString url,QString crossoverUrl, QString source = "ffn"){
-        this->name = name.trimmed();
-        this->section = section.trimmed();
-        this->url = url.trimmed();
-        this->crossoverUrl = crossoverUrl.trimmed();
-        this->source = source.trimmed();
-    }
+    Fandom(QString name){this->name = ConvertName(name);}
+//    Fandom(QString name,QString section,QString source = "ffn"){
+//        this->name = ConvertName(name);
+//        this->section = section.trimmed();
+//        this->source = source.trimmed();
+//    }
     static FandomPtr NewFandom() { return QSharedPointer<Fandom>(new Fandom);}
-    QStringList GetUrls(){
-//        QStringList  result;
-//        if(!url.isEmpty() && url != "none")
-//            result.push_back(url);
-//        if(!crossoverUrl.isEmpty() && crossoverUrl != "none")
-//            result.push_back(crossoverUrl);
-//        return result;
-        return mergedUrls;
-    };
+    QList<Url> GetUrls(){
+        return urls;
+    }
+    void AddUrl(Url url){
+        urls.append(url);
+    }
+    void SetName(QString name){this->name = ConvertName(name);}
+    QString GetName() const {return this->name;}
     int id = -1;
     int idInRecentFandoms = -1;
     int ficCount = 0;
     double averageFavesTop3 = 0.0;
-    QString name;
+
     QString section = "none";
-    QString url = "none";
-    QString crossoverUrl = "none";
     QString source = "ffn";
-    QStringList mergedUrls;
+    QList<Url> urls;
     QDate dateOfCreation;
     QDate dateOfFirstFic;
     QDate dateOfLastFic;
     QDate lastUpdateDate;
-
-
     bool tracked = false;
+    static QString ConvertName(QString name)
+    {
+        static QHash<QString, QString> cache;
+        name=name.trimmed();
+        QString result;
+        if(cache.contains(name))
+            result = cache[name];
+        else
+        {
+            QRegExp rx = QRegExp("(/(.|\\s){0,}[^\\x0000-\\x007F])|(/(.|\\s){0,}[?][?][?])");
+            rx.setMinimal(true);
+            int index = name.indexOf(rx);
+            if(index != -1)
+                cache[name] = name.left(index).trimmed();
+            else
+                cache[name] = name.trimmed();
+            result = cache[name];
+        }
+        return result;
+    }
+private:
+    QString name;
+
 };
 
 

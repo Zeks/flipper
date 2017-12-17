@@ -219,15 +219,15 @@ void MainWindow::Init()
     connect(ui->pbWipeFandom, SIGNAL(clicked(bool)), this, SLOT(WipeSelectedFandom(bool)));
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
 
-    sections.insert("Anime/Manga", core::Fandom{"Anime/Manga", "anime", NameOfFandomSectionToLink("anime"), NameOfCrossoverSectionToLink("anime")});
-    sections.insert("Misc", core::Fandom{"Misc", "misc", NameOfFandomSectionToLink("misc"), NameOfCrossoverSectionToLink("misc")});
-    sections.insert("Books", core::Fandom{"Books", "book", NameOfFandomSectionToLink("book"), NameOfCrossoverSectionToLink("book")});
-    sections.insert("Movies", core::Fandom{"Movies", "movie", NameOfFandomSectionToLink("movie"), NameOfCrossoverSectionToLink("movie")});
-    sections.insert("Cartoons", core::Fandom{"Cartoons", "cartoon", NameOfFandomSectionToLink("cartoon"), NameOfCrossoverSectionToLink("cartoon")});
-    sections.insert("Comics", core::Fandom{"Comics", "comic", NameOfFandomSectionToLink("comic"), NameOfCrossoverSectionToLink("comic")});
-    sections.insert("Games", core::Fandom{"Games", "game", NameOfFandomSectionToLink("game"), NameOfCrossoverSectionToLink("game")});
-    sections.insert("Plays/Musicals", core::Fandom{"Plays/Musicals", "play", NameOfFandomSectionToLink("play"), NameOfCrossoverSectionToLink("play")});
-    sections.insert("TV Shows", core::Fandom{"TV Shows", "tv", NameOfFandomSectionToLink("tv"), NameOfCrossoverSectionToLink("tv")});
+//    sections.insert("Anime/Manga", core::Fandom{"Anime/Manga", "anime", NameOfFandomSectionToLink("anime"), NameOfCrossoverSectionToLink("anime")});
+//    sections.insert("Misc", core::Fandom{"Misc", "misc", NameOfFandomSectionToLink("misc"), NameOfCrossoverSectionToLink("misc")});
+//    sections.insert("Books", core::Fandom{"Books", "book", NameOfFandomSectionToLink("book"), NameOfCrossoverSectionToLink("book")});
+//    sections.insert("Movies", core::Fandom{"Movies", "movie", NameOfFandomSectionToLink("movie"), NameOfCrossoverSectionToLink("movie")});
+//    sections.insert("Cartoons", core::Fandom{"Cartoons", "cartoon", NameOfFandomSectionToLink("cartoon"), NameOfCrossoverSectionToLink("cartoon")});
+//    sections.insert("Comics", core::Fandom{"Comics", "comic", NameOfFandomSectionToLink("comic"), NameOfCrossoverSectionToLink("comic")});
+//    sections.insert("Games", core::Fandom{"Games", "game", NameOfFandomSectionToLink("game"), NameOfCrossoverSectionToLink("game")});
+//    sections.insert("Plays/Musicals", core::Fandom{"Plays/Musicals", "play", NameOfFandomSectionToLink("play"), NameOfCrossoverSectionToLink("play")});
+//    sections.insert("TV Shows", core::Fandom{"TV Shows", "tv", NameOfFandomSectionToLink("tv"), NameOfCrossoverSectionToLink("tv")});
 
     ;
     ui->cbNormals->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
@@ -245,6 +245,8 @@ void MainWindow::Init()
     if(!showTagWidget)
         ui->tagWidget->removeTab(1);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnLinkClicked);
+
+    connect(ui->pbFormattedList, &QPushButton::clicked, this, &MainWindow::OnDoFormattedList);
 
     // should refer to new tag widget instead
     GenericEventFilter* eventFilter = new GenericEventFilter(this);
@@ -443,6 +445,7 @@ void MainWindow::SetupFanficTable()
     qwFics->setResizeMode(QQuickWidget::SizeRootObjectToView);
     qwFics->rootContext()->setContextProperty("ficModel", typetableModel);
 
+    tagsInterface->LoadAlltags();
     tagList = tagsInterface->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
     QSettings settings("settings.ini", QSettings::IniFormat);
@@ -799,7 +802,7 @@ void MainWindow::LoadMoreAuthors(bool reprocessCache)
     int cachedPages = 0;
     int loadedPages = 0;
     QSqlDatabase db = QSqlDatabase::database();
-    QSqlDatabase pcDb = QSqlDatabase::database("PageCache");
+    QSqlDatabase pcDb = QSqlDatabase::database("Service");
 //    bool hasTransactions = db.driver()->hasFeature(QSqlDriver::Transactions);
 //    bool transOpen = db.transaction();
     database::Transaction transaction(db);
@@ -1042,9 +1045,12 @@ void MainWindow::OnCopyFicUrl(QString text)
 
 void MainWindow::OnOpenRecommenderLinks(QString url)
 {
+    if(!ui->chkHeartProfile->isChecked())
+        return;
     auto webId = url_utils::GetWebId(url, "ffn");
     auto id = fanficsInterface->GetIDFromWebID(webId.toInt(), "ffn");
     auto recommenders = recsInterface->GetRecommendersForFicId(id);
+
     for(auto recommender : recommenders)
     {
         auto author = authorsInterface->GetById(recommender);
@@ -1062,9 +1068,87 @@ void MainWindow::OnCopyAllUrls()
     {
         if(ui->chkInfoForLinks->isChecked())
         {
-            result += typetableModel->index(i, 2).data().toString() + "\n";
+            //result += typetableModel->index(i, 2).data().toString() + "\n";
         }
-        result += "http://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";
+        result += "http://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
+    }
+    clipboard->setText(result);
+}
+
+void MainWindow::OnDoFormattedList()
+{
+    QClipboard *clipboard = QApplication::clipboard();
+    QString result;
+    QList<int> ficIds;
+    for(int i = 0; i < typetableModel->rowCount(); i ++)
+        ficIds.push_back(typetableModel->index(i, 17).data().toInt());
+    QSet<QPair<QString, int>> already;
+    QMap<QString, QList<int>> byFandoms;
+    for(auto id : ficIds)
+    {
+        auto ficPtr = fanficsInterface->GetFicById(id);
+
+        auto fandoms = fanficsInterface->GetFandomsForFicAsNames(id);
+        bool validGenre = false;
+        for(auto genre : ficPtr->genres)
+        {
+            if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
+               validGenre = true;
+        }
+//        qDebug() <<  validGenre  << " " << ficPtr->title;
+//        qDebug() <<  ficPtr->genres.join("/")  << " " << ficPtr->title;
+        if(!validGenre)
+            continue;
+        if(fandoms.size() == 0)
+        {
+            auto fandom = ficPtr->fandom.trimmed();
+            byFandoms[fandom].push_back(id);
+            qDebug() << "no fandoms written for: " << "http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">";
+        }
+        for(auto fandom: fandoms)
+        {
+            byFandoms[fandom].push_back(id);
+        }
+    }
+
+    result += "<ul>";
+    for(auto fandomKey : byFandoms.keys())
+        result+= "<li><a href=\"#" + fandomKey.toLower().replace(" ","_") +"\">" + fandomKey + "</a></li>";
+    An<PageManager> pager;
+    pager->SetDatabase(QSqlDatabase::database());
+    for(auto fandomKey : byFandoms.keys())
+    {
+        result+="<h4 id=\""+ fandomKey.toLower().replace(" ","_") +  "\">" + fandomKey + "</h4>";
+
+        for(auto fic : byFandoms[fandomKey])
+        {
+            QPair<QString, int> key = {fandomKey, fic};
+            if(already.contains(key))
+                continue;
+            already.insert(key);
+            auto ficPtr = fanficsInterface->GetFicById(fic);
+
+            auto genreString = ficPtr->genreString;
+            bool validGenre = false;
+            for(auto genre : ficPtr->genres)
+            {
+                if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
+                   validGenre = true;
+            }
+            if(validGenre)
+            {
+                result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+                result+=ficPtr->genres.join("/")+ "<br><br>";
+                QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
+
+                if(ficPtr->complete)
+                    result+=status.arg("green").arg("Complete<br>");
+                else
+                    result+=status.arg("red").arg("Active<br>");
+                result+=ficPtr->summary + "<br><br>";
+            }
+
+        }
     }
     clipboard->setText(result);
 }
@@ -1108,6 +1192,7 @@ void MainWindow::ReadSettings()
     ui->leNotContainsWords->setText(settings.value("Settings/minusWords", "").toString());
     ui->leContainsWords->setText(settings.value("Settings/plusWords", "").toString());
 
+    ui->chkHeartProfile->setChecked(settings.value("Settings/chkHeartProfile", false).toBool());
     ui->chkGenrePlus->setChecked(settings.value("Settings/chkGenrePlus", false).toBool());
     ui->chkGenreMinus->setChecked(settings.value("Settings/chkGenreMinus", false).toBool());
     ui->chkWordsPlus->setChecked(settings.value("Settings/chkWordsPlus", false).toBool());
@@ -1153,6 +1238,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
 
 
+    settings.setValue("Settings/chkHeartProfile", ui->chkHeartProfile->isChecked());
     settings.setValue("Settings/chkGenrePlus", ui->chkGenrePlus->isChecked());
     settings.setValue("Settings/chkGenreMinus", ui->chkGenreMinus->isChecked());
     settings.setValue("Settings/chkWordsPlus", ui->chkWordsPlus->isChecked());
@@ -1181,7 +1267,7 @@ void MainWindow::WriteSettings()
 
 QString MainWindow::GetCurrentFandomName()
 {
-    return ui->cbNormals->currentText().trimmed();
+    return core::Fandom::ConvertName(ui->cbNormals->currentText());
 }
 
 void MainWindow::OnChapterUpdated(QVariant id, QVariant chapter)
@@ -1257,14 +1343,14 @@ void MainWindow::on_pbCrawl_clicked()
     ignoreUpdateDate = false;
     nextUrl = QString();
     //urls.pop_front();
-    for(QString url: urls)
+    for(auto url: urls)
     {
-        currentFilterUrl = url;
+        currentFilterUrl = url.GetUrl();
         auto lastUpdated = fandom->lastUpdateDate;
-        RequestAndProcessPage(fandom->name, lastUpdated, AppendCurrentSearchParameters(url));
+        RequestAndProcessPage(fandom->GetName(), lastUpdated, AppendCurrentSearchParameters(currentFilterUrl));
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
-    ReinitRecent(fandom->name);
+    ReinitRecent(fandom->GetName());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
 
 }
@@ -1332,10 +1418,6 @@ void MainWindow::on_pbLoadDatabase_clicked()
     ReinitRecent(ui->cbNormals->currentText());
 }
 
-void MainWindow::on_pbInit_clicked()
-{
-    ReInitFandoms();
-}
 
 
 void MainWindow::OnCheckboxFilter(int)
@@ -1349,9 +1431,11 @@ void MainWindow::OnCheckboxFilter(int)
 
 void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
-    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    auto ficLimitActive =  ui->chkFicLimitActivated->isChecked();
+    int maxFicCountValue = ficLimitActive ? ui->sbMaxFicCount->value()  : 0;
     if(checked && (maxFicCountValue < 1 || maxFicCountValue >50))
-        ui->sbMaxFicCount->setValue(10);
+        ui->sbMaxFicCount->setValue(settings.value("Settings/defaultRandomFicCount", 6).toInt());
 }
 
 void MainWindow::on_cbCustomFilters_currentTextChanged(const QString &)
@@ -1637,8 +1721,8 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         processedCount = 0;
         ignoreUpdateDate = false;
         nextUrl = QString();
-        for(QString url: urls)
-            RequestAndProcessPage(fandom->name, lastUpdated.date(), url);
+        for(auto url: urls)
+            RequestAndProcessPage(fandom->GetName(), lastUpdated.date(), url.GetUrl());
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
 }
@@ -1724,7 +1808,8 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
 
         {
             fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
-            fandoms.intersect(fandomsInterface->EnsureFandoms(parser.processedStuff));
+            auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
+            fandoms.intersect(fandoms);
             QList<core::FicRecommendation> tempRecommendations;
             tempRecommendations.reserve(parser.processedStuff.size());
             uniqueAuthors.reserve(parser.processedStuff.size());

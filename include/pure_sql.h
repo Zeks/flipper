@@ -17,10 +17,10 @@ QStringList GetTrackedFandomList(QSqlDatabase db);
 bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 QStringList GetFandomListFromDB(QSqlDatabase db);
-void CalculateFandomsAverages(QSqlDatabase db);
+//void CalculateFandomsAverages(QSqlDatabase db);
 void CalculateFandomsFicCounts(QSqlDatabase db);
 bool UpdateFandomStats(int fandomId, QSqlDatabase db);
-void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db);
+void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers = false);
 void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
@@ -28,14 +28,24 @@ bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db);
+QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db);
 core::FandomPtr GetFandom(QString name, QSqlDatabase db);
-bool CleanuFandom(int fandom_id,  QSqlDatabase db);
+bool CleanupFandom(int fandom_id,  QSqlDatabase db);
 int GetFandomCountInDatabase(QSqlDatabase db);
 bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db);
+bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db);
+//bool AddFandomLink(int oldId, int newId, QSqlDatabase db);
+//bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db);
+QHash<int, QList<int> > GetWholeFicFandomsTable(QSqlDatabase db);
+bool EraseFicFandomsTable(QSqlDatabase db);
+
+
+QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db);
 
 int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
 core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db);
+core::FicPtr GetFicById(int ficId, QSqlDatabase db);
 
 bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);

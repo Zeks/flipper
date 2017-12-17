@@ -40,7 +40,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     queryString.clear();
     queryString = "ID, ";
     queryString+= CreateCustomFields(filter) + " f.* ";
-    queryString+=" from fanfics f where 1 = 1 and alive = 1 " ;
+    queryString+=" from vFanfics f where 1 = 1 and alive = 1 " ;
     QString where = CreateWhere(filter);
     queryString+= where;
     ProcessBindings(filter, query);
@@ -57,6 +57,7 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
 {
     QString queryString;
     queryString+=ProcessSumFaves(filter);
+    queryString+=ProcessFandoms(filter);
     queryString+=ProcessSumRecs(filter);
     queryString+=ProcessTags(filter);
     queryString+=ProcessUrl(filter);
@@ -103,10 +104,17 @@ QString DefaultQueryBuilder::ProcessBias(StoryFilter filter)
     return result;
 }
 
-QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter filter)
+QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter)
 {
     QString sumOfAuthorFavourites = " (SELECT sumfaves FROM recommenders where name = f.author) as sumfaves, ";
     return sumOfAuthorFavourites;
+}
+
+QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
+{
+    //return QString();
+    QString fandoms = " ( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, ";
+    return fandoms;
 }
 
 // not exactly what its supposed to do but okay query to save
@@ -214,7 +222,10 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
         queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
 
     if(filter.sortMode == StoryFilter::favrate)
-        queryString+= " and published <> updated and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') and updated > date('now', '-60 days') ";
+        queryString+= " and published <> updated "
+                      " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
+                      " and published < date('now', '-" + QString::number(45) + " days') "
+                      " and updated > date('now', '-60 days') ";
     return queryString;
 }
 
@@ -266,10 +277,8 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
     QString queryString;
     if(filter.fandom.trimmed().isEmpty())
         return queryString;
-    if(filter.includeCrossovers)
-        queryString+=QString(" and  f.fandom like '%%1%' and f.fandom like '%CROSSOVER%'").arg(filter.fandom);
-    else
-        queryString+=QString(" and  f.fandom like '%%1%'").arg(filter.fandom);
+    QString add = " and id in (select fic_id from ficfandoms where fandom_id = (select id from fandomindex where name = '%1')) ";
+    queryString+=add.arg(filter.fandom);
     return queryString;
 
 }

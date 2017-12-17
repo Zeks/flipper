@@ -133,6 +133,11 @@ bool Fanfics::LoadFicToDB(core::FicPtr fic)
     return true;
 }
 
+core::FicPtr Fanfics::GetFicById(int id)
+{
+    return database::puresql::GetFicById(id, db);
+}
+
 
 int Fanfics::GetIDFromWebID(int id, QString website)
 {
@@ -173,6 +178,11 @@ bool Fanfics::DeactivateFic(int ficId, QString website)
 void Fanfics::ClearProcessedHash()
 {
     processedHash.clear();
+}
+
+QStringList Fanfics::GetFandomsForFicAsNames(int ficId)
+{
+    return database::puresql::GetFandomNamesForFicId(ficId, db);
 }
 
 bool Fanfics::AssignChapter(int ficId, int chapter)
@@ -237,10 +247,16 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
             database::puresql::SetUpdateOrInsert(fic, db, alwaysUpdateIfNotInsert);
             {
                 QWriteLocker lock(&mutex);
+                bool insert = false;
                 if(fic->updateMode == core::UpdateMode::update && !updateQueue.contains(id))
                     updateQueue[id] = fic;
                 if(fic->updateMode == core::UpdateMode::insert && !insertQueue.contains(id))
+                {
                     insertQueue[id] = fic;
+                    insert = true;
+                }
+                if(!insert)
+                    updateQueue[id] = fic;
             }
         }
         else
@@ -257,14 +273,32 @@ bool Fanfics::FlushDataQueues()
     for(auto fic: insertQueue)
     {
         insertCounter++;
-        database::puresql::InsertIntoDB(fic, db);
+        bool writeResult = database::puresql::InsertIntoDB(fic, db);
+        fic->id = GetIDFromWebID(fic->webId, "ffn");
         for(auto fandom: fic->fandoms)
-            database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+        {
+            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+            if(!result)
+            {
+                qDebug() << "failed to write fandom for: " << fic->webId;
+                fandomInterface->GetIDForName(fandom);
+            }
+        }
     }
 
     for(auto fic: updateQueue)
     {
+        fic->id = GetIDFromWebID(fic->webId, "ffn");
         database::puresql::UpdateInDB(fic, db);
+        for(auto fandom: fic->fandoms)
+        {
+            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+            if(!result)
+            {
+                qDebug() << "failed to write fandom for: " << fic->webId;
+                fandomInterface->GetIDForName(fandom);
+            }
+        }
         updateCounter++;
     }
 

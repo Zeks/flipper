@@ -118,6 +118,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="chkTagIncludingCrosses">
+       <property name="text">
+        <string>Crosses</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pbAssignTagToFandom">
        <property name="text">
         <string>Do It</string>

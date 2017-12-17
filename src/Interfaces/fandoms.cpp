@@ -53,6 +53,7 @@ void Fandoms::ClearIndex()
 
 bool Fandoms::EnsureFandom(QString name)
 {
+    name = core::Fandom::ConvertName(name.trimmed());
     if(nameIndex.contains(name) || LoadFandom(name))
         return true;
     return false;
@@ -66,8 +67,11 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
         if(!fic)
             continue;
         for(auto fandom : fic->fandoms)
+        {
+            fandom = core::Fandom::ConvertName(fandom.trimmed());
             if(!uniqueFandoms.contains(fandom))
                 uniqueFandoms.insert(fandom);
+        }
     }
     for(auto fandom: uniqueFandoms)
     {
@@ -81,7 +85,10 @@ bool Fandoms::RecalculateFandomStats(QStringList fandoms)
 {
     bool success = true;
     for(auto fandom : fandoms)
+    {
+        fandom = core::Fandom::ConvertName(fandom.trimmed());
         success = success && database::puresql::UpdateFandomStats(GetIDForName(fandom), db);
+    }
     return success;
 }
 
@@ -92,7 +99,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom)
 
     // getting empty node if its not there which is not a problem since we are
     // supposed to fill it at the end
-    auto current = nameIndex[fandom->name];
+    auto current = nameIndex[fandom->GetName()];
     if(current && current->id != -1)
         return true;
     database::Transaction transaction(db);
@@ -101,7 +108,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom)
     if(!result)
         return false;
 
-    fandom->id = portableDBInterface->GetLastIdForTable("fandoms");
+    //fandom->id = portableDBInterface->GetLastIdForTable("fandoms");
     if(!transaction.finalize())
         return false;
     AddToIndex(fandom);
@@ -111,13 +118,15 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom)
 bool Fandoms::CreateFandom(QString fandom)
 {
     core::FandomPtr fandomPtr (new core::Fandom());
-    fandomPtr->name = fandom;
+    fandom = core::Fandom::ConvertName(fandom);
+    fandomPtr->SetName(fandom);
     return CreateFandom(fandomPtr);
 }
 
-core::FandomPtr Fandoms::GetFandom(QString name, bool mergeUrls)
+core::FandomPtr Fandoms::GetFandom(QString name)
 {
     core::FandomPtr result;
+    name = core::Fandom::ConvertName(name);
     if(!name.trimmed().isEmpty() && EnsureFandom(name))
         result = nameIndex[name];
 
@@ -136,7 +145,7 @@ QStringList Fandoms::GetRecentFandoms()
     });
 
     std::for_each(std::begin(recentFandoms), std::end(recentFandoms), [&result](core::FandomPtr f){
-        result.push_back(f->name);
+        result.push_back(f->GetName());
     });
     return result;
 }
@@ -157,13 +166,14 @@ QStringList Fandoms::GetFandomList()
 
 bool Fandoms::AddToTopOfRecent(QString fandom)
 {
+    fandom = core::Fandom::ConvertName(fandom);
     if(!EnsureFandom(fandom))
         return false;
 
     bool foundIterating = false;
     for(auto bit: recentFandoms)
     {
-        if(bit->name != fandom)
+        if(bit->GetName() != fandom)
             bit->idInRecentFandoms = bit->idInRecentFandoms+1;
         else
         {
@@ -183,6 +193,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
 
 void Fandoms::PushFandomToTopOfRecent(QString fandom)
 {
+    fandom = core::Fandom::ConvertName(fandom);
     if(!EnsureFandom(fandom))
         return;
 
@@ -217,18 +228,18 @@ QList<core::FandomPtr> Fandoms::FilterFandoms(std::function<bool (core::FandomPt
 }
 
 // do I really need that?
-bool Fandoms::Sync(bool forcedSync)
-{
-    bool ok = true;
-    for(auto fandom: fandoms)
-    {
-        if(forcedSync || fandom->hasChanges)
-        {
-            ok = ok && database::puresql::WriteMaxUpdateDateForFandom(fandom, db);
-        }
-    }
-    return ok;
-}
+//bool Fandoms::Sync(bool forcedSync)
+//{
+//    bool ok = true;
+//    for(auto fandom: fandoms)
+//    {
+//        if(forcedSync || fandom->hasChanges)
+//        {
+//            ok = ok && database::puresql::WriteMaxUpdateDateForFandom(fandom, db);
+//        }
+//    }
+//    return ok;
+//}
 
 bool Fandoms::Load()
 {
@@ -294,6 +305,7 @@ bool Fandoms::LoadAllFandoms(bool forced)
 
 bool Fandoms::IsTracked(QString fandom)
 {
+    fandom = core::Fandom::ConvertName(fandom.trimmed());
     if(!EnsureFandom(fandom))
         return false;
     return nameIndex[fandom]->tracked;
@@ -314,18 +326,19 @@ void Fandoms::AddToIndex(core::FandomPtr fandom)
 {
     if(!fandom)
         return;
-    nameIndex[fandom->name] = fandom;
+    nameIndex[fandom->GetName()] = fandom;
     idIndex[fandom->id] = fandom;
-    fandomsList.push_back(fandom->name);
+    fandomsList.push_back(fandom->GetName());
     if(fandom->tracked)
         trackedFandoms.push_back(fandom);
 }
 
 bool Fandoms::WipeFandom(QString name)
 {
+    name = core::Fandom::ConvertName(name.trimmed());
     if(!EnsureFandom(name))
         return false;
-    return database::puresql::CleanuFandom(nameIndex[name]->id, db);
+    return database::puresql::CleanupFandom(nameIndex[name]->id, db);
 }
 
 int Fandoms::GetFandomCount()
@@ -340,6 +353,7 @@ Fandoms::~Fandoms()
 
 int Fandoms::GetIDForName(QString fandom)
 {
+    fandom = core::Fandom::ConvertName(fandom.trimmed());
     int result = -1;
     if(EnsureFandom(fandom))
         result = nameIndex[fandom]->id;
@@ -348,6 +362,7 @@ int Fandoms::GetIDForName(QString fandom)
 
 void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
 {
+    fandom = core::Fandom::ConvertName(fandom.trimmed());
     if(!EnsureFandom(fandom))
         return;
 
@@ -369,7 +384,7 @@ QStringList Fandoms::ListOfTrackedNames()
         return names;
     for(auto fandom: trackedFandoms)
         if(fandom)
-            names.push_back(fandom->name);
+            names.push_back(fandom->GetName());
     return names;
 }
 
@@ -383,6 +398,7 @@ QList<core::FandomPtr > Fandoms::ListOfTrackedFandoms()
 
 bool Fandoms::LoadFandom(QString name)
 {
+    name = core::Fandom::ConvertName(name);
     auto fandom = database::puresql::GetFandom(name, db);
     if(!fandom)
         return false;
@@ -392,19 +408,21 @@ bool Fandoms::LoadFandom(QString name)
     return true;
 }
 
-bool Fandoms::AssignTagToFandom(QString fandom, QString tag)
+bool Fandoms::AssignTagToFandom(QString fandom, QString tag, bool includeCrosses)
 {
+    fandom = core::Fandom::ConvertName(fandom);
     if(!EnsureFandom(fandom))
         return false;
 
     auto id = nameIndex[fandom]->id;
-    database::puresql::AssignTagToFandom(tag, id, db);
+    database::puresql::AssignTagToFandom(tag, id, db, includeCrosses);
     return true;
 }
 
 void Fandoms::CalculateFandomsAverages()
 {
-    database::puresql::CalculateFandomsAverages(db);
+    //! todo needs refactoring
+    //database::puresql::CalculateFandomsAverages(db);
 }
 
 void Fandoms::CalculateFandomsFicCounts()
