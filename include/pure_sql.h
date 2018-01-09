@@ -2,14 +2,48 @@
 #include <functional>
 #include <QString>
 #include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 #include <QSharedPointer>
 #include "section.h"
+
+class BasePageTask;
+class PageTask;
+class PageSubTask;
+class PageFailure;
+class PageTaskAction;
+typedef QSharedPointer<BasePageTask> BaseTaskPtr;
+typedef QSharedPointer<PageTask> PageTaskPtr;
+typedef QSharedPointer<PageSubTask> SubTaskPtr;
+typedef QSharedPointer<PageFailure> PageFailurePtr;
+typedef QSharedPointer<PageTaskAction> PageTaskActionPtr;
+typedef QList<SubTaskPtr> SubTaskList;
+typedef QList<PageFailurePtr> SubTaskErrors;
+typedef QList<PageTaskActionPtr> PageTaskActions;
 namespace database {
 namespace puresql{
+
 bool ExecAndCheck(QSqlQuery& q);
 bool CheckExecution(QSqlQuery& q);
 bool ExecuteQuery(QSqlQuery& q, QString query);
 bool ExecuteQueryChain(QSqlQuery& q, QStringList queries);
+
+template <typename T>
+struct DiagnosticSQLResult
+{
+    bool success = true;
+    QString oracleError;
+    T data;
+    bool ExecAndCheck(QSqlQuery& q) {
+        bool result = database::puresql::ExecAndCheck(q);
+        if(!result)
+        {
+            success = false;
+            oracleError = q.lastError().text();
+        }
+        return result;
+    }
+};
 
 bool SetFandomTracked(int id, bool tracked, QSqlDatabase);
 QStringList GetTrackedFandomList(QSqlDatabase db);
@@ -114,6 +148,24 @@ QSet<QString> GetAllGenres(QSqlDatabase db);
 // moved them to dump temporarily
 //void RemoveAuthor(const core::Author &recommender);
 //void RemoveAuthor(int id);
+
+// page tasks
+int GetLastExecutedTaskID(QSqlDatabase db);
+bool GetTaskSuccessByID(int id, QSqlDatabase db);
+
+DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db);
+DiagnosticSQLResult<SubTaskList> GetSubTaskData(int id, QSqlDatabase db);
+DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id, QSqlDatabase db, int subId = -1);
+DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase db, int subId = -1);
+
+DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors, QSqlDatabase);
+
+DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr, QSqlDatabase);
+
 
 namespace Internal{
 bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,

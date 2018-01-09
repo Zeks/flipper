@@ -30,34 +30,56 @@ CREATE INDEX if not exists I_PT_SUCCESS ON PageTask (success asc);
 -- subtask table;
 CREATE TABLE if not exists PageTaskParts (
  task_id integer NOT NULL,
- sub_id integer not null autoincrement default 0, 
+ sub_id integer not null default 0, 
  content varchar, 
  created DATETIME, 
  scheduled_to DATETIME, 
  started DATETIME, 
  finished DATETIME, 
- results varchar, 
  success integer default 0,
- action_id integer not null, 
  retries integer default 0, 
  PRIMARY KEY (task_id, sub_id));
 CREATE INDEX if not exists I_PTP_PK ON PageTaskParts (task_id asc, sub_id asc);
 CREATE INDEX if not exists I_PTP_STARTED ON PageTaskParts (started asc);
 CREATE INDEX if not exists I_PTP_ERROR_CODE ON PageTaskParts (success asc);
-CREATE INDEX if not exists I_PTP_ACTION_ID ON PageTaskParts (action_id asc);
+
+
+-- subtask action table;
+CREATE TABLE if not exists PageTaskActions (
+ action_uuid integer NOT NULL,
+ task_id integer NOT NULL,
+ sub_id integer,
+ started DATETIME, 
+ finished DATETIME, 
+ success integer default 0,
+ PRIMARY KEY (action_uuid));
+ 
+CREATE INDEX if not exists I_PTA_PK ON PageTaskActions (action_uuid asc);
+CREATE INDEX if not exists I_PTA_TASK_KEY ON PageTaskActions (task_id asc, sub_id asc);
+CREATE INDEX if not exists I_PTA_TASK_ID ON PageTaskActions (task_id asc);
+CREATE INDEX if not exists I_PTA_SUB_ID ON PageTaskActions (sub_id asc);
+CREATE INDEX if not exists I_PTA_STARTED ON PageTaskActions (started asc);
+CREATE INDEX if not exists I_PTA_FINISHED ON PageTaskActions (finished asc);
+
 
 -- failed pages for subtasks;
 CREATE TABLE if not exists PageWarnings (
- action_id integer NOT NULL,
- task_id integer NOT NULL ,
+ id integer NOT NULL primary key autoincrement default 0,
+ action_uuid varchar,
+ task_id integer NOT NULL,
+ sub_id integer NOT NULL,
  URL VARCHAR,
- process_attempt datetime,
+ attempted_at datetime,
  last_seen datetime,
  error_code integer default 0,
  error_level integer default 0,
- error varchar);
+ error varchar,
+ PRIMARY KEY (id)
+ );
+CREATE INDEX if not exists I_PW_ID ON PageWarnings (id asc);
 CREATE INDEX if not exists I_PW_ACTION_ID ON PageWarnings (action_id asc);
-CREATE INDEX if not exists I_PW_TASK_ID ON PageWarnings (task_id asc);CREATE INDEX if not exists I_PW_TASK_ID ON PageTaskFailedPages (task_id asc);
+CREATE INDEX if not exists I_PW_TASK_ID ON PageWarnings (task_id asc);
+CREATE INDEX if not exists I_PW_SUBTASK_ID ON PageWarnings (subtask_id asc);
 CREATE INDEX if not exists I_PW_ERROR_CODE ON PageWarnings (error_code asc);
 CREATE INDEX if not exists I_PW_URL ON PageWarnings (URL asc);
 CREATE INDEX if not exists I_PW_ERROR_LEVEL ON PageWarnings (error_level asc);
