@@ -1570,16 +1570,21 @@ bool EraseFicFandomsTable(QSqlDatabase db)
     return true;
 }
 
-int GetLastExecutedTaskID(QSqlDatabase db)
+DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db)
 {
+    DiagnosticSQLResult<int> result;
+    result.data = -1;
     QString qs = QString("select max(id) from pagetasks");
 
     QSqlQuery q(db);
     q.prepare(qs);
-    if(!ExecAndCheck(q))
-        return -1;
-    auto id = q.value(0).toInt();
-    return id;
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    result.data = q.value(0).toInt();
+    return result;
 }
 
 bool GetTaskSuccessByID(int id, QSqlDatabase db)
@@ -1614,6 +1619,7 @@ void FillPageTaskBaseFromQuery(BaseTaskPtr task, QSqlQuery& q){
     task->started = q.value("started").toDateTime();
     task->finished= q.value("finished").toDateTime();
 
+    task->size = q.value("size").toInt();
     task->retries= q.value("retries").toInt();
     task->success = q.value("success").toBool();
 }
@@ -1630,7 +1636,7 @@ void FillPageTaskFromQuery(PageTaskPtr task, QSqlQuery& q){
     task->taskComment= q.value("comment").toString();
     task->type = q.value("type").toInt();
     task->allowedRetries = q.value("allowed_retry_count").toInt();
-    task->ignoreCache = q.value("ignore_cache").toBool();
+    task->cacheMode = static_cast<ECacheMode>(q.value("cache_mode").toInt());
     task->refreshIfNeeded= q.value("refresh_if_needed").toBool();
 }
 
@@ -1641,7 +1647,10 @@ void FillSubTaskFromQuery(SubTaskPtr task, QSqlQuery& q){
     FillPageTaskBaseFromQuery(task, q);
     task->parentId= q.value("task_id").toInt();
     task->id = q.value("sub_id").toInt();
-    task->content = q.value("content").toString();
+    auto content = SubTaskAuthorContent::NewContent();
+    auto cast = static_cast<SubTaskAuthorContent*>(content.data());
+    cast->authors = q.value("content").toString().split("\n");
+    task->content = content;
 }
 
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db)
@@ -1682,9 +1691,9 @@ void FillPageFailuresFromQuery(PageFailurePtr failure, QSqlQuery& q){
     if(!NullPtrGuard(failure))
         return;
 
-    failure->action = {q.value("action_uuid").toString(),
+    failure->action = QSharedPointer<PageTaskAction>(new PageTaskAction{q.value("action_uuid").toString(),
                       q.value("task_id").toInt(),
-                      q.value("sub_id").toInt()};
+                      q.value("sub_id").toInt()});
     failure->attemptTimeStamp = q.value("process_attempt").toDateTime();
     failure->errorCode  = static_cast<PageFailure::EFailureReason>(q.value("error_code").toInt());
     failure->errorlevel  = static_cast<PageFailure::EErrorLevel>(q.value("error_level").toInt());
@@ -1763,9 +1772,9 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     result.data = -1;
     Transaction transaction(db);
     QString qs = QString("insert into PageTasks(type, parts, created, scheduled_to, allowed_retry_count, "
-                         "allowed_subtask_retry_count, ignore_cache, refresh_if_needed, task_comment, success) "
+                         "allowed_subtask_retry_count, ignore_cache, refresh_if_needed, task_comment, task_size, success) "
                          "values(:type, :parts, :created, :scheduled_to, :allowed_retry_count,"
-                         ":allowed_subtask_retry_count, :ignore_cache, :refresh_if_needed, :task_comment, false) ");
+                         ":allowed_subtask_retry_count, :ignore_cache, :refresh_if_needed, :task_comment,:task_size, false) ");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1775,9 +1784,10 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     q.bindValue(":scheduled_to", task->scheduledTo);
     q.bindValue(":allowed_retry_count", task->allowedRetries);
     q.bindValue(":allowed_subtask_retry_count", task->allowedSubtaskRetries);
-    q.bindValue(":ignore_cache", task->ignoreCache);
+    q.bindValue(":cache_mode", static_cast<int>(task->cacheMode));
     q.bindValue(":refresh_if_needed", task->refreshIfNeeded);
     q.bindValue(":task_comment", task->taskComment);
+    q.bindValue(":task_size", task->size);
 
     if(!result.ExecAndCheck(q))
         return result;
@@ -1796,8 +1806,8 @@ DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("insert into PageTaskParts(task_id, sub_id, created, scheduled_to, content, success) "
-                         "values(:task_id, :sub_id, :created, :scheduled_to, :content, false) ");
+    QString qs = QString("insert into PageTaskParts(task_id, sub_id, created, scheduled_to, content,task_size, success) "
+                         "values(:task_id, :sub_id, :created, :scheduled_to, :content,:task_size, false) ");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1805,8 +1815,8 @@ DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
     q.bindValue(":sub_id", subtask->id);
     q.bindValue(":created", subtask->created);
     q.bindValue(":scheduled_to", subtask->scheduledTo);
-    q.bindValue(":content", subtask->content);
-
+    q.bindValue(":content", subtask->content->ToDB());
+    q.bindValue(":task_size", subtask->size);
 
     if(!result.ExecAndCheck(q))
         return result;
@@ -1820,7 +1830,7 @@ DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr action, QSqlDatabas
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("insert into PageTaskActions(action_uuid, task_id, sub_id, started, finished, success) "
+    QString qs = QString("insert into PageTaskActions(action_uuid, task_id, sub_id, started_at, finished_at, success) "
                          "values(:action_uuid, :task_id, :sub_id, :started, :finished, :success) ");
 
     QSqlQuery q(db);
@@ -1845,7 +1855,7 @@ DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors errors, QSqlDatabase db
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("insert into PageWarnings(action_uuid, task_id, sub_id, url, attempted_at, last_seen, error_code, error_level, error) "
+    QString qs = QString("insert into PageWarnings(action_uuid, task_id, sub_id, url, attempted_at, last_seen_at, error_code, error_level, error) "
                          "values(:action_uuid, :task_id, :sub_id, :url, :attempted_at, :last_seen, :error_code, :error_level, :error) ");
 
     for(auto error: errors)
@@ -1875,7 +1885,7 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("update PageTasks set scheduled_to = :scheduled_to, started = :started, finished = :finished,"
+    QString qs = QString("update PageTasks set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished,"
                          " results = :results, retries = :retries, success = :success"
                          " where id = :id");
 
@@ -1902,7 +1912,7 @@ DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("update PageTaskParts set scheduled_to = :scheduled_to, started = :started, finished = :finished,"
+    QString qs = QString("update PageTaskParts set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished,"
                          " retries = :retries, success = :success"
                          " where task_id = :task_id and sub_id = :sub_id");
 
@@ -1921,6 +1931,51 @@ DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
 
     result.data = true;
     transaction.finalize();
+    return result;
+}
+
+DiagnosticSQLResult<bool> SetTaskFinished(int id, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.data = false;
+    Transaction transaction(db);
+    QString qs = QString("update PageTasks set finished = true where id = :task_id");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":task_id", id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    result.data = true;
+    transaction.finalize();
+    return result;
+}
+
+DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
+{
+    DiagnosticSQLResult<TaskList> result;
+
+    QString qs = QString("select id from pagetasks where finished = false");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    do{
+        QSqlQuery tq(db);
+        qs = QString("select * from pagetasks where id = :task_id");
+        tq.prepare(qs);
+        tq.bindValue(":task_id", q.value(0).toInt());
+        if(!result.ExecAndCheck(tq) || !result.CheckDataAvailability(tq))
+            continue;
+        auto task = PageTask::CreateNewTask();
+        FillPageTaskFromQuery(task, tq);
+        result.data.push_back(task);
+    }while(!q.next());
     return result;
 }
 

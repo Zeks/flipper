@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
     w.InitInterfaces();
     w.Init();
     w.show();
+    w.StartTaskTimer();
 
     return a.exec();
 }

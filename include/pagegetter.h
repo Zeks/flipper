@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "ECacheMode.h"
 #include <atomic>
 
+
 enum class EPageType
 {
     hub_page = 0,
@@ -61,6 +62,19 @@ struct WebPage
     int pageIndex = 0;
 };
 
+struct PageQueue{
+    bool pending = true;
+    QList<WebPage> data;
+};
+
+class  PageResult{
+public:
+    PageResult(WebPage page, bool _finished):data(page), finished(_finished){}
+    bool finished = false;
+    WebPage data;
+};
+
+
 class PageGetterPrivate;
 class PageManager
 {
@@ -90,7 +104,7 @@ public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode);
     void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
-    void pageReady(WebPage);
+    void pageResult(PageResult);
 };
 
 

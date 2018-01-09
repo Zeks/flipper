@@ -268,7 +268,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         }
         if(!result.isValid || url.isEmpty())
             result.isLastPage = true;
-        emit pageReady(result);
+        emit pageResult({result, false});
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
 
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
@@ -279,6 +279,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         }
         counter++;
     }while(url != lastUrl && result.isValid && !result.isLastPage);
+    emit pageResult({WebPage(), true});
     pcTransaction.finalize();
     qDebug() << "leaving task1";
 }
@@ -305,13 +306,14 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-        emit pageReady(result);
+        emit pageResult({result, false});
         if(!result.isFromCache)
         {
             qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
         }
     }
+    emit pageResult({WebPage(), true});
     pcTransaction.finalize();
     qDebug() << "leaving task2";
 }

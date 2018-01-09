@@ -17,6 +17,7 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 typedef QSharedPointer<PageSubTask> SubTaskPtr;
 typedef QSharedPointer<PageFailure> PageFailurePtr;
 typedef QSharedPointer<PageTaskAction> PageTaskActionPtr;
+typedef QList<PageTaskPtr> TaskList;
 typedef QList<SubTaskPtr> SubTaskList;
 typedef QList<PageFailurePtr> SubTaskErrors;
 typedef QList<PageTaskActionPtr> PageTaskActions;
@@ -43,6 +44,15 @@ struct DiagnosticSQLResult
         }
         return result;
     }
+    bool CheckDataAvailability(QSqlQuery& q){
+        if(!q.next())
+        {
+            success = false;
+            oracleError = "no data to read";
+            return false;
+        }
+        return true;
+    };
 };
 
 bool SetFandomTracked(int id, bool tracked, QSqlDatabase);
@@ -150,7 +160,7 @@ QSet<QString> GetAllGenres(QSqlDatabase db);
 //void RemoveAuthor(int id);
 
 // page tasks
-int GetLastExecutedTaskID(QSqlDatabase db);
+DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db);
 bool GetTaskSuccessByID(int id, QSqlDatabase db);
 
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db);
@@ -165,7 +175,8 @@ DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors, QSqlDatabase);
 
 DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr, QSqlDatabase);
 DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr, QSqlDatabase);
-
+DiagnosticSQLResult<bool> SetTaskFinished(int, QSqlDatabase);
+DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase);
 
 namespace Internal{
 bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,

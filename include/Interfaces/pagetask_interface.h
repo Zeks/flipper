@@ -5,20 +5,25 @@
 #include <QSharedPointer>
 #include <QUuid>
 #include "pagetask.h"
-namespace database{
-class PageSubtask;
+class PageSubTask;
 class PageTask;
 
-class PageTaskDBInterface{
+namespace interfaces {
+class PageTask{
 public:
     void WriteTaskIntoDB(PageTaskPtr);
 
+    bool DropLastTask();
+    bool DropTaskId(int id);
     bool IsLastTaskSuccessful();
     PageTaskPtr GetLastTask();
+    int GetLastTaskId();
+    TaskList GetUnfinishedTasks();
     PageTaskPtr GetTaskById(int id);
     SubTaskErrors GetErrorsForTask(int id, int subId = -1, int cutoffLevel = 1);
 
-    void SetCurrent(PageTaskPtr);
+    void SetCurrentTask(PageTaskPtr);
+    PageTaskPtr GetCurrentTask();
 
     PageTaskPtr currentTask;
     QSqlDatabase db;

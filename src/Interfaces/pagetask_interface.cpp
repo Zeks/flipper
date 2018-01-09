@@ -4,23 +4,31 @@
 #include "GlobalHeaders/run_once.h"
 #include "include/transaction.h"
 
-namespace database{
+namespace interfaces {
 
-void PageTaskDBInterface::WriteTaskIntoDB(PageTaskPtr task)
+void PageTask::WriteTaskIntoDB(PageTaskPtr task)
 {
     if(!task || !task->isValid)
         return;
     if(task->NeedsInsertion())
-        database::puresql::CreateTaskInDB(task, db);
+    {
+        auto result = database::puresql::CreateTaskInDB(task, db);
+        task->id = result.data;
+    }
     else
         database::puresql::UpdateTaskInDB(task, db);
+    task->isNew = false;
 
     for(auto subtask : task->subTasks)
     {
         if(!subtask || !subtask->isValid)
             continue;
         if(subtask->NeedsInsertion())
-            database::puresql::CreateSubTaskInDB(subtask, db);
+        {
+            auto result = database::puresql::CreateSubTaskInDB(subtask, db);
+            subtask->id = result.data;
+            subtask->parentId = task->id;
+        }
         else
             database::puresql::UpdateSubTaskInDB(subtask, db);
 
@@ -35,23 +43,51 @@ void PageTaskDBInterface::WriteTaskIntoDB(PageTaskPtr task)
     }
 }
 
-bool PageTaskDBInterface::IsLastTaskSuccessful()
+bool PageTask::DropLastTask()
+{
+    auto id = GetLastTaskId();
+    auto result = database::puresql::SetTaskFinished(id, db);
+    return true;
+}
+
+bool PageTask::DropTaskId(int id)
+{
+    auto result = database::puresql::SetTaskFinished(id, db);
+    return true;
+}
+
+bool PageTask::IsLastTaskSuccessful()
 {
     auto id = database::puresql::GetLastExecutedTaskID(db);
-    bool success = database::puresql::GetTaskSuccessByID(id, db);
+    bool success = database::puresql::GetTaskSuccessByID(id.data, db);
     return success;
 }
 
-PageTaskPtr PageTaskDBInterface::GetLastTask()
+PageTaskPtr PageTask::GetLastTask()
 {
     auto id = database::puresql::GetLastExecutedTaskID(db);
-    auto task = GetTaskById(id);
+    auto task = GetTaskById(id.data);
     return task;
 }
 
-PageTaskPtr PageTaskDBInterface::GetTaskById(int id)
+int PageTask::GetLastTaskId()
 {
+    auto id = database::puresql::GetLastExecutedTaskID(db);
+    return id.data;
+}
+
+TaskList PageTask::GetUnfinishedTasks()
+{
+    auto taskList = database::puresql::GetUnfinishedTasks(db);
+    // todo: this needs error processing
+    return taskList.data;
+}
+
+PageTaskPtr PageTask::GetTaskById(int id)
+{
+
     auto taskResult = database::puresql::GetTaskData(id, db);
+    auto result =  taskResult.data;
     auto subtaskResult = database::puresql::GetSubTaskData(id, db);
     bool valid = true;
     for(auto subtask: subtaskResult.data)
@@ -67,10 +103,14 @@ PageTaskPtr PageTaskDBInterface::GetTaskById(int id)
 
         if(!subtask->isValid)
             valid = false;
+
+        result->subTasks.push_back(subtask);
+        subtask->parent = result;
     }
+    return result;
 }
 
-SubTaskErrors PageTaskDBInterface::GetErrorsForTask(int id, int subId, int cutoffLevel)
+SubTaskErrors PageTask::GetErrorsForTask(int id, int subId, int cutoffLevel)
 {
     SubTaskErrors result;
     auto errors = database::puresql::GetErrorsForSubTask(id, db, subId);
@@ -83,9 +123,14 @@ SubTaskErrors PageTaskDBInterface::GetErrorsForTask(int id, int subId, int cutof
     return result;
 }
 
-void PageTaskDBInterface::SetCurrent(PageTaskPtr task)
+void PageTask::SetCurrentTask(PageTaskPtr task)
 {
     currentTask = task;
+}
+
+PageTaskPtr PageTask::GetCurrentTask()
+{
+    return currentTask;
 }
 
 

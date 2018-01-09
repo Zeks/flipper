@@ -9,21 +9,24 @@ CREATE TABLE if not exists PageTasks (
  type integer not null, 
  parts integer default 0, 
  entities integer default 0, 
- created DATETIME, 
+ created_at DATETIME, 
  scheduled_to DATETIME, 
- started DATETIME, 
- finished DATETIME, 
+ started_at DATETIME, 
+ finished_at DATETIME, 
+ finished boolean default false,
  results varchar, 
  allowed_retry_count integer default 2,
  allowed_subtask_retry_count integer default 2,
  retries integer default 0, 
- ignore_cache integer default 0,
+ cache_mode integer default 0,
  refresh_if_needed integer default 0,
  task_comment varchar,
+ task_size integer default 0,
  success integer default 0);
 CREATE INDEX if not exists I_PT_ID ON PageTask (id asc);
 CREATE INDEX if not exists I_PT_TYPE ON PageTask (type asc);
-CREATE INDEX if not exists I_PT_CREATED ON PageTask (created asc);
+CREATE INDEX if not exists I_PT_FINISHED ON PageTask (finished asc);
+CREATE INDEX if not exists I_PT_CREATED ON PageTask (created_at asc);
 CREATE INDEX if not exists I_PT_SCHEDULED ON PageTask (scheduled_to asc);
 CREATE INDEX if not exists I_PT_SUCCESS ON PageTask (success asc);
 
@@ -32,15 +35,17 @@ CREATE TABLE if not exists PageTaskParts (
  task_id integer NOT NULL,
  sub_id integer not null default 0, 
  content varchar, 
- created DATETIME, 
+ created_at DATETIME, 
+ attempted boolean default false,
  scheduled_to DATETIME, 
- started DATETIME, 
- finished DATETIME, 
+ started_at DATETIME, 
+ finished_at DATETIME, 
+ task_size integer default 0,
  success integer default 0,
  retries integer default 0, 
  PRIMARY KEY (task_id, sub_id));
 CREATE INDEX if not exists I_PTP_PK ON PageTaskParts (task_id asc, sub_id asc);
-CREATE INDEX if not exists I_PTP_STARTED ON PageTaskParts (started asc);
+CREATE INDEX if not exists I_PTP_STARTED ON PageTaskParts (started_at asc);
 CREATE INDEX if not exists I_PTP_ERROR_CODE ON PageTaskParts (success asc);
 
 
@@ -70,7 +75,7 @@ CREATE TABLE if not exists PageWarnings (
  sub_id integer NOT NULL,
  URL VARCHAR,
  attempted_at datetime,
- last_seen datetime,
+ last_seen_at datetime,
  error_code integer default 0,
  error_level integer default 0,
  error varchar,
