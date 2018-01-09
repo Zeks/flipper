@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <quazip/quazip.h>
 #include <quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
+#include "include/transaction.h"
 #include "pure_sql.h"
 
 namespace database{
@@ -276,6 +277,33 @@ QSqlDatabase InitDatabase(QString name, bool setDefault)
     InstallCustomFunctions(db);
 
     return db;
+}
+
+int CreateNewTask(QSqlDatabase db)
+{
+    Transaction tr(db);
+    QSqlQuery q(db);
+    QString qsl = "insert into PageTasks(type) values(0)";
+    q.prepare(qsl);
+    if(!database::puresql::ExecAndCheck(q))
+        return -1;
+    auto id = GetLastIdForTable("PageTasks", db);
+    tr.finalize();
+    return id;
+}
+
+int CreateNewSubTask(int taskId, QSqlDatabase db)
+{
+    Transaction tr(db);
+    QSqlQuery q(db);
+    QString qsl = "insert into PageTaskParts(task_id) values(:task_id)";
+    q.prepare(qsl);
+    q.bindValue(":task_id", taskId);
+    if(!database::puresql::ExecAndCheck(q))
+        return -1;
+    auto id = GetLastIdForTable("PageTaskParts", db);
+    tr.finalize();
+    return id;
 }
 
 

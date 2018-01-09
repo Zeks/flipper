@@ -255,6 +255,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         qDebug() << "loading page: " << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(url, cacheMode);
+        result.pageIndex = counter;
         auto minUpdate = GrabMinUpdate(result.content);
         url = GetNext(result.content);
         bool updateLimitReached = false;

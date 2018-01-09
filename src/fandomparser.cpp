@@ -21,6 +21,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "regex_utils.h"
 
 
+QDate GetRealMinDate(QList<QDate> dates)
+{
+    std::sort(std::begin(dates), std::end(dates));
+    QDate medianDate = dates[dates.size()/2];
+    QHash<QDate, int> distances;
+    int counter = 0;
+    int totalDistance = 0;
+    for(auto date : dates)
+    {
+       int distance = std::abs(date.daysTo(medianDate));
+       totalDistance+=distance;
+       counter++;
+    }
+    if(counter == 0)
+        return QDateTime::currentDateTimeUtc().date();
+
+    double average = static_cast<double>(totalDistance)/static_cast<double>(counter);
+
+    QDate minDate = medianDate;
+    for(auto date : dates)
+    {
+        if(date < minDate && std::abs(date.daysTo(medianDate)) <= average)
+            minDate = date;
+    }
+    return minDate;
+}
+
 
 FandomParser::FandomParser(QSharedPointer<interfaces::Fanfics> fanfics)
     : FFNParserBase(fanfics)
@@ -37,7 +64,7 @@ void FandomParser::ProcessPage(WebPage page)
     int currentPosition = 0;
     int counter = 0;
     QList<core::Section> sections;
-
+    QList<QDate> updateDates;
     while(true)
     {
 
@@ -95,14 +122,14 @@ void FandomParser::ProcessPage(WebPage page)
         if(section.isValid)
         {
             auto updateDate = section.result->updated.date();
-            if((updateDate < minSectionUpdateDate) && (updateDate.year() > 1990))
-                minSectionUpdateDate = updateDate;
-
+            if(updateDate.year() > 1990)
+                updateDates.push_back(updateDate);
             processedStuff.append(section.result);
             sections.push_back(section);
         }
 
     }
+    minSectionUpdateDate = GetRealMinDate(updateDates);
 
     if(sections.size() > 0)
         nextUrl = GetNext(sections.last(), currentPosition, str);

@@ -245,7 +245,7 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
     else if(filter.sortMode == StoryFilter::reccount)
         diffField = " sumrecs desc";
     else if(filter.sortMode == StoryFilter::favrate)
-        diffField = " favourites/(julianday(Updated) - julianday(Published)) desc";
+        diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
     return diffField;
 }
 

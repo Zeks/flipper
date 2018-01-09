@@ -58,6 +58,7 @@ struct WebPage
     bool isLastPage = false;
     bool isFromCache = false;
     int loadedIn = 0;
+    int pageIndex = 0;
 };
 
 class PageGetterPrivate;

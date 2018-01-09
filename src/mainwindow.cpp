@@ -621,6 +621,8 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
             ui->edtResults->append("Already have updates past this point. Aborting.");
             break;
         }
+        if(webPage.isLastPage)
+            break;
 
     }while(!webPage.isLastPage);
     fandomsInterface->RecalculateFandomStats(updatedFandoms.values());
@@ -1089,12 +1091,12 @@ void MainWindow::OnDoFormattedList()
         auto ficPtr = fanficsInterface->GetFicById(id);
 
         auto fandoms = fanficsInterface->GetFandomsForFicAsNames(id);
-        bool validGenre = false;
-        for(auto genre : ficPtr->genres)
-        {
-            if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
-               validGenre = true;
-        }
+        bool validGenre = true;
+//        for(auto genre : ficPtr->genres)
+//        {
+//            if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
+//               validGenre = true;
+//        }
 //        qDebug() <<  validGenre  << " " << ficPtr->title;
 //        qDebug() <<  ficPtr->genres.join("/")  << " " << ficPtr->title;
         if(!validGenre)
@@ -1129,12 +1131,12 @@ void MainWindow::OnDoFormattedList()
             auto ficPtr = fanficsInterface->GetFicById(fic);
 
             auto genreString = ficPtr->genreString;
-            bool validGenre = false;
-            for(auto genre : ficPtr->genres)
-            {
-                if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
-                   validGenre = true;
-            }
+            bool validGenre = true;
+//            for(auto genre : ficPtr->genres)
+//            {
+//                if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
+//                   validGenre = true;
+//            }
             if(validGenre)
             {
                 result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
