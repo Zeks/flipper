@@ -335,11 +335,18 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     return result;
 }
 
-bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QStringList list)
+//bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QStringList list)
+//{
+//    if(!EnsureAuthorLoaded(authorId) || list.isEmpty())
+//        return false;
+//    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
+//}
+
+bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QString website , QList<int> ids)
 {
-    if(!EnsureAuthorLoaded(authorId) || list.isEmpty())
+    if(!EnsureAuthorLoaded(authorId) || ids.isEmpty())
         return false;
-    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
+    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, website, ids, db);
 }
 
 bool Authors::DeleteLinkedAuthorsForAuthor(int authorId)

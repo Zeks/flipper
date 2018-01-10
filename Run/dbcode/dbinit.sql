@@ -178,6 +178,10 @@ CREATE INDEX if not exists  I_FIC_FANDOMS_FIC ON FicFandoms (fic_id ASC);
  
  -- linked authors table;
  CREATE TABLE if not exists LinkedAuthors (recommender_id INTEGER NOT NULL, url VARCHAR);
+ alter table LinkedAuthors add column ffn_id integer default -1;
+ alter table LinkedAuthors add column ao3_id integer default -1;
+ alter table LinkedAuthors add column sb_id integer default -1;
+ alter table LinkedAuthors add column sv_id integer default -1;
  CREATE INDEX if not exists I_LINKED_AUTHORS_PK ON LinkedAuthors (recommender_id ASC);
 
 -- per author stats for specific recommendation list;

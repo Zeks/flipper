@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "transaction.h"
 #include "section.h"
 #include "pagetask.h"
+#include "url_utils.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QVector>
@@ -1150,13 +1151,18 @@ bool DeactivateStory(int id, QString website, QSqlDatabase db)
 bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
     QSqlQuery q1(db);
-    QString qsl = " insert into recommenders(name, url, favourites, fics, page_updated) values(:name, :url, :favourites, :fics,  :time) ";
+    QString qsl = " insert into recommenders(name, url, favourites, fics, page_updated, ffn_id, ao3_id,sb_id, sv_id) "
+                  "values(:name, :url, :favourites, :fics,  :time, :ffn_id, :ao3_id,:sb_id, :sv_id) ";
     q1.prepare(qsl);
     q1.bindValue(":name", author->name);
     q1.bindValue(":time", timestamp);
     q1.bindValue(":url", author->url("ffn"));
     q1.bindValue(":favourites", author->favCount);
     q1.bindValue(":fics", author->ficCount);
+    q1.bindValue(":ffn_id", author->GetWebID("ffn"));
+    q1.bindValue(":ao3_id", author->GetWebID("ao3"));
+    q1.bindValue(":sb_id", author->GetWebID("sb"));
+    q1.bindValue(":sv_id", author->GetWebID("sv"));
 
     if(!ExecAndCheck(q1))
         return false;
@@ -1523,15 +1529,34 @@ bool DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db)
     return true;
 }
 
-bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db)
+//bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db)
+//{
+//    QSqlQuery q(db);
+//    QString qs = QString("insert into  LinkedAuthors(recommender_id, url) values(:author_id, :url)");
+//    q.prepare(qs);
+//    for(auto url :list)
+//    {
+//        q.bindValue(":author_id",authorId);
+//        q.bindValue(":url",url);
+//        q.exec();
+//        if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
+//        {
+//            qDebug() << q.lastError();
+//            qDebug() << q.lastQuery();
+//            return false;
+//        }
+//    }
+//    return true;
+//}
+bool UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db)
 {
     QSqlQuery q(db);
-    QString qs = QString("insert into  LinkedAuthors(recommender_id, url) values(:author_id, :url)");
+    QString qs = QString("insert into  LinkedAuthors(recommender_id, %1_id) values(:author_id, :id)").arg(website);
     q.prepare(qs);
-    for(auto url :list)
+    for(auto id :ids)
     {
         q.bindValue(":author_id",authorId);
-        q.bindValue(":url",url);
+        q.bindValue(":id",id);
         q.exec();
         if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
         {
@@ -1542,22 +1567,25 @@ bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase d
     }
     return true;
 }
-
-QStringList GetLinkedPagesForList(int listId, QSqlDatabase db)
+QStringList GetLinkedPagesForList(int listId, QString website, QSqlDatabase db)
 {
     QStringList result;
-    QString qs = QString("Select distinct url from LinkedAuthors "
+    QString qs = QString("Select distinct %1_id from LinkedAuthors "
                          " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = 17) "
-                         " and url not in (select distinct url from recommenders)"
+                         " and %1_id not in (select distinct %1_id from recommenders)"
                          " union all "
                          " select url from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
+    qs=qs.arg(website);
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":list_id",listId);
     if(!ExecAndCheck(q))
         return result;
     while(q.next())
-        result.push_back(q.value("url").toString());
+    {
+        auto authorUrl = url_utils::GetAuthorUrlFromWebId(q.value(QString("%1_id").arg(website)).toInt(), "ffn");
+        result.push_back(authorUrl);
+    }
     return result;
 }
 
@@ -1709,6 +1737,9 @@ DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db)
     q.bindValue(":id", id);
     if(!result.ExecAndCheck(q))
         return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+
     FillPageTaskFromQuery(result.data, q);
     return result;
 }
@@ -1934,7 +1965,7 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     result.data = false;
     Transaction transaction(db);
     QString qs = QString("update PageTasks set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished,"
-                         " results = :results, retries = :retries, success = :success"
+                         " results = :results, retries = :retries, success = :success, task_size = :size"
                          " where id = :id");
 
     QSqlQuery q(db);
@@ -1946,6 +1977,7 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     q.bindValue(":retries",         task->retries);
     q.bindValue(":success",         task->success);
     q.bindValue(":id",              task->id);
+    q.bindValue(":size",              task->size);
 
     if(!result.ExecAndCheck(q))
         return result;

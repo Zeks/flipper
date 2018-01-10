@@ -26,10 +26,16 @@ QString GetWebId(QString url, QString source)
    return "";
 }
 
-QString GetUrlFromWebId(int id, QString source)
+QString GetStoryUrlFromWebId(int id, QString source)
 {
     if(source == "ffn")
-        return ffn::GetUrlFromWebId(id);
+        return ffn::GetStoryUrlFromWebId(id);
+    return "";
+}
+QString GetAuthorUrlFromWebId(int id, QString source)
+{
+    if(source == "ffn")
+        return ffn::GetAuthorUrlFromWebId(id);
     return "";
 }
 
@@ -47,9 +53,13 @@ QString GetWebId(QString url)
     return result;
 }
 
-QString GetUrlFromWebId(int id)
+QString GetStoryUrlFromWebId(int id)
 {
     return "https://www.fanfiction.net/s/" + QString::number(id);
+}
+QString GetAuthorUrlFromWebId(int id)
+{
+    return "https://www.fanfiction.net/u/" + QString::number(id);
 }
 
 }

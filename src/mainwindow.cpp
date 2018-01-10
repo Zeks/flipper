@@ -980,7 +980,8 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
             qDebug() << "Page loaded in: " << webPage.loadedIn;
             callProgressCount(currentCounter);
-            auto author = authorsInterface->GetById(url_utils::GetWebId(webPage.url, "ffn").toInt());
+            auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
+            auto author = authorsInterface->GetByWebID("ffn", webId);
             //if author is not yet in the database, process his favourites and load him in
             if(!author)
             {
@@ -1001,7 +1002,10 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                     }
                 }
                 else if(callProgressText)
-                    callProgressText("Skipping page with too much favourites<br>");
+                {
+                    callProgressText(QString("Skipping page with too much favourites : %1<br>").arg(webPage.url));
+                    qDebug() << "Too much faves on: " << webPage.url;
+                }
 
                 auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
                 qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
@@ -1023,7 +1027,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 if(splittings.favouriteStoryCountInWhole == 0)
                 {
                     qDebug() << "skipping author with no favourites";
-                    callProgressText("skipping author with no favourites: " + webPage.url + "<br>");
+                    callProgressText("skipping author with no favourites: " + name + " " + webPage.url + "<br>");
                     continue;
                 }
                 for(auto actualParser: parsers)
@@ -1046,7 +1050,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 if(callProgressText)
                 {
                     callProgressText(webPage.url + " ");
-                    callProgressText(" All Faves:  " + QString::number(sumParser.processedStuff.size()) + " " + "<br>");
+                    callProgressText(name + ": All Faves:  " + QString::number(sumParser.processedStuff.size()) + " " + "<br>");
                 }
 
                 elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -1069,11 +1073,11 @@ void MainWindow::LoadMoreAuthors()
 {
     filter.mode = core::StoryFilter::filtering_in_recommendations;
     recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecGroup->currentText()));
-    QStringList authorUrls = recsInterface->GetLinkedPagesForList(recsInterface->GetCurrentRecommendationList());
+    QStringList authorUrls = recsInterface->GetLinkedPagesForList(recsInterface->GetCurrentRecommendationList(), "ffn");
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
     QString comment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());
 
-    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 20, 3, cacheMode, true);
+    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 100, 3, cacheMode, true);
 
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
     ReinitProgressbar(authorUrls.size());
@@ -2029,7 +2033,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     {
         QList<QSharedPointer<core::Fic>> sections;
         QList<QFuture<QList<QSharedPointer<core::Fic>>>> futures;
-        QSet<QString> uniqueAuthors;
+        QSet<int> uniqueAuthors;
         authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
         auto startPageRequest = std::chrono::high_resolution_clock::now();
         auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
@@ -2061,12 +2065,13 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
             for(auto& section : parser.processedStuff)
             {
                 tempRecommendations.push_back({section, author});
-                if(!uniqueAuthors.contains(section->author->url("ffn")))
-                    uniqueAuthors.insert(section->author->url("ffn"));
+                if(!uniqueAuthors.contains(section->author->GetWebID("ffn")))
+                    uniqueAuthors.insert(section->author->GetWebID("ffn"));
             }
             fanficsInterface->AddRecommendations(tempRecommendations);
             fanficsInterface->FlushDataQueues();
-            authorsInterface->UploadLinkedAuthorsForAuthor(author->id, uniqueAuthors.values());
+            //todo this also needs to be done everywhere
+            authorsInterface->UploadLinkedAuthorsForAuthor(author->id, "ffn", uniqueAuthors.values());
             qDebug() << "skipped: " << fanficsInterface->skippedCounter;
         }
 

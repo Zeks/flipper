@@ -74,7 +74,7 @@ public:
     QStringList GetNamesForListId(int listId);
     QList<QSharedPointer<core::Author>> GetAuthorsForRecommendationList(int listId);
     QList<int> GetRecommendersForFicId(int ficId);
-    QStringList GetLinkedPagesForList(int listId);
+    QStringList GetLinkedPagesForList(int listId, QString website);
 
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);

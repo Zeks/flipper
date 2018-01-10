@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 
 
     //dbfix::EnsureFandomIndexExists(mainDb);
-//    /dbfix::FillFFNId(mainDb);
+    //dbfix::ReplaceUrlInLinkedAuthorsWithID(mainDb);
     MainWindow w;
     w.dbInterface = dbInterface;
     w.pageCacheInterface = pageCacheInterface;

@@ -65,6 +65,42 @@ void FillFFNId(QSqlDatabase db)
     transaction.finalize();
 }
 
+
+void ReplaceUrlInLinkedAuthorsWithID(QSqlDatabase db)
+{
+    database::Transaction transaction(db);
+    QString qs = "select rowid, recommender_id, url from LinkedAuthors";
+    QSqlQuery q(db);
+    q.prepare(qs);
+    database::puresql::ExecAndCheck(q);
+    QHash<int, int> idToFFNId;
+    while(q.next())
+    {
+        QString url = q.value("url").toString();
+        QRegExp rxEnd("(/u/(\\d+)/)(.*)");
+        rxEnd.setMinimal(true);
+        rxEnd.indexIn(url);
+        auto idPart = rxEnd.cap(2);
+        qDebug() << idPart;
+        bool ok = true;
+        idToFFNId[q.value("rowid").toInt()] = idPart.toInt(&ok);
+        if(!ok)
+            qDebug() << "cannot convert value to int";
+
+
+    }
+    QSqlQuery fixQ(db);
+    fixQ.prepare("update LinkedAuthors set ffn_id = :ffn_id where rowid = :row_id");
+    for(auto id : idToFFNId.keys())
+    {
+        fixQ.bindValue(":row_id", id);
+        auto ffnId= idToFFNId[id];
+        fixQ.bindValue(":ffn_id", ffnId);
+        database::puresql::ExecAndCheck(fixQ);
+    }
+    transaction.finalize();
+}
+
 //void EnsureFandomIndexExists(QSqlDatabase db)
 //{
 //    auto fandoms = database::puresql::GetAllFandomsFromSingleTable(db);

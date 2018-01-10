@@ -65,7 +65,8 @@ public:
     int GetFicCount(int authorId);
     int GetCountOfRecsForTag(int authorId, QString tag);
     QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list);
-    bool UploadLinkedAuthorsForAuthor(int authorId, QStringList);
+    //bool UploadLinkedAuthorsForAuthor(int authorId, QStringList);
+    bool UploadLinkedAuthorsForAuthor(int authorId, QString , QList<int>);
     bool DeleteLinkedAuthorsForAuthor(int authorId);
 
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);

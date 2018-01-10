@@ -381,12 +381,12 @@ QList<int> RecommendationLists::GetRecommendersForFicId(int ficId)
     return result;
 }
 
-QStringList RecommendationLists::GetLinkedPagesForList(int listId)
+QStringList RecommendationLists::GetLinkedPagesForList(int listId, QString website)
 {
     QStringList result;
     if(!EnsureList(listId))
         return result;
-    result = database::puresql::GetLinkedPagesForList(listId, db);
+    result = database::puresql::GetLinkedPagesForList(listId, website,  db);
     return result;
 }
 
