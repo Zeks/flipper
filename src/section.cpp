@@ -22,14 +22,24 @@ void core::Author::Log()
 {
     qDebug() << "id: " << id;
     qDebug() << "name: " << name;
-    qDebug() << "website: " << website;
-    qDebug() << "urls: " << urls;
     qDebug() << "valid: " << isValid;
     qDebug() << "idStatus: " << static_cast<int>(idStatus);
     qDebug() << "ficCount: " << ficCount;
     qDebug() << "favCount: " << favCount;
     qDebug() << "lastUpdated: " << lastUpdated;
     qDebug() << "firstPublishedFic: " << firstPublishedFic;
+}
+
+QString core::Author::CreateAuthorUrl(QString urlType, int webId) const
+{
+    if(urlType == "ffn")
+        return "https://www.fanfiction.net/u/" + QString::number(webId);
+    return QString();
+}
+
+QStringList core::Author::GetWebsites() const
+{
+    return webIds.keys();
 }
 
 

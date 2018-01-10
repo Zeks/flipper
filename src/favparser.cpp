@@ -33,7 +33,7 @@ FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> f
 
 QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
-    QList<QSharedPointer<core::Fic>> sections;
+    QList<QSharedPointer<core::Fic>>  sections;
     core::Section section;
     int currentPosition = 0;
     int counter = 0;
@@ -43,8 +43,6 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     recommender.author = author;
 
     recommender.author->name = authorName;
-    recommender.author->SetUrl("ffn", url);
-    recommender.author->website = "ffn";
     recommender.author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
     while(true)
     {
@@ -65,7 +63,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         //section.fandom = ui->rbNormal->isChecked() ? currentFandom: currentFandom + " CROSSOVER";
         GetTitle(section, currentPosition, str);
         GetUrl(section, currentPosition, str);
-        GetAuthorUrl(section, currentPosition, str);
+        GetAuthorId(section, currentPosition, str);
         GetAuthor(section, currentPosition, str);
         GetSummary(section, currentPosition, str);
 
@@ -160,18 +158,31 @@ void FavouriteStoryParser::SetCurrentTag(QString value)
     currentTagMode = value;
 }
 
-void FavouriteStoryParser::GetAuthorUrl(core::Section & section, int &startfrom, QString text)
+void FavouriteStoryParser::SetAuthor(core::AuthorPtr author)
+{
+    recommender.author = author;
+}
+
+void FavouriteStoryParser::GetAuthorId(core::Section & section, int &startfrom, QString text)
 {
     // looking for first href
     //QString currentSection = text.mid(startfrom);
-    QRegExp rxStart(QRegExp::escape("href=\""));
-    QRegExp rxEnd(QRegExp::escape("\">"));
-    int indexStart = rxStart.indexIn(text,startfrom);
-//    if(indexStart == -1)
-//        qDebug() << currentSection;
-    int indexEnd = rxEnd.indexIn(text, indexStart);
-    section.result->author->SetUrl("ffn","https://www.fanfiction.net" + text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
-    startfrom = indexEnd+2;
+//    QRegExp rxStart(QRegExp::escape("href=\""));
+//    QRegExp rxEnd(QRegExp::escape("\">"));
+//    int indexStart = rxStart.indexIn(text,startfrom);
+////    if(indexStart == -1)
+////        qDebug() << currentSection;
+//    int indexEnd = rxEnd.indexIn(text, indexStart);
+
+    QRegExp rx("(/u/(\\d+)/)(.*)(?=\">)");
+    rx.setMinimal(true);
+    auto index = rx.indexIn(text, startfrom);
+    if(index == -1)
+        return;
+    bool ok = true;
+    section.result->author->SetWebID("ffn", rx.cap(2).toInt(&ok)); // todo, needs checking
+    auto capture = rx.cap();
+    startfrom = index+rx.cap().size();
 }
 
 void FavouriteStoryParser::GetAuthor(core::Section & section, int& startfrom, QString text)

@@ -270,7 +270,8 @@ void FicParser::GetAuthor(core::Section & section,  QString text)
 
     QSharedPointer<core::Author> author(new core::Author);
     section.result->author = author;
-    section.result->author->SetUrl("ffn",rxEnd.cap(1));
+    QString uPart = rxEnd.cap(2);
+    section.result->author->SetWebID("ffn",uPart.mid(3).toInt()); // needs checking
     section.result->author->name = full;
     queuedAuthor = author;
 }

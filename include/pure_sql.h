@@ -105,6 +105,8 @@ QList<core::AuthorPtr > GetAllAuthors(QString website,  QSqlDatabase db);
 QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
 
 core::AuthorPtr  GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
+core::AuthorPtr  GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase db);
+
 core::AuthorPtr  GetAuthorByUrl(QString url,  QSqlDatabase db);
 core::AuthorPtr  GetAuthorById(int id,  QSqlDatabase db);
 QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);

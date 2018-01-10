@@ -44,7 +44,8 @@ public:
     bool EnsureId(core::AuthorPtr author, QString website);
 
     bool EnsureAuthorLoaded(QString name, QString website);
-    bool EnsureAuthorLoaded(QString url);
+    bool EnsureAuthorLoaded(QString website, int id);
+    //bool EnsureAuthorLoaded(QString url);
     bool EnsureAuthorLoaded(int id);
 
     bool LoadAuthors(QString website, bool forced = false);
@@ -55,7 +56,8 @@ public:
 
     core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website);
     QList<core::AuthorPtr> GetAllByName(QString name);
-    core::AuthorPtr GetByUrl(QString url);
+    //core::AuthorPtr GetByUrl(QString url);
+    core::AuthorPtr GetByWebID(QString website, int id);
     core::AuthorPtr GetById(int id);
     QList<core::AuthorPtr> GetAllAuthors(QString website, bool forced = false);
     QStringList GetAllAuthorsUrls(QString website, bool forced = false);
@@ -79,6 +81,8 @@ public:
 
     // index
     QHash<QString, QHash<QString, core::AuthorPtr>> authorsNamesByWebsite;
+    QHash<QString, QHash<int, core::AuthorPtr>> authorsByWebID;
+
     QHash<int, core::AuthorPtr> authorsById;
     QHash<QString, core::AuthorPtr> authorsByUrl;
 
@@ -92,6 +96,7 @@ public:
 
 public:
     bool LoadAuthor(QString name, QString website);
+    bool LoadAuthor(QString website, int id);
     bool LoadAuthor(QString url);
     bool LoadAuthor(int id);
 

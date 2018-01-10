@@ -79,7 +79,8 @@ struct SplitPart
 struct SplitJobs
 {
     QVector<SplitPart> parts;
-    int storyCountInWhole;
+    int favouriteStoryCountInWhole;
+    int authorStoryCountInWhole;
     QString authorName;
 };
 
@@ -87,13 +88,15 @@ struct SplitJobs
 QString ParseAuthorNameFromFavouritePage(QString data)
 {
     QString result;
-    QRegExp rx("title>([A-Za-z0-9.\\-\\s]+)(?=\\s|\\sFanFiction)");
+    QRegExp rx("title>([A-Za-z0-9.\\-\\s']+)(?=\\s|\\sFanFiction)");
     //rx.setMinimal(true);
     int index = rx.indexIn(data);
     if(index == -1)
         return result;
     //qDebug() << rx.capturedTexts();
     result = rx.cap(1);
+    if(result.trimmed().isEmpty())
+        result = rx.cap(1);
     return result;
 }
 
@@ -104,7 +107,14 @@ SplitJobs SplitJob(QString data)
     QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
     int captured = data.count(rxStart);
-    result.storyCountInWhole = captured;
+    result.favouriteStoryCountInWhole = captured;
+
+    QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
+    index = rxAuthorStories.indexIn(data);
+    captured = data.count(rxAuthorStories);
+    result.authorStoryCountInWhole = captured;
+
+
     qDebug() << "Will process "  << captured << " stories";
 
     int partSize = captured/(threadCount-1);
@@ -188,7 +198,7 @@ void MainWindow::Init()
 
     this->setWindowTitle("ffnet sane search engine");
     QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    //settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     if(settings.value("Settings/hideCache", true).toBool())
         ui->chkCacheMode->setVisible(false);
 
@@ -209,8 +219,10 @@ void MainWindow::Init()
 
     //QSettings settings("settings.ini", QSettings::IniFormat);
     //settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    ui->cbRecGroup->setCurrentText(settings.value("Settings/currentList").toString());
-
+    auto storedRecList = settings.value("Settings/currentList").toString();
+    qDebug() << QDir::currentPath();
+    ui->cbRecGroup->setCurrentText(storedRecList);
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(storedRecList));
 
     qRegisterMetaType<WebPage>("WebPage");
     qRegisterMetaType<PageResult>("PageResult");
@@ -222,15 +234,15 @@ void MainWindow::Init()
     connect(ui->pbWipeFandom, SIGNAL(clicked(bool)), this, SLOT(WipeSelectedFandom(bool)));
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
 
-//    sections.insert("Anime/Manga", core::Fandom{"Anime/Manga", "anime", NameOfFandomSectionToLink("anime"), NameOfCrossoverSectionToLink("anime")});
-//    sections.insert("Misc", core::Fandom{"Misc", "misc", NameOfFandomSectionToLink("misc"), NameOfCrossoverSectionToLink("misc")});
-//    sections.insert("Books", core::Fandom{"Books", "book", NameOfFandomSectionToLink("book"), NameOfCrossoverSectionToLink("book")});
-//    sections.insert("Movies", core::Fandom{"Movies", "movie", NameOfFandomSectionToLink("movie"), NameOfCrossoverSectionToLink("movie")});
-//    sections.insert("Cartoons", core::Fandom{"Cartoons", "cartoon", NameOfFandomSectionToLink("cartoon"), NameOfCrossoverSectionToLink("cartoon")});
-//    sections.insert("Comics", core::Fandom{"Comics", "comic", NameOfFandomSectionToLink("comic"), NameOfCrossoverSectionToLink("comic")});
-//    sections.insert("Games", core::Fandom{"Games", "game", NameOfFandomSectionToLink("game"), NameOfCrossoverSectionToLink("game")});
-//    sections.insert("Plays/Musicals", core::Fandom{"Plays/Musicals", "play", NameOfFandomSectionToLink("play"), NameOfCrossoverSectionToLink("play")});
-//    sections.insert("TV Shows", core::Fandom{"TV Shows", "tv", NameOfFandomSectionToLink("tv"), NameOfCrossoverSectionToLink("tv")});
+    //    sections.insert("Anime/Manga", core::Fandom{"Anime/Manga", "anime", NameOfFandomSectionToLink("anime"), NameOfCrossoverSectionToLink("anime")});
+    //    sections.insert("Misc", core::Fandom{"Misc", "misc", NameOfFandomSectionToLink("misc"), NameOfCrossoverSectionToLink("misc")});
+    //    sections.insert("Books", core::Fandom{"Books", "book", NameOfFandomSectionToLink("book"), NameOfCrossoverSectionToLink("book")});
+    //    sections.insert("Movies", core::Fandom{"Movies", "movie", NameOfFandomSectionToLink("movie"), NameOfCrossoverSectionToLink("movie")});
+    //    sections.insert("Cartoons", core::Fandom{"Cartoons", "cartoon", NameOfFandomSectionToLink("cartoon"), NameOfCrossoverSectionToLink("cartoon")});
+    //    sections.insert("Comics", core::Fandom{"Comics", "comic", NameOfFandomSectionToLink("comic"), NameOfCrossoverSectionToLink("comic")});
+    //    sections.insert("Games", core::Fandom{"Games", "game", NameOfFandomSectionToLink("game"), NameOfCrossoverSectionToLink("game")});
+    //    sections.insert("Plays/Musicals", core::Fandom{"Plays/Musicals", "play", NameOfFandomSectionToLink("play"), NameOfCrossoverSectionToLink("play")});
+    //    sections.insert("TV Shows", core::Fandom{"TV Shows", "tv", NameOfFandomSectionToLink("tv"), NameOfCrossoverSectionToLink("tv")});
 
     ;
     ui->cbNormals->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
@@ -260,7 +272,6 @@ void MainWindow::Init()
             return;
         }
         InitUIFromTask(task);
-        StartPageWorker();
         UseAuthorsPageTask(task, callProgress, callProgressText);
     });
     // should refer to new tag widget instead
@@ -327,12 +338,15 @@ void MainWindow::Init()
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
     CreatePageThreadWorker();
     callProgress = [&](int counter) {
-        pbMain->setValue(counter);
         pbMain->setTextVisible(true);
         pbMain->setFormat("%v");
+        pbMain->setValue(counter);
+        pbMain->show();
     };
     callProgressText = [&](QString value) {
         ui->edtResults->insertHtml(value);
+        ui->edtResults->ensureCursorVisible();
+
     };
 }
 
@@ -551,7 +565,7 @@ void MainWindow::InitInterfaces()
     tagsInterface->db    = dbInterface->GetDatabase();
     genresInterface->db  = dbInterface->GetDatabase();
     queryBuilder.portableDBInterface = dbInterface;
-    pageTaskInterface->db  = pageCacheInterface->GetDatabase();
+    pageTaskInterface->db  = tasksInterface->GetDatabase();
     fandomsInterface->Load();
 }
 
@@ -819,6 +833,8 @@ QString MainWindow::CreateLimitQueryPart()
 PageTaskPtr MainWindow::CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize, int subTaskRetries,
                                                ECacheMode cacheMode, bool allowCacheRefresh)
 {
+    database::Transaction transaction(pageTaskInterface->db);
+
     auto timestamp = dbInterface->GetCurrentDateTime();
     qDebug() << timestamp;
     auto task = PageTask::CreateNewTask();
@@ -848,6 +864,8 @@ PageTaskPtr MainWindow::CreatePageTaskFromUrls(QStringList urls, QString taskCom
         subtask->content = content;
         subtask->parentId = task->id;
         subtask->created = timestamp;
+        subtask->size = last - (urls.begin() + i); // fucking idiot
+        task->size += subtask->size;
         subtask->id = counter;
         subtask->isValid = true;
         subtask->allowedRetries = subTaskRetries;
@@ -858,7 +876,16 @@ PageTaskPtr MainWindow::CreatePageTaskFromUrls(QStringList urls, QString taskCom
     }while(i < urls.size());
     // now with subtasks
     pageTaskInterface->WriteTaskIntoDB(task);
+    transaction.finalize();
     return task;
+}
+
+core::AuthorPtr CreateAuthorFromNameAndUrl(QString name, QString url)
+{
+    core::AuthorPtr author(new core::Author);
+    author->name = name;
+    author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
+    return author;
 }
 
 void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
@@ -879,21 +906,30 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
     QList<FavouriteStoryParser> parsers;
 
     QSqlDatabase db = QSqlDatabase::database();
-    QSqlDatabase pcDb = QSqlDatabase::database("Service");
+    QSqlDatabase tasksDb = QSqlDatabase::database("Tasks");
 
     int cachedPages = 0;
     int loadedPages = 0;
     bool breakerTriggered = false;
+    StartPageWorker();
     for(auto subtask : task->subTasks)
     {
+        qDebug() << "subtask test: " << subtask->id;
+    }
+    for(auto subtask : task->subTasks)
+    {
+        if(callProgressText)
+            callProgressText(QString("<br>Starting new subtask: %1 <br>").arg(subtask->id));
+        pageQueue.pending = true;
         qDebug() << "starting new subtask: " << subtask->id;
+        // well this is bollocks :) wtf
         if(breakerTriggered)
             break;
 
         if(!subtask)
-           continue;
+            continue;
 
-        if(subtask->success)
+        if(subtask->finished)
         {
             qDebug() << "subtask: " << subtask->id << " already processed its " << QString::number(subtask->content->size()) << "entities";
             qDebug() << "skipping";
@@ -910,7 +946,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
         auto cast = static_cast<SubTaskAuthorContent*>(subtask->content.data());
         database::Transaction transaction(db);
-        database::Transaction pcTransaction(pageCacheInterface->GetDatabase());
+        database::Transaction pcTransaction(pageTaskInterface->db);
 
         emit pageTaskList(cast->authors, subtask->parent.toStrongRef()->cacheMode);
 
@@ -944,7 +980,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
             qDebug() << "Page loaded in: " << webPage.loadedIn;
             callProgressCount(currentCounter);
-            auto author = authorsInterface->GetByUrl(webPage.url);
+            auto author = authorsInterface->GetById(url_utils::GetWebId(webPage.url, "ffn").toInt());
             //if author is not yet in the database, process his favourites and load him in
             if(!author)
             {
@@ -952,22 +988,20 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 auto splittings = SplitJob(webPage.content);
 
                 //QString  authorName = splittings.authorName;
-                if(splittings.storyCountInWhole > 2000)
+                if(splittings.favouriteStoryCountInWhole <= 2000)
                 {
-                    if(callProgressText)
-                        callProgressText("Skipping page with too much favourites");
-                    continue;
+                    for(auto part: splittings.parts)
+                    {
+                        futures.push_back(QtConcurrent::run(job, webPage.url, part.data));
+                    }
+                    for(auto future: futures)
+                    {
+                        future.waitForFinished();
+                        parsers+=future.result();
+                    }
                 }
-
-                for(auto part: splittings.parts)
-                {
-                    futures.push_back(QtConcurrent::run(job, webPage.url, part.data));
-                }
-                for(auto future: futures)
-                {
-                    future.waitForFinished();
-                    parsers+=future.result();
-                }
+                else if(callProgressText)
+                    callProgressText("Skipping page with too much favourites<br>");
 
                 auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
                 qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
@@ -975,15 +1009,21 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
                 FavouriteStoryParser sumParser;
                 QString name = ParseAuthorNameFromFavouritePage(webPage.content);
-                sumParser.recommender = parsers.first().recommender;
-                sumParser.recommender.author->name = name;
-                sumParser.recommender.author->favCount = splittings.storyCountInWhole;
+                // need to create author when there is no data to parse
+
+                auto author = CreateAuthorFromNameAndUrl(name, webPage.url);
+                author->favCount = splittings.favouriteStoryCountInWhole;
+                author->ficCount = splittings.authorStoryCountInWhole;
+                auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
+                author->SetWebID("ffn", webId);
+                sumParser.SetAuthor(author);
+
                 authorsInterface->EnsureId(sumParser.recommender.author);
-                author = authorsInterface->GetByUrl(webPage.url);
-                if(splittings.storyCountInWhole == 0)
+                author = authorsInterface->GetByWebID("ffn", webId);
+                if(splittings.favouriteStoryCountInWhole == 0)
                 {
                     qDebug() << "skipping author with no favourites";
-                    callProgressText("skipping author with no favourites:" + webPage.url);
+                    callProgressText("skipping author with no favourites: " + webPage.url + "<br>");
                     continue;
                 }
                 for(auto actualParser: parsers)
@@ -1005,21 +1045,23 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 }
                 if(callProgressText)
                 {
-                    callProgressText(webPage.url);
-                    callProgressText(" All Faves: " + QString::number(sumParser.processedStuff.size()) + " ");
+                    callProgressText(webPage.url + " ");
+                    callProgressText(" All Faves:  " + QString::number(sumParser.processedStuff.size()) + " " + "<br>");
                 }
 
                 elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
                 qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
             }
-            subtask->SetFinished(dbInterface->GetCurrentDateTime());
-        }while(!webPage.isLastPage);
+        }while(pageQueue.pending);
+        subtask->SetFinished(dbInterface->GetCurrentDateTime());
         pageTaskInterface->WriteSubTaskIntoDB(subtask);
         fandomsInterface->RecalculateFandomStats(fandoms.values());
         fanficsInterface->ClearProcessedHash();
         transaction.finalize();
         pcTransaction.finalize();
+        qDebug() << "subtask end";
     }
+    StopPageWorker();
 }
 
 
@@ -1030,11 +1072,12 @@ void MainWindow::LoadMoreAuthors()
     QStringList authorUrls = recsInterface->GetLinkedPagesForList(recsInterface->GetCurrentRecommendationList());
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
     QString comment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());
-    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 1000, 3, cacheMode, true);
+
+    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 20, 3, cacheMode, true);
 
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
     ReinitProgressbar(authorUrls.size());
-    StartPageWorker();
+
 
     DisableAllLoadButtons();
     UseAuthorsPageTask(pageTask, callProgress, callProgressText);
@@ -1238,13 +1281,13 @@ void MainWindow::OnDoFormattedList()
 
         auto fandoms = fanficsInterface->GetFandomsForFicAsNames(id);
         bool validGenre = true;
-//        for(auto genre : ficPtr->genres)
-//        {
-//            if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
-//               validGenre = true;
-//        }
-//        qDebug() <<  validGenre  << " " << ficPtr->title;
-//        qDebug() <<  ficPtr->genres.join("/")  << " " << ficPtr->title;
+        //        for(auto genre : ficPtr->genres)
+        //        {
+        //            if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
+        //               validGenre = true;
+        //        }
+        //        qDebug() <<  validGenre  << " " << ficPtr->title;
+        //        qDebug() <<  ficPtr->genres.join("/")  << " " << ficPtr->title;
         if(!validGenre)
             continue;
         if(fandoms.size() == 0)
@@ -1278,11 +1321,11 @@ void MainWindow::OnDoFormattedList()
 
             auto genreString = ficPtr->genreString;
             bool validGenre = true;
-//            for(auto genre : ficPtr->genres)
-//            {
-//                if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
-//                   validGenre = true;
-//            }
+            //            for(auto genre : ficPtr->genres)
+            //            {
+            //                if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
+            //                   validGenre = true;
+            //            }
             if(validGenre)
             {
                 result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
@@ -1325,7 +1368,8 @@ void MainWindow::ReadSettings()
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
     ui->chkTrackedFandom->blockSignals(true);
-    auto fandom = fandomsInterface->GetFandom(GetCurrentFandomName());
+    auto fandomName = GetCurrentFandomName();
+    auto fandom = fandomsInterface->GetFandom(fandomName);
     if(fandom)
         ui->chkTrackedFandom->setChecked(fandom->tracked);
     else
@@ -1519,9 +1563,9 @@ void MainWindow::CheckUnfinishedTasks()
     {
         for(auto task : tasksToResume)
         {
-            InitUIFromTask(task);
-            StartPageWorker();
-            UseAuthorsPageTask(task, callProgress, callProgressText);
+            auto fullTask = pageTaskInterface->GetTaskById(task->id);
+            InitUIFromTask(fullTask);
+            UseAuthorsPageTask(fullTask, callProgress, callProgressText);
         }
     }
 }
@@ -1853,7 +1897,8 @@ void MainWindow::FillRecTagCombobox()
 void MainWindow::FillRecommenderListView(bool forceRefresh)
 {
     QStringList result;
-    auto allStats = recsInterface->GetAuthorStatsForList(recsInterface->GetCurrentRecommendationList(), forceRefresh);
+    auto list = recsInterface->GetCurrentRecommendationList();
+    auto allStats = recsInterface->GetAuthorStatsForList(list, forceRefresh);
     std::sort(std::begin(allStats),std::end(allStats), [](auto s1, auto s2){
         return s1->matchRatio < s2->matchRatio;
     });
@@ -1883,7 +1928,7 @@ bool MainWindow::LoadAuthor(QString url)
     database::Transaction transaction(db);
     QSet<QString> fandoms;
     authorsInterface->EnsureId(parser.recommender.author); // assuming ffn
-    auto author = authorsInterface->GetByUrl(ui->leAuthorUrl->text());
+    auto author = authorsInterface->GetByWebID("ffn", url_utils::GetWebId(ui->leAuthorUrl->text(), "ffn").toInt());
     {
         fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
         fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
@@ -2183,7 +2228,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
     QString authorUrl = ui->leAuthorUrl->text();
-    auto author = authorsInterface->GetByUrl(authorUrl);
+    auto author = authorsInterface->GetByWebID("ffn", url_utils::GetWebId(authorUrl, "ffn").toInt());
     if(author && useAuthorLink)
         filter.useThisRecommenderOnly = author->id;
     return filter;
@@ -2306,7 +2351,7 @@ void MainWindow::on_pbAddAuthorToList_clicked()
     QString listName = ui->leCurrentListName->text().trimmed();
     if(listName.isEmpty())
     {
-       QMessageBox::warning(nullptr, "Warning!", "You need at least some name to create a new list. Please enter the list name.");
+        QMessageBox::warning(nullptr, "Warning!", "You need at least some name to create a new list. Please enter the list name.");
     }
 
 
@@ -2318,7 +2363,7 @@ void MainWindow::on_pbAddAuthorToList_clicked()
         recsInterface->LoadListIntoDatabase(params);
         listId = recsInterface->GetListIdForName(ui->leCurrentListName->text().trimmed());
     }
-    auto author = authorsInterface->GetByUrl(url);
+    auto author = authorsInterface->GetByWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
     if(!author)
         return;
     QSharedPointer<core::AuthorRecommendationStats> stats(new core::AuthorRecommendationStats);
@@ -2342,7 +2387,7 @@ void MainWindow::on_pbRemoveAuthorFromList_clicked()
     database::Transaction transaction(db);
     if(url.isEmpty())
         return;
-    auto author = authorsInterface->GetByUrl(url);
+    auto author = authorsInterface->GetByWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
     if(!author)
         return;
 

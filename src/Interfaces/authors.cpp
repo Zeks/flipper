@@ -65,7 +65,9 @@ void Authors::IndexAuthors()
     for(auto author : authors)
     {
         authorsById[author->id] = author;
-        authorsNamesByWebsite[author->website][author->name] = author;
+        for(auto key : author->GetWebsites())
+            authorsNamesByWebsite[key][author->name] = author;
+
         authorsByUrl[author->url("ffn")] = author;
     }
 }
@@ -81,16 +83,27 @@ bool Authors::EnsureAuthorLoaded(QString name, QString website)
     return true;
 }
 
-bool Authors::EnsureAuthorLoaded(QString url)
+bool Authors::EnsureAuthorLoaded(QString website, int id)
 {
-    if(authorsByUrl.contains(url))
+    if(authorsByWebID[website].contains(id))
         return true;
 
-    if(!LoadAuthor(url))
+    if(!LoadAuthor(website, id))
         return false;
 
     return true;
 }
+
+//bool Authors::EnsureAuthorLoaded(QString url)
+//{
+//    if(authorsByUrl.contains(url))
+//        return true;
+
+//    if(!LoadAuthor(url))
+//        return false;
+
+//    return true;
+//}
 
 bool Authors::EnsureAuthorLoaded(int id)
 {
@@ -112,9 +125,9 @@ bool Authors::LoadAuthor(QString name, QString website)
     return true;
 }
 
-bool Authors::LoadAuthor(QString url)
+bool Authors::LoadAuthor(QString website, int id)
 {
-    auto author = database::puresql::GetAuthorByUrl(url,db);
+    auto author = database::puresql::GetAuthorByIDAndWebsite(id, website, db);
     if(!author)
         return false;
     AddAuthorToIndex(author);
@@ -155,14 +168,23 @@ QList<core::AuthorPtr> Authors::GetAllByName(QString name)
     return result;
 }
 
-core::AuthorPtr Authors::GetByUrl(QString url)
+core::AuthorPtr Authors::GetByWebID(QString website, int id)
 {
     core::AuthorPtr result;
-    if(EnsureAuthorLoaded(url))
-        result = authorsByUrl[url];
+    if(EnsureAuthorLoaded(website, id))
+        result = authorsByWebID[website][id];
 
     return result;
 }
+
+//core::AuthorPtr Authors::GetByUrl(QString url)
+//{
+//    core::AuthorPtr result;
+//    if(EnsureAuthorLoaded(url))
+//        result = authorsByUrl[url];
+
+//    return result;
+//}
 
 QSharedPointer<core::Author > Authors::GetById(int id)
 {
@@ -266,9 +288,12 @@ void Authors::AddAuthorToIndex(core::AuthorPtr author)
 {
     authors.push_back(author);
 
-    authorsNamesByWebsite[author->website][author->name] = author;
+    for(auto key : author->GetWebsites())
+        authorsNamesByWebsite[key][author->name] = author;
     authorsById[author->id] = author;
-    authorsByUrl[author->url(author->website)] = author;
+    for(auto key : author->GetWebsites())
+        authorsByUrl[author->url(key)] = author;
+
 }
 
 bool Authors::AssignNewNameForAuthor(core::AuthorPtr author, QString name)

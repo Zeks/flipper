@@ -102,6 +102,7 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  CREATE  INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);
  alter table Recommenders add column wave integer default 0;
  alter table Recommenders add column favourites integer default -1;
+ alter table Recommenders add column fics integer default -1;
  alter table Recommenders add column ffn_id integer default -1;
  alter table Recommenders add column ao3_id integer default -1;
  alter table Recommenders add column sb_id integer default -1;

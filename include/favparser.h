@@ -32,7 +32,7 @@ public:
     core::Section GetSection( QString text, int start);
     QString ExtractRecommenderNameFromUrl(QString url);
     void GetAuthor(core::Section& , int& startfrom, QString text);
-    void GetAuthorUrl(core::Section& , int& startfrom, QString text);
+    void GetAuthorId(core::Section& , int& startfrom, QString text);
     void GetTitle(core::Section& , int& startfrom, QString text);
     void GetGenre(core::Section& , int& startfrom, QString text);
     void GetSummary(core::Section& , int& startfrom, QString text);
@@ -49,7 +49,7 @@ public:
     void WriteProcessed();
     void WriteRecommenderInfo();
     void SetCurrentTag(QString);
-
+    void SetAuthor(core::AuthorPtr);
 
     QStringList diagnostics;
     QList<QSharedPointer<core::Fic>> processedStuff;

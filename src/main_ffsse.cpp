@@ -30,24 +30,31 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+    QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
     QSettings settings("settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/doBackups", true).toBool())
         dbInterface->BackupDatabase("CrawlerDB");
     qDebug() << "current appPath is: " << QDir::currentPath();
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+
     if(settings.value("Settings/storeCache", false).toBool())
     {
-        auto pageCacheDb = pageCacheInterface->InitDatabase("Service");
-        pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "Service");
+        auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+        pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
     }
-    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+
+    auto tasksDb = tasksInterface->InitDatabase("Tasks");
+    tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
+
 
     //dbfix::EnsureFandomIndexExists(mainDb);
 //    /dbfix::FillFFNId(mainDb);
     MainWindow w;
     w.dbInterface = dbInterface;
     w.pageCacheInterface = pageCacheInterface;
+    w.tasksInterface = tasksInterface;
     w.InitInterfaces();
     w.Init();
     w.show();

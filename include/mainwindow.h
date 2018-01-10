@@ -106,6 +106,7 @@ public:
     QSharedPointer<interfaces::RecommendationLists> recsInterface;
     QSharedPointer<database::IDBWrapper> dbInterface;
     QSharedPointer<database::IDBWrapper> pageCacheInterface;
+    QSharedPointer<database::IDBWrapper> tasksInterface;
 private:
 
     void SetupFanficTable();

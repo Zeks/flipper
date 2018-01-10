@@ -35,7 +35,6 @@ void PageTask::WriteSubTaskIntoDB(SubTaskPtr subtask)
     if(subtask->NeedsInsertion())
     {
         auto result = database::puresql::CreateSubTaskInDB(subtask, db);
-        subtask->id = result.data;
         subtask->isNew = false;
     }
     else

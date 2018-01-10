@@ -90,7 +90,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-    auto db = QSqlDatabase::database("Service");
+    auto db = QSqlDatabase::database("PageCache");
     bool dbOpen = db.isOpen();
     QSqlQuery q(db);
     q.prepare("select * from PageCache where url = :URL");
@@ -151,7 +151,7 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     QSettings settings("settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/storeCache", false).toBool())
         return;
-    QSqlQuery q(QSqlDatabase::database("Service"));
+    QSqlQuery q(QSqlDatabase::database("PageCache"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
@@ -245,7 +245,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
 {
     FuncCleanup f([&](){working = false;});
 
-    database::Transaction pcTransaction(QSqlDatabase::database("Service"));
+    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;
@@ -287,7 +287,11 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
 void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
-    database::Transaction pcTransaction(QSqlDatabase::database("Service"));
+    // kinda have to split pagecache db from service db I guess
+    // which is only natural anyway... probably
+    // still not helping for multithreading later on
+    auto db = QSqlDatabase::database("PageCache");
+    database::Transaction pcTransaction(db);
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     WebPage result;

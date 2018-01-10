@@ -72,26 +72,22 @@ class Author : public DBEntity{
         return -1;
     }
     QString name;
-    QHash<QString, QString> urls;
     QDateTime firstPublishedFic;
     QDateTime lastUpdated;
     int ficCount = -1;
     int recCount = -1;
     int favCount = -1;
     bool isValid = false;
-    QString website = "";
+    //QString website = "";
     QHash<QString, int> webIds;
-
-    void SetUrl(QString type, QString url)
-    {
-        urls[type] = url;
-    }
+    QString CreateAuthorUrl(QString urlType, int webId) const;
     QString url(QString type) const
     {
-        if(urls.contains(type))
-            return urls[type];
+        if(webIds.contains(type))
+            return CreateAuthorUrl(type, webIds[type]);
         return "";
     }
+    QStringList GetWebsites() const;
     UpdateMode updateMode = UpdateMode::none;
 };
 

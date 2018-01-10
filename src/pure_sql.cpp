@@ -574,14 +574,29 @@ bool AssignNewNameToAuthorWithId(core::AuthorPtr author, QSqlDatabase db)
     return true;
 }
 
+void ProcessIdsFromQuery(core::AuthorPtr author, QSqlQuery& q)
+{
+    auto ffnId = q.value("ffn_id").toInt();
+    auto ao3Id = q.value("ao3_id").toInt();
+    auto sbId = q.value("sb_id").toInt();
+    auto svId = q.value("sv_id").toInt();
+    if(ffnId != -1)
+        author->SetWebID("ffn", ffnId);
+    if(ao3Id != -1)
+        author->SetWebID("ao3", ao3Id);
+    if(sbId != -1)
+        author->SetWebID("sb", sbId);
+    if(svId != -1)
+        author->SetWebID("sv", svId);
+}
+
 core::AuthorPtr AuthorFromQuery(QSqlQuery& q)
 {
     core::AuthorPtr result(new core::Author);
     result->AssignId(q.value("id").toInt());
     result->name = q.value("name").toString();
-    result->website = q.value("website").toString();
     result->recCount = q.value("rec_count").toInt();
-    result->SetUrl("ffn", q.value("url").toString());
+    ProcessIdsFromQuery(result, q);
     return result;
 }
 
@@ -599,7 +614,7 @@ QList<core::AuthorPtr> GetAllAuthors(QString website,  QSqlDatabase db)
     q.next();
     int size = q.value(0).toInt();
 
-    qs = QString("select distinct id,name, url, website_type as website, "
+    qs = QString("select distinct id,name, url, ffn_id, ao3_id,sb_id, sv_id,  "
                  "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
                  " from recommenders where website_type = :site");
     q.prepare(qs);
@@ -623,7 +638,7 @@ QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase
     QList<core::AuthorPtr> result;
 
     QSqlQuery q(db);
-    QString qs = QString("select id,name, url, website_type as website, "
+    QString qs = QString("select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
                          " from recommenders "
                          "where id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id )");
@@ -644,7 +659,8 @@ QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase
 core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url, website_type as website from recommenders where website_type = :site and name = :name");
+    QString qs = QString("select id,name, url, website_type, ffn_id, ao3_id,sb_id, sv_id from recommenders where %1_id is not null and name = :name");
+    qs=qs.arg(website);
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -657,16 +673,36 @@ core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website, QSqlDat
         return result;
 
     result = AuthorFromQuery(q);
-    result->website = website;
+    return result;
+}
+core::AuthorPtr GetAuthorByIDAndWebsite(int id, QString website, QSqlDatabase db)
+{
+    core::AuthorPtr result;
+    QString qs = QString("select r.id,r.name, r.url, r.website_type, r.ffn_id, r.ao3_id,r.sb_id, r.sv_id, "
+                         " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count "
+                         "from recommenders r where %1_id is not null and %1_id = :id");
+    qs=qs.arg(website);
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":site",website);
+    q.bindValue(":id",id);
+    if(!ExecAndCheck(q))
+        return result;
+
+    if(!q.next())
+        return result;
+
+    result = AuthorFromQuery(q);
     return result;
 }
 
 core::AuthorPtr GetAuthorByUrl(QString url, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url, website_type as website,"
-                         " (select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
-                         " from recommenders where url = :url");
+    QString qs = QString("select r.id,name, r.url, r.ffn_id, r.ao3_id, r.sb_id, r.sv_id, "
+                         " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count "
+                         " from recommenders r where url = :url");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -685,7 +721,7 @@ core::AuthorPtr GetAuthorByUrl(QString url, QSqlDatabase db)
 core::AuthorPtr GetAuthorById(int id, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url, website_type as website,  "
+    QString qs = QString("select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
                          "(select count(fic_id) from recommendations where recommender_id = :id) as rec_count "
                          "from recommenders where id = :id");
 
@@ -1114,12 +1150,13 @@ bool DeactivateStory(int id, QString website, QSqlDatabase db)
 bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
     QSqlQuery q1(db);
-    QString qsl = " insert into recommenders(name, url, page_updated) values(:name, :url,  :timestamp) ";
+    QString qsl = " insert into recommenders(name, url, favourites, fics, page_updated) values(:name, :url, :favourites, :fics,  :time) ";
     q1.prepare(qsl);
     q1.bindValue(":name", author->name);
     q1.bindValue(":time", timestamp);
     q1.bindValue(":url", author->url("ffn"));
     q1.bindValue(":favourites", author->favCount);
+    q1.bindValue(":fics", author->ficCount);
 
     if(!ExecAndCheck(q1))
         return false;
@@ -1279,7 +1316,7 @@ static bool GetFandomStats(core::FandomPtr fandom, QSqlDatabase db)
     fandom->dateOfFirstFic = q.value("date_of_first_fic").toDate();
     fandom->dateOfLastFic = q.value("date_of_last_fic").toDate();
     fandom->lastUpdateDate = q.value("last_update").toDate();
-
+    return true;
 }
 
 QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db)
@@ -1510,9 +1547,9 @@ QStringList GetLinkedPagesForList(int listId, QSqlDatabase db)
 {
     QStringList result;
     QString qs = QString("Select distinct url from LinkedAuthors "
-                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id)"
-                         " and (url not in (select distinct url from recommenders)                          "
-                         " union all  "
+                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = 17) "
+                         " and url not in (select distinct url from recommenders)"
+                         " union all "
                          " select url from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1628,6 +1665,7 @@ void FillPageTaskBaseFromQuery(BaseTaskPtr task, QSqlQuery& q){
     task->size = q.value("size").toInt();
     task->retries= q.value("retries").toInt();
     task->success = q.value("success").toBool();
+    task->finished= q.value("finished").toBool();
 }
 
 
@@ -1641,6 +1679,7 @@ void FillPageTaskFromQuery(PageTaskPtr task, QSqlQuery& q){
     task->results = q.value("results").toString();
     task->taskComment= q.value("task_comment").toString();
     task->type = q.value("type").toInt();
+    task->size = q.value("task_size").toInt();
     task->allowedRetries = q.value("allowed_retry_count").toInt();
     task->cacheMode = static_cast<ECacheMode>(q.value("cache_mode").toInt());
     task->refreshIfNeeded= q.value("refresh_if_needed").toBool();
@@ -1922,18 +1961,19 @@ DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
     result.data = false;
     Transaction transaction(db);
     QString qs = QString("update PageTaskParts set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished,"
-                         " retries = :retries, success = :success"
+                         " retries = :retries, success = :success, finished = :finished "
                          " where task_id = :task_id and sub_id = :sub_id");
 
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":scheduled_to",    task->scheduledTo);
-    q.bindValue(":started_at",         task->startedAt);
-    q.bindValue(":finished_at",        task->finished);
-    q.bindValue(":retries",         task->retries);
-    q.bindValue(":success",         task->success);
-    q.bindValue(":id",              task->parentId);
-    q.bindValue(":sub_id",          task->id);
+    q.bindValue(":scheduled_to",     task->scheduledTo);
+    q.bindValue(":started_at",       task->startedAt);
+    q.bindValue(":finished_at",      task->finished);
+    q.bindValue(":retries",          task->retries);
+    q.bindValue(":success",          task->success);
+    q.bindValue(":finished",         task->finished);
+    q.bindValue(":task_id",          task->parentId);
+    q.bindValue(":sub_id",           task->id);
 
     if(!result.ExecAndCheck(q))
         return result;
@@ -1987,6 +2027,7 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
     }while(q.next());
     return result;
 }
+
 
 
 }

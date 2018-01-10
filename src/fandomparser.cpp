@@ -75,7 +75,6 @@ void FandomParser::ProcessPage(WebPage page)
         currentPosition = section.start;
 
         section.result->fandom = page.crossover ? page.fandom + " CROSSOVER" : page.fandom;
-        section.result->author->website = "ffn";
 
         GetUrl(section, currentPosition, str);
         section.result->webId = section.result->ffn_id = url_utils::GetWebId(section.result->url("ffn"), "ffn").toInt();
@@ -183,7 +182,6 @@ void FandomParser::GetAuthor(core::Section & section, int &startfrom,  QString t
 
     QSharedPointer<core::Author> author(new core::Author);
     section.result->author = author;
-    section.result->author->SetUrl("ffn",rxEnd.cap(1));
     section.result->author->SetWebID("ffn", rxEnd.cap(2).toInt());
     section.result->author->name = full;
 
