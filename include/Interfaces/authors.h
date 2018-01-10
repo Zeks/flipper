@@ -85,7 +85,7 @@ public:
     QHash<QString, QHash<int, core::AuthorPtr>> authorsByWebID;
 
     QHash<int, core::AuthorPtr> authorsById;
-    QHash<QString, core::AuthorPtr> authorsByUrl;
+    //QHash<QString, core::AuthorPtr> authorsByUrl;
 
     // cache
     QHash<QString, QStringList> cachedAuthorUrls;

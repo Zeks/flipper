@@ -87,6 +87,8 @@ class PageManager
     bool GetCachedMode() const;
     WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::dont_use_cache);
     void SavePageToDB(const WebPage & page);
+    void SetAutomaticCacheLimit(QDate);
+    void SetAutomaticCacheForCurrentDate(bool);
     QScopedPointer<PageGetterPrivate> d;
 };
 
@@ -99,8 +101,12 @@ public:
     virtual void timerEvent(QTimerEvent *);
     QString GetNext(QString);
     QDate GrabMinUpdate(QString text);
-    int timeout = 300;
+    void SetAutomaticCache(QDate);
+    void SetAutomaticCacheForCurrentDate(bool);
+    int timeout = 500;
     std::atomic<bool> working;
+    QDate automaticCache;
+    bool automaticCacheForCurrentDate = true;
 public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode);
     void TaskList(QStringList urls, ECacheMode cacheMode);

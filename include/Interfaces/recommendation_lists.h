@@ -72,7 +72,7 @@ public:
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId);
     QStringList GetNamesForListId(int listId);
-    QList<QSharedPointer<core::Author>> GetAuthorsForRecommendationList(int listId);
+    QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QList<int> GetRecommendersForFicId(int ficId);
     QStringList GetLinkedPagesForList(int listId, QString website);
 

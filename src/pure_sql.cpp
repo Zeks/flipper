@@ -560,7 +560,23 @@ int GetAuthorIdFromUrl(QString url, QSqlDatabase db)
 
     return result;
 }
+int GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db)
+{
+    QSqlQuery q1(db);
+    QString qsl = "select id from recommenders where %1_id = :id";
+    qsl = qsl.arg(website);
+    q1.prepare(qsl);
+    q1.bindValue(":id", id);
+    q1.exec();
+    int result = -1;
+    while(q1.next())
+        result = q1.value(0).toInt();
 
+    if(!CheckExecution(q1))
+        return -2;
+
+    return result;
+}
 bool AssignNewNameToAuthorWithId(core::AuthorPtr author, QSqlDatabase db)
 {
     if(author->GetIdStatus() != core::AuthorIdStatus::valid)

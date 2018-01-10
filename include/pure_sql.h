@@ -96,6 +96,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
 int GetAuthorIdFromUrl(QString url, QSqlDatabase db);
+int GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
 bool AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 QList<int> GetAllAuthorIds(QSqlDatabase db);

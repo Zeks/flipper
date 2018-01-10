@@ -40,7 +40,7 @@ void Authors::Reindex()
 void Authors::ClearIndex()
 {
     authorsNamesByWebsite.clear();
-    authorsByUrl.clear();
+    //authorsByUrl.clear();
     authorsById.clear();
 }
 
@@ -66,9 +66,12 @@ void Authors::IndexAuthors()
     {
         authorsById[author->id] = author;
         for(auto key : author->GetWebsites())
+        {
             authorsNamesByWebsite[key][author->name] = author;
+            authorsByWebID[key][author->GetWebID(key)] = author;
+        }
 
-        authorsByUrl[author->url("ffn")] = author;
+        //authorsByUrl[author->url("ffn")] = author;
     }
 }
 
@@ -261,21 +264,34 @@ bool Authors::LoadAuthors(QString website, bool )
     return true;
 }
 
+void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
+{
+    for(QString website : author->GetWebsites())
+    {
+        auto id = database::puresql::GetAuthorIdFromWebID(author->GetWebID(website),website, db);
+        author->AssignId(id);
+        if(id > -1)
+            break;
+    }
+}
+
 bool Authors::EnsureId(core::AuthorPtr author, QString website)
 {
     if(!author)
         return false;
 
-    QString url = author->url(website);
-    if(authorsByUrl.contains(url) && authorsByUrl[url])
-        author = authorsByUrl[url];
+    //QString url = author->url(website);
+    auto webId = author->GetWebID(website);
+    if(authorsByWebID[website].contains(webId) && authorsByWebID[website][webId])
+        author = authorsByWebID[website][webId];
 
     if(author->GetIdStatus() == core::AuthorIdStatus::unassigned)
-        author->AssignId(database::puresql::GetAuthorIdFromUrl(author->url(website), db));
+        LoadIDForAuthor(author, db);
+
     if(author->GetIdStatus() == core::AuthorIdStatus::not_found)
     {
         database::puresql::WriteAuthor(author,portableDBInterface->GetCurrentDateTime(), db);
-        author->AssignId(database::puresql::GetAuthorIdFromUrl(author->url(website), db));
+        LoadIDForAuthor(author, db);
     }
     if(author->id < 0)
         return false;
@@ -289,10 +305,14 @@ void Authors::AddAuthorToIndex(core::AuthorPtr author)
     authors.push_back(author);
 
     for(auto key : author->GetWebsites())
+    {
         authorsNamesByWebsite[key][author->name] = author;
+        auto webId = author->GetWebID(key);
+        authorsByWebID[key][webId] = author;
+    }
     authorsById[author->id] = author;
-    for(auto key : author->GetWebsites())
-        authorsByUrl[author->url(key)] = author;
+//    for(auto key : author->GetWebsites())
+//        authorsByUrl[author->url(key)] = author;
 
 }
 

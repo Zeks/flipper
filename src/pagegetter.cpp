@@ -51,6 +51,8 @@ public:
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
     void SetDatabase(QSqlDatabase _db);
+    QDate automaticCacheDateCutoff;
+    bool autoCacheForCurrentDate = true;
     QSqlDatabase db;
 
 public slots:
@@ -66,6 +68,15 @@ PageGetterPrivate::PageGetterPrivate(QObject *parent): QObject(parent)
 WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 {
     WebPage result;
+    // first, we get the page from cache anyway
+    // not much point doing otherwise if the page is super fresh
+    auto temp = GetPageFromDB(url);
+    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate())
+    {
+        result = temp;
+        result.isFromCache = true;
+        return result;
+    }
     if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
     {
         result = GetPageFromDB(url);
@@ -224,6 +235,16 @@ void PageManager::SavePageToDB(const WebPage & page)
     if(settings.value("Settings/storeCache", false).toBool())
         d->SavePageToDB(page);
 }
+
+void PageManager::SetAutomaticCacheLimit(QDate date)
+{
+    d->automaticCacheDateCutoff = date;
+}
+
+void PageManager::SetAutomaticCacheForCurrentDate(bool value)
+{
+    d->autoCacheForCurrentDate = value;
+}
 #include "pagegetter.moc"
 
 PageThreadWorker::PageThreadWorker(QObject *parent)
@@ -248,6 +269,8 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
     database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
+    pager->SetAutomaticCacheLimit(automaticCache);
+    pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     WebPage result;
     int counter = 0;
     do
@@ -294,6 +317,8 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
     database::Transaction pcTransaction(db);
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
+    pager->SetAutomaticCacheLimit(automaticCache);
+    pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     WebPage result;
     qDebug() << "loading task: " << urls;
     for(int i=0; i< urls.size();  i++)
@@ -351,4 +376,16 @@ QDate PageThreadWorker::GrabMinUpdate(QString text)
 
     return minDate.date();
 }
+
+void PageThreadWorker::SetAutomaticCache(QDate date)
+{
+    automaticCache = date;
+}
+
+void PageThreadWorker::SetAutomaticCacheForCurrentDate(bool value)
+{
+    automaticCacheForCurrentDate = value;
+}
+
+
 

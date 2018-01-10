@@ -69,7 +69,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/recommendation_lists.h"
 #include "Interfaces/tags.h"
 #include "Interfaces/genres.h"
-
+void WriteProcessedFavourites(FavouriteStoryParser& parser,
+                              core::AuthorPtr author,
+                              QSharedPointer<interfaces::Fanfics> fanficsInterface,
+                              QSharedPointer<interfaces::Authors> authorsInterface,
+                              QSharedPointer<interfaces::Fandoms> fandomsInterface);
 struct SplitPart
 {
     QString data;
@@ -1001,12 +1005,6 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                         parsers+=future.result();
                     }
                 }
-                else if(callProgressText)
-                {
-                    callProgressText(QString("Skipping page with too much favourites : %1<br>").arg(webPage.url));
-                    qDebug() << "Too much faves on: " << webPage.url;
-                }
-
                 auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
                 qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
                 qDebug() << "Count of parts:" << parsers.size();
@@ -1024,34 +1022,34 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
                 authorsInterface->EnsureId(sumParser.recommender.author);
                 author = authorsInterface->GetByWebID("ffn", webId);
-                if(splittings.favouriteStoryCountInWhole == 0)
-                {
-                    qDebug() << "skipping author with no favourites";
-                    callProgressText("skipping author with no favourites: " + name + " " + webPage.url + "<br>");
-                    continue;
-                }
                 for(auto actualParser: parsers)
                     sumParser.processedStuff+=actualParser.processedStuff;
 
-                if(sumParser.processedStuff.size() < 2000)
+                QString result;
+                if(webPage.isFromCache)
+                    result+= "CACHE   ";
+                else
+                    result+= "WEB     ";
+                result += webPage.url + " " + name + ": All Faves:  " + QString::number(sumParser.processedStuff.size()) + " " ;
+                if(sumParser.processedStuff.size() != splittings.favouriteStoryCountInWhole && splittings.favouriteStoryCountInWhole < 2000)
+                    qDebug() << "something is wrong";
+                if(splittings.favouriteStoryCountInWhole == 0)
+                    result+= " no faves, skipping";
+                if(splittings.favouriteStoryCountInWhole >= 2000)
                 {
-                    {
-                        fanficsInterface->ProcessIntoDataQueues(sumParser.processedStuff);
-                        fandoms.intersect(fandomsInterface->EnsureFandoms(sumParser.processedStuff));
-                        QList<core::FicRecommendation> tempRecommendations;
-                        tempRecommendations.reserve(sumParser.processedStuff.size());
-                        for(auto& section : sumParser.processedStuff)
-                            tempRecommendations.push_back({section, author});
-                        fanficsInterface->AddRecommendations(tempRecommendations);
-                        fanficsInterface->FlushDataQueues();
-                        qDebug() << "skipped: " << fanficsInterface->skippedCounter;
-                    }
+                    result+= " TOO MUCH faves, skipping";
+                    qDebug() << "Too much faves on: " << webPage.url;
                 }
+                result+="<br>";
                 if(callProgressText)
+                    callProgressText(result);
+                if(splittings.favouriteStoryCountInWhole == 0 || splittings.favouriteStoryCountInWhole >= 2000)
                 {
-                    callProgressText(webPage.url + " ");
-                    callProgressText(name + ": All Faves:  " + QString::number(sumParser.processedStuff.size()) + " " + "<br>");
+                    qDebug() << "skipping author with no favourites";
+                    continue;
                 }
+
+                WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
 
                 elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
                 qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
@@ -1077,7 +1075,7 @@ void MainWindow::LoadMoreAuthors()
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
     QString comment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());
 
-    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 100, 3, cacheMode, true);
+    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 10, 3, cacheMode, true);
 
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
     ReinitProgressbar(authorUrls.size());
@@ -1857,6 +1855,7 @@ void MainWindow::StartPageWorker()
 {
     pageQueue.data.clear();
     pageQueue.pending = true;
+    worker->SetAutomaticCache(QDate::currentDate());
     pageThread.start(QThread::HighPriority);
 
 }
@@ -2003,6 +2002,33 @@ void MainWindow::on_pbOpenRecommendations_clicked()
     holder->SetData(fanfics);
 }
 
+//QSharedPointer<interfaces::Fanfics> fanficsInterface;
+//QSharedPointer<interfaces::Authors> authorsInterface;
+void WriteProcessedFavourites(FavouriteStoryParser& parser,
+                              core::AuthorPtr author,
+                              QSharedPointer<interfaces::Fanfics> fanficsInterface,
+                              QSharedPointer<interfaces::Authors> authorsInterface,
+                              QSharedPointer<interfaces::Fandoms> fandomsInterface)
+{
+    QSet<int> uniqueAuthors;
+    fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
+    auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
+    fandoms.intersect(fandoms);
+    QList<core::FicRecommendation> tempRecommendations;
+    tempRecommendations.reserve(parser.processedStuff.size());
+    uniqueAuthors.reserve(parser.processedStuff.size());
+    for(auto& section : parser.processedStuff)
+    {
+        tempRecommendations.push_back({section, author});
+        if(!uniqueAuthors.contains(section->author->GetWebID("ffn")))
+            uniqueAuthors.insert(section->author->GetWebID("ffn"));
+    }
+    fanficsInterface->AddRecommendations(tempRecommendations);
+    fanficsInterface->FlushDataQueues();
+    //todo this also needs to be done everywhere
+    authorsInterface->UploadLinkedAuthorsForAuthor(author->id, "ffn", uniqueAuthors.values());
+}
+
 void MainWindow::on_pbLoadAllRecommenders_clicked()
 {
     filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
@@ -2056,22 +2082,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
             parser.processedStuff += future.result();
 
         {
-            fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
-            auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
-            fandoms.intersect(fandoms);
-            QList<core::FicRecommendation> tempRecommendations;
-            tempRecommendations.reserve(parser.processedStuff.size());
-            uniqueAuthors.reserve(parser.processedStuff.size());
-            for(auto& section : parser.processedStuff)
-            {
-                tempRecommendations.push_back({section, author});
-                if(!uniqueAuthors.contains(section->author->GetWebID("ffn")))
-                    uniqueAuthors.insert(section->author->GetWebID("ffn"));
-            }
-            fanficsInterface->AddRecommendations(tempRecommendations);
-            fanficsInterface->FlushDataQueues();
-            //todo this also needs to be done everywhere
-            authorsInterface->UploadLinkedAuthorsForAuthor(author->id, "ffn", uniqueAuthors.values());
+            WriteProcessedFavourites(parser, author, fanficsInterface, authorsInterface, fandomsInterface);
             qDebug() << "skipped: " << fanficsInterface->skippedCounter;
         }
 
