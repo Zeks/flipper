@@ -23,23 +23,31 @@ void PageTask::WriteTaskIntoDB(PageTaskPtr task)
     {
         if(!subtask || !subtask->isValid)
             continue;
-        if(subtask->NeedsInsertion())
-        {
-            auto result = database::puresql::CreateSubTaskInDB(subtask, db);
-            subtask->id = result.data;
-            subtask->parentId = task->id;
-        }
-        else
-            database::puresql::UpdateSubTaskInDB(subtask, db);
+        subtask->parentId = task->id;
+        WriteSubTaskIntoDB(subtask);
+    }
+}
 
-        for(auto action : subtask->executedActions)
-        {
-            if(!action || !action->isNewAction)
-                continue;
+void PageTask::WriteSubTaskIntoDB(SubTaskPtr subtask)
+{
+    if(!subtask || !subtask->isValid)
+        return;
+    if(subtask->NeedsInsertion())
+    {
+        auto result = database::puresql::CreateSubTaskInDB(subtask, db);
+        subtask->id = result.data;
+        subtask->isNew = false;
+    }
+    else
+        database::puresql::UpdateSubTaskInDB(subtask, db);
 
-            database::puresql::CreateActionInDB(action, db);
-            database::puresql::CreateErrorsInDB(action->errors, db);
-        }
+    for(auto action : subtask->executedActions)
+    {
+        if(!action || !action->isNewAction)
+            continue;
+
+        database::puresql::CreateActionInDB(action, db);
+        database::puresql::CreateErrorsInDB(action->errors, db);
     }
 }
 

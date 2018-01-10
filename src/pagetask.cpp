@@ -52,3 +52,18 @@ QStringList BasePageTask::ListFailures()
 {
     return QStringList();
 }
+
+void BasePageTask::SetFinished(QDateTime dt)
+{
+    finishedAt = dt;
+    success = true;
+    finished = true;
+    // need to close up an action here
+}
+
+void BasePageTask::SetInitiated(QDateTime dt)
+{
+    attempted = true;
+    startedAt = dt;
+    // need to create an action here
+}

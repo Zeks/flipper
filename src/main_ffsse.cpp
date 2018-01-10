@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
     //dbfix::EnsureFandomIndexExists(mainDb);
+//    /dbfix::FillFFNId(mainDb);
     MainWindow w;
     w.dbInterface = dbInterface;
     w.pageCacheInterface = pageCacheInterface;

@@ -184,7 +184,7 @@ void FandomParser::GetAuthor(core::Section & section, int &startfrom,  QString t
     QSharedPointer<core::Author> author(new core::Author);
     section.result->author = author;
     section.result->author->SetUrl("ffn",rxEnd.cap(1));
-    section.result->author->webId = rxEnd.cap(2).toInt();
+    section.result->author->SetWebID("ffn", rxEnd.cap(2).toInt());
     section.result->author->name = full;
 
 }

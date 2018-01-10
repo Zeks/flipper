@@ -259,6 +259,7 @@ QDateTime GetCurrentDateTime(QSqlDatabase db)
     q.prepare(qsl);
     if(!database::puresql::ExecAndCheck(q))
         return dt;
+    q.next();
     dt = q.value(0).toDateTime();
     return dt;
 }

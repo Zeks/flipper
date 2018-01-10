@@ -213,6 +213,7 @@ void MainWindow::Init()
 
 
     qRegisterMetaType<WebPage>("WebPage");
+    qRegisterMetaType<PageResult>("PageResult");
     qRegisterMetaType<ECacheMode>("ECacheMode");
 
 
@@ -815,22 +816,23 @@ QString MainWindow::CreateLimitQueryPart()
     return result;
 }
 
-PageTaskPtr MainWindow::CreatePageTaskFromUrls(QStringList urls, int subTaskSize, int subTaskRetries,
+PageTaskPtr MainWindow::CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize, int subTaskRetries,
                                                ECacheMode cacheMode, bool allowCacheRefresh)
 {
     auto timestamp = dbInterface->GetCurrentDateTime();
+    qDebug() << timestamp;
     auto task = PageTask::CreateNewTask();
     task->allowedSubtaskRetries = subTaskRetries;
     task->cacheMode = cacheMode;
     task->parts = urls.size() / subTaskSize;
     task->refreshIfNeeded = allowCacheRefresh;
-    task->taskComment = "New authors for recommendation lists";
+    task->taskComment = taskComment;
     task->type = 0;
     task->allowedRetries = 2;
     task->created = timestamp;
     task->isValid = true;
     task->scheduledTo = timestamp;
-    task->started = timestamp;
+    task->startedAt = timestamp;
     pageTaskInterface->WriteTaskIntoDB(task);
 
     SubTaskPtr subtask;
@@ -850,9 +852,12 @@ PageTaskPtr MainWindow::CreatePageTaskFromUrls(QStringList urls, int subTaskSize
         subtask->isValid = true;
         subtask->allowedRetries = subTaskRetries;
         subtask->success = false;
+        task->subTasks.push_back(subtask);
         i += subTaskSize;
         counter++;
     }while(i < urls.size());
+    // now with subtasks
+    pageTaskInterface->WriteTaskIntoDB(task);
     return task;
 }
 
@@ -900,6 +905,9 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
         if(subtask->attempted)
             qDebug() << "Retrying attempted task: " << task->id << " " << subtask->id;
 
+
+        subtask->SetInitiated(dbInterface->GetCurrentDateTime());
+
         auto cast = static_cast<SubTaskAuthorContent*>(subtask->content.data());
         database::Transaction transaction(db);
         database::Transaction pcTransaction(pageCacheInterface->GetDatabase());
@@ -942,8 +950,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
             {
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
                 auto splittings = SplitJob(webPage.content);
-                if(splittings.parts.size() == 0)
-                    continue;
+
                 //QString  authorName = splittings.authorName;
                 if(splittings.storyCountInWhole > 2000)
                 {
@@ -970,9 +977,15 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 QString name = ParseAuthorNameFromFavouritePage(webPage.content);
                 sumParser.recommender = parsers.first().recommender;
                 sumParser.recommender.author->name = name;
+                sumParser.recommender.author->favCount = splittings.storyCountInWhole;
                 authorsInterface->EnsureId(sumParser.recommender.author);
                 author = authorsInterface->GetByUrl(webPage.url);
-
+                if(splittings.storyCountInWhole == 0)
+                {
+                    qDebug() << "skipping author with no favourites";
+                    callProgressText("skipping author with no favourites:" + webPage.url);
+                    continue;
+                }
                 for(auto actualParser: parsers)
                     sumParser.processedStuff+=actualParser.processedStuff;
 
@@ -999,7 +1012,9 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
                 qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
             }
+            subtask->SetFinished(dbInterface->GetCurrentDateTime());
         }while(!webPage.isLastPage);
+        pageTaskInterface->WriteSubTaskIntoDB(subtask);
         fandomsInterface->RecalculateFandomStats(fandoms.values());
         fanficsInterface->ClearProcessedHash();
         transaction.finalize();
@@ -1014,8 +1029,8 @@ void MainWindow::LoadMoreAuthors()
     recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecGroup->currentText()));
     QStringList authorUrls = recsInterface->GetLinkedPagesForList(recsInterface->GetCurrentRecommendationList());
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
-    auto pageTask = CreatePageTaskFromUrls(authorUrls, 1000, 3, cacheMode, true);
-    pageTask->taskComment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());
+    QString comment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());
+    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 1000, 3, cacheMode, true);
 
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
     ReinitProgressbar(authorUrls.size());
@@ -1462,11 +1477,15 @@ void MainWindow::ReinitRecent(QString name)
 
 void MainWindow::StartTaskTimer()
 {
+    taskTimer.setSingleShot(true);
     taskTimer.start(1000);
 }
 
 void MainWindow::CheckUnfinishedTasks()
 {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    if(settings.value("Settings/skipUnfinishedTasksCheck",true).toBool())
+        return;
     auto tasks = pageTaskInterface->GetUnfinishedTasks();
     TaskList tasksToResume;
     for(auto task : tasks)
@@ -1474,11 +1493,12 @@ void MainWindow::CheckUnfinishedTasks()
         QString diagnostics;
         diagnostics+= "Unfinished task:\n";
         diagnostics+= task->taskComment + "\n";
-        diagnostics+= "Started: " + task->started.toString("yyyyMMdd hh:mm") + "\n";
+        diagnostics+= "Started: " + task->startedAt.toString("yyyyMMdd hh:mm") + "\n";
         diagnostics+= "Do you want to continue this task?";
         QMessageBox m; /*(QMessageBox::Warning, "Unfinished task warning",
                       diagnostics,QMessageBox::Ok|QMessageBox::Cancel);*/
         m.setIcon(QMessageBox::Warning);
+        m.setText(diagnostics);
         auto continueTask =  m.addButton("Continue",QMessageBox::AcceptRole);
         auto dropTask =      m.addButton("Drop task",QMessageBox::AcceptRole);
         auto delayDecision = m.addButton("Ask next time",QMessageBox::AcceptRole);

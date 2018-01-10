@@ -65,6 +65,12 @@ class Author : public DBEntity{
         }
     }
     AuthorIdStatus GetIdStatus() const {return idStatus;}
+    void SetWebID(QString website, int id){webIds[website] = id;}
+    int GetWebID(QString website) {
+        if(webIds.contains(website))
+            return webIds[website];
+        return -1;
+    }
     QString name;
     QHash<QString, QString> urls;
     QDateTime firstPublishedFic;
@@ -74,7 +80,7 @@ class Author : public DBEntity{
     int favCount = -1;
     bool isValid = false;
     QString website = "";
-    int webId = -1;
+    QHash<QString, int> webIds;
 
     void SetUrl(QString type, QString url)
     {

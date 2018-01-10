@@ -12,6 +12,7 @@ namespace interfaces {
 class PageTask{
 public:
     void WriteTaskIntoDB(PageTaskPtr);
+    void WriteSubTaskIntoDB(SubTaskPtr);
 
     bool DropLastTask();
     bool DropTaskId(int id);

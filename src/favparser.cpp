@@ -45,7 +45,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     recommender.author->name = authorName;
     recommender.author->SetUrl("ffn", url);
     recommender.author->website = "ffn";
-    recommender.author->webId = url_utils::GetWebId(url, "ffn").toInt();
+    recommender.author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
     while(true)
     {
 

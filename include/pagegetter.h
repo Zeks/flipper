@@ -69,7 +69,8 @@ struct PageQueue{
 
 class  PageResult{
 public:
-    PageResult(WebPage page, bool _finished):data(page), finished(_finished){}
+    PageResult() = default;
+    PageResult(WebPage page, bool _finished): finished(_finished),data(page){}
     bool finished = false;
     WebPage data;
 };

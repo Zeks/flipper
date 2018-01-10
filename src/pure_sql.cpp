@@ -441,7 +441,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID, AUTHOR_WEB_ID,"
                     " wcr, reviewstofavourites, age, daysrunning ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
-                    " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,:author_web_id,"
+                    " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,"
                     " :wcr, :reviewstofavourites, :age, :daysrunning )";
     query=query.arg(section->webSite);
     QSqlQuery q(db);
@@ -450,7 +450,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":fandom",section->fandom);
     q.bindValue(":author",section->author->name); //?
     q.bindValue(":author_id",section->author->id);
-    q.bindValue(":author_web_id",section->author->webId);
+    //q.bindValue(":author_web_id",section->author->webId);
     q.bindValue(":title",section->title);
     q.bindValue(":wordcount",section->wordCount.toInt());
     q.bindValue(":CHAPTERS",section->chapters.trimmed().toInt());
@@ -482,7 +482,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
 {
     QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
                     "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
-                    "summary = :summary, genres= :genres, published = :published, updated = :updated, author_id = :author_id,  author_web_id = :author_web_id,"
+                    "summary = :summary, genres= :genres, published = :published, updated = :updated, author_id = :author_id,"
                     "wcr= :wcr, reviewstofavourites = :reviewstofavourites, age = :age, daysrunning = :daysrunning "
                     " where %1_id = :site_id";
     query=query.arg(section->webSite);
@@ -491,7 +491,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     q.bindValue(":fandom",section->fandom);
     q.bindValue(":author",section->author->name);
     q.bindValue(":author_id",section->author->id);
-    q.bindValue(":author_web_id",section->author->webId);
+    //q.bindValue(":author_web_id",section->author->webId);
     q.bindValue(":title",section->title);
 
     q.bindValue(":wordcount",section->wordCount.toInt());
@@ -664,7 +664,9 @@ core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website, QSqlDat
 core::AuthorPtr GetAuthorByUrl(QString url, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url, website_type as website from recommenders where url = :url");
+    QString qs = QString("select id,name, url, website_type as website,"
+                         " (select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
+                         " from recommenders where url = :url");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1117,6 +1119,7 @@ bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
     q1.bindValue(":name", author->name);
     q1.bindValue(":time", timestamp);
     q1.bindValue(":url", author->url("ffn"));
+    q1.bindValue(":favourites", author->favCount);
 
     if(!ExecAndCheck(q1))
         return false;
@@ -1507,7 +1510,10 @@ QStringList GetLinkedPagesForList(int listId, QSqlDatabase db)
 {
     QStringList result;
     QString qs = QString("Select distinct url from LinkedAuthors "
-                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id)");
+                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id)"
+                         " and (url not in (select distinct url from recommenders)                          "
+                         " union all  "
+                         " select url from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":list_id",listId);
@@ -1614,10 +1620,10 @@ bool NullPtrGuard(T item)
 void FillPageTaskBaseFromQuery(BaseTaskPtr task, QSqlQuery& q){
     if(!NullPtrGuard(task))
         return;
-    task->created = q.value("created").toDateTime();
+    task->created = q.value("created_at").toDateTime();
     task->scheduledTo = q.value("scheduled_to").toDateTime();
-    task->started = q.value("started").toDateTime();
-    task->finished= q.value("finished").toDateTime();
+    task->startedAt = q.value("started_at").toDateTime();
+    task->finishedAt= q.value("finished_at").toDateTime();
 
     task->size = q.value("size").toInt();
     task->retries= q.value("retries").toInt();
@@ -1633,7 +1639,7 @@ void FillPageTaskFromQuery(PageTaskPtr task, QSqlQuery& q){
     task->id= q.value("id").toInt();
     task->parts = q.value("parts").toInt();
     task->results = q.value("results").toString();
-    task->taskComment= q.value("comment").toString();
+    task->taskComment= q.value("task_comment").toString();
     task->type = q.value("type").toInt();
     task->allowedRetries = q.value("allowed_retry_count").toInt();
     task->cacheMode = static_cast<ECacheMode>(q.value("cache_mode").toInt());
@@ -1697,7 +1703,7 @@ void FillPageFailuresFromQuery(PageFailurePtr failure, QSqlQuery& q){
     failure->attemptTimeStamp = q.value("process_attempt").toDateTime();
     failure->errorCode  = static_cast<PageFailure::EFailureReason>(q.value("error_code").toInt());
     failure->errorlevel  = static_cast<PageFailure::EErrorLevel>(q.value("error_level").toInt());
-    failure->lastSeen = q.value("last_seen").toDateTime();
+    failure->lastSeen = q.value("last_seen_at").toDateTime();
     failure->url = q.value("url").toString();
     failure->error = q.value("error").toString();
 }
@@ -1736,8 +1742,8 @@ void FillActionFromQuery(PageTaskActionPtr action, QSqlQuery& q){
                       q.value("sub_id").toInt());
 
     action->success = q.value("success").toBool();
-    action->started = q.value("started").toDateTime();
-    action->finished = q.value("finished").toDateTime();
+    action->started = q.value("started_at").toDateTime();
+    action->finished = q.value("finished_at").toDateTime();
     action->isNewAction = false;
 }
 
@@ -1771,16 +1777,16 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     DiagnosticSQLResult<int> result;
     result.data = -1;
     Transaction transaction(db);
-    QString qs = QString("insert into PageTasks(type, parts, created, scheduled_to, allowed_retry_count, "
-                         "allowed_subtask_retry_count, ignore_cache, refresh_if_needed, task_comment, task_size, success) "
-                         "values(:type, :parts, :created, :scheduled_to, :allowed_retry_count,"
-                         ":allowed_subtask_retry_count, :ignore_cache, :refresh_if_needed, :task_comment,:task_size, false) ");
+    QString qs = QString("insert into PageTasks(type, parts, created_at, scheduled_to, allowed_retry_count, "
+                         "allowed_subtask_retry_count, cache_mode, refresh_if_needed, task_comment, task_size, success, finished) "
+                         "values(:type, :parts, :created_at, :scheduled_to, :allowed_retry_count,"
+                         ":allowed_subtask_retry_count, :cache_mode, :refresh_if_needed, :task_comment,:task_size, 0, 0) ");
 
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":type", task->type);
     q.bindValue(":parts", task->parts);
-    q.bindValue(":created", task->created);
+    q.bindValue(":created_at", task->created);
     q.bindValue(":scheduled_to", task->scheduledTo);
     q.bindValue(":allowed_retry_count", task->allowedRetries);
     q.bindValue(":allowed_subtask_retry_count", task->allowedSubtaskRetries);
@@ -1796,6 +1802,9 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     q.prepare(qs);
     if(!result.ExecAndCheck(q))
         return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+
     result.data = q.value(0).toInt();
     transaction.finalize();
     return result;
@@ -1806,14 +1815,14 @@ DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("insert into PageTaskParts(task_id, sub_id, created, scheduled_to, content,task_size, success) "
-                         "values(:task_id, :sub_id, :created, :scheduled_to, :content,:task_size, false) ");
+    QString qs = QString("insert into PageTaskParts(task_id, sub_id, created_at, scheduled_to, content,task_size, success, finished) "
+                         "values(:task_id, :sub_id, :created_at, :scheduled_to, :content,:task_size, 0,0) ");
 
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":task_id", subtask->parentId);
     q.bindValue(":sub_id", subtask->id);
-    q.bindValue(":created", subtask->created);
+    q.bindValue(":created_at", subtask->created);
     q.bindValue(":scheduled_to", subtask->scheduledTo);
     q.bindValue(":content", subtask->content->ToDB());
     q.bindValue(":task_size", subtask->size);
@@ -1831,15 +1840,15 @@ DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr action, QSqlDatabas
     result.data = false;
     Transaction transaction(db);
     QString qs = QString("insert into PageTaskActions(action_uuid, task_id, sub_id, started_at, finished_at, success) "
-                         "values(:action_uuid, :task_id, :sub_id, :started, :finished, :success) ");
+                         "values(:action_uuid, :task_id, :sub_id, :started_at, :finished_at, :success) ");
 
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":action_uuid", action->id.toString());
     q.bindValue(":task_id", action->taskId);
     q.bindValue(":sub_id", action->subTaskId);
-    q.bindValue(":started", action->started);
-    q.bindValue(":finished", action->finished);
+    q.bindValue(":started_at", action->started);
+    q.bindValue(":finished_at", action->finished);
     q.bindValue(":success", action->success);
 
     if(!result.ExecAndCheck(q))
@@ -1892,8 +1901,8 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":scheduled_to",    task->scheduledTo);
-    q.bindValue(":started",         task->started);
-    q.bindValue(":finished",        task->finished);
+    q.bindValue(":started_at",         task->startedAt);
+    q.bindValue(":finished_at",        task->finishedAt);
     q.bindValue(":results",         task->results);
     q.bindValue(":retries",         task->retries);
     q.bindValue(":success",         task->success);
@@ -1919,8 +1928,8 @@ DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":scheduled_to",    task->scheduledTo);
-    q.bindValue(":started",         task->started);
-    q.bindValue(":finished",        task->finished);
+    q.bindValue(":started_at",         task->startedAt);
+    q.bindValue(":finished_at",        task->finished);
     q.bindValue(":retries",         task->retries);
     q.bindValue(":success",         task->success);
     q.bindValue(":id",              task->parentId);
@@ -1956,7 +1965,7 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
 {
     DiagnosticSQLResult<TaskList> result;
 
-    QString qs = QString("select id from pagetasks where finished = false");
+    QString qs = QString("select id from pagetasks where finished = 0");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -1975,7 +1984,7 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
         auto task = PageTask::CreateNewTask();
         FillPageTaskFromQuery(task, tq);
         result.data.push_back(task);
-    }while(!q.next());
+    }while(q.next());
     return result;
 }
 

@@ -215,7 +215,9 @@ private:
 
 
 
-    PageTaskPtr CreatePageTaskFromUrls(QStringList urls, int subTaskSize = 100, int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache, bool allowCacheRefresh = true);
+    PageTaskPtr CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize = 100,
+                                       int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
+                                       bool allowCacheRefresh = true);
     void UseAuthorsPageTask(PageTaskPtr, std::function<void(int)>callProgress, std::function<void(QString)>callProgressText);
     void LoadMoreAuthors();
     void ReparseAllAuthors(bool reprocessCache = false);

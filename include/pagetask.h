@@ -58,15 +58,19 @@ public:
     int size = 0;
     int retries = -1; // how much retries actually happened (subtask retries can be fetched separately)
     int allowedRetries = -1; // how much retries a task can use
+    bool attempted = false;
+    bool finished = false;
     QDateTime created; // task creation timestamp
     QDateTime scheduledTo; // when it's supposed to be run
-    QDateTime started; // when the task has been staretd
-    QDateTime finished; // when it was finished (whether succesfully or not)
+    QDateTime startedAt; // when the task has been staretd
+    QDateTime finishedAt; // when it was finished (whether succesfully or not)
     QList<PageFailurePtr> errors;
     QHash<QUuid, QList<PageFailurePtr>> actionFailures;
     QList<PageTaskActionPtr> executedActions;
     QStringList ListFailures();
     bool NeedsInsertion(){return isNew;}
+    void SetFinished(QDateTime);
+    void SetInitiated(QDateTime);
 };
 
 
@@ -110,7 +114,7 @@ public:
     QWeakPointer<PageTask> parent;
     int parentId = -1; // id of the parent task
     SubTaskContentBasePtr content; // part of page content or url list to execute
-    bool attempted = false;
+
 };
 
 typedef QList<PageFailurePtr> SubTaskErrors;
