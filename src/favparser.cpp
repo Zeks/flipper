@@ -52,7 +52,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         if(sections.size() == 0 && section.isValid)
         {
             int parts = str.length()/(section.end-section.start);
-            qDebug() << "reserving parts: " << parts;
+            //qDebug() << "reserving parts: " << parts;
             sections.reserve(parts);
         }
         if(!section.isValid)
@@ -86,8 +86,8 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         });
         GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result->rated = val;});
         GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.result->SetGenres(val, "ffn");});
-        GetTaggedSection(statText, "</span>\\s-\\s([A-Za-z\\.\\s/]+)$", [&section](QString val){
-            section.result->charactersFull = val.replace(" - Complete", "");
+        GetCharacters(statText,  [&section](QString val){
+            section.result->charactersFull = val;
         });
         GetTaggedSection(statText, "(Complete)$", [&section](QString val){
             if(val != "not found")
@@ -108,7 +108,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         diagnostics.push_back("<span> \nFinished loading data <br></span>");
     }
 
-    qDebug() << "Processed fic, count:  " << sections.count();
+    //qDebug() << "Processed fic, count:  " << sections.count();
     processedStuff+=sections;
     currentPosition = 999;
     return sections;
@@ -182,7 +182,7 @@ void FavouriteStoryParser::GetAuthorId(core::Section & section, int &startfrom, 
     bool ok = true;
     section.result->author->SetWebID("ffn", rx.cap(2).toInt(&ok)); // todo, needs checking
     auto capture = rx.cap();
-    startfrom = index+rx.cap().size();
+    startfrom = index+rx.cap().size()+2;
 }
 
 void FavouriteStoryParser::GetAuthor(core::Section & section, int& startfrom, QString text)
@@ -192,10 +192,12 @@ void FavouriteStoryParser::GetAuthor(core::Section & section, int& startfrom, QS
     //QRegExp rxStart("</a>");
     QRegExp rxEnd(QRegExp::escape("</a>"));
     //int indexBy = rxBy.indexIn(text, startfrom);
+    //QString search = text.mid(startfrom);
     int indexStart = startfrom;
     int indexEnd = rxEnd.indexIn(text, indexStart);
     startfrom = indexEnd;
-    section.result->author->name = text.mid(indexStart,indexEnd - (indexStart));
+    QString name = text.mid(indexStart,indexEnd - (indexStart));
+    section.result->author->name = name;
 
 }
 
@@ -306,6 +308,19 @@ void FavouriteStoryParser::GetTaggedSection(QString text, QString rxString ,std:
         functor(rx.cap(1));
     else
         functor("not found");
+}
+#include "include/regex_utils.h"
+void FavouriteStoryParser::GetCharacters(QString text, std::function<void (QString)> functor)
+{
+    //auto full = GetSingleNarrow(text,"</span>\\s-\\s", "</div></div></div>", true);
+    auto full = GetDoubleNarrow(text,"^", "$", true,
+                                "",  "</span>\\s-\\s", true,
+                                10);
+
+    //qDebug() << "Full section: " << text;
+    //qDebug() << "Just characters:" << full;
+    full = full.replace(" - Complete", "");
+    functor(full);
 }
 
 

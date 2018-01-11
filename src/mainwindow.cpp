@@ -119,10 +119,10 @@ SplitJobs SplitJob(QString data)
     result.authorStoryCountInWhole = captured;
 
 
-    qDebug() << "Will process "  << captured << " stories";
+    //qDebug() << "Will process "  << captured << " stories";
 
     int partSize = captured/(threadCount-1);
-    qDebug() << "In packs of "  << partSize;
+    //qDebug() << "In packs of "  << partSize;
     index = 0;
 
     if(partSize < 70)
@@ -138,7 +138,7 @@ SplitJobs SplitJob(QString data)
         }
         counter++;
     }while(index != -1);
-    qDebug() << "Splitting into: "  << splitPositions;
+    //qDebug() << "Splitting into: "  << splitPositions;
     result.parts.reserve(splitPositions.size());
     for(int i = 0; i < splitPositions.size(); i++)
     {
@@ -613,6 +613,7 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
 
     QSet<QString> updatedFandoms;
     database::Transaction transaction(db);
+
     do
     {
 
@@ -918,10 +919,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
     StartPageWorker();
     for(auto subtask : task->subTasks)
     {
-        qDebug() << "subtask test: " << subtask->id;
-    }
-    for(auto subtask : task->subTasks)
-    {
+        auto startSubtask = std::chrono::high_resolution_clock::now();
         if(callProgressText)
             callProgressText(QString("<br>Starting new subtask: %1 <br>").arg(subtask->id));
         pageQueue.pending = true;
@@ -952,6 +950,8 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
         database::Transaction transaction(db);
         database::Transaction pcTransaction(pageTaskInterface->db);
 
+        pageQueue.data.clear();
+        pageQueue.data.reserve(cast->authors.size());
         emit pageTaskList(cast->authors, subtask->parent.toStrongRef()->cacheMode);
 
         WebPage webPage;
@@ -961,8 +961,12 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
             currentCounter++;
             futures.clear();
             parsers.clear();
-            while(pageQueue.pending && pageQueue.data.size() == 0)
+            int waitCounter = 10;
+            while((pageQueue.pending && pageQueue.data.size() == 0) || waitCounter > 0)
+            {
                 QCoreApplication::processEvents();
+                waitCounter--;
+            }
 
             if(!pageQueue.pending && pageQueue.data.size() == 0)
                 break;
@@ -982,13 +986,19 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
             else
                 cachedPages++;
 
-            qDebug() << "Page loaded in: " << webPage.loadedIn;
+            qDebug() << "Page loaded in: " << webPage.LoadedIn();
             callProgressCount(currentCounter);
             auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
             auto author = authorsInterface->GetByWebID("ffn", webId);
             //if author is not yet in the database, process his favourites and load him in
+            if(author)
+            {
+                qDebug() << author->GetWebID("ffn");
+                qDebug() << author->name;
+            }
             if(!author)
             {
+                qDebug() << "processing page:" << webPage.pageIndex;
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
                 auto splittings = SplitJob(webPage.content);
 
@@ -1006,8 +1016,8 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                     }
                 }
                 auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-                qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-                qDebug() << "Count of parts:" << parsers.size();
+                //qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+                //qDebug() << "Count of parts:" << parsers.size();
 
                 FavouriteStoryParser sumParser;
                 QString name = ParseAuthorNameFromFavouritePage(webPage.content);
@@ -1015,6 +1025,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
                 auto author = CreateAuthorFromNameAndUrl(name, webPage.url);
                 author->favCount = splittings.favouriteStoryCountInWhole;
+                qDebug() << "total: " << splittings.favouriteStoryCountInWhole;
                 author->ficCount = splittings.authorStoryCountInWhole;
                 auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
                 author->SetWebID("ffn", webId);
@@ -1045,24 +1056,37 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                     callProgressText(result);
                 if(splittings.favouriteStoryCountInWhole == 0 || splittings.favouriteStoryCountInWhole >= 2000)
                 {
-                    qDebug() << "skipping author with no favourites";
+                    //qDebug() << "skipping author with no favourites";
                     continue;
                 }
 
                 WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
+                if(fanficsInterface->skippedCounter > 0)
+                    qDebug() << "skipped: " << fanficsInterface->skippedCounter;
 
                 elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-                qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+                //qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
             }
-        }while(pageQueue.pending);
+
+        }while(pageQueue.pending || pageQueue.data.size() > 0);
         subtask->SetFinished(dbInterface->GetCurrentDateTime());
         pageTaskInterface->WriteSubTaskIntoDB(subtask);
         fandomsInterface->RecalculateFandomStats(fandoms.values());
         fanficsInterface->ClearProcessedHash();
+//        auto mainElapsed = std::chrono::high_resolution_clock::now() - startSubtask;
+//        QString info  = "pre-commit finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(mainElapsed).count()) + "<br>";
+//        if(callProgressText)
+//            callProgressText(info);
         transaction.finalize();
         pcTransaction.finalize();
-        qDebug() << "subtask end";
+        auto elapsed = std::chrono::high_resolution_clock::now() - startSubtask;
+        //qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        QString info  = "subtask finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(elapsed).count()) + "<br>";
+        if(callProgressText)
+            callProgressText(info);
     }
+    task->SetFinished(dbInterface->GetCurrentDateTime());
+    pageTaskInterface->WriteTaskIntoDB(task);
     StopPageWorker();
 }
 
@@ -1075,7 +1099,7 @@ void MainWindow::LoadMoreAuthors()
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
     QString comment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());
 
-    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 10, 3, cacheMode, true);
+    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 1000, 3, cacheMode, true);
 
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
     ReinitProgressbar(authorUrls.size());
@@ -1110,7 +1134,7 @@ void MainWindow::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Au
     for(auto author: authors)
     {
         auto webPage = pager->GetPage(author->url("ffn"), ECacheMode::use_only_cache);
-        qDebug() << "Page loaded in: " << webPage.loadedIn;
+        qDebug() << "Page loaded in: " << webPage.LoadedIn();
         pbMain->setValue(pbMain->value()+1);
         pbMain->setTextVisible(true);
         pbMain->setFormat("%v");
@@ -1222,6 +1246,7 @@ void MainWindow::EnableAllLoadButtons()
 
 void MainWindow::OnNewPage(PageResult result)
 {
+    //qDebug() << "received page: " << result.data.pageIndex;
     if(result.data.isValid)
         pageQueue.data.push_back(result.data);
     if(result.finished)
@@ -2083,7 +2108,8 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
 
         {
             WriteProcessedFavourites(parser, author, fanficsInterface, authorsInterface, fandomsInterface);
-            qDebug() << "skipped: " << fanficsInterface->skippedCounter;
+            if(fanficsInterface->skippedCounter > 0)
+                qDebug() << "skipped: " << fanficsInterface->skippedCounter;
         }
 
         ui->edtResults->clear();

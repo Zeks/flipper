@@ -71,7 +71,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     // first, we get the page from cache anyway
     // not much point doing otherwise if the page is super fresh
     auto temp = GetPageFromDB(url);
-    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate())
+    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-10))
     {
         result = temp;
         result.isFromCache = true;
@@ -123,8 +123,8 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
     else
         result.content = q.value("CONTENT").toByteArray();
-    result.crossover= q.value("CROSSOVER").toInt();
-    result.fandom= q.value("FANDOM").toString();
+    //result.crossover= q.value("CROSSOVER").toInt();
+    //result.fandom= q.value("FANDOM").toString();
     result.generated= q.value("GENERATION_DATE").toDateTime();
     result.type = static_cast<EPageType>(q.value("PAGE_TYPE").toInt());
     return result;
@@ -297,7 +297,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
         if(!result.isFromCache)
         {
-            qDebug() << "thread will sleep for " << timeout;
+            //qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
         }
         counter++;
@@ -334,11 +334,12 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
             result.isLastPage = true;
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-
+        result.pageIndex = i;
+        //qDebug() << "emitting page:" << i;
         emit pageResult({result, false});
         if(!result.isFromCache)
         {
-            qDebug() << "thread will sleep for " << timeout;
+            //qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
         }
     }

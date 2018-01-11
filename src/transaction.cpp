@@ -27,7 +27,7 @@ database::Transaction::Transaction(QSqlDatabase db)
     QWriteLocker locker(&lock);
     if(!transactionSet.contains(db.connectionName()))
     {
-        qDebug() << "opening transaction";
+        //qDebug() << "opening transaction";
         start();
     }
     transactionSet.insert(db.connectionName());
@@ -72,7 +72,7 @@ bool database::Transaction::finalize()
         return false;
     if(!db.commit())
         return false;
-    qDebug() << "closing transaction";
+    //qDebug() << "closing transaction";
     transactionSet.remove(db.connectionName());
     isOpen = false;
     return true;

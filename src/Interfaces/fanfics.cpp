@@ -255,8 +255,8 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
                     insertQueue[id] = fic;
                     insert = true;
                 }
-                if(!insert)
-                    updateQueue[id] = fic;
+//                if(!insert)
+//                    updateQueue[id] = fic;
             }
         }
         else
@@ -303,8 +303,10 @@ bool Fanfics::FlushDataQueues()
     }
 
     WriteRecommendations();
-    qDebug() << "inserted: " << insertCounter;
-    qDebug() << "updated: " << updateCounter;
+    if(insertCounter > 0)
+        qDebug() << "inserted: " << insertCounter;
+    if(updateCounter > 0)
+        qDebug() << "updated: " << updateCounter;
     if(!transaction.finalize())
         return false;
     insertQueue.clear();

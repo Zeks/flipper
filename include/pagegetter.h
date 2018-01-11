@@ -40,9 +40,10 @@ enum class EPageSource
     network = 0,
     cache = 1,
 };
-
+class PageThreadWorker;
 struct WebPage
 {
+    friend class PageThreadWorker;
     QString url;
     QDateTime generated;
     //QString stringContent;
@@ -58,8 +59,14 @@ struct WebPage
     QString error;
     bool isLastPage = false;
     bool isFromCache = false;
-    int loadedIn = 0;
     int pageIndex = 0;
+    QString LoadedIn() {
+        QString decimal = QString::number(loadedIn/1000000);
+        int offset = decimal == "0" ? 0 : decimal.length();
+        QString partial = QString::number(loadedIn).mid(offset,1);
+        return decimal + "." + partial;}
+private:
+    int loadedIn = 0;
 };
 
 struct PageQueue{

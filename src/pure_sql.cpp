@@ -439,7 +439,7 @@ bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
 {
     QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
-                    " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID, AUTHOR_WEB_ID,"
+                    " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
                     " wcr, reviewstofavourites, age, daysrunning ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
                     " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,"
@@ -474,6 +474,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     {
         qDebug() << "failed to insert: " << section->author->name << " " << section->title;
         qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
         return false;
     }
     return true;
@@ -1740,6 +1741,8 @@ void FillSubTaskFromQuery(SubTaskPtr task, QSqlQuery& q){
     auto cast = static_cast<SubTaskAuthorContent*>(content.data());
     cast->authors = q.value("content").toString().split("\n");
     task->content = content;
+    task->isValid = true;
+    task->isNew =false;
 }
 
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db)
