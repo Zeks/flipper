@@ -210,6 +210,7 @@ private:
     core::StoryFilter filter;
     bool cancelCurrentTaskPressed = false;
     std::function<void(int)> callProgress;
+    std::function<void(void)> cleanupEditor;
     std::function<void(QString)> callProgressText;
     //QHash<QString, core::RecommendationList> lists;
 
@@ -219,7 +220,10 @@ private:
     PageTaskPtr CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize = 100,
                                        int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
                                        bool allowCacheRefresh = true);
-    void UseAuthorsPageTask(PageTaskPtr, std::function<void(int)>callProgress, std::function<void(QString)>callProgressText);
+    void UseAuthorsPageTask(PageTaskPtr,
+                            std::function<void(int)>callProgress,
+                            std::function<void(QString)>callProgressText,
+                            std::function<void(void)> cleanupFunctor);
     void LoadMoreAuthors();
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);

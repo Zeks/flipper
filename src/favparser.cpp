@@ -24,15 +24,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDebug>
 #include <QSqlDatabase>
 #include <chrono>
+#include <algorithm>
 
 FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics)
                     : FFNParserBase(fanfics)
 {
 
 }
-
+static QString MicrosecondsToString(int value) {
+    QString decimal = QString::number(value/1000000);
+    int offset = decimal == "0" ? 0 : decimal.length();
+    QString partial = QString::number(value).mid(offset,1);
+    return decimal + "." + partial;}
 QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
+
     QList<QSharedPointer<core::Fic>>  sections;
     core::Section section;
     int currentPosition = 0;
@@ -44,9 +50,20 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
     recommender.author->name = authorName;
     recommender.author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
+    auto point = std::chrono::high_resolution_clock::now();
+    qDebug() << "part started at: " << point.time_since_epoch()/std::chrono::seconds(1);;
+    QRegExp rxFandom("(.*)(?=\\s-\\sRated:)");
+    QRegExp rxWords("Words:\\s(\\d{1,8})");
+    QRegExp rxChapters("Chapters:\\s(\\d{1,5})");
+    QRegExp rxReviews("Reviews:\\s(\\d{1,5})");
+    QRegExp rxFavs("Favs:\\s(\\d{1,5})");
+    QRegExp rxPublished("Published:\\s<span\\sdata-xutime='(\\d+)'");
+    QRegExp rxUpdated("Updated:\\s<span\\sdata-xutime='(\\d+)'");
+    QRegExp rxRated("Rated:\\s(.{1})");
+    QRegExp rxGenres("English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters");
+    QRegExp rxComplete("(Complete)$");
     while(true)
     {
-
         counter++;
         section = GetSection(str, currentPosition);
         if(sections.size() == 0 && section.isValid)
@@ -68,28 +85,28 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         GetSummary(section, currentPosition, str);
 
         GetStatSection(section, currentPosition, str);
-        auto statText = section.statSection.text;
-        GetTaggedSection(statText.replace(",", ""), "(.*)(?=\\s-\\sRated:)", [&section](QString val){ section.result->fandom = val;});
-        GetTaggedSection(statText.replace(",", ""), "Words:\\s(\\d{1,8})", [&section](QString val){ section.result->wordCount = val;});
-        GetTaggedSection(statText.replace(",", ""), "Chapters:\\s(\\d{1,5})", [&section](QString val){ section.result->chapters = val;});
-        GetTaggedSection(statText.replace(",", ""), "Reviews:\\s(\\d{1,5})", [&section](QString val){ section.result->reviews = val;});
-        GetTaggedSection(statText.replace(",", ""), "Favs:\\s(\\d{1,5})", [&section](QString val){ section.result->favourites = val;});
-        GetTaggedSection(statText, "Published:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
+        auto statText = section.statSection.text.replace(",", "");
+        GetTaggedSection(statText, rxFandom,    [&section](QString val){ section.result->fandom = val;});
+        GetTaggedSection(statText, rxWords,      [&section](QString val){ section.result->wordCount = val;});
+        GetTaggedSection(statText, rxChapters,   [&section](QString val){ section.result->chapters = val;});
+        GetTaggedSection(statText, rxReviews,    [&section](QString val){ section.result->reviews = val;});
+        GetTaggedSection(statText, rxFavs,       [&section](QString val){ section.result->favourites = val;});
+        GetTaggedSection(statText, rxPublished, [&section](QString val){
             if(val != "not found")
                 section.result->published.setTime_t(val.toInt()); ;
         });
-        GetTaggedSection(statText, "Updated:\\s<span\\sdata-xutime='(\\d+)'", [&section](QString val){
+        GetTaggedSection(statText, rxUpdated,  [&section](QString val){
             if(val != "not found")
                 section.result->updated.setTime_t(val.toInt());
             else
                 section.result->updated.setTime_t(0);
         });
-        GetTaggedSection(statText, "Rated:\\s(.{1})", [&section](QString val){ section.result->rated = val;});
-        GetTaggedSection(statText, "English\\s-\\s([A-Za-z/\\-]+)\\s-\\sChapters", [&section](QString val){ section.result->SetGenres(val, "ffn");});
+        GetTaggedSection(statText, rxRated, [&section](QString val){ section.result->rated = val;});
+        GetTaggedSection(statText, rxGenres, [&section](QString val){ section.result->SetGenres(val, "ffn");});
         GetCharacters(statText,  [&section](QString val){
             section.result->charactersFull = val;
         });
-        GetTaggedSection(statText, "(Complete)$", [&section](QString val){
+        GetTaggedSection(statText, rxComplete, [&section](QString val){
             if(val != "not found")
                 section.result->complete = 1;
         });
@@ -102,6 +119,12 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
             sections.append(section.result);
     }
 
+
+    //qDebug() << "parser iterations: " << counter;
+    auto elapsed = std::chrono::high_resolution_clock::now() - point;
+    qDebug() << "Part of size: " << str.length() << "Processed in: " << MicrosecondsToString(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
+
+    qDebug() << "part finished at: " << std::chrono::high_resolution_clock::now().time_since_epoch()/ std::chrono::seconds(1);;
     if(sections.size() == 0)
     {
         diagnostics.push_back("<span> No data found on the page.<br></span>");
@@ -116,8 +139,8 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
 QString FavouriteStoryParser::GetFandom(QString text)
 {
-    QRegExp rxStart(QRegExp::escape("xicon-section-arrow'></span>"));
-    QRegExp rxEnd(QRegExp::escape("<div"));
+    thread_local QRegExp rxStart(QRegExp::escape("xicon-section-arrow'></span>"));
+    thread_local QRegExp rxEnd(QRegExp::escape("<div"));
     int indexStart = rxStart.indexIn(text, 0);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     return text.mid(indexStart + 28,indexEnd - (indexStart + 28));
@@ -174,7 +197,7 @@ void FavouriteStoryParser::GetAuthorId(core::Section & section, int &startfrom, 
 ////        qDebug() << currentSection;
 //    int indexEnd = rxEnd.indexIn(text, indexStart);
 
-    QRegExp rx("(/u/(\\d+)/)(.*)(?=\">)");
+    thread_local QRegExp rx("(/u/(\\d+)/)(.*)(?=\">)");
     rx.setMinimal(true);
     auto index = rx.indexIn(text, startfrom);
     if(index == -1)
@@ -190,7 +213,7 @@ void FavouriteStoryParser::GetAuthor(core::Section & section, int& startfrom, QS
     //QString currentStart = text.mid(startfrom);
     //QRegExp rxBy("\">");
     //QRegExp rxStart("</a>");
-    QRegExp rxEnd(QRegExp::escape("</a>"));
+    thread_local QRegExp rxEnd(QRegExp::escape("</a>"));
     //int indexBy = rxBy.indexIn(text, startfrom);
     //QString search = text.mid(startfrom);
     int indexStart = startfrom;
@@ -205,8 +228,8 @@ void FavouriteStoryParser::GetAuthor(core::Section & section, int& startfrom, QS
 
 void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QString text)
 {
-    QRegExp rxStart(QRegExp::escape("data-title=\""));
-    QRegExp rxEnd(QRegExp::escape("\""));
+    thread_local QRegExp rxStart(QRegExp::escape("data-title=\""));
+    thread_local QRegExp rxEnd(QRegExp::escape("\""));
     int indexStart = rxStart.indexIn(text, startfrom + 1);
     int indexEnd = rxEnd.indexIn(text, indexStart+13);
     startfrom = indexEnd;
@@ -217,8 +240,8 @@ void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QSt
 
 void FavouriteStoryParser::GetStatSection(core::Section &section, int &startfrom, QString text)
 {
-    QRegExp rxStart("padtop2\\sxgray");
-    QRegExp rxEnd("</div></div></div>");
+    thread_local QRegExp rxStart("padtop2\\sxgray");
+    thread_local QRegExp rxEnd("</div></div></div>");
     int indexStart = rxStart.indexIn(text, startfrom + 1);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     section.statSection.text = text.mid(indexStart + 15,indexEnd - (indexStart + 15));
@@ -229,8 +252,8 @@ void FavouriteStoryParser::GetStatSection(core::Section &section, int &startfrom
 
 void FavouriteStoryParser::GetSummary(core::Section & section, int& startfrom, QString text)
 {
-    QRegExp rxStart(QRegExp::escape("padtop'>"));
-    QRegExp rxEnd(QRegExp::escape("<div"));
+    thread_local QRegExp rxStart(QRegExp::escape("padtop'>"));
+    thread_local QRegExp rxEnd(QRegExp::escape("<div"));
     int indexStart = rxStart.indexIn(text,startfrom);
     int indexEnd = rxEnd.indexIn(text, indexStart);
 
@@ -241,8 +264,8 @@ void FavouriteStoryParser::GetSummary(core::Section & section, int& startfrom, Q
 
 void FavouriteStoryParser::GetCrossoverFandomList(core::Section & section, int &startfrom, QString text)
 {
-    QRegExp rxStart("Crossover\\s-\\s");
-    QRegExp rxEnd("\\s-\\sRated:");
+    thread_local QRegExp rxStart("Crossover\\s-\\s");
+    thread_local QRegExp rxEnd("\\s-\\sRated:");
 
 
     int indexStart = rxStart.indexIn(text, startfrom);
@@ -263,8 +286,8 @@ void FavouriteStoryParser::GetCrossoverFandomList(core::Section & section, int &
 void FavouriteStoryParser::GetUrl(core::Section & section, int& startfrom, QString text)
 {
     // looking for first href
-    QRegExp rxStart(QRegExp::escape("href=\""));
-    QRegExp rxEnd(QRegExp::escape("\">"));
+    thread_local QRegExp rxStart(QRegExp::escape("href=\""));
+    thread_local QRegExp rxEnd(QRegExp::escape("\">"));
     int indexStart = rxStart.indexIn(text,startfrom);
     int tempStart = indexStart;
     int indexEnd = rxEnd.indexIn(text, indexStart);
@@ -292,6 +315,7 @@ void FavouriteStoryParser::GetUrl(core::Section & section, int& startfrom, QStri
     {
         QString captured = rxWebId.cap(1);
         section.result->webId = captured.toInt();
+        //qDebug() << "webId: " << section.result->webId;
         section.result->SetUrl("ffn", section.result->url("ffn").left(3 + captured.length()));
     }
     startfrom = indexEnd+2;
@@ -299,27 +323,32 @@ void FavouriteStoryParser::GetUrl(core::Section & section, int& startfrom, QStri
 
 
 
-void FavouriteStoryParser::GetTaggedSection(QString text, QString rxString ,std::function<void (QString)> functor)
+void FavouriteStoryParser::GetTaggedSection(QString text, QRegExp& rx, std::function<void (QString)> functor)
 {
-    QRegExp rx(rxString);
+//    /QRegExp rx(rxString);
     int indexStart = rx.indexIn(text);
-    //qDebug() << rx.capturedTexts();
     if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
         functor(rx.cap(1));
     else
         functor("not found");
 }
 #include "include/regex_utils.h"
-void FavouriteStoryParser::GetCharacters(QString text, std::function<void (QString)> functor)
+void FavouriteStoryParser::GetCharacters(QString text,
+                                         std::function<void (QString)> functor)
 {
     //auto full = GetSingleNarrow(text,"</span>\\s-\\s", "</div></div></div>", true);
     auto full = GetDoubleNarrow(text,"^", "$", true,
                                 "",  "</span>\\s-\\s", true,
                                 10);
 
-    //qDebug() << "Full section: " << text;
+
     //qDebug() << "Just characters:" << full;
     full = full.replace(" - Complete", "");
+//    if(full.trimmed().isEmpty() && (text.midRef(40).contains("Naruto") || text.midRef(40).contains("Harry") ))
+//    {
+//        qDebug() << webId << " Full section: " << text;
+//        functor(full);
+//    }
     functor(full);
 }
 
@@ -327,7 +356,7 @@ void FavouriteStoryParser::GetCharacters(QString text, std::function<void (QStri
 core::Section FavouriteStoryParser::GetSection(QString text, int start)
 {
     core::Section section;
-    QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
+    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
 
     int index = rxStart.indexIn(text, start);
     if(index != -1)
@@ -347,3 +376,4 @@ QString FavouriteStoryParser::ExtractRecommenderNameFromUrl(QString url)
     int pos = url.lastIndexOf("/");
     return url.mid(pos+1);
 }
+

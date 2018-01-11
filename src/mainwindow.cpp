@@ -56,7 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include "genericeventfilter.h"
 
-#include <algorithm>
+
 #include "include/favparser.h"
 #include "include/fandomparser.h"
 #include "include/url_utils.h"
@@ -110,13 +110,20 @@ SplitJobs SplitJob(QString data)
     int threadCount = QThread::idealThreadCount();
     QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
-    int captured = data.count(rxStart);
+//    int captured = 0;
+//    do{
+//        index = rxStart.indexIn(data, index+1);
+//        if(index != -1)
+//            captured++;
+//    }while(index != -1);
+
+    int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
 
     QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
     index = rxAuthorStories.indexIn(data);
-    captured = data.count(rxAuthorStories);
-    result.authorStoryCountInWhole = captured;
+    int capturedAuthorStories = data.count(rxAuthorStories);
+    result.authorStoryCountInWhole = capturedAuthorStories;
 
 
     //qDebug() << "Will process "  << captured << " stories";
@@ -138,15 +145,19 @@ SplitJobs SplitJob(QString data)
         }
         counter++;
     }while(index != -1);
+    //qDebug() << splitPositions.length() << " parts"; /*of size: " << partSizes.join(", ");*/
     //qDebug() << "Splitting into: "  << splitPositions;
     result.parts.reserve(splitPositions.size());
+    QStringList partSizes;
     for(int i = 0; i < splitPositions.size(); i++)
     {
         if(i != splitPositions.size()-1)
             result.parts.push_back({data.mid(splitPositions[i], splitPositions[i+1] - splitPositions[i]), i});
         else
             result.parts.push_back({data.mid(splitPositions[i], data.length() - splitPositions[i]),i});
+        partSizes.push_back(QString::number(result.parts.last().data.length()));
     }
+    qDebug() << partSizes.length() << " parts of size: " << partSizes.join(", ");
     return result;
 }
 
@@ -276,7 +287,7 @@ void MainWindow::Init()
             return;
         }
         InitUIFromTask(task);
-        UseAuthorsPageTask(task, callProgress, callProgressText);
+        UseAuthorsPageTask(task, callProgress, callProgressText, cleanupEditor);
     });
     // should refer to new tag widget instead
     GenericEventFilter* eventFilter = new GenericEventFilter(this);
@@ -350,7 +361,9 @@ void MainWindow::Init()
     callProgressText = [&](QString value) {
         ui->edtResults->insertHtml(value);
         ui->edtResults->ensureCursorVisible();
-
+    };
+    cleanupEditor = [&](void) {
+        ui->edtResults->clear();
     };
 }
 
@@ -893,9 +906,16 @@ core::AuthorPtr CreateAuthorFromNameAndUrl(QString name, QString url)
     return author;
 }
 
+static QString MicrosecondsToString(int value) {
+    QString decimal = QString::number(value/1000000);
+    int offset = decimal == "0" ? 0 : decimal.length();
+    QString partial = QString::number(value).mid(offset,1);
+    return decimal + "." + partial;}
+
 void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                                     std::function<void(int)>callProgressCount,
-                                    std::function<void(QString)>callProgressText)
+                                    std::function<void(QString)>callProgressText,
+                                    std::function<void(void)> cleanupFunctor)
 {
     int currentCounter = 0;
     auto fanfics = fanficsInterface;
@@ -956,13 +976,16 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
         WebPage webPage;
         QSet<QString> fandoms;
+
         do
         {
             currentCounter++;
+            if(currentCounter%300 == 0 && cleanupFunctor)
+                cleanupFunctor();
             futures.clear();
             parsers.clear();
             int waitCounter = 10;
-            while((pageQueue.pending && pageQueue.data.size() == 0) || waitCounter > 0)
+            while((pageQueue.pending && pageQueue.data.size() == 0) || (pageQueue.pending && waitCounter > 0))
             {
                 QCoreApplication::processEvents();
                 waitCounter--;
@@ -996,9 +1019,10 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 qDebug() << author->GetWebID("ffn");
                 qDebug() << author->name;
             }
+            QCoreApplication::processEvents();
             if(!author)
             {
-                qDebug() << "processing page:" << webPage.pageIndex;
+                qDebug() << "processing page:" << webPage.pageIndex << " " << webPage.url;
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
                 auto splittings = SplitJob(webPage.content);
 
@@ -1016,7 +1040,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                     }
                 }
                 auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-                //qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+                qDebug() << "Processed in: " << MicrosecondsToString(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
                 //qDebug() << "Count of parts:" << parsers.size();
 
                 FavouriteStoryParser sumParser;
@@ -1084,6 +1108,8 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
         QString info  = "subtask finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(elapsed).count()) + "<br>";
         if(callProgressText)
             callProgressText(info);
+        if(cleanupFunctor)
+            cleanupFunctor();
     }
     task->SetFinished(dbInterface->GetCurrentDateTime());
     pageTaskInterface->WriteTaskIntoDB(task);
@@ -1099,14 +1125,14 @@ void MainWindow::LoadMoreAuthors()
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
     QString comment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());
 
-    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 1000, 3, cacheMode, true);
+    auto pageTask = CreatePageTaskFromUrls(authorUrls, comment, 500, 3, cacheMode, true);
 
     AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
     ReinitProgressbar(authorUrls.size());
 
 
     DisableAllLoadButtons();
-    UseAuthorsPageTask(pageTask, callProgress, callProgressText);
+    UseAuthorsPageTask(pageTask, callProgress, callProgressText, cleanupEditor);
 
     //pcTransaction.finalize();
 
@@ -1592,7 +1618,7 @@ void MainWindow::CheckUnfinishedTasks()
         {
             auto fullTask = pageTaskInterface->GetTaskById(task->id);
             InitUIFromTask(fullTask);
-            UseAuthorsPageTask(fullTask, callProgress, callProgressText);
+            UseAuthorsPageTask(fullTask, callProgress, callProgressText, cleanupEditor);
         }
     }
 }

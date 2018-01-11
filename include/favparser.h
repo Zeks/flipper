@@ -41,7 +41,7 @@ public:
     void GetUpdatedDate(core::Section& , int& startfrom, QString text);
     void GetUrl(core::Section& , int& startfrom, QString text);
     void GetStatSection(core::Section& , int& startfrom, QString text);
-    void GetTaggedSection(QString text, QString tag, std::function<void(QString)> functor);
+    void GetTaggedSection(QString text, QRegExp& rx, std::function<void(QString)> functor);
     void GetCharacters(QString text, std::function<void(QString)> functor);
     void GetCrossoverFandomList(core::Section& , int& startfrom, QString text);
     QString GetFandom(QString text);
