@@ -71,7 +71,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     // first, we get the page from cache anyway
     // not much point doing otherwise if the page is super fresh
     auto temp = GetPageFromDB(url);
-    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-10))
+    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
     {
         result = temp;
         result.isFromCache = true;

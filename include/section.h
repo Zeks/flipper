@@ -50,6 +50,7 @@ class Author : public DBEntity{
     static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
     ~Author(){}
     void Log();
+    void LogWebIds();
     int id= -1;
     AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
     void AssignId(int id){
@@ -108,6 +109,8 @@ class Fic : public DBEntity{
     class FicCalcStats
     {
     public:
+        void Log();
+        bool isValid = false;
         double wcr;
         double wcr_adjusted;
         double reviewsTofavourites;
@@ -121,7 +124,9 @@ class Fic : public DBEntity{
     Fic(const Fic&) = default;
     Fic& operator=(const Fic&) = default;
     ~Fic(){}
-
+    void Log();
+    void LogUrls();
+    void LogWebIds();
     static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
     int complete=0;
     int atChapter=0;
@@ -179,11 +184,8 @@ class Fic : public DBEntity{
             return urls[type];
         return "";
     }
-    void SetUrl(QString type, QString url)
-    {
-        urls[type] = url;
-        urlFFN = url;
-    }
+    void SetUrl(QString type, QString url);
+
     int ffn_id = -1;
     int ao3_id = -1;
     int sb_id = -1;

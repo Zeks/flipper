@@ -230,11 +230,11 @@ void FicParser::ClearProcessed()
     processedStuff = decltype(processedStuff)();
 }
 
-void FicParser::WriteProcessed()
-{
-    fanfics->ProcessIntoDataQueues(processedStuff);
-    fanfics->FlushDataQueues();
-}
+//void FicParser::WriteProcessed()
+//{
+//    fanfics->ProcessIntoDataQueues(processedStuff);
+//    fanfics->FlushDataQueues();
+//}
 
 void FicParser::SetRewriteAuthorNames(bool value)
 {

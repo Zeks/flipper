@@ -838,7 +838,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>2</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -924,14 +924,24 @@
                         <string/>
                        </property>
                        <property name="checked">
-                        <bool>false</bool>
+                        <bool>true</bool>
                        </property>
                       </widget>
                      </item>
                      <item>
                       <widget class="QDateEdit" name="deCutoffLimit">
                        <property name="enabled">
-                        <bool>false</bool>
+                        <bool>true</bool>
+                       </property>
+                       <property name="dateTime">
+                        <datetime>
+                         <hour>0</hour>
+                         <minute>0</minute>
+                         <second>0</second>
+                         <year>2017</year>
+                         <month>5</month>
+                         <day>1</day>
+                        </datetime>
                        </property>
                       </widget>
                      </item>

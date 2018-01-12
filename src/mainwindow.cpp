@@ -528,7 +528,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
-    ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
+    //ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
 {
@@ -2194,7 +2194,7 @@ void MainWindow::OnReloadRecLists()
 
 void MainWindow::on_cbUseDateCutoff_clicked()
 {
-    ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
+    //ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
 }
 
 
