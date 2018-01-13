@@ -262,7 +262,7 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
     qDebug() << "worker is alive";
 }
 
-void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode)
+void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate)
 {
     FuncCleanup f([&](){working = false;});
 
@@ -284,7 +284,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         bool updateLimitReached = false;
         if(counter > 0)
             updateLimitReached = minUpdate < updateLimit;
-        if((url == lastUrl || lastUrl.trimmed().isEmpty())|| (updateLimit.isValid() && updateLimitReached))
+        if((url == lastUrl || lastUrl.trimmed().isEmpty()) || (!ignoreUpdateDate && updateLimit.isValid() && updateLimitReached))
         {
             result.error = "Already have the stuff past this point. Aborting.";
             result.isLastPage = true;
@@ -367,15 +367,56 @@ QString PageThreadWorker::GetNext(QString text)
     return nextUrl;
 }
 
+static QDate GetRealMinDate(QList<QDate> dates)
+{
+    if(dates.size() == 0)
+        return QDate();
+    std::sort(std::begin(dates), std::end(dates));
+    QDate medianDate = dates[dates.size()/2];
+    QHash<QDate, int> distances;
+    int counter = 0;
+    int totalDistance = 0;
+    for(auto date : dates)
+    {
+        int distance = std::abs(date.daysTo(medianDate));
+        totalDistance+=distance;
+        counter++;
+    }
+    if(counter == 0)
+        return QDateTime::currentDateTimeUtc().date();
+
+    double average = static_cast<double>(totalDistance)/static_cast<double>(counter);
+
+    QDate minDate = medianDate;
+    for(auto date : dates)
+    {
+        if(date < minDate && std::abs(date.daysTo(medianDate)) <= average)
+            minDate = date;
+    }
+    return minDate;
+}
+
+
 QDate PageThreadWorker::GrabMinUpdate(QString text)
 {
+    QList<QDate> dates;
     QDateTime minDate;
+    QDate result;
     QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
-    int indexStart = rx.lastIndexIn(text);
-    if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
-        minDate.setTime_t(rx.cap(1).toInt());
+    int startFrom = 0;
+    int indexStart = -1;
+    do{
+        indexStart = rx.indexIn(text, startFrom);
+        if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
+        {
+            minDate.setTime_t(rx.cap(1).toInt());
+            dates.push_back(minDate.date());
+        }
 
-    return minDate.date();
+        startFrom = indexStart+2;
+    }while(indexStart != -1);
+    result = GetRealMinDate(dates);
+    return result;
 }
 
 void PageThreadWorker::SetAutomaticCache(QDate date)

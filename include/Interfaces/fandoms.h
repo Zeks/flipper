@@ -56,6 +56,7 @@ public:
     virtual int GetIDForName(QString) ;
     virtual core::FandomPtr GetFandom(QString);
 
+    virtual void SetLastUpdateDate(QString, QDate);
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);
     virtual QStringList ListOfTrackedNames();

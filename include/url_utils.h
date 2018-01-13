@@ -22,6 +22,7 @@ namespace url_utils{
 QString GetWebId(QString, QString );
 QString GetStoryUrlFromWebId(int, QString );
 QString GetAuthorUrlFromWebId(int, QString );
+QString AppendBase(QString website, QString postfix);
 namespace ffn{
     QString GetWebId(QString);
     QString GetStoryUrlFromWebId(int);

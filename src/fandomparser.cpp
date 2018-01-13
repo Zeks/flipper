@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 static QDate GetRealMinDate(QList<QDate> dates)
 {
+    if(dates.size() == 0)
+        return QDate();
     std::sort(std::begin(dates), std::end(dates));
     QDate medianDate = dates[dates.size()/2];
     QHash<QDate, int> distances;
@@ -138,7 +140,7 @@ void FandomParser::GetTitle(core::Section & section, int& startfrom, QString tex
     int indexEnd = rxEnd.indexIn(text, indexStart);
     startfrom = indexEnd;
     section.result->title = text.mid(indexStart + 1,indexEnd - (indexStart + 1));
-    qDebug() << section.result->title;
+//    /qDebug() << section.result->title;
 }
 
 void FandomParser::GetTitleAndUrl(core::Section & section, int& currentPosition, QString str)

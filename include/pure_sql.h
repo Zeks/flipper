@@ -82,7 +82,7 @@ bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db);
 //bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db);
 QHash<int, QList<int> > GetWholeFicFandomsTable(QSqlDatabase db);
 bool EraseFicFandomsTable(QSqlDatabase db);
-
+bool SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db);
 
 QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db);
 

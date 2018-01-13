@@ -215,7 +215,7 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 {
     QString queryString;
     if(filter.sortMode == StoryFilter::favrate)
-        queryString += " and ( favourites/(julianday(Updated) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
+        queryString += " and ( favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
     if(filter.sortMode == StoryFilter::reccount)
         queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
     else if(filter.minRecommendations > 0)

@@ -1327,6 +1327,7 @@ static core::FandomPtr FandomfromQueryNew (QSqlQuery& q, core::FandomPtr fandom 
         fandom->id = q.value("ID").toInt();
         fandom->SetName(q.value("name").toString());
         fandom->tracked = q.value("tracked").toInt();
+        fandom->lastUpdateDate = q.value("updated").toDate();
         fandom->AddUrl({q.value("url").toString(),
                        q.value("website").toString(),
                        ""});
@@ -1359,7 +1360,7 @@ static bool GetFandomStats(core::FandomPtr fandom, QSqlDatabase db)
     fandom->dateOfCreation = q.value("date_of_creation").toDate();
     fandom->dateOfFirstFic = q.value("date_of_first_fic").toDate();
     fandom->dateOfLastFic = q.value("date_of_last_fic").toDate();
-    fandom->lastUpdateDate = q.value("last_update").toDate();
+    //fandom->lastUpdateDate = q.value("last_update").toDate();
     return true;
 }
 
@@ -1407,7 +1408,7 @@ core::FandomPtr GetFandom(QString name, QSqlDatabase db)
     core::FandomPtr result;
 
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
-                 " urls.custom as section from fandomindex ind, fandomurls urls where ind.id = urls.global_id"
+                 " urls.custom as section, ind.updated as updated from fandomindex ind, fandomurls urls where ind.id = urls.global_id"
                  " and name = :fandom ");
 
     QSqlQuery q(db);
@@ -1679,7 +1680,17 @@ bool EraseFicFandomsTable(QSqlDatabase db)
         return false;
     return true;
 }
-
+bool SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db)
+{
+    QString qs = QString("update fandomindex set updated = :updated where id = :id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":updated", date);
+    q.bindValue(":id", id);
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+}
 DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db)
 {
     DiagnosticSQLResult<int> result;
@@ -2100,6 +2111,8 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
     }while(q.next());
     return result;
 }
+
+
 
 
 
