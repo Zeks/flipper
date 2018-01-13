@@ -157,7 +157,7 @@ SplitJobs SplitJob(QString data)
             result.parts.push_back({data.mid(splitPositions[i], data.length() - splitPositions[i]),i});
         partSizes.push_back(QString::number(result.parts.last().data.length()));
     }
-    qDebug() << partSizes.length() << " parts of size: " << partSizes.join(", ");
+    //qDebug() << partSizes.length() << " parts of size: " << partSizes.join(", ");
     return result;
 }
 
@@ -1014,11 +1014,11 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
             auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
             auto author = authorsInterface->GetByWebID("ffn", webId);
             //if author is not yet in the database, process his favourites and load him in
-            if(author)
-            {
-                qDebug() << author->GetWebID("ffn");
-                qDebug() << author->name;
-            }
+//            if(author)
+//            {
+//                qDebug() << author->GetWebID("ffn");
+//                qDebug() << author->name;
+//            }
             QCoreApplication::processEvents();
 //            if(!author)
             {

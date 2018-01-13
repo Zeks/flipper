@@ -58,7 +58,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     recommender.author->name = authorName;
     recommender.author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
     auto point = std::chrono::high_resolution_clock::now();
-    qDebug() << "part started at: " << point.time_since_epoch()/std::chrono::seconds(1);;
+    //qDebug() << "part started at: " << point.time_since_epoch()/std::chrono::seconds(1);;
 
     while(true)
     {
@@ -80,9 +80,9 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
     //qDebug() << "parser iterations: " << counter;
     auto elapsed = std::chrono::high_resolution_clock::now() - point;
-    qDebug() << "Part of size: " << str.length() << "Processed in: " << MicrosecondsToString(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
+    //qDebug() << "Part of size: " << str.length() << "Processed in: " << MicrosecondsToString(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
 
-    qDebug() << "part finished at: " << std::chrono::high_resolution_clock::now().time_since_epoch()/ std::chrono::seconds(1);;
+    //qDebug() << "part finished at: " << std::chrono::high_resolution_clock::now().time_since_epoch()/ std::chrono::seconds(1);;
     if(sections.size() == 0)
     {
         diagnostics.push_back("<span> No data found on the page.<br></span>");
