@@ -2,14 +2,58 @@
 #include <functional>
 #include <QString>
 #include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 #include <QSharedPointer>
 #include "section.h"
+
+class BasePageTask;
+class PageTask;
+class PageSubTask;
+class PageFailure;
+class PageTaskAction;
+typedef QSharedPointer<BasePageTask> BaseTaskPtr;
+typedef QSharedPointer<PageTask> PageTaskPtr;
+typedef QSharedPointer<PageSubTask> SubTaskPtr;
+typedef QSharedPointer<PageFailure> PageFailurePtr;
+typedef QSharedPointer<PageTaskAction> PageTaskActionPtr;
+typedef QList<PageTaskPtr> TaskList;
+typedef QList<SubTaskPtr> SubTaskList;
+typedef QList<PageFailurePtr> SubTaskErrors;
+typedef QList<PageTaskActionPtr> PageTaskActions;
 namespace database {
 namespace puresql{
+
 bool ExecAndCheck(QSqlQuery& q);
 bool CheckExecution(QSqlQuery& q);
 bool ExecuteQuery(QSqlQuery& q, QString query);
 bool ExecuteQueryChain(QSqlQuery& q, QStringList queries);
+
+template <typename T>
+struct DiagnosticSQLResult
+{
+    bool success = true;
+    QString oracleError;
+    T data;
+    bool ExecAndCheck(QSqlQuery& q) {
+        bool result = database::puresql::ExecAndCheck(q);
+        if(!result)
+        {
+            success = false;
+            oracleError = q.lastError().text();
+        }
+        return result;
+    }
+    bool CheckDataAvailability(QSqlQuery& q){
+        if(!q.next())
+        {
+            success = false;
+            oracleError = "no data to read";
+            return false;
+        }
+        return true;
+    };
+};
 
 bool SetFandomTracked(int id, bool tracked, QSqlDatabase);
 QStringList GetTrackedFandomList(QSqlDatabase db);
@@ -52,6 +96,7 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 bool WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
 int GetAuthorIdFromUrl(QString url, QSqlDatabase db);
+int GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
 bool AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 QList<int> GetAllAuthorIds(QSqlDatabase db);
@@ -61,6 +106,8 @@ QList<core::AuthorPtr > GetAllAuthors(QString website,  QSqlDatabase db);
 QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
 
 core::AuthorPtr  GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
+core::AuthorPtr  GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase db);
+
 core::AuthorPtr  GetAuthorByUrl(QString url,  QSqlDatabase db);
 core::AuthorPtr  GetAuthorById(int id,  QSqlDatabase db);
 QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
@@ -81,12 +128,13 @@ bool DeleteRecommendationList(int listId, QSqlDatabase db );
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
 bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db);
 bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db);
-bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db);
+//bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db);
+bool UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db);
 bool DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db);
 bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
-QStringList GetLinkedPagesForList(int listId, QSqlDatabase db);
+QStringList GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
 bool SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
 
 bool DeleteTagFromDatabase(QString tag, QSqlDatabase db);
@@ -104,7 +152,8 @@ QVector<int> GetIdList(QString where, QSqlDatabase db);
 QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db);
 bool DeactivateStory(int id, QString website, QSqlDatabase db);
 
-bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
+bool UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
+bool CreateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
 QStringList ReadUserTags(QSqlDatabase db);
 bool PushTaglistIntoDatabase(QStringList, QSqlDatabase);
 bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db);
@@ -114,6 +163,25 @@ QSet<QString> GetAllGenres(QSqlDatabase db);
 // moved them to dump temporarily
 //void RemoveAuthor(const core::Author &recommender);
 //void RemoveAuthor(int id);
+
+// page tasks
+DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db);
+bool GetTaskSuccessByID(int id, QSqlDatabase db);
+
+DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db);
+DiagnosticSQLResult<SubTaskList> GetSubTaskData(int id, QSqlDatabase db);
+DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id, QSqlDatabase db, int subId = -1);
+DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase db, int subId = -1);
+
+DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors, QSqlDatabase);
+
+DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr, QSqlDatabase);
+DiagnosticSQLResult<bool> SetTaskFinished(int, QSqlDatabase);
+DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase);
 
 namespace Internal{
 bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,

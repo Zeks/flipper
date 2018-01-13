@@ -38,12 +38,23 @@ public:
         this->fanfics = fanfics;
     }
     virtual ~FFNParserBase();
-    void ProcessGenres(core::Section & section, QString genreText);
-    void ProcessCharacters(core::Section & section, QString genreText);
-    virtual void WriteProcessed() = 0;
+    virtual core::Section GetSection(QString text, QString sectionSeparator, int start);
+    virtual void ProcessSection(core::Section &section, int &startfrom, QString str);
+    virtual void ProcessGenres(core::Section & section, QString genreText);
+    virtual void ProcessCharacters(core::Section & section, QString genreText);
+    virtual void ProcessStatSection(core::Section & section);
+    virtual void GetAuthor(core::Section & section, int &startfrom,  QString text);
+    virtual void GetTitleAndUrl(core::Section & section, int& startfrom, QString text) = 0;
+    virtual void GetTitle(core::Section & section, int& startfrom, QString text) = 0;
+    virtual void GetSummary(core::Section & section, int& startfrom, QString text);
+    virtual void GetStatSection(core::Section &section, int &startfrom, QString text);
+    virtual void GetUrl(core::Section & section, int& startfrom, QString text);
+    virtual void GetTaggedSection(QString text, QRegExp& rx,std::function<void (QString)> functor);
+    virtual void GetFandomFromTaggedSection(core::Section & section,QString text);
+
+    virtual void GetCharacters(QString text, std::function<void(QString)> functor);
+    virtual void GetCrossoverFandomList(core::Section & section, QString text);
     virtual void ClearProcessed() = 0;
-
-
 
     QSharedPointer<interfaces::Fanfics> fanfics;
     QList<QSharedPointer<core::Fic>> processedStuff;

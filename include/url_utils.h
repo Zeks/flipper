@@ -20,10 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 namespace url_utils{
 QString GetWebId(QString, QString );
-QString GetUrlFromWebId(int, QString );
+QString GetStoryUrlFromWebId(int, QString );
+QString GetAuthorUrlFromWebId(int, QString );
 namespace ffn{
     QString GetWebId(QString);
-    QString GetUrlFromWebId(int);
+    QString GetStoryUrlFromWebId(int);
+    QString GetAuthorUrlFromWebId(int);
 }
 }
 

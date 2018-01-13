@@ -40,7 +40,7 @@ void Authors::Reindex()
 void Authors::ClearIndex()
 {
     authorsNamesByWebsite.clear();
-    authorsByUrl.clear();
+    //authorsByUrl.clear();
     authorsById.clear();
 }
 
@@ -65,8 +65,13 @@ void Authors::IndexAuthors()
     for(auto author : authors)
     {
         authorsById[author->id] = author;
-        authorsNamesByWebsite[author->website][author->name] = author;
-        authorsByUrl[author->url("ffn")] = author;
+        for(auto key : author->GetWebsites())
+        {
+            authorsNamesByWebsite[key][author->name] = author;
+            authorsByWebID[key][author->GetWebID(key)] = author;
+        }
+
+        //authorsByUrl[author->url("ffn")] = author;
     }
 }
 
@@ -81,16 +86,27 @@ bool Authors::EnsureAuthorLoaded(QString name, QString website)
     return true;
 }
 
-bool Authors::EnsureAuthorLoaded(QString url)
+bool Authors::EnsureAuthorLoaded(QString website, int id)
 {
-    if(authorsByUrl.contains(url))
+    if(authorsByWebID[website].contains(id))
         return true;
 
-    if(!LoadAuthor(url))
+    if(!LoadAuthor(website, id))
         return false;
 
     return true;
 }
+
+//bool Authors::EnsureAuthorLoaded(QString url)
+//{
+//    if(authorsByUrl.contains(url))
+//        return true;
+
+//    if(!LoadAuthor(url))
+//        return false;
+
+//    return true;
+//}
 
 bool Authors::EnsureAuthorLoaded(int id)
 {
@@ -103,6 +119,12 @@ bool Authors::EnsureAuthorLoaded(int id)
     return true;
 }
 
+bool Authors::UpdateAuthorRecord(core::AuthorPtr author)
+{
+    auto result = database::puresql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    return result;
+}
+
 bool Authors::LoadAuthor(QString name, QString website)
 {
     auto author = database::puresql::GetAuthorByNameAndWebsite(name, website,db);
@@ -112,9 +134,9 @@ bool Authors::LoadAuthor(QString name, QString website)
     return true;
 }
 
-bool Authors::LoadAuthor(QString url)
+bool Authors::LoadAuthor(QString website, int id)
 {
-    auto author = database::puresql::GetAuthorByUrl(url,db);
+    auto author = database::puresql::GetAuthorByIDAndWebsite(id, website, db);
     if(!author)
         return false;
     AddAuthorToIndex(author);
@@ -155,14 +177,23 @@ QList<core::AuthorPtr> Authors::GetAllByName(QString name)
     return result;
 }
 
-core::AuthorPtr Authors::GetByUrl(QString url)
+core::AuthorPtr Authors::GetByWebID(QString website, int id)
 {
     core::AuthorPtr result;
-    if(EnsureAuthorLoaded(url))
-        result = authorsByUrl[url];
+    if(EnsureAuthorLoaded(website, id))
+        result = authorsByWebID[website][id];
 
     return result;
 }
+
+//core::AuthorPtr Authors::GetByUrl(QString url)
+//{
+//    core::AuthorPtr result;
+//    if(EnsureAuthorLoaded(url))
+//        result = authorsByUrl[url];
+
+//    return result;
+//}
 
 QSharedPointer<core::Author > Authors::GetById(int id)
 {
@@ -239,21 +270,40 @@ bool Authors::LoadAuthors(QString website, bool )
     return true;
 }
 
+void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
+{
+    for(QString website : author->GetWebsites())
+    {
+        auto id = database::puresql::GetAuthorIdFromWebID(author->GetWebID(website),website, db);
+        author->AssignId(id);
+        if(id > -1)
+            break;
+    }
+}
+
+bool Authors::CreateAuthorRecord(core::AuthorPtr author)
+{
+    auto result = database::puresql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    return result;
+}
+
 bool Authors::EnsureId(core::AuthorPtr author, QString website)
 {
     if(!author)
         return false;
 
-    QString url = author->url(website);
-    if(authorsByUrl.contains(url) && authorsByUrl[url])
-        author = authorsByUrl[url];
+    //QString url = author->url(website);
+    auto webId = author->GetWebID(website);
+    if(authorsByWebID[website].contains(webId) && authorsByWebID[website][webId])
+        author = authorsByWebID[website][webId];
 
     if(author->GetIdStatus() == core::AuthorIdStatus::unassigned)
-        author->AssignId(database::puresql::GetAuthorIdFromUrl(author->url(website), db));
+        LoadIDForAuthor(author, db);
+
     if(author->GetIdStatus() == core::AuthorIdStatus::not_found)
     {
-        database::puresql::WriteAuthor(author,portableDBInterface->GetCurrentDateTime(), db);
-        author->AssignId(database::puresql::GetAuthorIdFromUrl(author->url(website), db));
+        CreateAuthorRecord(author);
+        LoadIDForAuthor(author, db);
     }
     if(author->id < 0)
         return false;
@@ -266,9 +316,16 @@ void Authors::AddAuthorToIndex(core::AuthorPtr author)
 {
     authors.push_back(author);
 
-    authorsNamesByWebsite[author->website][author->name] = author;
+    for(auto key : author->GetWebsites())
+    {
+        authorsNamesByWebsite[key][author->name] = author;
+        auto webId = author->GetWebID(key);
+        authorsByWebID[key][webId] = author;
+    }
     authorsById[author->id] = author;
-    authorsByUrl[author->url(author->website)] = author;
+//    for(auto key : author->GetWebsites())
+//        authorsByUrl[author->url(key)] = author;
+
 }
 
 bool Authors::AssignNewNameForAuthor(core::AuthorPtr author, QString name)
@@ -310,11 +367,18 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     return result;
 }
 
-bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QStringList list)
+//bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QStringList list)
+//{
+//    if(!EnsureAuthorLoaded(authorId) || list.isEmpty())
+//        return false;
+//    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
+//}
+
+bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QString website , QList<int> ids)
 {
-    if(!EnsureAuthorLoaded(authorId) || list.isEmpty())
+    if(!EnsureAuthorLoaded(authorId) || ids.isEmpty())
         return false;
-    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
+    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, website, ids, db);
 }
 
 bool Authors::DeleteLinkedAuthorsForAuthor(int authorId)

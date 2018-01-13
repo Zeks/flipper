@@ -924,14 +924,24 @@
                         <string/>
                        </property>
                        <property name="checked">
-                        <bool>false</bool>
+                        <bool>true</bool>
                        </property>
                       </widget>
                      </item>
                      <item>
                       <widget class="QDateEdit" name="deCutoffLimit">
                        <property name="enabled">
-                        <bool>false</bool>
+                        <bool>true</bool>
+                       </property>
+                       <property name="dateTime">
+                        <datetime>
+                         <hour>0</hour>
+                         <minute>0</minute>
+                         <second>0</second>
+                         <year>2017</year>
+                         <month>5</month>
+                         <day>1</day>
+                        </datetime>
                        </property>
                       </widget>
                      </item>
@@ -1730,12 +1740,25 @@
                <property name="bottomMargin">
                 <number>0</number>
                </property>
-               <item row="0" column="0">
-                <widget class="QPushButton" name="pbReprocessAuthors">
+               <item row="0" column="2">
+                <widget class="QPushButton" name="pbPauseTask">
                  <property name="text">
-                  <string>Build Recommendation List</string>
+                  <string>Pause Task</string>
                  </property>
                 </widget>
+               </item>
+               <item row="0" column="4">
+                <spacer name="horizontalSpacer_6">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>883</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
                <item row="0" column="1">
                 <widget class="QPushButton" name="pbLoadTrackedFandoms">
@@ -1759,18 +1782,19 @@
                  </property>
                 </widget>
                </item>
-               <item row="0" column="2">
-                <spacer name="horizontalSpacer_6">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
+               <item row="0" column="0">
+                <widget class="QPushButton" name="pbReprocessAuthors">
+                 <property name="text">
+                  <string>Build Recommendation List</string>
                  </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>883</width>
-                   <height>20</height>
-                  </size>
+                </widget>
+               </item>
+               <item row="0" column="3">
+                <widget class="QPushButton" name="pbContinueTask">
+                 <property name="text">
+                  <string>Continue Task</string>
                  </property>
-                </spacer>
+                </widget>
                </item>
               </layout>
              </widget>

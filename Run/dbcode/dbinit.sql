@@ -101,7 +101,18 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  CREATE INDEX if not exists I_RECOMMENDATIONS_FIC ON Recommendations (fic_id ASC);
  CREATE  INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);
  alter table Recommenders add column wave integer default 0;
+ alter table Recommenders add column favourites integer default -1;
+ alter table Recommenders add column fics integer default -1;
+ alter table Recommenders add column ffn_id integer default -1;
+ alter table Recommenders add column ao3_id integer default -1;
+ alter table Recommenders add column sb_id integer default -1;
+ alter table Recommenders add column sv_id integer default -1;
  CREATE  INDEX if not exists I_RECOMMENDER_WAVE ON Recommenders (wave ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_FAVOURITES ON Recommenders (favourites ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_FFN_ID ON Recommenders (ffn_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_AO3_ID ON Recommenders (ao3_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_SB_ID ON Recommenders (sb_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_SV_ID ON Recommenders (sv_id ASC);
  
  
 CREATE  INDEX if  not exists main.I_FANDOMS_FANDOM ON FANDOMS (FANDOM ASC);
@@ -167,6 +178,10 @@ CREATE INDEX if not exists  I_FIC_FANDOMS_FIC ON FicFandoms (fic_id ASC);
  
  -- linked authors table;
  CREATE TABLE if not exists LinkedAuthors (recommender_id INTEGER NOT NULL, url VARCHAR);
+ alter table LinkedAuthors add column ffn_id integer default -1;
+ alter table LinkedAuthors add column ao3_id integer default -1;
+ alter table LinkedAuthors add column sb_id integer default -1;
+ alter table LinkedAuthors add column sv_id integer default -1;
  CREATE INDEX if not exists I_LINKED_AUTHORS_PK ON LinkedAuthors (recommender_id ASC);
 
 -- per author stats for specific recommendation list;

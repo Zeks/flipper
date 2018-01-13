@@ -50,6 +50,7 @@ class Author : public DBEntity{
     static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
     ~Author(){}
     void Log();
+    void LogWebIds();
     int id= -1;
     AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
     void AssignId(int id){
@@ -65,27 +66,29 @@ class Author : public DBEntity{
         }
     }
     AuthorIdStatus GetIdStatus() const {return idStatus;}
+    void SetWebID(QString website, int id){webIds[website] = id;}
+    int GetWebID(QString website) {
+        if(webIds.contains(website))
+            return webIds[website];
+        return -1;
+    }
     QString name;
-    QHash<QString, QString> urls;
     QDateTime firstPublishedFic;
     QDateTime lastUpdated;
     int ficCount = -1;
     int recCount = -1;
     int favCount = -1;
     bool isValid = false;
-    QString website = "";
-    int webId = -1;
-
-    void SetUrl(QString type, QString url)
-    {
-        urls[type] = url;
-    }
+    //QString website = "";
+    QHash<QString, int> webIds;
+    QString CreateAuthorUrl(QString urlType, int webId) const;
     QString url(QString type) const
     {
-        if(urls.contains(type))
-            return urls[type];
+        if(webIds.contains(type))
+            return CreateAuthorUrl(type, webIds[type]);
         return "";
     }
+    QStringList GetWebsites() const;
     UpdateMode updateMode = UpdateMode::none;
 };
 
@@ -106,6 +109,8 @@ class Fic : public DBEntity{
     class FicCalcStats
     {
     public:
+        void Log();
+        bool isValid = false;
         double wcr;
         double wcr_adjusted;
         double reviewsTofavourites;
@@ -119,7 +124,9 @@ class Fic : public DBEntity{
     Fic(const Fic&) = default;
     Fic& operator=(const Fic&) = default;
     ~Fic(){}
-
+    void Log();
+    void LogUrls();
+    void LogWebIds();
     static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
     int complete=0;
     int atChapter=0;
@@ -177,11 +184,8 @@ class Fic : public DBEntity{
             return urls[type];
         return "";
     }
-    void SetUrl(QString type, QString url)
-    {
-        urls[type] = url;
-        urlFFN = url;
-    }
+    void SetUrl(QString type, QString url);
+
     int ffn_id = -1;
     int ao3_id = -1;
     int sb_id = -1;

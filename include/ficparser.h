@@ -38,7 +38,7 @@ public:
               QSharedPointer<interfaces::Genres> genres);
     QSharedPointer<core::Fic> ProcessPage(QString url,QString&);
     void ClearProcessed();
-    void WriteProcessed();
+    //void WriteProcessed();
     void SetRewriteAuthorNames(bool);
 private:
     void ProcessUnmarkedSections(core::Section& );

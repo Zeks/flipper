@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "ECacheMode.h"
 #include <atomic>
 
+
 enum class EPageType
 {
     hub_page = 0,
@@ -39,9 +40,10 @@ enum class EPageSource
     network = 0,
     cache = 1,
 };
-
+class PageThreadWorker;
 struct WebPage
 {
+    friend class PageThreadWorker;
     QString url;
     QDateTime generated;
     //QString stringContent;
@@ -57,8 +59,29 @@ struct WebPage
     QString error;
     bool isLastPage = false;
     bool isFromCache = false;
+    int pageIndex = 0;
+    QString LoadedIn() {
+        QString decimal = QString::number(loadedIn/1000000);
+        int offset = decimal == "0" ? 0 : decimal.length();
+        QString partial = QString::number(loadedIn).mid(offset,1);
+        return decimal + "." + partial;}
+private:
     int loadedIn = 0;
 };
+
+struct PageQueue{
+    bool pending = true;
+    QList<WebPage> data;
+};
+
+class  PageResult{
+public:
+    PageResult() = default;
+    PageResult(WebPage page, bool _finished): finished(_finished),data(page){}
+    bool finished = false;
+    WebPage data;
+};
+
 
 class PageGetterPrivate;
 class PageManager
@@ -71,6 +94,8 @@ class PageManager
     bool GetCachedMode() const;
     WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::dont_use_cache);
     void SavePageToDB(const WebPage & page);
+    void SetAutomaticCacheLimit(QDate);
+    void SetAutomaticCacheForCurrentDate(bool);
     QScopedPointer<PageGetterPrivate> d;
 };
 
@@ -83,13 +108,17 @@ public:
     virtual void timerEvent(QTimerEvent *);
     QString GetNext(QString);
     QDate GrabMinUpdate(QString text);
-    int timeout = 300;
+    void SetAutomaticCache(QDate);
+    void SetAutomaticCacheForCurrentDate(bool);
+    int timeout = 500;
     std::atomic<bool> working;
+    QDate automaticCache;
+    bool automaticCacheForCurrentDate = true;
 public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode);
     void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
-    void pageReady(WebPage);
+    void pageResult(PageResult);
 };
 
 

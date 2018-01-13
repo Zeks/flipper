@@ -367,7 +367,7 @@ bool RecommendationLists::LoadAuthorsForRecommendationList(int listId)
     return true;
 }
 
-QList<QSharedPointer<core::Author> > RecommendationLists::GetAuthorsForRecommendationList(int listId)
+QList<core::AuthorPtr> RecommendationLists::GetAuthorsForRecommendationList(int listId)
 {
     if(currentRecommendationList != listId || currentRecommenderSet.isEmpty())
         LoadAuthorsForRecommendationList(listId);
@@ -381,12 +381,12 @@ QList<int> RecommendationLists::GetRecommendersForFicId(int ficId)
     return result;
 }
 
-QStringList RecommendationLists::GetLinkedPagesForList(int listId)
+QStringList RecommendationLists::GetLinkedPagesForList(int listId, QString website)
 {
     QStringList result;
     if(!EnsureList(listId))
         return result;
-    result = database::puresql::GetLinkedPagesForList(listId, db);
+    result = database::puresql::GetLinkedPagesForList(listId, website,  db);
     return result;
 }
 

@@ -43,6 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
 #include "qml_ficmodel.h"
 #include "include/section.h"
+#include "include/pagetask.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
 
@@ -56,6 +57,7 @@ class Fanfics;
 class Authors;
 class Tags;
 class Genres;
+class PageTask;
 class RecommendationLists;
 }
 namespace database {
@@ -86,21 +88,25 @@ public:
     };
     explicit MainWindow(QWidget *parent = 0);
     void Init();
+    void InitUIFromTask(PageTaskPtr);
     ~MainWindow();
     // currently broken, need to refator the whole procedure
     //void ReInitFandoms();
     //bool CheckSectionAvailability();
     void InitInterfaces();
     void InitConnections();
+    void StartTaskTimer();
 
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
     QSharedPointer<interfaces::Genres> genresInterface;
+    QSharedPointer<interfaces::PageTask> pageTaskInterface;
     QSharedPointer<interfaces::RecommendationLists> recsInterface;
     QSharedPointer<database::IDBWrapper> dbInterface;
     QSharedPointer<database::IDBWrapper> pageCacheInterface;
+    QSharedPointer<database::IDBWrapper> tasksInterface;
 private:
 
     void SetupFanficTable();
@@ -195,18 +201,30 @@ private:
     QDialog* expanderWidget = nullptr;
     QTextEdit* edtExpander = new QTextEdit;
     QTimer selectionTimer;
+    QTimer taskTimer;
     QThread pageThread;
     PageThreadWorker* worker = nullptr;
-    QList<WebPage> pageQueue;
+
+    PageQueue pageQueue;
     core::DefaultQueryBuilder queryBuilder;
     core::StoryFilter filter;
+    bool cancelCurrentTaskPressed = false;
+    std::function<void(int)> callProgress;
+    std::function<void(void)> cleanupEditor;
+    std::function<void(QString)> callProgressText;
     //QHash<QString, core::RecommendationList> lists;
 
 
 
 
-
-    void LoadMoreAuthors(bool reprocessCache = false);
+    PageTaskPtr CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize = 100,
+                                       int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
+                                       bool allowCacheRefresh = true);
+    void UseAuthorsPageTask(PageTaskPtr,
+                            std::function<void(int)>callProgress,
+                            std::function<void(QString)>callProgressText,
+                            std::function<void(void)> cleanupFunctor);
+    void LoadMoreAuthors();
     void ReparseAllAuthors(bool reprocessCache = false);
     void ProcessTagIntoRecommenders(QString tag);
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
@@ -216,6 +234,8 @@ private:
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false);
     QString AppendCurrentSearchParameters(QString url);
     void ReinitRecent(QString name);
+
+    void CheckUnfinishedTasks();
 
 public slots:
     //broken and needs refactoring anyway
@@ -227,7 +247,7 @@ public slots:
     void OnTagRemove(QVariant tag, QVariant row);
 
     void WipeSelectedFandom(bool);
-    void OnNewPage(WebPage);
+    void OnNewPage(PageResult result);
     void OnCopyFicUrl(QString);
     void OnOpenRecommenderLinks(QString);
     void OnCopyAllUrls();
@@ -287,6 +307,8 @@ private slots:
     void on_pbAddAuthorToList_clicked();
 
     void on_pbRemoveAuthorFromList_clicked();
+    void OnCheckUnfinishedTasks();
+
 
 signals:
     void pageTask(QString, QString, QDate, ECacheMode);

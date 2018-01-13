@@ -51,6 +51,8 @@ public:
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
     void SetDatabase(QSqlDatabase _db);
+    QDate automaticCacheDateCutoff;
+    bool autoCacheForCurrentDate = true;
     QSqlDatabase db;
 
 public slots:
@@ -66,6 +68,15 @@ PageGetterPrivate::PageGetterPrivate(QObject *parent): QObject(parent)
 WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 {
     WebPage result;
+    // first, we get the page from cache anyway
+    // not much point doing otherwise if the page is super fresh
+    auto temp = GetPageFromDB(url);
+    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
+    {
+        result = temp;
+        result.isFromCache = true;
+        return result;
+    }
     if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
     {
         result = GetPageFromDB(url);
@@ -90,7 +101,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-    auto db = QSqlDatabase::database("Service");
+    auto db = QSqlDatabase::database("PageCache");
     bool dbOpen = db.isOpen();
     QSqlQuery q(db);
     q.prepare("select * from PageCache where url = :URL");
@@ -112,8 +123,8 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
     else
         result.content = q.value("CONTENT").toByteArray();
-    result.crossover= q.value("CROSSOVER").toInt();
-    result.fandom= q.value("FANDOM").toString();
+    //result.crossover= q.value("CROSSOVER").toInt();
+    //result.fandom= q.value("FANDOM").toString();
     result.generated= q.value("GENERATION_DATE").toDateTime();
     result.type = static_cast<EPageType>(q.value("PAGE_TYPE").toInt());
     return result;
@@ -151,7 +162,7 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     QSettings settings("settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/storeCache", false).toBool())
         return;
-    QSqlQuery q(QSqlDatabase::database("Service"));
+    QSqlQuery q(QSqlDatabase::database("PageCache"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
@@ -224,6 +235,16 @@ void PageManager::SavePageToDB(const WebPage & page)
     if(settings.value("Settings/storeCache", false).toBool())
         d->SavePageToDB(page);
 }
+
+void PageManager::SetAutomaticCacheLimit(QDate date)
+{
+    d->automaticCacheDateCutoff = date;
+}
+
+void PageManager::SetAutomaticCacheForCurrentDate(bool value)
+{
+    d->autoCacheForCurrentDate = value;
+}
 #include "pagegetter.moc"
 
 PageThreadWorker::PageThreadWorker(QObject *parent)
@@ -245,9 +266,11 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
 {
     FuncCleanup f([&](){working = false;});
 
-    database::Transaction pcTransaction(QSqlDatabase::database("Service"));
+    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
+    pager->SetAutomaticCacheLimit(automaticCache);
+    pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     WebPage result;
     int counter = 0;
     do
@@ -255,6 +278,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         qDebug() << "loading page: " << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(url, cacheMode);
+        result.pageIndex = counter;
         auto minUpdate = GrabMinUpdate(result.content);
         url = GetNext(result.content);
         bool updateLimitReached = false;
@@ -267,17 +291,18 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         }
         if(!result.isValid || url.isEmpty())
             result.isLastPage = true;
-        emit pageReady(result);
+        emit pageResult({result, false});
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
 
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
         if(!result.isFromCache)
         {
-            qDebug() << "thread will sleep for " << timeout;
+            //qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
         }
         counter++;
     }while(url != lastUrl && result.isValid && !result.isLastPage);
+    emit pageResult({WebPage(), true});
     pcTransaction.finalize();
     qDebug() << "leaving task1";
 }
@@ -285,9 +310,15 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
 void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});
-    database::Transaction pcTransaction(QSqlDatabase::database("Service"));
+    // kinda have to split pagecache db from service db I guess
+    // which is only natural anyway... probably
+    // still not helping for multithreading later on
+    auto db = QSqlDatabase::database("PageCache");
+    database::Transaction pcTransaction(db);
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
+    pager->SetAutomaticCacheLimit(automaticCache);
+    pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     WebPage result;
     qDebug() << "loading task: " << urls;
     for(int i=0; i< urls.size();  i++)
@@ -303,14 +334,16 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
             result.isLastPage = true;
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-
-        emit pageReady(result);
+        result.pageIndex = i;
+        //qDebug() << "emitting page:" << i;
+        emit pageResult({result, false});
         if(!result.isFromCache)
         {
-            qDebug() << "thread will sleep for " << timeout;
+            //qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
         }
     }
+    emit pageResult({WebPage(), true});
     pcTransaction.finalize();
     qDebug() << "leaving task2";
 }
@@ -344,4 +377,16 @@ QDate PageThreadWorker::GrabMinUpdate(QString text)
 
     return minDate.date();
 }
+
+void PageThreadWorker::SetAutomaticCache(QDate date)
+{
+    automaticCache = date;
+}
+
+void PageThreadWorker::SetAutomaticCacheForCurrentDate(bool value)
+{
+    automaticCacheForCurrentDate = value;
+}
+
+
 
