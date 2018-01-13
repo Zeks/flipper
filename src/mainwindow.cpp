@@ -597,7 +597,6 @@ void MainWindow::InitConnections()
 void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString page)
 {
     nextUrl = page;
-    //qDebug() << "will request url:" << nextUrl;
     if(ui->cbUseDateCutoff->isChecked())
         lastFandomUpdatedate = ui->deCutoffLimit->date();
     if(ui->chkIgnoreUpdateDate->isChecked())
@@ -619,17 +618,15 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
         pbMain->setMaximum(pageCount);
     }
     qDebug() << "emitting page task:" << nextUrl << "\n" << lastUrl << "\n" << lastFandomUpdatedate;
-    emit pageTask(nextUrl, lastUrl, lastFandomUpdatedate, ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+    emit pageTask(nextUrl, lastUrl, lastFandomUpdatedate, ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache, ui->chkIgnoreUpdateDate->isChecked());
     int counter = 0;
     WebPage webPage;
     QSqlDatabase db = QSqlDatabase::database();
 
     QSet<QString> updatedFandoms;
     database::Transaction transaction(db);
-
     do
     {
-
         while(pageQueue.pending && pageQueue.data.isEmpty())
         {
             QThread::msleep(500);
@@ -685,22 +682,12 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
 
         elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-
-        if(parser.minSectionUpdateDate < lastFandomUpdatedate && !ui->chkIgnoreUpdateDate->isChecked())
-        {
-            ui->edtResults->append("Already have updates past this point. Aborting.");
-            break;
-        }
-        if(webPage.isLastPage)
-            break;
-
-    }while(!webPage.isLastPage);
+    }while(pageQueue.pending || pageQueue.data.size() > 0);
     fandomsInterface->RecalculateFandomStats(updatedFandoms.values());
     transaction.finalize();
     StopPageWorker();
     ShutdownProgressbar();
     EnableAllLoadButtons();
-    //manager.get(QNetworkRequest(QUrl(page)));
 }
 
 WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
@@ -1623,7 +1610,17 @@ void MainWindow::CheckUnfinishedTasks()
         }
     }
 }
-
+QString MainWindow::AdjustFFNCrossoverUrl(core::Url url)
+{
+    auto currentUrl = url.GetUrl();
+    if(currentUrl.contains("/crossovers") && (url.GetSource() == "ffn"))
+    {
+        QStringList temp = url.GetUrl().split("/");
+        currentUrl = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
+        currentUrl+="/0";
+    }
+    return currentUrl;
+}
 
 void MainWindow::on_pbCrawl_clicked()
 {
@@ -1646,6 +1643,7 @@ void MainWindow::on_pbCrawl_clicked()
         auto lastUpdated = fandom->lastUpdateDate;
         RequestAndProcessPage(fandom->GetName(), lastUpdated, AppendCurrentSearchParameters(currentFilterUrl));
     }
+    fandomsInterface->SetLastUpdateDate(fandom->GetName(), QDateTime::currentDateTimeUtc().date());
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
     ReinitRecent(fandom->GetName());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
@@ -2021,8 +2019,15 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         processedCount = 0;
         ignoreUpdateDate = false;
         nextUrl = QString();
+        ui->deCutoffLimit->setDate(fandom->lastUpdateDate);
+        qDebug() << "will load fandom since:" << fandom->lastUpdateDate;
         for(auto url: urls)
-            RequestAndProcessPage(fandom->GetName(), lastUpdated.date(), url.GetUrl());
+        {
+            //auto currentUrl = AdjustFFNCrossoverUrl(url);
+            //auto fullUrl = url_utils::AppendBase(url.GetSource(), currentUrl);
+            RequestAndProcessPage(fandom->GetName(), lastUpdated.date(), AppendCurrentSearchParameters(url.GetUrl()));
+        }
+        fandomsInterface->SetLastUpdateDate(fandom->GetName(), QDateTime::currentDateTimeUtc().date());
     }
     QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
 }

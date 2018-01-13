@@ -236,7 +236,7 @@ private:
     void ReinitRecent(QString name);
 
     void CheckUnfinishedTasks();
-
+    QString AdjustFFNCrossoverUrl(core::Url url);
 public slots:
     //broken and needs refactoring anyway
     //void ProcessFandoms(WebPage webPage);
@@ -311,7 +311,7 @@ private slots:
 
 
 signals:
-    void pageTask(QString, QString, QDate, ECacheMode);
+    void pageTask(QString, QString, QDate, ECacheMode, bool);
     void pageTaskList(QStringList, ECacheMode);
 };
 

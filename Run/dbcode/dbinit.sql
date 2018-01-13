@@ -42,24 +42,11 @@ CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
  CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);
  INSERT INTO sqlite_sequence(name, seq) SELECT 'fanfics', 0 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name = 'fanfics');
  update sqlite_sequence set seq = (select max(id) from fanfics) where name = 'fanfics';
-
---fandoms;
-create table if not exists fandoms (FANDOM VARCHAR NOT NULL, SECTION VARCHAR NOT NULL, NORMAL_URL VARCHAR NOT NULL, CROSSOVER_URL VARCHAR NOT NULL);
- alter table fandoms add column id integer AUTOINCREMENT default 0; 
- alter table fandoms add column tracked integer default 0; 
- alter table fandoms add column last_update datetime; 
- alter table fandoms add column last_parse_limit datetime; 
- alter table fandoms add column second_last_parse_limit datetime; 
- alter table fandoms add column date_of_first_fic datetime; 
- alter table fandoms add column date_of_last_fic datetime; 
- alter table fandoms add column date_of_creation datetime; 
- alter table fandoms add column fandom_multiplier integer default 1; 
- alter table fandoms add column fic_count integer default 0; 
- alter table fandoms add column average_faves_top_3 real default 0; 
- alter table fandoms add column source varchar default 'ffn'; 
  
 create table if not exists fandomindex (id integer, name VARCHAR NOT NULL, tracked integer default 0, primary key(id, name));
-CREATE INDEX if not exists I_FANDOMINDEX ON fandomindex (id ASC, name asc);
+alter table fandomindex add column updated datetime;
+CREATE INDEX if not exists I_FANDOMINDEX_PK ON fandomindex (id ASC, name asc);
+CREATE INDEX if not exists I_FANDOMINDEX_UPDATED ON fandomindex (updated ASC);
 CREATE INDEX if not exists I_FANDOMINDEX_ID ON fandomindex (id ASC);
 CREATE INDEX if not exists I_FANDOMINDEX_NAME ON fandomindex (name ASC);
 

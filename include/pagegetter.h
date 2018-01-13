@@ -115,7 +115,7 @@ public:
     QDate automaticCache;
     bool automaticCacheForCurrentDate = true;
 public slots:
-    void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode);
+    void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate);
     void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
     void pageResult(PageResult);

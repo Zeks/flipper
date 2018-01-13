@@ -21,9 +21,9 @@ namespace url_utils{
 
 QString GetWebId(QString url, QString source)
 {
-   if(source == "ffn")
-       return ffn::GetWebId(url);
-   return "";
+    if(source == "ffn")
+        return ffn::GetWebId(url);
+    return "";
 }
 
 QString GetStoryUrlFromWebId(int id, QString source)
@@ -62,6 +62,13 @@ QString GetAuthorUrlFromWebId(int id)
     return "https://www.fanfiction.net/u/" + QString::number(id);
 }
 
+}
+
+QString AppendBase(QString website, QString postfix)
+{
+    if(website == "ffn")
+        return "https://www.fanfiction.net" + postfix;
+    return postfix;
 }
 
 

@@ -133,6 +133,14 @@ core::FandomPtr Fandoms::GetFandom(QString name)
     return result;
 }
 
+void Fandoms::SetLastUpdateDate(QString fandom, QDate date)
+{
+    auto id = GetIDForName(fandom);
+    if(id== -1)
+        return;
+    auto result = database::puresql::SetLastUpdateDateForFandom(id, date, db);
+}
+
 QStringList Fandoms::GetRecentFandoms()
 {
     CleanupPtrList(recentFandoms);

@@ -261,6 +261,7 @@ public:
         this->type = type;
     }
     QString GetUrl(){return url;}
+    QString GetSource(){return source;}
     private:
     QString url;
     QString source;
