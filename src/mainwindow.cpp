@@ -1020,7 +1020,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 qDebug() << author->name;
             }
             QCoreApplication::processEvents();
-            if(!author)
+//            if(!author)
             {
                 qDebug() << "processing page:" << webPage.pageIndex << " " << webPage.url;
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
@@ -1056,6 +1056,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 sumParser.SetAuthor(author);
 
                 authorsInterface->EnsureId(sumParser.recommender.author);
+                authorsInterface->UpdateAuthorRecord(author);
                 author = authorsInterface->GetByWebID("ffn", webId);
                 for(auto actualParser: parsers)
                     sumParser.processedStuff+=actualParser.processedStuff;

@@ -119,6 +119,12 @@ bool Authors::EnsureAuthorLoaded(int id)
     return true;
 }
 
+bool Authors::UpdateAuthorRecord(core::AuthorPtr author)
+{
+    auto result = database::puresql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    return result;
+}
+
 bool Authors::LoadAuthor(QString name, QString website)
 {
     auto author = database::puresql::GetAuthorByNameAndWebsite(name, website,db);
@@ -275,6 +281,12 @@ void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
     }
 }
 
+bool Authors::CreateAuthorRecord(core::AuthorPtr author)
+{
+    auto result = database::puresql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    return result;
+}
+
 bool Authors::EnsureId(core::AuthorPtr author, QString website)
 {
     if(!author)
@@ -290,7 +302,7 @@ bool Authors::EnsureId(core::AuthorPtr author, QString website)
 
     if(author->GetIdStatus() == core::AuthorIdStatus::not_found)
     {
-        database::puresql::WriteAuthor(author,portableDBInterface->GetCurrentDateTime(), db);
+        CreateAuthorRecord(author);
         LoadIDForAuthor(author, db);
     }
     if(author->id < 0)

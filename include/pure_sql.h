@@ -152,7 +152,8 @@ QVector<int> GetIdList(QString where, QSqlDatabase db);
 QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db);
 bool DeactivateStory(int id, QString website, QSqlDatabase db);
 
-bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
+bool UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
+bool CreateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
 QStringList ReadUserTags(QSqlDatabase db);
 bool PushTaglistIntoDatabase(QStringList, QSqlDatabase);
 bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db);

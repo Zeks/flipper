@@ -1165,12 +1165,33 @@ bool DeactivateStory(int id, QString website, QSqlDatabase db)
     return true;
 }
 
-bool WriteAuthor(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
+bool CreateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
     QSqlQuery q1(db);
     QString qsl = " insert into recommenders(name, url, favourites, fics, page_updated, ffn_id, ao3_id,sb_id, sv_id) "
                   "values(:name, :url, :favourites, :fics,  :time, :ffn_id, :ao3_id,:sb_id, :sv_id) ";
     q1.prepare(qsl);
+    q1.bindValue(":name", author->name);
+    q1.bindValue(":time", timestamp);
+    q1.bindValue(":url", author->url("ffn"));
+    q1.bindValue(":favourites", author->favCount);
+    q1.bindValue(":fics", author->ficCount);
+    q1.bindValue(":ffn_id", author->GetWebID("ffn"));
+    q1.bindValue(":ao3_id", author->GetWebID("ao3"));
+    q1.bindValue(":sb_id", author->GetWebID("sb"));
+    q1.bindValue(":sv_id", author->GetWebID("sv"));
+
+    if(!ExecAndCheck(q1))
+        return false;
+    return true;
+}
+bool UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
+{
+    QSqlQuery q1(db);
+    QString qsl = " update recommenders set name = :name, url = :url, favourites = :favourites, fics = :fics, page_updated = :time, "
+                  " ffn_id = :ffn_id, ao3_id = :ao3_id, sb_id  =:sb_id, sv_id = :sv_id where id = :id ";
+    q1.prepare(qsl);
+    q1.bindValue(":id", author->id);
     q1.bindValue(":name", author->name);
     q1.bindValue(":time", timestamp);
     q1.bindValue(":url", author->url("ffn"));
@@ -1591,13 +1612,14 @@ QStringList GetLinkedPagesForList(int listId, QString website, QSqlDatabase db)
                          " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = 17) "
                          " and %1_id not in (select distinct %1_id from recommenders)"
                          " union all "
-                         " select url from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
+                         " select ffn_id from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
     qs=qs.arg(website);
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":list_id",listId);
     if(!ExecAndCheck(q))
         return result;
+    qDebug() << q.lastQuery();
     while(q.next())
     {
         auto authorUrl = url_utils::GetAuthorUrlFromWebId(q.value(QString("%1_id").arg(website)).toInt(), "ffn");
@@ -2039,7 +2061,7 @@ DiagnosticSQLResult<bool> SetTaskFinished(int id, QSqlDatabase db)
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("update PageTasks set finished = true where id = :task_id");
+    QString qs = QString("update PageTasks set finished = 1 where id = :task_id");
 
     QSqlQuery q(db);
     q.prepare(qs);

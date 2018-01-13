@@ -48,6 +48,9 @@ public:
     //bool EnsureAuthorLoaded(QString url);
     bool EnsureAuthorLoaded(int id);
 
+    bool CreateAuthorRecord(core::AuthorPtr author);
+    bool UpdateAuthorRecord(core::AuthorPtr author);
+
     bool LoadAuthors(QString website, bool forced = false);
 
     //for the future, not strictly necessary atm
