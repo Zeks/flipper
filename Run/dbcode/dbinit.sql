@@ -8,12 +8,12 @@ create table if not exists FANFICS (AUTHOR VARCHAR NOT NULL,TITLE VARCHAR NOT NU
  alter table fanfics add column author_id integer default null; 
  alter table fanfics add column age integer default null; 
  alter table fanfics add column follows integer default 0; 
- alter table fanfics add column ffn_id integer default null;
- alter table fanfics add column ao3_id integer default null;
- alter table fanfics add column sb_id integer default null;
- alter table fanfics add column sv_id integer default null;
- alter table fanfics add column author_id integer default null;
- alter table fanfics add column author_web_id integer default null;
+ alter table fanfics add column ffn_id integer default -1;
+ alter table fanfics add column ao3_id integer default -1;
+ alter table fanfics add column sb_id integer default -1;
+ alter table fanfics add column sv_id integer default -1;
+ alter table fanfics add column author_id integer default -1;
+ alter table fanfics add column author_web_id integer default -1;
  alter table fanfics add column date_added datetime default;
  alter table fanfics add column date_deactivated datetime default null;
  alter table fanfics add column for_fill integer default 0;  
@@ -134,7 +134,7 @@ CREATE INDEX if not exists  I_GENRES_WEBSITE ON Genres (website ASC);
 
 -- fandoms for fics;
 CREATE TABLE if not exists FicFandoms (fic_id INTEGER NOT NULL, fandom_id integer,  PRIMARY KEY (fic_id asc, fandom_id asc));
-REATE INDEX if not exists  I_FIC_FANDOMS_PK ON FicFandoms (fic_id asc, fandom_id ASC);
+CREATE INDEX if not exists  I_FIC_FANDOMS_PK ON FicFandoms (fic_id asc, fandom_id ASC);
 CREATE INDEX if not exists  I_FIC_FANDOMS_FANDOM ON FicFandoms (fandom_id ASC);
 CREATE INDEX if not exists  I_FIC_FANDOMS_FIC ON FicFandoms (fic_id ASC);
 
