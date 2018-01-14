@@ -16,7 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "Interfaces/tags.h"
+#include "Interfaces/db_interface.h"
+#include "Interfaces/interface_sqlite.h"
 #include "pure_sql.h"
+#include <QFile>
+#include <QDebug>
 
 namespace interfaces {
 
@@ -66,6 +70,32 @@ QStringList Tags::CreateDefaultTagList()
     QStringList temp;
     temp << "smut" << "hidden" << "meh_description" << "unknown_fandom" << "read_queue" << "reading" << "finished" << "disgusting" << "crap_fandom";
     return temp;
+}
+
+bool Tags::ExportToFile(QString filename)
+{
+    QString exportFile = filename;
+    QFile::remove(exportFile);
+    QSharedPointer<database::IDBWrapper> tagExportInterface (new database::SqliteInterface());
+    auto tagExportDb = tagExportInterface->InitDatabase("TagExport", false);
+    tagExportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagExport");
+    database::puresql::ExportTagsToDatabase(db, tagExportDb);
+    return true;
+}
+
+bool Tags::ImportFromFile(QString filename)
+{
+    QString importFile = filename;
+    if(!QFile::exists(importFile))
+    {
+        qDebug() << "Could not find importfile";
+        return false;
+    }
+    QSharedPointer<database::IDBWrapper> tagImportInterface (new database::SqliteInterface());
+    auto tagImportDb = tagImportInterface->InitDatabase("TagExport", false);
+    tagImportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagImport");
+    database::puresql::ImportTagsFromDatabase(db, tagImportInterface->GetDatabase());
+    return true;
 }
 
 }

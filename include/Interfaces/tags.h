@@ -34,6 +34,9 @@ public:
     QStringList ReadUserTags();
     bool SetTagForFic(int ficId, QString tag);
     bool RemoveTagFromFic(int ficId, QString tag);
+    bool ExportToFile(QString);
+    bool ImportFromFile(QString);
+
 QSqlDatabase db;
 QSharedPointer<Fandoms> fandomInterface;
 private:

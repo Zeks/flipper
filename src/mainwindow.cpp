@@ -226,7 +226,9 @@ void MainWindow::Init()
     recsInterface->LoadAvailableRecommendationLists();
 
     ui->wdgTagsPlaceholder->fandomsInterface = fandomsInterface;
+    ui->wdgTagsPlaceholder->tagsInterface = tagsInterface;
     tagWidgetDynamic->fandomsInterface = fandomsInterface;
+    tagWidgetDynamic->tagsInterface = tagsInterface;
     fandomsInterface->FillFandomList(true);
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
@@ -528,7 +530,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
-    //ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
+    ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
 {
@@ -1395,11 +1397,27 @@ void MainWindow::ReadSettings()
     ui->pbReprocessAuthors->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
     ui->wdgLower->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
     ui->wdgWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
+    ui->pbLoadAllRecommenders->setVisible(settings.value("Settings/showRecListReload", false).toBool());
+    ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
+    ui->pbFormattedList->setVisible(settings.value("Settings/showListCreation", false).toBool());
+    ui->chkInfoForLinks->setVisible(settings.value("Settings/showListCreation", false).toBool());
     //ui->cbRecTagGroup->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbFirstWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbWipeFandom->setVisible(settings.value("Settings/pbWipeFandom", false).toBool());
+    ui->chkCacheMode->setVisible(settings.value("Settings/showCacheMode", false).toBool());
+    ui->cbCustomFilters->setVisible(settings.value("Settings/showCustomFilters", false).toBool());
+    ui->chkCustomFilter->setVisible(settings.value("Settings/showCustomFilters", false).toBool());
+    ui->pbCreateNewList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+    ui->label_18->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+    ui->leCurrentListName->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+    ui->chkSyncListNameToView->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+    ui->pbAddAuthorToList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+    ui->pbRemoveAuthorFromList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+    ui->pbRemoveList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
 
     ui->chkTrackedFandom->setVisible(settings.value("Settings/showTracking", false).toBool());
+    ui->pbPauseTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());
+    ui->pbContinueTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());
     ui->pbLoadTrackedFandoms->setVisible(settings.value("Settings/showTracking", false).toBool());
     //pbLoadTrackedFandoms
     //chkActivateReloadSectionData
@@ -1743,10 +1761,8 @@ void MainWindow::on_cbSortMode_currentTextChanged(const QString &)
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     if(ui->cbSortMode->currentText() == "Rec Count")
-        ui->cbRecGroup->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
+        ui->cbRecGroup->setVisible(settings.value("Settings/showRecListSelector", false).toBool());
 }
-
-
 
 void MainWindow::on_pbExpandPlusGenre_clicked()
 {
@@ -2200,7 +2216,7 @@ void MainWindow::OnReloadRecLists()
 
 void MainWindow::on_cbUseDateCutoff_clicked()
 {
-    //ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
+    ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
 }
 
 
