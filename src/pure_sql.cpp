@@ -2177,27 +2177,17 @@ DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDataba
     QSqlQuery insertQ(targetDB);
     insertQ.prepare(insertQS);
     static auto idHash = GetGlobalIDHash(originDB, " where id in (select distinct fic_id from fictags)");
-    int lastId = -1;
-    QString lastTag = "";
     while(q.next())
     {
 
         auto record = idHash.GetRecord(q.value("fic_id").toInt());
-        if(lastId == q.value("fic_id").toInt() &&
-                lastTag == q.value("tag").toString())
-        {
-            lastTag = lastTag;
-        }
-        insertQ.bindValue(":ffn_id", record.GetID(("ffn")));
+         insertQ.bindValue(":ffn_id", record.GetID(("ffn")));
         insertQ.bindValue(":ao3_id", record.GetID(("ao3")));
         insertQ.bindValue(":sb_id",  record.GetID(("sb")));
         insertQ.bindValue(":sv_id",  record.GetID(("sv")));
         insertQ.bindValue(":tag", q.value("tag").toString());
         if(!result.ExecAndCheck(insertQ))
             return result;
-        lastId = q.value("fic_id").toInt();
-        lastTag = q.value("tag").toString();
-
     }
 
     // now we need to export actual user tags table

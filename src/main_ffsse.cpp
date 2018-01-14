@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
-
     if(settings.value("Settings/storeCache", false).toBool())
     {
         auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
