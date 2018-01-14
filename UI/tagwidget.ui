@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>554</width>
-    <height>680</height>
+    <width>653</width>
+    <height>749</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -32,34 +32,10 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <property name="spacing">
-    <number>0</number>
-   </property>
-   <item row="0" column="0">
+   <item row="1" column="0">
     <widget class="QTextBrowser" name="edtTags"/>
    </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QPushButton" name="pbDeleteTag">
-       <property name="text">
-        <string>Delete Tag</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="leTag"/>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pbAddTag">
-       <property name="text">
-        <string>Add Tag</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="2" column="0">
+   <item row="3" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QLabel" name="label">
@@ -133,13 +109,65 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="0">
-    <widget class="QWidget" name="wdgControls" native="true"/>
+   <item row="2" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="pbDeleteTag">
+       <property name="text">
+        <string>Delete Tag</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="leTag"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbAddTag">
+       <property name="text">
+        <string>Add Tag</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QPushButton" name="pbTagExport">
+       <property name="text">
+        <string>Export Tags</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbTagImport">
+       <property name="text">
+        <string>Import Tags</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
   </layout>
   <zorder>edtTags</zorder>
-  <zorder>wdgControls</zorder>
   <zorder></zorder>
+  <zorder>pbTagExport</zorder>
+  <zorder></zorder>
+  <zorder>pbTagImport</zorder>
+  <zorder>horizontalSpacer_2</zorder>
  </widget>
  <resources/>
  <connections/>

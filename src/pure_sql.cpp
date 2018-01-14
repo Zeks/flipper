@@ -27,6 +27,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDebug>
 namespace database {
 namespace puresql{
+static FicIdHash GetGlobalIDHash(QSqlDatabase db, QString where)
+{
+    FicIdHash  result;
+    QString qs = QString("select id, ffn_id, ao3_id, sb_id, sv_id from fanfics ");
+    if(!where.isEmpty())
+        qs+=where;
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+    while(q.next())
+    {
+        result.ids["ffn"][q.value("ffn_id").toInt()] = q.value("id").toInt();
+        result.ids["sb"][q.value("sb_id").toInt()] = q.value("id").toInt();
+        result.ids["sv"][q.value("sv_id").toInt()] = q.value("id").toInt();
+        result.ids["ao3"][q.value("ao3_id").toInt()] = q.value("id").toInt();
+        FanficIdRecord rec;
+        rec.ids["ffn"] = q.value("ffn_id").toInt();
+        rec.ids["sb"] = q.value("sb_id").toInt();
+        rec.ids["sv"] = q.value("sv_id").toInt();
+        rec.ids["ao3"] = q.value("ao3_id").toInt();
+        result.records[q.value("id").toInt()] = rec;
+    }
+    return  result;
+}
+static const FanficIdRecord& GrabFicIDFromQuery(QSqlQuery& q, QSqlDatabase db)
+{
+    static FicIdHash webIdToGlobal = GetGlobalIDHash(db, "");
+    static FanficIdRecord result;
+    auto ffn = q.value("ffn_id").toInt();
+    auto ao3 = q.value("ao3_id").toInt();
+    auto sb = q.value("sb_id").toInt();
+    auto sv = q.value("sv_id").toInt();
+    result.ids["ffn"] = ffn;
+    result.ids["ao3"] = ao3;
+    result.ids["sb"] = sb;
+    result.ids["sv"] = sv;
+    if(webIdToGlobal.ids.size() == 0)
+        return result;
+
+    if(webIdToGlobal.ids["ffn"].contains(ffn))
+        result.ids["db"] = webIdToGlobal.ids["ffn"][ffn];
+    else if(webIdToGlobal.ids["sb"].contains(sb))
+        result.ids["db"] = webIdToGlobal.ids["sb"][sb];
+    else if(webIdToGlobal.ids["sv"].contains(sv))
+        result.ids["db"] = webIdToGlobal.ids["sv"][sv];
+    else if(webIdToGlobal.ids["ao3"].contains(ao3))
+        result.ids["db"] = webIdToGlobal.ids["ao3"][ao3];
+
+    return result;
+}
 
 bool ExecAndCheck(QSqlQuery& q)
 {
@@ -2109,6 +2160,168 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
         FillPageTaskFromQuery(task, tq);
         result.data.push_back(task);
     }while(q.next());
+    return result;
+}
+
+DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)
+{
+    DiagnosticSQLResult<bool> result;
+    QString qs = QString("select fic_id, tag from fictags order by fic_id, tag");
+
+    QSqlQuery q(originDB);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    Transaction transaction(targetDB);
+    QString insertQS = QString("insert into UserFicTags(ffn_id, ao3_id, sb_id, sv_id, tag) values(:ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
+    QSqlQuery insertQ(targetDB);
+    insertQ.prepare(insertQS);
+    static auto idHash = GetGlobalIDHash(originDB, " where id in (select distinct fic_id from fictags)");
+    int lastId = -1;
+    QString lastTag = "";
+    while(q.next())
+    {
+
+        auto record = idHash.GetRecord(q.value("fic_id").toInt());
+        if(lastId == q.value("fic_id").toInt() &&
+                lastTag == q.value("tag").toString())
+        {
+            lastTag = lastTag;
+        }
+        insertQ.bindValue(":ffn_id", record.GetID(("ffn")));
+        insertQ.bindValue(":ao3_id", record.GetID(("ao3")));
+        insertQ.bindValue(":sb_id",  record.GetID(("sb")));
+        insertQ.bindValue(":sv_id",  record.GetID(("sv")));
+        insertQ.bindValue(":tag", q.value("tag").toString());
+        if(!result.ExecAndCheck(insertQ))
+            return result;
+        lastId = q.value("fic_id").toInt();
+        lastTag = q.value("tag").toString();
+
+    }
+
+    // now we need to export actual user tags table
+    qs = QString("select * from tags");
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    QList<QPair<QString, int>> tags;
+    while(q.next())
+    {
+        tags.push_back({q.value("tag").toString(),
+                        q.value("id").toInt()});
+    }
+
+    insertQS = QString("insert into UserTags(id, tag) values(:id, :tag)");
+    insertQ.prepare(insertQS);
+    for(auto pair : tags)
+    {
+        insertQ.bindValue(":tag", pair.first);
+        insertQ.bindValue(":id", pair.second);
+        if(!result.ExecAndCheck(insertQ))
+            return result;
+    }
+
+    transaction.finalize();
+    return result;
+}
+
+
+DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlDatabase tagImportSourceDB)
+{
+    DiagnosticSQLResult<bool> result;
+    // first we wipe the original tag tables
+    QString qs = QString("delete from fictags");
+    QSqlQuery q(currentDB);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    qs = QString("delete from tags");
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+
+    Transaction transaction(currentDB);
+    // now we install new tag selection
+    QString insertQS = QString("insert into Tags(id, tag) values(:id, :tag)");
+    QSqlQuery insertQ(currentDB);
+    insertQ.prepare(insertQS);
+
+    qs = QString("select * from UserTags");
+    if(!tagImportSourceDB.isOpen())
+        qDebug() << "not open";
+    QSqlQuery importTagsQ(tagImportSourceDB);
+    importTagsQ.prepare(qs);
+    if(!result.ExecAndCheck(importTagsQ))
+        return result;
+
+    while(importTagsQ.next())
+    {
+        insertQ.bindValue(":tag", importTagsQ.value("tag").toString());
+        insertQ.bindValue(":id", importTagsQ.value("id").toInt());
+        if(!result.ExecAndCheck(insertQ))
+            return result;
+    }
+    // and finally restore fictags (which is the hardest part)
+    qs = QString("select * from UserFicTags");
+    importTagsQ.prepare(qs);
+    if(!result.ExecAndCheck(importTagsQ))
+        return result;
+    insertQS = QString("insert into FicTags(fic_id, tag) values(:id, :tag)");
+    insertQ.prepare(insertQS);
+    while(importTagsQ.next())
+    {
+        auto& idRecord = GrabFicIDFromQuery(importTagsQ, currentDB);
+        auto dbId = idRecord.GetID("db");
+        if(dbId == -1)
+        {
+            auto recResult = idRecord.CreateRecord(currentDB);
+            qDebug() << "Creatign fic record";
+            if(!recResult.success)
+            {
+                result.success = false;
+                result.oracleError = recResult.oracleError;
+                return result;
+            }
+        }
+        insertQ.bindValue(":tag", importTagsQ.value("tag").toString());
+        insertQ.bindValue(":id", dbId);
+        if(!result.ExecAndCheck(insertQ))
+        {
+            qDebug() << "Ffn id: " << idRecord.GetID("ffn") <<  " Db id: " << dbId << " tag:" <<  importTagsQ.value("tag").toString();
+            return result;
+        }
+    }
+    transaction.finalize();
+    result.data = true;
+    return result;
+}
+
+FanficIdRecord::FanficIdRecord()
+{
+    ids["ffn"] = -1;
+    ids["sb"] = -1;
+    ids["sv"] = -1;
+    ids["ao3"] = -1;
+}
+
+DiagnosticSQLResult<bool> FanficIdRecord::CreateRecord(QSqlDatabase db) const
+{
+    // will create an empty record with just ids to be filled later on
+    DiagnosticSQLResult<bool> result;
+    QString query = "INSERT INTO FANFICS (ffn_id, sb_id, sv_id, ao3_id, for_fill) "
+                    "VALUES ( :ffn_id, :sb_id, :sv_id, :ao3_id, 1)";
+    QSqlQuery q(db);
+    q.prepare(query);
+    q.bindValue(":ffn_id", ids["ffn"]);
+    q.bindValue(":sb_id",  ids["sb"]);
+    q.bindValue(":sv_id",  ids["sv"]);
+    q.bindValue(":ao3_id", ids["ao3"]);
+    q.exec();
+    if(result.ExecAndCheck(q))
+        return result;
+    result.data = true;
     return result;
 }
 

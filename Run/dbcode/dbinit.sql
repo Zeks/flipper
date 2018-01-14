@@ -16,6 +16,7 @@ create table if not exists FANFICS (AUTHOR VARCHAR NOT NULL,TITLE VARCHAR NOT NU
  alter table fanfics add column author_web_id integer default null;
  alter table fanfics add column date_added datetime default;
  alter table fanfics add column date_deactivated datetime default null;
+ alter table fanfics add column for_fill integer default 0;  
  
  CREATE VIEW vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, faves, ffn_id, author_id,
@@ -37,6 +38,7 @@ CREATE INDEX if not exists  I_AUTHOR_WEB_ID ON fanfics (author_web_id ASC);
 CREATE INDEX if not exists  I_FANFICS_FFN_ID ON fanfics (ffn_id ASC);
 CREATE INDEX if not exists  I_ALIVE ON fanfics (alive ASC);
 CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
+CREATE INDEX if not exists  I_FOR_FILL ON fanfics (for_fill ASC);
 
 -- fanfics sequence;
  CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);

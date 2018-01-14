@@ -23,7 +23,7 @@ Depends { name: "UniversalModels" }
 Depends { name: "logger" }
 
 cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY",
-                          "QT_QML_DEBUG"
+                          //"QT_QML_DEBUG"
                          // ,"QT_LOGGING_TO_CONSOLE=1"
                          ])
 cpp.includePaths: [

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "tagwidget.h"
 #include "ui_tagwidget.h"
 #include "Interfaces/fandoms.h"
+#include "Interfaces/tags.h"
 #include "genericeventfilter.h"
 #include "pure_sql.h"
 #include <QDebug>
@@ -31,6 +32,8 @@ TagWidget::TagWidget(QWidget *parent) :
     ui->setupUi(this);
     ui->edtTags->setOpenLinks(false);
     connect(ui->edtTags, &QTextBrowser::anchorClicked, this, &TagWidget::OnTagClicked);
+    connect(ui->pbTagExport, &QPushButton::clicked, this, &TagWidget::OnTagExport);
+    connect(ui->pbTagImport, &QPushButton::clicked, this, &TagWidget::OnTagImport);
     ui->edtTags->setFont(QFont("Verdana", 12));
 
 
@@ -73,7 +76,7 @@ QStringList TagWidget::GetAllTags()
 
 void TagWidget::SetAddDialogVisibility(bool value)
 {
-    ui->wdgControls->setVisible(value);
+    //ui->wdgControls->setVisible(value);
 }
 
 void TagWidget::on_pbAddTag_clicked()
@@ -182,6 +185,32 @@ void TagWidget::OnRemoveTagFromEdit(QString tag)
     ui->edtTags->setHtml(text);
 }
 
+void TagWidget::OnTagExport()
+{
+    QMessageBox m;
+    m.setIcon(QMessageBox::Warning);
+    m.setText("Cliclking Yes will export tags to Tags.sqlite.");
+    m.addButton("Yes",QMessageBox::AcceptRole);
+    auto dropTask = m.addButton("No",QMessageBox::AcceptRole);
+    m.exec();
+    if(m.clickedButton() == dropTask)
+        return;
+    tagsInterface->ExportToFile("TagExport.sqlite");
+}
+
+void TagWidget::OnTagImport()
+{
+    QMessageBox m;
+    m.setIcon(QMessageBox::Warning);
+    m.setText("Cliclking Yes will import tags from Tags.sqlite into your database.");
+    m.addButton("Yes",QMessageBox::AcceptRole);
+    auto dropTask = m.addButton("No",QMessageBox::AcceptRole);
+    m.exec();
+    if(m.clickedButton() == dropTask)
+        return;
+    tagsInterface->ImportFromFile("TagExport.sqlite");
+}
+
 
 void TagWidget::on_pbAssignTagToFandom_clicked()
 {
@@ -189,3 +218,4 @@ void TagWidget::on_pbAssignTagToFandom_clicked()
                                         ui->cbAssignTag->currentText(),
                                         ui->chkTagIncludingCrosses->isChecked());
 }
+

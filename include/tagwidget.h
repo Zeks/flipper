@@ -19,7 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #define TAGWIDGET_H
 
 #include <QWidget>
-namespace interfaces{ class Fandoms; }
+namespace interfaces{
+class Fandoms;
+class Tags;
+}
 
 namespace Ui {
 class TagWidget;
@@ -37,6 +40,7 @@ public:
     QStringList GetAllTags();
     void SetAddDialogVisibility(bool);
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
+    QSharedPointer<interfaces::Tags> tagsInterface;
 private:
     Ui::TagWidget *ui;
     int currentId;
@@ -59,6 +63,8 @@ public slots:
     void OnTagClicked(const QUrl &);
     void OnNewTag(QString, bool);
     void OnRemoveTagFromEdit(QString);
+    void OnTagExport();
+    void OnTagImport();
 
 private slots:
     void on_pbAssignTagToFandom_clicked();

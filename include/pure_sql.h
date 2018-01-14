@@ -55,6 +55,35 @@ struct DiagnosticSQLResult
     };
 };
 
+
+struct FanficIdRecord
+{
+    FanficIdRecord();
+    DiagnosticSQLResult<bool> CreateRecord(QSqlDatabase db) const;
+    int GetID(QString value) const {
+        if(ids.contains(value))
+            return ids[value];
+        return -1;
+    }
+    QHash<QString, int> ids;
+};
+struct FicIdHash
+{
+    int GetID(QString website, int value) const
+    {
+        if(ids[website].contains(value))
+            return ids[website][value];
+        return -1;
+    }
+    FanficIdRecord GetRecord(int value) const {
+        if(records.contains(value))
+            return records[value];
+        return emptyRecord;
+    }
+    QHash<QString, QHash<int, int>> ids;
+    QHash<int, FanficIdRecord> records;
+    FanficIdRecord emptyRecord;
+};
 bool SetFandomTracked(int id, bool tracked, QSqlDatabase);
 QStringList GetTrackedFandomList(QSqlDatabase db);
 
@@ -139,6 +168,8 @@ bool SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
 
 bool DeleteTagFromDatabase(QString tag, QSqlDatabase db);
 bool CreateTagInDatabase(QString tag, QSqlDatabase db);
+DiagnosticSQLResult<bool>  ExportTagsToDatabase (QSqlDatabase originDB, QSqlDatabase targetDB);
+DiagnosticSQLResult<bool>  ImportTagsFromDatabase(QSqlDatabase originDB, QSqlDatabase targetDB);
 
 bool AddAuthorFavouritesToList(int authorId, int listId, QSqlDatabase db);
 void ShortenFFNurlsForAllFics(QSqlDatabase db);
