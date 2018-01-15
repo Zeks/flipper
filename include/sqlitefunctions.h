@@ -1,7 +1,7 @@
 #pragma once
 #include <QSqlQuery>
 #include <QSqlDatabase>
-#include "include/section.h"
+#include "include/core/section.h"
 #include "include/queryinterfaces.h"
 #include "sqlite/sqlite3.h"
 

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "pure_sql.h"
 #include "transaction.h"
-#include "section.h"
+#include "core/section.h"
 #include "pagetask.h"
 #include "url_utils.h"
 #include <QSqlQuery>

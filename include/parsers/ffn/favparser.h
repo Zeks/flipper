@@ -16,30 +16,40 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
+#include "include/core/section.h"
+#include "include/Interfaces/fanfics.h"
+#include "include/parsers/ffn/ffnparserbase.h"
 #include <QString>
-#include <QSharedPointer>
-#include "section.h"
-#include "pagegetter.h"
+#include <QSqlDatabase>
+#include <QDateTime>
 #include <functional>
-#include "include/ffnparserbase.h"
-
-class FandomParser : public FFNParserBase
+class FavouriteStoryParser : public FFNParserBase
 {
 public:
-    FandomParser(QSharedPointer<interfaces::Fanfics> fanfics);
-    void ProcessPage(WebPage page);
+    FavouriteStoryParser(){}
+    FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics);
+    QList<QSharedPointer<core::Fic>> ProcessPage(QString url,QString&);
+    QString ExtractRecommenderNameFromUrl(QString url);
+    void GetGenre(core::Section& , int& startfrom, QString text);
     void GetWordCount(core::Section& , int& startfrom, QString text);
     void GetPublishedDate(core::Section& , int& startfrom, QString text);
     void GetUpdatedDate(core::Section& , int& startfrom, QString text);
-    QString GetNext(int& startfrom, QString text);
-    QString GetLast(QString pageContent);
-    QString CreateURL(QString str);
-    void GetTitle(core::Section & section, int& startfrom, QString text) override;
+    QString GetFandom(QString text);
+    virtual void GetFandomFromTaggedSection(core::Section & section,QString text) override;
+    void GetTitle(core::Section & , int& , QString ) override;
     virtual void GetTitleAndUrl(core::Section & , int& , QString ) override;
-    QStringList diagnostics;
-    QString nextUrl;
-    QDate minSectionUpdateDate;
-
-public:
     void ClearProcessed() override;
+    void ClearDoneCache();
+    void SetCurrentTag(QString);
+    void SetAuthor(core::AuthorPtr);
+
+    QStringList diagnostics;
+    QList<QSharedPointer<core::Fic>> processedStuff;
+
+    core::FavouritesPage recommender;
+    QHash<QString, QString> alreadyDone;
+    QString currentTagMode = "core";
+    QString authorName;
+    QSet<QString> fandoms;
 };
+

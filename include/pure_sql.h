@@ -5,7 +5,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QSharedPointer>
-#include "section.h"
+#include "core/section.h"
 
 class BasePageTask;
 class PageTask;

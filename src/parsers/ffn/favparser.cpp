@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
 
-#include "include/favparser.h"
-#include "include/section.h"
+#include "include/parsers/ffn/favparser.h"
+#include "include/core/section.h"
 #include "include/pure_sql.h"
 #include "include/url_utils.h"
 #include <QDebug>

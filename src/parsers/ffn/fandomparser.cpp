@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "fandomparser.h"
+#include "parsers/ffn/fandomparser.h"
 #include "Interfaces/fanfics.h"
 #include "url_utils.h"
 #include "regex_utils.h"

@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
-#include "include/section.h"
-#include "include/ffnparserbase.h"
+#include "include/core/section.h"
+#include "include/parsers/ffn/ffnparserbase.h"
 #include <QString>
 #include <QSqlDatabase>
 #include <QDateTime>

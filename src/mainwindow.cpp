@@ -57,8 +57,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "genericeventfilter.h"
 
 
-#include "include/favparser.h"
-#include "include/fandomparser.h"
+#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/fandomparser.h"
 #include "include/url_utils.h"
 #include "include/pure_sql.h"
 #include "include/transaction.h"
@@ -1395,7 +1395,7 @@ void MainWindow::ReadSettings()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ui->chkShowDirectRecs->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbReprocessAuthors->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
-    ui->wdgLower->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
+    //ui->wdgLower->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
     ui->wdgWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbLoadAllRecommenders->setVisible(settings.value("Settings/showRecListReload", false).toBool());
     ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
@@ -1407,14 +1407,18 @@ void MainWindow::ReadSettings()
     ui->chkCacheMode->setVisible(settings.value("Settings/showCacheMode", false).toBool());
     ui->cbCustomFilters->setVisible(settings.value("Settings/showCustomFilters", false).toBool());
     ui->chkCustomFilter->setVisible(settings.value("Settings/showCustomFilters", false).toBool());
-    ui->pbCreateNewList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
-    ui->label_18->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
-    ui->leCurrentListName->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
-    ui->chkSyncListNameToView->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
-    ui->pbAddAuthorToList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
-    ui->pbRemoveAuthorFromList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
-    ui->pbRemoveList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
 
+    {
+        ui->pbCreateNewList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+        ui->label_18->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+        ui->leCurrentListName->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+        ui->chkSyncListNameToView->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+        //ui->pbAddAuthorToList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+        //ui->pbRemoveAuthorFromList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+        ui->pbRemoveList->setVisible(settings.value("Settings/showRecListCustomization", false).toBool());
+    }
+
+    ui->cbRecGroup->setVisible(settings.value("Settings/showRecListSelector", false).toBool());
     ui->chkTrackedFandom->setVisible(settings.value("Settings/showTracking", false).toBool());
     ui->pbPauseTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());
     ui->pbContinueTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());

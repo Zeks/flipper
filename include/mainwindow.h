@@ -42,7 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "libs/UniversalModels/include/TableDataListHolder.h"
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
 #include "qml_ficmodel.h"
-#include "include/section.h"
+#include "include/core/section.h"
 #include "include/pagetask.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"

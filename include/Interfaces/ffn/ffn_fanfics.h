@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "Interfaces/base.h"
 #include "Interfaces/fanfics.h"
-#include "section.h"
+#include "core/section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
 #include "QSqlDatabase"

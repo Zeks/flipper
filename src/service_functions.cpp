@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "service_functions.h"
 #include "url_utils.h"
 #include "pagegetter.h"
-#include "ficparser.h"
+#include "parsers/ffn/ficparser.h"
 namespace service{
 
 //    void ReprocessFic(core::Fic fic, ECacheMode cacheMode)

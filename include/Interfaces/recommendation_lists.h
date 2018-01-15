@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "Interfaces/base.h"
 #include "Interfaces/db_interface.h"
-#include "section.h"
+#include "core/section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
 #include "QSqlDatabase"

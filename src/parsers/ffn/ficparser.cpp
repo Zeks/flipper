@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "include/ficparser.h"
-#include "include/section.h"
+#include "include/parsers/ffn/ficparser.h"
+#include "include/core/section.h"
 #include "include/regex_utils.h"
 #include "include/url_utils.h"
 #include "include/pure_sql.h"
