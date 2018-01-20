@@ -51,37 +51,47 @@ struct StoryFilter{
     };
     //do I even need that?
     //QString ficCategory;
-    QString fandom;
-    QString website;
-    int useThisRecommenderOnly = -1;
+
     bool includeCrossovers = false;
     bool ignoreAlreadyTagged = false;
-    int minWords = 0;
-    int maxWords = 0;
-    int maxFics = 0;
     bool randomizeResults = false;
-    int minFavourites = 0;
-    int minRecommendations = 0;
     bool ensureCompleted = false;
     bool ensureActive = false;
     bool allowUnfinished = true;
     bool allowNoGenre = true;
     bool showOriginsInLists = false;
-    ESortMode sortMode;
+
+    int useThisRecommenderOnly = -1;
+    int recordLimit = -1;
+    int recordPage = -1;
+    int physicalRecordLimit = -1;
+    int lastFetchedRecordID = -1;
+    int minWords = 0;
+    int maxWords = 0;
+    int maxFics = 0;
+    int minFavourites = 0;
+    int minRecommendations = 0;
     int listForRecommendations;
+    int recentAndPopularFavRatio;
+
+    ESortMode sortMode;
     EReviewBiasMode reviewBias;
     EBiasOperator biasOperator;
-    double reviewBiasRatio = 0;
+    EFilterMode mode;
 
-    QDateTime recentCutoff;
-    int recentAndPopularFavRatio;
+    QString fandom;
+    QString website;
+
     QStringList genreExclusion;
     QStringList genreInclusion;
     QStringList wordExclusion;
     QStringList wordInclusion;
     QStringList titleInclusion;
     QStringList activeTags;
-    EFilterMode mode;
+    QDateTime recentCutoff;
+
+    double reviewBiasRatio = 0;
+
 };
 }
 

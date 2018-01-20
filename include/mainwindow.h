@@ -119,6 +119,8 @@ private:
     int processedFics = 0;
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
     int currentRecWave = 0;
+    int currentLastFanficId = -1;
+    QSharedPointer<core::Query> currentQuery;
     bool event(QEvent * e);
     void ReadSettings();
     void WriteSettings();
@@ -136,7 +138,11 @@ private:
     void EnableAllLoadButtons();
 
     void LoadData();
-    QSqlQuery BuildQuery();
+    int GetResultCount();
+    QSqlQuery BuildQuery(bool countOnly = false);
+
+    QSqlQuery NewPageQuery(int pageNumber);
+
 
     void UpdateFandomList(std::function<QString(core::Fandom)> linkGetter);
     void InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names);
@@ -175,7 +181,8 @@ private:
     int processedCount = 0;
     QString nextUrl;
     int timerId = -1;
-    int pageCounter = 0;
+    int sizeOfCurrentQuery = 0;
+    int pageOfCurrentQuery = 0;
     QMenu browserMenu;
     QEventLoop managerEventLoop;
     QMap<QPair<QString,QString>, core::Fandom> names;
@@ -237,6 +244,7 @@ private:
 
     void CheckUnfinishedTasks();
     QString AdjustFFNCrossoverUrl(core::Url url);
+    void PlaceResults();
 public slots:
     //broken and needs refactoring anyway
     //void ProcessFandoms(WebPage webPage);
@@ -253,6 +261,8 @@ public slots:
     void OnCopyAllUrls();
     void OnDoFormattedList();
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
+    void OnDisplayNextPage();
+    void OnDisplayPreviousPage();
 private slots:
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);
@@ -309,6 +319,8 @@ private slots:
     void on_pbRemoveAuthorFromList_clicked();
     void OnCheckUnfinishedTasks();
 
+
+    void on_chkRandomizeSelection_toggled(bool checked);
 
 signals:
     void pageTask(QString, QString, QDate, ECacheMode, bool);

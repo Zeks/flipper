@@ -298,6 +298,8 @@ void MainWindow::Init()
 
     connect(tagWidgetDynamic, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
     connect(ui->pbCopyFavUrls, &QPushButton::clicked, this, &MainWindow::OnCopyFavUrls);
+    connect(ui->pbNextPage, &QPushButton::clicked, this, &MainWindow::OnDisplayNextPage);
+    connect(ui->pbPreviousPage, &QPushButton::clicked, this, &MainWindow::OnDisplayPreviousPage);
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
 
@@ -548,6 +550,31 @@ bool MainWindow::event(QEvent * e)
 void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 {
 }
+
+void MainWindow::OnDisplayNextPage()
+{
+    if(sizeOfCurrentQuery <= filter.recordLimit * (pageOfCurrentQuery+1))
+    {
+        ui->pbNextPage->setEnabled(false);
+        return;
+    }
+    filter.recordPage = ++pageOfCurrentQuery;
+    LoadData();
+    PlaceResults();
+}
+
+void MainWindow::OnDisplayPreviousPage()
+{
+    if((pageOfCurrentQuery - 1) < 0)
+    {
+        ui->pbPreviousPage->setEnabled(false);
+        return;
+    }
+    filter.recordPage = --pageOfCurrentQuery;
+    LoadData();
+    PlaceResults();
+}
+
 MainWindow::~MainWindow()
 {
     WriteSettings();
@@ -753,6 +780,9 @@ void MainWindow::LoadData()
         QMessageBox::warning(0, "warning!", "Please set minimum word count");
         return;
     }
+    if(filter.recordPage == 0)
+        sizeOfCurrentQuery = GetResultCount();
+
     auto q = BuildQuery();
     q.setForwardOnly(true);
     q.exec();
@@ -760,7 +790,7 @@ void MainWindow::LoadData()
     if(q.lastError().isValid())
     {
         qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
+        qDebug().noquote() << q.lastQuery();
     }
     ui->edtResults->setOpenExternalLinks(true);
     ui->edtResults->clear();
@@ -769,28 +799,61 @@ void MainWindow::LoadData()
     ui->edtResults->setUpdatesEnabled(false);
     fanfics.clear();
     //ui->edtResults->insertPlainText(q.lastQuery());
+    currentLastFanficId = -1;
     while(q.next())
     {
         counter++;
         fanfics.push_back(LoadFanfic(q));
-
         if(counter%10000 == 0)
             qDebug() << "tick " << counter/1000;
         //qDebug() << "tick " << counter;
     }
+    if(fanfics.size() > 0)
+        currentLastFanficId = fanfics.last().id;
+
     qDebug() << "loaded fics:" << counter;
 
 
 }
 
-QSqlQuery MainWindow::BuildQuery()
+int MainWindow::GetResultCount()
+{
+    auto q = BuildQuery(true);
+    q.setForwardOnly(true);
+    if(!database::puresql::ExecAndCheck(q))
+        return -1;
+    q.next();
+    auto result =  q.value("records").toInt();
+    return result;
+}
+
+QSqlQuery MainWindow::BuildQuery(bool countOnly)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    auto query = queryBuilder.Build(filter);
+    queryBuilder.SetCountOnlyQuery(countOnly);
+    currentQuery = queryBuilder.Build(filter);
     QSqlQuery q(db);
-    q.prepare(query->str);
-    auto it = query->bindings.begin();
-    auto end = query->bindings.end();
+    q.prepare(currentQuery->str);
+    auto it = currentQuery->bindings.begin();
+    auto end = currentQuery->bindings.end();
+    while(it != end)
+    {
+        qDebug() << it.key() << " " << it.value();
+        q.bindValue(it.key(), it.value());
+        ++it;
+    }
+    return q;
+}
+
+QSqlQuery MainWindow::NewPageQuery(int pageNumber)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    queryBuilder.ProcessBindings(filter, currentQuery);
+
+    QSqlQuery q(db);
+    q.prepare(currentQuery->str);
+    auto it = currentQuery->bindings.begin();
+    auto end = currentQuery->bindings.end();
     while(it != end)
     {
         qDebug() << it.key() << " " << it.value();
@@ -831,7 +894,7 @@ void MainWindow::UnsetTag(int id, QString tag)
 QString MainWindow::CreateLimitQueryPart()
 {
     QString result;
-    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxFicCount->value()  : 0;
+    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxRandomFicCount->value()  : 0;
     if(maxFicCountValue > 0 && maxFicCountValue < 51)
         result+= QString(" LIMIT %1 ").arg(QString::number(maxFicCountValue));
     return result;
@@ -1644,6 +1707,14 @@ QString MainWindow::AdjustFFNCrossoverUrl(core::Url url)
     return currentUrl;
 }
 
+void MainWindow::PlaceResults()
+{
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+    ReinitRecent(ui->cbNormals->currentText());
+}
+
 void MainWindow::on_pbCrawl_clicked()
 {
     processedFics = 0;
@@ -1653,7 +1724,6 @@ void MainWindow::on_pbCrawl_clicked()
     auto urls = fandom->GetUrls();
     //currentFilterUrls = GetCurrentFilterUrls(GetFandomName(), ui->rbCrossovers->isChecked(), true);
 
-    pageCounter = 0;
     ui->edtResults->clear();
     processedCount = 0;
     ignoreUpdateDate = false;
@@ -1729,10 +1799,7 @@ void MainWindow::on_pbLoadDatabase_clicked()
     filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     LoadData();
 
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(fanfics);
-    ReinitRecent(ui->cbNormals->currentText());
+    PlaceResults();
 }
 
 
@@ -1750,9 +1817,9 @@ void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     auto ficLimitActive =  ui->chkFicLimitActivated->isChecked();
-    int maxFicCountValue = ficLimitActive ? ui->sbMaxFicCount->value()  : 0;
+    int maxFicCountValue = ficLimitActive ? ui->sbMaxRandomFicCount->value()  : 0;
     if(checked && (maxFicCountValue < 1 || maxFicCountValue >50))
-        ui->sbMaxFicCount->setValue(settings.value("Settings/defaultRandomFicCount", 6).toInt());
+        ui->sbMaxRandomFicCount->setValue(settings.value("Settings/defaultRandomFicCount", 6).toInt());
 }
 
 void MainWindow::on_cbCustomFilters_currentTextChanged(const QString &)
@@ -2034,7 +2101,6 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     for(auto fandom : fandoms)
     {
         auto urls = fandom->GetUrls();
-        pageCounter = 0;
         ui->edtResults->clear();
         processedCount = 0;
         ignoreUpdateDate = false;
@@ -2303,7 +2369,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
-    filter.maxFics = valueIfChecked(ui->chkFicLimitActivated, ui->sbMaxFicCount->value());
+    filter.maxFics = valueIfChecked(ui->chkFicLimitActivated, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
     filter.minWords= ui->cbMinWordCount->currentText().toInt();
@@ -2316,11 +2382,14 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex());
     filter.showOriginsInLists = ui->chkShowOrigins->isChecked();
     filter.minRecommendations = ui->sbMinRecommendations->value();
+    filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : -1;
+    filter.recordPage = ui->chkLimitPageSize->isChecked() ?  0 : -1;
     //if(ui->cbSortMode->currentText())
     filter.listForRecommendations = recsInterface->GetListIdForName(ui->cbRecGroup->currentText());
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
+    filter.lastFetchedRecordID = currentLastFanficId;
     QString authorUrl = ui->leAuthorUrl->text();
     auto author = authorsInterface->GetByWebID("ffn", url_utils::GetWebId(authorUrl, "ffn").toInt());
     if(author && useAuthorLink)
@@ -2500,4 +2569,10 @@ void MainWindow::on_pbRemoveAuthorFromList_clicked()
 void MainWindow::OnCheckUnfinishedTasks()
 {
     CheckUnfinishedTasks();
+}
+
+void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
+{
+    ui->chkFicLimitActivated->setEnabled(checked);
+    ui->sbMaxRandomFicCount->setEnabled(checked);
 }

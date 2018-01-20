@@ -38,10 +38,13 @@ public:
     DefaultQueryBuilder();
     QSharedPointer<Query> Build(StoryFilter);
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
+    void ProcessBindings(StoryFilter, QSharedPointer<Query>);
+    void SetCountOnlyQuery(bool value);
     QScopedPointer<IRNGGenerator> rng;
 private:
     QString CreateCustomFields(StoryFilter);
-    QString CreateWhere(StoryFilter);
+    QString CreateWhere(StoryFilter,
+                        bool usePageLimiter = false);
 
     QString ProcessBias(StoryFilter);
     QString ProcessSumFaves(StoryFilter);
@@ -61,7 +64,7 @@ private:
     QString ProcessFilteringMode(StoryFilter);
     QString ProcessActiveTags(StoryFilter);
     QString ProcessRandomization(StoryFilter, QString);
-    void ProcessBindings(StoryFilter, QSharedPointer<Query>);
+
 
     QString BuildSortMode(StoryFilter);
     QString CreateLimitQueryPart(StoryFilter);
@@ -73,6 +76,7 @@ private:
     QString diffField;
     QString activeTags;
     QString wherePart;
+    bool countOnlyQuery = false;
 
     QSharedPointer<Query> query;
     QSharedPointer<Query> idQuery;

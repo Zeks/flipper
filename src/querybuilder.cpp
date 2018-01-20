@@ -38,8 +38,17 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     query = NewQuery();
 
     queryString.clear();
-    queryString = "ID, ";
-    queryString+= CreateCustomFields(filter) + " f.* ";
+    if(countOnlyQuery)
+    {
+        queryString = " count(id) as records, ";
+        queryString+= CreateCustomFields(filter);
+        queryString+= " 1 as junk ";
+    }
+    else
+    {
+        queryString = "ID, ";
+        queryString+= CreateCustomFields(filter) + " f.* ";
+    }
     queryString+=" from vFanfics f where 1 = 1 and alive = 1 " ;
     QString where = CreateWhere(filter);
     queryString+= where;
@@ -49,7 +58,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     queryString+= CreateLimitQueryPart(filter);
 
     query->str = "select " + queryString;
-    qDebug() << query->str;
+    qDebug().noquote() << query->str;
+    countOnlyQuery = false;
     return query;
 }
 
@@ -61,11 +71,11 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
     queryString+=ProcessSumRecs(filter);
     queryString+=ProcessTags(filter);
     queryString+=ProcessUrl(filter);
-
     return queryString;
 }
 
-QString DefaultQueryBuilder::CreateWhere(StoryFilter filter)
+QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
+                                         bool usePageLimiter)
 {
     QString queryString;
 
@@ -75,7 +85,6 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter)
     queryString+= ProcessBias(filter);
     queryString+= ProcessWhereSortMode(filter);
     queryString+= ProcessActiveRecommendationsPart(filter);
-
 
     if(filter.minFavourites > 0)
         queryString += " and favourites > :favourites ";
@@ -106,14 +115,14 @@ QString DefaultQueryBuilder::ProcessBias(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter)
 {
-    QString sumOfAuthorFavourites = " (SELECT sumfaves FROM recommenders where name = f.author) as sumfaves, ";
+    QString sumOfAuthorFavourites = " (SELECT sumfaves FROM recommenders where name = f.author) as sumfaves, \n";
     return sumOfAuthorFavourites;
 }
 
 QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
 {
     //return QString();
-    QString fandoms = " ( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, ";
+    QString fandoms = " ( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n";
     return fandoms;
 }
 
@@ -125,7 +134,7 @@ QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
 
 QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 {
-    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id %1) as sumrecs, ";
+    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id %1) as sumrecs, \n";
     if(filter.showOriginsInLists)
         currentRecTagValue=currentRecTagValue.arg("");
     else
@@ -136,7 +145,7 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
 
 QString DefaultQueryBuilder::ProcessTags(StoryFilter)
 {
-    QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, ";
+    QString currentTagValue = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, \n";
     return currentTagValue;
 }
 
@@ -327,7 +336,8 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     return result;
 }
 
-void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, QSharedPointer<Query> q)
+void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
+                                          QSharedPointer<Query> q)
 {
     if(filter.minWords > 0)
         q->bindings[":minwordcount"] = filter.minWords;
@@ -337,6 +347,15 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter, QSharedPointer<Que
         q->bindings[":favourites"] = filter.minFavourites;
     if(filter.listForRecommendations > -1)
         q->bindings[":list_id"] = filter.listForRecommendations;
+    if(!countOnlyQuery && filter.recordLimit > 0)
+        q->bindings[":record_limit"] = filter.recordLimit;
+    if(!countOnlyQuery && filter.recordPage > -1)
+        q->bindings[":record_offset"] = filter.recordPage * filter.recordLimit;
+}
+
+void DefaultQueryBuilder::SetCountOnlyQuery(bool value)
+{
+    countOnlyQuery = value;
 }
 
 QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)
@@ -350,9 +369,16 @@ QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)
 QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
 {
     QString result;
-    int maxFicCountValue = filter.maxFics;
-    if(maxFicCountValue > 0)
-        result+= QString(" LIMIT %1 COLLATE NOCASE ").arg(QString::number(maxFicCountValue));
+    if(countOnlyQuery || filter.recordLimit <= 0)
+        return result;
+    result = " COLLATE NOCASE ";
+    QString limitOffset = QString(" %1 %2 ");
+    if(filter.recordLimit > 0)
+        limitOffset = limitOffset.arg(" LIMIT :record_limit ");
+    if(filter.recordPage != -1)
+        limitOffset = limitOffset.arg(" OFFSET :record_offset");
+    if(!limitOffset.trimmed().isEmpty())
+        result = result.prepend(limitOffset);
     return result;
 }
 
