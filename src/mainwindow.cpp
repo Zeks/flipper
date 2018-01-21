@@ -851,6 +851,9 @@ void MainWindow::LoadData()
 
 int MainWindow::GetResultCount()
 {
+    if(ui->chkRandomizeSelection->isChecked())
+        return ui->sbMaxRandomFicCount->value()-1;
+
     auto q = BuildQuery(true);
     q.setForwardOnly(true);
     if(!database::puresql::ExecAndCheck(q))
@@ -1831,9 +1834,11 @@ void MainWindow::OnSectionChanged(QString)
 
 void MainWindow::on_pbLoadDatabase_clicked()
 {
-    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    LoadData();
 
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+    filter.recordPage = 0;
+    pageOfCurrentQuery = 0;
+    LoadData();
     PlaceResults();
 }
 

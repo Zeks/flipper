@@ -44,7 +44,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     QString where = CreateWhere(filter);
     qDebug().noquote() << "WHERE IS: " << where;
     ProcessBindings(filter, query);
-    where+= ProcessRandomization(filter, queryString);
+
 
     //where+= CreateLimitQueryPart(filter);
     bool useRecommendationFiltering = filter.sortMode == StoryFilter::reccount || filter.minRecommendations > 0;
@@ -52,7 +52,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     {
         if(useRecommendationFiltering)
         {
-            QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join fanfics ff  on ff.id = rt.fic_id and rt.list_id = :list_id2 where 1=1 ";
+            QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join fanfics ff  on ff.id = rt.fic_id  where 1=1 and rt.list_id = :list_id2 ";
             if(!filter.showOriginsInLists)
                 temp+=" and is_origin <> 1 ";
             temp += where + "order by rt.match_count desc" + CreateLimitQueryPart(filter) + ")";
@@ -60,15 +60,18 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
         }
         else
             where = " and id in ( select id as fid from fanfics ff where 1=1 " + where + BuildSortMode(filter) + CreateLimitQueryPart(filter) + ")";
-        queryString += where + BuildSortMode(filter);
+        QString randomizer = ProcessRandomization(filter, where);
+        if(!filter.randomizeResults)
+            queryString += where  + BuildSortMode(filter);
+        else
+            queryString += randomizer  + BuildSortMode(filter);
     }
     else
     {
-        queryString += where + BuildSortMode(filter);
+        QString randomizer = ProcessRandomization(filter, where);
+        queryString += where + randomizer + BuildSortMode(filter);
         queryString += CreateLimitQueryPart(filter);
     }
-
-
 
     query->str = "select " + queryString;
     qDebug().noquote() << query->str;
@@ -336,7 +339,10 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     if(!filter.randomizeResults)
         return result;
     QStringList idList;
-    QString part = " and ID IN ( %1 ) ";
+    QString part = "  and ID IN ( %1 ) ";
+    wherePart = " 1 as junk from fanfics where 1 = 1 " + wherePart;
+    wherePart.replace("COLLATE NOCASE", "");
+    wherePart+=" COLLATE NOCASE";
     for(int i = 0; i < filter.maxFics; i++)
     {
         if(rng)
@@ -344,6 +350,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
             auto q = NewQuery();
             q->bindings = query->bindings;
             q->str = wherePart;
+
             auto value = rng->Get(q, db);
             if(value == "-1")
                 return "";
@@ -397,12 +404,17 @@ QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
     QString result;
     if(filter.recordLimit <= 0)
         return result;
-    result = " COLLATE NOCASE ";
+    if(!filter.randomizeResults)
+        result = " COLLATE NOCASE ";
     QString limitOffset = QString(" %1 %2 ");
-    if(filter.recordLimit > 0)
+    if(!filter.randomizeResults && filter.recordLimit > 0)
         limitOffset = limitOffset.arg(" LIMIT :record_limit ");
-    if(filter.recordPage != -1)
+    else
+        limitOffset = limitOffset.arg("");
+    if(!filter.randomizeResults && filter.recordPage != -1)
         limitOffset = limitOffset.arg(" OFFSET :record_offset");
+    else
+        limitOffset = limitOffset.arg("");
     if(!limitOffset.trimmed().isEmpty())
         result = result.prepend(limitOffset);
     return result;

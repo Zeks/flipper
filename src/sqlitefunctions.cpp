@@ -158,7 +158,7 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
     QStringList result;
     QString qs = QString("select group_concat(id, ',') as merged, " + where);
     //qs= qs.arg(where);
-    qDebug() << qs;
+    qDebug().noquote() << "RANDOM: " << qs;
     QSqlQuery q(db);
     q.prepare(qs);
     auto it = query->bindings.begin();
