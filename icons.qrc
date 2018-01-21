@@ -13,5 +13,9 @@
         <file>icons/heart_active.png</file>
         <file>icons/heart.png</file>
         <file>icons/copy.png</file>
+        <file>icons/back_grey.png</file>
+        <file>icons/forward_grey.png</file>
+        <file>icons/back_blue.png</file>
+        <file>icons/forward_blue.png</file>
     </qresource>
 </RCC>

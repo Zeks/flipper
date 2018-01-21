@@ -525,6 +525,7 @@ void MainWindow::SetupFanficTable()
     qwFics->setSource(source);
 
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+
     //connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
     //connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
@@ -532,6 +533,9 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
+    QObject* windowObject= qwFics->rootObject();
+    connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
+    connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
     ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
@@ -553,24 +557,24 @@ void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 
 void MainWindow::OnDisplayNextPage()
 {
-    if(sizeOfCurrentQuery <= filter.recordLimit * (pageOfCurrentQuery+1))
-    {
-        ui->pbNextPage->setEnabled(false);
-        return;
-    }
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("havePagesBefore", true);
     filter.recordPage = ++pageOfCurrentQuery;
+    if(sizeOfCurrentQuery <= filter.recordLimit * (pageOfCurrentQuery))
+        windowObject->setProperty("havePagesAfter", false);
+
     LoadData();
     PlaceResults();
 }
 
 void MainWindow::OnDisplayPreviousPage()
 {
-    if((pageOfCurrentQuery - 1) < 0)
-    {
-        ui->pbPreviousPage->setEnabled(false);
-        return;
-    }
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("havePagesAfter", true);
     filter.recordPage = --pageOfCurrentQuery;
+
+    if(pageOfCurrentQuery == 0)
+        windowObject->setProperty("havePagesBefore", false);
     LoadData();
     PlaceResults();
 }
@@ -781,7 +785,13 @@ void MainWindow::LoadData()
         return;
     }
     if(filter.recordPage == 0)
+    {
         sizeOfCurrentQuery = GetResultCount();
+        QObject* windowObject= qwFics->rootObject();
+        windowObject->setProperty("havePagesBefore", false);
+        windowObject->setProperty("havePagesAfter", filter.recordLimit > 0 && sizeOfCurrentQuery > filter.recordLimit);
+
+    }
 
     auto q = BuildQuery();
     q.setForwardOnly(true);
