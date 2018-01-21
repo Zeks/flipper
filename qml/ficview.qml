@@ -7,10 +7,13 @@ Rectangle {
     property int textSize: 22
     property string currentPage: "1"
     property string totalPages: "1"
+    property color leadingColor:  "#fceaef"
     property bool havePagesBefore: false
     property bool havePagesAfter: false
+    signal pageRequested(int page)
     signal backClicked()
     signal forwardClicked()
+
     Rectangle{
         id:leadingLine
         width: parent.width
@@ -23,55 +26,18 @@ Rectangle {
         anchors.top: leadingLine.bottom
         height:3
     }
+    Rectangle
+    {
+        id: coloredRect
+        anchors.top: spacerBeforeRow.bottom
+        color: leadingColor
+        height: info.height - 2
+        width: parent.width
     RowLayout{
         id:row
-        Item {
-            // spacer item
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            //Rectangle { anchors.fill: parent; color: "#ffaaaa" } // to visualize the spacer
-        }
-        Label {
-            id:info
-            font.pixelSize: mainWindow.textSize
-            text: "At page:"
-            anchors.top: row.top
-        }
-        Rectangle{
-            color: "lightyellow"
-            anchors.bottom: info.bottom
-            //anchors.bottom: row.bottom
-            width: 80
-            height:row.height - 5
-            Item {
-                // spacer item
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                //Rectangle { anchors.fill: parent; color: "#ffaaaa" } // to visualize the spacer
-            }
-            TextInput{
-                font.pixelSize: mainWindow.textSize
-                anchors.fill: parent
-                text: mainWindow.currentPage
-                validator: IntValidator{}
-                horizontalAlignment: TextInput.AlignRight
-
-                //placeholderText: qsTr("")
-            }
-        }
-        Label {
-            text: "of:"
-            font.pixelSize: mainWindow.textSize
-            anchors.top: row.top
-        }
-        Label {
-            id:total
-            font.pixelSize: mainWindow.textSize
-            text: mainWindow.totalPages
-            anchors.top: row.top
-        }
         Image {
             id: imgBack
+            anchors.bottomMargin: 3
             width: mainWindow.textSize
             height: mainWindow.textSize
             sourceSize.height: mainWindow.textSize
@@ -89,6 +55,7 @@ Rectangle {
         }
         Image {
             id: imgForward
+            anchors.bottomMargin: 3
             width: mainWindow.textSize
             height: mainWindow.textSize
             sourceSize.height: mainWindow.textSize
@@ -104,11 +71,59 @@ Rectangle {
                 }
             }
         }
+        Label {
+            id:info
+            font.pixelSize: mainWindow.textSize
+            text: "At page:"
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 2
+        }
+        Rectangle{
+            color: "lightyellow"
+
+            anchors.top: row.top
+            anchors.topMargin: 2
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 3
+            width: 80
+            height:row.height - 5
+            TextInput{
+                font.pixelSize: mainWindow.textSize
+                anchors.fill: parent
+                text: mainWindow.currentPage
+                validator: IntValidator{}
+                horizontalAlignment: TextInput.AlignRight
+                onEditingFinished: {
+                    mainWindow.pageRequested(text)
+                }
+            }
+        }
+        Label {
+            text: "of:"
+            font.pixelSize: mainWindow.textSize
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 2
+        }
+        Label {
+            id:total
+            font.pixelSize: mainWindow.textSize
+            text: mainWindow.totalPages
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 2
+        }
+
+        Item {
+            // spacer item
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            //Rectangle { anchors.fill: parent; color: "#ffaaaa" } // to visualize the spacer
+        }
         width: parent.width
+    }
     }
     Item {
         id:spacerBeforeSeparator
-        anchors.top: row.bottom
+        anchors.top: coloredRect.bottom
         height:3
     }
     Rectangle{

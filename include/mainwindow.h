@@ -263,6 +263,7 @@ public slots:
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
     void OnDisplayNextPage();
     void OnDisplayPreviousPage();
+    void OnDisplayExactPage(int);
 private slots:
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);
