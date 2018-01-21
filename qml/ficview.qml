@@ -5,8 +5,8 @@ import "components"
 Rectangle {
     id:mainWindow
     property int textSize: 22
-    property string currentPage: "1"
-    property string totalPages: "1"
+    property string currentPage: "0"
+    property string totalPages: "0"
     property color leadingColor:  "#fceaef"
     property bool havePagesBefore: false
     property bool havePagesAfter: false

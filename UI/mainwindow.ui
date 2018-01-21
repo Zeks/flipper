@@ -1131,7 +1131,7 @@
                      <number>1000</number>
                     </property>
                     <property name="value">
-                     <number>1000</number>
+                     <number>5</number>
                     </property>
                    </widget>
                   </item>
@@ -1216,20 +1216,7 @@
                    <string>Together with &quot;Max fics&quot; checkbox, allow random navigation for a fandom if you feel like it.</string>
                   </property>
                   <property name="text">
-                   <string>Randomize</string>
-                  </property>
-                  <property name="checked">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="chkFicLimitActivated">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>MaxFics</string>
+                   <string>Random fics</string>
                   </property>
                   <property name="checked">
                    <bool>false</bool>

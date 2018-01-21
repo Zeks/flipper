@@ -30,7 +30,6 @@ QString WrapTag(QString tag)
 DefaultQueryBuilder::DefaultQueryBuilder()
 {
     query = NewQuery();
-    idQuery = NewQuery();
 }
 
 QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
@@ -38,35 +37,48 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     query = NewQuery();
 
     queryString.clear();
-    if(countOnlyQuery)
+    queryString = "ID, ";
+    queryString+= CreateCustomFields(filter) + " f.* ";
+
+    queryString+=" from vFanfics f where alive = 1 " ;
+    QString where = CreateWhere(filter);
+    qDebug().noquote() << "WHERE IS: " << where;
+    ProcessBindings(filter, query);
+    where+= ProcessRandomization(filter, queryString);
+
+    //where+= CreateLimitQueryPart(filter);
+    bool useRecommendationFiltering = filter.sortMode == StoryFilter::reccount || filter.minRecommendations > 0;
+    if(!where.trimmed().isEmpty() || useRecommendationFiltering)
     {
-        queryString = " count(id) as records, ";
-        queryString+= CreateCustomFields(filter);
-        queryString+= " 1 as junk ";
+        if(useRecommendationFiltering)
+        {
+            QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join fanfics ff  on ff.id = rt.fic_id and rt.list_id = :list_id2 where 1=1 ";
+            if(!filter.showOriginsInLists)
+                temp+=" and is_origin <> 1 ";
+            temp += where + "order by rt.match_count desc" + CreateLimitQueryPart(filter) + ")";
+            where = temp;
+        }
+        else
+            where = " and id in ( select id as fid from fanfics ff where 1=1 " + where + BuildSortMode(filter) + CreateLimitQueryPart(filter) + ")";
+        queryString += where + BuildSortMode(filter);
     }
     else
     {
-        queryString = "ID, ";
-        queryString+= CreateCustomFields(filter) + " f.* ";
+        queryString += where + BuildSortMode(filter);
+        queryString += CreateLimitQueryPart(filter);
     }
-    queryString+=" from vFanfics f where 1 = 1 and alive = 1 " ;
-    QString where = CreateWhere(filter);
-    queryString+= where;
-    ProcessBindings(filter, query);
-    queryString+= ProcessRandomization(filter, queryString);
-    queryString+= BuildSortMode(filter);
-    queryString+= CreateLimitQueryPart(filter);
+
+
 
     query->str = "select " + queryString;
     qDebug().noquote() << query->str;
-    countOnlyQuery = false;
     return query;
 }
 
 QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
 {
     QString queryString;
-    queryString+=ProcessSumFaves(filter);
+    //queryString+=ProcessSumFaves(filter);
     queryString+=ProcessFandoms(filter);
     queryString+=ProcessSumRecs(filter);
     queryString+=ProcessTags(filter);
@@ -92,6 +104,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
     queryString+= ProcessFilteringMode(filter);
+
     return queryString;
 }
 
@@ -119,7 +132,7 @@ QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter)
     return sumOfAuthorFavourites;
 }
 
-QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
+QString DefaultQueryBuilder::ProcessFandoms(StoryFilter filter)
 {
     //return QString();
     QString fandoms = " ( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n";
@@ -132,9 +145,13 @@ QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
 //        " when (select (select max(average_faves_top_3) from fandoms)/(select max(average_faves_top_3) from fandoms fs where fs.fandom in (f.fandom1, f.fandom2) )) > 15 then 2 "
 //        " else 1 end))  as sumrecs, ";
 
-QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter)
+QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter, bool appendComma)
 {
-    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id %1) as sumrecs, \n";
+
+    QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id %1) as sumrecs";
+    if(appendComma)
+        currentRecTagValue+= ",";
+    currentRecTagValue+= " \n";
     if(filter.showOriginsInLists)
         currentRecTagValue=currentRecTagValue.arg("");
     else
@@ -225,16 +242,18 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
     QString queryString;
     if(filter.sortMode == StoryFilter::favrate)
         queryString += " and ( favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
-    if(filter.sortMode == StoryFilter::reccount)
-        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
-    else if(filter.minRecommendations > 0)
-        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
 
     if(filter.sortMode == StoryFilter::favrate)
         queryString+= " and published <> updated "
                       " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
                       " and published < date('now', '-" + QString::number(45) + " days') "
                       " and updated > date('now', '-60 days') ";
+
+//    if(filter.sortMode == StoryFilter::reccount)
+//        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
+//    else if(filter.minRecommendations > 0)
+//        queryString += QString(" AND sumrecs > " + QString::number(filter.minRecommendations));
+
     return queryString;
 }
 
@@ -286,6 +305,7 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
     QString queryString;
     if(filter.fandom.trimmed().isEmpty())
         return queryString;
+    //todo this can be optimized if I pass fandom id directly
     QString add = " and id in (select fic_id from ficfandoms where fandom_id = (select id from fandomindex where name = '%1')) ";
     queryString+=add.arg(filter.fandom);
     return queryString;
@@ -297,13 +317,13 @@ QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
     QString queryString;
     QString part =  "'" + filter.activeTags.join("','") + "'";
     if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
-        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = f.id) ").arg(part);
+        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = ff.id) ").arg(part);
     else
     {
         if(filter.ignoreAlreadyTagged)
             queryString += QString("");
         else
-            queryString += QString(" and not exists  (select fic_id from fictags where fic_id = f.id)");
+            queryString += QString(" and not exists  (select fic_id from fictags where fic_id = fid)");
 
     }
     return queryString;
@@ -346,17 +366,23 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
     if(filter.minFavourites> 0)
         q->bindings[":favourites"] = filter.minFavourites;
     if(filter.listForRecommendations > -1)
+    {
         q->bindings[":list_id"] = filter.listForRecommendations;
-    if(!countOnlyQuery && filter.recordLimit > 0)
+        q->bindings[":list_id2"] = filter.listForRecommendations;
+    }
+    if(filter.minRecommendations > -1)
+        q->bindings[":match_count"] = filter.minRecommendations;
+    if(filter.recordLimit > 0)
         q->bindings[":record_limit"] = filter.recordLimit;
-    if(!countOnlyQuery && filter.recordPage > -1)
+    if(filter.recordPage > -1)
         q->bindings[":record_offset"] = filter.recordPage * filter.recordLimit;
 }
 
-void DefaultQueryBuilder::SetCountOnlyQuery(bool value)
+void DefaultQueryBuilder::InitQuery()
 {
-    countOnlyQuery = value;
+    query = NewQuery();
 }
+
 
 QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)
 {
@@ -369,7 +395,7 @@ QString DefaultQueryBuilder::BuildSortMode(StoryFilter filter)
 QString DefaultQueryBuilder::CreateLimitQueryPart(StoryFilter filter)
 {
     QString result;
-    if(countOnlyQuery || filter.recordLimit <= 0)
+    if(filter.recordLimit <= 0)
         return result;
     result = " COLLATE NOCASE ";
     QString limitOffset = QString(" %1 %2 ");
@@ -405,6 +431,72 @@ QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
     std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
     auto value = distr(eng);
     return currentList[value];
+}
+
+CountQueryBuilder::CountQueryBuilder()
+{
+
+}
+
+QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
+{
+    // todo note : randomized queries don't need size queries as size is known beforehand
+    query = NewQuery();
+    queryString.clear();
+
+    // special cases that need to be optimised in order of necessity
+    // recommendation list sorting can and needs to be inverted for instant results
+    QString wrappignString =  "select count(fic_id) as records from RecommendationListData  where list_id = :list_id and match_count > :match_count and exists (%1)";
+    QString normalString = "select count(id) as records %1 ";
+    queryString = "  from vFanfics ff where alive = 1 " ;
+    QString where;
+    {
+        where+= ProcessWordcount(filter);
+        where+= ProcessGenreIncluson(filter);
+        where+= ProcessWordInclusion(filter);
+        where+= ProcessBias(filter);
+        where+= ProcessWhereSortMode(filter);
+        where+= ProcessActiveRecommendationsPart(filter);
+
+        if(filter.minFavourites > 0)
+            where += " and favourites > :favourites ";
+
+        where+= ProcessStatusFilters(filter);
+        where+= ProcessNormalOrCrossover(filter);
+        where+= ProcessFilteringMode(filter);
+
+    }
+    queryString+= where;
+    if(!queryString.contains("as fid"))
+        queryString.replace("= fid", "= ff.id");
+    ProcessBindings(filter, query);
+
+
+    if(filter.sortMode == StoryFilter::reccount)
+        queryString = wrappignString.arg("select id as fid" + queryString);
+    else
+        queryString = normalString.arg(queryString);
+    queryString+= " COLLATE NOCASE ";
+
+    query->str = queryString;
+    qDebug().noquote() << query->str;
+    return query;
+}
+
+QString CountQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
+{
+    QString queryString;
+    if(filter.sortMode == StoryFilter::favrate)
+        queryString += " and ( favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
+
+    if(filter.sortMode == StoryFilter::favrate)
+        queryString+= " and published <> updated "
+                      " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
+                      " and published < date('now', '-" + QString::number(45) + " days') "
+                      " and updated > date('now', '-60 days') ";
+
+    // this doesnt require sumrecs as it's inverted
+    return queryString;
 }
 
 }

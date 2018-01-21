@@ -87,7 +87,7 @@ bool ExecAndCheck(QSqlQuery& q)
         if(q.lastError().text().contains("record"))
             qDebug() << "Error while performing a query: ";
         qDebug() << "Error while performing a query: ";
-        qDebug() << q.lastQuery();
+        qDebug().noquote() << q.lastQuery();
         qDebug() << "Error was: " <<  q.lastError();
         qDebug() << q.lastError().nativeErrorCode();
         if(q.lastError().text().contains("Parameter"))

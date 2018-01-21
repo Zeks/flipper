@@ -214,6 +214,7 @@ private:
 
     PageQueue pageQueue;
     core::DefaultQueryBuilder queryBuilder;
+    core::CountQueryBuilder countQueryBuilder;
     core::StoryFilter filter;
     bool cancelCurrentTaskPressed = false;
     std::function<void(int)> callProgress;

@@ -634,6 +634,7 @@ void MainWindow::InitInterfaces()
     tagsInterface->db    = dbInterface->GetDatabase();
     genresInterface->db  = dbInterface->GetDatabase();
     queryBuilder.portableDBInterface = dbInterface;
+    countQueryBuilder.portableDBInterface = dbInterface;
     pageTaskInterface->db  = tasksInterface->GetDatabase();
     fandomsInterface->Load();
 }
@@ -807,8 +808,9 @@ void MainWindow::LoadData()
     {
         sizeOfCurrentQuery = GetResultCount();
         QObject* windowObject= qwFics->rootObject();
-        int currentActuaLimit = ui->chkRandomizeSelection->isChecked() && ui->chkFicLimitActivated->isChecked() ? ui->sbMaxRandomFicCount->value() : filter.recordLimit;
-        windowObject->setProperty("totalPages", filter.recordLimit > 0 ? sizeOfCurrentQuery/currentActuaLimit : 1);
+        int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : filter.recordLimit;
+        windowObject->setProperty("totalPages", filter.recordLimit > 0 ? (sizeOfCurrentQuery/currentActuaLimit) + 1 : 1);
+        windowObject->setProperty("currentPage", filter.recordLimit > 0 ? filter.recordPage+1 : 1);
         windowObject->setProperty("havePagesBefore", false);
         windowObject->setProperty("havePagesAfter", filter.recordLimit > 0 && sizeOfCurrentQuery > filter.recordLimit);
 
@@ -817,7 +819,7 @@ void MainWindow::LoadData()
     auto q = BuildQuery();
     q.setForwardOnly(true);
     q.exec();
-    qDebug() << q.lastQuery();
+    qDebug().noquote() << q.lastQuery();
     if(q.lastError().isValid())
     {
         qDebug() << q.lastError();
@@ -861,8 +863,10 @@ int MainWindow::GetResultCount()
 QSqlQuery MainWindow::BuildQuery(bool countOnly)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    queryBuilder.SetCountOnlyQuery(countOnly);
-    currentQuery = queryBuilder.Build(filter);
+    if(countOnly)
+        currentQuery = countQueryBuilder.Build(filter);
+    else
+        currentQuery = queryBuilder.Build(filter);
     QSqlQuery q(db);
     q.prepare(currentQuery->str);
     auto it = currentQuery->bindings.begin();
@@ -925,7 +929,7 @@ void MainWindow::UnsetTag(int id, QString tag)
 QString MainWindow::CreateLimitQueryPart()
 {
     QString result;
-    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxRandomFicCount->value()  : 0;
+    int maxFicCountValue = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value()  : 0;
     if(maxFicCountValue > 0 && maxFicCountValue < 51)
         result+= QString(" LIMIT %1 ").arg(QString::number(maxFicCountValue));
     return result;
@@ -1847,7 +1851,7 @@ void MainWindow::OnCheckboxFilter(int)
 void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
-    auto ficLimitActive =  ui->chkFicLimitActivated->isChecked();
+    auto ficLimitActive =  ui->chkRandomizeSelection->isChecked();
     int maxFicCountValue = ficLimitActive ? ui->sbMaxRandomFicCount->value()  : 0;
     if(checked && (maxFicCountValue < 1 || maxFicCountValue >50))
         ui->sbMaxRandomFicCount->setValue(settings.value("Settings/defaultRandomFicCount", 6).toInt());
@@ -2400,7 +2404,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
-    filter.maxFics = valueIfChecked(ui->chkFicLimitActivated, ui->sbMaxRandomFicCount->value());
+    filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
     filter.minWords= ui->cbMinWordCount->currentText().toInt();
@@ -2604,6 +2608,6 @@ void MainWindow::OnCheckUnfinishedTasks()
 
 void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
 {
-    ui->chkFicLimitActivated->setEnabled(checked);
+    ui->chkRandomizeSelection->setEnabled(checked);
     ui->sbMaxRandomFicCount->setEnabled(checked);
 }

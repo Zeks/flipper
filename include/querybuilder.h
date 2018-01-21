@@ -36,12 +36,14 @@ class DefaultQueryBuilder : public IQueryBuilder
 {
 public:
     DefaultQueryBuilder();
-    QSharedPointer<Query> Build(StoryFilter);
+    virtual ~DefaultQueryBuilder(){}
+    virtual QSharedPointer<Query> Build(StoryFilter);
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
-    void ProcessBindings(StoryFilter, QSharedPointer<Query>);
-    void SetCountOnlyQuery(bool value);
+    virtual void ProcessBindings(StoryFilter, QSharedPointer<Query>);
     QScopedPointer<IRNGGenerator> rng;
-private:
+
+protected:
+    virtual void InitQuery();
     QString CreateCustomFields(StoryFilter);
     QString CreateWhere(StoryFilter,
                         bool usePageLimiter = false);
@@ -49,14 +51,14 @@ private:
     QString ProcessBias(StoryFilter);
     QString ProcessSumFaves(StoryFilter);
     QString ProcessFandoms(StoryFilter);
-    QString ProcessSumRecs(StoryFilter);
+    QString ProcessSumRecs(StoryFilter, bool appendComma = true);
     QString ProcessTags(StoryFilter);
     QString ProcessUrl(StoryFilter);
     QString ProcessWordcount(StoryFilter);
     QString ProcessGenreIncluson(StoryFilter);
     QString ProcessWordInclusion(StoryFilter);
     QString ProcessActiveRecommendationsPart(StoryFilter);
-    QString ProcessWhereSortMode(StoryFilter);
+    virtual QString ProcessWhereSortMode(StoryFilter);
 
     QString ProcessDiffField(StoryFilter);
     QString ProcessStatusFilters(StoryFilter);
@@ -76,10 +78,28 @@ private:
     QString diffField;
     QString activeTags;
     QString wherePart;
-    bool countOnlyQuery = false;
+    //bool countOnlyQuery = false;
 
     QSharedPointer<Query> query;
-    QSharedPointer<Query> idQuery;
+    QSqlDatabase db;
+};
+
+class CountQueryBuilder : public DefaultQueryBuilder
+{
+public:
+    CountQueryBuilder();
+    QSharedPointer<Query> Build(StoryFilter);
+private:
+    QString CreateWhere(StoryFilter,
+                        bool usePageLimiter = false);
+
+    virtual QString ProcessWhereSortMode(StoryFilter) override;
+
+    QString queryString;
+    QString diffField;
+    QString wherePart;
+
+    QSharedPointer<Query> query;
     QSqlDatabase db;
 };
 }
