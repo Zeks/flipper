@@ -262,6 +262,8 @@ public:
     }
     QString GetUrl(){return url;}
     QString GetSource(){return source;}
+    QString GetType(){return type;}
+    void SetType(QString value) {type = value;}
     private:
     QString url;
     QString source;

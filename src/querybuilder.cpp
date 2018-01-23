@@ -52,7 +52,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     {
         if(useRecommendationFiltering)
         {
-            QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join fanfics ff  on ff.id = rt.fic_id  where 1=1 and rt.list_id = :list_id2 ";
+            QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join fanfics ff  on ff.id = rt.fic_id  where rt.list_id = :list_id2 ";
             if(!filter.showOriginsInLists)
                 temp+=" and is_origin <> 1 ";
             temp += where + "order by rt.match_count desc" + CreateLimitQueryPart(filter) + ")";

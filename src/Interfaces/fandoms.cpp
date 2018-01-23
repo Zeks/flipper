@@ -53,7 +53,10 @@ void Fandoms::ClearIndex()
 
 bool Fandoms::EnsureFandom(QString name)
 {
+
     name = core::Fandom::ConvertName(name.trimmed());
+    if(name.contains("'"))
+        name = core::Fandom::ConvertName(name.trimmed());
     if(nameIndex.contains(name) || LoadFandom(name))
         return true;
     return false;
@@ -121,6 +124,16 @@ bool Fandoms::CreateFandom(QString fandom)
     fandom = core::Fandom::ConvertName(fandom);
     fandomPtr->SetName(fandom);
     return CreateFandom(fandomPtr);
+}
+
+bool Fandoms::AddFandomLink(QString fandom, core::Url url)
+{
+    fandom = core::Fandom::ConvertName(fandom);
+    auto id = GetIDForName(fandom);
+    if(id == -1)
+        return false;
+    auto result = database::puresql::AddUrlToFandom(id, url, db);
+    return result.success;
 }
 
 core::FandomPtr Fandoms::GetFandom(QString name)

@@ -349,6 +349,8 @@ bool CreateFandomInDatabase(core::FandomPtr fandom, QSqlDatabase db)
     if(!ExecAndCheck(q))
         return false;
 
+    qDebug() << "new fandom: " << fandom->GetName();
+
     fandom->id = newFandomId;
     WriteFandomUrls(fandom, db);
     transaction.finalize();
@@ -1425,30 +1427,33 @@ QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db)
     q.prepare(qs);
     if(!ExecAndCheck(q))
         return result;
+    q.next();
 
-    result.reserve(q.value(0).toInt());
+    int fandomsSize = q.value(0).toInt();
+    result.reserve(fandomsSize);
 
-    qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as source,"
-                 " urls.custom as section"
-                 " from fandomindex ind, fandomurls urls"
-                 " where ind.id = urls.global_id order by name");
+    qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
+                 " urls.custom as section, ind.updated as updated "
+                 " from fandomindex ind left join fandomurls urls"
+                 " on ind.id = urls.global_id order by id asc");
     q.prepare(qs);
 
     if(!ExecAndCheck(q))
         return result;
     core::FandomPtr currentFandom;
-    QString lastName;
+    int lastId = -1;
     while(q.next())
     {
-        auto currentName = q.value("name").toString();
-        if(lastName != lastName)
+        auto currentId= q.value("id").toInt();
+        if(currentId != lastId)
         {
             currentFandom = FandomfromQueryNew(q);
-            GetFandomStats(currentFandom, db);
+            //GetFandomStats(currentFandom, db);
             result.push_back(currentFandom);
         }
         else
-            currentFandom = FandomfromQueryNew(q);
+            currentFandom = FandomfromQueryNew(q, currentFandom);
+        lastId = currentId;
     }
 
     return result;
@@ -1459,12 +1464,14 @@ core::FandomPtr GetFandom(QString name, QSqlDatabase db)
     core::FandomPtr result;
 
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
-                 " urls.custom as section, ind.updated as updated from fandomindex ind, fandomurls urls where ind.id = urls.global_id"
-                 " and name = :fandom ");
+                 " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
+                 " where name = :fandom ");
 
     QSqlQuery q(db);
     q.prepare(qs);
-    q.bindValue(":fandom", name);
+    QString tempName = name;
+    //q.bindValue(":fandom", tempName.replace("'", "''"));
+    q.bindValue(":fandom", tempName);
     if(!ExecAndCheck(q))
         return result;
 
@@ -1514,6 +1521,33 @@ bool CleanupFandom(int fandom_id, QSqlDatabase db)
     return true;
 
 }
+
+DiagnosticSQLResult<bool> DeleteFandom(int fandom_id, QSqlDatabase db)
+{
+
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString qs = QString("delete from fandomindex where id = :fandom_id");
+
+    Transaction transaction(db);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fandom_id", fandom_id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    qs = QString("delete from fandomurls where global_id = :fandom_id");
+    q.prepare(qs);
+    q.bindValue(":fandom_id", fandom_id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    transaction.finalize();
+    result.success = true;
+    return result;
+}
+
 
 
 QStringList GetTrackedFandomList(QSqlDatabase db)
@@ -1578,6 +1612,43 @@ QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db)
     }
     return result;
 }
+
+DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+    if(fandomID == -1)
+        return result;
+
+    QString qs = QString(" insert into fandomurls (global_id, url, website, custom) "
+                         " values (:global_id, :url, :website, :custom) ");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":global_id",fandomID);
+    q.bindValue(":url",url.GetUrl());
+    q.bindValue(":website",url.GetSource());
+    q.bindValue(":custom",url.GetType());
+    q.exec();
+
+    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
+    {
+        qDebug() << q.lastError();
+        qDebug() << q.lastQuery();
+        result.oracleError = q.lastError().text();
+        return result;
+    }
+    bool newFandom = !q.lastError().isValid();
+    if(url.GetType().isEmpty())
+        qDebug() << "empty type";
+    if(newFandom)
+        qDebug() << "new fandom url: " << url.GetUrl();
+
+    result.success = true;
+    return result;
+
+}
+
+
 QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
 {
     QList<int> result;
@@ -2318,45 +2389,44 @@ DiagnosticSQLResult<bool> FanficIdRecord::CreateRecord(QSqlDatabase db) const
 
 
 
+bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
+{
+    QString qs = QString("select * from fandoms where id = :old_id");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":old_id", oldId);
+    if(!ExecAndCheck(q))
+        return false;
+    q.next();
+    QStringList urls;
+    urls << q.value("normal_url").toString().trimmed();
+    urls << q.value("crossover_url").toString().trimmed();
+    urls.removeAll("");
+    urls.removeAll("none");
+    QString custom = q.value("section").toString();
+    for(auto url : urls)
+    {
+        if(url.trimmed().isEmpty())
+            continue;
+
+        qs = QString("insert into fandomurls (global_id, url, website, custom) values(:new_id, :url, 'ffn', :custom)");
+        q.prepare(qs);
+        q.bindValue(":new_id", newId);
+        q.bindValue(":url", url);
+        q.bindValue(":custom", custom);
+        if(!ExecAndCheck(q))
+            return false;
+    }
+    return true;
+}
+
 
 }
 
 }
 
 
-//bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
-//{
-//    QString qs = QString("select * from fandoms where id = :old_id");
-
-//    QSqlQuery q(db);
-//    q.prepare(qs);
-//    q.bindValue(":old_id", oldId);
-//    if(!ExecAndCheck(q))
-//        return false;
-//    q.next();
-//    QStringList urls;
-//    urls << q.value("normal_url").toString().trimmed();
-//    urls << q.value("crossover_url").toString().trimmed();
-//    urls.removeAll("");
-//    urls.removeAll("none");
-////    if(urls.size())
-////        qDebug() << urls;
-//    QString custom = q.value("section").toString();
-//    for(auto url : urls)
-//    {
-//        if(url.trimmed().isEmpty())
-//            continue;
-
-//        qs = QString("insert into fandomurls (global_id, url, website, custom) values(:new_id, :url, 'ffn', :custom)");
-//        q.prepare(qs);
-//        q.bindValue(":new_id", newId);
-//        q.bindValue(":url", url);
-//        q.bindValue(":custom", custom);
-//        if(!ExecAndCheck(q))
-//            return false;
-//    }
-//    return true;
-//}
 
 //bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db)
 //{

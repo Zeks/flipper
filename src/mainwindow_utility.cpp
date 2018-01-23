@@ -22,7 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fandoms.h"
 #include "Interfaces/fanfics.h"
 #include "Interfaces/db_interface.h"
+#include "pagetask.h"
 #include "Interfaces/tags.h"
+#include "parsers/ffn/fandomindexparser.h"
+#include "transaction.h"
 
 #include <QSqlQuery>
 #include <QSqlDatabase>
@@ -100,7 +103,68 @@ void MainWindow::WipeSelectedFandom(bool)
     }
 }
 
+void UpdateCategory(QString cat,
+                    FFNFandomIndexParserBase* parser,
+                    QSharedPointer<interfaces::Fandoms> fandomInterface)
+{
+    An<PageManager> pager;
+    QString link = "https://www.fanfiction.net" + cat;
+    WebPage result = pager->GetPage(link, ECacheMode::dont_use_cache);
+    database::Transaction transaction(fandomInterface->db);
+    if(result.isValid)
+    {
+        parser->SetPage(result);
+        parser->Process();
+        if(!parser->HadErrors())
+        {
+            for(auto fandom : parser->results)
+            {
+                fandom->section = cat;
+                bool exists = fandomInterface->EnsureFandom(fandom->GetName());
+                if(!exists)
+                    fandomInterface->CreateFandom(fandom);
+                for(auto url : fandom->GetUrls())
+                {
+                    url.SetType(cat);
+                    fandomInterface->AddFandomLink(fandom->GetName(), url);
+                }
+            }
+        }
+        else
+        {
+            QString pageMissingPrototype = "Page format unexpected: %1\nNew fandoms from it will be unavailable until the next succeesful reload";
+            pageMissingPrototype=pageMissingPrototype.arg(link);
+            QMessageBox::information(nullptr, "Attention!", pageMissingPrototype);
+            transaction.cancel();
+            return;
+        }
 
+    }
+    else
+    {
+        QString pageMissingPrototype = "Could not load page: %1\nNew fandoms from it will be unavailable until the next succeesful reload";
+        pageMissingPrototype=pageMissingPrototype.arg(link);
+        QMessageBox::information(nullptr, "Attention!", pageMissingPrototype);
+        transaction.cancel();
+        return;
+    }
+    transaction.finalize();
+
+}
+
+void MainWindow::UpdateFandomList(UpdateFandomTask task)
+{
+    if(task.ffn)
+    {
+        FFNFandomParser fandomParser;
+        FFNCrossoverFandomParser crossoverParser;
+        QStringList categoryList = {"anime", "book", "cartoon", "comic", "game", "misc", "movie", "play", "tv"};
+//        for(auto cat : categoryList)
+//            UpdateCategory("/" + cat, &fandomParser, fandomsInterface);
+        for(auto cat : categoryList)
+            UpdateCategory("/crossovers/" + cat + "/", &crossoverParser, fandomsInterface);
+    }
+}
 
 //void MainWindow::UpdateFandomList(std::function<QString(core::Fandom)> linkGetter)
 //{

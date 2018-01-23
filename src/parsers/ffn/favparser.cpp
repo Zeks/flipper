@@ -125,7 +125,10 @@ QString FavouriteStoryParser::ExtractRecommenderNameFromUrl(QString url)
 void FavouriteStoryParser::GetFandomFromTaggedSection(core::Section & section, QString text)
 {
     thread_local QRegExp rxFandom("(.*)(?=\\s-\\sRated:)");
-    GetTaggedSection(text, rxFandom,    [&section](QString val){ section.result->fandom = val;});
+    GetTaggedSection(text, rxFandom,    [&section](QString val){
+        val.replace("\\'", "'");
+        section.result->fandom = val;
+    });
 }
 
 void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QString text)

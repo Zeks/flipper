@@ -110,12 +110,12 @@ SplitJobs SplitJob(QString data)
     int threadCount = QThread::idealThreadCount();
     QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
-//    int captured = 0;
-//    do{
-//        index = rxStart.indexIn(data, index+1);
-//        if(index != -1)
-//            captured++;
-//    }while(index != -1);
+    //    int captured = 0;
+    //    do{
+    //        index = rxStart.indexIn(data, index+1);
+    //        if(index != -1)
+    //            captured++;
+    //    }while(index != -1);
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
@@ -642,7 +642,6 @@ void MainWindow::InitInterfaces()
 void MainWindow::InitConnections()
 {
     connect(ui->chkCustomFilter, &QCheckBox::clicked, this, &MainWindow::OnCustomFilterClicked);
-    connect(ui->chkActivateReloadSectionData, &QCheckBox::clicked, this, &MainWindow::OnSectionReloadActivated);
     connect(ui->chkShowDirectRecs, &QCheckBox::clicked, this, &MainWindow::OnReloadRecLists);
 
 }
@@ -1104,13 +1103,13 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
             auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
             auto author = authorsInterface->GetByWebID("ffn", webId);
             //if author is not yet in the database, process his favourites and load him in
-//            if(author)
-//            {
-//                qDebug() << author->GetWebID("ffn");
-//                qDebug() << author->name;
-//            }
+            //            if(author)
+            //            {
+            //                qDebug() << author->GetWebID("ffn");
+            //                qDebug() << author->name;
+            //            }
             QCoreApplication::processEvents();
-//            if(!author)
+            //            if(!author)
             {
                 qDebug() << "processing page:" << webPage.pageIndex << " " << webPage.url;
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
@@ -1188,10 +1187,10 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
         pageTaskInterface->WriteSubTaskIntoDB(subtask);
         fandomsInterface->RecalculateFandomStats(fandoms.values());
         fanficsInterface->ClearProcessedHash();
-//        auto mainElapsed = std::chrono::high_resolution_clock::now() - startSubtask;
-//        QString info  = "pre-commit finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(mainElapsed).count()) + "<br>";
-//        if(callProgressText)
-//            callProgressText(info);
+        //        auto mainElapsed = std::chrono::high_resolution_clock::now() - startSubtask;
+        //        QString info  = "pre-commit finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(mainElapsed).count()) + "<br>";
+        //        if(callProgressText)
+        //            callProgressText(info);
         transaction.finalize();
         pcTransaction.finalize();
         auto elapsed = std::chrono::high_resolution_clock::now() - startSubtask;
@@ -1524,10 +1523,6 @@ void MainWindow::ReadSettings()
     ui->pbPauseTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());
     ui->pbContinueTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());
     ui->pbLoadTrackedFandoms->setVisible(settings.value("Settings/showTracking", false).toBool());
-    //pbLoadTrackedFandoms
-    //chkActivateReloadSectionData
-    ui->pbInit->setVisible(settings.value("Settings/showSectionReload", false).toBool());
-    ui->chkActivateReloadSectionData->setVisible(settings.value("Settings/showSectionReload", false).toBool());
 
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
@@ -1814,11 +1809,6 @@ void MainWindow::OnCustomFilterClicked()
         ui->chkCustomFilter->setStyleSheet("");
     }
     //on_pbLoadDatabase_clicked();
-}
-
-void MainWindow::OnSectionReloadActivated()
-{
-    ui->pbInit->setEnabled(ui->chkActivateReloadSectionData->isChecked());
 }
 
 
@@ -2615,4 +2605,26 @@ void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
 {
     ui->chkRandomizeSelection->setEnabled(checked);
     ui->sbMaxRandomFicCount->setEnabled(checked);
+}
+
+void MainWindow::on_pbReinitFandoms_clicked()
+{
+    QString diagnostics;
+    diagnostics+= "This operation will now reload fandom index pages.\n";
+    diagnostics+= "It is only necessary if you need to add a new fandom.\n";
+    diagnostics+= "Do you want to continue?\n";
+
+    QMessageBox m;
+    m.setIcon(QMessageBox::Warning);
+    m.setText(diagnostics);
+    auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
+    auto noButton =  m.addButton("Cancel", QMessageBox::AcceptRole);
+    Q_UNUSED(noButton);
+    m.exec();
+    if(m.clickedButton() != yesButton)
+        return;
+
+    UpdateFandomTask task;
+    task.ffn = true;
+    UpdateFandomList(task);
 }

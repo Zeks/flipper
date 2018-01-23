@@ -118,7 +118,6 @@ void FFNParserBase::GetCrossoverFandomList(core::Section & section,  QString tex
     thread_local QRegExp rxStart("Crossover\\s-\\s");
     thread_local QRegExp rxEnd("\\s-\\sRated:");
 
-
     int indexStart = rxStart.indexIn(text);
     if(indexStart != -1 )
     {
@@ -129,6 +128,7 @@ void FFNParserBase::GetCrossoverFandomList(core::Section & section,  QString tex
     int indexEnd = rxEnd.indexIn(text, indexStart + 1);
 
     QString tmp = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed();
+    tmp.replace("\\'", "'");
     section.result->fandom = tmp + QString(" CROSSOVER");
     section.result->fandoms = tmp.split(" & ", QString::SkipEmptyParts);
 }

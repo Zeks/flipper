@@ -20,6 +20,14 @@ typedef QList<PageTaskActionPtr> PageTaskActions;
 // used to uniquely identify actions performed on page tasks and bind info to them
 
 
+struct UpdateFandomTask
+{
+    bool ffn = false;
+    bool ao3 = false;
+    bool sb = false;
+    bool sv = false;
+    bool qq = false;
+};
 
 class PageTaskAction{
 public:

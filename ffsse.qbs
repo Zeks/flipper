@@ -58,6 +58,8 @@ files: [
         "include/parsers/ffn/favparser.h",
         "include/parsers/ffn/ffnparserbase.h",
         "include/parsers/ffn/ficparser.h",
+        "include/parsers/ffn/fandomindexparser.h",
+        "src/parsers/ffn/fandomindexparser.cpp",
         "include/mainwindow.h",
         "include/pagegetter.h",
         "include/parse.h",
