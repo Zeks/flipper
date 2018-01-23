@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFile>
 #include <QDebug>
 #include <QTextStream>
-#include <quazip/quazip.h>
-#include <quazip/JlCompress.h>
+#include <third_party/quazip/quazip.h>
+#include <third_party/quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
 #include "include/transaction.h"
 #include "pure_sql.h"

@@ -3,7 +3,7 @@
 #include <QSqlDatabase>
 #include "include/core/section.h"
 #include "include/queryinterfaces.h"
-#include "sqlite/sqlite3.h"
+#include "third_party/sqlite/sqlite3.h"
 
 
 namespace database{

@@ -298,8 +298,8 @@ void MainWindow::Init()
 
     connect(tagWidgetDynamic, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
     connect(ui->pbCopyFavUrls, &QPushButton::clicked, this, &MainWindow::OnCopyFavUrls);
-    connect(ui->pbNextPage, &QPushButton::clicked, this, &MainWindow::OnDisplayNextPage);
-    connect(ui->pbPreviousPage, &QPushButton::clicked, this, &MainWindow::OnDisplayPreviousPage);
+//    connect(ui->pbNextPage, &QPushButton::clicked, this, &MainWindow::OnDisplayNextPage);
+//    connect(ui->pbPreviousPage, &QPushButton::clicked, this, &MainWindow::OnDisplayPreviousPage);
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
 

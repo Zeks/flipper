@@ -30,7 +30,7 @@ cpp.includePaths: [
                 sourceDirectory,
                 sourceDirectory + "/include",
                 sourceDirectory + "/libs",
-                sourceDirectory + "/zlib",
+                sourceDirectory + "/third_party/zlib",
                 sourceDirectory + "/libs/Logger/include",
 
 
@@ -74,8 +74,8 @@ files: [
         "include/url_utils.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
-        "sqlite/sqlite3.c",
-        "sqlite/sqlite3.h",
+        "third_party/sqlite/sqlite3.c",
+        "third_party/sqlite/sqlite3.h",
         "src/Interfaces/authors.cpp",
         "src/Interfaces/base.cpp",
         "src/Interfaces/db_interface.cpp",

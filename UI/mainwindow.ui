@@ -870,11 +870,17 @@
                   <number>0</number>
                  </property>
                  <item row="0" column="5">
-                  <widget class="QPushButton" name="pbNextPage">
-                   <property name="text">
-                    <string>Next Page</string>
+                  <spacer name="horizontalSpacer_6">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
                    </property>
-                  </widget>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>883</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
                  </item>
                  <item row="0" column="1">
                   <widget class="QPushButton" name="pbLoadTrackedFandoms">
@@ -916,26 +922,6 @@
                   <widget class="QPushButton" name="pbContinueTask">
                    <property name="text">
                     <string>Continue Task</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="7">
-                  <spacer name="horizontalSpacer_6">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>883</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item row="0" column="4">
-                  <widget class="QPushButton" name="pbPreviousPage">
-                   <property name="text">
-                    <string>Previous Page</string>
                    </property>
                   </widget>
                  </item>

@@ -246,9 +246,9 @@ void FicParser::GetFandom(core::Section & section, int &, QString text)
     auto full = GetDoubleNarrow(text,"id=pre_story_links", "</a>\\n", true,
                                 "",  "/\">", true,
                                 3);
-    full = full.replace(" Crossover", "");
+    full.replace(" Crossover", "");
+    full.replace("\\'", "'");
     QStringList split = full.split(" + ", QString::SkipEmptyParts);
-
     section.result->fandom = full;
     section.result->fandoms = split;
     qDebug() << section.result->fandoms;
