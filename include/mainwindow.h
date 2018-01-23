@@ -144,7 +144,7 @@ private:
     QSqlQuery NewPageQuery(int pageNumber);
 
 
-    void UpdateFandomList(std::function<QString(core::Fandom)> linkGetter);
+    void UpdateFandomList(UpdateFandomTask);
     void InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names);
     void PopulateComboboxes();
 
@@ -214,6 +214,7 @@ private:
 
     PageQueue pageQueue;
     core::DefaultQueryBuilder queryBuilder;
+    core::CountQueryBuilder countQueryBuilder;
     core::StoryFilter filter;
     bool cancelCurrentTaskPressed = false;
     std::function<void(int)> callProgress;
@@ -263,6 +264,7 @@ public slots:
     void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
     void OnDisplayNextPage();
     void OnDisplayPreviousPage();
+    void OnDisplayExactPage(int);
 private slots:
     void OnShowContextMenu(QPoint);
     void OnSectionChanged(QString);
@@ -275,7 +277,6 @@ private slots:
 
     void OnTagToggled(int, QString, bool);
     void OnCustomFilterClicked();
-    void OnSectionReloadActivated();
 
     void on_chkRandomizeSelection_clicked(bool checked);
     void on_cbCustomFilters_currentTextChanged(const QString &arg1);
@@ -321,6 +322,8 @@ private slots:
 
 
     void on_chkRandomizeSelection_toggled(bool checked);
+
+    void on_pbReinitFandoms_clicked();
 
 signals:
     void pageTask(QString, QString, QDate, ECacheMode, bool);

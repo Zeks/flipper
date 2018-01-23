@@ -110,12 +110,12 @@ SplitJobs SplitJob(QString data)
     int threadCount = QThread::idealThreadCount();
     QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
-//    int captured = 0;
-//    do{
-//        index = rxStart.indexIn(data, index+1);
-//        if(index != -1)
-//            captured++;
-//    }while(index != -1);
+    //    int captured = 0;
+    //    do{
+    //        index = rxStart.indexIn(data, index+1);
+    //        if(index != -1)
+    //            captured++;
+    //    }while(index != -1);
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
@@ -525,6 +525,7 @@ void MainWindow::SetupFanficTable()
     qwFics->setSource(source);
 
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+
     //connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
     //connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
@@ -532,6 +533,10 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
+    QObject* windowObject= qwFics->rootObject();
+    connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
+    connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
+    connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
     ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
 bool MainWindow::event(QEvent * e)
@@ -553,24 +558,42 @@ void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
 
 void MainWindow::OnDisplayNextPage()
 {
-    if(sizeOfCurrentQuery <= filter.recordLimit * (pageOfCurrentQuery+1))
-    {
-        ui->pbNextPage->setEnabled(false);
-        return;
-    }
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("havePagesBefore", true);
     filter.recordPage = ++pageOfCurrentQuery;
+    if(sizeOfCurrentQuery <= filter.recordLimit * (pageOfCurrentQuery))
+        windowObject->setProperty("havePagesAfter", false);
+
+    windowObject->setProperty("currentPage", pageOfCurrentQuery+1);
     LoadData();
     PlaceResults();
 }
 
 void MainWindow::OnDisplayPreviousPage()
 {
-    if((pageOfCurrentQuery - 1) < 0)
-    {
-        ui->pbPreviousPage->setEnabled(false);
-        return;
-    }
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("havePagesAfter", true);
     filter.recordPage = --pageOfCurrentQuery;
+
+    if(pageOfCurrentQuery == 0)
+        windowObject->setProperty("havePagesBefore", false);
+    windowObject->setProperty("currentPage", pageOfCurrentQuery+1);
+    LoadData();
+    PlaceResults();
+}
+
+void MainWindow::OnDisplayExactPage(int page)
+{
+    if(page < 0 || page*filter.recordLimit > sizeOfCurrentQuery)
+        return;
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("currentPage", page);
+    windowObject->setProperty("havePagesAfter", sizeOfCurrentQuery > filter.recordLimit * page);
+    page--;
+    windowObject->setProperty("havePagesBefore", page > 0);
+
+
+    filter.recordPage = page;
     LoadData();
     PlaceResults();
 }
@@ -611,6 +634,7 @@ void MainWindow::InitInterfaces()
     tagsInterface->db    = dbInterface->GetDatabase();
     genresInterface->db  = dbInterface->GetDatabase();
     queryBuilder.portableDBInterface = dbInterface;
+    countQueryBuilder.portableDBInterface = dbInterface;
     pageTaskInterface->db  = tasksInterface->GetDatabase();
     fandomsInterface->Load();
 }
@@ -618,7 +642,6 @@ void MainWindow::InitInterfaces()
 void MainWindow::InitConnections()
 {
     connect(ui->chkCustomFilter, &QCheckBox::clicked, this, &MainWindow::OnCustomFilterClicked);
-    connect(ui->chkActivateReloadSectionData, &QCheckBox::clicked, this, &MainWindow::OnSectionReloadActivated);
     connect(ui->chkShowDirectRecs, &QCheckBox::clicked, this, &MainWindow::OnReloadRecLists);
 
 }
@@ -781,12 +804,21 @@ void MainWindow::LoadData()
         return;
     }
     if(filter.recordPage == 0)
+    {
         sizeOfCurrentQuery = GetResultCount();
+        QObject* windowObject= qwFics->rootObject();
+        int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : filter.recordLimit;
+        windowObject->setProperty("totalPages", filter.recordLimit > 0 ? (sizeOfCurrentQuery/currentActuaLimit) + 1 : 1);
+        windowObject->setProperty("currentPage", filter.recordLimit > 0 ? filter.recordPage+1 : 1);
+        windowObject->setProperty("havePagesBefore", false);
+        windowObject->setProperty("havePagesAfter", filter.recordLimit > 0 && sizeOfCurrentQuery > filter.recordLimit);
+
+    }
 
     auto q = BuildQuery();
     q.setForwardOnly(true);
     q.exec();
-    qDebug() << q.lastQuery();
+    qDebug().noquote() << q.lastQuery();
     if(q.lastError().isValid())
     {
         qDebug() << q.lastError();
@@ -818,6 +850,9 @@ void MainWindow::LoadData()
 
 int MainWindow::GetResultCount()
 {
+    if(ui->chkRandomizeSelection->isChecked())
+        return ui->sbMaxRandomFicCount->value()-1;
+
     auto q = BuildQuery(true);
     q.setForwardOnly(true);
     if(!database::puresql::ExecAndCheck(q))
@@ -830,8 +865,10 @@ int MainWindow::GetResultCount()
 QSqlQuery MainWindow::BuildQuery(bool countOnly)
 {
     QSqlDatabase db = QSqlDatabase::database();
-    queryBuilder.SetCountOnlyQuery(countOnly);
-    currentQuery = queryBuilder.Build(filter);
+    if(countOnly)
+        currentQuery = countQueryBuilder.Build(filter);
+    else
+        currentQuery = queryBuilder.Build(filter);
     QSqlQuery q(db);
     q.prepare(currentQuery->str);
     auto it = currentQuery->bindings.begin();
@@ -894,7 +931,7 @@ void MainWindow::UnsetTag(int id, QString tag)
 QString MainWindow::CreateLimitQueryPart()
 {
     QString result;
-    int maxFicCountValue = ui->chkFicLimitActivated->isChecked() ? ui->sbMaxRandomFicCount->value()  : 0;
+    int maxFicCountValue = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value()  : 0;
     if(maxFicCountValue > 0 && maxFicCountValue < 51)
         result+= QString(" LIMIT %1 ").arg(QString::number(maxFicCountValue));
     return result;
@@ -1066,13 +1103,13 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
             auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
             auto author = authorsInterface->GetByWebID("ffn", webId);
             //if author is not yet in the database, process his favourites and load him in
-//            if(author)
-//            {
-//                qDebug() << author->GetWebID("ffn");
-//                qDebug() << author->name;
-//            }
+            //            if(author)
+            //            {
+            //                qDebug() << author->GetWebID("ffn");
+            //                qDebug() << author->name;
+            //            }
             QCoreApplication::processEvents();
-//            if(!author)
+            //            if(!author)
             {
                 qDebug() << "processing page:" << webPage.pageIndex << " " << webPage.url;
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
@@ -1150,10 +1187,10 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
         pageTaskInterface->WriteSubTaskIntoDB(subtask);
         fandomsInterface->RecalculateFandomStats(fandoms.values());
         fanficsInterface->ClearProcessedHash();
-//        auto mainElapsed = std::chrono::high_resolution_clock::now() - startSubtask;
-//        QString info  = "pre-commit finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(mainElapsed).count()) + "<br>";
-//        if(callProgressText)
-//            callProgressText(info);
+        //        auto mainElapsed = std::chrono::high_resolution_clock::now() - startSubtask;
+        //        QString info  = "pre-commit finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(mainElapsed).count()) + "<br>";
+        //        if(callProgressText)
+        //            callProgressText(info);
         transaction.finalize();
         pcTransaction.finalize();
         auto elapsed = std::chrono::high_resolution_clock::now() - startSubtask;
@@ -1486,10 +1523,6 @@ void MainWindow::ReadSettings()
     ui->pbPauseTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());
     ui->pbContinueTask->setVisible(settings.value("Settings/showTaskButtons", false).toBool());
     ui->pbLoadTrackedFandoms->setVisible(settings.value("Settings/showTracking", false).toBool());
-    //pbLoadTrackedFandoms
-    //chkActivateReloadSectionData
-    ui->pbInit->setVisible(settings.value("Settings/showSectionReload", false).toBool());
-    ui->chkActivateReloadSectionData->setVisible(settings.value("Settings/showSectionReload", false).toBool());
 
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
@@ -1778,11 +1811,6 @@ void MainWindow::OnCustomFilterClicked()
     //on_pbLoadDatabase_clicked();
 }
 
-void MainWindow::OnSectionReloadActivated()
-{
-    ui->pbInit->setEnabled(ui->chkActivateReloadSectionData->isChecked());
-}
-
 
 void MainWindow::OnShowContextMenu(QPoint p)
 {
@@ -1796,9 +1824,11 @@ void MainWindow::OnSectionChanged(QString)
 
 void MainWindow::on_pbLoadDatabase_clicked()
 {
-    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    LoadData();
 
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+    filter.recordPage = 0;
+    pageOfCurrentQuery = 0;
+    LoadData();
     PlaceResults();
 }
 
@@ -1816,7 +1846,7 @@ void MainWindow::OnCheckboxFilter(int)
 void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
-    auto ficLimitActive =  ui->chkFicLimitActivated->isChecked();
+    auto ficLimitActive =  ui->chkRandomizeSelection->isChecked();
     int maxFicCountValue = ficLimitActive ? ui->sbMaxRandomFicCount->value()  : 0;
     if(checked && (maxFicCountValue < 1 || maxFicCountValue >50))
         ui->sbMaxRandomFicCount->setValue(settings.value("Settings/defaultRandomFicCount", 6).toInt());
@@ -2369,7 +2399,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
-    filter.maxFics = valueIfChecked(ui->chkFicLimitActivated, ui->sbMaxRandomFicCount->value());
+    filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
     filter.minWords= ui->cbMinWordCount->currentText().toInt();
@@ -2573,6 +2603,28 @@ void MainWindow::OnCheckUnfinishedTasks()
 
 void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
 {
-    ui->chkFicLimitActivated->setEnabled(checked);
+    ui->chkRandomizeSelection->setEnabled(checked);
     ui->sbMaxRandomFicCount->setEnabled(checked);
+}
+
+void MainWindow::on_pbReinitFandoms_clicked()
+{
+    QString diagnostics;
+    diagnostics+= "This operation will now reload fandom index pages.\n";
+    diagnostics+= "It is only necessary if you need to add a new fandom.\n";
+    diagnostics+= "Do you want to continue?\n";
+
+    QMessageBox m;
+    m.setIcon(QMessageBox::Warning);
+    m.setText(diagnostics);
+    auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
+    auto noButton =  m.addButton("Cancel", QMessageBox::AcceptRole);
+    Q_UNUSED(noButton);
+    m.exec();
+    if(m.clickedButton() != yesButton)
+        return;
+
+    UpdateFandomTask task;
+    task.ffn = true;
+    UpdateFandomList(task);
 }

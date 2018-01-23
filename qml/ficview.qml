@@ -1,40 +1,177 @@
-import QtQuick 2.5
+import QtQuick 2.10
 import QtQuick.Controls 1.4
-import "qrc:components"
+import QtQuick.Layouts 1.3
+import "components"
 Rectangle {
     id:mainWindow
+    property int textSize: 22
+    property string currentPage: "0"
+    property string totalPages: "0"
+    property color leadingColor:  "#fceaef"
+    property bool havePagesBefore: false
+    property bool havePagesAfter: false
+    signal pageRequested(int page)
+    signal backClicked()
+    signal forwardClicked()
 
+    Rectangle{
+        id:leadingLine
+        width: parent.width
+        height:2
+        color: "green"
+        anchors.top: parent.top
+    }
+    Item {
+        id:spacerBeforeRow
+        anchors.top: leadingLine.bottom
+        height:3
+    }
+    Rectangle
+    {
+        id: coloredRect
+        anchors.top: spacerBeforeRow.bottom
+        color: leadingColor
+        height: info.height - 2
+        width: parent.width
+    RowLayout{
+        id:row
+        Image {
+            id: imgBack
+            anchors.bottomMargin: 3
+            width: mainWindow.textSize
+            height: mainWindow.textSize
+            sourceSize.height: mainWindow.textSize
+            sourceSize.width: mainWindow.textSize
+            visible: true
+            source: mainWindow.havePagesBefore ? "qrc:/icons/icons/back_blue.png" :  "qrc:/icons/icons/back_grey.png"
+            MouseArea{
+                enabled: mainWindow.havePagesBefore
+                anchors.fill : parent
+                propagateComposedEvents : true
+                onClicked : {
+                    mainWindow.backClicked();
+                }
+            }
+        }
+        Image {
+            id: imgForward
+            anchors.bottomMargin: 3
+            width: mainWindow.textSize
+            height: mainWindow.textSize
+            sourceSize.height: mainWindow.textSize
+            sourceSize.width: mainWindow.textSize
+            visible: true
+            source: mainWindow.havePagesAfter ? "qrc:/icons/icons/forward_blue.png" :  "qrc:/icons/icons/forward_grey.png"
+            MouseArea{
+                enabled: mainWindow.havePagesAfter
+                anchors.fill : parent
+                propagateComposedEvents : true
+                onClicked : {
+                    mainWindow.forwardClicked();
+                }
+            }
+        }
+        Label {
+            id:info
+            font.pixelSize: mainWindow.textSize
+            text: "At page:"
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 2
+        }
+        Rectangle{
+            color: "lightyellow"
+
+            anchors.top: row.top
+            anchors.topMargin: 2
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 3
+            width: 80
+            height:row.height - 5
+            TextInput{
+                font.pixelSize: mainWindow.textSize
+                anchors.fill: parent
+                text: mainWindow.currentPage
+                validator: IntValidator{}
+                horizontalAlignment: TextInput.AlignRight
+                onEditingFinished: {
+                    mainWindow.pageRequested(text)
+                }
+            }
+        }
+        Label {
+            text: "of:"
+            font.pixelSize: mainWindow.textSize
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 2
+        }
+        Label {
+            id:total
+            font.pixelSize: mainWindow.textSize
+            text: mainWindow.totalPages
+            anchors.bottom: row.bottom
+            anchors.bottomMargin: 2
+        }
+
+        Item {
+            // spacer item
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            //Rectangle { anchors.fill: parent; color: "#ffaaaa" } // to visualize the spacer
+        }
+        width: parent.width
+    }
+    }
+    Item {
+        id:spacerBeforeSeparator
+        anchors.top: coloredRect.bottom
+        height:3
+    }
+    Rectangle{
+        id:separator
+        width: parent.width
+        height:2
+        color: "green"
+        anchors.top: spacerBeforeSeparator.bottom
+    }
+    Item {
+        id:spacerBeforeListview
+        anchors.top: separator.bottom
+        height:5
+    }
     ScrollView {
         highlightOnFocus: false
         frameVisible: false
-        anchors.fill: parent
+        anchors.top: spacerBeforeListview.bottom
+        width: parent.width
+        anchors.bottom:  parent.bottom
         verticalScrollBarPolicy: Qt.ScrollBarAsNeeded
-    ListView{
-        cacheBuffer: 6000
-        displayMarginBeginning: 50
-        displayMarginEnd:  50
-        id:lvFics
-        objectName: "lvFics"
-        //snapMode: ListView.NoSnap
-        property int previousIndex: -1
-        property bool showUrlCopyIcon: urlCopyIconVisible
+        ListView{
+            cacheBuffer: 6000
+            displayMarginBeginning: 50
+            displayMarginEnd:  50
+            id:lvFics
+            objectName: "lvFics"
+            //snapMode: ListView.NoSnap
+            property int previousIndex: -1
+            property bool showUrlCopyIcon: urlCopyIconVisible
 
-    spacing: 5
-    clip:true
-    model:ficModel
-    delegate:Ficform{}
-    //delegate:Text{text:title}
-    anchors.fill: parent
-    //signal chapterChanged(var chapter, var author, var title)
-    signal chapterChanged(var chapter, var ficId)
-    signal tagDeleted(var tag, var row)
-    signal tagAdded(var tag, var row)
-    signal tagClicked(var tag, var currentMode, var title, var author)
-    signal callTagWindow()
-    signal urlCopyClicked(string msg)
-    signal recommenderCopyClicked(string msg)
+            spacing: 5
+            clip:true
+            model:ficModel
+            delegate:Ficform{}
+            //delegate:Text{text:title}
+            anchors.fill: parent
+            //signal chapterChanged(var chapter, var author, var title)
+            signal chapterChanged(var chapter, var ficId)
+            signal tagDeleted(var tag, var row)
+            signal tagAdded(var tag, var row)
+            signal tagClicked(var tag, var currentMode, var title, var author)
+            signal callTagWindow()
+            signal urlCopyClicked(string msg)
+            signal recommenderCopyClicked(string msg)
 
+        }
     }
-    }
+
 }
 

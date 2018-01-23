@@ -64,6 +64,7 @@ public:
 
     virtual bool CreateFandom(core::FandomPtr);
     virtual bool CreateFandom(QString);
+    virtual bool AddFandomLink(QString fandom, core::Url);
     virtual bool AssignTagToFandom(QString, QString tag, bool includeCrosses = false);
     virtual void PushFandomToTopOfRecent(QString);
 
