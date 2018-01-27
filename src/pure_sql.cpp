@@ -157,7 +157,7 @@ bool SetFandomTracked(int id, bool tracked,  QSqlDatabase db)
 
 void CalculateFandomsFicCounts(QSqlDatabase db)
 {
-    QString qs = QString("update fandomsources set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id");
+    QString qs = QString("update fandomsources set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id)");
     QSqlQuery q(db);
     q.prepare(qs);
     if(!ExecAndCheck(q))
@@ -170,7 +170,7 @@ bool UpdateFandomStats(int fandomId, QSqlDatabase db)
     if(fandomId == -1)
         return false;
     QString qs = QString("update fandomsources set fic_count = "
-                         " (select count(fic_id) from ficfandoms where fandom_id = :fandom_id),"
+                         " (select count(fic_id) from ficfandoms where fandom_id = :fandom_id)"
                          //! todo
                          //" average_faves_top_3 = (select sum(favourites)/3 from fanfics f where f.fandom = fandoms.fandom and f.id "
                          //" in (select id from fanfics where fanfics.fandom = fandoms.fandom order by favourites desc limit 3))"
@@ -1323,6 +1323,40 @@ QList<int> GetAllAuthorIds(QSqlDatabase db)
 
     return result;
 }
+DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db)
+{
+    DiagnosticSQLResult<QStringList> result;
+    result.success = false;
+
+    QString qs = QString("select id, ffn_id, ao3_id, sb_id, sv_id from fanfics where id in (select fic_id from recommendations where recommender_id = :author_id )");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":author_id",id);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    do
+    {
+        auto ffn_id = q.value("ffn_id").toInt();
+        auto ao3_id = q.value("ao3_id").toInt();
+        auto sb_id = q.value("sb_id").toInt();
+        auto sv_id = q.value("sv_id").toInt();
+
+        if(ffn_id != -1)
+            result.data.push_back(url_utils::GetStoryUrlFromWebId(ffn_id, "ffn"));
+        if(ao3_id != -1)
+            result.data.push_back(url_utils::GetStoryUrlFromWebId(ao3_id, "ao3"));
+        if(sb_id != -1)
+            result.data.push_back(url_utils::GetStoryUrlFromWebId(sb_id, "sb"));
+        if(sv_id != -1)
+            result.data.push_back(url_utils::GetStoryUrlFromWebId(sv_id, "sv"));
+    }while(q.next());
+    result.success = true;
+
+    return result;
+}
 
 bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db)
 {
@@ -2420,6 +2454,7 @@ bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
     }
     return true;
 }
+
 
 
 }

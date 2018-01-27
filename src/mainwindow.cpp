@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fanfics.h"
 #include "Interfaces/db_interface.h"
 #include "Interfaces/pagetask_interface.h"
+#include "actionprogress.h"
+#include "ui_actionprogress.h"
 #include "pagetask.h"
 #include "Interfaces/tags.h"
 #include <QMessageBox>
@@ -51,6 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QtConcurrent>
 #include <QSqlDriver>
 #include <QClipboard>
+#include <QMovie>
 #include <chrono>
 #include <algorithm>
 
@@ -88,6 +91,37 @@ struct SplitJobs
     QString authorName;
 };
 
+struct TaskProgressGuard
+{
+    TaskProgressGuard(MainWindow* w){
+        w->SetWorkingStatus();
+        this->w = w;
+    }
+    ~TaskProgressGuard(){
+        if(!hasFailures)
+            w->SetFinishedStatus();
+        else
+            w->SetFailureStatus();
+    }
+    bool hasFailures = false;
+    MainWindow* w = nullptr;
+
+};
+
+QList<QSharedPointer<core::Author> >  ReverseSortedList(QList<QSharedPointer<core::Author> >  list)
+{
+    qSort(list.begin(),list.end(), [](QSharedPointer<core::Author> a1, QSharedPointer<core::Author> a2){
+        return a1->name < a2->name;
+    });
+    std::reverse(list.begin(),list.end());
+    return list;
+}
+
+QStringList SortedList(QStringList list)
+{
+    qSort(list.begin(),list.end());
+    return list;
+}
 
 QString ParseAuthorNameFromFavouritePage(QString data)
 {
@@ -195,7 +229,8 @@ QString NameOfCrossoverSectionToLink(QString val)
 }
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    refreshSpin(":/icons/icons/refresh_spin_lg.gif")
 {
     ui->setupUi(this);
     ui->cbNormals->lineEdit()->setClearButtonEnabled(true);
@@ -233,6 +268,7 @@ void MainWindow::Init()
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
     ProcessTagsIntoGui();
+    FillRecTagCombobox();
 
     //QSettings settings("settings.ini", QSettings::IniFormat);
     //settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
@@ -264,20 +300,25 @@ void MainWindow::Init()
     ;
     ui->cbNormals->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
 
-    pbMain = new QProgressBar;
+    actionProgress = new ActionProgress;
+    pbMain = actionProgress->ui->pbMain;
+    pbMain->setMinimumWidth(200);
     pbMain->setMaximumWidth(200);
-    lblCurrentOperation = new QLabel;
-    lblCurrentOperation->setMaximumWidth(300);
+    pbMain->setValue(0);
+    pbMain->setTextVisible(false);
 
+    lblCurrentOperation = new QLabel;
     ui->statusBar->addPermanentWidget(lblCurrentOperation,1);
-    ui->statusBar->addPermanentWidget(pbMain,0);
+    ui->statusBar->addPermanentWidget(actionProgress,0);
+
+
 
     ui->edtResults->setOpenLinks(false);
     auto showTagWidget = settings.value("Settings/showNewTagsWidget", false).toBool();
     if(!showTagWidget)
         ui->tagWidget->removeTab(1);
-    connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnLinkClicked);
     connect(ui->pbFormattedList, &QPushButton::clicked, this, &MainWindow::OnDoFormattedList);
+    connect(ui->pbGetFavouriteLinks, &QPushButton::clicked, this, &MainWindow::OnGetAuthorFavouritesLinks);
     connect(ui->pbPauseTask, &QPushButton::clicked, [&](){
         cancelCurrentTaskPressed = true;
     });
@@ -331,7 +372,6 @@ void MainWindow::Init()
             tagsInterface->CreateTag(tag);
             tagList.append(tag);
             qwFics->rootContext()->setContextProperty("tagModel", tagList);
-            FillRecTagBuildCombobox();
         }
 
     });
@@ -539,22 +579,19 @@ void MainWindow::SetupFanficTable()
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
     ui->deCutoffLimit->setDate(QDateTime::currentDateTime().date());
 }
-bool MainWindow::event(QEvent * e)
-{
-    switch(e->type())
-    {
-    case QEvent::WindowActivate :
-        tagWidgetDynamic->hide();
-        break ;
-    default:
-        break;
-    } ;
-    return QMainWindow::event(e) ;
-}
+//bool MainWindow::event(QEvent * e)
+//{
+//    switch(e->type())
+//    {
+//    case QEvent::WindowActivate :
+//        tagWidgetDynamic->hide();
+//        break ;
+//    default:
+//        break;
+//    } ;
+//    return QMainWindow::event(e) ;
+//}
 
-void MainWindow::OnTagClicked(QVariant tag, QVariant currentMode, QVariant row)
-{
-}
 
 void MainWindow::OnDisplayNextPage()
 {
@@ -641,8 +678,7 @@ void MainWindow::InitInterfaces()
 
 void MainWindow::InitConnections()
 {
-    connect(ui->chkCustomFilter, &QCheckBox::clicked, this, &MainWindow::OnCustomFilterClicked);
-    connect(ui->chkShowDirectRecs, &QCheckBox::clicked, this, &MainWindow::OnReloadRecLists);
+    //connect(ui->chkCustomFilter, &QCheckBox::clicked, this, &MainWindow::OnCustomFilterClicked);
 
 }
 
@@ -788,7 +824,7 @@ inline core::Fic LoadFanfic(QSqlQuery& q)
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
-    result.chapters = q.value("CHAPTERS").toString();
+    result.chapters = QString::number(q.value("CHAPTERS").toInt() + 1);
     result.complete= q.value("COMPLETE").toInt();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     result.recommendations= q.value("SUMRECS").toInt();
@@ -882,37 +918,17 @@ QSqlQuery MainWindow::BuildQuery(bool countOnly)
     return q;
 }
 
-QSqlQuery MainWindow::NewPageQuery(int pageNumber)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    queryBuilder.ProcessBindings(filter, currentQuery);
-
-    QSqlQuery q(db);
-    q.prepare(currentQuery->str);
-    auto it = currentQuery->bindings.begin();
-    auto end = currentQuery->bindings.end();
-    while(it != end)
-    {
-        qDebug() << it.key() << " " << it.value();
-        q.bindValue(it.key(), it.value());
-        ++it;
-    }
-    return q;
-}
 
 
 
 void MainWindow::ProcessTagsIntoGui()
 {
-
     auto tagList = tagsInterface->ReadUserTags();
     QList<QPair<QString, QString>> tagPairs;
 
     for(auto tag : tagList)
         tagPairs.push_back({ "0", tag });
     ui->wdgTagsPlaceholder->InitFromTags(-1, tagPairs);
-    FillRecTagBuildCombobox();
-    FillRecTagCombobox();
 
 }
 
@@ -928,14 +944,6 @@ void MainWindow::UnsetTag(int id, QString tag)
     tagList = tagsInterface->ReadUserTags();
 }
 
-QString MainWindow::CreateLimitQueryPart()
-{
-    QString result;
-    int maxFicCountValue = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value()  : 0;
-    if(maxFicCountValue > 0 && maxFicCountValue < 51)
-        result+= QString(" LIMIT %1 ").arg(QString::number(maxFicCountValue));
-    return result;
-}
 
 PageTaskPtr MainWindow::CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize, int subTaskRetries,
                                                ECacheMode cacheMode, bool allowCacheRefresh)
@@ -1264,7 +1272,7 @@ void MainWindow::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Au
     EnableAllLoadButtons();
 }
 
-void MainWindow::ReprocessAuthors()
+void MainWindow::ReprocessAuthorNamesFromTheirPages()
 {
     auto functor = [&](QSharedPointer<core::Author> author, WebPage webPage){
         //auto splittings = SplitJob(webPage.content);
@@ -1329,16 +1337,6 @@ void MainWindow::ProcessListIntoRecommendations(QString list)
     }
 }
 
-void MainWindow::ProcessTagIntoRecommenders(QString listName)
-{
-    if(!recommendersModel)
-        return;
-    QStringList result;
-    auto allStats = recsInterface->GetAuthorStatsForList(recsInterface->GetListIdForName(listName));
-    for(auto stat : allStats)
-        result.push_back(stat->authorName);
-    recommendersModel->setStringList(result);
-}
 
 
 
@@ -1728,24 +1726,31 @@ void MainWindow::CheckUnfinishedTasks()
         }
     }
 }
-QString MainWindow::AdjustFFNCrossoverUrl(core::Url url)
-{
-    auto currentUrl = url.GetUrl();
-    if(currentUrl.contains("/crossovers") && (url.GetSource() == "ffn"))
-    {
-        QStringList temp = url.GetUrl().split("/");
-        currentUrl = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
-        currentUrl+="/0";
-    }
-    return currentUrl;
-}
 
 void MainWindow::PlaceResults()
 {
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
-    ReinitRecent(ui->cbNormals->currentText());
+    ReinitRecent(GetCurrentFandomName());
+}
+
+void MainWindow::SetWorkingStatus()
+{
+//    QPixmap px(":/icons/icons/refresh.png");
+//    px = px.scaled(24, 24);
+    refreshSpin.setScaledSize(actionProgress->ui->lblCurrentStatusIcon->size());
+    refreshSpin.start();
+    actionProgress->ui->lblCurrentStatusIcon->setMovie(&refreshSpin);
+    actionProgress->ui->lblCurrentStatus->setText("working...");
+}
+
+void MainWindow::SetFinishedStatus()
+{
+    QPixmap px(":/icons/icons/ok.png");
+    px = px.scaled(24, 24);
+    actionProgress->ui->lblCurrentStatusIcon->setPixmap(px);
+    actionProgress->ui->lblCurrentStatus->setText("Done!");
 }
 
 void MainWindow::on_pbCrawl_clicked()
@@ -1758,8 +1763,6 @@ void MainWindow::on_pbCrawl_clicked()
     //currentFilterUrls = GetCurrentFilterUrls(GetFandomName(), ui->rbCrossovers->isChecked(), true);
 
     ui->edtResults->clear();
-    processedCount = 0;
-    ignoreUpdateDate = false;
     nextUrl = QString();
     //urls.pop_front();
     for(auto url: urls)
@@ -1775,14 +1778,6 @@ void MainWindow::on_pbCrawl_clicked()
 
 }
 
-void MainWindow::OnLinkClicked(const QUrl & url)
-{
-    if(url.toString().contains("fanfiction.net"))
-        QDesktopServices::openUrl(url);
-    else
-        OpenTagWidget(QCursor::pos(), url.toString());
-}
-
 
 void MainWindow::OnTagToggled(int id, QString tag, bool checked)
 {
@@ -1792,56 +1787,6 @@ void MainWindow::OnTagToggled(int id, QString tag, bool checked)
         UnsetTag(id, tag);
 }
 
-void MainWindow::OnCustomFilterClicked()
-{
-    if(ui->chkCustomFilter->isChecked())
-    {
-        ui->cbCustomFilters->setEnabled(true);
-        QPalette p = ui->cbCustomFilters->palette();
-        ui->chkCustomFilter->setStyleSheet("QCheckBox {border: none; color: DarkGreen;}");
-        ui->cbCustomFilters->setPalette(p);
-    }
-    else
-    {
-        ui->cbCustomFilters->setEnabled(false);
-        QPalette p = ui->cbSortMode->palette();
-        ui->cbCustomFilters->setPalette(p);
-        ui->chkCustomFilter->setStyleSheet("");
-    }
-    //on_pbLoadDatabase_clicked();
-}
-
-
-void MainWindow::OnShowContextMenu(QPoint p)
-{
-    browserMenu.popup(this->mapToGlobal(p));
-}
-
-void MainWindow::OnSectionChanged(QString)
-{
-    ui->cbNormals->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
-}
-
-void MainWindow::on_pbLoadDatabase_clicked()
-{
-
-    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    filter.recordPage = 0;
-    pageOfCurrentQuery = 0;
-    LoadData();
-    PlaceResults();
-}
-
-
-
-void MainWindow::OnCheckboxFilter(int)
-{
-    LoadData();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(fanfics);
-    typetableModel->OnReloadDataFromInterface();
-}
 
 void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
@@ -1852,10 +1797,6 @@ void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
         ui->sbMaxRandomFicCount->setValue(settings.value("Settings/defaultRandomFicCount", 6).toInt());
 }
 
-void MainWindow::on_cbCustomFilters_currentTextChanged(const QString &)
-{
-    on_pbLoadDatabase_clicked();
-}
 
 void MainWindow::on_cbSortMode_currentTextChanged(const QString &)
 {
@@ -1936,77 +1877,6 @@ void MainWindow::CallExpandedWidget()
     expanderWidget->exec();
 }
 
-QStringList MainWindow::SortedList(QStringList list)
-{
-    qSort(list.begin(),list.end());
-    return list;
-}
-QList<QSharedPointer<core::Author> >  MainWindow::ReverseSortedList(QList<QSharedPointer<core::Author> >  list)
-{
-    qSort(list.begin(),list.end(), [](QSharedPointer<core::Author> a1, QSharedPointer<core::Author> a2){
-        return a1->name < a2->name;
-    });
-    std::reverse(list.begin(),list.end());
-    return list;
-}
-
-
-QStringList MainWindow::GetUniqueAuthorsFromActiveRecommenderSet()
-{
-    QStringList result;
-    QList<QSharedPointer<core::Fic>> sections;
-    int counter = 0;
-    auto list = ReverseSortedList(recsInterface->GetAuthorsForRecommendationList(recsInterface->GetCurrentRecommendationList()));
-    auto fanfics = fanficsInterface;
-    auto authors = authorsInterface;
-    auto job = [fanfics,authors](QString url, QString content){
-        QList<QSharedPointer<core::Fic> > sections;
-        FavouriteStoryParser parser(fanfics);
-        sections += parser.ProcessPage(url, content);
-        return sections;
-    };
-    QList<QFuture<QList<QSharedPointer<core::Fic>>>> futures;
-    An<PageManager> pager;
-    QHash<QString, QSharedPointer<core::Fic>> uniqueSections;
-    pager->SetDatabase(QSqlDatabase::database()); //! todo needs updating for postgre
-    for(auto author: list)
-    {
-
-        auto startRecProcessing = std::chrono::high_resolution_clock::now();
-        counter++;
-        uniqueSections[author->url("ffn")] = QSharedPointer<core::Fic>(new core::Fic);
-
-        InsertLogIntoEditor(ui->edtResults, author->url("ffn"));
-        auto page = pager->GetPage(author->url("ffn"), ECacheMode::use_cache);
-        if(!page.isFromCache)
-            pager->SavePageToDB(page);
-
-
-        auto splittings = SplitJob(page.content);
-        for(auto part: splittings.parts)
-        {
-            futures.push_back(QtConcurrent::run(job, page.url, part.data));
-        }
-        for(auto future: futures)
-        {
-            future.waitForFinished();
-            sections+=future.result();
-        }
-        if(!page.isFromCache)
-        {
-            qDebug() << "Sleeping";
-            QThread::sleep(1);
-        }
-        auto elapsed = std::chrono::high_resolution_clock::now() - startRecProcessing;
-        qDebug() << "Recommender processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    }
-
-
-    for(auto section: sections)
-        uniqueSections[section->author->url("ffn")] = section;
-    result = SortedList(uniqueSections.keys());
-    return result;
-}
 
 
 void MainWindow::CreatePageThreadWorker()
@@ -2050,18 +1920,11 @@ void MainWindow::AddToProgressLog(QString value)
     ui->edtResults->insertHtml(value);
 }
 
-void MainWindow::FillRecTagBuildCombobox()
-{
-    ui->cbRecTagBuildGroup->setModel(new QStringListModel(tagList));
-
-}
 
 void MainWindow::FillRecTagCombobox()
 {
     auto lists = recsInterface->GetAllRecommendationListNames();
     ui->cbRecGroup->setModel(new QStringListModel(lists));
-    ui->cbAuthorNames->setModel(new QStringListModel(lists));
-    //ui->cbRecTagGroup->setModel(new QStringListModel(lists));
 }
 
 void MainWindow::FillRecommenderListView(bool forceRefresh)
@@ -2079,7 +1942,7 @@ void MainWindow::FillRecommenderListView(bool forceRefresh)
     ui->cbAuthorNames->setModel(recommendersModel);
 }
 
-bool MainWindow::LoadAuthor(QString url)
+core::AuthorPtr MainWindow::LoadAuthor(QString url)
 {
     auto startPageRequest = std::chrono::high_resolution_clock::now();
     auto page = RequestPage(url.trimmed(),  ECacheMode::dont_use_cache);
@@ -2112,7 +1975,7 @@ bool MainWindow::LoadAuthor(QString url)
         fandomsInterface->RecalculateFandomStats(fandoms.values());
     }
     transaction.finalize();
-    return true;
+    return author;
 }
 
 
@@ -2132,8 +1995,6 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     {
         auto urls = fandom->GetUrls();
         ui->edtResults->clear();
-        processedCount = 0;
-        ignoreUpdateDate = false;
         nextUrl = QString();
         ui->deCutoffLimit->setDate(fandom->lastUpdateDate);
         qDebug() << "will load fandom since:" << fandom->lastUpdateDate;
@@ -2150,7 +2011,6 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
 
 void MainWindow::on_pbLoadPage_clicked()
 {
-    //! todo rec list needs source fics saved
     filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
     //ui->leAuthorUrl->text()
     LoadAuthor(ui->leAuthorUrl->text());
@@ -2301,17 +2161,6 @@ void MainWindow::on_pbOpenWholeList_clicked()
 void MainWindow::on_pbFirstWave_clicked()
 {
     LoadMoreAuthors();
-}
-
-void MainWindow::OnReloadRecLists()
-{
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    auto currentList = settings.value("Settings/recommendationListName").toString();
-    QStringList recommenderList;
-    if(!currentList.isEmpty())
-        recommenderList = recsInterface->GetNamesForListId(recsInterface->GetListIdForName(currentList));
-    recommendersModel->setStringList(SortedList(recommenderList));
 }
 
 void MainWindow::on_cbUseDateCutoff_clicked()
@@ -2627,4 +2476,22 @@ void MainWindow::on_pbReinitFandoms_clicked()
     UpdateFandomTask task;
     task.ffn = true;
     UpdateFandomList(task);
+}
+
+void MainWindow::OnGetAuthorFavouritesLinks()
+{
+    SetWorkingStatus();
+    auto author = LoadAuthor(ui->leAuthorUrl->text());
+    if(!author)
+        return;
+    auto list = authorsInterface->GetAllAuthorsFavourites(author->id);
+    QClipboard *clipboard = QApplication::clipboard();
+    QString result;
+    for(auto bit : list)
+    {
+        result += bit + "\n";
+    }
+    clipboard->setText(result);
+    SetFinishedStatus();
+
 }

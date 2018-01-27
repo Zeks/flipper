@@ -131,7 +131,7 @@ int GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
 bool AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 QList<int> GetAllAuthorIds(QSqlDatabase db);
-
+DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
 
 QList<core::AuthorPtr > GetAllAuthors(QString website,  QSqlDatabase db);
 QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);

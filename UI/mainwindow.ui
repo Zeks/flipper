@@ -1362,7 +1362,7 @@
                    </sizepolicy>
                   </property>
                   <attribute name="title">
-                   <string>Recommendations</string>
+                   <string>Favourites</string>
                   </attribute>
                   <layout class="QGridLayout" name="gridLayout_10">
                    <property name="leftMargin">
@@ -1576,6 +1576,13 @@
                      </item>
                      <item>
                       <widget class="QLineEdit" name="leAuthorUrl"/>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbGetFavouriteLinks">
+                       <property name="text">
+                        <string>Get Fav Links</string>
+                       </property>
+                      </widget>
                      </item>
                      <item>
                       <widget class="QPushButton" name="pbOpenRecommendations">
@@ -1869,7 +1876,7 @@
              </size>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="tab">
              <attribute name="title">

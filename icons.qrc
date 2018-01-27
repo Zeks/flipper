@@ -17,5 +17,7 @@
         <file>icons/forward_grey.png</file>
         <file>icons/back_blue.png</file>
         <file>icons/forward_blue.png</file>
+        <file>icons/refresh.png</file>
+        <file>icons/refresh_spin_lg.gif</file>
     </qresource>
 </RCC>

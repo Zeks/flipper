@@ -46,11 +46,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagetask.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
+#include <QMovie>
 
 class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
 class QStringListModel;
+class ActionProgress;
 namespace interfaces{
 class Fandoms;
 class Fanfics;
@@ -58,6 +60,7 @@ class Authors;
 class Tags;
 class Genres;
 class PageTask;
+
 class RecommendationLists;
 }
 namespace database {
@@ -81,22 +84,41 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    // current search mode
+    // defines which search elemnts are to be used
+    // and how
     enum ELastFilterButtonPressed
     {
         lfbp_search = 0,
         lfbp_recs = 1
     };
     explicit MainWindow(QWidget *parent = 0);
-    void Init();
-    void InitUIFromTask(PageTaskPtr);
-    ~MainWindow();
-    // currently broken, need to refator the whole procedure
-    //void ReInitFandoms();
-    //bool CheckSectionAvailability();
-    void InitInterfaces();
-    void InitConnections();
-    void StartTaskTimer();
 
+    //initalizes widgets
+    void Init();
+
+
+    ~MainWindow();
+
+    // used to set up connections between database and interfaces
+    // and between differnt interfaces themselves
+    void InitInterfaces();
+    // used to set up signal/slot connections
+    void InitConnections();
+    // sets up the timer that later triggers a check if there are unfinished tasks
+    // written into the task databse
+    void StartTaskTimer();
+    // used to set up the approriate UI elemnts when task execution starts
+    void InitUIFromTask(PageTaskPtr);
+
+    // used to indicate "action in progress" status to the user
+    void SetWorkingStatus();
+    // used to indicate "action finished" status to the user
+    void SetFinishedStatus();
+    // used to indicate failure of the performed action to the user
+    void SetFailureStatus();
+
+    // the interface classes used to avoid direct database access in the application
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;
@@ -107,226 +129,317 @@ public:
     QSharedPointer<database::IDBWrapper> dbInterface;
     QSharedPointer<database::IDBWrapper> pageCacheInterface;
     QSharedPointer<database::IDBWrapper> tasksInterface;
+
+
 private:
 
+    // sets up the model for fanfics
     void SetupFanficTable();
+    // sets up the interface to access fic params from core::fic class
     void SetupTableAccess();
-    FicModel* typetableModel = nullptr;
-    QSharedPointer<TableDataInterface> typetableInterface;
-    TableDataListHolder<core::Fic>* holder = nullptr;
-    QList<core::Fic> fanfics;
-    QSortFilterProxyModel* sortModel;
-    int processedFics = 0;
-    ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
-    int currentRecWave = 0;
-    int currentLastFanficId = -1;
-    QSharedPointer<core::Query> currentQuery;
-    bool event(QEvent * e);
+
+    //bool event(QEvent * e);
+    // reads settings into a files
     void ReadSettings();
+    // writes settings into a files
     void WriteSettings();
 
+    // a unified function to get the name of the current fandom
+    // (without mentioning GUI element each time)
     QString GetCurrentFandomName();
 
+    // a wrapper over pagegetter to request pages for fandom parsing
     void RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
+
+    // a wrapper over pagegetter to request pages
+    // todo probably could be dropped, will need to check
     WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 
 
-
-    QString GetFandom(QString text);
-
+    // disable the interface (to perform a lengthy task)
     void DisableAllLoadButtons();
+
+    // enables the interface (after some task has finished)
     void EnableAllLoadButtons();
 
+    // use to actually query the search results from the database into fanfic list
+    // placing results into the inetrface happens in PlaceResults
     void LoadData();
+
+    void PlaceResults(); // places the currently filtered results into table
+
+    // used to query the information of total query size from database
+    // to separate stuff into pages
     int GetResultCount();
+
+    // used to build the actual query to be used in the database from filters
     QSqlQuery BuildQuery(bool countOnly = false);
 
-    QSqlQuery NewPageQuery(int pageNumber);
-
-
+    // used to fill fandom database with new data from web
     void UpdateFandomList(UpdateFandomTask);
-    void InsertFandomData(QMap<QPair<QString,QString>, core::Fandom> names);
-    void PopulateComboboxes();
 
-    //QStringList GetCrossoverUrl(QString);
-    //QStringList GetNormalUrl(QString);
-
-    void OpenTagWidget(QPoint, QString url);
+    // used to fill tagwidget
     void ProcessTagsIntoGui();
 
+    // used to set tag to a certain fic
     void SetTag(int id, QString tag, bool silent = false);
+
+    // used to unset tag from a certain fic
     void UnsetTag(int id, QString tag);
 
-    void ToggleTag();
+    // used to call a widget that llows editing of lineedit contents in a larger box
     void CallExpandedWidget();
 
-    QStringList SortedList(QStringList);
-    QList<QSharedPointer<core::Author> > ReverseSortedList(QList<QSharedPointer<core::Author> > list);
-    QStringList GetUniqueAuthorsFromActiveRecommenderSet();
-
+    // creates page worker that gets pages from ffn in a thread
     void CreatePageThreadWorker();
+    // starts page worker thread execution
     void StartPageWorker();
+    // stops page worker thread execution
     void StopPageWorker();
 
+    // shows the progress bar and set its max value to maxValue
     void ReinitProgressbar(int maxValue);
+
+    // hides the progress bar and sets its value to 0
     void ShutdownProgressbar();
+
+    // simply adds a line to QTextEdit with the results
     void AddToProgressLog(QString);
-    void FillRecTagBuildCombobox();
+
+    // fills the sort by list combobox with names of recommendation lists
     void FillRecTagCombobox();
+
+    // fills the authors list view with names from currently active recommendation list
     void FillRecommenderListView(bool forceRefresh = false);
-    bool LoadAuthor(QString url);
+
+    // loads the author favourites page into the database
+    // used in recommendations page
+    core::AuthorPtr LoadAuthor(QString url);
+
+    // fill a recommendation list token to be passed into recommendation builder from ui
     QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
 
-    Ui::MainWindow *ui;
-    int processedCount = 0;
-    QString nextUrl;
-    int timerId = -1;
-    int sizeOfCurrentQuery = 0;
-    int pageOfCurrentQuery = 0;
-    QMenu browserMenu;
-    QEventLoop managerEventLoop;
-    QMap<QPair<QString,QString>, core::Fandom> names;
-    QString currentProcessedSection;
-    QString dbName = "CrawlerDB.sqlite";
-    QDateTime lastUpdated;
-    //QHash<QString, core::Fandom> sections;
-    QSignalMapper* mapper = nullptr;
-    QProgressBar* pbMain = nullptr;
-    QLabel* lblCurrentOperation = nullptr;
-    //QStringList currentFilterUrls;
-    QString currentFilterUrl;
-    bool ignoreUpdateDate = false;
-    QStringList tagList;
-    QStringListModel* tagModel;
-    QStringListModel* recentFandomsModel= nullptr;
-    QStringListModel* recommendersModel = nullptr;
-    QLineEdit* currentExpandedEdit = nullptr;
-    TagWidget* tagWidgetDynamic = new TagWidget;
-    QQuickWidget* qwFics = nullptr;
-    QString CreateLimitQueryPart();
-    QHash<QString, QList<int>> randomIdLists;
-    QDialog* expanderWidget = nullptr;
-    QTextEdit* edtExpander = new QTextEdit;
-    QTimer selectionTimer;
-    QTimer taskTimer;
-    QThread pageThread;
-    PageThreadWorker* worker = nullptr;
-
-    PageQueue pageQueue;
-    core::DefaultQueryBuilder queryBuilder;
-    core::CountQueryBuilder countQueryBuilder;
-    core::StoryFilter filter;
-    bool cancelCurrentTaskPressed = false;
-    std::function<void(int)> callProgress;
-    std::function<void(void)> cleanupEditor;
-    std::function<void(QString)> callProgressText;
-    //QHash<QString, core::RecommendationList> lists;
-
-
-
-
+    // creates the task and subtasks to load more authors from urls found in the database
     PageTaskPtr CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize = 100,
                                        int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
                                        bool allowCacheRefresh = true);
+
+    // the actual task that procecces he next wave of authors into database
     void UseAuthorsPageTask(PageTaskPtr,
                             std::function<void(int)>callProgress,
                             std::function<void(QString)>callProgressText,
                             std::function<void(void)> cleanupFunctor);
+
+    // used to download the next wave of author favourites
     void LoadMoreAuthors();
-    void ReparseAllAuthors(bool reprocessCache = false);
-    void ProcessTagIntoRecommenders(QString tag);
+
+    // a utility to pass a functor to all the authors
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
-    void ReprocessAuthors();
+
+    // used to fix author names when one of the parsers gets a bunch wrong
+    void ReprocessAuthorNamesFromTheirPages();
+
+    // used to create recommendation list from lists/source.txt
     void ProcessListIntoRecommendations(QString list);
+
+    // creates a recommendation list from passed params
     int BuildRecommendations(QSharedPointer<core::RecommendationList> params);
+
+    // collects information from the ui into a token to be passed to a query generator
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false);
+
+    //fixes the crossover url and selects between 60 and 100k words to add to search params
     QString AppendCurrentSearchParameters(QString url);
+
+    // pushes fandom to top of recent and reinits the recent fandom listview
     void ReinitRecent(QString name);
 
+    // used to check for unfinished tasks on application start
     void CheckUnfinishedTasks();
-    QString AdjustFFNCrossoverUrl(core::Url url);
-    void PlaceResults();
+
+
+
+    Ui::MainWindow *ui;
+
+    ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
+
+    bool cancelCurrentTaskPressed = false;
+
+    int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
+    int pageOfCurrentQuery = 0; // current page that the used search query is at
+
+    int processedFics = 0; // amount of fics processed by the last operation
+    int currentLastFanficId = -1;
+
+    QString nextUrl;
+    QString currentFilterUrl;
+
+    QStringList tagList; // user tags used in the system
+
+    QList<core::Fic> fanfics; // filtered fanfic data
+
+    QDateTime lastUpdated; // candidate for deletion
+
+    QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
+
+    QThread pageThread; // thread for pagegetter worker to live in
+
+    PageThreadWorker* worker = nullptr;
+    PageQueue pageQueue; // collects data sent from PageThreadWorker
+    core::DefaultQueryBuilder queryBuilder; // builds search queries
+    core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
+    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
+
+    std::function<void(int)> callProgress; // temporary shit while I decouple page getter from ui
+    std::function<void(void)> cleanupEditor; // temporary shit while I decouple page getter from ui
+    std::function<void(QString)> callProgressText; // temporary shit while I decouple page getter from ui
+
+    QSharedPointer<TableDataInterface> typetableInterface;
+
+    QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
+    QMovie refreshSpin; // an indicator that some work is in progress
+                        // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
+
+    FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
+    TableDataListHolder<core::Fic>* holder = nullptr; // an interface class that model uses to access the data
+
+    QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
+    QStringListModel* recommendersModel = nullptr; // this keeps names of te authors in current recommendation list
+
+    QLineEdit* currentExpandedEdit = nullptr; // expanded editor for line edits
+    QDialog* expanderWidget = nullptr; // a dialog to display data from currentExpandedEdit for editing
+    QTextEdit* edtExpander = new QTextEdit; //text edit taht contains the data of currentExpandedEdit while tis displayed by expanderWidget
+
+    TagWidget* tagWidgetDynamic = new TagWidget; // tag filtering widget on Tags panel
+
+
+    QQuickWidget* qwFics = nullptr; // a widget that holds qml fic search results
+    QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
+    QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
+    ActionProgress* actionProgress = nullptr;
+
 public slots:
     //broken and needs refactoring anyway
     //void ProcessFandoms(WebPage webPage);
     //void ProcessCrossovers(WebPage webPage);
     //void on_pbInit_clicked();
+    // if anything, this needs to be rewritten to use fandom_ids
+    // unsure if I want to give users that
+    //void WipeSelectedFandom(bool);
+
+
+    // triggered when user changes chapter in qml
     void OnChapterUpdated(QVariant, QVariant);
+    // triggered when user adds tag in qml
     void OnTagAdd(QVariant tag, QVariant row);
+    // triggered when user removes tag from a fic in qml
     void OnTagRemove(QVariant tag, QVariant row);
 
-    void WipeSelectedFandom(bool);
+    // when new page arrives from page worker
     void OnNewPage(PageResult result);
+    // places into the clipboard, the url of the fic clicked in qml
     void OnCopyFicUrl(QString);
+    // used to open author pages on heart click that contain the current fic in their favourites
     void OnOpenRecommenderLinks(QString);
+    // copies urls of all currently visible fics into the cliboard
     void OnCopyAllUrls();
+    // used to create targeted HTML lists to put on the web
     void OnDoFormattedList();
-    void OnTagClicked(QVariant tag, QVariant currentMode, QVariant row);
+    // queries and displays next page for the current query
     void OnDisplayNextPage();
+    // queries and displays pervious page for the current query
     void OnDisplayPreviousPage();
+    // queries and displays exact page for the current query
     void OnDisplayExactPage(int);
 private slots:
-    void OnShowContextMenu(QPoint);
-    void OnSectionChanged(QString);
-    void OnCheckboxFilter(int);
-    void on_pbLoadDatabase_clicked();
-
-
+    // called to trudge through a fandom
     void on_pbCrawl_clicked();
-    void OnLinkClicked(const QUrl &);
 
+    // used to receive tag events from tag widget on Tags tab
     void OnTagToggled(int, QString, bool);
-    void OnCustomFilterClicked();
 
+    // used to make sure that the amount of random fics requested later will be correct
     void on_chkRandomizeSelection_clicked(bool checked);
-    void on_cbCustomFilters_currentTextChanged(const QString &arg1);
+    // used to toggle visibility of recommendation list selector for sorting
     void on_cbSortMode_currentTextChanged(const QString &arg1);
+
+    // each of those functions calls an expanded editor for the corresponding line edit
+    // -------------------------------------
     void on_pbExpandPlusGenre_clicked();
     void on_pbExpandMinusGenre_clicked();
     void on_pbExpandPlusWords_clicked();
     void on_pbExpandMinusWords_clicked();
+    // -------------------------------------
+
+    // used to put the clicked fandom into the fandom lieedit
+    // and set the tracked tick for the fandom to the value from the database
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
+
+    // used to put the clicked author name into the author combobox
+    // and his url into the url lineedit
     void OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous);
 
+    // used to toggle the tracked status for fandom on the checkbox state change
     void on_chkTrackedFandom_toggled(bool checked);
+    // used to downlaod the updates to all the tracked fandoms
     void on_pbLoadTrackedFandoms_clicked();
+    // used to load author favourites for the url in the favourites lineedit
     void on_pbLoadPage_clicked();
+    // used to open the recommendation for the author that is already in the databse
+    // (and is selected in the author list)
     void on_pbOpenRecommendations_clicked();
+    // used to full reload all authors in the current list
     void on_pbLoadAllRecommenders_clicked();
+    // used to open favourites of all teh authors in the current list
     void on_pbOpenWholeList_clicked();
+    // used to load the next wave of authors from LinkedAuthors
     void on_pbFirstWave_clicked();
-    void OnReloadRecLists();
+    // used to toggle enabled status of date cutoff mechanism for fandom parses
     void on_cbUseDateCutoff_clicked();
-
+    // used to create a recommendation list from GUI parameters (obscure, currently better use sources.txt)
     void on_pbBuildRecs_clicked();
 
-    //void on_cbRecTagGroup_currentIndexChanged(const QString &arg1);
-
+    // used to open the url of the author currently selected in the favourites tab in the browser
     void on_pbOpenAuthorUrl_clicked();
+    // probbaly legacy. Used to change the params in GUI rec list builder
+    // since tags are no longer used should be phased out
+    void on_cbRecTagBuildGroup_currentTextChanged(const QString &arg1);
 
+    // misnamed. currently used to build recommedation lists from sources.txt
     void on_pbReprocessAuthors_clicked();
 
-    void on_cbRecTagBuildGroup_currentTextChanged(const QString &arg1);
+    // used to put urls for all authors in the current list into the clipboard
     void OnCopyFavUrls();
 
+    // used to repopulate the interface elements dealing with recommendation lists
+    // when the current selectionc hanges in the reclist combobox
     void on_cbRecGroup_currentIndexChanged(const QString &arg1);
 
+    // used to manually create a new list to be populated
     void on_pbCreateNewList_clicked();
-
+    // used to remove recommendation list from DB
     void on_pbRemoveList_clicked();
-
+    // used to add the current author from the url in favourites tab to the current reclist
     void on_pbAddAuthorToList_clicked();
-
+    // used to remove the current author in favourites tab from the current reclist
     void on_pbRemoveAuthorFromList_clicked();
+    // triggered on timer to check if there is still an unfinished task
     void OnCheckUnfinishedTasks();
-
-
+    // used to toggle the UI elements dealing with fic randomization
     void on_chkRandomizeSelection_toggled(bool checked);
 
+    // used to trigger the reinit of fandoms on ffn
     void on_pbReinitFandoms_clicked();
 
+    // used to get all favourites links for the current author on favourites page
+    void OnGetAuthorFavouritesLinks();
+
 signals:
+    // page task when trudging through fandoms
+    // contains the first url and the last url to stop
     void pageTask(QString, QString, QDate, ECacheMode, bool);
+    // page task when iterating through favourites pages
+    // contains urls from a SUBtask
     void pageTaskList(QStringList, ECacheMode);
 };
 

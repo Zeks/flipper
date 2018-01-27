@@ -87,21 +87,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //    return result;
 //}
 
-void MainWindow::WipeSelectedFandom(bool)
-{
-    QString fandom;
+//void MainWindow::WipeSelectedFandom(bool)
+//{
+//    QString fandom;
 
-    fandom = GetCurrentFandomName();
+//    fandom = GetCurrentFandomName();
 
-    if(!fandom.isEmpty())
-    {
-        QSqlDatabase db = QSqlDatabase::database();
-        QString qs = QString("delete from fanfics where fandom like '%%1%'");
-        qs=qs.arg(fandom);
-        QSqlQuery q(qs, db);
-        q.exec();
-    }
-}
+//    if(!fandom.isEmpty())
+//    {
+//        QSqlDatabase db = QSqlDatabase::database();
+//        QString qs = QString("delete from fanfics where fandom like '%%1%'");
+//        qs=qs.arg(fandom);
+//        QSqlQuery q(qs, db);
+//        q.exec();
+//    }
+//}
 
 void UpdateCategory(QString cat,
                     FFNFandomIndexParserBase* parser,
@@ -159,8 +159,8 @@ void MainWindow::UpdateFandomList(UpdateFandomTask task)
         FFNFandomParser fandomParser;
         FFNCrossoverFandomParser crossoverParser;
         QStringList categoryList = {"anime", "book", "cartoon", "comic", "game", "misc", "movie", "play", "tv"};
-//        for(auto cat : categoryList)
-//            UpdateCategory("/" + cat, &fandomParser, fandomsInterface);
+        for(auto cat : categoryList)
+            UpdateCategory("/" + cat, &fandomParser, fandomsInterface);
         for(auto cat : categoryList)
             UpdateCategory("/crossovers/" + cat + "/", &crossoverParser, fandomsInterface);
     }
@@ -290,151 +290,6 @@ void MainWindow::UpdateFandomList(UpdateFandomTask task)
 //}
 
 
-void MainWindow::OpenTagWidget(QPoint pos, QString url)
-{
-    url = url.replace(" none ", "");
-    QStringList temp = url.split("TAGS");
-    QString id = temp.at(0);
-    QString tags= temp.at(1);
-
-    QList<QPair<QString, QString>> tagPairs;
-
-    for(QString tag: ui->wdgTagsPlaceholder->GetAllTags())
-    {
-        if(tags.contains(tag))
-            tagPairs.push_back({"1", tag});
-        else
-            tagPairs.push_back({"0", tag});
-    }
-
-    tagWidgetDynamic->InitFromTags(id.toInt(), tagPairs);
-    tagWidgetDynamic->resize(500,200);
-    QPoint tempPoint(ui->edtResults->x(), 0);
-    tempPoint = mapToGlobal(ui->twMain->mapTo(this, tempPoint));
-    tagWidgetDynamic->move(tempPoint.x(), pos.y());
-    tagWidgetDynamic->setWindowFlags(Qt::FramelessWindowHint);
-
-
-    tagWidgetDynamic->show();
-    tagWidgetDynamic->setFocus();
-}
-
-//void MainWindow::ProcessFandoms(WebPage webPage)
-//{
-
-//    QString str(webPage.content);
-//    // getting to the start of fandom section
-//    QRegExp rxStartFandoms("list_output");
-//    int indexStart = rxStartFandoms.indexIn(str);
-//    if(indexStart == -1)
-//    {
-//        QMessageBox::warning(0, "warning!", "failed to find the start of fandom section");
-//        return;
-//    }
-
-//    QRegExp rxEndFandoms("</TABLE>");
-//    int indexEnd= rxEndFandoms.indexIn(str);
-//    if(indexEnd == -1)
-//    {
-//        QMessageBox::warning(0, "warning!", "failed to find the end of fandom section");
-//        return;
-//    }
-//    while(true)
-//    {
-//        QRegExp rxStartLink("href=\"");
-//        QRegExp rxEndLink("/\"");
-
-//        int linkStart = rxStartLink.indexIn(str, indexStart);
-//        if(linkStart == -1)
-//            break;
-//        int linkEnd= rxEndLink.indexIn(str, linkStart);
-//        if(linkStart == -1 || linkEnd == -1)
-//        {
-//            QMessageBox::warning(0, "warning!", "failed to fetch link at: ", str.mid(linkStart, str.size() - linkStart));
-//        }
-//        QString link = str.mid(linkStart + rxStartLink.pattern().length(),
-//                               linkEnd - (linkStart + rxStartLink.pattern().length()));
-
-//        QRegExp rxStartName(">");
-//        QRegExp rxEndName("</a");
-
-//        int nameStart = rxStartName.indexIn(str, linkEnd);
-//        int nameEnd= rxEndName.indexIn(str, nameStart);
-//        if(nameStart == -1 || nameEnd == -1)
-//        {
-//            QMessageBox::warning(0, "warning!", "failed to fetch name at: ", str.mid(nameStart, str.size() - nameStart));
-//        }
-//        QString name = str.mid(nameStart + rxStartName.pattern().length(),
-//                               nameEnd - (nameStart + rxStartName.pattern().length()));
-
-//        //qDebug()  << name << " " << link << " " << counter++;
-//        indexStart = linkEnd;
-//        names.insert({currentProcessedSection,name}, core::Fandom{name, currentProcessedSection, link, ""});
-//    }
-//    managerEventLoop.quit();
-//}
-
-//void MainWindow::ProcessCrossovers(WebPage webPage)
-//{
-//    QString str(webPage.content);
-//    //QString pattern = sections[currentProcessedSection].section;//.mid(indexOfSlash + 1, currentProcessedSection.length() - (indexOfSlash +1)) + "\\sCrossovers";
-//    QRegExp rxStartFandoms("<TABLE\\sWIDTH='100%'><TR>");
-//    int indexStart = rxStartFandoms.indexIn(str);
-//    if(indexStart == -1)
-//    {
-//        QMessageBox::warning(0, "warning!", "failed to find the start of fandom section");
-//        return;
-//    }
-
-//    QRegExp rxEndFandoms("</TABLE>");
-//    int indexEnd= rxEndFandoms.indexIn(str);
-//    if(indexEnd == -1)
-//    {
-//        QMessageBox::warning(0, "warning!", "failed to find the end of fandom section");
-//        return;
-//    }
-//    while(true)
-//    {
-//        QRegExp rxStartLink("href=[\"]");
-//        QRegExp rxEndLink("/\"");
-
-//        int linkStart = rxStartLink.indexIn(str, indexStart);
-//        if(linkStart == -1)
-//            break;
-//        int linkEnd= rxEndLink.indexIn(str, linkStart);
-//        if(linkStart == -1 || linkEnd == -1)
-//        {
-//            QMessageBox::warning(0, "warning!", "failed to fetch link at: ", str.mid(linkStart, str.size() - linkStart));
-//        }
-//        QString link = str.mid(linkStart + rxStartLink.pattern().length()-2,
-//                               linkEnd - (linkStart + rxStartLink.pattern().length())+2);
-
-//        QRegExp rxStartName(">");
-//        QRegExp rxEndName("</a");
-
-//        int nameStart = rxStartName.indexIn(str, linkEnd);
-//        int nameEnd= rxEndName.indexIn(str, nameStart);
-//        if(nameStart == -1 || nameEnd == -1)
-//        {
-//            QMessageBox::warning(0, "warning!", "failed to fetch name at: ", str.mid(nameStart, str.size() - nameStart));
-//        }
-//        QString name = str.mid(nameStart + rxStartName.pattern().length(),
-//                               nameEnd - (nameStart + rxStartName.pattern().length()));
-
-//        indexStart = linkEnd;
-//        if(!names.contains({currentProcessedSection,name}))
-//            names.insert({currentProcessedSection,name},core::Fandom{name, currentProcessedSection,  "",link});
-//        else
-//            names[{currentProcessedSection,name}].crossoverUrl = link;
-//    }
-//    managerEventLoop.quit();
-//}
-
-//void MainWindow::on_pbInit_clicked()
-//{
-//    ReInitFandoms();
-//}
-
 
 // I don't like the idea of alive validation on this list creation
 //seems wrong place to do it
@@ -449,3 +304,30 @@ void MainWindow::OpenTagWidget(QPoint pos, QString url)
 //            QThread::msleep(500);
 
 //authorsInterface->GetById(ficPtr->authorId);
+
+
+//void MainWindow::on_cbCustomFilters_currentTextChanged(const QString &)
+//{
+//    on_pbLoadDatabase_clicked();
+//}
+
+
+//void MainWindow::OnCustomFilterClicked()
+//{
+//    if(ui->chkCustomFilter->isChecked())
+//    {
+//        ui->cbCustomFilters->setEnabled(true);
+//        QPalette p = ui->cbCustomFilters->palette();
+//        ui->chkCustomFilter->setStyleSheet("QCheckBox {border: none; color: DarkGreen;}");
+//        ui->cbCustomFilters->setPalette(p);
+//    }
+//    else
+//    {
+//        ui->cbCustomFilters->setEnabled(false);
+//        QPalette p = ui->cbSortMode->palette();
+//        ui->cbCustomFilters->setPalette(p);
+//        ui->chkCustomFilter->setStyleSheet("");
+//    }
+//    //on_pbLoadDatabase_clicked();
+//}
+
