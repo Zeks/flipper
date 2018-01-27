@@ -257,8 +257,6 @@ private:
     // used to check for unfinished tasks on application start
     void CheckUnfinishedTasks();
 
-
-
     Ui::MainWindow *ui;
 
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -281,6 +279,7 @@ private:
     QDateTime lastUpdated; // candidate for deletion
 
     QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
+    QTimer fandomInfoTimer; // used to hide the information about the amount of loaded fics
 
     QThread pageThread; // thread for pagegetter worker to live in
 
@@ -351,6 +350,9 @@ public slots:
     void OnDisplayPreviousPage();
     // queries and displays exact page for the current query
     void OnDisplayExactPage(int);
+
+    // invoked on "Search" click
+    void on_pbLoadDatabase_clicked();
 private slots:
     // called to trudge through a fandom
     void on_pbCrawl_clicked();
@@ -433,6 +435,9 @@ private slots:
 
     // used to get all favourites links for the current author on favourites page
     void OnGetAuthorFavouritesLinks();
+
+    //used to hide fandom results on timer
+    void OnHideFandomResults();
 
 signals:
     // page task when trudging through fandoms

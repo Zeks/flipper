@@ -19,5 +19,6 @@
         <file>icons/forward_blue.png</file>
         <file>icons/refresh.png</file>
         <file>icons/refresh_spin_lg.gif</file>
+        <file>icons/error2.png</file>
     </qresource>
 </RCC>

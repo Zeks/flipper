@@ -220,7 +220,7 @@
                      <number>1000</number>
                     </property>
                     <property name="value">
-                     <number>5</number>
+                     <number>100</number>
                     </property>
                    </widget>
                   </item>
@@ -1027,7 +1027,7 @@
                         <string/>
                        </property>
                        <property name="checked">
-                        <bool>true</bool>
+                        <bool>false</bool>
                        </property>
                       </widget>
                      </item>
@@ -1273,6 +1273,13 @@
                        </widget>
                       </item>
                      </layout>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="lblLoadResult">
+                     <property name="text">
+                      <string/>
+                     </property>
                     </widget>
                    </item>
                   </layout>
