@@ -174,13 +174,15 @@ QStringList Fandoms::GetRecentFandoms()
 void Fandoms::FillFandomList(bool forced)
 {
     if(forced || fandomsList.isEmpty())
+    {
         fandomsList  = database::puresql::GetFandomListFromDB(db);
+    }
 }
 
 
-QStringList Fandoms::GetFandomList()
+QStringList Fandoms::GetFandomList(bool forced)
 {
-    FillFandomList();
+    FillFandomList(forced);
     return fandomsList;
 }
 
@@ -396,6 +398,19 @@ void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
         nameIndex[fandom]->hasChanges = nameIndex[fandom]->tracked == false;
 
     nameIndex[fandom]->tracked = value;
+    if(value == true)
+        trackedFandoms.push_back(nameIndex[fandom]);
+    else
+    {
+        int id = nameIndex[fandom]->id;
+        auto it = std::find_if(std::begin(trackedFandoms), std::end(trackedFandoms), [id](core::FandomPtr ptr){
+                if(ptr && ptr->id == id)
+                return true;
+                return false;
+    });
+        if(it != std::end(trackedFandoms))
+          trackedFandoms.erase(it);
+    }
 }
 
 QStringList Fandoms::ListOfTrackedNames()

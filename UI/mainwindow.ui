@@ -1019,7 +1019,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QCheckBox" name="cbUseDateCutoff">
+                      <widget class="QCheckBox" name="chkCutoffLimit">
                        <property name="enabled">
                         <bool>true</bool>
                        </property>

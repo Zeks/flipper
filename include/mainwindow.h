@@ -257,6 +257,8 @@ private:
     // used to check for unfinished tasks on application start
     void CheckUnfinishedTasks();
 
+    bool AskYesNoQuestion(QString);
+
     Ui::MainWindow *ui;
 
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -396,8 +398,10 @@ private slots:
     void on_pbOpenWholeList_clicked();
     // used to load the next wave of authors from LinkedAuthors
     void on_pbFirstWave_clicked();
+
     // used to toggle enabled status of date cutoff mechanism for fandom parses
     void on_cbUseDateCutoff_clicked();
+
     // used to create a recommendation list from GUI parameters (obscure, currently better use sources.txt)
     void on_pbBuildRecs_clicked();
 
@@ -438,6 +442,8 @@ private slots:
 
     //used to hide fandom results on timer
     void OnHideFandomResults();
+
+    void on_chkCutoffLimit_toggled(bool checked);
 
 signals:
     // page task when trudging through fandoms

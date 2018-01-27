@@ -69,7 +69,7 @@ public:
     virtual void PushFandomToTopOfRecent(QString);
 
     QStringList GetRecentFandoms();
-    QStringList GetFandomList();
+    QStringList GetFandomList(bool forced = false);
 
     virtual void CalculateFandomsAverages();
     virtual void CalculateFandomsFicCounts();

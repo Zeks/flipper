@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
     w.tasksInterface = tasksInterface;
     w.InitInterfaces();
     w.Init();
+    w.InitConnections();
     w.show();
     w.StartTaskTimer();
 

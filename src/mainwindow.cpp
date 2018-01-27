@@ -145,12 +145,6 @@ SplitJobs SplitJob(QString data)
     int threadCount = QThread::idealThreadCount();
     QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
-    //    int captured = 0;
-    //    do{
-    //        index = rxStart.indexIn(data, index+1);
-    //        if(index != -1)
-    //            captured++;
-    //    }while(index != -1);
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
@@ -159,9 +153,6 @@ SplitJobs SplitJob(QString data)
     index = rxAuthorStories.indexIn(data);
     int capturedAuthorStories = data.count(rxAuthorStories);
     result.authorStoryCountInWhole = capturedAuthorStories;
-
-
-    //qDebug() << "Will process "  << captured << " stories";
 
     int partSize = captured/(threadCount-1);
     //qDebug() << "In packs of "  << partSize;
@@ -220,14 +211,7 @@ bool TagEditorHider(QObject* /*obj*/, QEvent *event, QWidget* widget)
     }
     return false;
 }
-QString NameOfFandomSectionToLink(QString val)
-{
-    return "https://www.fanfiction.net/" + val + "/";
-}
-QString NameOfCrossoverSectionToLink(QString val)
-{
-    return "https://www.fanfiction.net/crossovers/" + val + "/";
-}
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -240,16 +224,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::Init()
 {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+
+    qRegisterMetaType<WebPage>("WebPage");
+    qRegisterMetaType<PageResult>("PageResult");
+    qRegisterMetaType<ECacheMode>("ECacheMode");
+
+    this->setWindowTitle("ffnet sane search engine");
+    this->setAttribute(Qt::WA_QuitOnClose);
+
     std::unique_ptr<core::DefaultRNGgenerator> rng (new core::DefaultRNGgenerator());
+
     rng->portableDBInterface = dbInterface;
+
     queryBuilder.SetIdRNGgenerator(rng.release());
+
     ui->chkShowDirectRecs->setVisible(false);
     ui->pbFirstWave->setVisible(false);
 
-
-    this->setWindowTitle("ffnet sane search engine");
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    //settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     if(settings.value("Settings/hideCache", true).toBool())
         ui->chkCacheMode->setVisible(false);
 
@@ -258,36 +250,25 @@ void MainWindow::Init()
                                       "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
                                       "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
 
-    //ProcessRecommendationListsFromDB(database::GetAvailableRecommendationLists());
-    recsInterface->LoadAvailableRecommendationLists();
+
 
     ui->wdgTagsPlaceholder->fandomsInterface = fandomsInterface;
     ui->wdgTagsPlaceholder->tagsInterface = tagsInterface;
     tagWidgetDynamic->fandomsInterface = fandomsInterface;
     tagWidgetDynamic->tagsInterface = tagsInterface;
-    fandomsInterface->FillFandomList(true);
+
     recentFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
-    ProcessTagsIntoGui();
-    FillRecTagCombobox();
 
-    //QSettings settings("settings.ini", QSettings::IniFormat);
-    //settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
     auto storedRecList = settings.value("Settings/currentList").toString();
     qDebug() << QDir::currentPath();
     ui->cbRecGroup->setCurrentText(storedRecList);
     recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(storedRecList));
-
-    qRegisterMetaType<WebPage>("WebPage");
-    qRegisterMetaType<PageResult>("PageResult");
-    qRegisterMetaType<ECacheMode>("ECacheMode");
-
-
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
-
-    connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
-
-    ui->cbNormals->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
+    auto fandomList = fandomsInterface->GetFandomList(true);
+    ui->cbNormals->setModel(new QStringListModel(fandomList));
+    ui->deCutoffLimit->setEnabled(false);
 
     actionProgress = new ActionProgress;
     pbMain = actionProgress->ui->pbMain;
@@ -306,6 +287,48 @@ void MainWindow::Init()
     auto showTagWidget = settings.value("Settings/showNewTagsWidget", false).toBool();
     if(!showTagWidget)
         ui->tagWidget->removeTab(1);
+
+
+
+
+
+
+
+    recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
+    ui->lvTrackedFandoms->setModel(recentFandomsModel);
+    recsInterface->LoadAvailableRecommendationLists();
+    fandomsInterface->FillFandomList(true);
+
+    ProcessTagsIntoGui();
+    FillRecTagCombobox();
+    ReadSettings();
+    SetupFanficTable();
+    FillRecommenderListView();
+    CreatePageThreadWorker();
+    callProgress = [&](int counter) {
+        pbMain->setTextVisible(true);
+        pbMain->setFormat("%v");
+        pbMain->setValue(counter);
+        pbMain->show();
+    };
+    callProgressText = [&](QString value) {
+        ui->edtResults->insertHtml(value);
+        ui->edtResults->ensureCursorVisible();
+    };
+    cleanupEditor = [&](void) {
+        ui->edtResults->clear();
+    };
+    ui->lblLoadResult->hide();
+}
+
+void MainWindow::InitConnections()
+{
+
+    //    // should refer to new tag widget instead
+    //    GenericEventFilter* eventFilter = new GenericEventFilter(this);
+    //    eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagWidgetDynamic));
+    //    tagWidgetDynamic->installEventFilter(eventFilter);
+    connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
     connect(ui->pbFormattedList, &QPushButton::clicked, this, &MainWindow::OnDoFormattedList);
     connect(ui->pbGetFavouriteLinks, &QPushButton::clicked, this, &MainWindow::OnGetAuthorFavouritesLinks);
     connect(ui->pbPauseTask, &QPushButton::clicked, [&](){
@@ -321,15 +344,10 @@ void MainWindow::Init()
         InitUIFromTask(task);
         UseAuthorsPageTask(task, callProgress, callProgressText, cleanupEditor);
     });
-    // should refer to new tag widget instead
-    GenericEventFilter* eventFilter = new GenericEventFilter(this);
-    eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagWidgetDynamic));
-    tagWidgetDynamic->installEventFilter(eventFilter);
+
 
     connect(tagWidgetDynamic, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
     connect(ui->pbCopyFavUrls, &QPushButton::clicked, this, &MainWindow::OnCopyFavUrls);
-//    connect(ui->pbNextPage, &QPushButton::clicked, this, &MainWindow::OnDisplayNextPage);
-//    connect(ui->pbPreviousPage, &QPushButton::clicked, this, &MainWindow::OnDisplayPreviousPage);
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
 
@@ -364,48 +382,15 @@ void MainWindow::Init()
         }
 
     });
-
     connect(&taskTimer, &QTimer::timeout, this, &MainWindow::OnCheckUnfinishedTasks);
     connect(&fandomInfoTimer, &QTimer::timeout, this, &MainWindow::OnHideFandomResults);
-
-    this->setAttribute(Qt::WA_QuitOnClose);
-    ReadSettings();
-    SetupFanficTable();
-    InitConnections();
-    //fandomsInterface->RebaseFandomsToZero();
-
-    recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
-    ui->lvTrackedFandoms->setModel(recentFandomsModel);
-    //! todo rethink
-    //recommenders = database::FetchRecommenders();
-    //recommendersModel->setStringList(SortedList(recommenders.keys()));
-    //ui->lvRecommenders->setModel(recommendersModel);
-    FillRecommenderListView();
-
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     //! todo currently null
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
-    CreatePageThreadWorker();
-    callProgress = [&](int counter) {
-        pbMain->setTextVisible(true);
-        pbMain->setFormat("%v");
-        pbMain->setValue(counter);
-        pbMain->show();
-    };
-    callProgressText = [&](QString value) {
-        ui->edtResults->insertHtml(value);
-        ui->edtResults->ensureCursorVisible();
-    };
-    cleanupEditor = [&](void) {
-        ui->edtResults->clear();
-    };
-    ui->lblLoadResult->hide();
-}
 
-void MainWindow::InitConnections()
-{
-
-
+    connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
+    connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
+    connect(worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -680,10 +665,13 @@ void MainWindow::InitInterfaces()
 void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString page)
 {
     nextUrl = page;
-    if(ui->cbUseDateCutoff->isChecked())
+    qDebug() << "dateArrived as: " << lastFandomUpdatedate;
+    if(ui->chkCutoffLimit->isChecked())
         lastFandomUpdatedate = ui->deCutoffLimit->date();
     if(ui->chkIgnoreUpdateDate->isChecked())
         lastFandomUpdatedate = QDate();
+    qDebug() << "after if as: " << lastFandomUpdatedate;
+    //bool noSpecificTime = !ui->chkIgnoreUpdateDate->isChecked() && ui->cbUseDateCutoff->isChecked();
 
     StartPageWorker();
     DisableAllLoadButtons();
@@ -1744,6 +1732,20 @@ void MainWindow::CheckUnfinishedTasks()
     }
 }
 
+bool MainWindow::AskYesNoQuestion(QString value)
+{
+    QMessageBox m;
+    m.setIcon(QMessageBox::Warning);
+    m.setText(value);
+    auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
+    auto noButton =  m.addButton("Cancel", QMessageBox::AcceptRole);
+    Q_UNUSED(noButton);
+    m.exec();
+    if(m.clickedButton() != yesButton)
+        return false;
+    return true;
+}
+
 void MainWindow::PlaceResults()
 {
     ui->edtResults->setUpdatesEnabled(true);
@@ -1754,8 +1756,8 @@ void MainWindow::PlaceResults()
 
 void MainWindow::SetWorkingStatus()
 {
-//    QPixmap px(":/icons/icons/refresh.png");
-//    px = px.scaled(24, 24);
+    //    QPixmap px(":/icons/icons/refresh.png");
+    //    px = px.scaled(24, 24);
     refreshSpin.setScaledSize(actionProgress->ui->lblCurrentStatusIcon->size());
     refreshSpin.start();
     actionProgress->ui->lblCurrentStatusIcon->setMovie(&refreshSpin);
@@ -1917,9 +1919,7 @@ void MainWindow::CreatePageThreadWorker()
 {
     worker = new PageThreadWorker;
     worker->moveToThread(&pageThread);
-    connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
-    connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
-    connect(worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
+
 }
 
 void MainWindow::StartPageWorker()
@@ -1946,7 +1946,7 @@ void MainWindow::ReinitProgressbar(int maxValue)
 void MainWindow::ShutdownProgressbar()
 {
     pbMain->setValue(0);
-    pbMain->hide();
+    //pbMain->hide();
 }
 
 void MainWindow::AddToProgressLog(QString value)
@@ -2027,22 +2027,39 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     processedFics = 0;
     auto fandoms = fandomsInterface->ListOfTrackedFandoms();
     qDebug() << fandoms;
+    ui->edtResults->clear();
+    if(ui->chkCutoffLimit->isChecked())
+    {
+        QString diagnostics;
+        diagnostics = "Date cutoff is enabled.\n";
+        diagnostics += "Fandoms will be updated up to that date instead of last update.\n";
+        diagnostics += "Unless their update date is older than this date.";
+        if(!AskYesNoQuestion(diagnostics))
+            return;
+    }
+
     for(auto fandom : fandoms)
     {
         auto urls = fandom->GetUrls();
-        ui->edtResults->clear();
         nextUrl = QString();
-        ui->deCutoffLimit->setDate(fandom->lastUpdateDate);
-        qDebug() << "will load fandom since:" << fandom->lastUpdateDate;
+        //ui->deCutoffLimit->setDate(fandom->lastUpdateDate);
+        QDate prefererdDate = fandom->lastUpdateDate <  ui->deCutoffLimit->date() ? fandom->lastUpdateDate: ui->deCutoffLimit->date();
+        qDebug() << "will load fandom since:" << prefererdDate;
         for(auto url: urls)
         {
-            //auto currentUrl = AdjustFFNCrossoverUrl(url);
-            //auto fullUrl = url_utils::AppendBase(url.GetSource(), currentUrl);
-            RequestAndProcessPage(fandom->GetName(), lastUpdated.date(), AppendCurrentSearchParameters(url.GetUrl()));
+            auto urlString = AppendCurrentSearchParameters(url.GetUrl());
+            AddToProgressLog("Processing: " + urlString + "<br>");
+            RequestAndProcessPage(fandom->GetName(), prefererdDate, urlString);
         }
         fandomsInterface->SetLastUpdateDate(fandom->GetName(), QDateTime::currentDateTimeUtc().date());
     }
-    QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
+    //QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
+    QString status = "Finished processing %1 fics";
+    ui->lblLoadResult->show();
+    fandomInfoTimer.setSingleShot(true);
+    fandomInfoTimer.start(7000);
+    ui->lblLoadResult->setText(status.arg(processedFics));
+    ui->lblLoadResult->setStyleSheet("font-weight: bold; color: darkGreen; font-size: 20px");
 }
 
 void MainWindow::on_pbLoadPage_clicked()
@@ -2172,7 +2189,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     fandomsInterface->RecalculateFandomStats(fandoms.values());
     transaction.finalize();
     fanficsInterface->ClearProcessedHash();
-    pbMain->hide();
+    //pbMain->hide();
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     LoadData();
@@ -2204,7 +2221,7 @@ void MainWindow::on_pbFirstWave_clicked()
 
 void MainWindow::on_cbUseDateCutoff_clicked()
 {
-    ui->deCutoffLimit->setEnabled(!ui->deCutoffLimit->isEnabled());
+    ui->deCutoffLimit->setEnabled(ui->chkCutoffLimit->isChecked());
 }
 
 
@@ -2609,4 +2626,10 @@ void MainWindow::UpdateFandomList(UpdateFandomTask task)
         for(auto cat : categoryList)
             UpdateCategory("/crossovers/" + cat + "/", &crossoverParser, fandomsInterface);
     }
+}
+//
+
+void MainWindow::on_chkCutoffLimit_toggled(bool checked)
+{
+    ui->deCutoffLimit->setEnabled(checked);
 }
