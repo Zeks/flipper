@@ -319,6 +319,7 @@ void MainWindow::Init()
         ui->edtResults->clear();
     };
     ui->lblLoadResult->hide();
+
 }
 
 void MainWindow::InitConnections()
@@ -1493,7 +1494,7 @@ void MainWindow::ReadSettings()
     ui->pbReprocessAuthors->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
     //ui->wdgLower->setVisible(settings.value("Settings/showListBuildButton", false).toBool());
     ui->wdgWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
-
+    ui->wdgCustomActions->setVisible(settings.value("Settings/showCustomActions", false).toBool());
     ui->pbLoadAllRecommenders->setVisible(settings.value("Settings/showRecListReload", false).toBool());
     ui->sbMinRecommendations->setVisible(settings.value("Settings/showRecListReload", false).toBool());
     ui->chkShowOrigins->setVisible(settings.value("Settings/showRecListReload", false).toBool());
@@ -2219,10 +2220,6 @@ void MainWindow::on_pbFirstWave_clicked()
     LoadMoreAuthors();
 }
 
-void MainWindow::on_cbUseDateCutoff_clicked()
-{
-    ui->deCutoffLimit->setEnabled(ui->chkCutoffLimit->isChecked());
-}
 
 
 int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params)
