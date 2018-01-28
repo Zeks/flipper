@@ -352,7 +352,7 @@
                      <item>
                       <widget class="QCheckBox" name="chkIgnoreUpdateDate">
                        <property name="text">
-                        <string>Ignore updatedate</string>
+                        <string>Full parse</string>
                        </property>
                       </widget>
                      </item>

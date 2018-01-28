@@ -288,12 +288,6 @@ void MainWindow::Init()
     if(!showTagWidget)
         ui->tagWidget->removeTab(1);
 
-
-
-
-
-
-
     recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
     recsInterface->LoadAvailableRecommendationLists();
@@ -319,6 +313,9 @@ void MainWindow::Init()
         ui->edtResults->clear();
     };
     ui->lblLoadResult->hide();
+
+    fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
+    ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
 
 }
 
@@ -392,6 +389,7 @@ void MainWindow::InitConnections()
     connect(this, &MainWindow::pageTask, worker, &PageThreadWorker::Task);
     connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
     connect(worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
+    connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -710,7 +708,9 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
         if(!pageQueue.pending && pageQueue.data.isEmpty())
             break;
 
+
         webPage = pageQueue.data.at(0);
+
         pageQueue.data.pop_front();
         webPage.crossover = webPage.url.contains("Crossovers");
         webPage.fandom =  fandom;
@@ -730,7 +730,7 @@ void MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedat
             pbMain->setValue(counter++);
 
 
-
+        AddToProgressLog("Page: " + QString::number(webPage.pageIndex) + "<br>");
         auto startPageRequest = std::chrono::high_resolution_clock::now();
 
         {
@@ -895,8 +895,11 @@ QSqlQuery MainWindow::BuildQuery(bool countOnly)
     auto end = currentQuery->bindings.end();
     while(it != end)
     {
-        qDebug() << it.key() << " " << it.value();
-        q.bindValue(it.key(), it.value());
+        if(currentQuery->str.contains(it.key()))
+        {
+            qDebug() << it.key() << " " << it.value();
+            q.bindValue(it.key(), it.value());
+        }
         ++it;
     }
     return q;
@@ -1678,6 +1681,7 @@ QString MainWindow::AppendCurrentSearchParameters(QString url)
 void MainWindow::ReinitRecent(QString name)
 {
     fandomsInterface->PushFandomToTopOfRecent(name);
+    fandomsInterface->ReloadRecentFandoms();
     recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
 }
 
@@ -1783,6 +1787,9 @@ void MainWindow::SetFailureStatus()
 
 void MainWindow::on_pbCrawl_clicked()
 {
+    if(!WarnCutoffLimit() || !WarnFullParse())
+        return;
+
     TaskProgressGuard guard(this);
     processedFics = 0;
     auto fandom = fandomsInterface->GetFandom(GetCurrentFandomName());
@@ -2021,14 +2028,8 @@ void MainWindow::on_chkTrackedFandom_toggled(bool checked)
 }
 
 
-
-void MainWindow::on_pbLoadTrackedFandoms_clicked()
+bool MainWindow::WarnCutoffLimit()
 {
-    TaskProgressGuard guard(this);
-    processedFics = 0;
-    auto fandoms = fandomsInterface->ListOfTrackedFandoms();
-    qDebug() << fandoms;
-    ui->edtResults->clear();
     if(ui->chkCutoffLimit->isChecked())
     {
         QString diagnostics;
@@ -2036,8 +2037,35 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         diagnostics += "Fandoms will be updated up to that date instead of last update.\n";
         diagnostics += "Unless their update date is older than this date.";
         if(!AskYesNoQuestion(diagnostics))
-            return;
+            return false;
     }
+    return true;
+}
+
+bool MainWindow::WarnFullParse()
+{
+    if(ui->chkIgnoreUpdateDate->isChecked())
+    {
+        QString diagnostics;
+        diagnostics = "Update date is fully ignored.\n";
+        diagnostics += "Fandoms will be parsed up to the very beginning of their history.\n";
+        diagnostics += "This is potentially a very long process for big fandoms.";
+        if(!AskYesNoQuestion(diagnostics))
+            return false;
+    }
+    return true;
+}
+
+void MainWindow::on_pbLoadTrackedFandoms_clicked()
+{
+    if(!WarnCutoffLimit() || !WarnFullParse())
+        return;
+
+    TaskProgressGuard guard(this);
+    processedFics = 0;
+    auto fandoms = fandomsInterface->ListOfTrackedFandoms();
+    qDebug() << fandoms;
+    ui->edtResults->clear();
 
     for(auto fandom : fandoms)
     {
@@ -2629,4 +2657,25 @@ void MainWindow::UpdateFandomList(UpdateFandomTask task)
 void MainWindow::on_chkCutoffLimit_toggled(bool checked)
 {
     ui->deCutoffLimit->setEnabled(checked);
+    if(checked)
+        ui->chkIgnoreUpdateDate->setChecked(false);
+}
+
+void MainWindow::on_chkIgnoreUpdateDate_toggled(bool checked)
+{
+    if(checked)
+        ui->chkCutoffLimit->setChecked(false);
+}
+
+void MainWindow::OnRemoveFandomFromRecentList()
+{
+    auto fandom = ui->lvTrackedFandoms->currentIndex().data(0).toString();
+    fandomsInterface->RemoveFandomFromRecentList(fandom);
+    fandomsInterface->ReloadRecentFandoms();
+    recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
+}
+
+void MainWindow::OnFandomsContextMenu(const QPoint &pos)
+{
+    fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
 }

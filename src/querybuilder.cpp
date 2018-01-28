@@ -40,7 +40,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     queryString = "ID, ";
     queryString+= CreateCustomFields(filter) + " f.* ";
 
-    queryString+=" from vFanfics f where alive = 1 " ;
+    queryString+=" from vFanfics f where f.alive = 1 " ;
     QString where = CreateWhere(filter);
     qDebug().noquote() << "WHERE IS: " << where;
     ProcessBindings(filter, query);
@@ -59,7 +59,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
             where = temp;
         }
         else
-            where = " and id in ( select id as fid from fanfics ff where 1=1 " + where + BuildSortMode(filter) + CreateLimitQueryPart(filter) + ")";
+            where = " and f.id in ( select id as fid from fanfics ff where 1=1 " + where + BuildSortMode(filter) + CreateLimitQueryPart(filter) + ")";
         QString randomizer = ProcessRandomization(filter, where);
         if(!filter.randomizeResults)
             queryString += where  + BuildSortMode(filter);
@@ -285,15 +285,15 @@ QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
     QString queryString;
     QString activeString = " cast("
                            "("
-                           " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
+                           " strftime('%s',ff.updated)-strftime('%s',CURRENT_TIMESTAMP) "
                            " ) AS real "
                            " )/60/60/24 >-365";
 
     if(filter.ensureCompleted)
-        queryString+=QString(" and  complete = 1");
+        queryString+=QString(" and  ff.complete = 1");
 
     if(!filter.allowUnfinished)
-        queryString+=QString(" and  ( complete = 1 or " + activeString + " )");
+        queryString+=QString(" and  ( ff.complete = 1 or " + activeString + " )");
 
     if(!filter.allowNoGenre)
         queryString+=QString(" and  ( genres != 'not found' )");
@@ -460,7 +460,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
     // recommendation list sorting can and needs to be inverted for instant results
     QString wrappignString =  "select count(fic_id) as records from RecommendationListData  where list_id = :list_id and match_count > :match_count and exists (%1)";
     QString normalString = "select count(id) as records %1 ";
-    queryString = "  from vFanfics ff where alive = 1 " ;
+    queryString = "  from vFanfics ff where ff.alive = 1 " ;
     QString where;
     {
         where+= ProcessWordcount(filter);

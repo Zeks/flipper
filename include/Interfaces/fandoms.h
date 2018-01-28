@@ -67,8 +67,10 @@ public:
     virtual bool AddFandomLink(QString fandom, core::Url);
     virtual bool AssignTagToFandom(QString, QString tag, bool includeCrosses = false);
     virtual void PushFandomToTopOfRecent(QString);
+    virtual void RemoveFandomFromRecentList(QString);
 
     QStringList GetRecentFandoms();
+    void ReloadRecentFandoms();
     QStringList GetFandomList(bool forced = false);
 
     virtual void CalculateFandomsAverages();
@@ -80,6 +82,7 @@ public:
     QSharedPointer<database::IDBWrapper> portableDBInterface;
 private:
     bool AddToTopOfRecent(QString);
+
 
 
     QList<core::FandomPtr> fandoms;

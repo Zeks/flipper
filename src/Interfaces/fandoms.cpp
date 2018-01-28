@@ -214,6 +214,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
 
 
 
+
 void Fandoms::PushFandomToTopOfRecent(QString fandom)
 {
     fandom = core::Fandom::ConvertName(fandom);
@@ -228,6 +229,12 @@ void Fandoms::PushFandomToTopOfRecent(QString fandom)
     portableDBInterface->PushFandomToTopOfRecent(fandom);
     portableDBInterface->RebaseFandomsToZero();
     transaction.finalize();
+}
+
+void Fandoms::RemoveFandomFromRecentList(QString name)
+{
+    name = core::Fandom::ConvertName(name);
+    auto result = database::puresql::RemoveFandomFromRecentList(name, db);
 }
 
 bool Fandoms::IsDataLoaded()
@@ -289,6 +296,22 @@ bool Fandoms::Load()
     }
     fandomCount = database::puresql::GetFandomCountInDatabase(db);
     return hadErrors;
+}
+
+void Fandoms::ReloadRecentFandoms()
+{
+    this->recentFandoms.clear();
+    QStringList recentFandoms = portableDBInterface->FetchRecentFandoms();
+    recentFandoms.removeAll("");
+    for(auto bit: recentFandoms)
+    {
+        bool fandomPresent = false;
+        if(EnsureFandom(bit))
+            fandomPresent = true;
+
+        if(fandomPresent)
+            this->recentFandoms.push_back(nameIndex[bit]);
+    }
 }
 
 bool Fandoms::LoadTrackedFandoms(bool forced)

@@ -258,6 +258,8 @@ private:
     void CheckUnfinishedTasks();
 
     bool AskYesNoQuestion(QString);
+    bool WarnCutoffLimit();
+    bool WarnFullParse();
 
     Ui::MainWindow *ui;
 
@@ -318,6 +320,7 @@ private:
     QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
     ActionProgress* actionProgress = nullptr;
+    QMenu fandomMenu;
 
 public slots:
     //broken and needs refactoring anyway
@@ -445,6 +448,12 @@ private slots:
 
     // used to toggle enabled status of date cutoff mechanism for fandom parses
     void on_chkCutoffLimit_toggled(bool checked);
+
+    void on_chkIgnoreUpdateDate_toggled(bool checked);
+
+    void OnRemoveFandomFromRecentList();
+
+    void OnFandomsContextMenu(const QPoint &pos);
 
 signals:
     // page task when trudging through fandoms

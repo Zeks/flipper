@@ -1847,6 +1847,23 @@ bool SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db)
         return false;
     return true;
 }
+
+DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString qs = QString("delete from recent_fandoms where fandom = :name");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":name", name);
+    if(!result.ExecAndCheck(q))
+        return result;
+    result.success = true;
+    return result;
+}
+
+
 DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db)
 {
     DiagnosticSQLResult<int> result;
@@ -2454,6 +2471,7 @@ bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
     }
     return true;
 }
+
 
 
 
