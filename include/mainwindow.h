@@ -53,6 +53,7 @@ class QQuickWidget;
 class QQuickView;
 class QStringListModel;
 class ActionProgress;
+class FFNFandomIndexParserBase;
 namespace interfaces{
 class Fandoms;
 class Fanfics;
@@ -149,7 +150,7 @@ private:
     QString GetCurrentFandomName();
 
     // a wrapper over pagegetter to request pages for fandom parsing
-    void RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
+    bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
 
     // a wrapper over pagegetter to request pages
     // todo probably could be dropped, will need to check
@@ -454,6 +455,10 @@ private slots:
     void OnRemoveFandomFromRecentList();
 
     void OnFandomsContextMenu(const QPoint &pos);
+
+    void UpdateCategory(QString cat,
+                        FFNFandomIndexParserBase* parser,
+                        QSharedPointer<interfaces::Fandoms> fandomInterface);
 
 signals:
     // page task when trudging through fandoms

@@ -76,11 +76,10 @@ bool RecommendationLists::EnsureList(int listId)
 
     auto list = database::puresql::GetRecommendationList(listId, db);
 
-    AddToIndex(list);
-
     if(!list)
         return false;
 
+    AddToIndex(list);
     return true;
 }
 
@@ -95,12 +94,10 @@ bool RecommendationLists::EnsureList(QString name)
     if(nameIndex.contains(name))
         return true;
     auto list = database::puresql::GetRecommendationList(name, db);
-    if(!list)
-        return false;
-    AddToIndex(list);
 
     if(!list)
         return false;
+    AddToIndex(list);
 
     return true;
 }

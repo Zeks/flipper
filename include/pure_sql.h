@@ -59,7 +59,7 @@ struct DiagnosticSQLResult
 struct FanficIdRecord
 {
     FanficIdRecord();
-    DiagnosticSQLResult<bool> CreateRecord(QSqlDatabase db) const;
+    DiagnosticSQLResult<int> CreateRecord(QSqlDatabase db) const;
     int GetID(QString value) const {
         if(ids.contains(value))
             return ids[value];

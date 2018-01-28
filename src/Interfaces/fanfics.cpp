@@ -270,37 +270,54 @@ bool Fanfics::FlushDataQueues()
     database::Transaction transaction(db);
     int insertCounter = 0;
     int updateCounter = 0;
+    bool hasFailures = false;
     for(auto fic: insertQueue)
     {
         insertCounter++;
         bool writeResult = database::puresql::InsertIntoDB(fic, db);
+        hasFailures = hasFailures && writeResult;
         fic->id = GetIDFromWebID(fic->webId, "ffn");
         for(auto fandom: fic->fandoms)
         {
             bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+            hasFailures = hasFailures && result;
             if(!result)
             {
                 qDebug() << "failed to write fandom for: " << fic->webId;
                 fandomInterface->GetIDForName(fandom);
             }
+            if(hasFailures)
+                break;
         }
+        if(hasFailures)
+            break;
     }
+    if(hasFailures)
+        return false;
 
     for(auto fic: updateQueue)
     {
         fic->id = GetIDFromWebID(fic->webId, "ffn");
-        database::puresql::UpdateInDB(fic, db);
+        auto result = database::puresql::UpdateInDB(fic, db);
+        hasFailures = hasFailures && result;
         for(auto fandom: fic->fandoms)
         {
             bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+            hasFailures = hasFailures && result;
             if(!result)
             {
                 qDebug() << "failed to write fandom for: " << fic->webId;
                 fandomInterface->GetIDForName(fandom);
             }
+            if(hasFailures)
+                break;
         }
         updateCounter++;
+        if(hasFailures)
+            break;
     }
+    if(hasFailures)
+        return false;
 
     WriteRecommendations();
     if(insertCounter > 0)

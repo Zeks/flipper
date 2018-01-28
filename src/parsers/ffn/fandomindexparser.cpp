@@ -50,7 +50,7 @@ void FFNFandomIndexParserBase::ProcessInternal(RegexProcessData procData)
             AddError("failed to fetch link at: " +  str.mid(linkStart, str.size() - linkStart));
             break;
         }
-        qDebug() << str.mid(linkStart, linkEnd - linkStart);
+        //qDebug() << str.mid(linkStart, linkEnd - linkStart);
         QString link = str.mid(linkStart + procData.rxStartLink.pattern().length() - procData.leftLinkAdjustment,
                                linkEnd - (linkStart + procData.rxStartLink.pattern().length()) + procData.rightLinkAdjustment);
 
@@ -89,7 +89,7 @@ static RegexProcessData CreateFandomControls(){
     controls.rxEndName = CreateRegex("[\"]>");
     controls.nameStartLength = 7;
     controls.leftLinkAdjustment = 0;
-    controls.rightLinkAdjustment = 0;
+    controls.rightLinkAdjustment = 1;
     controls.type = "normal";
     return controls;
 }

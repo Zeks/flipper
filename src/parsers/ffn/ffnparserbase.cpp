@@ -28,13 +28,13 @@ FFNParserBase::~FFNParserBase()
 void FFNParserBase::ProcessGenres(core::Section &section, QString genreText)
 {
     section.result->SetGenres(genreText, "ffn");
-    qDebug() << "Genres: " << section.result->genres;
+    //qDebug() << "Genres: " << section.result->genres;
 }
 
 void FFNParserBase::ProcessCharacters(core::Section &section, QString characters)
 {
     section.result->charactersFull = characters.trimmed();
-    qDebug() << "Characters: " << characters;
+    //qDebug() << "Characters: " << characters;
 }
 
 void FFNParserBase::ProcessStatSection(core::Section &section)
@@ -108,7 +108,7 @@ void FFNParserBase::GetCharacters(QString text,
                                 10);
 
 
-    qDebug() << text;
+    // qDebug() << text;
     full = full.replace(" - Complete", "");
     if(full.contains("Published"))
         full = "";
