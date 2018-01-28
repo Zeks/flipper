@@ -98,7 +98,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>1</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -657,6 +657,13 @@
                       </widget>
                      </item>
                      <item>
+                      <widget class="QPushButton" name="pbCopyFavUrls">
+                       <property name="text">
+                        <string>Copy Author Urls</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <spacer name="horizontalSpacer_3">
                        <property name="orientation">
                         <enum>Qt::Horizontal</enum>
@@ -685,13 +692,6 @@
                      </item>
                      <item>
                       <widget class="QSpinBox" name="sbMinRecommendations"/>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbCopyFavUrls">
-                       <property name="text">
-                        <string>Copy Urls</string>
-                       </property>
-                      </widget>
                      </item>
                      <item>
                       <widget class="QPushButton" name="pbOpenWholeList">

@@ -340,7 +340,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
         return result;
     QStringList idList;
     QString part = "  and ID IN ( %1 ) ";
-    wherePart = " 1 as junk from fanfics where 1 = 1 " + wherePart;
+    wherePart = " 1 as junk from fanfics f where 1 = 1 " + wherePart;
     wherePart.replace("COLLATE NOCASE", "");
     wherePart+=" COLLATE NOCASE";
     for(int i = 0; i < filter.maxFics; i++)

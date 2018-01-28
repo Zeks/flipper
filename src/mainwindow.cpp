@@ -354,6 +354,8 @@ void MainWindow::InitConnections()
             filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
             LoadData();
         }
+        if(ui->gbTagFilters->isChecked()  && ui->wdgTagsPlaceholder->GetSelectedTags().size() == 0)
+            on_pbLoadDatabase_clicked();
         ui->edtResults->setUpdatesEnabled(true);
         ui->edtResults->setReadOnly(true);
         holder->SetData(fanfics);
@@ -2539,7 +2541,7 @@ void MainWindow::OnCheckUnfinishedTasks()
 
 void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
 {
-    ui->chkRandomizeSelection->setEnabled(checked);
+    //ui->chkRandomizeSelection->setEnabled(checked);
     ui->sbMaxRandomFicCount->setEnabled(checked);
 }
 
