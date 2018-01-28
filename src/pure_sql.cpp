@@ -464,11 +464,13 @@ bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
         return false;
 
     QString getKeyQuery = "Select ( select count(id) from FANFICS where  %1_id = :site_id) as COUNT_NAMED,"
-                          " ( select count(id) from FANFICS where  %1_id = :site_id and updated <> :updated) as count_updated"
+                          " ( select count(id) from FANFICS where  %1_id = :site_id and (updated <> :updated or updated is null)) as count_updated"
                           ;
 
     QString filledQuery = getKeyQuery.arg(fic->webSite);
-//    if(fic->title.contains("Fire Princess"))
+//    if(fic->webId == 12741163 ||
+//            fic->webId == 12322164 ||
+//            fic->webId == 10839545)
 //        qDebug() << filledQuery;
     QSqlQuery q(db);
     q.prepare(filledQuery);
@@ -481,8 +483,12 @@ bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
     if(!q.next())
         return false;
 
-    bool requiresInsert = q.value(0).toInt() == 0;
-    if(alwaysUpdateIfNotInsert || (q.value(0).toInt() > 0 && q.value(1).toInt() > 0))
+    int countNamed = q.value("COUNT_NAMED").toInt();
+    int countUpdated = q.value("count_updated").toInt();
+    bool requiresInsert = countNamed == 0;
+    bool requiresUpdate = countUpdated > 0;
+
+    if(alwaysUpdateIfNotInsert || (!requiresInsert && requiresUpdate > 0))
         fic->updateMode = core::UpdateMode::update;
     if(requiresInsert)
         fic->updateMode = core::UpdateMode::insert;
@@ -538,7 +544,7 @@ bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
     QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
                     "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
                     "summary = :summary, genres= :genres, published = :published, updated = :updated, author_id = :author_id,"
-                    "wcr= :wcr, reviewstofavourites = :reviewstofavourites, age = :age, daysrunning = :daysrunning "
+                    "wcr= :wcr,  author= :author, title= :title, reviewstofavourites = :reviewstofavourites, age = :age, daysrunning = :daysrunning "
                     " where %1_id = :site_id";
     query=query.arg(section->webSite);
     QSqlQuery q(db);
@@ -2392,13 +2398,15 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
         if(dbId == -1)
         {
             auto recResult = idRecord.CreateRecord(currentDB);
-            qDebug() << "Creatign fic record";
+            qDebug() << "Creating fic record";
             if(!recResult.success)
             {
                 result.success = false;
                 result.oracleError = recResult.oracleError;
                 return result;
             }
+            dbId = recResult.data;
+
         }
         insertQ.bindValue(":tag", importTagsQ.value("tag").toString());
         insertQ.bindValue(":id", dbId);
@@ -2421,10 +2429,11 @@ FanficIdRecord::FanficIdRecord()
     ids["ao3"] = -1;
 }
 
-DiagnosticSQLResult<bool> FanficIdRecord::CreateRecord(QSqlDatabase db) const
+DiagnosticSQLResult<int> FanficIdRecord::CreateRecord(QSqlDatabase db) const
 {
     // will create an empty record with just ids to be filled later on
-    DiagnosticSQLResult<bool> result;
+    DiagnosticSQLResult<int> result;
+    result.success = false;
     QString query = "INSERT INTO FANFICS (ffn_id, sb_id, sv_id, ao3_id, for_fill) "
                     "VALUES ( :ffn_id, :sb_id, :sv_id, :ao3_id, 1)";
     QSqlQuery q(db);
@@ -2433,10 +2442,16 @@ DiagnosticSQLResult<bool> FanficIdRecord::CreateRecord(QSqlDatabase db) const
     q.bindValue(":sb_id",  ids["sb"]);
     q.bindValue(":sv_id",  ids["sv"]);
     q.bindValue(":ao3_id", ids["ao3"]);
-    q.exec();
-    if(result.ExecAndCheck(q))
+    if(!result.ExecAndCheck(q))
         return result;
-    result.data = true;
+    query = "select max(id) from fanfics";
+    q.prepare(query);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+    result.success = true;
+    result.data = q.value(0).toInt();
     return result;
 }
 

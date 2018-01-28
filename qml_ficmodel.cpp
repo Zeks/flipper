@@ -108,7 +108,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[CurrentChapterRole] = "currentchapter";
     roles[ChaptersRole] = "chapters";
     roles[ReviewsRole] = "reviews";
-    roles[FavesRole] = "faves";
+    roles[FavesRole] = "favourites";
     roles[RatedRole] = "rated";
     roles[AtChapterRole] = "atChapter";
     roles[RownumRole] = "rownum";

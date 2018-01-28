@@ -84,7 +84,10 @@ QStringList Tags::CreateDefaultTagList()
 bool Tags::ExportToFile(QString filename)
 {
     QString exportFile = filename;
-    QFile::remove(exportFile);
+    auto closeDb = QSqlDatabase::database("TagExport");
+    if(closeDb.isOpen())
+        closeDb.close();
+    bool success = QFile::remove(exportFile);
     QSharedPointer<database::IDBWrapper> tagExportInterface (new database::SqliteInterface());
     auto tagExportDb = tagExportInterface->InitDatabase("TagExport", false);
     tagExportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagExport");
@@ -95,6 +98,9 @@ bool Tags::ExportToFile(QString filename)
 bool Tags::ImportFromFile(QString filename)
 {
     QString importFile = filename;
+    auto closeDb = QSqlDatabase::database("TagExport");
+    if(closeDb.isOpen())
+        closeDb.close();
     if(!QFile::exists(importFile))
     {
         qDebug() << "Could not find importfile";
