@@ -113,6 +113,7 @@ bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db);
 QHash<int, QList<int> > GetWholeFicFandomsTable(QSqlDatabase db);
 bool EraseFicFandomsTable(QSqlDatabase db);
 bool SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db);
+DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase db);
 
 QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDatabase);
@@ -131,7 +132,7 @@ int GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
 bool AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 QList<int> GetAllAuthorIds(QSqlDatabase db);
-
+DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
 
 QList<core::AuthorPtr > GetAllAuthors(QString website,  QSqlDatabase db);
 QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);

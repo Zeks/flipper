@@ -241,13 +241,27 @@ Rectangle {
                     lvFics.chapterChanged(index, ID)
                 }
                 onModelChanged: {currentIndex = atChapter}
+                MouseArea {
+                       anchors.fill: parent
+                       onWheel: {
+                           // do nothing
+                       }
+                       onPressed: {
+                           // propogate to ComboBox
+                           mouse.accepted = false;
+                       }
+                       onReleased: {
+                           // propogate to ComboBox
+                           mouse.accepted = false;
+                       }
+                   }
 
             }
 
             Text {
                 id: txtOf
                 height: 24
-                text: "Of: " + chapters
+                text: "Of: " + String(parseInt(chapters) - 1)
                 verticalAlignment: Text.AlignVCenter
 
                 font.pixelSize: 12

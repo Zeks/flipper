@@ -174,13 +174,15 @@ QStringList Fandoms::GetRecentFandoms()
 void Fandoms::FillFandomList(bool forced)
 {
     if(forced || fandomsList.isEmpty())
+    {
         fandomsList  = database::puresql::GetFandomListFromDB(db);
+    }
 }
 
 
-QStringList Fandoms::GetFandomList()
+QStringList Fandoms::GetFandomList(bool forced)
 {
-    FillFandomList();
+    FillFandomList(forced);
     return fandomsList;
 }
 
@@ -212,6 +214,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
 
 
 
+
 void Fandoms::PushFandomToTopOfRecent(QString fandom)
 {
     fandom = core::Fandom::ConvertName(fandom);
@@ -226,6 +229,12 @@ void Fandoms::PushFandomToTopOfRecent(QString fandom)
     portableDBInterface->PushFandomToTopOfRecent(fandom);
     portableDBInterface->RebaseFandomsToZero();
     transaction.finalize();
+}
+
+void Fandoms::RemoveFandomFromRecentList(QString name)
+{
+    name = core::Fandom::ConvertName(name);
+    auto result = database::puresql::RemoveFandomFromRecentList(name, db);
 }
 
 bool Fandoms::IsDataLoaded()
@@ -287,6 +296,22 @@ bool Fandoms::Load()
     }
     fandomCount = database::puresql::GetFandomCountInDatabase(db);
     return hadErrors;
+}
+
+void Fandoms::ReloadRecentFandoms()
+{
+    this->recentFandoms.clear();
+    QStringList recentFandoms = portableDBInterface->FetchRecentFandoms();
+    recentFandoms.removeAll("");
+    for(auto bit: recentFandoms)
+    {
+        bool fandomPresent = false;
+        if(EnsureFandom(bit))
+            fandomPresent = true;
+
+        if(fandomPresent)
+            this->recentFandoms.push_back(nameIndex[bit]);
+    }
 }
 
 bool Fandoms::LoadTrackedFandoms(bool forced)
@@ -396,6 +421,19 @@ void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
         nameIndex[fandom]->hasChanges = nameIndex[fandom]->tracked == false;
 
     nameIndex[fandom]->tracked = value;
+    if(value == true)
+        trackedFandoms.push_back(nameIndex[fandom]);
+    else
+    {
+        int id = nameIndex[fandom]->id;
+        auto it = std::find_if(std::begin(trackedFandoms), std::end(trackedFandoms), [id](core::FandomPtr ptr){
+                if(ptr && ptr->id == id)
+                return true;
+                return false;
+    });
+        if(it != std::end(trackedFandoms))
+          trackedFandoms.erase(it);
+    }
 }
 
 QStringList Fandoms::ListOfTrackedNames()

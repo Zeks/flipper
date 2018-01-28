@@ -103,6 +103,8 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     WebPage result;
     auto db = QSqlDatabase::database("PageCache");
     bool dbOpen = db.isOpen();
+    if(!dbOpen)
+        return result;
     QSqlQuery q(db);
     q.prepare("select * from PageCache where url = :URL");
     q.bindValue(":URL", url);
@@ -265,7 +267,7 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
 void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate)
 {
     FuncCleanup f([&](){working = false;});
-
+    qDebug() << updateLimit;
     database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
@@ -278,7 +280,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         qDebug() << "loading page: " << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(url, cacheMode);
-        result.pageIndex = counter;
+        result.pageIndex = counter+1;
         auto minUpdate = GrabMinUpdate(result.content);
         url = GetNext(result.content);
         bool updateLimitReached = false;

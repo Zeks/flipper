@@ -108,7 +108,11 @@ void FFNParserBase::GetCharacters(QString text,
                                 10);
 
 
+    qDebug() << text;
     full = full.replace(" - Complete", "");
+    if(full.contains("Published"))
+        full = "";
+
     if(full == "Complete")
         full = QString();
     functor(full);

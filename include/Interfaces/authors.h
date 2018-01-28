@@ -64,6 +64,7 @@ public:
     core::AuthorPtr GetById(int id);
     QList<core::AuthorPtr> GetAllAuthors(QString website, bool forced = false);
     QStringList GetAllAuthorsUrls(QString website, bool forced = false);
+    QStringList GetAllAuthorsFavourites(int id);
     QList<int> GetAllAuthorIds();
     int GetFicCount(int authorId);
     int GetCountOfRecsForTag(int authorId, QString tag);

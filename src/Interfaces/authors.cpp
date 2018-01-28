@@ -236,6 +236,12 @@ QStringList Authors::GetAllAuthorsUrls(QString website, bool forced)
     return result;
 }
 
+QStringList Authors::GetAllAuthorsFavourites(int id)
+{
+    auto result = database::puresql::GetAllAuthorFavourites(id, db);
+    return result.data;
+}
+
 QList<int> Authors::GetAllAuthorIds()
 {
     //! todo need to regenerate cache

@@ -91,6 +91,7 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  CREATE  INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);
  alter table Recommenders add column wave integer default 0;
  alter table Recommenders add column favourites integer default -1;
+ alter table Recommenders add column in_favourites integer default 0;
  alter table Recommenders add column fics integer default -1;
  alter table Recommenders add column ffn_id integer default -1;
  alter table Recommenders add column ao3_id integer default -1;
@@ -102,6 +103,7 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  CREATE  INDEX if not exists I_RECOMMENDER_AO3_ID ON Recommenders (ao3_id ASC);
  CREATE  INDEX if not exists I_RECOMMENDER_SB_ID ON Recommenders (sb_id ASC);
  CREATE  INDEX if not exists I_RECOMMENDER_SV_ID ON Recommenders (sv_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_IN_FAVOURITES ON Recommenders (in_favourites ASC);
  
  
 CREATE  INDEX if  not exists main.I_FANDOMS_FANDOM ON FANDOMS (FANDOM ASC);
