@@ -113,7 +113,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
 
     if(q.lastError().isValid())
     {
-        qDebug() << q.lastError();
+        qDebug() << "Error getting page from database: " << q.lastError();
         return result;
     }
     if(!dataFound)
@@ -178,7 +178,7 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     q.bindValue(":PAGE_TYPE", static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
-        qDebug() << q.lastError();
+        qDebug() << "Error saving page to database: "  << q.lastError();
 }
 
 void PageGetterPrivate::SetDatabase(QSqlDatabase _db)
@@ -267,7 +267,7 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
 void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate)
 {
     FuncCleanup f([&](){working = false;});
-    qDebug() << updateLimit;
+    //qDebug() << updateLimit;
     database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
@@ -275,14 +275,16 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
     pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     WebPage result;
     int counter = 0;
+    QString nextUrl = url;
     do
     {
+        url = nextUrl;
         qDebug() << "loading page: " << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(url, cacheMode);
         result.pageIndex = counter+1;
         auto minUpdate = GrabMinUpdate(result.content);
-        url = GetNext(result.content);
+
         bool updateLimitReached = false;
         if(counter > 0)
             updateLimitReached = minUpdate < updateLimit;
@@ -302,6 +304,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
             //qDebug() << "thread will sleep for " << timeout;
             QThread::msleep(timeout);
         }
+        nextUrl = GetNext(result.content);
         counter++;
     }while(url != lastUrl && result.isValid && !result.isLastPage);
     emit pageResult({WebPage(), true});

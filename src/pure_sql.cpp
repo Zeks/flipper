@@ -493,10 +493,10 @@ bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
 {
     QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
-                    " wcr, reviewstofavourites, age, daysrunning ) "
+                    " wcr, reviewstofavourites, age, daysrunning, at_chapter ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
                     " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,"
-                    " :wcr, :reviewstofavourites, :age, :daysrunning )";
+                    " :wcr, :reviewstofavourites, :age, :daysrunning, 0 )";
     query=query.arg(section->webSite);
     QSqlQuery q(db);
     q.prepare(query);
@@ -843,7 +843,7 @@ QSharedPointer<core::RecommendationList> GetRecommendationList(int listId, QSqlD
     if(!ExecAndCheck(q))
         return result;
 
-    q.next();
+    if(q.next())
     {
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         result = list;
@@ -1278,18 +1278,21 @@ QStringList ReadUserTags(QSqlDatabase db)
 bool PushTaglistIntoDatabase(QStringList tagList, QSqlDatabase db)
 {
     bool success = true;
+    int counter = 0;
     for(QString tag : tagList)
     {
-        QString qs = QString("INSERT INTO TAGS (TAG) VALUES (:tag)");
+        QString qs = QString("INSERT INTO TAGS (TAG, id) VALUES (:tag, :id)");
         QSqlQuery q(db);
         q.prepare(qs);
         q.bindValue(":tag", tag);
+        q.bindValue(":id", counter);
         q.exec();
         if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
         {
             success = false;
             qDebug() << q.lastError().text();
         }
+        counter++;
     }
     return success;
 }

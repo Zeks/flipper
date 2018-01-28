@@ -2,6 +2,7 @@
 create table if not exists FANFICS (AUTHOR VARCHAR NOT NULL,TITLE VARCHAR NOT NULL,SUMMARY VARCHAR NOT NULL,GENRES VARCHAR,CHARACTERS VARCHAR,RATED VARCHAR,PUBLISHED DATETIME NOT NULL,UPDATED DATETIME NOT NULL, WORDCOUNT INTEGER NOT NULL,FAVOURITES INTEGER NOT NULL,REVIEWS INTEGER NOT NULL,CHAPTERS INTEGER NOT NULL,COMPLETE INTEGER NOT NULL DEFAULT 0,AT_CHAPTER INTEGER NOT NULL, ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);			
  alter table fanfics add column alive integer default 1;
  alter table fanfics add column wcr real; 
+ alter table fanfics add column fandom VARCHAR; 
  alter table fanfics add column wcr_adjusted real; 
  alter table fanfics add column reviewstofavourites real; 
  alter table fanfics add column daysrunning integer default null; 
@@ -120,8 +121,8 @@ min(published) as origin,
 max(favourites) as maxfaves, min(wcr) as minwcr, count(id) as ficcount from fanfics fs group by fandom;
 
 -- user tags;
-create table if not exists tags (tag VARCHAR unique NOT NULL);
-alter table tags add column id integer;
+create table if not exists tags (tag VARCHAR unique NOT NULL, id integer);
+
 
 -- manually assigned tags for fics;
 CREATE TABLE if not exists FicTags (fic_id INTEGER NOT NULL, tag varchar,  PRIMARY KEY (fic_id asc, tag asc));
