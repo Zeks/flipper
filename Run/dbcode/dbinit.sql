@@ -1,23 +1,37 @@
 --fanfics;
-create table if not exists FANFICS (AUTHOR VARCHAR,TITLE VARCHAR,SUMMARY VARCHAR,GENRES VARCHAR,CHARACTERS VARCHAR,RATED VARCHAR,PUBLISHED DATETIME,UPDATED DATETIME, WORDCOUNT INTEGER,FAVOURITES INTEGER,REVIEWS INTEGER,CHAPTERS INTEGER,COMPLETE INTEGER DEFAULT 0,AT_CHAPTER INTEGER default 0, ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);			
- alter table fanfics add column alive integer default 1;
- alter table fanfics add column wcr real; 
- alter table fanfics add column fandom VARCHAR; 
- alter table fanfics add column wcr_adjusted real; 
- alter table fanfics add column reviewstofavourites real; 
- alter table fanfics add column daysrunning integer default null; 
- alter table fanfics add column author_id integer default null; 
- alter table fanfics add column age integer default null; 
- alter table fanfics add column follows integer default 0; 
- alter table fanfics add column ffn_id integer default -1;
- alter table fanfics add column ao3_id integer default -1;
- alter table fanfics add column sb_id integer default -1;
- alter table fanfics add column sv_id integer default -1;
- alter table fanfics add column author_id integer default -1;
- alter table fanfics add column author_web_id integer default -1;
- alter table fanfics add column date_added datetime default;
- alter table fanfics add column date_deactivated datetime default null;
- alter table fanfics add column for_fill integer default 0;  
+create table if not exists FANFICS (
+AUTHOR VARCHAR,
+TITLE VARCHAR,
+SUMMARY VARCHAR,
+GENRES VARCHAR,
+CHARACTERS VARCHAR,
+RATED VARCHAR,
+PUBLISHED DATETIME,
+UPDATED DATETIME,
+WORDCOUNT INTEGER,
+FAVOURITES INTEGER,
+REVIEWS INTEGER,
+CHAPTERS INTEGER DEFAULT 0,
+COMPLETE INTEGER DEFAULT 0,
+AT_CHAPTER INTEGER default 0, 
+alive integer default 1,
+wcr real,
+fandom VARCHAR,
+wcr_adjusted real,
+reviewstofavourites real,
+daysrunning integer default null,
+age integer default null,
+follows integer default 0,
+ffn_id integer default -1,
+ao3_id integer default -1,
+sb_id integer default -1,
+sv_id integer default -1,
+author_id integer default -1,
+author_web_id integer default -1,
+date_added datetime default null,
+date_deactivated datetime default null,
+for_fill integer default 0,
+ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);	
  
  CREATE VIEW vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
