@@ -488,7 +488,7 @@ bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwa
     bool requiresInsert = countNamed == 0;
     bool requiresUpdate = countUpdated > 0;
 
-    if(alwaysUpdateIfNotInsert || (!requiresInsert && requiresUpdate > 0))
+    if(alwaysUpdateIfNotInsert || (!requiresInsert && requiresUpdate))
         fic->updateMode = core::UpdateMode::update;
     if(requiresInsert)
         fic->updateMode = core::UpdateMode::insert;
