@@ -40,6 +40,34 @@ enum class EPageSource
     network = 0,
     cache = 1,
 };
+
+struct FandomParseTask{
+    FandomParseTask() = default;
+    FandomParseTask(QStringList parts,
+                    QDate stopAt,
+                    ECacheMode cacheMode,
+                    int pageRetries = 3){
+        this->stopAt = stopAt;
+        this->cacheMode = cacheMode;
+        this->pageRetries = pageRetries;
+        this->parts = parts;
+    }
+    QString fandom;
+    QStringList parts;
+    int pageRetries = 3;
+    QDate stopAt;
+    ECacheMode cacheMode = ECacheMode::dont_use_cache;
+
+};
+
+
+struct FandomParseTaskResult
+{
+    FandomParseTaskResult(){}
+    bool success = false;
+    QStringList failedParts;
+};
+
 class PageThreadWorker;
 struct WebPage
 {
@@ -55,6 +83,7 @@ struct WebPage
     bool crossover;
     EPageType type;
     bool isValid = false;
+    bool failedToAcquire = false;
     EPageSource source = EPageSource::none;
     QString error;
     bool isLastPage = false;
@@ -116,6 +145,7 @@ public:
     bool automaticCacheForCurrentDate = true;
 public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate);
+    void FandomTask(FandomParseTask);
     void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
     void pageResult(PageResult);

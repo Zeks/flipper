@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "url_utils.h"
 #include <QRegExp>
+#include <QRegularExpression>
 namespace url_utils{
 
 QString GetWebId(QString url, QString source)
@@ -62,6 +63,16 @@ QString GetAuthorUrlFromWebId(int id)
     return "https://www.fanfiction.net/u/" + QString::number(id);
 }
 
+int GetLastPageIndex(QString url)
+{
+    QRegularExpression rx("&p=(\\d+)");
+    auto match = rx.match(url);
+    if(!match.hasMatch())
+        return 1;
+    int result = match.captured(1).toInt();
+    return result;
+}
+
 }
 
 QString AppendBase(QString website, QString postfix)
@@ -69,6 +80,13 @@ QString AppendBase(QString website, QString postfix)
     if(website == "ffn")
         return "https://www.fanfiction.net" + postfix;
     return postfix;
+}
+
+int GetLastPageIndex(QString url)
+{
+    if(url.contains("fanfiction.net"))
+        return ffn::GetLastPageIndex(url);
+    return 1;
 }
 
 

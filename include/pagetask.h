@@ -52,7 +52,10 @@ public:
 };
 
 class PageFailure;
-
+class BasePageTask;
+class SubTaskContentBase;
+typedef QSharedPointer<SubTaskContentBase> SubTaskContentBasePtr;
+typedef QSharedPointer<BasePageTask> BasePageTaskPtr;
 class BasePageTask{
 public:
     bool isValid = false;
@@ -75,10 +78,13 @@ public:
     QList<PageFailurePtr> errors;
     QHash<QUuid, QList<PageFailurePtr>> actionFailures;
     QList<PageTaskActionPtr> executedActions;
+
     QStringList ListFailures();
     bool NeedsInsertion(){return isNew;}
     void SetFinished(QDateTime);
     void SetInitiated(QDateTime);
+    virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new BasePageTask);}
+    SubTaskContentBasePtr content; // part of page content or url list to execute
 };
 
 
@@ -92,27 +98,44 @@ public:
     int parts = -1; // amount of subtasks the task is split into
     int entities = -1; // I don't remember what teh fuck that is. to be explained later
     int allowedSubtaskRetries = -1; // how much retries a task can use
+    QDateTime updateLimit; // task creation timestamp
     QString results; // why the fuck am I using a string for the results, looks retarded
     QString taskComment; // if necessary
     QList<SubTaskPtr> subTasks;
+    virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new PageTask);}
 };
 
 class SubTaskContentBase{
 public:
     virtual ~SubTaskContentBase(){}
     virtual QString ToDB() = 0;
+    virtual SubTaskContentBasePtr Spawn() = 0;
+    virtual QString CustomData1() = 0;
     virtual int size() = 0;
 };
 class SubTaskAuthorContent;
-typedef QSharedPointer<SubTaskContentBase> SubTaskContentBasePtr;
 
 class SubTaskAuthorContent: public SubTaskContentBase {
 public:
     static SubTaskContentBasePtr NewContent();
+    virtual SubTaskContentBasePtr Spawn() override { return NewContent();}
     virtual ~SubTaskAuthorContent();
     virtual QString ToDB() override;
+    virtual QString CustomData1() override { return "";}
     virtual int size() override {return authors.size();}
     QStringList authors;
+};
+
+class SubTaskFandomContent: public SubTaskContentBase {
+public:
+    static SubTaskContentBasePtr NewContent();
+    virtual SubTaskContentBasePtr Spawn() override { return NewContent();}
+    virtual ~SubTaskFandomContent();
+    virtual QString ToDB() override;
+    virtual QString CustomData1() override { return fandom;}
+    virtual int size() override {return urlLinks.size();}
+    QStringList urlLinks;
+    QString fandom;
 };
 
 class PageSubTask: public BasePageTask{
@@ -121,8 +144,7 @@ public:
     static SubTaskPtr CreateNewSubTask();
     QWeakPointer<PageTask> parent;
     int parentId = -1; // id of the parent task
-    SubTaskContentBasePtr content; // part of page content or url list to execute
-
+    virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new PageSubTask);}
 };
 
 typedef QList<PageFailurePtr> SubTaskErrors;

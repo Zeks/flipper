@@ -312,6 +312,54 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
     qDebug() << "leaving task1";
 }
 
+void PageThreadWorker::FandomTask(FandomParseTask task)
+{
+//    FuncCleanup f([&](){working = false;});
+//    //qDebug() << updateLimit;
+//    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+//    working = true;
+//    QScopedPointer<PageManager> pager(new PageManager);
+//    pager->SetAutomaticCacheLimit(automaticCache);
+//    pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
+//    WebPage result;
+//    int counter = 0;
+//    QString nextUrl = url;
+//    do
+//    {
+//        url = nextUrl;
+//        qDebug() << "loading page: " << url;
+//        auto startPageLoad = std::chrono::high_resolution_clock::now();
+//        result = pager->GetPage(url, cacheMode);
+//        result.pageIndex = counter+1;
+//        auto minUpdate = GrabMinUpdate(result.content);
+
+//        bool updateLimitReached = false;
+//        if(counter > 0)
+//            updateLimitReached = minUpdate < updateLimit;
+//        if((url == lastUrl || lastUrl.trimmed().isEmpty()) || (!ignoreUpdateDate && updateLimit.isValid() && updateLimitReached))
+//        {
+//            result.error = "Already have the stuff past this point. Aborting.";
+//            result.isLastPage = true;
+//        }
+//        if(!result.isValid || url.isEmpty())
+//            result.isLastPage = true;
+//        emit pageResult({result, false});
+//        auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
+
+//        result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+//        if(!result.isFromCache)
+//        {
+//            //qDebug() << "thread will sleep for " << timeout;
+//            QThread::msleep(timeout);
+//        }
+//        nextUrl = GetNext(result.content);
+//        counter++;
+//    }while(url != lastUrl && result.isValid && !result.isLastPage);
+//    emit pageResult({WebPage(), true});
+//    pcTransaction.finalize();
+//    qDebug() << "leaving fandom task";
+}
+
 void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
 {
     FuncCleanup f([&](){working = false;});

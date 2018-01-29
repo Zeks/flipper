@@ -19,6 +19,7 @@ CREATE TABLE if not exists PageTasks (
  task_size integer default 0,
  success integer default 0);
  alter table PageTasks add column parse_up_to datetime;
+ 
 CREATE INDEX if not exists I_PT_ID ON PageTasks (id asc);
 CREATE INDEX if not exists I_PT_TYPE ON PageTasks (type asc);
 CREATE INDEX if not exists I_PT_FINISHED ON PageTasks (finished asc);
@@ -42,10 +43,10 @@ CREATE TABLE if not exists PageTaskParts (
  finished integer default 0,
  retries integer default 0, 
  PRIMARY KEY (task_id, sub_id));
+ alter table PageTaskParts add column custom_data1 varchar;
 CREATE INDEX if not exists I_PTP_PK ON PageTaskParts (task_id asc, sub_id asc);
 CREATE INDEX if not exists I_PTP_STARTED ON PageTaskParts (started_at asc);
 CREATE INDEX if not exists I_PTP_ERROR_CODE ON PageTaskParts (success asc);
-
 
 -- subtask action table;
 CREATE TABLE if not exists PageTaskActions (

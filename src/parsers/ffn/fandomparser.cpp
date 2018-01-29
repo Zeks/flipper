@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fanfics.h"
 #include "url_utils.h"
 #include "regex_utils.h"
+#include <QRegularExpression>
 
 
 static QDate GetRealMinDate(QList<QDate> dates)
@@ -114,17 +115,30 @@ QString FandomParser::GetNext( int &startfrom, QString text)
     return nextUrl;
 }
 
-QString FandomParser::GetLast(QString pageContent)
+QString FandomParser::GetLast(QString pageContent, QString originalUrl)
 {
     QString lastUrl;
     QRegExp rxEnd(QRegExp::escape("Last</a"));
     int indexEnd = rxEnd.indexIn(pageContent);
-    indexEnd-=2;
-    int posHref = indexEnd - 400 + pageContent.midRef(indexEnd - 400,400).lastIndexOf("href='");
-    lastUrl = CreateURL(pageContent.mid(posHref+6, indexEnd - (posHref+6)));
-    if(!lastUrl.contains("&p="))
-        lastUrl = "";
-    indexEnd = rxEnd.indexIn(pageContent);
+    if(indexEnd != -1)
+    {
+        indexEnd-=2;
+        int posHref = indexEnd - 400 + pageContent.midRef(indexEnd - 400,400).lastIndexOf("href='");
+        lastUrl = CreateURL(pageContent.mid(posHref+6, indexEnd - (posHref+6)));
+        if(!lastUrl.contains("&p="))
+            lastUrl = "";
+        indexEnd = rxEnd.indexIn(pageContent);
+    }
+    QRegExp rxNext(QRegExp::escape("Next</a"));
+    indexEnd = rxNext.indexIn(pageContent);
+    if(indexEnd != -1)
+    {
+        QRegularExpression reg("1</b>\\s<a\\shref='");
+        auto match = reg.match(pageContent);
+        if(!match.hasMatch())
+            lastUrl = originalUrl;
+        lastUrl = lastUrl + "&p=2";
+    }
     return lastUrl;
 }
 

@@ -32,7 +32,7 @@ public:
     void GetPublishedDate(core::Section& , int& startfrom, QString text);
     void GetUpdatedDate(core::Section& , int& startfrom, QString text);
     QString GetNext(int& startfrom, QString text);
-    QString GetLast(QString pageContent);
+    QString GetLast(QString pageContent, QString originalUrl);
     QString CreateURL(QString str);
     void GetTitle(core::Section & section, int& startfrom, QString text) override;
     virtual void GetTitleAndUrl(core::Section & , int& , QString ) override;
