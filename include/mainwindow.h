@@ -152,7 +152,7 @@ private:
     // a wrapper over pagegetter to request pages for fandom parsing
     //bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
 
-    FandomParseTaskResult ProcessFandomTask(FandomParseTask);
+    FandomParseTaskResult ProcessFandomSubTask(FandomParseTask);
 
     // a wrapper over pagegetter to request pages
     // todo probably could be dropped, will need to check
@@ -227,11 +227,10 @@ private:
                                        int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
                                        bool allowCacheRefresh = true);
 
-    PageTaskPtr CreatePageTaskFromFandom(core::FandomPtr fandom,
+    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
                                                      QString taskComment,
-                                                     QDate updateLimit,
-                                                     ECacheMode cacheMode,
                                                      bool allowCacheRefresh);
+    void UseFandomTask(PageTaskPtr);
 
     // the actual task that procecces he next wave of authors into database
     void UseAuthorsPageTask(PageTaskPtr,

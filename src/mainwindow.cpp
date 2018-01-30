@@ -759,7 +759,7 @@ void MainWindow::InitInterfaces()
 //    return result;
 //}
 
-FandomParseTaskResult MainWindow::ProcessFandomTask(FandomParseTask task)
+FandomParseTaskResult MainWindow::ProcessFandomSubTask(FandomParseTask task)
 {
     StartPageWorker();
     DisableAllLoadButtons();
@@ -1079,10 +1079,8 @@ SubTaskPtr CreateAdditionalSubtask(PageTaskPtr task)
 }
 
 
-PageTaskPtr MainWindow::CreatePageTaskFromFandom(core::FandomPtr fandom,
+PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms,
                                                  QString taskComment,
-                                                 QDate updateLimit,
-                                                 ECacheMode cacheMode,
                                                  bool allowCacheRefresh)
 {
     database::Transaction transaction(pageTaskInterface->db);
@@ -1092,53 +1090,64 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandom(core::FandomPtr fandom,
     auto task = PageTask::CreateNewTask();
     task->allowedRetries = 3;
     task->allowedSubtaskRetries = 3;
+    auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
     task->cacheMode = cacheMode;
-    task->parts = fandom->GetUrls().size();
+    for(auto fandom : fandoms)
+        task->parts += fandom->GetUrls().size();
     task->refreshIfNeeded = allowCacheRefresh;
     task->taskComment = taskComment;
     task->type = 1;
     task->created = timestamp;
     task->isValid = true;
-    task->updateLimit.setDate(updateLimit);
     task->scheduledTo = timestamp;
     task->startedAt = timestamp;
     pageTaskInterface->WriteTaskIntoDB(task);
 
-    SubTaskPtr subtask;
-    int counter = 0;
-    auto urls = fandom->GetUrls();
-
     An<PageManager> pager;
-    for(auto url : urls)
+    for(auto fandom : fandoms)
     {
-        auto urlString = AppendCurrentSearchParameters(url.GetUrl());
-        WebPage currentPage = pager->GetPage(urlString, cacheMode);
-        FandomParser parser(fanficsInterface);
-        QString lastUrl = parser.GetLast(currentPage.content, urlString);
+        auto lastUpdated = fandom->lastUpdateDate;
+        if(ui->chkCutoffLimit->isChecked())
+            lastUpdated = ui->deCutoffLimit->date();
+        if(ui->chkIgnoreUpdateDate->isChecked())
+            lastUpdated = QDate();
 
-        subtask = PageSubTask::CreateNewSubTask();
-        subtask->size = url_utils::GetLastPageIndex(lastUrl);
-        subtask->parent = task;
-        auto content = SubTaskFandomContent::NewContent();
-        auto cast = static_cast<SubTaskFandomContent*>(content.data());
-        cast->urlLinks.push_back(urlString);
-        cast->fandom = fandom->GetName();
+        SubTaskPtr subtask;
+        int counter = 0;
+        auto urls = fandom->GetUrls();
 
-        auto baseUrl= urlString;
-        for(int i = 2; i <= subtask->size; i ++)
-            cast->urlLinks.push_back(baseUrl + "&p=" + QString::number(i));
+        for(auto url : urls)
+        {
+            auto urlString = AppendCurrentSearchParameters(url.GetUrl());
+            WebPage currentPage = pager->GetPage(urlString, cacheMode);
+            FandomParser parser(fanficsInterface);
+            QString lastUrl = parser.GetLast(currentPage.content, urlString);
 
-        subtask->content = content;
-        subtask->parentId = task->id;
-        subtask->created = timestamp;
+            subtask = PageSubTask::CreateNewSubTask();
+            subtask->size = url_utils::GetLastPageIndex(lastUrl);
+            subtask->parent = task;
+            subtask->updateLimit.setDate(lastUpdated);
+            auto content = SubTaskFandomContent::NewContent();
+            auto cast = static_cast<SubTaskFandomContent*>(content.data());
+            cast->urlLinks.push_back(urlString);
+            cast->fandom = fandom->GetName();
 
-        task->size += subtask->size;
-        subtask->id = counter;
-        subtask->isValid = true;
-        subtask->allowedRetries = 3;
-        subtask->success = false;
-        task->subTasks.push_back(subtask);
-        counter++;
+            auto baseUrl= urlString;
+            for(int i = 2; i <= subtask->size; i ++)
+                cast->urlLinks.push_back(baseUrl + "&p=" + QString::number(i));
+
+            subtask->content = content;
+            subtask->parentId = task->id;
+            subtask->created = timestamp;
+
+            task->size += subtask->size;
+            subtask->id = counter;
+            subtask->isValid = true;
+            subtask->allowedRetries = 3;
+            subtask->success = false;
+            task->subTasks.push_back(subtask);
+            counter++;
+        }
     }
     // now with subtasks
     pageTaskInterface->WriteTaskIntoDB(task);
@@ -2198,6 +2207,69 @@ bool MainWindow::WarnFullParse()
     return true;
 }
 
+void MainWindow::UseFandomTask(PageTaskPtr task)
+{
+    TaskProgressGuard guard(this);
+    processedFics = 0;
+    ui->edtResults->clear();
+
+    AddToProgressLog(task->taskComment + "<br>");
+    QStringList acquisitioFailures;
+    QList<SubTaskPtr> subsToInsert;
+    for(auto subtask : task->subTasks)
+    {
+        acquisitioFailures.clear();
+        auto urlList= subtask->content->ToDB().split("\n",QString::SkipEmptyParts);
+
+        FandomParseTask fpt;
+        fpt.cacheMode = task->cacheMode;
+        fpt.pageRetries = subtask->allowedRetries;
+        fpt.parts = urlList;
+        fpt.stopAt = subtask->updateLimit.date();
+        fpt.fandom = subtask->content->CustomData1();
+
+
+        auto result = ProcessFandomSubTask(fpt);
+        if(result.failedToAcquirePages)
+        {
+            // need to write pages that we failed to acquire into errors
+            acquisitioFailures +=result.failedParts;
+            subtask->success = false;
+        }
+        else
+            subtask->success = true;
+        subtask->finished = true;
+
+        SubTaskPtr sub;
+        if(acquisitioFailures.size() > 0)
+        {
+            task->success = false;
+            sub = CreateAdditionalSubtask(task);
+        }
+        if(sub)
+        {
+            sub->taskComment = "Failed pages";
+            sub->isValid = true;
+            auto content = sub->content;
+            auto cast = static_cast<SubTaskFandomContent*>(content.data());
+            cast->fandom = subtask->content->CustomData1();
+            cast->urlLinks = acquisitioFailures;
+            subsToInsert.push_back(sub);
+        }
+        fandomsInterface->SetLastUpdateDate(subtask->content->CustomData1(), QDateTime::currentDateTimeUtc().date());
+    }
+    if(subsToInsert.size() == 0)
+        task->success = true;
+    else
+        task->success =false;
+    for(auto sub: subsToInsert )
+        task->subTasks.push_back(sub);
+    task->finished = true;
+
+    pageTaskInterface->WriteTaskIntoDB(task);
+}
+
+
 void MainWindow::CrawlFandom(QString fandomName)
 {
 //    if(!WarnCutoffLimit() || !WarnFullParse())
@@ -2214,63 +2286,9 @@ void MainWindow::CrawlFandom(QString fandomName)
     ui->edtResults->clear();
     nextUrl = QString();
 
-    auto lastUpdated = fandom->lastUpdateDate;
-    if(ui->chkCutoffLimit->isChecked())
-        lastUpdated = ui->deCutoffLimit->date();
-    if(ui->chkIgnoreUpdateDate->isChecked())
-        lastUpdated = QDate();
-    auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
+    auto task = CreatePageTaskFromFandoms({fandom}, "Loading the fandom" + fandomName, true);
+    UseFandomTask(task);
 
-    auto task = CreatePageTaskFromFandom(fandom, "Loading the fandom" + fandomName, lastUpdated, cacheMode, true);
-    AddToProgressLog("Loading the fandom: " + fandomName + "<br>");
-    QStringList acquisitioFailures;
-    for(auto subtask : task->subTasks)
-    {
-        auto urlList= subtask->content->ToDB().split("\n",QString::SkipEmptyParts);
-
-        FandomParseTask fpt;
-        fpt.cacheMode = cacheMode;
-        fpt.pageRetries = subtask->allowedRetries;
-        fpt.parts = urlList;
-        fpt.stopAt = lastUpdated;
-        fpt.fandom = fandomName;
-
-
-        auto result = ProcessFandomTask(fpt);
-        if(result.failedToAcquirePages)
-        {
-            // need to write pages that we failed to acquire into errors
-            acquisitioFailures +=result.failedParts;
-            subtask->success = false;
-        }
-        else
-            subtask->success = true;
-        subtask->finished = true;
-    }
-    // possibly create a new subtask and finish the rest
-    SubTaskPtr sub;
-    if(acquisitioFailures.size() > 0)
-    {
-        task->success = false;
-        sub = CreateAdditionalSubtask(task);
-    }
-    else
-        task->success = true;
-    if(sub)
-    {
-        sub->taskComment = "Failed pages";
-        auto content = sub->content;
-        auto cast = static_cast<SubTaskFandomContent*>(content.data());
-        cast->fandom = fandom->GetName();
-        cast->urlLinks = acquisitioFailures;
-        task->subTasks.push_back(sub);
-    }
-    else
-        task->finished = true;
-
-
-    pageTaskInterface->WriteTaskIntoDB(task);
-    fandomsInterface->SetLastUpdateDate(fandom->GetName(), QDateTime::currentDateTimeUtc().date());
     QString status = "Finished processing %1 fics";
     ui->lblLoadResult->setText(status.arg(processedFics));
     ui->lblLoadResult->setStyleSheet("font-weight: bold; color: darkGreen; font-size: 20px");
@@ -2278,7 +2296,7 @@ void MainWindow::CrawlFandom(QString fandomName)
     ui->lblLoadResult->show();
     fandomInfoTimer.setSingleShot(true);
     fandomInfoTimer.start(7000);
-    //QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
+
     ReinitRecent(fandom->GetName());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
 }
@@ -2294,9 +2312,17 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     qDebug() << "Tracked fandoms: " << fandoms;
     ui->edtResults->clear();
 
+    QStringList nameList;
     for(auto fandom : fandoms)
-        CrawlFandom(fandom->GetName());
-    //QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
+    {
+        if(!fandom)
+            continue;
+        nameList.push_back(fandom->GetName());
+    }
+
+    auto task = CreatePageTaskFromFandoms(fandoms, "Loading fandoms:" + nameList.join(","), true);
+    UseFandomTask(task);
+
     QString status = "Finished processing %1 fics";
     ui->lblLoadResult->show();
     fandomInfoTimer.setSingleShot(true);

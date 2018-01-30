@@ -79,7 +79,7 @@ public:
     QList<PageFailurePtr> errors;
     QHash<QUuid, QList<PageFailurePtr>> actionFailures;
     QList<PageTaskActionPtr> executedActions;
-
+    QDateTime updateLimit; // task creation timestamp
     QStringList ListFailures();
     bool NeedsInsertion(){return isNew;}
     void SetFinished(QDateTime);
@@ -99,7 +99,7 @@ public:
     int parts = -1; // amount of subtasks the task is split into
     int entities = -1; // I don't remember what teh fuck that is. to be explained later
     int allowedSubtaskRetries = -1; // how much retries a task can use
-    QDateTime updateLimit; // task creation timestamp
+
     QString results; // why the fuck am I using a string for the results, looks retarded
     QList<SubTaskPtr> subTasks;
     virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new PageTask);}

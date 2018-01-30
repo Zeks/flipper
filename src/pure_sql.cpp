@@ -2082,7 +2082,7 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     result.data = -1;
     bool dbIsOpen = db.isOpen();
     Transaction transaction(db);
-    QString qs = QString("insert into PageTasks(type, parts, created_at, scheduled_to, parse_up_to, allowed_retry_count, "
+    QString qs = QString("insert into PageTasks(type, parts, created_at, scheduled_to,  allowed_retry_count, "
                          "allowed_subtask_retry_count, cache_mode, refresh_if_needed, task_comment, task_size, success, finished) "
                          "values(:type, :parts, :created_at, :scheduled_to, :parse_up_to, :allowed_retry_count,"
                          ":allowed_subtask_retry_count, :cache_mode, :refresh_if_needed, :task_comment,:task_size, 0, 0) ");
@@ -2093,7 +2093,7 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     q.bindValue(":parts", task->parts);
     q.bindValue(":created_at", task->created);
     q.bindValue(":scheduled_to", task->scheduledTo);
-    q.bindValue(":parse_up_to", task->updateLimit);
+
     q.bindValue(":allowed_retry_count", task->allowedRetries);
     q.bindValue(":allowed_subtask_retry_count", task->allowedSubtaskRetries);
     q.bindValue(":cache_mode", static_cast<int>(task->cacheMode));
@@ -2121,8 +2121,8 @@ DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
     DiagnosticSQLResult<bool> result;
     result.data = false;
     Transaction transaction(db);
-    QString qs = QString("insert into PageTaskParts(task_id, sub_id, created_at, scheduled_to, content,task_size, success, finished) "
-                         "values(:task_id, :sub_id, :created_at, :scheduled_to, :content,:task_size, 0,0) ");
+    QString qs = QString("insert into PageTaskParts(task_id, sub_id, created_at, scheduled_to, content,task_size, success, finished, parse_up_to) "
+                         "values(:task_id, :sub_id, :created_at, :scheduled_to, :content,:task_size, 0,0, :parse_up_to) ");
 
     QSqlQuery q(db);
     q.prepare(qs);
@@ -2132,6 +2132,7 @@ DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
     q.bindValue(":scheduled_to", subtask->scheduledTo);
     q.bindValue(":content", subtask->content->ToDB());
     q.bindValue(":task_size", subtask->size);
+    q.bindValue(":parse_up_to", subtask->updateLimit);
 
     if(!result.ExecAndCheck(q))
         return result;
