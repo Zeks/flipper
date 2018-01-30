@@ -68,6 +68,11 @@ void BasePageTask::SetInitiated(QDateTime dt)
     // need to create an action here
 }
 
+SubTaskContentBasePtr SubTaskFandomContent::NewContent()
+{
+return SubTaskContentBasePtr(new SubTaskFandomContent());
+}
+
 SubTaskFandomContent::~SubTaskFandomContent()
 {
 

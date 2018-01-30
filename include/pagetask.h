@@ -71,6 +71,7 @@ public:
     int allowedRetries = -1; // how much retries a task can use
     bool attempted = false;
     bool finished = false;
+    QString taskComment; // if necessary
     QDateTime created; // task creation timestamp
     QDateTime scheduledTo; // when it's supposed to be run
     QDateTime startedAt; // when the task has been staretd
@@ -100,7 +101,6 @@ public:
     int allowedSubtaskRetries = -1; // how much retries a task can use
     QDateTime updateLimit; // task creation timestamp
     QString results; // why the fuck am I using a string for the results, looks retarded
-    QString taskComment; // if necessary
     QList<SubTaskPtr> subTasks;
     virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new PageTask);}
 };

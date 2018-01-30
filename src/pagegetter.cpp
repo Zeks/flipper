@@ -93,7 +93,8 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     else
     {
         result = GetPageFromNetwork(url);
-        SavePageToDB(result);
+        if(result.isValid)
+            SavePageToDB(result);
     }
     return result;
 }
@@ -312,52 +313,72 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
     qDebug() << "leaving task1";
 }
 
+
+void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
+                                                QDate stopAt,
+                                                ECacheMode cacheMode,
+                                                QStringList& failedPages
+                                                )
+{
+    WebPage result;
+    QScopedPointer<PageManager> pager(new PageManager);
+    pager->SetAutomaticCacheLimit(automaticCache);
+    pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
+    int counter = 0;
+    for (auto url : urls)
+    {
+        qDebug() << "loading page: " << url;
+        auto startPageLoad = std::chrono::high_resolution_clock::now();
+        result = pager->GetPage(url, cacheMode);
+        result.pageIndex = counter+1;
+        auto minUpdate = GrabMinUpdate(result.content);
+
+        bool updateLimitReached = false;
+        // we ALWAYS get at least one page
+        if(counter > 0)
+            updateLimitReached = minUpdate < stopAt;
+        if(stopAt.isValid() && updateLimitReached)
+        {
+            result.comment = "Already have the stuff past this point. Aborting.";
+            result.isLastPage = true;
+        }
+        if(!result.isValid)
+        {
+            failedPages.push_back(result.url);
+            continue;
+        }
+        emit pageResult({result, false});
+        auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
+
+        result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        if(!result.isFromCache)
+            QThread::msleep(timeout);
+        counter++;
+    }
+}
+
 void PageThreadWorker::FandomTask(FandomParseTask task)
 {
-//    FuncCleanup f([&](){working = false;});
-//    //qDebug() << updateLimit;
-//    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
-//    working = true;
-//    QScopedPointer<PageManager> pager(new PageManager);
-//    pager->SetAutomaticCacheLimit(automaticCache);
-//    pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
-//    WebPage result;
-//    int counter = 0;
-//    QString nextUrl = url;
-//    do
-//    {
-//        url = nextUrl;
-//        qDebug() << "loading page: " << url;
-//        auto startPageLoad = std::chrono::high_resolution_clock::now();
-//        result = pager->GetPage(url, cacheMode);
-//        result.pageIndex = counter+1;
-//        auto minUpdate = GrabMinUpdate(result.content);
-
-//        bool updateLimitReached = false;
-//        if(counter > 0)
-//            updateLimitReached = minUpdate < updateLimit;
-//        if((url == lastUrl || lastUrl.trimmed().isEmpty()) || (!ignoreUpdateDate && updateLimit.isValid() && updateLimitReached))
-//        {
-//            result.error = "Already have the stuff past this point. Aborting.";
-//            result.isLastPage = true;
-//        }
-//        if(!result.isValid || url.isEmpty())
-//            result.isLastPage = true;
-//        emit pageResult({result, false});
-//        auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
-
-//        result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-//        if(!result.isFromCache)
-//        {
-//            //qDebug() << "thread will sleep for " << timeout;
-//            QThread::msleep(timeout);
-//        }
-//        nextUrl = GetNext(result.content);
-//        counter++;
-//    }while(url != lastUrl && result.isValid && !result.isLastPage);
-//    emit pageResult({WebPage(), true});
-//    pcTransaction.finalize();
-//    qDebug() << "leaving fandom task";
+    FuncCleanup f([&](){working = false;});
+    //qDebug() << updateLimit;
+    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+    working = true;
+    WebPage result;
+    QStringList failedPages;
+    ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages);
+    QStringList voidPages;
+    ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages);
+    for(auto page : voidPages)
+    {
+        WebPage failedPage;
+        failedPage.failedToAcquire = true;
+        failedPage.isValid = false;
+        failedPage.url = page;
+        emit pageResult({result, false});
+    }
+    emit pageResult({WebPage(), true});
+    pcTransaction.finalize();
+    qDebug() << "leaving fandom task";
 }
 
 void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)

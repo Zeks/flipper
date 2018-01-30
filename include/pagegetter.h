@@ -64,7 +64,9 @@ struct FandomParseTask{
 struct FandomParseTaskResult
 {
     FandomParseTaskResult(){}
-    bool success = false;
+    bool finished = false;
+    bool failedToAcquirePages = false;
+    bool criticalErrors = false;
     QStringList failedParts;
 };
 
@@ -86,6 +88,7 @@ struct WebPage
     bool failedToAcquire = false;
     EPageSource source = EPageSource::none;
     QString error;
+    QString comment;
     bool isLastPage = false;
     bool isFromCache = false;
     int pageIndex = 0;
@@ -146,6 +149,10 @@ public:
 public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate);
     void FandomTask(FandomParseTask);
+    void ProcessBunchOfFandomUrls(QStringList urls,
+                                  QDate stopAt,
+                                  ECacheMode cacheMode,
+                                  QStringList& failedPages);
     void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
     void pageResult(PageResult);

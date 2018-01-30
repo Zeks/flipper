@@ -43,6 +43,7 @@ CREATE TABLE if not exists PageTaskParts (
  finished integer default 0,
  retries integer default 0, 
  PRIMARY KEY (task_id, sub_id));
+ alter table PageTaskParts add column subtask_comment varchar;
  alter table PageTaskParts add column custom_data1 varchar;
 CREATE INDEX if not exists I_PTP_PK ON PageTaskParts (task_id asc, sub_id asc);
 CREATE INDEX if not exists I_PTP_STARTED ON PageTaskParts (started_at asc);

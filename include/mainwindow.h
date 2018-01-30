@@ -150,7 +150,7 @@ private:
     QString GetCurrentFandomName();
 
     // a wrapper over pagegetter to request pages for fandom parsing
-    bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
+    //bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
 
     FandomParseTaskResult ProcessFandomTask(FandomParseTask);
 
@@ -476,7 +476,7 @@ signals:
     void pageTask(FandomParseTask);
     // page task when trudging through fandoms
     // contains the first url and the last url to stop
-    void pageTask(QString, QString, QDate, ECacheMode, bool);
+    //void pageTask(QString, QString, QDate, ECacheMode, bool);
     // page task when iterating through favourites pages
     // contains urls from a SUBtask
     void pageTaskList(QStringList, ECacheMode);
