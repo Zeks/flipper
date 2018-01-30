@@ -814,7 +814,7 @@ FandomParseTaskResult MainWindow::ProcessFandomSubTask(FandomParseTask task)
 
         QCoreApplication::processEvents();
         pbMain->setValue(counter++);
-        AddToProgressLog(webPage.url + "<br>");
+        AddToProgressLog("Min Update: " + webPage.minFicDate.toString("yyMMdd") + " Url: " + webPage.url + "<br>");
 
         auto startPageRequest = std::chrono::high_resolution_clock::now();
 
@@ -1092,6 +1092,7 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms
     task->allowedSubtaskRetries = 3;
     auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
     task->cacheMode = cacheMode;
+    task->parts = 0;
     for(auto fandom : fandoms)
         task->parts += fandom->GetUrls().size();
     task->refreshIfNeeded = allowCacheRefresh;
@@ -1102,7 +1103,7 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms
     task->scheduledTo = timestamp;
     task->startedAt = timestamp;
     pageTaskInterface->WriteTaskIntoDB(task);
-
+    int counter = 0;
     An<PageManager> pager;
     for(auto fandom : fandoms)
     {
@@ -1113,11 +1114,14 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms
             lastUpdated = QDate();
 
         SubTaskPtr subtask;
-        int counter = 0;
+
         auto urls = fandom->GetUrls();
+
+        AddToProgressLog("Scheduling fandom: Date:" + lastUpdated.toString("yyMMdd") + " Name: " + fandom->GetName() + "<br>");
 
         for(auto url : urls)
         {
+            AddToProgressLog("Scheduling section:" + url.GetUrl() + "<br>");
             auto urlString = AppendCurrentSearchParameters(url.GetUrl());
             WebPage currentPage = pager->GetPage(urlString, cacheMode);
             FandomParser parser(fanficsInterface);
@@ -1940,36 +1944,6 @@ void MainWindow::SetFailureStatus()
 void MainWindow::on_pbCrawl_clicked()
 {
     CrawlFandom(GetCurrentFandomName());
-//    TaskProgressGuard guard(this);
-//    processedFics = 0;
-//    auto fandom = fandomsInterface->GetFandom(GetCurrentFandomName());
-//    if(!fandom)
-//        return;
-//    auto urls = fandom->GetUrls();
-//    //currentFilterUrls = GetCurrentFilterUrls(GetFandomName(), ui->rbCrossovers->isChecked(), true);
-
-//    ui->edtResults->clear();
-//    nextUrl = QString();
-//    //urls.pop_front();
-//    for(auto url: urls)
-//    {
-//        currentFilterUrl = url.GetUrl();
-//        auto lastUpdated = fandom->lastUpdateDate;
-//        auto urlString = AppendCurrentSearchParameters(currentFilterUrl);
-//        AddToProgressLog("Processing: " + urlString + "<br>");
-//        RequestAndProcessPage(fandom->GetName(), lastUpdated, urlString);
-//    }
-//    fandomsInterface->SetLastUpdateDate(fandom->GetName(), QDateTime::currentDateTimeUtc().date());
-//    QString status = "Finished processing %1 fics";
-//    ui->lblLoadResult->setText(status.arg(processedFics));
-//    ui->lblLoadResult->setStyleSheet("font-weight: bold; color: darkGreen; font-size: 20px");
-
-//    ui->lblLoadResult->show();
-//    fandomInfoTimer.setSingleShot(true);
-//    fandomInfoTimer.start(7000);
-//    //QMessageBox::information(nullptr, "Info", QString("finished processing %1 fics" ).arg(processedFics));
-//    ReinitRecent(fandom->GetName());
-//    ui->lvTrackedFandoms->setModel(recentFandomsModel);
 }
 
 
@@ -2211,9 +2185,10 @@ void MainWindow::UseFandomTask(PageTaskPtr task)
 {
     TaskProgressGuard guard(this);
     processedFics = 0;
-    ui->edtResults->clear();
+    //ui->edtResults->clear();
 
-    AddToProgressLog(task->taskComment + "<br>");
+    if(!task->taskComment .isEmpty())
+        AddToProgressLog(task->taskComment + "<br>");
     QStringList acquisitioFailures;
     QList<SubTaskPtr> subsToInsert;
     for(auto subtask : task->subTasks)
@@ -2320,7 +2295,8 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         nameList.push_back(fandom->GetName());
     }
 
-    auto task = CreatePageTaskFromFandoms(fandoms, "Loading fandoms:" + nameList.join(","), true);
+    AddToProgressLog(QString("Starting load of tracked %1 fandoms <br>").arg(fandoms.size()));
+    auto task = CreatePageTaskFromFandoms(fandoms, "", true);
     UseFandomTask(task);
 
     QString status = "Finished processing %1 fics";

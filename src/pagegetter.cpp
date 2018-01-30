@@ -346,7 +346,7 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
 
         bool updateLimitReached = false;
         // we ALWAYS get at least one page
-        if(counter > 0)
+        if(counter > 1)
             updateLimitReached = minUpdate < stopAt;
         if(stopAt.isValid() && updateLimitReached)
         {
@@ -358,10 +358,13 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
             failedPages.push_back(result.url);
             continue;
         }
+        result.minFicDate = minUpdate;
         emit pageResult({result, false});
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageLoad;
 
         result.loadedIn = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        if(updateLimitReached)
+            break;
         if(!result.isFromCache)
             QThread::msleep(timeout);
         counter++;

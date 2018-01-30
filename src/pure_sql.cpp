@@ -2084,7 +2084,7 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     Transaction transaction(db);
     QString qs = QString("insert into PageTasks(type, parts, created_at, scheduled_to,  allowed_retry_count, "
                          "allowed_subtask_retry_count, cache_mode, refresh_if_needed, task_comment, task_size, success, finished) "
-                         "values(:type, :parts, :created_at, :scheduled_to, :parse_up_to, :allowed_retry_count,"
+                         "values(:type, :parts, :created_at, :scheduled_to, :allowed_retry_count,"
                          ":allowed_subtask_retry_count, :cache_mode, :refresh_if_needed, :task_comment,:task_size, 0, 0) ");
 
     QSqlQuery q(db);

@@ -96,8 +96,8 @@ public:
     ECacheMode cacheMode = ECacheMode::use_cache; // if only data from the internet is to be used
     bool refreshIfNeeded = false; // ties in with page expiration mechanism. Passed to pagegetter to let it know if the page needs to be fetched ifit has expired
     int type = -1; // task type
-    int parts = -1; // amount of subtasks the task is split into
-    int entities = -1; // I don't remember what teh fuck that is. to be explained later
+    int parts = 0; // amount of subtasks the task is split into
+    int entities = 0; // I don't remember what teh fuck that is. to be explained later
     int allowedSubtaskRetries = -1; // how much retries a task can use
 
     QString results; // why the fuck am I using a string for the results, looks retarded

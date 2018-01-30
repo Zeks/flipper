@@ -76,6 +76,7 @@ struct WebPage
     friend class PageThreadWorker;
     QString url;
     QDateTime generated;
+    QDate minFicDate;
     //QString stringContent;
     QString content;
     QString previousUrl;
