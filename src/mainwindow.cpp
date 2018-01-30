@@ -1117,6 +1117,7 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandom(core::FandomPtr fandom,
         QString lastUrl = parser.GetLast(currentPage.content, urlString);
 
         subtask = PageSubTask::CreateNewSubTask();
+        subtask->size = url_utils::GetLastPageIndex(lastUrl);
         subtask->parent = task;
         auto content = SubTaskFandomContent::NewContent();
         auto cast = static_cast<SubTaskFandomContent*>(content.data());
@@ -1130,7 +1131,7 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandom(core::FandomPtr fandom,
         subtask->content = content;
         subtask->parentId = task->id;
         subtask->created = timestamp;
-        subtask->size = url_utils::GetLastPageIndex(lastUrl);
+
         task->size += subtask->size;
         subtask->id = counter;
         subtask->isValid = true;
@@ -2074,7 +2075,7 @@ void MainWindow::StartPageWorker()
 {
     pageQueue.data.clear();
     pageQueue.pending = true;
-    worker->SetAutomaticCache(QDate::currentDate());
+    //worker->SetAutomaticCache(QDate::currentDate());
     pageThread.start(QThread::HighPriority);
 
 }
@@ -2199,8 +2200,8 @@ bool MainWindow::WarnFullParse()
 
 void MainWindow::CrawlFandom(QString fandomName)
 {
-    if(!WarnCutoffLimit() || !WarnFullParse())
-        return;
+//    if(!WarnCutoffLimit() || !WarnFullParse())
+//        return;
 
     TaskProgressGuard guard(this);
     processedFics = 0;
@@ -2220,22 +2221,21 @@ void MainWindow::CrawlFandom(QString fandomName)
         lastUpdated = QDate();
     auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
 
-    auto task = CreatePageTaskFromFandom(fandom, "Loading the fandom", lastUpdated, cacheMode, true);
+    auto task = CreatePageTaskFromFandom(fandom, "Loading the fandom" + fandomName, lastUpdated, cacheMode, true);
+    AddToProgressLog("Loading the fandom: " + fandomName + "<br>");
     QStringList acquisitioFailures;
     for(auto subtask : task->subTasks)
     {
-        QStringList urlList;
-        auto baseUrl= subtask->content->ToDB();
-        for(int i = 2; i <= subtask->size; i ++)
-            urlList.push_back(baseUrl + "&p=" + QString::number(i));
+        auto urlList= subtask->content->ToDB().split("\n",QString::SkipEmptyParts);
 
         FandomParseTask fpt;
         fpt.cacheMode = cacheMode;
         fpt.pageRetries = subtask->allowedRetries;
         fpt.parts = urlList;
         fpt.stopAt = lastUpdated;
+        fpt.fandom = fandomName;
 
-        AddToProgressLog("Processing: " + baseUrl + "<br>");
+
         auto result = ProcessFandomTask(fpt);
         if(result.failedToAcquirePages)
         {
@@ -2265,6 +2265,9 @@ void MainWindow::CrawlFandom(QString fandomName)
         cast->urlLinks = acquisitioFailures;
         task->subTasks.push_back(sub);
     }
+    else
+        task->finished = true;
+
 
     pageTaskInterface->WriteTaskIntoDB(task);
     fandomsInterface->SetLastUpdateDate(fandom->GetName(), QDateTime::currentDateTimeUtc().date());

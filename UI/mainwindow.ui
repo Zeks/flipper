@@ -354,6 +354,9 @@
                        <property name="text">
                         <string>Full parse</string>
                        </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
                       </widget>
                      </item>
                      <item>

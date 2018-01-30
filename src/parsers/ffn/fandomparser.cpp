@@ -129,16 +129,16 @@ QString FandomParser::GetLast(QString pageContent, QString originalUrl)
             lastUrl = "";
         indexEnd = rxEnd.indexIn(pageContent);
     }
-    QRegExp rxNext(QRegExp::escape("Next</a"));
-    indexEnd = rxNext.indexIn(pageContent);
-    if(indexEnd != -1)
+    else
     {
-        QRegularExpression reg("1</b>\\s<a\\shref='");
+        QRegularExpression reg("b>\\s2\\s<a\\shref=");
         auto match = reg.match(pageContent);
         if(!match.hasMatch())
             lastUrl = originalUrl;
-        lastUrl = lastUrl + "&p=2";
+        else
+            lastUrl = originalUrl + "&p=2";
     }
+
     return lastUrl;
 }
 

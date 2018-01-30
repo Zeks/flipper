@@ -179,9 +179,9 @@ QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
 {
     QString queryString;
     if(filter.minWords > 0)
-        queryString += " and wordcount > :minwordcount ";
+        queryString += " and wordcount >= :minwordcount ";
     if(filter.maxWords > 0)
-        queryString += " and wordcount < :maxwordcount ";
+        queryString += " and wordcount =< :maxwordcount ";
     return queryString;
 }
 

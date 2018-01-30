@@ -136,15 +136,26 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
 WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 {
     result = WebPage();
+    result.url = url;
     currentRequest = QNetworkRequest(QUrl(url));
     auto reply = manager.get(currentRequest);
-    int retries = 20;
-    while(!reply->isFinished() || retries > 0)
+    int retries = 40;
+    qDebug() << "entering wait phase";
+    while(!reply->isFinished() && retries > 0)
     {
+        qDebug() << "retries left: " << retries;
+        if(reply->isFinished())
+            break;
         retries--;
-        //QThread::sleep(500);
+        QThread::msleep(500);
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     }
+    if(!reply->isFinished())
+    {
+        qDebug() << "failed to get the page in time";
+        return result;
+    }
+
     QByteArray data=reply->readAll();
 
     error = reply->error();
@@ -367,6 +378,7 @@ void PageThreadWorker::FandomTask(FandomParseTask task)
     QStringList failedPages;
     ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages);
     QStringList voidPages;
+    qDebug() << "reacquiring urls: " << failedPages;
     ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages);
     for(auto page : voidPages)
     {
