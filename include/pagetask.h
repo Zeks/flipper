@@ -52,7 +52,10 @@ public:
 };
 
 class PageFailure;
-
+class BasePageTask;
+class SubTaskContentBase;
+typedef QSharedPointer<SubTaskContentBase> SubTaskContentBasePtr;
+typedef QSharedPointer<BasePageTask> BasePageTaskPtr;
 class BasePageTask{
 public:
     bool isValid = false;
@@ -61,13 +64,21 @@ public:
     // errors are success = false;
     bool success = false;
     // created automatically for supertasks via autoincrement or proc to avoid potential problems in the future
-    // creted in code for subtasks
+    // created in code for subtasks
+    int type = -1; // task type
     int id = -1;
     int size = 0;
     int retries = -1; // how much retries actually happened (subtask retries can be fetched separately)
     int allowedRetries = -1; // how much retries a task can use
+    int parsedPages = 0;
+    int addedFics = 0;
+    int skippedFics = 0;
+    int addedAuthors= 0;
+    int updatedFics= 0;
+    int updatedAuthors= 0;
     bool attempted = false;
     bool finished = false;
+    QString taskComment; // if necessary
     QDateTime created; // task creation timestamp
     QDateTime scheduledTo; // when it's supposed to be run
     QDateTime startedAt; // when the task has been staretd
@@ -75,10 +86,13 @@ public:
     QList<PageFailurePtr> errors;
     QHash<QUuid, QList<PageFailurePtr>> actionFailures;
     QList<PageTaskActionPtr> executedActions;
+    QDateTime updateLimit; // task creation timestamp
     QStringList ListFailures();
     bool NeedsInsertion(){return isNew;}
     void SetFinished(QDateTime);
     void SetInitiated(QDateTime);
+    virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new BasePageTask);}
+    SubTaskContentBasePtr content; // part of page content or url list to execute
 };
 
 
@@ -88,31 +102,48 @@ public:
     static PageTaskPtr CreateNewTask();
     ECacheMode cacheMode = ECacheMode::use_cache; // if only data from the internet is to be used
     bool refreshIfNeeded = false; // ties in with page expiration mechanism. Passed to pagegetter to let it know if the page needs to be fetched ifit has expired
-    int type = -1; // task type
-    int parts = -1; // amount of subtasks the task is split into
-    int entities = -1; // I don't remember what teh fuck that is. to be explained later
+
+    int parts = 0; // amount of subtasks the task is split into
+    int entities = 0; // I don't remember what teh fuck that is. to be explained later
     int allowedSubtaskRetries = -1; // how much retries a task can use
+
+
     QString results; // why the fuck am I using a string for the results, looks retarded
-    QString taskComment; // if necessary
     QList<SubTaskPtr> subTasks;
+    virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new PageTask);}
 };
 
 class SubTaskContentBase{
 public:
     virtual ~SubTaskContentBase(){}
     virtual QString ToDB() = 0;
+    virtual SubTaskContentBasePtr Spawn() = 0;
+    virtual QString CustomData1() = 0;
     virtual int size() = 0;
 };
 class SubTaskAuthorContent;
-typedef QSharedPointer<SubTaskContentBase> SubTaskContentBasePtr;
 
 class SubTaskAuthorContent: public SubTaskContentBase {
 public:
     static SubTaskContentBasePtr NewContent();
+    virtual SubTaskContentBasePtr Spawn() override { return NewContent();}
     virtual ~SubTaskAuthorContent();
     virtual QString ToDB() override;
+    virtual QString CustomData1() override { return "";}
     virtual int size() override {return authors.size();}
     QStringList authors;
+};
+
+class SubTaskFandomContent: public SubTaskContentBase {
+public:
+    static SubTaskContentBasePtr NewContent();
+    virtual SubTaskContentBasePtr Spawn() override { return NewContent();}
+    virtual ~SubTaskFandomContent();
+    virtual QString ToDB() override;
+    virtual QString CustomData1() override { return fandom;}
+    virtual int size() override {return urlLinks.size();}
+    QStringList urlLinks;
+    QString fandom;
 };
 
 class PageSubTask: public BasePageTask{
@@ -121,8 +152,7 @@ public:
     static SubTaskPtr CreateNewSubTask();
     QWeakPointer<PageTask> parent;
     int parentId = -1; // id of the parent task
-    SubTaskContentBasePtr content; // part of page content or url list to execute
-
+    virtual BasePageTaskPtr Spawn(){ return BasePageTaskPtr(new PageSubTask);}
 };
 
 typedef QList<PageFailurePtr> SubTaskErrors;

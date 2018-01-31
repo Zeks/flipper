@@ -22,11 +22,13 @@ namespace url_utils{
 QString GetWebId(QString, QString );
 QString GetStoryUrlFromWebId(int, QString );
 QString GetAuthorUrlFromWebId(int, QString );
+int GetLastPageIndex(QString); //&p=11866
 QString AppendBase(QString website, QString postfix);
 namespace ffn{
     QString GetWebId(QString);
     QString GetStoryUrlFromWebId(int);
     QString GetAuthorUrlFromWebId(int);
+    int GetLastPageIndex(QString); //&p=11866
 }
 }
 

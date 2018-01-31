@@ -236,6 +236,8 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
 {
     CalcStatsForFics(fics);
     skippedCounter = 0;
+    updatedCounter = 0;
+    insertedCounter = 0;
     for(QSharedPointer<core::Fic> fic: fics)
     {
         if(!fic)
@@ -249,11 +251,15 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
                 QWriteLocker lock(&mutex);
                 bool insert = false;
                 if(fic->updateMode == core::UpdateMode::update && !updateQueue.contains(id))
+                {
                     updateQueue[id] = fic;
+                    updatedCounter++;
+                }
                 if(fic->updateMode == core::UpdateMode::insert && !insertQueue.contains(id))
                 {
                     insertQueue[id] = fic;
                     insert = true;
+                    insertedCounter++;
                 }
 //                if(!insert)
 //                    updateQueue[id] = fic;

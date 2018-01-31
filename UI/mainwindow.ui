@@ -354,6 +354,9 @@
                        <property name="text">
                         <string>Full parse</string>
                        </property>
+                       <property name="checked">
+                        <bool>false</bool>
+                       </property>
                       </widget>
                      </item>
                      <item>
@@ -363,6 +366,9 @@
                        </property>
                        <property name="text">
                         <string>Cache Mode</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
                        </property>
                       </widget>
                      </item>

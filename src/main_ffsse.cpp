@@ -46,8 +46,12 @@ int main(int argc, char *argv[])
         pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
     }
 
-    auto tasksDb = tasksInterface->InitDatabase("Tasks");
+    QSqlDatabase tasksDb;
+
+    tasksDb = tasksInterface->InitDatabase("Tasks");
     tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
+
+
 
 
     //dbfix::EnsureFandomIndexExists(mainDb);

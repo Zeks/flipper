@@ -150,7 +150,9 @@ private:
     QString GetCurrentFandomName();
 
     // a wrapper over pagegetter to request pages for fandom parsing
-    bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
+    //bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
+
+    FandomParseTaskResult ProcessFandomSubTask(FandomParseTask);
 
     // a wrapper over pagegetter to request pages
     // todo probably could be dropped, will need to check
@@ -225,6 +227,11 @@ private:
                                        int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
                                        bool allowCacheRefresh = true);
 
+    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
+                                                     QString taskComment,
+                                                     bool allowCacheRefresh);
+    void UseFandomTask(PageTaskPtr);
+
     // the actual task that procecces he next wave of authors into database
     void UseAuthorsPageTask(PageTaskPtr,
                             std::function<void(int)>callProgress,
@@ -261,6 +268,8 @@ private:
     bool AskYesNoQuestion(QString);
     bool WarnCutoffLimit();
     bool WarnFullParse();
+
+    void CrawlFandom(QString fandom);
 
     Ui::MainWindow *ui;
 
@@ -459,11 +468,15 @@ private slots:
     void UpdateCategory(QString cat,
                         FFNFandomIndexParserBase* parser,
                         QSharedPointer<interfaces::Fandoms> fandomInterface);
+    void OnOpenLogUrl(const QUrl&);
 
 signals:
+
+
+    void pageTask(FandomParseTask);
     // page task when trudging through fandoms
     // contains the first url and the last url to stop
-    void pageTask(QString, QString, QDate, ECacheMode, bool);
+    //void pageTask(QString, QString, QDate, ECacheMode, bool);
     // page task when iterating through favourites pages
     // contains urls from a SUBtask
     void pageTaskList(QStringList, ECacheMode);

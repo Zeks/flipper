@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/regex_utils.h"
-
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 NarrowResult GetNextInstanceOf(QString text, QString regex1, QString regex2, bool forward)
 {
     QRegExp rx1(regex1);

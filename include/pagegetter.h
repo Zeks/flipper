@@ -40,12 +40,49 @@ enum class EPageSource
     network = 0,
     cache = 1,
 };
+
+struct FandomParseTask{
+    FandomParseTask() = default;
+    FandomParseTask(QStringList parts,
+                    QDate stopAt,
+                    ECacheMode cacheMode,
+                    int pageRetries = 3){
+        this->stopAt = stopAt;
+        this->cacheMode = cacheMode;
+        this->pageRetries = pageRetries;
+        this->parts = parts;
+    }
+    QString fandom;
+    QStringList parts;
+    int pageRetries = 3;
+    QDate stopAt;
+    ECacheMode cacheMode = ECacheMode::dont_use_cache;
+
+};
+
+
+struct FandomParseTaskResult
+{
+    FandomParseTaskResult(){}
+    bool finished = false;
+    bool failedToAcquirePages = false;
+    bool criticalErrors = false;
+    int parsedPages = 0;
+    int addedFics = 0;
+    int skippedFics = 0;
+    int addedAuthors= 0;
+    int updatedFics= 0;
+    int updatedAuthors= 0;
+    QStringList failedParts;
+};
+
 class PageThreadWorker;
 struct WebPage
 {
     friend class PageThreadWorker;
     QString url;
     QDateTime generated;
+    QDate minFicDate;
     //QString stringContent;
     QString content;
     QString previousUrl;
@@ -55,8 +92,10 @@ struct WebPage
     bool crossover;
     EPageType type;
     bool isValid = false;
+    bool failedToAcquire = false;
     EPageSource source = EPageSource::none;
     QString error;
+    QString comment;
     bool isLastPage = false;
     bool isFromCache = false;
     int pageIndex = 0;
@@ -116,6 +155,11 @@ public:
     bool automaticCacheForCurrentDate = true;
 public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate);
+    void FandomTask(FandomParseTask);
+    void ProcessBunchOfFandomUrls(QStringList urls,
+                                  QDate stopAt,
+                                  ECacheMode cacheMode,
+                                  QStringList& failedPages);
     void TaskList(QStringList urls, ECacheMode cacheMode);
 signals:
     void pageResult(PageResult);

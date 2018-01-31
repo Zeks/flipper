@@ -114,6 +114,8 @@ PageTaskPtr PageTask::GetTaskById(int id)
         result->subTasks.push_back(subtask);
         subtask->parent = result;
     }
+    taskResult.data->isValid = valid;
+    taskResult.data->isNew =false;
     return result;
 }
 
