@@ -15,8 +15,7 @@ void PageTask::WriteTaskIntoDB(PageTaskPtr task)
         auto result = database::puresql::CreateTaskInDB(task, db);
         task->id = result.data;
     }
-    else
-        database::puresql::UpdateTaskInDB(task, db);
+    database::puresql::UpdateTaskInDB(task, db);
     task->isNew = false;
 
     for(auto subtask : task->subTasks)
@@ -37,8 +36,7 @@ void PageTask::WriteSubTaskIntoDB(SubTaskPtr subtask)
         auto result = database::puresql::CreateSubTaskInDB(subtask, db);
         subtask->isNew = false;
     }
-    else
-        database::puresql::UpdateSubTaskInDB(subtask, db);
+    database::puresql::UpdateSubTaskInDB(subtask, db);
 
     for(auto action : subtask->executedActions)
     {

@@ -17,7 +17,13 @@ CREATE TABLE if not exists PageTasks (
  refresh_if_needed integer default 0,
  task_comment varchar,
  task_size integer default 0,
- success integer default 0);
+ success integer default 0,
+ parsed_pages integer default 0,
+ updated_fics integer default 0,
+ inserted_fics integer default 0,
+ inserted_authors integer default 0,
+ updated_authors integer default 0
+ );
   
 CREATE INDEX if not exists I_PT_ID ON PageTasks (id asc);
 CREATE INDEX if not exists I_PT_TYPE ON PageTasks (type asc);
@@ -25,7 +31,6 @@ CREATE INDEX if not exists I_PT_FINISHED ON PageTasks (finished asc);
 CREATE INDEX if not exists I_PT_CREATED ON PageTasks (created_at asc);
 CREATE INDEX if not exists I_PT_SCHEDULED ON PageTasks (scheduled_to asc);
 CREATE INDEX if not exists I_PT_SUCCESS ON PageTasks (success asc);
-
 
 -- subtask table;
 CREATE TABLE if not exists PageTaskParts (
@@ -41,6 +46,11 @@ CREATE TABLE if not exists PageTaskParts (
  success integer default 0,
  finished integer default 0,
  retries integer default 0, 
+ parsed_pages integer default 0,
+ updated_fics integer default 0,
+ inserted_fics integer default 0,
+ inserted_authors integer default 0,
+ updated_authors integer default 0
  PRIMARY KEY (task_id, sub_id));
  alter table PageTaskParts add column subtask_comment varchar;
  alter table PageTaskParts add column custom_data1 varchar;

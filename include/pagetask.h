@@ -69,6 +69,12 @@ public:
     int size = 0;
     int retries = -1; // how much retries actually happened (subtask retries can be fetched separately)
     int allowedRetries = -1; // how much retries a task can use
+    int parsedPages = 0;
+    int addedFics = 0;
+    int skippedFics = 0;
+    int addedAuthors= 0;
+    int updatedFics= 0;
+    int updatedAuthors= 0;
     bool attempted = false;
     bool finished = false;
     QString taskComment; // if necessary
@@ -99,6 +105,7 @@ public:
     int parts = 0; // amount of subtasks the task is split into
     int entities = 0; // I don't remember what teh fuck that is. to be explained later
     int allowedSubtaskRetries = -1; // how much retries a task can use
+
 
     QString results; // why the fuck am I using a string for the results, looks retarded
     QList<SubTaskPtr> subTasks;

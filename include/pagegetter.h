@@ -67,6 +67,12 @@ struct FandomParseTaskResult
     bool finished = false;
     bool failedToAcquirePages = false;
     bool criticalErrors = false;
+    int parsedPages = 0;
+    int addedFics = 0;
+    int skippedFics = 0;
+    int addedAuthors= 0;
+    int updatedFics= 0;
+    int updatedAuthors= 0;
     QStringList failedParts;
 };
 

@@ -85,6 +85,8 @@ class Fanfics : public IDBWebIDIndex {
     QSet<int> processedHash;
 
     int skippedCounter = 0;
+    int insertedCounter = 0;
+    int updatedCounter = 0;
     QList<core::FicPtr> fics;
     QHash<int, core::FicPtr> idIndex;
     QHash<QString, QHash<int, core::FicPtr>> webIdIndex;

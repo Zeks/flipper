@@ -468,6 +468,7 @@ private slots:
     void UpdateCategory(QString cat,
                         FFNFandomIndexParserBase* parser,
                         QSharedPointer<interfaces::Fandoms> fandomInterface);
+    void OnOpenLogUrl(const QUrl&);
 
 signals:
 

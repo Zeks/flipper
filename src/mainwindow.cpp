@@ -319,6 +319,7 @@ void MainWindow::Init()
 
     fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
     ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    //ui->edtResults->setOpenExternalLinks(true);
 
 }
 
@@ -395,6 +396,7 @@ void MainWindow::InitConnections()
     connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
     connect(worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
     connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
+    connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -814,8 +816,10 @@ FandomParseTaskResult MainWindow::ProcessFandomSubTask(FandomParseTask task)
 
         QCoreApplication::processEvents();
         pbMain->setValue(counter++);
-        AddToProgressLog("Min Update: " + webPage.minFicDate.toString("yyMMdd") + " Url: " + webPage.url + "<br>");
-
+        QString pageProto = "Min Update: " + webPage.minFicDate.toString("yyMMdd") + " Url: %1 <br>";
+        thread_local QString url_proto = "<a href=\"%1\"> %1 </a>";
+        AddToProgressLog(pageProto.arg(url_proto.arg(webPage.url)));
+        //QString toInsert = "<a href=\"" + pageUrl + "\"> %1 </a>";
         auto startPageRequest = std::chrono::high_resolution_clock::now();
 
         {
@@ -835,6 +839,10 @@ FandomParseTaskResult MainWindow::ProcessFandomSubTask(FandomParseTask task)
             if(!flushResult)
                 result.criticalErrors = true;
 
+            result.updatedFics += fanficsInterface->updatedCounter;
+            result.addedFics   += fanficsInterface->insertedCounter;
+            result.skippedFics += fanficsInterface->skippedCounter;
+            result.parsedPages += counter;
             auto elapsedFlush= std::chrono::high_resolution_clock::now() - startFlush;
             qDebug() << "Flush processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedFlush).count();
         }
@@ -1238,9 +1246,11 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
 
         WebPage webPage;
         QSet<QString> fandoms;
+        int updatedAuthorCounter = -1;
 
         do
         {
+            updatedAuthorCounter++;
             currentCounter++;
             if(currentCounter%300 == 0 && cleanupFunctor)
                 cleanupFunctor();
@@ -1342,6 +1352,10 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 }
 
                 WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
+                subtask->updatedFics = fanficsInterface->updatedCounter;
+                subtask->addedFics = fanficsInterface->insertedCounter;
+                subtask->skippedFics = fanficsInterface->skippedCounter;
+
                 if(fanficsInterface->skippedCounter > 0)
                     qDebug() << "skipped: " << fanficsInterface->skippedCounter;
 
@@ -1350,7 +1364,14 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
             }
 
         }while(pageQueue.pending || pageQueue.data.size() > 0);
+        subtask->updatedAuthors = updatedAuthorCounter;
         subtask->SetFinished(dbInterface->GetCurrentDateTime());
+
+        task->updatedFics += subtask->updatedFics;
+        task->addedFics   += subtask->addedFics;
+        task->skippedFics += subtask->skippedFics;
+        task->parsedPages += currentCounter - 1;
+
         pageTaskInterface->WriteSubTaskIntoDB(subtask);
         fandomsInterface->RecalculateFandomStats(fandoms.values());
         fanficsInterface->ClearProcessedHash();
@@ -2205,6 +2226,11 @@ void MainWindow::UseFandomTask(PageTaskPtr task)
 
 
         auto result = ProcessFandomSubTask(fpt);
+        task->updatedFics += result.updatedFics;
+        task->addedFics   += result.addedFics;
+        task->skippedFics += result.skippedFics;
+        task->parsedPages += result.parsedPages;
+
         if(result.failedToAcquirePages)
         {
             // need to write pages that we failed to acquire into errors
@@ -2263,12 +2289,17 @@ void MainWindow::CrawlFandom(QString fandomName)
 
     auto task = CreatePageTaskFromFandoms({fandom}, "Loading the fandom" + fandomName, true);
     UseFandomTask(task);
+    thread_local QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
+    AddToProgressLog("Finished the job <br>");
+    ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(task->addedFics));
+    ui->edtResults->insertHtml(status.arg("Updated fics").arg("darkBlue").arg(task->updatedFics));
+    ui->edtResults->insertHtml(status.arg("Duplicate fics").arg("gray").arg(task->skippedFics));
 
-    QString status = "Finished processing %1 fics";
+    status = "Finished processing %1 fics";
     ui->lblLoadResult->setText(status.arg(processedFics));
     ui->lblLoadResult->setStyleSheet("font-weight: bold; color: darkGreen; font-size: 20px");
 
-    ui->lblLoadResult->show();
+    //ui->lblLoadResult->show();
     fandomInfoTimer.setSingleShot(true);
     fandomInfoTimer.start(7000);
 
@@ -2299,8 +2330,14 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     auto task = CreatePageTaskFromFandoms(fandoms, "", true);
     UseFandomTask(task);
 
-    QString status = "Finished processing %1 fics";
-    ui->lblLoadResult->show();
+    thread_local QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
+    AddToProgressLog("Finished the job <br>");
+    ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(task->addedFics));
+    ui->edtResults->insertHtml(status.arg("Updated fics").arg("darkBlue").arg(task->updatedFics));
+    ui->edtResults->insertHtml(status.arg("Duplicate fics").arg("gray").arg(task->skippedFics));
+
+    status = "Finished processing %1 fics";
+    //ui->lblLoadResult->show();
     fandomInfoTimer.setSingleShot(true);
     fandomInfoTimer.start(7000);
     ui->lblLoadResult->setText(status.arg(processedFics));
@@ -2843,6 +2880,11 @@ void MainWindow::UpdateCategory(QString cat,
     }
     transaction.finalize();
 
+}
+
+void MainWindow::OnOpenLogUrl(const QUrl & url)
+{
+    QDesktopServices::openUrl(url);
 }
 
 

@@ -2202,7 +2202,9 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     result.data = false;
     Transaction transaction(db);
     QString qs = QString("update PageTasks set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished_at,"
-                         " results = :results, retries = :retries, success = :success, task_size = :size, finished = :finished"
+                         " results = :results, retries = :retries, success = :success, task_size = :size, finished = :finished,"
+                         " parsed_pages = :parsed_pages, updated_fics = :updated_fics, inserted_fics = :inserted_fics,"
+                         " inserted_authors = :inserted_authors, updated_authors = :updated_authors"
                          " where id = :id");
 
     QSqlQuery q(db);
@@ -2216,6 +2218,11 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     q.bindValue(":success",         task->success);
     q.bindValue(":id",              task->id);
     q.bindValue(":size",              task->size);
+    q.bindValue(":parsed_pages",      task->parsedPages);
+    q.bindValue(":updated_fics",      task->updatedFics);
+    q.bindValue(":inserted_fics",     task->addedFics);
+    q.bindValue(":inserted_authors",  task->addedAuthors);
+    q.bindValue(":updated_authors",   task->updatedAuthors);
 
     if(!result.ExecAndCheck(q))
         return result;
@@ -2231,7 +2238,9 @@ DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
     result.data = false;
     Transaction transaction(db);
     QString qs = QString("update PageTaskParts set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished,"
-                         " retries = :retries, success = :success, finished = :finished "
+                         " retries = :retries, success = :success, finished = :finished, "
+                         " parsed_pages = :parsed_pages, updated_fics = :updated_fics, inserted_fics = :inserted_fics,"
+                         " inserted_authors = :inserted_authors, updated_authors = :updated_authors "
                          " where task_id = :task_id and sub_id = :sub_id");
 
     QSqlQuery q(db);
@@ -2244,6 +2253,11 @@ DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
     q.bindValue(":finished",         task->finished);
     q.bindValue(":task_id",          task->parentId);
     q.bindValue(":sub_id",           task->id);
+    q.bindValue(":parsed_pages",      task->parsedPages);
+    q.bindValue(":updated_fics",      task->updatedFics);
+    q.bindValue(":inserted_fics",     task->addedFics);
+    q.bindValue(":inserted_authors",  task->addedAuthors);
+    q.bindValue(":updated_authors",   task->updatedAuthors);
 
     if(!result.ExecAndCheck(q))
         return result;
