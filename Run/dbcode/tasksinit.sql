@@ -35,13 +35,17 @@ CREATE INDEX if not exists I_PT_SUCCESS ON PageTasks (success asc);
 -- subtask table;
 CREATE TABLE if not exists PageTaskParts (
  task_id integer NOT NULL,
+ type integer not null, 
  sub_id integer not null default 0, 
  content varchar, 
+ custom_data1 varchar, 
+ subtask_comment varchar, 
  created_at DATETIME, 
  attempted boolean default false,
  scheduled_to DATETIME, 
  started_at DATETIME, 
  finished_at DATETIME, 
+ parse_up_to DATETIME, 
  task_size integer default 0,
  success integer default 0,
  finished integer default 0,
@@ -50,11 +54,8 @@ CREATE TABLE if not exists PageTaskParts (
  updated_fics integer default 0,
  inserted_fics integer default 0,
  inserted_authors integer default 0,
- updated_authors integer default 0
+ updated_authors integer default 0,
  PRIMARY KEY (task_id, sub_id));
- alter table PageTaskParts add column subtask_comment varchar;
- alter table PageTaskParts add column custom_data1 varchar;
- alter table PageTaskParts add column parse_up_to datetime;
 CREATE INDEX if not exists I_PTP_PK ON PageTaskParts (task_id asc, sub_id asc);
 CREATE INDEX if not exists I_PTP_STARTED ON PageTaskParts (started_at asc);
 CREATE INDEX if not exists I_PTP_ERROR_CODE ON PageTaskParts (success asc);

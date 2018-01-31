@@ -64,7 +64,8 @@ public:
     // errors are success = false;
     bool success = false;
     // created automatically for supertasks via autoincrement or proc to avoid potential problems in the future
-    // creted in code for subtasks
+    // created in code for subtasks
+    int type = -1; // task type
     int id = -1;
     int size = 0;
     int retries = -1; // how much retries actually happened (subtask retries can be fetched separately)
@@ -101,7 +102,7 @@ public:
     static PageTaskPtr CreateNewTask();
     ECacheMode cacheMode = ECacheMode::use_cache; // if only data from the internet is to be used
     bool refreshIfNeeded = false; // ties in with page expiration mechanism. Passed to pagegetter to let it know if the page needs to be fetched ifit has expired
-    int type = -1; // task type
+
     int parts = 0; // amount of subtasks the task is split into
     int entities = 0; // I don't remember what teh fuck that is. to be explained later
     int allowedSubtaskRetries = -1; // how much retries a task can use

@@ -367,6 +367,9 @@
                        <property name="text">
                         <string>Cache Mode</string>
                        </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
                       </widget>
                      </item>
                      <item>

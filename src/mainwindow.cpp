@@ -1138,6 +1138,7 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms
             subtask = PageSubTask::CreateNewSubTask();
             subtask->size = url_utils::GetLastPageIndex(lastUrl);
             subtask->parent = task;
+            subtask->type = 1;
             subtask->updateLimit.setDate(lastUpdated);
             auto content = SubTaskFandomContent::NewContent();
             auto cast = static_cast<SubTaskFandomContent*>(content.data());
@@ -1910,8 +1911,24 @@ void MainWindow::CheckUnfinishedTasks()
         for(auto task : tasksToResume)
         {
             auto fullTask = pageTaskInterface->GetTaskById(task->id);
-            InitUIFromTask(fullTask);
-            UseAuthorsPageTask(fullTask, callProgress, callProgressText, cleanupEditor);
+            if(fullTask->type == 0)
+            {
+                InitUIFromTask(fullTask);
+                UseAuthorsPageTask(fullTask, callProgress, callProgressText, cleanupEditor);
+            }
+            else
+            {
+                if(!task)
+                    return;
+                ReinitProgressbar(fullTask->size);
+                DisableAllLoadButtons();
+                UseFandomTask(fullTask);
+                thread_local QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
+                AddToProgressLog("Finished the job <br>");
+                ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(fullTask->addedFics));
+                ui->edtResults->insertHtml(status.arg("Updated fics").arg("darkBlue").arg(fullTask->updatedFics));
+                ui->edtResults->insertHtml(status.arg("Duplicate fics").arg("gray").arg(fullTask->skippedFics));
+            }
         }
     }
 }
@@ -2214,6 +2231,8 @@ void MainWindow::UseFandomTask(PageTaskPtr task)
     QList<SubTaskPtr> subsToInsert;
     for(auto subtask : task->subTasks)
     {
+        if(subtask->finished)
+            continue;
         acquisitioFailures.clear();
         auto urlList= subtask->content->ToDB().split("\n",QString::SkipEmptyParts);
 
@@ -2287,7 +2306,7 @@ void MainWindow::CrawlFandom(QString fandomName)
     ui->edtResults->clear();
     nextUrl = QString();
 
-    auto task = CreatePageTaskFromFandoms({fandom}, "Loading the fandom" + fandomName, true);
+    auto task = CreatePageTaskFromFandoms({fandom}, "Loading the fandom: " + fandomName, true);
     UseFandomTask(task);
     thread_local QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");
