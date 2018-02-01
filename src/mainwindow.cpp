@@ -397,6 +397,7 @@ void MainWindow::InitConnections()
     connect(worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
     connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
+    connect(ui->pbWipeCache, &QPushButton::clicked, this, &MainWindow::OnWipeCache);
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -818,7 +819,8 @@ FandomParseTaskResult MainWindow::ProcessFandomSubTask(FandomParseTask task)
         pbMain->setValue(counter++);
         QString pageProto = "Min Update: " + webPage.minFicDate.toString("yyMMdd") + " Url: %1 <br>";
         thread_local QString url_proto = "<a href=\"%1\"> %1 </a>";
-        AddToProgressLog(pageProto.arg(url_proto.arg(webPage.url)));
+        QString source = webPage.isFromCache ? "CACHE:" : "WEB:";
+        AddToProgressLog(source + " " + pageProto.arg(url_proto.arg(webPage.url)));
         //QString toInsert = "<a href=\"" + pageUrl + "\"> %1 </a>";
         auto startPageRequest = std::chrono::high_resolution_clock::now();
 
@@ -940,7 +942,7 @@ void MainWindow::LoadData()
     }
     ui->edtResults->setOpenExternalLinks(true);
     ui->edtResults->clear();
-    ui->edtResults->setFont(QFont("Verdana", 20));
+    //ui->edtResults->setFont(QFont("Verdana", 20));
     int counter = 0;
     ui->edtResults->setUpdatesEnabled(false);
     fanfics.clear();
@@ -1098,7 +1100,8 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms
     auto task = PageTask::CreateNewTask();
     task->allowedRetries = 3;
     task->allowedSubtaskRetries = 3;
-    auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
+    auto cacheMode = GetCurrentCacheMode();
+    //auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
     task->cacheMode = cacheMode;
     task->parts = 0;
     for(auto fandom : fandoms)
@@ -1113,6 +1116,7 @@ PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms
     pageTaskInterface->WriteTaskIntoDB(task);
     int counter = 0;
     An<PageManager> pager;
+    pager->GetPage("", cacheMode);
     for(auto fandom : fandoms)
     {
         auto lastUpdated = fandom->lastUpdateDate;
@@ -2296,6 +2300,7 @@ void MainWindow::CrawlFandom(QString fandomName)
 //        return;
 
     TaskProgressGuard guard(this);
+    fanficsInterface->ClearProcessedHash();
     processedFics = 0;
     auto fandom = fandomsInterface->GetFandom(fandomName);
     if(!fandom)
@@ -2308,7 +2313,7 @@ void MainWindow::CrawlFandom(QString fandomName)
 
     auto task = CreatePageTaskFromFandoms({fandom}, "Loading the fandom: " + fandomName, true);
     UseFandomTask(task);
-    thread_local QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
+    QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");
     ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(task->addedFics));
     ui->edtResults->insertHtml(status.arg("Updated fics").arg("darkBlue").arg(task->updatedFics));
@@ -2326,12 +2331,34 @@ void MainWindow::CrawlFandom(QString fandomName)
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
 }
 
+ECacheMode MainWindow::GetCurrentCacheMode() const
+{
+    ECacheMode result;
+
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    //ui->chkShowDirectRecs->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
+    if(settings.value("Settings/releaseCacheMode", false).toBool())
+        result = ECacheMode::use_cache;
+    else
+        result = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
+    return result;
+}
+
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
     if(!WarnCutoffLimit() || !WarnFullParse())
         return;
 
+    QString diagnostics;
+    diagnostics = "You are initiating an update of all tracked fandoms.\n";
+    diagnostics += "This is potentially a very long operation.\n";
+    diagnostics += "Are you sure?";
+    if(!AskYesNoQuestion(diagnostics))
+        return;
+
     TaskProgressGuard guard(this);
+    fanficsInterface->ClearProcessedHash();
     processedFics = 0;
     auto fandoms = fandomsInterface->ListOfTrackedFandoms();
     qDebug() << "Tracked fandoms: " << fandoms;
@@ -2349,7 +2376,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     auto task = CreatePageTaskFromFandoms(fandoms, "", true);
     UseFandomTask(task);
 
-    thread_local QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
+    QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");
     ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(task->addedFics));
     ui->edtResults->insertHtml(status.arg("Updated fics").arg("darkBlue").arg(task->updatedFics));
@@ -2904,6 +2931,12 @@ void MainWindow::UpdateCategory(QString cat,
 void MainWindow::OnOpenLogUrl(const QUrl & url)
 {
     QDesktopServices::openUrl(url);
+}
+
+void MainWindow::OnWipeCache()
+{
+    An<PageManager> pager;
+    pager->WipeAllCache();
 }
 
 

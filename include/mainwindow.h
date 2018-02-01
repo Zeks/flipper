@@ -271,6 +271,8 @@ private:
 
     void CrawlFandom(QString fandom);
 
+    ECacheMode GetCurrentCacheMode() const;
+
     Ui::MainWindow *ui;
 
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -469,6 +471,8 @@ private slots:
                         FFNFandomIndexParserBase* parser,
                         QSharedPointer<interfaces::Fandoms> fandomInterface);
     void OnOpenLogUrl(const QUrl&);
+
+    void OnWipeCache();
 
 signals:
 

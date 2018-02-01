@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDebug>
 #include <QMessageBox>
 #include <QStringListModel>
+#include <QSettings>
+#include <QTextCodec>
 
 TagWidget::TagWidget(QWidget *parent) :
     QWidget(parent),
@@ -35,6 +37,10 @@ TagWidget::TagWidget(QWidget *parent) :
     connect(ui->pbTagExport, &QPushButton::clicked, this, &TagWidget::OnTagExport);
     connect(ui->pbTagImport, &QPushButton::clicked, this, &TagWidget::OnTagImport);
     ui->edtTags->setFont(QFont("Verdana", 12));
+
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    ui->wdgMassTag->setVisible(settings.value("Settings/showMassTagger", false).toBool());
 
 
 }

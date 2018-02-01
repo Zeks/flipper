@@ -51,6 +51,8 @@ public:
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
     void SetDatabase(QSqlDatabase _db);
+    void WipeOldCache();
+    void WipeAllCache();
     QDate automaticCacheDateCutoff;
     bool autoCacheForCurrentDate = true;
     QSqlDatabase db;
@@ -174,8 +176,6 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
-    if(!settings.value("Settings/storeCache", false).toBool())
-        return;
     QSqlQuery q(QSqlDatabase::database("PageCache"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
@@ -196,6 +196,30 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
 void PageGetterPrivate::SetDatabase(QSqlDatabase _db)
 {
     db  = _db;
+}
+
+void PageGetterPrivate::WipeOldCache()
+{
+    //" and updated > date('now', '-60 days') ";
+    QSqlQuery q(QSqlDatabase::database("PageCache"));
+    q.prepare("delete from pagecache where generation_date < date('now', '-2 days')");
+    q.exec();
+    if(q.lastError().isValid())
+        qDebug() << "Error wiping cache: "  << q.lastError();
+}
+
+void PageGetterPrivate::WipeAllCache()
+{
+    QSqlQuery q(QSqlDatabase::database("PageCache"));
+    q.prepare("delete from pagecache");
+    q.exec();
+    if(q.lastError().isValid())
+        qDebug() << "Error wiping cache: "  << q.lastError();
+
+    q.prepare("vacuum");
+    q.exec();
+    if(q.lastError().isValid())
+        qDebug() << "Error wiping cache: "  << q.lastError();
 }
 
 //void PageGetterPrivate::OnNetworkReply(QNetworkReply * reply)
@@ -245,9 +269,7 @@ WebPage PageManager::GetPage(QString url, ECacheMode useCache)
 
 void PageManager::SavePageToDB(const WebPage & page)
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    if(settings.value("Settings/storeCache", false).toBool())
-        d->SavePageToDB(page);
+    d->SavePageToDB(page);
 }
 
 void PageManager::SetAutomaticCacheLimit(QDate date)
@@ -258,6 +280,18 @@ void PageManager::SetAutomaticCacheLimit(QDate date)
 void PageManager::SetAutomaticCacheForCurrentDate(bool value)
 {
     d->autoCacheForCurrentDate = value;
+}
+
+void PageManager::WipeOldCache()
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    if(!settings.value("Settings/keepOldCache", false).toBool())
+        d->WipeOldCache();
+}
+
+void PageManager::WipeAllCache()
+{
+    d->WipeAllCache();
 }
 #include "pagegetter.moc"
 
@@ -283,6 +317,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
     database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
+    pager->WipeOldCache();
     pager->SetAutomaticCacheLimit(automaticCache);
     pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     WebPage result;
@@ -377,6 +412,8 @@ void PageThreadWorker::FandomTask(FandomParseTask task)
     //qDebug() << updateLimit;
     database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
     working = true;
+    QScopedPointer<PageManager> pager(new PageManager);
+    pager->WipeOldCache();
     WebPage result;
     QStringList failedPages;
     ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages);
@@ -406,6 +443,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
     database::Transaction pcTransaction(db);
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
+    pager->WipeOldCache();
     pager->SetAutomaticCacheLimit(automaticCache);
     pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     WebPage result;

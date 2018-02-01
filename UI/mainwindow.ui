@@ -189,7 +189,7 @@
                         </property>
                         <property name="minimumSize">
                          <size>
-                          <width>200</width>
+                          <width>100</width>
                           <height>0</height>
                          </size>
                         </property>
@@ -253,167 +253,15 @@
                      </layout>
                     </widget>
                    </item>
-                   <item row="5" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_15"/>
-                   </item>
-                   <item row="4" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_16">
-                     <item>
-                      <widget class="QPushButton" name="pbCrawl">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>30</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>200</width>
-                         <height>16777215</height>
-                        </size>
-                       </property>
-                       <property name="toolTip">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Crawls the fandom selected in the combobox above downloading all the fic information into internal database. Please note: Harry Potter and Naruto are already preloaded.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If a fandom is already somewhat pre-loaded it will crawl until it finds a date it already has in its database and stop. If you want it to keep going (presumably to pick stuff it might have missed) check &amp;quot;Ignore updatedate&amp;quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                       <property name="text">
-                        <string>Load Selected Fandom</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="chkCutoffLimit">
-                       <property name="enabled">
-                        <bool>true</bool>
-                       </property>
-                       <property name="text">
-                        <string>Cutoff Date</string>
-                       </property>
-                       <property name="checked">
-                        <bool>false</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QDateEdit" name="deCutoffLimit">
-                       <property name="enabled">
-                        <bool>true</bool>
-                       </property>
-                       <property name="dateTime">
-                        <datetime>
-                         <hour>0</hour>
-                         <minute>0</minute>
-                         <second>0</second>
-                         <year>2017</year>
-                         <month>5</month>
-                         <day>1</day>
-                        </datetime>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_2">
-                       <property name="text">
-                        <string>Cutoff Size</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QComboBox" name="cbWordCutoff">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>100</width>
-                         <height>0</height>
-                        </size>
-                       </property>
-                       <item>
-                        <property name="text">
-                         <string>60k Words</string>
-                        </property>
-                       </item>
-                       <item>
-                        <property name="text">
-                         <string>100k Words</string>
-                        </property>
-                       </item>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="chkIgnoreUpdateDate">
-                       <property name="text">
-                        <string>Full parse</string>
-                       </property>
-                       <property name="checked">
-                        <bool>false</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="chkCacheMode">
-                       <property name="toolTip">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;By default, the app will store the pages it passed in cache. if you want to quickly restore some fandom to a clean state without accessign ffnet : wipe it and reload the fandom with this tick checked.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                       <property name="text">
-                        <string>Cache Mode</string>
-                       </property>
-                       <property name="checked">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="horizontalSpacer_7">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>318</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbLoadTrackedFandoms">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>0</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>231231</width>
-                         <height>16777215</height>
-                        </size>
-                       </property>
-                       <property name="toolTip">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will load all the updates for the fandoms you've set as &amp;quot;Track&amp;quot; above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                       <property name="text">
-                        <string>Load All Tracked Fandoms</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="8" column="0" colspan="2">
+                   <item row="6" column="0" colspan="2">
                     <layout class="QHBoxLayout" name="horizontalLayout_5"/>
                    </item>
-                   <item row="3" column="0" colspan="2">
-                    <layout class="QHBoxLayout" name="horizontalLayout"/>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="lblLoadResult">
+                     <property name="text">
+                      <string/>
+                     </property>
+                    </widget>
                    </item>
                    <item row="0" column="0" colspan="2">
                     <widget class="QPushButton" name="pbWipeFandom">
@@ -425,14 +273,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="6" column="0">
-                    <widget class="QLabel" name="lblLoadResult">
-                     <property name="text">
-                      <string/>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="7" column="0" colspan="2">
+                   <item row="5" column="0" colspan="2">
                     <widget class="QListView" name="lvTrackedFandoms">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -457,7 +298,191 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="0">
+                   <item row="4" column="0" colspan="2">
+                    <widget class="QWidget" name="widget_4" native="true">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <layout class="QHBoxLayout" name="horizontalLayout">
+                      <property name="leftMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="rightMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <layout class="QGridLayout" name="gridLayout_16">
+                        <item row="0" column="0">
+                         <widget class="QPushButton" name="pbCrawl">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>30</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>200</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <property name="toolTip">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Crawls the fandom selected in the combobox above downloading all the fic information into internal database. Please note: Harry Potter and Naruto are already preloaded.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If a fandom is already somewhat pre-loaded it will crawl until it finds a date it already has in its database and stop. If you want it to keep going (presumably to pick stuff it might have missed) check &amp;quot;Ignore updatedate&amp;quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                          <property name="text">
+                           <string>Load Selected Fandom</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="chkIgnoreUpdateDate">
+                          <property name="text">
+                           <string>Full parse</string>
+                          </property>
+                          <property name="checked">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="2">
+                         <widget class="QCheckBox" name="chkCutoffLimit">
+                          <property name="enabled">
+                           <bool>true</bool>
+                          </property>
+                          <property name="text">
+                           <string>Cutoff Date</string>
+                          </property>
+                          <property name="checked">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="3">
+                         <widget class="QLabel" name="label_2">
+                          <property name="text">
+                           <string>Cutoff Size</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="4">
+                         <widget class="QCheckBox" name="chkCacheMode">
+                          <property name="toolTip">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;By default, the app will store the pages it passed in cache. if you want to quickly restore some fandom to a clean state without accessign ffnet : wipe it and reload the fandom with this tick checked.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                          <property name="text">
+                           <string>Cache Mode</string>
+                          </property>
+                          <property name="checked">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QPushButton" name="pbLoadTrackedFandoms">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>231231</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <property name="toolTip">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will load all the updates for the fandoms you've set as &amp;quot;Track&amp;quot; above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                          <property name="text">
+                           <string>Load All Tracked Fandoms</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QPushButton" name="pbWipeCache">
+                          <property name="text">
+                           <string>Wipe Cache</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="2">
+                         <widget class="QDateEdit" name="deCutoffLimit">
+                          <property name="enabled">
+                           <bool>true</bool>
+                          </property>
+                          <property name="dateTime">
+                           <datetime>
+                            <hour>0</hour>
+                            <minute>0</minute>
+                            <second>0</second>
+                            <year>2017</year>
+                            <month>5</month>
+                            <day>1</day>
+                           </datetime>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="3">
+                         <widget class="QComboBox" name="cbWordCutoff">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="minimumSize">
+                           <size>
+                            <width>100</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <item>
+                           <property name="text">
+                            <string>60k Words</string>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>100k Words</string>
+                           </property>
+                          </item>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                      <item>
+                       <spacer name="horizontalSpacer">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="sizeHint" stdset="0">
+                         <size>
+                          <width>667</width>
+                          <height>20</height>
+                         </size>
+                        </property>
+                       </spacer>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="1" column="0" colspan="2">
                     <widget class="QPushButton" name="pbReinitFandoms">
                      <property name="enabled">
                       <bool>true</bool>
@@ -575,152 +600,9 @@
                    <property name="bottomMargin">
                     <number>0</number>
                    </property>
-                   <item row="0" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_2">
-                     <item>
-                      <widget class="QPushButton" name="pbCreateNewList">
-                       <property name="text">
-                        <string>Create</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_18">
-                       <property name="text">
-                        <string>List Name</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLineEdit" name="leCurrentListName">
-                       <property name="maximumSize">
-                        <size>
-                         <width>200</width>
-                         <height>16777215</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Favourites</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="chkSyncListNameToView">
-                       <property name="text">
-                        <string>Sync to view</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbAddAuthorToList">
-                       <property name="text">
-                        <string>Add Current Author</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbRemoveAuthorFromList">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="text">
-                        <string>Remove Current Author</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="horizontalSpacer_2">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbRemoveList">
-                       <property name="text">
-                        <string>Remove List</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="5" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_3">
-                     <item>
-                      <widget class="QPushButton" name="pbLoadAllRecommenders">
-                       <property name="text">
-                        <string>Reload Whole List</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbCopyFavUrls">
-                       <property name="text">
-                        <string>Copy Author Urls</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="horizontalSpacer_3">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="chkShowOrigins">
-                       <property name="text">
-                        <string>Show Origins</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_16">
-                       <property name="text">
-                        <string>Min Recs</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QSpinBox" name="sbMinRecommendations"/>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbOpenWholeList">
-                       <property name="text">
-                        <string>Open Whole List</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="3" column="0">
-                    <widget class="QListView" name="lvRecommenders">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="1" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_4">
-                     <item>
+                    <layout class="QGridLayout" name="gridLayout_19">
+                     <item row="0" column="0">
                       <widget class="QPushButton" name="pbLoadPage">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -733,24 +615,24 @@
                        </property>
                       </widget>
                      </item>
-                     <item>
+                     <item row="0" column="1" colspan="2">
                       <widget class="QLabel" name="label_17">
                        <property name="text">
                         <string>Author:   </string>
                        </property>
                       </widget>
                      </item>
-                     <item>
+                     <item row="0" column="3">
                       <widget class="QComboBox" name="cbAuthorNames">
                        <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                          <horstretch>0</horstretch>
                          <verstretch>0</verstretch>
                         </sizepolicy>
                        </property>
                        <property name="minimumSize">
                         <size>
-                         <width>200</width>
+                         <width>100</width>
                          <height>0</height>
                         </size>
                        </property>
@@ -765,24 +647,27 @@
                        </property>
                       </widget>
                      </item>
-                     <item>
-                      <widget class="QLabel" name="label_6">
-                       <property name="text">
-                        <string>Url:</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QLineEdit" name="leAuthorUrl"/>
-                     </item>
-                     <item>
+                     <item row="0" column="4">
                       <widget class="QPushButton" name="pbGetFavouriteLinks">
                        <property name="text">
                         <string>Get Fav Links</string>
                        </property>
                       </widget>
                      </item>
-                     <item>
+                     <item row="0" column="5">
+                      <spacer name="horizontalSpacer_7">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item row="0" column="6">
                       <widget class="QPushButton" name="pbOpenRecommendations">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -795,12 +680,22 @@
                        </property>
                       </widget>
                      </item>
-                     <item>
+                     <item row="1" column="0">
                       <widget class="QPushButton" name="pbOpenAuthorUrl">
                        <property name="text">
-                        <string>URL</string>
+                        <string>Open</string>
                        </property>
                       </widget>
+                     </item>
+                     <item row="1" column="1">
+                      <widget class="QLabel" name="label_6">
+                       <property name="text">
+                        <string>Url:</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="2" colspan="5">
+                      <widget class="QLineEdit" name="leAuthorUrl"/>
                      </item>
                     </layout>
                    </item>
@@ -1032,6 +927,152 @@
                       </item>
                      </layout>
                     </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_3">
+                     <item>
+                      <widget class="QPushButton" name="pbLoadAllRecommenders">
+                       <property name="text">
+                        <string>Reload Whole List</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbCopyFavUrls">
+                       <property name="text">
+                        <string>Copy Author Urls</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_3">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="chkShowOrigins">
+                       <property name="text">
+                        <string>Show Origins</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_16">
+                       <property name="text">
+                        <string>Min Recs</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QSpinBox" name="sbMinRecommendations"/>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbOpenWholeList">
+                       <property name="text">
+                        <string>Open Whole List</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QListView" name="lvRecommenders">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_4"/>
+                   </item>
+                   <item row="0" column="0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_2">
+                     <item>
+                      <widget class="QPushButton" name="pbCreateNewList">
+                       <property name="text">
+                        <string>Create</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_18">
+                       <property name="text">
+                        <string>List Name</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="leCurrentListName">
+                       <property name="maximumSize">
+                        <size>
+                         <width>200</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>Favourites</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="chkSyncListNameToView">
+                       <property name="text">
+                        <string>Sync to view</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbAddAuthorToList">
+                       <property name="text">
+                        <string>Add Current Author</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbRemoveAuthorFromList">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Remove Current Author</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_2">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbRemoveList">
+                       <property name="text">
+                        <string>Remove List</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
                    </item>
                   </layout>
                  </widget>

@@ -135,6 +135,8 @@ class PageManager
     void SavePageToDB(const WebPage & page);
     void SetAutomaticCacheLimit(QDate);
     void SetAutomaticCacheForCurrentDate(bool);
+    void WipeOldCache();
+    void WipeAllCache();
     QScopedPointer<PageGetterPrivate> d;
 };
 
