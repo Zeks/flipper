@@ -331,7 +331,7 @@ void MainWindow::InitConnections()
     //    eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagWidgetDynamic));
     //    tagWidgetDynamic->installEventFilter(eventFilter);
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
-    connect(ui->pbFormattedList, &QPushButton::clicked, this, &MainWindow::OnDoFormattedList);
+    //connect(ui->pbFormattedList, &QPushButton::clicked, this, &MainWindow::OnDoFormattedListByFandoms);
     connect(ui->pbGetFavouriteLinks, &QPushButton::clicked, this, &MainWindow::OnGetAuthorFavouritesLinks);
     connect(ui->pbPauseTask, &QPushButton::clicked, [&](){
         cancelCurrentTaskPressed = true;
@@ -1589,7 +1589,7 @@ void MainWindow::OnCopyAllUrls()
     clipboard->setText(result);
 }
 
-void MainWindow::OnDoFormattedList()
+void MainWindow::OnDoFormattedListByFandoms()
 {
     TaskProgressGuard guard(this);
     QClipboard *clipboard = QApplication::clipboard();
@@ -1627,8 +1627,11 @@ void MainWindow::OnDoFormattedList()
     }
 
     result += "<ul>";
-    for(auto fandomKey : byFandoms.keys())
-        result+= "<li><a href=\"#" + fandomKey.toLower().replace(" ","_") +"\">" + fandomKey + "</a></li>";
+//    if(ui->chkGroupFandoms->isChecked())
+//    {
+        for(auto fandomKey : byFandoms.keys())
+            result+= "<li><a href=\"#" + fandomKey.toLower().replace(" ","_") +"\">" + fandomKey + "</a></li>";
+    //}
     An<PageManager> pager;
     pager->SetDatabase(QSqlDatabase::database());
     for(auto fandomKey : byFandoms.keys())
@@ -1663,6 +1666,37 @@ void MainWindow::OnDoFormattedList()
                 result+=ficPtr->summary + "<br><br>";
             }
 
+        }
+    }
+    clipboard->setText(result);
+}
+
+void MainWindow::OnDoFormattedList()
+{
+    TaskProgressGuard guard(this);
+    QClipboard *clipboard = QApplication::clipboard();
+    QString result;
+    QList<int> ficIds;
+    for(int i = 0; i < typetableModel->rowCount(); i ++)
+        ficIds.push_back(typetableModel->index(i, 17).data().toInt());
+    QSet<QPair<QString, int>> already;
+    QMap<QString, QList<int>> byFandoms;
+    for(auto id : ficIds)
+    {
+        auto ficPtr = fanficsInterface->GetFicById(id);
+        auto genreString = ficPtr->genreString;
+        bool validGenre = true;
+        if(validGenre)
+        {
+            result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+            result+=ficPtr->genres.join("/")+ "<br><br>";
+            QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
+
+            if(ficPtr->complete)
+                result+=status.arg("green").arg("Complete<br>");
+            else
+                result+=status.arg("red").arg("Active<br>");
+            result+=ficPtr->summary + "<br><br>";
         }
     }
     clipboard->setText(result);
@@ -2296,8 +2330,8 @@ void MainWindow::UseFandomTask(PageTaskPtr task)
 
 void MainWindow::CrawlFandom(QString fandomName)
 {
-//    if(!WarnCutoffLimit() || !WarnFullParse())
-//        return;
+    if(!WarnCutoffLimit() || !WarnFullParse())
+        return;
 
     TaskProgressGuard guard(this);
     fanficsInterface->ClearProcessedHash();
@@ -2849,6 +2883,7 @@ void MainWindow::on_pbReinitFandoms_clicked()
     UpdateFandomTask task;
     task.ffn = true;
     UpdateFandomList(task);
+    fandomsInterface->Clear();
 }
 
 void MainWindow::OnGetAuthorFavouritesLinks()
@@ -2983,4 +3018,12 @@ void MainWindow::OnRemoveFandomFromRecentList()
 void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
     fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
+}
+
+void MainWindow::on_pbFormattedList_clicked()
+{
+    if(ui->chkGroupFandoms->isChecked())
+        OnDoFormattedListByFandoms();
+    else
+        OnDoFormattedList();
 }

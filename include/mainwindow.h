@@ -360,6 +360,7 @@ public slots:
     // copies urls of all currently visible fics into the cliboard
     void OnCopyAllUrls();
     // used to create targeted HTML lists to put on the web
+    void OnDoFormattedListByFandoms();
     void OnDoFormattedList();
     // queries and displays next page for the current query
     void OnDisplayNextPage();
@@ -473,6 +474,8 @@ private slots:
     void OnOpenLogUrl(const QUrl&);
 
     void OnWipeCache();
+
+    void on_pbFormattedList_clicked();
 
 signals:
 
