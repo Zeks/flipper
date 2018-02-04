@@ -1,5 +1,5 @@
 /*
-FFSSE is a replacement search engine for fanfiction.net search results
+Flipper is a replacement search engine for fanfiction.net search results
 Copyright (C) 2017  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify
@@ -233,7 +233,7 @@ void MainWindow::Init()
     qRegisterMetaType<FandomParseTaskResult>("FandomParseTaskResult");
 
 
-    this->setWindowTitle("ffnet sane search engine");
+    this->setWindowTitle("Flipper");
     this->setAttribute(Qt::WA_QuitOnClose);
 
     std::unique_ptr<core::DefaultRNGgenerator> rng (new core::DefaultRNGgenerator());
@@ -320,6 +320,7 @@ void MainWindow::Init()
     fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
     ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->edtResults->setOpenExternalLinks(true);
+    ui->cbWordCutoff->setVisible(false);
 
 }
 
@@ -1723,7 +1724,7 @@ void MainWindow::ReadSettings()
     ui->wdgCustomActions->setVisible(settings.value("Settings/showCustomActions", false).toBool());
     ui->pbLoadAllRecommenders->setVisible(settings.value("Settings/showRecListReload", false).toBool());
     ui->sbMinRecommendations->setVisible(settings.value("Settings/showRecListReload", false).toBool());
-    ui->chkShowOrigins->setVisible(settings.value("Settings/showRecListReload", false).toBool());
+    ui->chkShowOrigins->setVisible(settings.value("Settings/showOriginsCheck", false).toBool());
     ui->label_16->setVisible(settings.value("Settings/showRecListReload", false).toBool());
 
 

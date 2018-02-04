@@ -1,5 +1,5 @@
 /*
-FFSSE is a replacement search engine for fanfiction.net search results
+Flipper is a replacement search engine for fanfiction.net search results
 Copyright (C) 2017  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify

@@ -18,6 +18,12 @@ Rectangle{
     function deactivate(index) {
         console.log("deactivating" + tagName);
         root.active = false
+        //rect.rotation = root.rotation != 0 ? 180 : 0
+        //root.selectionMode = false;
+        //list.model = allChoices;
+    }
+    function restore() {
+        rect.rotation = 0
         //root.selectionMode = false;
         //list.model = allChoices;
     }
@@ -63,6 +69,12 @@ Rectangle{
                 lvFics.currentIndex = delegateItem.indexOfThisDelegate
                 active = true
                 activated(delegateItem.indexOfThisDelegate)
+//                if(tagName === "Genre")
+//                {
+                    root.parent.rotation =  0;
+                    rect.rotation = 0;
+                //}
+
 
             }
         }
@@ -93,6 +105,7 @@ Rectangle{
 
                     active = true
                     activated(delegateItem.indexOfThisDelegate)
+
                     if(plus.mapToItem(mainWindow,0,0).y > mainWindow.height/2 )
                     {
                         //list.verticalLayoutDirection = ListView.BottomToTop;
@@ -109,6 +122,10 @@ Rectangle{
                         rect.rotation = 0;
                         //list.verticalLayoutDirection = ListView.TopToBottom;
                         //list.anchors.top =  rect.bottom
+                    }
+                    if(list.model === currentChoices)
+                    {
+                        root.parent.rotation =  0;
                     }
                 }
             }

@@ -4,7 +4,7 @@ import "BaseDefines.qbs" as App
 
 
 App{
-name: "ffsse"
+name: "flipper"
 consoleApplication:false
 type:"application"
 qbsSearchPaths: sourceDirectory + "/modules"
@@ -97,7 +97,7 @@ files: [
         "src/parsers/ffn/favparser.cpp",
         "src/parsers/ffn/ffnparserbase.cpp",
         "src/parsers/ffn/ficparser.cpp",
-        "src/main_ffsse.cpp",
+        "src/main_flipper.cpp",
         "src/mainwindow_utility.cpp",
         "src/pagegetter.cpp",
         "src/pure_sql.cpp",

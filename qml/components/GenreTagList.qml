@@ -45,6 +45,7 @@ Item {
 
     Component.onCompleted: {
             tsGenre.activated.connect(tsTags.deactivate)
+            tsGenre.activated.connect(tsTags.restore)
             tsTags.activated.connect(tsGenre.deactivate)
             tsTags.activated.connect(delegateItem.tagListActivated)
             delegateItem.mouseClicked.connect(tagGenreList.makeSelection)

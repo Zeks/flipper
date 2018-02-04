@@ -8,6 +8,6 @@ Please note that to run this application SQLITE3 version of qt libraries must ma
 Adjust contents of your sqlite folder accordingly after the clone.
 The currently present files are for Qt 5.10 and SQLITE 3.20.1
 
-Manual can be found at: https://docs.google.com/document/d/17vAasCLCV7rkBrs7-8taUOABkbCEpMEPddKLW2HhQhU/edit?usp=sharing
+Manual can be found at: https://docs.google.com/document/d/1fJ1P3y3UBY4OjEHosBCo3OtlIC2sycfrL3aC2yqNiP8/edit#heading=h.11xew8jszcs7
 
-If you have questions, email me at enmarantispam@gmail.com
+If you have questions, email me at ficflipper@gmail.com
