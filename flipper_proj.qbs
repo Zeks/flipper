@@ -3,9 +3,9 @@ import qbs.Process
 import "BaseDefines.qbs" as Application
 
 Project {
-    name: "ffsse_proj"
+    name: "flipper_proj"
     references: [
-        "ffsse.qbs",
+        "flipper.qbs",
         "libs/UniversalModels/UniversalModels.qbs",
         "libs/Logger/logger.qbs",
     ]
