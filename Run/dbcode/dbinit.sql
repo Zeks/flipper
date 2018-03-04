@@ -119,7 +119,7 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
   
  alter table AuthorPageStatistics add column favourites integer default 0;                  -- how much stuff did the author favourite;
  alter table AuthorPageStatistics add column favourites_type integer default -1;            -- tiny(<50)/medium(50-500)/large(500-2000)/bullshit(2k+);
- alter table AuthorPageStatistics add column bio_wordcount integer default -1;              -- how big is author's bio section;
+
  alter table AuthorPageStatistics add column favourite_fandoms_diversity real;              -- how uniform are his favourites relative to most popular fandom;
  alter table AuthorPageStatistics add column explorer_factor real;                          -- deals with how likely is the author to explore otherwise unpopular fics;
  alter table AuthorPageStatistics add column crossover_factor real;                         -- how willing is he to read crossovers;
@@ -129,12 +129,40 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  alter table AuthorPageStatistics add column esrb_type integer -1;                          -- agnostic/kiddy/mature;
  alter table AuthorPageStatistics add column genre_uniformity_factor real;                  -- how likely is the author to stick to a single genre;
  alter table AuthorPageStatistics add column prevalent_mood integer default -1;             -- sad/neutral/positive as categorized by genres;
+ alter table AuthorPageStatistics add column prevalent_genre varchar default null;
  alter table AuthorPageStatistics add column average_favourited_length integer default -1;  -- excluding the biggest outliers if there are not enough of them;
- alter table AuthorPageStatistics add column most_favourited_size integer default -1;       -- small/medium/huge;
+ alter table AuthorPageStatistics add column most_favourited_size integer default -1;       -- small/medium/large/huge;
+ 
+ alter table AuthorPageStatistics add column bio_wordcount integer default -1;              -- how big is author's bio section;
  alter table AuthorPageStatistics add column own_wordcount integer default -1;              -- author's own wordcount;
  alter table AuthorPageStatistics add column own_favourites integer default -1;             -- author's own favourites on fics (pretty much useless);
  alter table AuthorPageStatistics add column own_finished_ratio real;                       -- ratio of finished fics
  alter table AuthorPageStatistics add column most_written_size integer default -1;          -- small/medium/huge;
+  
+ alter table AuthorPageStatistics add column size_tiny real;
+ alter table AuthorPageStatistics add column size_medium real;
+ alter table AuthorPageStatistics add column size_large real;
+ alter table AuthorPageStatistics add column size_huge real;
+ 
+ alter table AuthorPageStatistics add column esrb_kiddy real;
+ alter table AuthorPageStatistics add column esrb_mature real;
+ 
+ alter table AuthorPageStatistics add column fandom_size_dominant real;
+ alter table AuthorPageStatistics add column fandom_size_minor real;
+ 
+ alter table AuthorPageStatistics add column mood_sad real;
+ alter table AuthorPageStatistics add column mood_neutral real;
+ alter table AuthorPageStatistics add column mood_happy real;
+ 
+ alter table AuthorPageStatistics add column explorer_popular real;
+ alter table AuthorPageStatistics add column explorer_minor real;
+
+ alter table AuthorPageStatistics add column unfinished_yes real;
+ alter table AuthorPageStatistics add column unfinished_no real;
+ 
+ alter table AuthorPageStatistics add column juststarted_no real;
+ alter table AuthorPageStatistics add column juststarted_yes real;
+ 
   
  -- need genre coefficients in a separate table probably;
  -- need cluster relations in separate table;

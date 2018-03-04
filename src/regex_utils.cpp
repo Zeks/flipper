@@ -89,8 +89,9 @@ RegularExpressionToken operator"" _c ( const char* data, size_t )
     return RegularExpressionToken(data, 1);
 }
 
-QString BouncingSearch(QString str, QList<SearchToken> tokens)
+QString BouncingSearch(QString str, FieldSearcher finder)
 {
+    auto tokens = finder.tokens;
     QString reversed = str;
     std::reverse(reversed.begin(), reversed.end());
     QStringRef directRef(&str);

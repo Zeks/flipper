@@ -54,20 +54,10 @@ enum ELookupType
     find_last_instance = 1,
 };
 }
+
+
 struct SearchToken
 {
-
-    //SearchToken(QList<RegularExpressionToken> rx, int move, bool first){
-//        this->regex = rx;
-//        QString reverseSearch;
-//        this->reversedRegex = rx;
-
-//        this->forwardDirection = first;
-//        std::reverse(reversedRegex.begin(), reversedRegex.end());
-//        this->reversedRegex.replace("s\\", "\\s");
-//        this->reversedRegex.replace("d\\", "\\d");
-
-    //}
     SearchToken(QString rx, QString bitmask, int move, SearchTokenNamespace::ELookupType lookupType, SearchTokenNamespace::EBoundaryType boundaryType)
     {
         this->moveAmount = move;
@@ -114,7 +104,14 @@ struct SearchToken
     bool snapLeftBound = true;
 };
 
-QString BouncingSearch(QString str, QList<SearchToken> tokens);
+struct FieldSearcher
+{
+    QString name;
+    QList<SearchToken> tokens;
+};
+
+
+QString BouncingSearch(QString str, FieldSearcher tokens);
 
 NarrowResult GetNextInstanceOf(QString text, QString regex1, QString regex2, bool forward);
 QString GetSingleNarrow(QString text,QString regex1, QString regex2, bool forward1);

@@ -63,7 +63,7 @@ public:
     enum class MoodType{
         sad = 0,
         neutral = 1,
-        largepositive = 2,
+        positive = 2,
     };
     enum class ESRBType{
         agnostic = 0,
@@ -79,19 +79,28 @@ public:
 
     int favourites = -1;
     EntitySizeType favouriteSectionSize;
-    int averageFavouritedLength = -1;
+    double averageFavouritedLength = 0.0;
     double favouriteFandomsDiversity = 0.0;
     double explorerFactor = 0.0;
     double crossoverFactor = 0.0;
     double unfinishedFactor = 0.0;
     double esrbUniformityFactor = 0.0;
-    double genreUniformityFactor = 0.0;
-    ESRBType esrbFactor;
+    double esrbKiddy = 0.0;
+    double esrbMature= 0.0;
+
+    ESRBType esrbType;
     MoodType prevalentMood;
+    double moodDiversityFactor = 0.0;
+    QString prevalentGenre;
+    double genreDiversityFactor = 0.0;
+    double moodNeutral = 0.0;
+    double moodSad = 0.0;
+    double moodHappy = 0.0;
+    double moodUniformity = 0.0;
     EntitySizeType mostFavouritedSize;
 
     QDate pageCreated;
-    QDate bioLastCreated;
+    QDate bioLastUpdated;
     QDate firstPublishedFavourite;
     QDate lastPublishedFavourite;
     QDate firstPublishedFic;
@@ -222,15 +231,23 @@ public:
 
         this->genreString = genreString;
         QStringList genresList;
+        bool hasHurt = false;
+        QString fixedGenreString = genreString;
         if(website == "ffn" && genreString.contains("Hurt/Comfort"))
         {
-            genreString.replace("Hurt/Comfort", "").split("/");
+            hasHurt = true;
+            fixedGenreString = fixedGenreString.replace("Hurt/Comfort", "");
         }
+
         if(website == "ffn")
-            genresList = genreString.split("/");
+            genresList = fixedGenreString.split("/", QString::SkipEmptyParts);
+        if(hasHurt)
+            genresList.push_back("Hurt/Comfort");
         for(auto& genre: genresList)
             genre = genre.trimmed();
         genres = genresList;
+
+
     };
     QString url(QString type)
     {
@@ -358,7 +375,7 @@ public:
     bool tracked = false;
     static QString ConvertName(QString name)
     {
-        static QHash<QString, QString> cache;
+        thread_local QHash<QString, QString> cache;
         name=name.trimmed();
         QString result;
         if(cache.contains(name))
