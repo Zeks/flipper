@@ -45,8 +45,61 @@ enum class AuthorIdStatus
 };
 class Author;
 typedef QSharedPointer<Author> AuthorPtr;
+
+enum class EntitySizeType{
+    small = 0,
+    medium = 2,
+    big = 3,
+    huge = 4
+};
+class AuthorStats{
+public:
+    enum class FavouritesType{
+        tiny = 0 ,
+        medium = 1,
+        large = 2,
+        bs = 3
+    };
+    enum class MoodType{
+        sad = 0,
+        neutral = 1,
+        largepositive = 2,
+    };
+    enum class ESRBType{
+        agnostic = 0,
+        kiddy = 1,
+        mature = 2,
+    };
+
+    int bioWordCount = -1;
+    int ownFicWordcount = -1;
+    int ownFavourites= -1;
+    double ownFinishedRatio = 1;
+    EntitySizeType mostWrittenSize;
+
+    int favourites = -1;
+    EntitySizeType favouriteSectionSize;
+    int averageFavouritedLength = -1;
+    double favouriteFandomsDiversity = 0.0;
+    double explorerFactor = 0.0;
+    double crossoverFactor = 0.0;
+    double unfinishedFactor = 0.0;
+    double esrbUniformityFactor = 0.0;
+    double genreUniformityFactor = 0.0;
+    ESRBType esrbFactor;
+    MoodType prevalentMood;
+    EntitySizeType mostFavouritedSize;
+
+    QDate pageCreated;
+    QDate bioLastCreated;
+    QDate firstPublishedFavourite;
+    QDate lastPublishedFavourite;
+    QDate firstPublishedFic;
+    QDate lastPublishedFic;
+
+};
 class Author : public DBEntity{
-    public:
+public:
     static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
     ~Author(){}
     void Log();
@@ -90,11 +143,12 @@ class Author : public DBEntity{
     }
     QStringList GetWebsites() const;
     UpdateMode updateMode = UpdateMode::none;
+    AuthorStats stats;
 };
 
 class FavouritesPage
 {
-    public:
+public:
     QSharedPointer<Author> author;
     QString pageData;
     //type of website, ffn or ao3
@@ -105,7 +159,7 @@ class Fic;
 typedef QSharedPointer<Fic> FicPtr;
 
 class Fic : public DBEntity{
-    public:
+public:
     class FicCalcStats
     {
     public:
@@ -199,7 +253,7 @@ class Fic : public DBEntity{
 
 class Section : public DBEntity
 {
-    public:
+public:
     Section();
     struct Tag
     {
@@ -264,7 +318,7 @@ public:
     QString GetSource(){return source;}
     QString GetType(){return type;}
     void SetType(QString value) {type = value;}
-    private:
+private:
     QString url;
     QString source;
     QString type;
@@ -272,14 +326,14 @@ public:
 
 class Fandom : public DBEntity
 {
-    public:
+public:
     Fandom(){}
     Fandom(QString name){this->name = ConvertName(name);}
-//    Fandom(QString name,QString section,QString source = "ffn"){
-//        this->name = ConvertName(name);
-//        this->section = section.trimmed();
-//        this->source = source.trimmed();
-//    }
+    //    Fandom(QString name,QString section,QString source = "ffn"){
+    //        this->name = ConvertName(name);
+    //        this->section = section.trimmed();
+    //        this->source = source.trimmed();
+    //    }
     static FandomPtr NewFandom() { return QSharedPointer<Fandom>(new Fandom);}
     QList<Url> GetUrls(){
         return urls;
@@ -333,7 +387,7 @@ typedef QSharedPointer<AuthorRecommendationStats> AuhtorStatsPtr;
 
 class AuthorRecommendationStats : public DBEntity
 {
-    public:
+public:
     static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}
     int authorId= -1;
     int totalRecommendations = -1;
@@ -362,7 +416,7 @@ typedef QSharedPointer<RecommendationList> RecPtr;
 
 
 class RecommendationList : public DBEntity{
-    public:
+public:
     static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
     int id = -1;
     int ficCount =-1;

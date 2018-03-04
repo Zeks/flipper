@@ -551,6 +551,8 @@ void MainWindow::SetupFanficTable()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     qwFics->rootContext()->setContextProperty("urlCopyIconVisible",
                                               settings.value("Settings/urlCopyIconVisible", true).toBool());
+    qwFics->rootContext()->setContextProperty("scanIconVisible",
+                                              settings.value("Settings/scanIconVisible", true).toBool());
     QUrl source("qrc:/qml/ficview.qml");
     qwFics->setSource(source);
 
@@ -562,6 +564,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
+    connect(childObject, SIGNAL(findSimilarClicked(QVariant)), this, SLOT(OnFindSimilarClicked(QVariant)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
@@ -2380,6 +2383,27 @@ ECacheMode MainWindow::GetCurrentCacheMode() const
     return result;
 }
 
+void MainWindow::CreateSimilarListForGivenFic(int id)
+{
+    static bool authorsLoaded = false;
+    TaskProgressGuard guard(this);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    QSharedPointer<core::RecommendationList> params = core::RecommendationList::NewRecList();
+    params->alwaysPickAt = 1;
+    params->minimumMatch = 1;
+    params->name = "similar";
+    params->tagToUse = "generictag";
+    params->pickRatio = 9999999999;
+    SetTag(id, "generictag");
+    BuildRecommendations(params, !authorsLoaded);
+    tagsInterface->DeleteTag("generictag");
+    ui->cbNormals->setCurrentText("");
+    recsInterface->SetFicsAsListOrigin({id}, params->id);
+    transaction.finalize();
+    OpenRecommendationList("similar");
+}
+
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
     if(!WarnCutoffLimit() || !WarnFullParse())
@@ -2563,7 +2587,15 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
 
 void MainWindow::on_pbOpenWholeList_clicked()
 {
-    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+    OpenRecommendationList("");
+}
+
+void MainWindow::OpenRecommendationList(QString listName)
+{
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations,
+                                       false,
+                                       listName);
+    filter.sortMode = core::StoryFilter::reccount;
 
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
@@ -2582,13 +2614,14 @@ void MainWindow::on_pbFirstWave_clicked()
 
 
 
-int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params)
+int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
     TaskProgressGuard guard(this);
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
 
-    authorsInterface->Clear();
+    if(clearAuthors)
+        authorsInterface->Clear();
     authorsInterface->LoadAuthors("ffn");
     recsInterface->Clear();
     //fanficsInterface->ClearIndex()
@@ -2602,8 +2635,12 @@ int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> pa
     recsInterface->LoadListIntoDatabase(params);
     int counter = 0;
     int alLCounter = 0;
+    int authorCounter = 0;
     for(auto authorId: allAuthors)
     {
+        ++authorCounter;
+        if(authorCounter%10 == 0)
+            QApplication::processEvents();
         auto stats = authorsInterface->GetStatsForTag(authorId, params);
 
 
@@ -2636,7 +2673,7 @@ int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> pa
     return params->id;
 }
 
-core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode, bool useAuthorLink)
+core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode, bool useAuthorLink, QString listToUse)
 {
     auto valueIfChecked = [](QCheckBox* box, auto value){
         if(box->isChecked())
@@ -2674,7 +2711,10 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : -1;
     filter.recordPage = ui->chkLimitPageSize->isChecked() ?  0 : -1;
     //if(ui->cbSortMode->currentText())
-    filter.listForRecommendations = recsInterface->GetListIdForName(ui->cbRecGroup->currentText());
+    if(listToUse.isEmpty())
+        filter.listForRecommendations = recsInterface->GetListIdForName(ui->cbRecGroup->currentText());
+    else
+        filter.listForRecommendations = recsInterface->GetListIdForName(listToUse);
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
@@ -3027,4 +3067,13 @@ void MainWindow::on_pbFormattedList_clicked()
         OnDoFormattedListByFandoms();
     else
         OnDoFormattedList();
+}
+
+void MainWindow::OnFindSimilarClicked(QVariant url)
+{
+    //auto id = url_utils::GetWebId(url.toString(), "ffn");
+    auto id = fanficsInterface->GetIDFromWebID(url.toInt(),"ffn");
+    if(id == -1)
+        return;
+    CreateSimilarListForGivenFic(id);
 }

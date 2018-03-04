@@ -154,6 +154,7 @@ Rectangle {
             //snapMode: ListView.NoSnap
             property int previousIndex: -1
             property bool showUrlCopyIcon: urlCopyIconVisible
+            property bool showScanIcon: scanIconVisible
 
             spacing: 5
             clip:true
@@ -168,6 +169,7 @@ Rectangle {
             signal tagClicked(var tag, var currentMode, var title, var author)
             signal callTagWindow()
             signal urlCopyClicked(string msg)
+            signal findSimilarClicked(var id)
             signal recommenderCopyClicked(string msg)
 
         }

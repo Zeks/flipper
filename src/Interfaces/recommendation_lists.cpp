@@ -401,7 +401,8 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
 {
     if(forced || lists.empty())
         LoadAvailableRecommendationLists();
-    return nameIndex.keys();
-
+    auto list = nameIndex.keys();
+    qSort(list.begin(), list.end());
+    return list;
 }
 }

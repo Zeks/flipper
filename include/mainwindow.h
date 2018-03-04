@@ -251,10 +251,10 @@ private:
     void ProcessListIntoRecommendations(QString list);
 
     // creates a recommendation list from passed params
-    int BuildRecommendations(QSharedPointer<core::RecommendationList> params);
+    int BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
 
     // collects information from the ui into a token to be passed to a query generator
-    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false);
+    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false, QString listToUse = QString());
 
     //fixes the crossover url and selects between 60 and 100k words to add to search params
     QString AppendCurrentSearchParameters(QString url);
@@ -272,6 +272,8 @@ private:
     void CrawlFandom(QString fandom);
 
     ECacheMode GetCurrentCacheMode() const;
+
+    void CreateSimilarListForGivenFic(int);
 
     Ui::MainWindow *ui;
 
@@ -412,6 +414,7 @@ private slots:
     void on_pbLoadAllRecommenders_clicked();
     // used to open favourites of all teh authors in the current list
     void on_pbOpenWholeList_clicked();
+    void OpenRecommendationList(QString);
     // used to load the next wave of authors from LinkedAuthors
     void on_pbFirstWave_clicked();
 
@@ -476,6 +479,7 @@ private slots:
     void OnWipeCache();
 
     void on_pbFormattedList_clicked();
+    void OnFindSimilarClicked(QVariant);
 
 signals:
 

@@ -80,3 +80,86 @@ QString GetDoubleNarrow(QString text,
     result = temp.mid(secondNarrow.second + lengthOfLastTag, firstNarrow.second);
     return result;
 }
+RegularExpressionToken operator"" _s ( const char* data, size_t )
+{
+    return RegularExpressionToken(data, 0);
+}
+RegularExpressionToken operator"" _c ( const char* data, size_t )
+{
+    return RegularExpressionToken(data, 1);
+}
+
+QString BouncingSearch(QString str, QList<SearchToken> tokens)
+{
+    QString reversed = str;
+    std::reverse(reversed.begin(), reversed.end());
+    QStringRef directRef(&str);
+    QStringRef reversedRef(&reversed);
+    QStringRef currentString;
+    int lastPosition = 0;
+    int skip = 0;
+    bool found = true;
+    int originalSize;
+    for(auto token: tokens)
+    {
+
+        QRegularExpression rx;
+        if(token.forwardDirection)
+        {
+            currentString = directRef;
+            rx.setPattern(token.regex);
+            lastPosition = reversedRef.size() - skip;
+        }
+        else{
+            currentString = reversedRef;
+            rx.setPattern(token.reversedRegex);
+            lastPosition = skip;
+        }
+        auto match = rx.match(currentString);
+        if(match.isValid())
+        {
+            skip = match.capturedStart() + token.moveAmount;
+            originalSize = reversedRef.size();
+            if(token.forwardDirection)
+            {
+                if(token.snapLeftBound)
+                {
+                    directRef = directRef.mid(skip);
+                    reversedRef = reversedRef.mid(0, (originalSize - skip));
+                }
+                else
+                {
+                    directRef = directRef.mid(0, skip);
+                    reversedRef = reversedRef.mid(originalSize - skip);
+                }
+
+            }
+            else
+            {
+
+                if(token.snapLeftBound)
+                {
+                    reversedRef = reversedRef.mid(skip);
+                    directRef = directRef.mid(0, (originalSize - skip));
+                }
+                else
+                {
+                    reversedRef = reversedRef.mid(0, skip);
+                    directRef = directRef.mid(originalSize - skip);
+
+                }
+            }
+        }
+        else
+        {
+            found = false;
+            break;
+        }
+    }
+    QString result;
+    if(found)
+    {
+        result = directRef.toString();
+    }
+    return result;
+}

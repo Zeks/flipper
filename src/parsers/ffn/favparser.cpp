@@ -21,7 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/core/section.h"
 #include "include/pure_sql.h"
 #include "include/url_utils.h"
+#include "include/regex_utils.h"
 #include <QDebug>
+#include <QRegularExpression>
 #include <QSqlDatabase>
 #include <chrono>
 #include <algorithm>
@@ -71,7 +73,29 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
             ReserveSpaceForSections(sections, section, str);
 
         currentPosition = section.start;
+
+        // first, need to check if the profile even was updated at all
+        static QRegularExpression rx("Profile\\sUpdated:");
+        auto match = rx.match(str);
+        //tokens.push_back({{"Profile"_s, "\\s"_c, "Updated:"_s}, 16, true});
+        //QString searchStr = "Allyy dies mission ism defeated everyine goes home";
+        if(match.isValid())
+        {
+            currentPosition = 0;
+            using namespace SearchTokenNamespace;
+            QList<SearchToken> tokens;
+            tokens.push_back({"Profile\\sUpdated:",
+                              "0000000 1100000000",
+                              16,          find_first_instance, move_left_boundary});
+            tokens.push_back({"'>","00",0, find_first_instance, move_right_boundary});
+            tokens.push_back({"'","0",1,   find_first_instance, move_left_boundary});
+            auto profileUpdateDate = BouncingSearch(str, tokens);
+        }
         ProcessSection(section, currentPosition, str);
+
+        // joined = 1st data-xutime
+        // updated = 2nd data-xutime
+
 
         // can be set invalid during the parse
         if(section.isValid)

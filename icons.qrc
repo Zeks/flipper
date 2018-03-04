@@ -20,5 +20,8 @@
         <file>icons/refresh.png</file>
         <file>icons/refresh_spin_lg.gif</file>
         <file>icons/error2.png</file>
+        <file>icons/scan.png</file>
+        <file>icons/scan_small.png</file>
     </qresource>
+    <qresource prefix="/"/>
 </RCC>
