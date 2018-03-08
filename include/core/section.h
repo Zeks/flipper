@@ -99,6 +99,8 @@ public:
 
     QString prevalentGenre;
     QHash<QString, int> fandoms;
+    QHash<QString, double> genreFactors;
+    QHash<QString, double> fandomFactors;
     QDate firstPublished;
     QDate lastPublished;
 };

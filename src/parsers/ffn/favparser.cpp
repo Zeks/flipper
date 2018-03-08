@@ -209,6 +209,7 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
             author->stats.favouriteStats.prevalentGenre = genre;
             maxPrevalence = factor;
         }
+        author->stats.favouriteStats.genreFactors[genre]=factor;
     }
     int totalInRest = ficTotal - totalInClumps;
     author->stats.favouriteStats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
@@ -255,6 +256,8 @@ inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficT
         totalValue+=fandomKeeper[fandom];
         if(fandomKeeper[fandom] >= 2*averageFicsPerFandom)
             totalInClumps+=fandomKeeper[fandom];
+        double  fandomFactor = static_cast<double>(fandomKeeper[fandom])/static_cast<double>(ficTotal);
+        author->stats.favouriteStats.fandomFactors[fandom]=fandomFactor;
     }
     int totalInRest = totalValue - totalInClumps;
     //diverse favourite list  will have this close to 1

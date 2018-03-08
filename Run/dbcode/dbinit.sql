@@ -102,7 +102,7 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  
  alter table Recommenders add column wave integer default 0;
  alter table Recommenders add column favourites integer default -1;
-  alter table Recommenders add column in_favourites integer default 0;
+ alter table Recommenders add column in_favourites integer default 0;
  alter table Recommenders add column fics integer default -1;
  alter table Recommenders add column ffn_id integer default -1;
  alter table Recommenders add column ao3_id integer default -1;
@@ -115,6 +115,16 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  alter table Recommenders add column first_published_fic_date datetime;
  alter table Recommenders add column latest_favourited_fic_date datetime;
  alter table Recommenders add column earliest_favourited_fic_date datetime;
+ 
+ CREATE  INDEX if not exists I_RECOMMENDERS_NAME ON Recommenders (name ASC);
+ CREATE  INDEX if not exists I_RECOMMENDERS_URL ON Recommenders (URL ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_WAVE ON Recommenders (wave ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_FAVOURITES ON Recommenders (favourites ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_FFN_ID ON Recommenders (ffn_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_AO3_ID ON Recommenders (ao3_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_SB_ID ON Recommenders (sb_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_SV_ID ON Recommenders (sv_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_IN_FAVOURITES ON Recommenders (in_favourites ASC);
  
  -- holds various stats for the author's page;
  -- to be used for fics clustering;
@@ -167,19 +177,34 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  alter table AuthorPageStatistics add column juststarted_no real;
  alter table AuthorPageStatistics add column juststarted_yes real;
  
+ -- contains percentage per genre for favourite lists
+ CREATE TABLE if not exists AuthorFavouritesGenreStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE);
+ alter table AuthorPageStatistics add column General_ real;
+ alter table AuthorPageStatistics add column Humor real;
+ alter table AuthorPageStatistics add column Poetry real;
+ alter table AuthorPageStatistics add column Adventure real;
+ alter table AuthorPageStatistics add column Mystery real;
+ alter table AuthorPageStatistics add column Horror real;
+ alter table AuthorPageStatistics add column Parody real;
+ alter table AuthorPageStatistics add column Angst real;
+ alter table AuthorPageStatistics add column Supernatural real;
+ alter table AuthorPageStatistics add column Suspense real;
+ alter table AuthorPageStatistics add column Romance real;
+ alter table AuthorPageStatistics add column NoGenre real;
+ alter table AuthorPageStatistics add column SciFi real;
+ alter table AuthorPageStatistics add column Fantasy real;
+ alter table AuthorPageStatistics add column Spiritual real;
+ alter table AuthorPageStatistics add column Tragedy real;
+ alter table AuthorPageStatistics add column Western real;
+ alter table AuthorPageStatistics add column Crime real;
+ alter table AuthorPageStatistics add column Family real;
+ alter table AuthorPageStatistics add column HurtComfort real;
+ alter table AuthorPageStatistics add column Friendship real;
+ CREATE  INDEX if not exists I_AFGS_AID ON Recommenders (author_id ASC);
   
- -- need genre coefficients in a separate table probably;
- -- need cluster relations in separate table;
- 
- CREATE  INDEX if not exists I_RECOMMENDERS_NAME ON Recommenders (name ASC);
- CREATE  INDEX if not exists I_RECOMMENDERS_URL ON Recommenders (URL ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_WAVE ON Recommenders (wave ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_FAVOURITES ON Recommenders (favourites ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_FFN_ID ON Recommenders (ffn_id ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_AO3_ID ON Recommenders (ao3_id ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_SB_ID ON Recommenders (sb_id ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_SV_ID ON Recommenders (sv_id ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_IN_FAVOURITES ON Recommenders (in_favourites ASC);
+  -- need cluster relations in separate table;
+ CREATE TABLE if not exists AuthorFavouritesFandomStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE, fandom_id integer default null, fandom_ratio real default null);
+ CREATE  INDEX if not exists I_AFFS_AID ON AuthorFavouritesFandomStatistics (author_id ASC, fandom_id asc);
  
  CREATE TABLE if not exists Recommendations (recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , PRIMARY KEY (recommender_id, fic_id));
  CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
