@@ -52,7 +52,7 @@ enum class EntitySizeType{
     big = 3,
     huge = 4
 };
-class AuthorStats{
+class FicSectionStats{
 public:
     enum class FavouritesType{
         tiny = 0 ,
@@ -71,16 +71,18 @@ public:
         mature = 2,
     };
 
-    int bioWordCount = -1;
-    int ownFicWordcount = -1;
-    int ownFavourites= -1;
-    double ownFinishedRatio = 1;
-    EntitySizeType mostWrittenSize;
 
+    int ficWordCount = 0;
     int favourites = -1;
-    EntitySizeType favouriteSectionSize;
-    double averageFavouritedLength = 0.0;
-    double favouriteFandomsDiversity = 0.0;
+
+    ESRBType esrbType;
+    MoodType prevalentMood;
+    EntitySizeType mostFavouritedSize;
+    EntitySizeType sectionRelativeSize;
+
+
+    double averageLength = 0.0;
+    double fandomsDiversity = 0.0;
     double explorerFactor = 0.0;
     double crossoverFactor = 0.0;
     double unfinishedFactor = 0.0;
@@ -88,25 +90,30 @@ public:
     double esrbKiddy = 0.0;
     double esrbMature= 0.0;
 
-    ESRBType esrbType;
-    MoodType prevalentMood;
-    double moodDiversityFactor = 0.0;
-    QString prevalentGenre;
     double genreDiversityFactor = 0.0;
     double moodNeutral = 0.0;
     double moodSad = 0.0;
     double moodHappy = 0.0;
     double moodUniformity = 0.0;
-    EntitySizeType mostFavouritedSize;
+    //double moodDiversityFactor = 0.0;
 
+    QString prevalentGenre;
+    QHash<QString, int> fandoms;
+    QDate firstPublished;
+    QDate lastPublished;
+};
+
+class AuthorStats
+{
+public:
     QDate pageCreated;
     QDate bioLastUpdated;
-    QDate firstPublishedFavourite;
-    QDate lastPublishedFavourite;
-    QDate firstPublishedFic;
-    QDate lastPublishedFic;
+    int bioWordCount = -1;
 
+    FicSectionStats favouriteStats;
+    FicSectionStats ownFicStats;
 };
+
 class Author : public DBEntity{
 public:
     static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}

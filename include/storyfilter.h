@@ -34,7 +34,8 @@ struct StoryFilter{
         updatedate = 3,
         publisdate = 4,
         reccount=    5,
-        wcrcr =      6
+        wcrcr =      6,
+        revtofav =   7,
     };
     enum EReviewBiasMode{
         bias_none    = 0,
@@ -54,12 +55,14 @@ struct StoryFilter{
 
     bool includeCrossovers = false;
     bool ignoreAlreadyTagged = false;
+    bool ignoreFandoms = false;
     bool randomizeResults = false;
     bool ensureCompleted = false;
     bool ensureActive = false;
     bool allowUnfinished = true;
     bool allowNoGenre = true;
     bool showOriginsInLists = false;
+
 
     int useThisRecommenderOnly = -1;
     int recordLimit = -1;

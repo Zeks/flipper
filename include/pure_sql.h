@@ -35,14 +35,15 @@ struct DiagnosticSQLResult
     bool success = true;
     QString oracleError;
     T data;
-    bool ExecAndCheck(QSqlQuery& q) {
-        bool result = database::puresql::ExecAndCheck(q);
-        if(!result)
+    bool ExecAndCheck(QSqlQuery& q, bool ignoreUniqueness = false) {
+        bool success = database::puresql::ExecAndCheck(q);
+        bool uniqueTriggered = ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed");
+        if(!success && !uniqueTriggered)
         {
             success = false;
             oracleError = q.lastError().text();
         }
-        return result;
+        return success;
     }
     bool CheckDataAvailability(QSqlQuery& q){
         if(!q.next())
@@ -52,7 +53,7 @@ struct DiagnosticSQLResult
             return false;
         }
         return true;
-    };
+    }
 };
 
 
@@ -103,6 +104,11 @@ bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db
 QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db);
 QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db);
 core::FandomPtr GetFandom(QString name, QSqlDatabase db);
+
+DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
+DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
+DiagnosticSQLResult<QStringList>  GetIgnoredFandoms(QSqlDatabase db);
+
 bool CleanupFandom(int fandom_id,  QSqlDatabase db);
 DiagnosticSQLResult<bool> DeleteFandom(int fandom_id,  QSqlDatabase db);
 int GetFandomCountInDatabase(QSqlDatabase db);

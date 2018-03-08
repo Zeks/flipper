@@ -95,6 +95,9 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);
  INSERT INTO recent_fandoms(fandom, seq_num) SELECT 'base', 0 WHERE NOT EXISTS(SELECT 1 FROM fandom WHERE fandom = 'base');
  
+ CREATE TABLE if not exists ignored_fandoms(fandom_id INTEGER PRIMARY KEY, including_crossovers integer default 0);
+CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id ASC);  
+ 
  CREATE TABLE if not exists Recommenders (id INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE , name VARCHAR NOT NULL , url VARCHAR NOT NULL , page_data BLOB, page_updated DATETIME, author_updated DATETIME);
  
  alter table Recommenders add column wave integer default 0;
@@ -116,7 +119,8 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  -- holds various stats for the author's page;
  -- to be used for fics clustering;
  CREATE TABLE if not exists AuthorPageStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE);
-  
+  -- slash/crack word inclusion
+  -- happy should be better calculated in doubles
  alter table AuthorPageStatistics add column favourites integer default 0;                  -- how much stuff did the author favourite;
  alter table AuthorPageStatistics add column favourites_type integer default -1;            -- tiny(<50)/medium(50-500)/large(500-2000)/bullshit(2k+);
 

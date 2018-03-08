@@ -321,6 +321,7 @@ private:
     TableDataListHolder<core::Fic>* holder = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
+    QStringListModel* ignoredFandomsModel= nullptr;
     QStringListModel* recommendersModel = nullptr; // this keeps names of te authors in current recommendation list
 
     QLineEdit* currentExpandedEdit = nullptr; // expanded editor for line edits
@@ -335,6 +336,7 @@ private:
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
     ActionProgress* actionProgress = nullptr;
     QMenu fandomMenu;
+    QMenu ignoreFandomMenu;
 
 public slots:
     //broken and needs refactoring anyway
@@ -468,8 +470,11 @@ private slots:
     void on_chkIgnoreUpdateDate_toggled(bool checked);
 
     void OnRemoveFandomFromRecentList();
+    void OnRemoveFandomFromIgnoredList();
+
 
     void OnFandomsContextMenu(const QPoint &pos);
+    void OnIgnoredFandomsContextMenu(const QPoint &pos);
 
     void UpdateCategory(QString cat,
                         FFNFandomIndexParserBase* parser,
@@ -480,6 +485,8 @@ private slots:
 
     void on_pbFormattedList_clicked();
     void OnFindSimilarClicked(QVariant);
+
+    void on_pbIgnoreFandom_clicked();
 
 signals:
 

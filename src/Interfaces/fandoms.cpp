@@ -357,6 +357,38 @@ bool Fandoms::IsTracked(QString fandom)
     return nameIndex[fandom]->tracked;
 }
 
+bool Fandoms::IgnoreFandom(QString name, bool includeCrossovers)
+{
+    auto id = GetIDForName(name);
+    auto result = IgnoreFandom(id, includeCrossovers);
+    return result;
+}
+
+bool Fandoms::IgnoreFandom(int id, bool includeCrossovers)
+{
+    auto result = database::puresql::IgnoreFandom(id,includeCrossovers,  db);
+    return result.data;
+}
+
+QStringList Fandoms::GetIgnoredFandoms() const
+{
+    auto result = database::puresql::GetIgnoredFandoms(db);
+    return result.data;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredList(QString name)
+{
+    auto id = GetIDForName(name);
+    auto result = RemoveFandomFromIgnoredList(id);
+    return result;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredList(int id)
+{
+    auto result = database::puresql::RemoveFandomFromIgnoredList(id, db);
+    return result.data;
+}
+
 void Fandoms::Reindex()
 {
     ClearIndex();

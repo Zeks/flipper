@@ -59,6 +59,13 @@ public:
     virtual void SetLastUpdateDate(QString, QDate);
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);
+
+    bool IgnoreFandom(QString name, bool includeCrossovers);
+    bool IgnoreFandom(int id, bool includeCrossovers);
+    QStringList GetIgnoredFandoms() const;
+    bool RemoveFandomFromIgnoredList(QString name);
+    bool RemoveFandomFromIgnoredList(int id);
+
     virtual QStringList ListOfTrackedNames();
     virtual QList<core::FandomPtr> ListOfTrackedFandoms();
 

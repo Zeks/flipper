@@ -107,6 +107,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
     queryString+= ProcessFilteringMode(filter);
+    queryString+= ProcessFandomIgnore(filter);
 
     return queryString;
 }
@@ -277,6 +278,8 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
         diffField = " sumrecs desc";
     else if(filter.sortMode == StoryFilter::favrate)
         diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
+    else if(filter.sortMode == StoryFilter::revtofav)
+        diffField = " favourites /(reviews + 1) desc";
     return diffField;
 }
 
@@ -328,6 +331,23 @@ QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
         else
             queryString += QString(" and not exists  (select fic_id from fictags where fic_id = fid)");
 
+    }
+    return queryString;
+}
+
+QString DefaultQueryBuilder::ProcessFandomIgnore(StoryFilter filter)
+{
+    QString queryString;
+    {
+        if(filter.ignoreFandoms)
+            queryString += QString(" and not ("
+                                   "(select case (select count(fandom_id) from ficfandoms where fic_id = fid) when 1"
+                                   "   then (select count(fandom_id) from ignored_fandoms ignf where ignf.fandom_id in (select fandom_id from ficfandoms where fic_id = fid))"
+                                   "   else (select count(fandom_id) from ignored_fandoms ignf where ignf.including_crossovers = 1 and ignf.fandom_id in (select fandom_id from ficfandoms where fic_id = fid)) end"
+                                   " ) > 0 ) ");
+
+        else
+            queryString += QString("");
     }
     return queryString;
 }

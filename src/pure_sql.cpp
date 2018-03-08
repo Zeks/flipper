@@ -1527,6 +1527,49 @@ core::FandomPtr GetFandom(QString name, QSqlDatabase db)
     return result;
 }
 
+DiagnosticSQLResult<bool> IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+
+    QString qs = QString(" insert into ignored_fandoms (fandom_id, including_crossovers) values (:fandom_id, :including_crossovers) ");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fandom_id", id);
+    q.bindValue(":including_crossovers", includeCrossovers);
+    result.ExecAndCheck(q, true);
+    return result;
+}
+
+DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int id, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+
+    QString qs = QString(" delete from ignored_fandoms where fandom_id  = :fandom_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fandom_id", id);
+    result.ExecAndCheck(q, true);
+    return result;
+}
+
+DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
+{
+    DiagnosticSQLResult<QStringList> result;
+
+    QString qs = QString("select name from fandomindex where id in (select fandom_id from ignored_fandoms) order by name asc");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    if(!result.CheckDataAvailability(q))
+        return result;
+    do{
+        result.data.push_back(q.value("NAME").toString());
+    }while(q.next());
+    return result;
+}
+
+
 
 bool CleanupFandom(int fandom_id, QSqlDatabase db)
 {
@@ -2545,6 +2588,7 @@ bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
     }
     return true;
 }
+
 
 
 

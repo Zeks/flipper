@@ -261,6 +261,7 @@ void MainWindow::Init()
     tagWidgetDynamic->tagsInterface = tagsInterface;
 
     recentFandomsModel = new QStringListModel;
+    ignoredFandomsModel = new QStringListModel;
     recommendersModel= new QStringListModel;
 
 
@@ -271,6 +272,7 @@ void MainWindow::Init()
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
     auto fandomList = fandomsInterface->GetFandomList(true);
     ui->cbNormals->setModel(new QStringListModel(fandomList));
+    ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
     ui->deCutoffLimit->setEnabled(false);
 
     actionProgress = new ActionProgress;
@@ -292,7 +294,9 @@ void MainWindow::Init()
         ui->tagWidget->removeTab(1);
 
     recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
+    ignoredFandomsModel->setStringList(fandomsInterface->GetIgnoredFandoms());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
+    ui->lvIgnoredFandoms->setModel(ignoredFandomsModel);
     recsInterface->LoadAvailableRecommendationLists();
     fandomsInterface->FillFandomList(true);
 
@@ -318,7 +322,9 @@ void MainWindow::Init()
     ui->lblLoadResult->hide();
 
     fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
+    ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
     ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->edtResults->setOpenExternalLinks(true);
     ui->cbWordCutoff->setVisible(false);
 
@@ -397,6 +403,7 @@ void MainWindow::InitConnections()
     connect(this, &MainWindow::pageTaskList, worker, &PageThreadWorker::TaskList);
     connect(worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
     connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
+    connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
     connect(ui->pbWipeCache, &QPushButton::clicked, this, &MainWindow::OnWipeCache);
 }
@@ -2694,6 +2701,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.wordExclusion = valueIfChecked(ui->chkWordsMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text(), "###"));
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
+    filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
@@ -3056,9 +3064,21 @@ void MainWindow::OnRemoveFandomFromRecentList()
     recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
 }
 
+void MainWindow::OnRemoveFandomFromIgnoredList()
+{
+    auto fandom = ui->lvIgnoredFandoms->currentIndex().data(0).toString();
+    fandomsInterface->RemoveFandomFromIgnoredList(fandom);
+    ignoredFandomsModel->setStringList(fandomsInterface->GetIgnoredFandoms());
+}
+
 void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
     fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
+}
+
+void MainWindow::OnIgnoredFandomsContextMenu(const QPoint &pos)
+{
+    ignoreFandomMenu.popup(ui->lvIgnoredFandoms->mapToGlobal(pos));
 }
 
 void MainWindow::on_pbFormattedList_clicked()
@@ -3076,4 +3096,10 @@ void MainWindow::OnFindSimilarClicked(QVariant url)
     if(id == -1)
         return;
     CreateSimilarListForGivenFic(id);
+}
+
+void MainWindow::on_pbIgnoreFandom_clicked()
+{
+    fandomsInterface->IgnoreFandom(ui->cbIgnoreFandomSelector->currentText(), ui->chkIgnoreIncludesCrossovers->isChecked());
+    ignoredFandomsModel->setStringList(fandomsInterface->GetIgnoredFandoms());
 }

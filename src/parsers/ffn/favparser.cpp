@@ -132,60 +132,70 @@ inline void UpdateESRB(QSharedPointer<core::Fic> fic, QHash<int, int>& esrbKeepe
     else
         esrbKeeper[1]++; // mature
 }
-
-inline void UpdateGenreResults(QSharedPointer<core::Fic> fic, QHash<QString, int>& genreKeeper)
+QHash<QString, int> CreateMoodRedirects(){
+    QHash<QString, int> result;
+    result["General"] = 0;
+    result["Humor"] = 1;
+    result["Poetry"] = 0;
+    result["Adventure"] = 0;
+    result["Mystery"] = 0;
+    result["Horror"] = 0;
+    result["Parody"] = 1;
+    result["Angst"] = -1;
+    result["Supernatural"] = 0;
+    result["Suspense"] = 0;
+    result["Romance"] = 0;
+    result["not found"] = 0;
+    result["Sci-Fi"] = 0;
+    result["Fantasy"] = 0;
+    result["Spiritual"] = 0;
+    result["Tragedy"] = -1;
+    result["Western"] = 0;
+    result["Crime"] = 0;
+    result["Family"] = 0;
+    result["Hurt/Comfort"] = -1;
+    result["Friendship"] = 1;
+    return result;
+}
+inline void UpdateGenreResults(QSharedPointer<core::Fic> fic,
+                               QHash<QString, int>& genreKeeper,
+                               QHash<int, int>& moodKeeper
+                               )
 {
+    thread_local QHash<QString, int> moodRedirects = CreateMoodRedirects();
+    int moodSum = 0;
     for(auto genre: fic->genres)
     {
-        if(genre.length() < 3)
-            genreKeeper[genre]++;
         genreKeeper[genre]++;
+        moodSum += moodRedirects[genre];
     }
+    if(moodSum == 0)
+        moodKeeper[1]++;
+    else if(moodSum < 0)
+        moodKeeper[0]++;
+    else
+        moodKeeper[2]++;
 }
 
 inline void ProcessFavouriteSectionSize(QSharedPointer<core::Author> author, int favouritesSize)
 {
     //tiny(<50)/medium(50-500)/large(500-2000)/bullshit(2k+);
     if(favouritesSize <= 50)
-        author->stats.favouriteSectionSize = core::EntitySizeType::small;
+        author->stats.favouriteStats.sectionRelativeSize = core::EntitySizeType::small;
     else if(favouritesSize <= 500)
-        author->stats.favouriteSectionSize = core::EntitySizeType::medium;
+        author->stats.favouriteStats.sectionRelativeSize = core::EntitySizeType::medium;
     else if(favouritesSize <= 2000)
-        author->stats.favouriteSectionSize = core::EntitySizeType::big;
+        author->stats.favouriteStats.sectionRelativeSize = core::EntitySizeType::big;
     else
-        author->stats.favouriteSectionSize = core::EntitySizeType::huge;
+        author->stats.favouriteStats.sectionRelativeSize = core::EntitySizeType::huge;
 }
-QHash<QString, int> CreateMoodRedirects(){
-    QHash<QString, int> result;
-    result["General"] = 1;
-    result["Humor"] = 2;
-    result["Poetry"] = 1;
-    result["Adventure"] = 1;
-    result["Mystery"] = 1;
-    result["Horror"] = 1;
-    result["Parody"] = 2;
-    result["Angst"] = 0;
-    result["Supernatural"] = 1;
-    result["Suspense"] = 1;
-    result["Romance"] = 1;
-    result["not found"] = 1;
-    result["Sci-Fi"] = 1;
-    result["Fantasy"] = 1;
-    result["Spiritual"] = 1;
-    result["Tragedy"] = 0;
-    result["Western"] = 1;
-    result["Crime"] = 1;
-    result["Family"] = 1;
-    result["Hurt/Comfort"] = 0;
-    result["Friendship"] = 2;
-    return result;
-}
-inline void ProcessMood(QSharedPointer<core::Author> author, int ficTotal, QHash<QString, int>& genreKeeper)
+
+inline void ProcessGenre(QSharedPointer<core::Author> author,
+                        int ficTotal,
+                        QHash<QString, int>& genreKeeper)
 {
     QHash<int, double> moodFactors;
-    thread_local QHash<QString, int> moodRedirects = CreateMoodRedirects();
     double maxPrevalence = 0.0;
-    //double averageFicsPerGenre = static_cast<double>(ficTotal)/static_cast<double>(genreKeeper.keys().size());
     int totalInClumps = 0;
     for(auto genre : genreKeeper.keys())
     {
@@ -196,35 +206,15 @@ inline void ProcessMood(QSharedPointer<core::Author> author, int ficTotal, QHash
 
         if(factor > maxPrevalence)
         {
-            author->stats.prevalentGenre = genre;
+            author->stats.favouriteStats.prevalentGenre = genre;
             maxPrevalence = factor;
         }
-        int redirectedTo = moodRedirects[genre];
-        moodFactors[redirectedTo]+=factor;
     }
     int totalInRest = ficTotal - totalInClumps;
-    author->stats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
-    double dominatingMoodValue = 0.0;
-    double totalMoodValue = 0.0;
-    for(auto mood : moodFactors.keys())
-    {
-        totalMoodValue+=moodFactors[mood];
-        if(mood == 0)
-            author->stats.moodSad = moodFactors[mood];
-        else if (mood == 1)
-            author->stats.moodNeutral = moodFactors[mood];
-        else
-            author->stats.moodHappy = moodFactors[mood];
-        if(moodFactors[mood] > dominatingMoodValue)
-        {
-            author->stats.prevalentMood = static_cast<core::AuthorStats::MoodType>(mood);
-            author->stats.moodDiversityFactor = moodFactors[mood]/totalMoodValue;
-            dominatingMoodValue = moodFactors[mood];
-        }
-    }
+    author->stats.favouriteStats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
 }
 
-inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes, QHash<int, int> ficSizeKeeper)
+inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes, QHash<int, int>& ficSizeKeeper)
 {
     int total = sizes.size();
     int dominatingValue = 0.0;
@@ -232,7 +222,7 @@ inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes
     {
         if(ficSizeKeeper[ficSize] > dominatingValue)
         {
-            author->stats.mostFavouritedSize = static_cast<core::EntitySizeType>(ficSize);
+            author->stats.favouriteStats.mostFavouritedSize = static_cast<core::EntitySizeType>(ficSize);
             dominatingValue = ficSizeKeeper[ficSize];
         }
     }
@@ -241,17 +231,17 @@ inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes
     for(auto size : sizes)
         sum+=size;
     averageFicSize = static_cast<double>(sum)/static_cast<double>(total);
-    author->stats.averageFavouritedLength = averageFicSize;
+    author->stats.favouriteStats.averageLength = averageFicSize;
 }
 
 inline void ProcessCrossovers(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int>& crossKeeper)
 {
-    author->stats.crossoverFactor = static_cast<double>(crossKeeper[1])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.crossoverFactor = static_cast<double>(crossKeeper[1])/static_cast<double>(ficTotal);
 }
 
 inline void ProcessUnpopular(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int>& popularUnpopularKeeper)
 {
-    author->stats.explorerFactor = static_cast<double>(popularUnpopularKeeper[0])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.explorerFactor = static_cast<double>(popularUnpopularKeeper[0])/static_cast<double>(ficTotal);
 }
 
 inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficTotal, QHash<QString, int>& fandomKeeper)
@@ -259,42 +249,59 @@ inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficT
     double averageFicsPerFandom = static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.keys().size());
     // need to find fics in fandoms 2x over average
     int totalInClumps = 0;
+    int totalValue = 0;
     for(auto fandom : fandomKeeper.keys())
     {
+        totalValue+=fandomKeeper[fandom];
         if(fandomKeeper[fandom] >= 2*averageFicsPerFandom)
             totalInClumps+=fandomKeeper[fandom];
     }
-    int totalInRest = ficTotal - totalInClumps;
+    int totalInRest = totalValue - totalInClumps;
     //diverse favourite list  will have this close to 1
-    author->stats.favouriteFandomsDiversity = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.fandomsDiversity = static_cast<double>(totalInRest)/static_cast<double>(totalValue);
 }
 
-inline void ProcessUnfinished(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int> unfinishedKeeper)
+inline void ProcessUnfinished(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int>& unfinishedKeeper)
 {
-    author->stats.unfinishedFactor = static_cast<double>(unfinishedKeeper[1])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.unfinishedFactor = static_cast<double>(unfinishedKeeper[1])/static_cast<double>(ficTotal);
 }
 
 
-inline void ProcessESRB(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int> esrbKeeper)
+inline void ProcessESRB(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int>& esrbKeeper)
 {
     //auto minValue = std::min(esrbKeeper[0],esrbKeeper[1]);
     auto maxValue = std::max(esrbKeeper[0],esrbKeeper[1]);
-    author->stats.esrbUniformityFactor= static_cast<double>(maxValue)/static_cast<double>(ficTotal);
-    author->stats.esrbKiddy = static_cast<double>(esrbKeeper[0])/static_cast<double>(ficTotal);
-    author->stats.esrbMature = static_cast<double>(esrbKeeper[1])/static_cast<double>(ficTotal);
-    bool hasprevalentESRB = author->stats.esrbUniformityFactor > 0.65;
+    author->stats.favouriteStats.esrbUniformityFactor= static_cast<double>(maxValue)/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.esrbKiddy = static_cast<double>(esrbKeeper[0])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.esrbMature = static_cast<double>(esrbKeeper[1])/static_cast<double>(ficTotal);
+    bool hasprevalentESRB = author->stats.favouriteStats.esrbUniformityFactor > 0.65;
     bool kiddyPrevalent = esrbKeeper[0] > esrbKeeper[1];
     if(!hasprevalentESRB)
-        author->stats.esrbType = core::AuthorStats::ESRBType::agnostic;
+        author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::agnostic;
     else{
         if(kiddyPrevalent)
-            author->stats.esrbType = core::AuthorStats::ESRBType::kiddy;
+            author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::kiddy;
         else
-            author->stats.esrbType = core::AuthorStats::ESRBType::mature;
+            author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::mature;
     }
 }
-
-
+inline void ProcessMood(QSharedPointer<core::Author> author,
+                        int ficTotal,
+                         QHash<int, int>& moodKeeper)
+{
+    author->stats.favouriteStats.moodSad = static_cast<double>(moodKeeper[0])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.moodNeutral = static_cast<double>(moodKeeper[1])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.moodHappy= static_cast<double>(moodKeeper[2])/static_cast<double>(ficTotal);
+    if(author->stats.favouriteStats.moodHappy > 0.5)
+        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::positive;
+    else if(author->stats.favouriteStats.moodNeutral> 0.5)
+        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::neutral;
+    if(author->stats.favouriteStats.moodSad> 0.5)
+        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::sad;
+    auto maxMood = std::max(author->stats.favouriteStats.moodSad, std::max(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
+    auto minMood = std::min(author->stats.favouriteStats.moodSad, std::min(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
+    author->stats.favouriteStats.moodUniformity = static_cast<double>(minMood)/static_cast<double>(maxMood);
+}
 QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
     thread_local FieldSearcher profilePageUpdatedFinder = CreateProfilePageUpdatedSearcher();
@@ -363,12 +370,16 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     QHash<int, int> unfinishedKeeper;
     QHash<int, int> esrbKeeper;
     QHash<QString, int> genreKeeper;
+    QHash<int, int> moodKeeper;
+
+
     QList<int> sizes;
     sizes.reserve(sections.size());
     QDate firstPublished;
     QDate lastPublished;
     for(auto fic: sections)
     {
+        author->stats.favouriteStats.ficWordCount +=fic->wordCount.toInt();
         if(!firstPublished.isValid() || fic->published.date() < firstPublished)
             firstPublished = fic->published.date();
         if(!lastPublished.isValid() || fic->published.date() > lastPublished)
@@ -378,11 +389,12 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         UpdateFandoms(fic, crossKeeper, fandomKeeper);
         UpdateCompleteness(fic, unfinishedKeeper);
         UpdateESRB(fic, esrbKeeper);
-        UpdateGenreResults(fic, genreKeeper);
+        UpdateGenreResults(fic, genreKeeper, moodKeeper);
     }
     int ficCount = sections.size();
     ProcessFavouriteSectionSize(author, ficCount);
-    ProcessMood(author, ficCount, genreKeeper);
+    ProcessGenre(author, ficCount, genreKeeper);
+    ProcessMood(author, ficCount, moodKeeper);
     ProcessFicSize(author, sizes, ficSizeKeeper);
     ProcessCrossovers(author, ficCount, crossKeeper);
     ProcessUnpopular(author, ficCount, popularUnpopularKeeper);
@@ -390,9 +402,10 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     ProcessUnfinished(author, ficCount, unfinishedKeeper);
     ProcessESRB(author, ficCount, esrbKeeper);
 
-    author->stats.favourites = sections.size();
-    author->stats.firstPublishedFavourite = firstPublished;
-    author->stats.lastPublishedFavourite = lastPublished;
+    author->stats.favouriteStats.favourites = sections.size();
+    author->stats.favouriteStats.fandoms = fandomKeeper;
+    author->stats.favouriteStats.firstPublished= firstPublished;
+    author->stats.favouriteStats.lastPublished= lastPublished;
     //qDebug() << "Processed fic, count:  " << sections.count();
     processedStuff+=sections;
     currentPosition = 999;
