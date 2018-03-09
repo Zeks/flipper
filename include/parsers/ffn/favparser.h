@@ -44,13 +44,15 @@ public:
     void SetAuthor(core::AuthorPtr);
 
     QStringList diagnostics;
-    QSharedPointer<interfaces::Fandoms> fandomInterface;
+    //QSharedPointer<interfaces::Fandoms> fandomInterface;
     QList<QSharedPointer<core::Fic>> processedStuff;
-
+    static void MergeStats(core::AuthorPtr,  QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers);
+    core::FicSectionStatsTemporaryToken statToken;
     core::FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;
     QSet<QString> fandoms;
+    core::AuthorPtr authorStats;
 };
 

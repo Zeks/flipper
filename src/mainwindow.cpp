@@ -1210,7 +1210,6 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
     pageTaskInterface->SetCurrentTask(task);
     auto job = [fanfics,authors, fandoms](QString url, QString content){
         FavouriteStoryParser parser(fanfics);
-        parser.fandomInterface = fandoms;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -1328,7 +1327,6 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 //qDebug() << "Count of parts:" << parsers.size();
 
                 FavouriteStoryParser sumParser;
-                sumParser.fandomInterface = fandomsInterface;
                 QString name = ParseAuthorNameFromFavouritePage(webPage.content);
                 // need to create author when there is no data to parse
 
@@ -1340,7 +1338,9 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 author->SetWebID("ffn", webId);
                 sumParser.SetAuthor(author);
 
+
                 authorsInterface->EnsureId(sumParser.recommender.author);
+                FavouriteStoryParser::MergeStats(author,fandomsInterface, parsers);
                 authorsInterface->UpdateAuthorRecord(author);
                 author = authorsInterface->GetByWebID("ffn", webId);
                 for(auto actualParser: parsers)
@@ -2207,11 +2207,11 @@ core::AuthorPtr MainWindow::LoadAuthor(QString url)
     auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
     qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     FavouriteStoryParser parser(fanficsInterface);
-    parser.fandomInterface = fandomsInterface;
     auto startPageProcess = std::chrono::high_resolution_clock::now();
     QString name = ParseAuthorNameFromFavouritePage(page.content);
     parser.authorName = name;
     parser.ProcessPage(page.url, page.content);
+
     elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
     qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     ui->edtResults->clear();
@@ -2221,6 +2221,10 @@ core::AuthorPtr MainWindow::LoadAuthor(QString url)
     QSet<QString> fandoms;
     authorsInterface->EnsureId(parser.recommender.author); // assuming ffn
     auto author = authorsInterface->GetByWebID("ffn", url_utils::GetWebId(ui->leAuthorUrl->text(), "ffn").toInt());
+    parser.authorStats->id = author->id;
+    FavouriteStoryParser::MergeStats(author,fandomsInterface, {parser});
+
+    authorsInterface->UpdateAuthorRecord(author);
     {
         fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
         fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
@@ -2537,15 +2541,14 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     auto job = [fanficsInterface,authorsInterface, fandomsInterface](QString url, QString content){
         QList<QSharedPointer<core::Fic> > sections;
         FavouriteStoryParser parser(fanficsInterface);
-        parser.fandomInterface = fandomsInterface;
-        sections += parser.ProcessPage(url, content);
-        return sections;
+        parser.ProcessPage(url, content);
+        return parser;
     };
 
     for(auto author: authors)
     {
         QList<QSharedPointer<core::Fic>> sections;
-        QList<QFuture<QList<QSharedPointer<core::Fic>>>> futures;
+        QList<QFuture<FavouriteStoryParser>> futures;
         QSet<int> uniqueAuthors;
         authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
         auto startPageRequest = std::chrono::high_resolution_clock::now();
@@ -2554,7 +2557,6 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
         qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         FavouriteStoryParser parser(fanficsInterface);
-        parser.fandomInterface = fandomsInterface;
         //parser.ProcessPage(page.url, page.content);
 
         auto splittings = SplitJob(page.content);
@@ -2566,11 +2568,23 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
         {
             future.waitForFinished();
         }
-        for(auto future: futures)
-            parser.processedStuff += future.result();
 
+        ////
+        FavouriteStoryParser sumParser;
+        sumParser.SetAuthor(author);
+
+        QList<FavouriteStoryParser> finishedParsers;
+        for(auto actualParser: futures)
+            finishedParsers.push_back(actualParser.result());
+
+        FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
+        authorsInterface->UpdateAuthorRecord(author);
+
+        for(auto actualParser: finishedParsers)
+            sumParser.processedStuff+=actualParser.processedStuff;
+        ////
         {
-            WriteProcessedFavourites(parser, author, fanficsInterface, authorsInterface, fandomsInterface);
+            WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
             if(fanficsInterface->skippedCounter > 0)
                 qDebug() << "skipped: " << fanficsInterface->skippedCounter;
         }

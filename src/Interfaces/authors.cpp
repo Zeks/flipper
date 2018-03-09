@@ -16,12 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "Interfaces/authors.h"
+#include "Interfaces/fandoms.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
 #include <QSqlQuery>
 #include <QDebug>
 
 namespace interfaces {
+
+
+
+
 Authors::~Authors(){}
 void Authors::Clear()
 {
@@ -122,6 +127,8 @@ bool Authors::EnsureAuthorLoaded(int id)
 bool Authors::UpdateAuthorRecord(core::AuthorPtr author)
 {
     auto result = database::puresql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    database::puresql::WipeAuthorStatistics(author,db);
+    //ConvertFandomsToIds(author, fandomInterface);
     auto f1Result = database::puresql::WriteAuthorFavouriteStatistics(author,db);
     auto f2Result = database::puresql::WriteAuthorFavouriteGenreStatistics(author,db);
     auto f3Result = database::puresql::WriteAuthorFavouriteFandomStatistics(author,db);
@@ -291,10 +298,15 @@ void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
     }
 }
 
+
+
 bool Authors::CreateAuthorRecord(core::AuthorPtr author)
 {
-    auto result = database::puresql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
 
+
+    auto result = database::puresql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    database::puresql::WipeAuthorStatistics(author,db);
+    //ConvertFandomsToIds(author, fandomInterface);
     auto f1Result = database::puresql::WriteAuthorFavouriteStatistics(author,db);
     auto f2Result = database::puresql::WriteAuthorFavouriteGenreStatistics(author,db);
     auto f3Result = database::puresql::WriteAuthorFavouriteFandomStatistics(author,db);

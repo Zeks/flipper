@@ -52,6 +52,27 @@ enum class EntitySizeType{
     big = 3,
     huge = 4
 };
+
+class FicSectionStatsTemporaryToken
+{
+    public:
+    QHash<int, int> ficSizeKeeper;
+    QHash<int, int> crossKeeper;
+    QHash<int, int> favouritesSizeKeeper;
+    QHash<int, int> popularUnpopularKeeper;
+    QHash<QString, int> fandomKeeper;
+    QHash<int, int> unfinishedKeeper;
+    QHash<int, int> esrbKeeper;
+    QHash<int, int> wordsKeeper;
+    QHash<QString, int> genreKeeper;
+    QHash<int, int> moodKeeper;
+    int chapterKeeper = 0;
+    QList<int> sizes;
+    QDate firstPublished;
+    QDate lastPublished;
+    int ficCount = 0;
+    int wordCount = 0;
+};
 class FicSectionStats{
 public:
     enum class FavouritesType{
@@ -76,7 +97,7 @@ public:
     double wordsPerChapter = 0;
 
     ESRBType esrbType;
-    MoodType prevalentMood;
+    MoodType prevalentMood = MoodType::neutral;
     EntitySizeType mostFavouritedSize;
     EntitySizeType sectionRelativeSize;
 
@@ -105,8 +126,12 @@ public:
     QString prevalentGenre;
     QHash<int, double> sizeFactors;
 
-    QHash<int, int> fandoms;
-    QHash<int, double> fandomFactors;
+    QHash<QString, int> fandoms;
+    QHash<QString, double> fandomFactors;
+
+    QHash<int, int> fandomsConverted;
+    QHash<int, double> fandomFactorsConverted;
+
     QHash<QString, double> genreFactors;
 
     QDate firstPublished;
@@ -127,6 +152,7 @@ public:
 class Author : public DBEntity{
 public:
     static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
+    //FicSectionStats MergeStats(QList<AuthorPtr>);
     ~Author(){}
     void Log();
     void LogWebIds();

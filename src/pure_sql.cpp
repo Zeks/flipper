@@ -2615,18 +2615,18 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author,
     QString query = "INSERT INTO AuthorFavouritesStatistics ("
                     "author_id, favourites, favourites_wordcount, average_words_per_chapter, esrb_type, prevalent_mood,"
                     "most_favourited_size,favourites_type,average_favourited_length,favourite_fandoms_diversity, explorer_factor, "
-                    "mega_explorer_factor, crossover_factor,unfinished_factor,esrb_uniformity_factor,esrb_kiddy,esrb_mature, genre_diversity_factor,"
+                    "mega_explorer_factor, crossover_factor,unfinished_factor,esrb_uniformity_factor,esrb_kiddy,esrb_mature,"
                     "genre_diversity_factor, mood_uniformity_factor, mood_sad, mood_neutral, mood_happy, "
                     "crack_factor,slash_factor,smut_factor, prevalent_genre, size_tiny, size_medium, size_large, size_huge,"
-                    "first_published,last_published"
+                    "first_published, last_published"
                     ") "
                     "VALUES ("
                     ":author_id, :favourites, :favourites_wordcount, :average_words_per_chapter, :esrb_type, :prevalent_mood,"
                     ":most_favourited_size,:favourites_type,:average_favourited_length,:favourite_fandoms_diversity, :explorer_factor, "
-                    ":mega_explorer_factor, :crossover_factor,:unfinished_factor,:esrb_uniformity_factor,:esrb_kiddy,:esrb_mature, :genre_diversity_factor,"
+                    ":mega_explorer_factor, :crossover_factor,:unfinished_factor,:esrb_uniformity_factor,:esrb_kiddy,:esrb_mature,"
                     ":genre_diversity_factor, :mood_uniformity_factor, :mood_sad, :mood_neutral, :mood_happy, "
                     ":crack_factor,:slash_factor,:smut_factor, :prevalent_genre, :size_tiny, :size_medium, :size_large, :size_huge,"
-                    ":first_published,last_published"
+                    ":first_published, :last_published"
                     ")";
     QSqlQuery q(db);
     q.prepare(query);
@@ -2677,10 +2677,10 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr au
 
     QString query = "INSERT INTO AuthorFavouritesGenreStatistics (author_id, "
                      "General_,Humor,Poetry, Adventure, Mystery, Horror,Parody,Angst, Supernatural, Suspense, "
-                    " Romance,SciFi, Fantasy,Spiritual,Tragedy, Western,Crime,Family,HurtComfort,Friendship  "
+                    " Romance,SciFi, Fantasy,Spiritual,Tragedy, Western,Crime,Family,HurtComfort,Friendship, NoGenre) "
                     "VALUES ("
-                    ":General_,:Humor,:Poetry, :Adventure, :Mystery, :Horror,:Parody,:Angst, :Supernatural, :Suspense, "
-                   " :Romance,:SciFi, :Fantasy,:Spiritual,:Tragedy, :Western,:Crime,:Family,:HurtComfort,:Friendship  "
+                    ":author_id, :General_,:Humor,:Poetry, :Adventure, :Mystery, :Horror,:Parody,:Angst, :Supernatural, :Suspense, "
+                   " :Romance,:SciFi, :Fantasy,:Spiritual,:Tragedy, :Western,:Crime,:Family,:HurtComfort,:Friendship, :NoGenre  "
                     ")";
     QSqlQuery q(db);
     q.prepare(query);
@@ -2696,6 +2696,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr au
     q.bindValue(":Supernatural", author->stats.favouriteStats.genreFactors["Supernatural"]);
     q.bindValue(":Suspense", author->stats.favouriteStats.genreFactors["Suspense"]);
     q.bindValue(":Romance", author->stats.favouriteStats.genreFactors["Romance"]);
+    q.bindValue(":NoGenre", author->stats.favouriteStats.genreFactors["not found"]);
     q.bindValue(":SciFi", author->stats.favouriteStats.genreFactors["Sci-Fi"]);
     q.bindValue(":Fantasy", author->stats.favouriteStats.genreFactors["Fantasy"]);
     q.bindValue(":Spiritual", author->stats.favouriteStats.genreFactors["Spiritual"]);
@@ -2718,27 +2719,55 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteFandomStatistics(core::AuthorPtr a
     result.success = false;
 
     QString query = "INSERT INTO AuthorFavouritesFandomRatioStatistics ("
-                    "author_id, fandom_id, fandom_ratio, fic_count"
+                    "author_id, fandom_id, fandom_ratio, fic_count) "
                     "VALUES ("
                     ":author_id, :fandom_id, :fandom_ratio, :fic_count"
                     ")";
     QSqlQuery q(db);
     q.prepare(query);
-    for(auto fandom : author->stats.favouriteStats.fandomFactors.keys())
+    for(auto fandom : author->stats.favouriteStats.fandomFactorsConverted.keys())
     {
         q.bindValue(":author_id", author->id);
         q.bindValue(":fandom_id", fandom);
-        q.bindValue(":fandom_ratio", author->stats.favouriteStats.fandomFactors[fandom]);
-        q.bindValue(":fic_count", author->stats.favouriteStats.fandoms[fandom]);
+        q.bindValue(":fandom_ratio", author->stats.favouriteStats.fandomFactorsConverted[fandom]);
+        q.bindValue(":fic_count", author->stats.favouriteStats.fandomsConverted[fandom]);
+        if(!result.ExecAndCheck(q, true))
+            return result;
     }
-
-    if(!result.ExecAndCheck(q, true))
-        return result;
     result.success = true;
 
     return result;
 }
 
+
+DiagnosticSQLResult<bool> WipeAuthorStatistics(core::AuthorPtr author, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString deleteGenre = "delete from AuthorFavouritesGenreStatistics where author_id = :author_id";
+    QString deleteStats = "delete from AuthorFavouritesStatistics where author_id = :author_id";
+    QString deleteFandoms = "delete from AuthorFavouritesFandomRatioStatistics where author_id = :author_id";
+    QSqlQuery q(db);
+    q.prepare(deleteGenre);
+    q.bindValue(":author_id", author->id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    q.prepare(deleteStats);
+    q.bindValue(":author_id", author->id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    q.prepare(deleteFandoms);
+    q.bindValue(":author_id", author->id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    result.success = true;
+
+    return result;
+}
 
 
 
