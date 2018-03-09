@@ -148,6 +148,12 @@ core::AuthorPtr  GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase 
 
 core::AuthorPtr  GetAuthorByUrl(QString url,  QSqlDatabase db);
 core::AuthorPtr  GetAuthorById(int id,  QSqlDatabase db);
+
+
+DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author, QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr author, QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteAuthorFavouriteFandomStatistics(core::AuthorPtr author, QSqlDatabase db);
+
 QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
 QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
 QSharedPointer<core::RecommendationList> GetRecommendationList(int listid, QSqlDatabase db);

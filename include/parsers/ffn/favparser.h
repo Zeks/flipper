@@ -44,6 +44,7 @@ public:
     void SetAuthor(core::AuthorPtr);
 
     QStringList diagnostics;
+    QSharedPointer<interfaces::Fandoms> fandomInterface;
     QList<QSharedPointer<core::Fic>> processedStuff;
 
     core::FavouritesPage recommender;

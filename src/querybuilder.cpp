@@ -108,6 +108,8 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessNormalOrCrossover(filter);
     queryString+= ProcessFilteringMode(filter);
     queryString+= ProcessFandomIgnore(filter);
+    queryString+= ProcessCrossovers(filter);
+
 
     return queryString;
 }
@@ -340,11 +342,28 @@ QString DefaultQueryBuilder::ProcessFandomIgnore(StoryFilter filter)
     QString queryString;
     {
         if(filter.ignoreFandoms)
-            queryString += QString(" and not ("
+            queryString += QString(" and (not ("
                                    "(select case (select count(fandom_id) from ficfandoms where fic_id = fid) when 1"
                                    "   then (select count(fandom_id) from ignored_fandoms ignf where ignf.fandom_id in (select fandom_id from ficfandoms where fic_id = fid))"
                                    "   else (select count(fandom_id) from ignored_fandoms ignf where ignf.including_crossovers = 1 and ignf.fandom_id in (select fandom_id from ficfandoms where fic_id = fid)) end"
-                                   " ) > 0 ) ");
+                                   " ) > 0  "
+                                   "or ( (select count(fandom_id) from ficfandoms where fic_id = fid) > 1 ) "
+                                   "and  (select fandom_id from ficfandoms where fic_id = fid limit 1) in (select fandom_id from ignored_fandoms) "
+                                   "and  (select fandom_id from ficfandoms where fic_id = fid limit 1 offset 1) in (select fandom_id from ignored_fandoms) "
+                                   "))");
+
+        else
+            queryString += QString("");
+    }
+    return queryString;
+}
+
+QString DefaultQueryBuilder::ProcessCrossovers(StoryFilter filter)
+{
+    QString queryString;
+    {
+        if(filter.crossoversOnly)
+            queryString += QString(" and (select count(fandom_id) from ficfandoms where fic_id = fid) > 1 ");
 
         else
             queryString += QString("");

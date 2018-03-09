@@ -65,6 +65,7 @@ protected:
     QString ProcessNormalOrCrossover(StoryFilter);
     QString ProcessFilteringMode(StoryFilter);
     QString ProcessFandomIgnore(StoryFilter);
+    QString ProcessCrossovers(StoryFilter);
     QString ProcessActiveTags(StoryFilter);
     QString ProcessRandomization(StoryFilter, QString);
 

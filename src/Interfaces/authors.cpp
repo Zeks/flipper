@@ -122,7 +122,11 @@ bool Authors::EnsureAuthorLoaded(int id)
 bool Authors::UpdateAuthorRecord(core::AuthorPtr author)
 {
     auto result = database::puresql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
-    return result;
+    auto f1Result = database::puresql::WriteAuthorFavouriteStatistics(author,db);
+    auto f2Result = database::puresql::WriteAuthorFavouriteGenreStatistics(author,db);
+    auto f3Result = database::puresql::WriteAuthorFavouriteFandomStatistics(author,db);
+
+    return result && f1Result.success && f2Result.success && f3Result.success;
 }
 
 bool Authors::LoadAuthor(QString name, QString website)
@@ -290,7 +294,12 @@ void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
 bool Authors::CreateAuthorRecord(core::AuthorPtr author)
 {
     auto result = database::puresql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
-    return result;
+
+    auto f1Result = database::puresql::WriteAuthorFavouriteStatistics(author,db);
+    auto f2Result = database::puresql::WriteAuthorFavouriteGenreStatistics(author,db);
+    auto f3Result = database::puresql::WriteAuthorFavouriteFandomStatistics(author,db);
+
+    return result && f1Result.success && f2Result.success && f3Result.success;
 }
 
 bool Authors::EnsureId(core::AuthorPtr author, QString website)

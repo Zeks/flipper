@@ -1206,9 +1206,11 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
     int currentCounter = 0;
     auto fanfics = fanficsInterface;
     auto authors = authorsInterface;
+    auto fandoms = fandomsInterface;
     pageTaskInterface->SetCurrentTask(task);
-    auto job = [fanfics,authors](QString url, QString content){
+    auto job = [fanfics,authors, fandoms](QString url, QString content){
         FavouriteStoryParser parser(fanfics);
+        parser.fandomInterface = fandoms;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -1326,6 +1328,7 @@ void MainWindow::UseAuthorsPageTask(PageTaskPtr task,
                 //qDebug() << "Count of parts:" << parsers.size();
 
                 FavouriteStoryParser sumParser;
+                sumParser.fandomInterface = fandomsInterface;
                 QString name = ParseAuthorNameFromFavouritePage(webPage.content);
                 // need to create author when there is no data to parse
 
@@ -2204,6 +2207,7 @@ core::AuthorPtr MainWindow::LoadAuthor(QString url)
     auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
     qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
     FavouriteStoryParser parser(fanficsInterface);
+    parser.fandomInterface = fandomsInterface;
     auto startPageProcess = std::chrono::high_resolution_clock::now();
     QString name = ParseAuthorNameFromFavouritePage(page.content);
     parser.authorName = name;
@@ -2529,9 +2533,11 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     QList<core::FicRecommendation> recommendations;
     auto fanficsInterface = this->fanficsInterface;
     auto authorsInterface = this->authorsInterface;
-    auto job = [fanficsInterface,authorsInterface](QString url, QString content){
+    auto fandomsInterface = this->fandomsInterface;
+    auto job = [fanficsInterface,authorsInterface, fandomsInterface](QString url, QString content){
         QList<QSharedPointer<core::Fic> > sections;
         FavouriteStoryParser parser(fanficsInterface);
+        parser.fandomInterface = fandomsInterface;
         sections += parser.ProcessPage(url, content);
         return sections;
     };
@@ -2548,6 +2554,7 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
         qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         FavouriteStoryParser parser(fanficsInterface);
+        parser.fandomInterface = fandomsInterface;
         //parser.ProcessPage(page.url, page.content);
 
         auto splittings = SplitJob(page.content);
@@ -2701,6 +2708,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.wordExclusion = valueIfChecked(ui->chkWordsMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text(), "###"));
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
+    filter.crossoversOnly= ui->chkCrossovers->isChecked();
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());

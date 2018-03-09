@@ -71,9 +71,9 @@ public:
         mature = 2,
     };
 
-
-    int ficWordCount = 0;
     int favourites = -1;
+    int ficWordCount = 0;
+    double wordsPerChapter = 0;
 
     ESRBType esrbType;
     MoodType prevalentMood;
@@ -84,23 +84,31 @@ public:
     double averageLength = 0.0;
     double fandomsDiversity = 0.0;
     double explorerFactor = 0.0;
+    double megaExplorerFactor = 0.0;
     double crossoverFactor = 0.0;
     double unfinishedFactor = 0.0;
     double esrbUniformityFactor = 0.0;
     double esrbKiddy = 0.0;
     double esrbMature= 0.0;
-
     double genreDiversityFactor = 0.0;
+    double moodUniformity = 0.0;
     double moodNeutral = 0.0;
     double moodSad = 0.0;
     double moodHappy = 0.0;
-    double moodUniformity = 0.0;
+
+
+    double crackRatio = 0.0;
+    double slashRatio = 0.0;
+    double smutRatio = 0.0;
     //double moodDiversityFactor = 0.0;
 
     QString prevalentGenre;
-    QHash<QString, int> fandoms;
+    QHash<int, double> sizeFactors;
+
+    QHash<int, int> fandoms;
+    QHash<int, double> fandomFactors;
     QHash<QString, double> genreFactors;
-    QHash<QString, double> fandomFactors;
+
     QDate firstPublished;
     QDate lastPublished;
 };

@@ -102,7 +102,6 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  
  alter table Recommenders add column wave integer default 0;
  alter table Recommenders add column favourites integer default -1;
- alter table Recommenders add column in_favourites integer default 0;
  alter table Recommenders add column fics integer default -1;
  alter table Recommenders add column ffn_id integer default -1;
  alter table Recommenders add column ao3_id integer default -1;
@@ -111,10 +110,14 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  
  alter table Recommenders add column page_creation_date datetime;
  alter table Recommenders add column info_updated datetime;
+ alter table Recommenders add column info_wordcount integer default -1;
  alter table Recommenders add column last_published_fic_date datetime;
  alter table Recommenders add column first_published_fic_date datetime;
- alter table Recommenders add column latest_favourited_fic_date datetime;
- alter table Recommenders add column earliest_favourited_fic_date datetime;
+ alter table Recommenders add column own_wordcount integer default -1;              -- author's own wordcount;
+ alter table Recommenders add column own_favourites integer default -1;             -- author's own favourites on fics (pretty much useless);
+ alter table Recommenders add column own_finished_ratio real;                       -- ratio of finished fics
+ alter table Recommenders add column most_written_size integer default -1;          -- small/medium/huge;
+ 
  
  CREATE  INDEX if not exists I_RECOMMENDERS_NAME ON Recommenders (name ASC);
  CREATE  INDEX if not exists I_RECOMMENDERS_URL ON Recommenders (URL ASC);
@@ -124,58 +127,55 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  CREATE  INDEX if not exists I_RECOMMENDER_AO3_ID ON Recommenders (ao3_id ASC);
  CREATE  INDEX if not exists I_RECOMMENDER_SB_ID ON Recommenders (sb_id ASC);
  CREATE  INDEX if not exists I_RECOMMENDER_SV_ID ON Recommenders (sv_id ASC);
- CREATE  INDEX if not exists I_RECOMMENDER_IN_FAVOURITES ON Recommenders (in_favourites ASC);
- 
+  
  -- holds various stats for the author's page;
  -- to be used for fics clustering;
- CREATE TABLE if not exists AuthorPageStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE);
-  -- slash/crack word inclusion
-  -- happy should be better calculated in doubles
- alter table AuthorPageStatistics add column favourites integer default 0;                  -- how much stuff did the author favourite;
- alter table AuthorPageStatistics add column favourites_type integer default -1;            -- tiny(<50)/medium(50-500)/large(500-2000)/bullshit(2k+);
-
- alter table AuthorPageStatistics add column favourite_fandoms_diversity real;              -- how uniform are his favourites relative to most popular fandom;
- alter table AuthorPageStatistics add column explorer_factor real;                          -- deals with how likely is the author to explore otherwise unpopular fics;
- alter table AuthorPageStatistics add column crossover_factor real;                         -- how willing is he to read crossovers;
- alter table AuthorPageStatistics add column unfinished_factor real;                        -- how willing is he to read stuff that isn't finished;
- alter table AuthorPageStatistics add column just_started_factor real;                      -- how willing is he to read stuff that has just started and is still very small (but the fic is still active);
- alter table AuthorPageStatistics add column esrb_uniformity_factor real;                   -- how faithfully the author sticks to the same ESRB when favouriting. Only  M/everything else taken into account;
- alter table AuthorPageStatistics add column esrb_type integer -1;                          -- agnostic/kiddy/mature;
- alter table AuthorPageStatistics add column genre_uniformity_factor real;                  -- how likely is the author to stick to a single genre;
- alter table AuthorPageStatistics add column prevalent_mood integer default -1;             -- sad/neutral/positive as categorized by genres;
- alter table AuthorPageStatistics add column prevalent_genre varchar default null;
- alter table AuthorPageStatistics add column average_favourited_length integer default -1;  -- excluding the biggest outliers if there are not enough of them;
- alter table AuthorPageStatistics add column most_favourited_size integer default -1;       -- small/medium/large/huge;
+ CREATE TABLE if not exists AuthorFavouritesStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE);
+ alter table AuthorFavouritesStatistics add column favourites integer default 0;                  -- how much stuff did the author favourite;
+ alter table AuthorFavouritesStatistics add column favourites_wordcount integer default 0;        -- how much stuff did the author favourite;
+ alter table AuthorFavouritesStatistics add column average_words_per_chapter integer;
  
- alter table AuthorPageStatistics add column bio_wordcount integer default -1;              -- how big is author's bio section;
- alter table AuthorPageStatistics add column own_wordcount integer default -1;              -- author's own wordcount;
- alter table AuthorPageStatistics add column own_favourites integer default -1;             -- author's own favourites on fics (pretty much useless);
- alter table AuthorPageStatistics add column own_finished_ratio real;                       -- ratio of finished fics
- alter table AuthorPageStatistics add column most_written_size integer default -1;          -- small/medium/huge;
+ alter table AuthorFavouritesStatistics add column esrb_type integer -1;                          -- agnostic/kiddy/mature;
+ alter table AuthorFavouritesStatistics add column prevalent_mood integer default -1;             -- sad/neutral/positive as categorized by genres;
+ 
+ alter table AuthorFavouritesStatistics add column most_favourited_size integer default -1;       -- small/medium/large/huge;
+ alter table AuthorFavouritesStatistics add column favourites_type integer default -1;            -- tiny(<50)/medium(50-500)/large(500-2000)/bullshit(2k+);
+ 
+ alter table AuthorFavouritesStatistics add column average_favourited_length integer default -1;  -- excluding the biggest outliers if there are not enough of them;
+ alter table AuthorFavouritesStatistics add column favourite_fandoms_diversity real;              -- how uniform are his favourites relative to most popular fandom;
+ alter table AuthorFavouritesStatistics add column explorer_factor real;                          -- deals with how likely is the author to explore otherwise unpopular fics;
+ alter table AuthorFavouritesStatistics add column mega_explorer_factor real;                     -- deals with how likely is the author to explore otherwise unpopular fics;
+ 
+ alter table AuthorFavouritesStatistics add column crossover_factor real;                         -- how willing is he to read crossovers;
+ alter table AuthorFavouritesStatistics add column unfinished_factor real;                        -- how willing is he to read stuff that isn't finished;
+ alter table AuthorFavouritesStatistics add column esrb_uniformity_factor real;                   -- how faithfully the author sticks to the same ESRB when favouriting. Only  M/everything else taken into account;
+ alter table AuthorFavouritesStatistics add column esrb_kiddy real;
+ alter table AuthorFavouritesStatistics add column esrb_mature real;
+ 
+ alter table AuthorFavouritesStatistics add column genre_diversity_factor real;                  -- how likely is the author to stick to a single genre;
+ alter table AuthorFavouritesStatistics add column mood_uniformity_factor real;
+ alter table AuthorFavouritesStatistics add column mood_sad real;
+ alter table AuthorFavouritesStatistics add column mood_neutral real;
+ alter table AuthorFavouritesStatistics add column mood_happy real;
+ 
+ alter table AuthorFavouritesStatistics add column crack_factor real;
+ alter table AuthorFavouritesStatistics add column slash_factor real;
+ alter table AuthorFavouritesStatistics add column smut_factor real;
+ 
+ alter table AuthorFavouritesStatistics add column prevalent_genre varchar default null;
+
+ alter table AuthorFavouritesStatistics add column size_tiny real;
+ alter table AuthorFavouritesStatistics add column size_medium real;
+ alter table AuthorFavouritesStatistics add column size_large real;
+ alter table AuthorFavouritesStatistics add column size_huge real;
+ 
+ alter table AuthorFavouritesStatistics add column first_published datetime;
+ alter table AuthorFavouritesStatistics add column last_published datetime;
   
- alter table AuthorPageStatistics add column size_tiny real;
- alter table AuthorPageStatistics add column size_medium real;
- alter table AuthorPageStatistics add column size_large real;
- alter table AuthorPageStatistics add column size_huge real;
  
- alter table AuthorPageStatistics add column esrb_kiddy real;
- alter table AuthorPageStatistics add column esrb_mature real;
- 
- alter table AuthorPageStatistics add column fandom_size_dominant real;
- alter table AuthorPageStatistics add column fandom_size_minor real;
- 
- alter table AuthorPageStatistics add column mood_sad real;
- alter table AuthorPageStatistics add column mood_neutral real;
- alter table AuthorPageStatistics add column mood_happy real;
- 
- alter table AuthorPageStatistics add column explorer_popular real;
- alter table AuthorPageStatistics add column explorer_minor real;
+-- genre and fandom individual ratios in the separate tables;
+-- which type of fandoms they are in : anime, games, books....  
 
- alter table AuthorPageStatistics add column unfinished_yes real;
- alter table AuthorPageStatistics add column unfinished_no real;
- 
- alter table AuthorPageStatistics add column juststarted_no real;
- alter table AuthorPageStatistics add column juststarted_yes real;
  
  -- contains percentage per genre for favourite lists
  CREATE TABLE if not exists AuthorFavouritesGenreStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE);
@@ -203,9 +203,9 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  CREATE  INDEX if not exists I_AFGS_AID ON Recommenders (author_id ASC);
   
   -- need cluster relations in separate table;
- CREATE TABLE if not exists AuthorFavouritesFandomStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE, fandom_id integer default null, fandom_ratio real default null);
- CREATE  INDEX if not exists I_AFFS_AID ON AuthorFavouritesFandomStatistics (author_id ASC, fandom_id asc);
- 
+ CREATE TABLE if not exists AuthorFavouritesFandomRatioStatistics (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE, fandom_id integer default null, fandom_ratio real default null, integer fic_count default 0);
+ CREATE  INDEX if not exists I_AFRS_AID_FAID ON AuthorFavouritesFandomRatioStatistics (author_id ASC, fandom_id asc);
+  
  CREATE TABLE if not exists Recommendations (recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , PRIMARY KEY (recommender_id, fic_id));
  CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
  CREATE INDEX if not exists I_RECOMMENDATIONS_FIC_TAG ON Recommendations (tag ASC, fic_id asc);

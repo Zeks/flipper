@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pure_sql.h"
 #include "include/url_utils.h"
 #include "include/regex_utils.h"
+#include "include/Interfaces/fandoms.h"
 #include <QDebug>
 #include <QRegularExpression>
 #include <QSqlDatabase>
@@ -86,13 +87,18 @@ QDate DateFromXUtime(QString value)
 inline void UpdatePopularity(QSharedPointer<core::Fic> fic, QHash<int, int>& popularUnpopularKeeper)
 {
     auto faveCount = fic->favourites.toInt();
-    if(faveCount <= 150)
+    if(faveCount <= 50)
         popularUnpopularKeeper[0]++;
-    else
+    else if(faveCount <= 150)
         popularUnpopularKeeper[1]++;
+    else
+        popularUnpopularKeeper[2]++;
 }
 
-inline void UpdateFandoms(QSharedPointer<core::Fic> fic, QHash<int, int>& crossKeeper, QHash<QString, int>& fandomKeeper)
+inline void UpdateFandoms(QSharedPointer<interfaces::Fandoms>fandomInterface,
+                          QSharedPointer<core::Fic> fic,
+                          QHash<int, int>& crossKeeper,
+                          QHash<int, int>& fandomKeeper)
 {
     if(fic->fandoms.size() == 1)
         crossKeeper[0]++;
@@ -100,7 +106,7 @@ inline void UpdateFandoms(QSharedPointer<core::Fic> fic, QHash<int, int>& crossK
         crossKeeper[1]++;
     for(auto fandom: fic->fandoms)
     {
-        fandomKeeper[core::Fandom::ConvertName(fandom)]++;
+        fandomKeeper[fandomInterface->GetIDForName(fandom)]++;
     }
 }
 inline void UpdateCompleteness(QSharedPointer<core::Fic> fic, QHash<int, int>& unfinishedKeeper)
@@ -111,9 +117,24 @@ inline void UpdateCompleteness(QSharedPointer<core::Fic> fic, QHash<int, int>& u
         unfinishedKeeper[1]++;
 }
 
-inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes)
+
+inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& wordsKeeper)
+{
+    if(fic->summary.contains("crack", Qt::CaseInsensitive))
+        wordsKeeper[0]++;
+    if(fic->summary.contains("slash", Qt::CaseInsensitive))
+        wordsKeeper[1]++;
+    if(fic->summary.contains("smut", Qt::CaseInsensitive) ||
+            fic->summary.contains("lemon", Qt::CaseInsensitive) ||
+            fic->summary.contains("lime", Qt::CaseInsensitive) ||
+            fic->summary.contains(" sex", Qt::CaseInsensitive))
+        wordsKeeper[2]++;
+}
+
+inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes, int& chapterCount)
 {
     auto wordCount = fic->wordCount.toInt();
+    chapterCount+=fic->chapters.toInt();
     if(wordCount <= 20000)          // tiny
         favouritesSizeKeeper[0]++;
     else if(wordCount <= 100000)    // medium
@@ -124,6 +145,8 @@ inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favour
         favouritesSizeKeeper[3]++;
     sizes.push_back(wordCount);
 }
+
+
 
 inline void UpdateESRB(QSharedPointer<core::Fic> fic, QHash<int, int>& esrbKeeper)
 {
@@ -226,6 +249,7 @@ inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes
             author->stats.favouriteStats.mostFavouritedSize = static_cast<core::EntitySizeType>(ficSize);
             dominatingValue = ficSizeKeeper[ficSize];
         }
+        author->stats.favouriteStats.sizeFactors[ficSize] = static_cast<double>(ficSizeKeeper[ficSize])/static_cast<double>(total);
     }
     double averageFicSize = 0.0;
     int sum = 0;
@@ -242,10 +266,11 @@ inline void ProcessCrossovers(QSharedPointer<core::Author> author, int ficTotal,
 
 inline void ProcessUnpopular(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int>& popularUnpopularKeeper)
 {
-    author->stats.favouriteStats.explorerFactor = static_cast<double>(popularUnpopularKeeper[0])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.megaExplorerFactor = static_cast<double>(popularUnpopularKeeper[0])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.explorerFactor = static_cast<double>(popularUnpopularKeeper[1])/static_cast<double>(ficTotal);
 }
 
-inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficTotal, QHash<QString, int>& fandomKeeper)
+inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int>& fandomKeeper)
 {
     double averageFicsPerFandom = static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.keys().size());
     // need to find fics in fandoms 2x over average
@@ -288,6 +313,16 @@ inline void ProcessESRB(QSharedPointer<core::Author> author, int ficTotal, QHash
             author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::mature;
     }
 }
+
+inline void ProcessKeyWords(QSharedPointer<core::Author> author, int ficTotal, QHash<int, int>& keyWordsKeeper)
+{
+    //auto minValue = std::min(esrbKeeper[0],esrbKeeper[1]);
+    author->stats.favouriteStats.crackRatio =  static_cast<double>(keyWordsKeeper[0])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.slashRatio =  static_cast<double>(keyWordsKeeper[1])/static_cast<double>(ficTotal);
+    author->stats.favouriteStats.smutRatio =  static_cast<double>(keyWordsKeeper[2])/static_cast<double>(ficTotal);
+}
+
+
 inline void ProcessMood(QSharedPointer<core::Author> author,
                         int ficTotal,
                          QHash<int, int>& moodKeeper)
@@ -369,12 +404,13 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     QHash<int, int> crossKeeper;
     QHash<int, int> favouritesSizeKeeper;
     QHash<int, int> popularUnpopularKeeper;
-    QHash<QString, int> fandomKeeper;
+    QHash<int, int> fandomKeeper;
     QHash<int, int> unfinishedKeeper;
     QHash<int, int> esrbKeeper;
+    QHash<int, int> wordsKeeper;
     QHash<QString, int> genreKeeper;
     QHash<int, int> moodKeeper;
-
+    int chapterKeeper = 0;
 
     QList<int> sizes;
     sizes.reserve(sections.size());
@@ -387,12 +423,13 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
             firstPublished = fic->published.date();
         if(!lastPublished.isValid() || fic->published.date() > lastPublished)
             lastPublished = fic->published.date();
-        UpdateFicSize(fic, ficSizeKeeper, sizes);
+        UpdateFicSize(fic, ficSizeKeeper, sizes, chapterKeeper);
         UpdatePopularity(fic, popularUnpopularKeeper);
-        UpdateFandoms(fic, crossKeeper, fandomKeeper);
+        UpdateFandoms(fandomInterface, fic, crossKeeper, fandomKeeper);
         UpdateCompleteness(fic, unfinishedKeeper);
         UpdateESRB(fic, esrbKeeper);
         UpdateGenreResults(fic, genreKeeper, moodKeeper);
+        UpdateWordsCounter(fic, wordsKeeper);
     }
     int ficCount = sections.size();
     ProcessFavouriteSectionSize(author, ficCount);
@@ -404,12 +441,13 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     ProcessFandomDiversity(author, ficCount, fandomKeeper);
     ProcessUnfinished(author, ficCount, unfinishedKeeper);
     ProcessESRB(author, ficCount, esrbKeeper);
+    ProcessKeyWords(author, ficCount, wordsKeeper);
 
+    author->stats.favouriteStats.wordsPerChapter = static_cast<double>(author->stats.favouriteStats.ficWordCount)/static_cast<double>(chapterKeeper);
     author->stats.favouriteStats.favourites = sections.size();
     author->stats.favouriteStats.fandoms = fandomKeeper;
     author->stats.favouriteStats.firstPublished= firstPublished;
     author->stats.favouriteStats.lastPublished= lastPublished;
-    //qDebug() << "Processed fic, count:  " << sections.count();
     processedStuff+=sections;
     currentPosition = 999;
     return sections;

@@ -55,6 +55,7 @@ struct StoryFilter{
 
     bool includeCrossovers = false;
     bool ignoreAlreadyTagged = false;
+    bool crossoversOnly = false;
     bool ignoreFandoms = false;
     bool randomizeResults = false;
     bool ensureCompleted = false;
