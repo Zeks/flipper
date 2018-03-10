@@ -275,6 +275,8 @@ private:
 
     void CreateSimilarListForGivenFic(int);
 
+    void ReprocessAllAuthors();
+
     Ui::MainWindow *ui;
 
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -487,6 +489,9 @@ private slots:
     void OnFindSimilarClicked(QVariant);
 
     void on_pbIgnoreFandom_clicked();
+
+    void on_pbReloadAllAuthors_clicked();
+    void OnOpenAuthorListByID();
 
 signals:
 

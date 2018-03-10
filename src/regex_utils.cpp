@@ -164,3 +164,27 @@ QString BouncingSearch(QString str, FieldSearcher finder)
     }
     return result;
 }
+
+QString GetSlashRegex()
+{
+    static QString slashRx = "(slash)|(\\smm\\s)|(yaoi)|(lgbt)|(m[-/*x]m)|(harry[-/*x]{0,1}cedric)|(lv[-/*x]{0,1}hp)|(hp[-/*x]{0,1}lv)|"
+                             "(hp[-/*x]{0,1}ss)|(ss[-/*x]{0,1}hp)|(harrymort)|(homosexual)|(harry[-/*x]draco)|(draco[-/*x]harry)|"
+                             "(ulquiorra[-/*x]ichigo)|(ichigo[-/*x]ulquiorra)|"
+                             "(ichi(go){0,1}[-/*x]ren(ji){0,1})|(ren(ji){0,1}[-/*x]ichi(go){0,1})|"
+                             "(ichi(go){0,1}[-/*x]byak)|(byak(uya){0,1}[-/*x]ichi(go){0,1})|"
+                             "(hp[-/*x]{0,1}dm)|(dm[-/*x]{0,1}hp)|(mpreg)|(sasu[-/*x]{0,1}naru)|(snarry)|"
+                             "(naru[-/*x]{0,1}sasu)|(sho[u]{0,1}nen\\sai)|(ita[-/*x]{0,1}naru)|(snape[-/*x]{0,1}harry)|"
+                             "(naru[-/*x]{0,1}ita)|(kaka[-/*x]{0,1}iru)|(iru[-/*x]{0,1}kaka)|(kaka[-/*x]{0,1}naru)|"
+                             "(naru[-/*x]{0,1}kaka)|(kaka[-/*x]{0,1}sasu)|(sasu[-/*x]{0,1}kaka)(kiba[-/*x]{0,1}naru)|"
+                             "(naru[-/*x]{0,1}kiba)|(naru[-/*x]{0,1}iru)|(iru[-/*x]{0,1}naru)(gaara[-/*x]{0,1}naru)|"
+                             "(naru[-/*x]{0,1}gaara)|(\\sgay(\\s|[.]))|(queer)|(boy\\slove)|"
+                             "(voldemort\\s{0,2}/\\s{0,2}harry)|(harry/voldemort)|(drarry)|(hp[/]{0,1}t[m]{0,1}r)|(t[m]{0,1}r[/]{0,1}hp)|"
+                             "(rw[-/*x]{0,1}hp)|(hp[-/*x]{0,1}rw)|(hp[-/*x]{0,1}lm)|(lm[-/*x]{0,1}hp)|"
+                             "(sb[-/*x]{0,1}hp)|(hp[-/*x]{0,1}sb)|(rl[-/*x]{0,1}hp)|(hp[-/*x]{0,1}rl)|(k[-/*x]s|s[-/*x]k)"
+                             "([\\[]Naruto\\sU[.][,]\\sSasuke\\sU[.][\\]])|"
+                             "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(00q)|"
+                             "(Thor[,]\\sLoki[\\]])"
+                             "([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])|((boy|guy)\\s{0,1}x\\s{0,1}(boy|guy))";
+
+    return slashRx;
+}

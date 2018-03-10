@@ -109,7 +109,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     if(!dbOpen)
         return result;
     QSqlQuery q(db);
-    q.prepare("select * from PageCache where url = :URL");
+    q.prepare("select * from PageCache where url like '%' || :URL || '%'");
     q.bindValue(":URL", url);
     q.exec();
     bool dataFound = q.next();

@@ -119,4 +119,5 @@ QString GetDoubleNarrow(QString text,
                         QString regex1, QString regex2, bool forward1,
                         QString regex3, QString regex4, bool forward2,
                         int lengthOfLastTag);
+QString GetSlashRegex();
 

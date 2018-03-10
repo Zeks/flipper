@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "actionprogress.h"
 #include "ui_actionprogress.h"
 #include "pagetask.h"
+#include "regex_utils.h"
 #include "Interfaces/tags.h"
 #include <QMessageBox>
 #include <QRegExp>
@@ -338,6 +339,7 @@ void MainWindow::InitConnections()
     //    eventFilter->SetEventProcessor(std::bind(TagEditorHider,std::placeholders::_1, std::placeholders::_2, tagWidgetDynamic));
     //    tagWidgetDynamic->installEventFilter(eventFilter);
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
+    connect(ui->pbOpenID, SIGNAL(clicked(bool)), this, SLOT(OnOpenAuthorListByID()));
     //connect(ui->pbFormattedList, &QPushButton::clicked, this, &MainWindow::OnDoFormattedListByFandoms);
     connect(ui->pbGetFavouriteLinks, &QPushButton::clicked, this, &MainWindow::OnGetAuthorFavouritesLinks);
     connect(ui->pbPauseTask, &QPushButton::clicked, [&](){
@@ -959,10 +961,26 @@ void MainWindow::LoadData()
     fanfics.clear();
     //ui->edtResults->insertPlainText(q.lastQuery());
     currentLastFanficId = -1;
+    auto rx = GetSlashRegex();
+
     while(q.next())
     {
         counter++;
-        fanfics.push_back(LoadFanfic(q));
+        bool allow = true;
+        auto fic = LoadFanfic(q);
+        QRegularExpression slashRx(rx, QRegularExpression::CaseInsensitiveOption);
+        if(ui->chkInvertedSlashFilter->isChecked())
+        {
+
+            if(fic.summary.contains(slashRx) || fic.charactersFull.contains(slashRx))
+            {
+                qDebug() << fic.summary;
+                //qDebug() << match.capturedTexts();
+                allow = false;
+            }
+        }
+        if(allow)
+            fanfics.push_back(fic);
         if(counter%10000 == 0)
             qDebug() << "tick " << counter/1000;
         //qDebug() << "tick " << counter;
@@ -2419,6 +2437,100 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     OpenRecommendationList("similar");
 }
 
+void MainWindow::ReprocessAllAuthors()
+{
+    TaskProgressGuard guard(this);
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    pbMain->setMaximum(authors.size());
+    pbMain->show();
+    pbMain->setValue(0);
+    pbMain->setTextVisible(true);
+    pbMain->setFormat("%v");
+
+    QSet<QString> fandoms;
+    QList<core::FicRecommendation> recommendations;
+    auto fanficsInterface = this->fanficsInterface;
+    auto authorsInterface = this->authorsInterface;
+    auto fandomsInterface = this->fandomsInterface;
+    auto job = [fanficsInterface,authorsInterface, fandomsInterface](QString url, QString content){
+        QList<QSharedPointer<core::Fic> > sections;
+        FavouriteStoryParser parser(fanficsInterface);
+        parser.ProcessPage(url, content);
+        return parser;
+    };
+
+    for(auto author: authors)
+    {
+        QList<QSharedPointer<core::Fic>> sections;
+        QList<QFuture<FavouriteStoryParser>> futures;
+        QSet<int> uniqueAuthors;
+        authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
+        auto startPageRequest = std::chrono::high_resolution_clock::now();
+        auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+        auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
+        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        auto startPageProcess = std::chrono::high_resolution_clock::now();
+        FavouriteStoryParser parser(fanficsInterface);
+        //parser.ProcessPage(page.url, page.content);
+
+        auto splittings = SplitJob(page.content);
+        for(auto part: splittings.parts)
+        {
+            futures.push_back(QtConcurrent::run(job, page.url, part.data));
+        }
+        for(auto future: futures)
+        {
+            future.waitForFinished();
+        }
+
+        ////
+        FavouriteStoryParser sumParser;
+        sumParser.SetAuthor(author);
+
+        QList<FavouriteStoryParser> finishedParsers;
+        for(auto actualParser: futures)
+            finishedParsers.push_back(actualParser.result());
+
+        FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
+        authorsInterface->UpdateAuthorRecord(author);
+
+        for(auto actualParser: finishedParsers)
+            sumParser.processedStuff+=actualParser.processedStuff;
+        ////
+        {
+            WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
+            if(fanficsInterface->skippedCounter > 0)
+                qDebug() << "skipped: " << fanficsInterface->skippedCounter;
+        }
+
+        ui->edtResults->clear();
+        ui->edtResults->insertHtml(parser.diagnostics.join(""));
+        pbMain->setValue(pbMain->value()+1);
+        pbMain->setTextVisible(true);
+        pbMain->setFormat("%v");
+        QCoreApplication::processEvents();
+
+        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+    }
+    fandomsInterface->RecalculateFandomStats(fandoms.values());
+    transaction.finalize();
+    fanficsInterface->ClearProcessedHash();
+    //pbMain->hide();
+    ui->leAuthorUrl->setText("");
+    auto startRecLoad = std::chrono::high_resolution_clock::now();
+    LoadData();
+    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
+}
+
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
     if(!WarnCutoffLimit() || !WarnFullParse())
@@ -3124,4 +3236,19 @@ void MainWindow::on_pbIgnoreFandom_clicked()
 {
     fandomsInterface->IgnoreFandom(ui->cbIgnoreFandomSelector->currentText(), ui->chkIgnoreIncludesCrossovers->isChecked());
     ignoredFandomsModel->setStringList(fandomsInterface->GetIgnoredFandoms());
+}
+
+void MainWindow::on_pbReloadAllAuthors_clicked()
+{
+    ReprocessAllAuthors();
+}
+
+void MainWindow::OnOpenAuthorListByID()
+{
+    int id = ui->leOpenID->text().toInt();
+    auto author = authorsInterface->GetById(id);
+    if(!author)
+        return;
+    ui->leAuthorUrl->setText(author->url("ffn"));
+    on_pbOpenRecommendations_clicked();
 }

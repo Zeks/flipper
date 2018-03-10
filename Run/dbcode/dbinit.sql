@@ -160,6 +160,7 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  
  alter table AuthorFavouritesStatistics add column crack_factor real;
  alter table AuthorFavouritesStatistics add column slash_factor real;
+ alter table AuthorFavouritesStatistics add column not_slash_factor real;
  alter table AuthorFavouritesStatistics add column smut_factor real;
  
  alter table AuthorFavouritesStatistics add column prevalent_genre varchar default null;

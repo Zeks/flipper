@@ -121,15 +121,38 @@ inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& w
 {
     if(fic->summary.contains("crack", Qt::CaseInsensitive))
         wordsKeeper[0]++;
-    bool containsSlash = fic->summary.contains("slash", Qt::CaseInsensitive);
-    bool containsNotSlash = fic->summary.contains("not slash", Qt::CaseInsensitive);
+
+
+    bool containsSlash = false;
+    QString slashRx = GetSlashRegex();
+    QString dontLikeRx = "don''t\\slike";
+    QString dontReadRx = "don''t\\sread";
+    bool dontLikeDontRead = fic->summary.contains(QRegularExpression(dontLikeRx, QRegularExpression::CaseInsensitiveOption));
+    dontLikeDontRead = dontLikeDontRead && fic->summary.contains(QRegularExpression(dontReadRx, QRegularExpression::CaseInsensitiveOption));
+    containsSlash = containsSlash  || fic->summary.contains(QRegularExpression(slashRx, QRegularExpression::CaseInsensitiveOption));
+    containsSlash = containsSlash  || fic->charactersFull.contains(QRegularExpression(slashRx, QRegularExpression::CaseInsensitiveOption));
+    containsSlash = containsSlash  || dontLikeDontRead;
+
+    bool containsNotSlash = false;
+    QString notSlashRx = "((no[tn]{0,1}|isn[']t)(\\s|-)(slash|yaoi))|(jack\\sslash)|(fem[!]{0,1})|(naruko)";
+    containsNotSlash = containsNotSlash  || fic->summary.contains(QRegularExpression(notSlashRx, QRegularExpression::CaseInsensitiveOption));
+
     if(containsSlash && !containsNotSlash)
+    {
+//        qDebug() << fic->summary;
         wordsKeeper[1]++;
-    if(fic->summary.contains("smut", Qt::CaseInsensitive) ||
-            fic->summary.contains("lemon", Qt::CaseInsensitive) ||
-            fic->summary.contains("lime", Qt::CaseInsensitive) ||
-            fic->summary.contains(" sex", Qt::CaseInsensitive))
+    }
+
+    bool hasSmut = false;
+    QString smutRx = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)"
+                     "(futanari)|(lemon)|(yuri)|(incest)|(succubus)|(incub)|(\\sanal\\s)|(vagina)|(\\sfem\\s)";
+    hasSmut = hasSmut  || fic->summary.contains(QRegularExpression(smutRx, QRegularExpression::CaseInsensitiveOption));
+
+    if(hasSmut)
+    {
+        //qDebug() << fic->summary;
         wordsKeeper[2]++;
+    }
 }
 
 inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes, int& chapterCount)
@@ -140,7 +163,7 @@ inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favour
         favouritesSizeKeeper[0]++;
     else if(wordCount <= 100000)    // medium
         favouritesSizeKeeper[1]++;
-    if(wordCount <= 400000)         // large
+    else if(wordCount <= 400000)         // large
         favouritesSizeKeeper[2]++;
     else                            // huge
         favouritesSizeKeeper[3]++;
@@ -578,4 +601,5 @@ void FavouriteStoryParser::GetTitleAndUrl(core::Section & section, int& currentP
     GetTitle(section, currentPosition, str);
     GetUrl(section, currentPosition, str);
 }
+
 
