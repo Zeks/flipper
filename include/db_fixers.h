@@ -5,5 +5,6 @@ namespace dbfix{
     void FillFFNId(QSqlDatabase db);
     void ReplaceUrlInLinkedAuthorsWithID(QSqlDatabase db);
     void RebindDuplicateFandoms(QSqlDatabase db);
+    void TrimUserUrls(QSqlDatabase db);
     //void SetLastFandomUpdateTo
 }

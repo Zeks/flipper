@@ -28,11 +28,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDatabase>
 #include <chrono>
 #include <algorithm>
-
+CommonRegex FavouriteStoryParser::commonRegex;
 FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics)
     : FFNParserBase(fanfics)
 {
-
+    if(!commonRegex.initComplete)
+        commonRegex.Init();
+    //commonRegex.Log();
 }
 static QString MicrosecondsToString(int value) {
     QString decimal = QString::number(value/1000000);
@@ -115,20 +117,36 @@ inline void UpdateCompleteness(QSharedPointer<core::Fic> fic, QHash<int, int>& u
     else
         unfinishedKeeper[1]++;
 }
-
-
-inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& wordsKeeper)
+inline void UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
+                                  const CommonRegex& regexToken,
+                                  QHash<int, int>& wordsKeeper)
 {
     if(fic->summary.contains("crack", Qt::CaseInsensitive))
         wordsKeeper[0]++;
 
+    auto containsSlash = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
+    if(containsSlash)
+        wordsKeeper[1]++;
+
+    bool hasSmut = fic->summary.contains(QRegularExpression(regexToken.smut, QRegularExpression::CaseInsensitiveOption));
+
+    if(hasSmut)
+        wordsKeeper[2]++;
+
+}
+inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& wordsKeeper)
+{
+//    if(fic->summary.contains("crack", Qt::CaseInsensitive))
+//        wordsKeeper[0]++;
+
 
     bool containsSlash = false;
     QString slashRx = GetSlashRegex();
-    QString dontLikeRx = "don''t\\slike";
-    QString dontReadRx = "don''t\\sread";
-    bool dontLikeDontRead = fic->summary.contains(QRegularExpression(dontLikeRx, QRegularExpression::CaseInsensitiveOption));
-    dontLikeDontRead = dontLikeDontRead && fic->summary.contains(QRegularExpression(dontReadRx, QRegularExpression::CaseInsensitiveOption));
+//    QString dontLikeRx = "don''t\\slike";
+//    QString dontReadRx = "don''t\\sread";
+    bool dontLikeDontRead = false;
+//    dontLikeDontRead = fic->summary.contains(QRegularExpression(dontLikeRx, QRegularExpression::CaseInsensitiveOption));
+//    dontLikeDontRead = dontLikeDontRead && fic->summary.contains(QRegularExpression(dontReadRx, QRegularExpression::CaseInsensitiveOption));
     containsSlash = containsSlash  || fic->summary.contains(QRegularExpression(slashRx, QRegularExpression::CaseInsensitiveOption));
     containsSlash = containsSlash  || fic->charactersFull.contains(QRegularExpression(slashRx, QRegularExpression::CaseInsensitiveOption));
     containsSlash = containsSlash  || dontLikeDontRead;
@@ -138,10 +156,7 @@ inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& w
     containsNotSlash = containsNotSlash  || fic->summary.contains(QRegularExpression(notSlashRx, QRegularExpression::CaseInsensitiveOption));
 
     if(containsSlash && !containsNotSlash)
-    {
-//        qDebug() << fic->summary;
         wordsKeeper[1]++;
-    }
 
     bool hasSmut = false;
     QString smutRx = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)"
@@ -149,10 +164,8 @@ inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& w
     hasSmut = hasSmut  || fic->summary.contains(QRegularExpression(smutRx, QRegularExpression::CaseInsensitiveOption));
 
     if(hasSmut)
-    {
-        //qDebug() << fic->summary;
         wordsKeeper[2]++;
-    }
+
 }
 
 inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes, int& chapterCount)
@@ -457,7 +470,8 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         UpdateCompleteness(fic, statToken.unfinishedKeeper);
         UpdateESRB(fic, statToken.esrbKeeper);
         UpdateGenreResults(fic, statToken.genreKeeper, statToken.moodKeeper);
-        UpdateWordsCounter(fic, statToken.wordsKeeper);
+        UpdateWordsCounterNew(fic, commonRegex, statToken.wordsKeeper);
+        //UpdateWordsCounter(fic, statToken.wordsKeeper);
     }
     statToken.ficCount = sections.size();
 

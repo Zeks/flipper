@@ -38,6 +38,8 @@ struct DiagnosticSQLResult
     bool ExecAndCheck(QSqlQuery& q, bool ignoreUniqueness = false) {
         bool success = database::puresql::ExecAndCheck(q);
         bool uniqueTriggered = ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed");
+        if(uniqueTriggered)
+            return true;
         if(!success && !uniqueTriggered)
         {
             success = false;

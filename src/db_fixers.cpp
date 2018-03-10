@@ -1,12 +1,14 @@
 #include "include/db_fixers.h"
 #include "include/pure_sql.h"
 #include "include/transaction.h"
+#include "include/url_utils.h"
 #include <QSet>
 #include <QDebug>
 #include <QMap>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QSqlDatabase>
+#include <QRegularExpression>
 
 namespace dbfix{
 
@@ -63,6 +65,53 @@ void FillFFNId(QSqlDatabase db)
         database::puresql::ExecAndCheck(fixQ);
     }
     transaction.finalize();
+}
+
+
+void TrimUserUrls(QSqlDatabase db)
+{
+    database::puresql::DiagnosticSQLResult<bool> result;
+    database::Transaction transaction(db);
+    QString qs = "select rowid, url from pagecache";
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.exec();
+    result.CheckDataAvailability(q);
+    if(!result.success)
+        return;
+
+    QSqlQuery fixQ(db);
+    fixQ.prepare("update pagecache set url = :url where rowid = :row_id");
+    //QRegularExpression rxEnd("(/u/(\\d+)/)(.*)", QRegularExpression::InvertedGreedinessOption);
+    bool success = true;
+    while(q.next())
+    {
+        int rowid = q.value("rowid").toInt();
+        QString originalurl = q.value("url").toString();
+        QString url = originalurl;
+
+        if(!url.contains("/u/"))
+            continue;
+        auto id = url_utils::GetWebId(originalurl, "ffn");
+        bool ok = true;
+        id.toInt(&ok);
+        if(!ok)
+            continue;
+
+        url = QString("https://www.fanfiction.net/u/") + id;
+
+        fixQ.bindValue(":row_id", rowid);
+        fixQ.bindValue(":url", url);
+        if(!result.ExecAndCheck(fixQ, true))
+        {
+            success = false;
+            break;
+        }
+    }
+    if(success)
+        transaction.finalize();
+    else
+        transaction.cancel();
 }
 
 

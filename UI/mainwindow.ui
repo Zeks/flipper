@@ -98,7 +98,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>2</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -479,7 +479,7 @@
                    <item row="5" column="0">
                     <widget class="QTabWidget" name="tabWidget_2">
                      <property name="currentIndex">
-                      <number>1</number>
+                      <number>0</number>
                      </property>
                      <widget class="QWidget" name="tab_3">
                       <attribute name="title">
@@ -1182,7 +1182,7 @@
                     </layout>
                    </item>
                    <item row="2" column="0">
-                    <widget class="QWidget" name="widget_7" native="true">
+                    <widget class="QWidget" name="wdgOpenID" native="true">
                      <property name="minimumSize">
                       <size>
                        <width>0</width>
@@ -1542,16 +1542,6 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="chkInvertedSlashFilter">
-                  <property name="text">
-                   <string>Inverted Slash</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
                  <spacer name="horizontalSpacer_5">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -1563,6 +1553,23 @@
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="chkOnlySlash">
+                  <property name="text">
+                   <string>Only Slash</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="chkInvertedSlashFilter">
+                  <property name="text">
+                   <string>No Slash</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>

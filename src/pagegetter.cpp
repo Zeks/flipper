@@ -108,30 +108,33 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     bool dbOpen = db.isOpen();
     if(!dbOpen)
         return result;
-    QSqlQuery q(db);
-    q.prepare("select * from PageCache where url like '%' || :URL || '%'");
-    q.bindValue(":URL", url);
-    q.exec();
-    bool dataFound = q.next();
-
-    if(q.lastError().isValid())
     {
-        qDebug() << "Error getting page from database: " << q.lastError();
-        return result;
+        // first we search for the exact page in the database
+        QSqlQuery q(db);
+        q.prepare("select * from PageCache where url = :URL ");
+        q.bindValue(":URL", url);
+        q.exec();
+        bool dataFound = q.next();
+
+        if(q.lastError().isValid())
+        {
+            qDebug() << "Error getting page from database: " << q.lastError();
+            return result;
+        }
+        if(!dataFound)
+            return result;
+        //qDebug() << q.record();
+        result.url = url;
+        result.isValid = true;
+        if(q.value("COMPRESSED").toInt() == 1)
+            result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
+        else
+            result.content = q.value("CONTENT").toByteArray();
+        //result.crossover= q.value("CROSSOVER").toInt();
+        //result.fandom= q.value("FANDOM").toString();
+        result.generated= q.value("GENERATION_DATE").toDateTime();
+        result.type = static_cast<EPageType>(q.value("PAGE_TYPE").toInt());
     }
-    if(!dataFound)
-        return result;
-    //qDebug() << q.record();
-    result.url = url;
-    result.isValid = true;
-    if(q.value("COMPRESSED").toInt() == 1)
-        result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
-    else
-        result.content = q.value("CONTENT").toByteArray();
-    //result.crossover= q.value("CROSSOVER").toInt();
-    //result.fandom= q.value("FANDOM").toString();
-    result.generated= q.value("GENERATION_DATE").toDateTime();
-    result.type = static_cast<EPageType>(q.value("PAGE_TYPE").toInt());
     return result;
 }
 

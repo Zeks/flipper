@@ -59,6 +59,7 @@ files: [
         "include/parsers/ffn/ffnparserbase.h",
         "include/parsers/ffn/ficparser.h",
         "include/parsers/ffn/fandomindexparser.h",
+        "include/timeutils.h",
         "src/actionprogress.cpp",
         "include/actionprogress.h",
         "UI/actionprogress.ui",

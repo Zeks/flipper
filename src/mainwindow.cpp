@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "actionprogress.h"
 #include "ui_actionprogress.h"
 #include "pagetask.h"
+#include "timeutils.h"
 #include "regex_utils.h"
 #include "Interfaces/tags.h"
 #include <QMessageBox>
@@ -144,13 +145,13 @@ SplitJobs SplitJob(QString data)
 {
     SplitJobs result;
     int threadCount = QThread::idealThreadCount();
-    QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
+    static QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
 
-    QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
+    static QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
     index = rxAuthorStories.indexIn(data);
     int capturedAuthorStories = data.count(rxAuthorStories);
     result.authorStoryCountInWhole = capturedAuthorStories;
@@ -172,8 +173,8 @@ SplitJobs SplitJob(QString data)
         }
         counter++;
     }while(index != -1);
-    //qDebug() << splitPositions.length() << " parts"; /*of size: " << partSizes.join(", ");*/
-    //qDebug() << "Splitting into: "  << splitPositions;
+
+
     result.parts.reserve(splitPositions.size());
     QStringList partSizes;
     for(int i = 0; i < splitPositions.size(); i++)
@@ -184,7 +185,6 @@ SplitJobs SplitJob(QString data)
             result.parts.push_back({data.mid(splitPositions[i], data.length() - splitPositions[i]),i});
         partSizes.push_back(QString::number(result.parts.last().data.length()));
     }
-    //qDebug() << partSizes.length() << " parts of size: " << partSizes.join(", ");
     return result;
 }
 
@@ -962,22 +962,25 @@ void MainWindow::LoadData()
     //ui->edtResults->insertPlainText(q.lastQuery());
     currentLastFanficId = -1;
     auto rx = GetSlashRegex();
-
+    CommonRegex regexToken;
+    regexToken.Init();
+    regexToken.Log();
     while(q.next())
     {
         counter++;
         bool allow = true;
         auto fic = LoadFanfic(q);
         QRegularExpression slashRx(rx, QRegularExpression::CaseInsensitiveOption);
+        auto containsSlash = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
         if(ui->chkInvertedSlashFilter->isChecked())
         {
-
-            if(fic.summary.contains(slashRx) || fic.charactersFull.contains(slashRx))
-            {
-                qDebug() << fic.summary;
-                //qDebug() << match.capturedTexts();
+            if(containsSlash)
                 allow = false;
-            }
+        }
+        if(ui->chkOnlySlash->isChecked())
+        {
+            if(!containsSlash)
+                allow = false;
         }
         if(allow)
             fanfics.push_back(fic);
@@ -1119,8 +1122,8 @@ SubTaskPtr CreateAdditionalSubtask(PageTaskPtr task)
 
 
 PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms,
-                                                 QString taskComment,
-                                                 bool allowCacheRefresh)
+                                                  QString taskComment,
+                                                  bool allowCacheRefresh)
 {
     database::Transaction transaction(pageTaskInterface->db);
 
@@ -1659,10 +1662,10 @@ void MainWindow::OnDoFormattedListByFandoms()
     }
 
     result += "<ul>";
-//    if(ui->chkGroupFandoms->isChecked())
-//    {
-        for(auto fandomKey : byFandoms.keys())
-            result+= "<li><a href=\"#" + fandomKey.toLower().replace(" ","_") +"\">" + fandomKey + "</a></li>";
+    //    if(ui->chkGroupFandoms->isChecked())
+    //    {
+    for(auto fandomKey : byFandoms.keys())
+        result+= "<li><a href=\"#" + fandomKey.toLower().replace(" ","_") +"\">" + fandomKey + "</a></li>";
     //}
     An<PageManager> pager;
     pager->SetDatabase(QSqlDatabase::database());
@@ -1757,6 +1760,7 @@ void MainWindow::ReadSettings()
     ui->sbMinRecommendations->setVisible(settings.value("Settings/showRecListReload", false).toBool());
     ui->chkShowOrigins->setVisible(settings.value("Settings/showOriginsCheck", false).toBool());
     ui->label_16->setVisible(settings.value("Settings/showRecListReload", false).toBool());
+    ui->wdgOpenID->setVisible(settings.value("Settings/showOpenID", false).toBool());
 
 
     ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
@@ -2450,7 +2454,7 @@ void MainWindow::ReprocessAllAuthors()
     pbMain->setValue(0);
     pbMain->setTextVisible(true);
     pbMain->setFormat("%v");
-
+    int counter = 0;
     QSet<QString> fandoms;
     QList<core::FicRecommendation> recommendations;
     auto fanficsInterface = this->fanficsInterface;
@@ -2465,19 +2469,24 @@ void MainWindow::ReprocessAllAuthors()
 
     for(auto author: authors)
     {
+        counter++;
+        auto startPageProcess = std::chrono::high_resolution_clock::now();
         QList<QSharedPointer<core::Fic>> sections;
         QList<QFuture<FavouriteStoryParser>> futures;
         QSet<int> uniqueAuthors;
         authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
-        auto startPageRequest = std::chrono::high_resolution_clock::now();
-        auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
-        auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-        auto startPageProcess = std::chrono::high_resolution_clock::now();
-        FavouriteStoryParser parser(fanficsInterface);
-        //parser.ProcessPage(page.url, page.content);
+        WebPage page;
+        TimedAction fetchAction("Fetch", [&](){
+            page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+        });
+        fetchAction.run();
 
-        auto splittings = SplitJob(page.content);
+        SplitJobs splittings;
+        TimedAction splitAction("Split", [&](){
+            splittings = SplitJob(page.content);
+        });
+        splitAction.run(false);
+        TimedAction parseAction("Parse", [&](){
         for(auto part: splittings.parts)
         {
             futures.push_back(QtConcurrent::run(job, page.url, part.data));
@@ -2486,36 +2495,44 @@ void MainWindow::ReprocessAllAuthors()
         {
             future.waitForFinished();
         }
+        });
+        parseAction.run();
 
         ////
         FavouriteStoryParser sumParser;
         sumParser.SetAuthor(author);
 
-        QList<FavouriteStoryParser> finishedParsers;
-        for(auto actualParser: futures)
-            finishedParsers.push_back(actualParser.result());
-
-        FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
-        authorsInterface->UpdateAuthorRecord(author);
-
-        for(auto actualParser: finishedParsers)
-            sumParser.processedStuff+=actualParser.processedStuff;
-        ////
+        if(true)
         {
-            WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
-            if(fanficsInterface->skippedCounter > 0)
-                qDebug() << "skipped: " << fanficsInterface->skippedCounter;
+            QList<FavouriteStoryParser> finishedParsers;
+            for(auto actualParser: futures)
+                finishedParsers.push_back(actualParser.result());
+
+            FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
+            authorsInterface->UpdateAuthorRecord(author);
+
+//            for(auto actualParser: finishedParsers)
+//                sumParser.processedStuff+=actualParser.processedStuff;
+            ////
+            {
+                //WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
+//                if(fanficsInterface->skippedCounter > 0)
+//                    qDebug() << "skipped: " << fanficsInterface->skippedCounter;
+            }
+
         }
 
         ui->edtResults->clear();
-        ui->edtResults->insertHtml(parser.diagnostics.join(""));
+        //ui->edtResults->insertHtml(parser.diagnostics.join(""));
         pbMain->setValue(pbMain->value()+1);
         pbMain->setTextVisible(true);
         pbMain->setFormat("%v");
+
         QCoreApplication::processEvents();
 
-        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+        auto elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
         qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
     }
     fandomsInterface->RecalculateFandomStats(fandoms.values());
     transaction.finalize();
@@ -2581,7 +2598,11 @@ void MainWindow::on_pbLoadPage_clicked()
     TaskProgressGuard guard(this);
     filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
     //ui->leAuthorUrl->text()
-    LoadAuthor(ui->leAuthorUrl->text());
+
+    TimedAction action("Full open",[&](){
+        LoadAuthor(ui->leAuthorUrl->text());
+    });
+    action.run();
     LoadData();
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
@@ -3093,8 +3114,8 @@ void MainWindow::OnHideFandomResults()
 }
 
 void MainWindow::UpdateCategory(QString cat,
-                    FFNFandomIndexParserBase* parser,
-                    QSharedPointer<interfaces::Fandoms> fandomInterface)
+                                FFNFandomIndexParserBase* parser,
+                                QSharedPointer<interfaces::Fandoms> fandomInterface)
 {
     An<PageManager> pager;
     QString link = "https://www.fanfiction.net" + cat;
@@ -3117,8 +3138,8 @@ void MainWindow::UpdateCategory(QString cat,
                 {
                     url.SetType(cat);
                     //QString urlToPass = url.GetUrl();
-//                    if(url.GetSource() == "ffn" && url.GetUrl().rightRef(1) != "/")
-//                        urlToPass = urlToPass + "/";
+                    //                    if(url.GetSource() == "ffn" && url.GetUrl().rightRef(1) != "/")
+                    //                        urlToPass = urlToPass + "/";
 
                     fandomInterface->AddFandomLink(fandom->GetName(), url);
                 }
@@ -3250,5 +3271,8 @@ void MainWindow::OnOpenAuthorListByID()
     if(!author)
         return;
     ui->leAuthorUrl->setText(author->url("ffn"));
-    on_pbOpenRecommendations_clicked();
+    TimedAction action("Full open",[&](){
+        on_pbOpenRecommendations_clicked();
+    });
+    action.run();
 }

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/core/section.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/parsers/ffn/ffnparserbase.h"
+#include "regex_utils.h"
 #include <QString>
 #include <QSqlDatabase>
 #include <QDateTime>
@@ -26,7 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 class FavouriteStoryParser : public FFNParserBase
 {
 public:
-    FavouriteStoryParser(){}
+    FavouriteStoryParser(){
+        if(!commonRegex.initComplete)
+            commonRegex.Init();
+    }
     FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics);
     QList<QSharedPointer<core::Fic>> ProcessPage(QString url,QString&);
     QString ExtractRecommenderNameFromUrl(QString url);
@@ -54,5 +58,6 @@ public:
     QString authorName;
     QSet<QString> fandoms;
     core::AuthorPtr authorStats;
+    static CommonRegex commonRegex;
 };
 

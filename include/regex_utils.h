@@ -1,6 +1,8 @@
 #pragma once
 #include <QRegExp>
+#include <QRegularExpression>
 #include <QList>
+#include <QHash>
 struct NarrowResult{
     NarrowResult(int first, int second){
         this->first = first;
@@ -119,5 +121,31 @@ QString GetDoubleNarrow(QString text,
                         QString regex1, QString regex2, bool forward1,
                         QString regex3, QString regex4, bool forward2,
                         int lengthOfLastTag);
+//namespace core{ class Fic;}
+struct CommonRegex
+{
+    CommonRegex(){Init();}
+    void Init();
+    void Log();
+    bool ContainsSlash(QString summary, QString characters, QString fandoms) const;
+    bool initComplete = false;
+    QHash<QString, QString> slashRegexPerFandom;
+    QHash<QString, QString> characterSlashPerFandom;
+
+    QString universalSlashRegex;
+    QString notSlash; // universal not slash
+    QString smut; // universal smut
+
+
+    QHash<QString, QRegularExpression> rxHashSlashFandom;
+    QHash<QString, QRegularExpression> rxHashCharacterSlashFandom;
+
+    QRegularExpression rxUniversal;
+    QRegularExpression rxNotSlash; // universal not slash
+    QRegularExpression rxSmut; // universal smut
+
+
+};
+
 QString GetSlashRegex();
 

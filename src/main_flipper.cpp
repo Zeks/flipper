@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
 //    dbfix::FillFFNId(mainDb);
 //    dbfix::ReplaceUrlInLinkedAuthorsWithID(mainDb);
     //dbfix::RebindDuplicateFandoms(mainDb);
+    //dbfix::TrimUserUrls(pageCacheDb);
+
     MainWindow w;
     w.dbInterface = dbInterface;
     w.pageCacheInterface = pageCacheInterface;
