@@ -122,12 +122,17 @@ QString GetDoubleNarrow(QString text,
                         QString regex3, QString regex4, bool forward2,
                         int lengthOfLastTag);
 //namespace core{ class Fic;}
+struct SlashPresence{
+    bool containsSlash = false;
+    bool containsNotSlash = false;
+    bool IsSlash(){return containsSlash && !containsNotSlash;}
+};
 struct CommonRegex
 {
     CommonRegex(){Init();}
     void Init();
     void Log();
-    bool ContainsSlash(QString summary, QString characters, QString fandoms) const;
+    SlashPresence ContainsSlash(QString summary, QString characters, QString fandoms) const;
     bool initComplete = false;
     QHash<QString, QString> slashRegexPerFandom;
     QHash<QString, QString> characterSlashPerFandom;

@@ -971,15 +971,15 @@ void MainWindow::LoadData()
         bool allow = true;
         auto fic = LoadFanfic(q);
         QRegularExpression slashRx(rx, QRegularExpression::CaseInsensitiveOption);
-        auto containsSlash = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
+        auto result = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
         if(ui->chkInvertedSlashFilter->isChecked())
         {
-            if(containsSlash)
+            if(result.IsSlash())
                 allow = false;
         }
         if(ui->chkOnlySlash->isChecked())
         {
-            if(!containsSlash)
+            if(!result.IsSlash())
                 allow = false;
         }
         if(allow)
@@ -2548,18 +2548,27 @@ void MainWindow::ReprocessAllAuthors()
     holder->SetData(fanfics);
 }
 
-inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,QHash<int, int>& slashHash)
+inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,QHash<int, int>& slashHash, bool checkRx)
 {
+    CommonRegex rx;
+    rx.Init();
     for(auto author : authors)
     {
         auto fics = authorsInterface->GetFicList(author);
         for(auto fic : fics)
         {
             auto ficPtr = fanficsInterface->GetFicById(fic);
+
             if(!ficPtr)
             {
                 qDebug() << "Could not load fic pointer:" << fic;
                 continue;
+            }
+            if(checkRx)
+            {
+                auto result = rx.ContainsSlash(ficPtr->summary,ficPtr->charactersFull, ficPtr->fandom);
+                if(result.containsNotSlash)
+                    continue;
             }
             if(ficPtr->rated == "M")
                 slashHash[fic]++;
@@ -2574,6 +2583,7 @@ void MainWindow::CreateListOfSlashCandidates()
 
     auto authors = authorsInterface->GetAllAuthors("ffn", true);
     QHash<int, QList<core::AuthorPtr>> slashAuthors;
+    QList<core::AuthorPtr> notSlashAuthors;
 
     for(auto author : authors)
     {
@@ -2584,18 +2594,67 @@ void MainWindow::CreateListOfSlashCandidates()
             slashAuthors[1].push_back(author);
         if(stats.slashRatio > 0.3)
             slashAuthors[2].push_back(author);
+
+        if(stats.slashRatio < 0.005 && stats.favourites > 5)
+            notSlashAuthors.push_back(author);
     }
     // first is slash certainty, 0 is the highest
     // second is fic id
     // third is fic count
 
     QHash<int, QHash<int, int>> slashFics;
+    QHash<int, int> notSlashFics;
+
+    TimedAction processSlash("ProcSlash", [&](){
     AddToSlashHash(slashAuthors[0], slashFics[0]);
     AddToSlashHash(slashAuthors[1], slashFics[1]);
     AddToSlashHash(slashAuthors[2], slashFics[2]);
+    });
+    processSlash.run();
+
+    TimedAction writeSlashLists("WriteSlash", [&](){
     recsInterface->CreateRecommendationList("SlashSure", slashFics[0]);
     recsInterface->CreateRecommendationList("SlashProbably", slashFics[1]);
     recsInterface->CreateRecommendationList("SlashMaybe", slashFics[2]);
+    });
+    writeSlashLists.run();
+    TimedAction processNotSlash("ProcNotSlash", [&](){
+    AddToSlashHash(notSlashAuthors, notSlashFics, false);
+    });
+    processNotSlash.run();
+    QList<int> intersection;
+    intersection.reserve(50000);
+    TimedAction intersect("Intersect", [&](){
+        for(const auto& fic: slashFics[2].keys())
+        {
+            bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
+            if(notSlashFics.contains(fic) || cantTellReliably)
+                intersection.push_back(fic);
+        }
+//    std::set_intersection(slashFics[2].keys().begin(), slashFics[2].keys().end(),
+//            notSlashFics.keys().begin(), notSlashFics.keys().end(),std::back_inserter(intersection));
+    });
+    intersect.run();
+    qDebug() << intersection;
+    QHash<int, int> filteredSlashFics;
+
+    TimedAction filter("Fill Intersection", [&](){
+    for(auto fic : intersection)
+    {
+        bool notSureIfGood = notSlashFics[fic] < 5;
+        if(notSureIfGood)
+            continue;
+
+        filteredSlashFics[fic]=slashFics[2][fic];
+        slashFics[2].remove(fic);
+    }
+    });
+    filter.run();
+
+    recsInterface->CreateRecommendationList("SlashCleaned", slashFics[2]);
+    recsInterface->CreateRecommendationList("SlashFilteredOut", filteredSlashFics);
+
+
     transaction.finalize();
     // I can create a recommendation list from this
 
@@ -2816,7 +2875,7 @@ void MainWindow::on_pbOpenWholeList_clicked()
 
 void MainWindow::OpenRecommendationList(QString listName)
 {
-    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations,
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
                                        false,
                                        listName);
     filter.sortMode = core::StoryFilter::reccount;

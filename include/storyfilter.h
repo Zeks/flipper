@@ -48,7 +48,8 @@ struct StoryFilter{
     };
     enum EFilterMode{
         filtering_in_fics = 0,
-        filtering_in_recommendations = 1
+        filtering_in_recommendations = 1,
+        filtering_whole_list = 2
     };
     //do I even need that?
     //QString ficCategory;

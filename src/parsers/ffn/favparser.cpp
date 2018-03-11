@@ -124,8 +124,8 @@ inline void UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
     if(fic->summary.contains("crack", Qt::CaseInsensitive))
         wordsKeeper[0]++;
 
-    auto containsSlash = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
-    if(containsSlash)
+    auto result = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
+    if(result.IsSlash())
         wordsKeeper[1]++;
 
     bool hasSmut = fic->summary.contains(QRegularExpression(regexToken.smut, QRegularExpression::CaseInsensitiveOption));

@@ -278,7 +278,7 @@ private:
     void ReprocessAllAuthors();
 
     inline void AddToSlashHash(QList<core::AuthorPtr> authors,
-                               QHash<int, int>& slashHash);
+                               QHash<int, int>& slashHash, bool checkRx = true);
     void CreateListOfSlashCandidates();
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();

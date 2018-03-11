@@ -268,9 +268,9 @@ void CommonRegex::Log()
 //            containsSlash = containsSlash  || characters.contains(QRegularExpression(characterSlashPerFandom[fandom], QRegularExpression::CaseInsensitiveOption));
 //    }
 
-bool CommonRegex::ContainsSlash(QString summary, QString characters, QString fandoms) const
+SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QString fandoms) const
 {
-    bool result = false;
+    SlashPresence result;
     bool containsSlash = false;
     // apply universal regex
     bool doLogging = false;
@@ -319,6 +319,7 @@ bool CommonRegex::ContainsSlash(QString summary, QString characters, QString fan
         }
         containsSlash = containsSlash || match.hasMatch();
     }
+    result.containsSlash = containsSlash;
 
     bool containsNotSlash = false;
 
@@ -330,9 +331,8 @@ bool CommonRegex::ContainsSlash(QString summary, QString characters, QString fan
         qDebug() << match.capturedTexts();\
         qDebug() << "end match";
     }
-    result = containsSlash && !containsNotSlash;
-//    if(result)
-//        result = result;
+    result.containsNotSlash = containsNotSlash;
+
     return result;
 }
 
