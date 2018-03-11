@@ -100,7 +100,7 @@ void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool include
 void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
-bool AssignSlashToFanfic(int fic_id, QSqlDatabase db);
+bool AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
 
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
@@ -159,6 +159,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr au
 DiagnosticSQLResult<bool> WriteAuthorFavouriteFandomStatistics(core::AuthorPtr author, QSqlDatabase db);
 DiagnosticSQLResult<bool> WipeAuthorStatistics(core::AuthorPtr author, QSqlDatabase db);
 DiagnosticSQLResult<QList<int>>  GetAllAuthorRecommendations(int id, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>>  GetAllKnownSlashFics(QSqlDatabase db);
 
 
 QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);

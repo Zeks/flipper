@@ -279,12 +279,13 @@ bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db)
     return true;
 }
 
-bool AssignSlashToFanfic(int fic_id, QSqlDatabase db)
+bool AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db)
 {
-    QString qs = QString("update fanfics set slash_probability = 1 where id = :fic_id");
+    QString qs = QString("update fanfics set slash_probability = 1, slash_source = :source where id = :fic_id");
     QSqlQuery q(db);
     q.prepare(qs);
     q.bindValue(":fic_id", fic_id);
+    q.bindValue(":source", source);
 
     if(!ExecAndCheck(q))
         return false;
@@ -426,6 +427,7 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
     fic->ao3_id = q1.value("AO3_ID").toInt();
     fic->sb_id = q1.value("SB_ID").toInt();
     fic->sv_id = q1.value("SV_ID").toInt();
+    fic->isSlash = q1.value("slash_probability").toDouble() > 0.9;
     return fic;
 }
 
@@ -2911,6 +2913,37 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendations(int id, QSqlDatabase
     return result;
 }
 
+DiagnosticSQLResult<QSet<int> > GetAllKnownSlashFics(QSqlDatabase db)
+{
+    DiagnosticSQLResult<QSet<int>> result;
+    result.success = false;
+
+    QString qs = QString("select count(id) from fanfics where slash_probability > 0.9");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    int size = q.value(0).toInt();
+
+    result.data.reserve(size);
+    qs = QString("select ffn_id from fanfics where slash_probability > 0.9");
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+    while(q.next())
+    {
+        result.data.insert(q.value("ffn_id").toInt());
+    }
+    result.success = true;
+    return result;
+}
+
 DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId, QHash<int, int> fics, QSqlDatabase db)
 {
     DiagnosticSQLResult<bool> result;
@@ -2940,6 +2973,7 @@ DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId, QHash<int, 
 
 
 
+
 }
 
 }
@@ -2962,3 +2996,4 @@ DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId, QHash<int, 
 //    }
 //    return true;
 //}
+

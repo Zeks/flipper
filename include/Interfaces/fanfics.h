@@ -71,9 +71,10 @@ class Fanfics : public IDBWebIDIndex {
     void ClearProcessedHash();
 
     QStringList GetFandomsForFicAsNames(int ficId);
+    QSet<int> GetAllKnownSlashFics();
 
     bool AssignChapter(int, int);
-    bool AssignSlashForFic(int);
+    bool AssignSlashForFic(int, int source);
 
     // update interface
     QReadWriteLock mutex;

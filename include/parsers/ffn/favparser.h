@@ -46,6 +46,9 @@ public:
     void ClearDoneCache();
     void SetCurrentTag(QString);
     void SetAuthor(core::AuthorPtr);
+    void UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
+                                      const CommonRegex& regexToken,
+                                      QHash<int, int>& wordsKeeper);
 
     QStringList diagnostics;
     //QSharedPointer<interfaces::Fandoms> fandomInterface;
@@ -59,5 +62,6 @@ public:
     QSet<QString> fandoms;
     core::AuthorPtr authorStats;
     static CommonRegex commonRegex;
+    QSet<int> knownSlashFics;
 };
 

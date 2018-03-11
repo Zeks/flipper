@@ -2462,9 +2462,11 @@ void MainWindow::ReprocessAllAuthors()
     auto fanficsInterface = this->fanficsInterface;
     auto authorsInterface = this->authorsInterface;
     auto fandomsInterface = this->fandomsInterface;
-    auto job = [fanficsInterface,authorsInterface, fandomsInterface](QString url, QString content){
+    auto slashRepo = fanficsInterface->GetAllKnownSlashFics();
+    auto job = [fanficsInterface,authorsInterface, fandomsInterface, slashRepo](QString url, QString content){
         QList<QSharedPointer<core::Fic> > sections;
         FavouriteStoryParser parser(fanficsInterface);
+        parser.knownSlashFics = slashRepo;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -2568,13 +2570,14 @@ void MainWindow::DetectSlashForEverything()
         auto fic = fanficsInterface->GetFicById(id);
         auto slash = rx.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
         bool isSlash = slashFics.contains(id) || slash.IsSlash();
+        bool slashType = slash.IsSlash() ? 0 : 1;
         if(isSlash)
-            fanficsInterface->AssignSlashForFic(id);
+            fanficsInterface->AssignSlashForFic(id, slashType);
     });
     transaction.finalize();
 }
 
-inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,QHash<int, int>& slashHash, bool checkRx)
+inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors, QHash<int, int>& slashHash, bool checkRx)
 {
     CommonRegex rx;
     rx.Init();
@@ -2596,8 +2599,8 @@ inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,QHash<int,
                 if(result.containsNotSlash)
                     continue;
             }
-            if(ficPtr->rated == "M")
-                slashHash[fic]++;
+            //            if(ficPtr->rated == "M")
+            slashHash[fic]++;
         }
     }
 }
@@ -2618,10 +2621,13 @@ void MainWindow::CreateListOfSlashCandidates()
             slashAuthors[0].push_back(author);
         if(stats.slashRatio > 0.5)
             slashAuthors[1].push_back(author);
+
+        // will need to inject a minimal favourite count clause for fics that are present just once
+        // catching odd slash in other fandoms which should be smut instead
         if(stats.slashRatio > 0.3)
             slashAuthors[2].push_back(author);
 
-        if(stats.slashRatio < 0.005 && stats.favourites > 5)
+        if(stats.slashRatio < 0.01 && stats.favourites > 5)
             notSlashAuthors.push_back(author);
     }
     // first is slash certainty, 0 is the highest
@@ -2632,29 +2638,36 @@ void MainWindow::CreateListOfSlashCandidates()
     QHash<int, int> notSlashFics;
 
     TimedAction processSlash("ProcSlash", [&](){
-    AddToSlashHash(slashAuthors[0], slashFics[0]);
-    AddToSlashHash(slashAuthors[1], slashFics[1]);
-    AddToSlashHash(slashAuthors[2], slashFics[2]);
+        AddToSlashHash(slashAuthors[0], slashFics[0]);
+        AddToSlashHash(slashAuthors[1], slashFics[1]);
+        AddToSlashHash(slashAuthors[2], slashFics[2]);
     });
     processSlash.run();
 
     TimedAction writeSlashLists("WriteSlash", [&](){
-    recsInterface->CreateRecommendationList("SlashSure", slashFics[0]);
-    recsInterface->CreateRecommendationList("SlashProbably", slashFics[1]);
-    recsInterface->CreateRecommendationList("SlashMaybe", slashFics[2]);
+        recsInterface->CreateRecommendationList("SlashSure", slashFics[0]);
+        recsInterface->CreateRecommendationList("SlashProbably", slashFics[1]);
+        recsInterface->CreateRecommendationList("SlashMaybe", slashFics[2]);
     });
     writeSlashLists.run();
     TimedAction processNotSlash("ProcNotSlash", [&](){
-    AddToSlashHash(notSlashAuthors, notSlashFics, false);
+        AddToSlashHash(notSlashAuthors, notSlashFics, false);
     });
     processNotSlash.run();
     QList<int> intersection;
     intersection.reserve(50000);
+    CommonRegex rx;
+    rx.Init();
     TimedAction intersect("Intersect", [&](){
         for(const auto& fic: slashFics[2].keys())
         {
+            auto ficPtr = fanficsInterface->GetFicById(fic);
+            bool soleTMatch = (ficPtr->rated != "M" && slashFics[2][fic]==1);
             bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
-            if(notSlashFics.contains(fic) || cantTellReliably)
+            bool sufficientMatches = notSlashFics[fic] >= 5;
+            auto slashToken = rx.ContainsSlash(ficPtr->summary,ficPtr->charactersFull, ficPtr->fandom);
+            bool definiteSlaslh = slashToken.IsSlash();
+            if(!definiteSlaslh && (cantTellReliably || soleTMatch || sufficientMatches))
                 intersection.push_back(fic);
         }
     });
@@ -2663,15 +2676,11 @@ void MainWindow::CreateListOfSlashCandidates()
     QHash<int, int> filteredSlashFics;
 
     TimedAction filter("Fill Intersection", [&](){
-    for(auto fic : intersection)
-    {
-        bool notSureIfGood = notSlashFics[fic] < 5;
-        if(notSureIfGood)
-            continue;
-
-        filteredSlashFics[fic]=slashFics[2][fic];
-        slashFics[2].remove(fic);
-    }
+        for(auto fic : intersection)
+        {
+            filteredSlashFics[fic]=slashFics[2][fic];
+            slashFics[2].remove(fic);
+        }
     });
     filter.run();
 

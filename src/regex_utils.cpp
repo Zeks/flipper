@@ -201,7 +201,7 @@ void CommonRegex::Init()
     characterSlashPerFandom["Avengers"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
     characterSlashPerFandom["Hobbit"] ="([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])";
 
-    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(slash|yaoi))|(jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\smentor\\s)";
+    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a\\s{0,1}){0,1}(slash|yaoi))|(jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\smentor\\s)";
 
     QString notSlashCharacterSpecialCase;
     notSlashCharacterSpecialCase+="|(naru(to){0,1}\\s{0,1}" + characterSeparator + "\\s{0,1}naru(to){0,1})";

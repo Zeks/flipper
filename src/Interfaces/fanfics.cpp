@@ -194,14 +194,19 @@ QStringList Fanfics::GetFandomsForFicAsNames(int ficId)
     return database::puresql::GetFandomNamesForFicId(ficId, db);
 }
 
+QSet<int> Fanfics::GetAllKnownSlashFics()
+{
+    return database::puresql::GetAllKnownSlashFics(db).data;
+}
+
 bool Fanfics::AssignChapter(int ficId, int chapter)
 {
     return database::puresql::AssignChapterToFanfic(chapter, ficId, db);
 }
 
-bool Fanfics::AssignSlashForFic(int ficId)
+bool Fanfics::AssignSlashForFic(int ficId, int source)
 {
-    return database::puresql::AssignSlashToFanfic(ficId, db);
+    return database::puresql::AssignSlashToFanfic(ficId, source, db);
 }
 
 void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)

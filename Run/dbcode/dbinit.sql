@@ -34,6 +34,7 @@ for_fill integer default 0,
 ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);	
  
 alter table fanfics add column slash_probability real default 0;
+alter table fanfics add column slash_source integer default -1; -- -1 are nothing, 0 are words, 1 is statistics
 
  CREATE VIEW vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,

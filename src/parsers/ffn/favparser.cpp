@@ -117,7 +117,7 @@ inline void UpdateCompleteness(QSharedPointer<core::Fic> fic, QHash<int, int>& u
     else
         unfinishedKeeper[1]++;
 }
-inline void UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
+inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
                                   const CommonRegex& regexToken,
                                   QHash<int, int>& wordsKeeper)
 {
@@ -125,7 +125,9 @@ inline void UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
         wordsKeeper[0]++;
 
     auto result = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
-    if(result.IsSlash())
+    //auto ficPtr = fanfics->GetFicById(fanfics->GetIDFromWebID(fic->ffn_id, "ffn"));
+    bool isInSlashSet = knownSlashFics.size() > 0 && knownSlashFics.contains(fic->ffn_id);
+    if(isInSlashSet || result.IsSlash())
         wordsKeeper[1]++;
 
     bool hasSmut = fic->summary.contains(QRegularExpression(regexToken.smut, QRegularExpression::CaseInsensitiveOption));

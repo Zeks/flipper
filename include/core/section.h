@@ -266,6 +266,7 @@ public:
     QString charactersFull;
     QStringList characters;
     bool isValid =false;
+    bool isSlash = false;
     int authorId = -1;
     QSharedPointer<Author> author;
 

@@ -325,7 +325,7 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
     if(filter.fandom.trimmed().isEmpty())
         return queryString;
     //todo this can be optimized if I pass fandom id directly
-    QString add = " and id in (select fic_id from ficfandoms where fandom_id = (select id from fandomindex where name = '%1')) ";
+    QString add = " and fid in (select fic_id from ficfandoms where fandom_id = (select id from fandomindex where name = '%1')) ";
     queryString+=add.arg(filter.fandom);
     return queryString;
 
