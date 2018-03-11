@@ -971,15 +971,17 @@ void MainWindow::LoadData()
         bool allow = true;
         auto fic = LoadFanfic(q);
         QRegularExpression slashRx(rx, QRegularExpression::CaseInsensitiveOption);
-        auto result = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
-        if(ui->chkInvertedSlashFilter->isChecked())
+        SlashPresence slashToken;
+        if(ui->chkInvertedSlashFilter->isChecked() || ui->chkOnlySlash->isChecked())
+            slashToken = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
+        if(!ui->chkUseDBForSlash->isChecked() && ui->chkInvertedSlashFilter->isChecked())
         {
-            if(result.IsSlash())
+            if(slashToken.IsSlash())
                 allow = false;
         }
-        if(ui->chkOnlySlash->isChecked())
+        if(!ui->chkUseDBForSlash->isChecked() && ui->chkOnlySlash->isChecked())
         {
-            if(!result.IsSlash())
+            if(!slashToken.IsSlash())
                 allow = false;
         }
         if(allow)
@@ -2548,6 +2550,30 @@ void MainWindow::ReprocessAllAuthors()
     holder->SetData(fanfics);
 }
 
+void MainWindow::DetectSlashForEverything()
+{
+    CommonRegex rx;
+    rx.Init();
+
+    TaskProgressGuard guard(this);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+
+    auto ficList = recsInterface->GetAllFicIDs(recsInterface->GetListIdForName("SlashCleaned"));
+    QSet<int> slashFics;
+    slashFics.reserve(ficList.size());
+    for(auto fic: ficList)
+        slashFics.insert(fic);
+    fanficsInterface->ReprocessFics("", "ffn", true, [&](int id){
+        auto fic = fanficsInterface->GetFicById(id);
+        auto slash = rx.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
+        bool isSlash = slashFics.contains(id) || slash.IsSlash();
+        if(isSlash)
+            fanficsInterface->AssignSlashForFic(id);
+    });
+    transaction.finalize();
+}
+
 inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,QHash<int, int>& slashHash, bool checkRx)
 {
     CommonRegex rx;
@@ -2631,8 +2657,6 @@ void MainWindow::CreateListOfSlashCandidates()
             if(notSlashFics.contains(fic) || cantTellReliably)
                 intersection.push_back(fic);
         }
-//    std::set_intersection(slashFics[2].keys().begin(), slashFics[2].keys().end(),
-//            notSlashFics.keys().begin(), notSlashFics.keys().end(),std::back_inserter(intersection));
     });
     intersect.run();
     qDebug() << intersection;
@@ -2982,6 +3006,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.crossoversOnly= ui->chkCrossovers->isChecked();
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
+    filter.includeSlash = ui->chkUseDBForSlash->isChecked() && ui->chkOnlySlash->isChecked();
+    filter.excludeSlash = ui->chkUseDBForSlash->isChecked() && ui->chkInvertedSlashFilter->isChecked();
     filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
@@ -3404,4 +3430,9 @@ void MainWindow::OnOpenAuthorListByID()
 void MainWindow::on_pbCreateSlashList_clicked()
 {
     CreateListOfSlashCandidates();
+}
+
+void MainWindow::on_pbProcessSlash_clicked()
+{
+    DetectSlashForEverything();
 }

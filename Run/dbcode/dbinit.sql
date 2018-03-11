@@ -56,6 +56,7 @@ CREATE INDEX if not exists  I_FANFICS_FFN_ID ON fanfics (ffn_id ASC);
 CREATE INDEX if not exists  I_ALIVE ON fanfics (alive ASC);
 CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
 CREATE INDEX if not exists  I_FOR_FILL ON fanfics (for_fill ASC);
+CREATE INDEX if not exists  I_SLASH ON fanfics (slash_probability ASC);
 
 -- fanfics sequence;
  CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);

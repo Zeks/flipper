@@ -865,6 +865,13 @@
                              </property>
                             </widget>
                            </item>
+                           <item row="1" column="1">
+                            <widget class="QPushButton" name="pbProcessSlash">
+                             <property name="text">
+                              <string>ProcessSlash</string>
+                             </property>
+                            </widget>
+                           </item>
                           </layout>
                          </item>
                          <item>
@@ -1560,6 +1567,13 @@
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="chkUseDBForSlash">
+                  <property name="text">
+                   <string>Use DB</string>
+                  </property>
+                 </widget>
                 </item>
                 <item>
                  <widget class="QCheckBox" name="chkOnlySlash">

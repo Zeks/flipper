@@ -279,6 +279,19 @@ bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db)
     return true;
 }
 
+bool AssignSlashToFanfic(int fic_id, QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set slash_probability = 1 where id = :fic_id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":fic_id", fic_id);
+
+    if(!ExecAndCheck(q))
+        return false;
+    return true;
+
+}
+
 bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db)
 {
     QString qs = QString("update fanfics set at_chapter = :chapter where id = :fic_id");
@@ -1273,6 +1286,37 @@ QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db)
             result.reserve(q.value(0).toInt());
         auto id = q.value(1).toInt();
         result.push_back(id);
+    }
+    return result;
+}
+DiagnosticSQLResult<QVector<int>> GetIdList(QString where, QSqlDatabase db)
+{
+    DiagnosticSQLResult<QVector<int>> result;
+
+    QString qs = QString("select count(id) from fanfics");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    int size = q.value(0).toInt();
+
+    result.data.reserve(size);
+
+
+    qs = QString("select id from fanfics %1 order by id asc");
+    qs = qs.arg(where);
+    q.prepare(qs);
+    if(!ExecAndCheck(q))
+        return result;
+
+    while(q.next())
+    {
+        auto id = q.value(0).toInt();
+        result.data.push_back(id);
     }
     return result;
 }
@@ -2890,6 +2934,7 @@ DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId, QHash<int, 
 
     return result;
 }
+
 
 
 

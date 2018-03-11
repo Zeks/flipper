@@ -57,7 +57,7 @@ class Fanfics : public IDBWebIDIndex {
     virtual int GetIdForUrl(QString url) = 0;
 //    QList<core::Fic>  GetCurrentFicSetForQML();
 
-    bool ReprocessFics(QString where, QString website, std::function<void(int)> f);
+    bool ReprocessFics(QString where, QString website,  bool useDirectIds = false, std::function<void(int)> f = std::function<void(int)>());
 
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
 
@@ -73,6 +73,7 @@ class Fanfics : public IDBWebIDIndex {
     QStringList GetFandomsForFicAsNames(int ficId);
 
     bool AssignChapter(int, int);
+    bool AssignSlashForFic(int);
 
     // update interface
     QReadWriteLock mutex;

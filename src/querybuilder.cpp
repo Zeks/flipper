@@ -95,6 +95,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     QString queryString;
 
     queryString+= ProcessWordcount(filter);
+    queryString+= ProcessSlashMode(filter);
     queryString+= ProcessGenreIncluson(filter);
     queryString+= ProcessWordInclusion(filter);
     queryString+= ProcessBias(filter);
@@ -185,6 +186,16 @@ QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
         queryString += " and wordcount >= :minwordcount ";
     if(filter.maxWords > 0)
         queryString += " and wordcount <= :maxwordcount ";
+    return queryString;
+}
+
+QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter)
+{
+    QString queryString;
+    if(filter.excludeSlash)
+        queryString += " and slash_probability < 0.9 ";
+    if(filter.includeSlash)
+        queryString += " and slash_probability > 0.9 ";
     return queryString;
 }
 
@@ -503,6 +514,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
     QString where;
     {
         where+= ProcessWordcount(filter);
+        where+= ProcessSlashMode(filter);
         where+= ProcessGenreIncluson(filter);
         where+= ProcessWordInclusion(filter);
         where+= ProcessBias(filter);

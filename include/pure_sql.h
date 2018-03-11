@@ -100,6 +100,7 @@ void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool include
 void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
+bool AssignSlashToFanfic(int fic_id, QSqlDatabase db);
 
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
@@ -203,7 +204,7 @@ int GetRecommendationListIdForName(QString name, QSqlDatabase db);
 //will need to add genre tracker on ffn in case it'sever expanded
 bool IsGenreList(QStringList list, QString website, QSqlDatabase db);
 
-QVector<int> GetIdList(QString where, QSqlDatabase db);
+DiagnosticSQLResult<QVector<int>> GetIdList(QString where, QSqlDatabase db);
 QVector<int> GetWebIdList(QString where, QString website, QSqlDatabase db);
 bool DeactivateStory(int id, QString website, QSqlDatabase db);
 

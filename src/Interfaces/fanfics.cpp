@@ -158,9 +158,13 @@ int Fanfics::GetWebIDFromID(int id, QString website)
     return result.id;
 }
 
-bool Fanfics::ReprocessFics(QString where, QString website, std::function<void (int)> f)
+bool Fanfics::ReprocessFics(QString where, QString website, bool useDirectIds, std::function<void (int)> f)
 {
-    auto list = database::puresql::GetWebIdList(where, website, db);
+    QVector<int> list;
+    if(useDirectIds)
+        list = database::puresql::GetIdList(where, db).data;
+    else
+        list = database::puresql::GetWebIdList(where, website, db);
     if(list.empty())
         return false;
     for(auto id : list)
@@ -193,6 +197,11 @@ QStringList Fanfics::GetFandomsForFicAsNames(int ficId)
 bool Fanfics::AssignChapter(int ficId, int chapter)
 {
     return database::puresql::AssignChapterToFanfic(chapter, ficId, db);
+}
+
+bool Fanfics::AssignSlashForFic(int ficId)
+{
+    return database::puresql::AssignSlashToFanfic(ficId, db);
 }
 
 void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)

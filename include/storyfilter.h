@@ -64,6 +64,8 @@ struct StoryFilter{
     bool allowUnfinished = true;
     bool allowNoGenre = true;
     bool showOriginsInLists = false;
+    bool excludeSlash = false;
+    bool includeSlash = false;
 
 
     int useThisRecommenderOnly = -1;

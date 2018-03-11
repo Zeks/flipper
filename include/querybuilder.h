@@ -55,6 +55,7 @@ protected:
     QString ProcessTags(StoryFilter);
     QString ProcessUrl(StoryFilter);
     QString ProcessWordcount(StoryFilter);
+    QString ProcessSlashMode(StoryFilter);
     QString ProcessGenreIncluson(StoryFilter);
     QString ProcessWordInclusion(StoryFilter);
     QString ProcessActiveRecommendationsPart(StoryFilter);

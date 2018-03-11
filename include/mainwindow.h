@@ -276,6 +276,7 @@ private:
     void CreateSimilarListForGivenFic(int);
 
     void ReprocessAllAuthors();
+    void DetectSlashForEverything();
 
     inline void AddToSlashHash(QList<core::AuthorPtr> authors,
                                QHash<int, int>& slashHash, bool checkRx = true);
@@ -500,6 +501,8 @@ private slots:
     void OnOpenAuthorListByID();
 
     void on_pbCreateSlashList_clicked();
+
+    void on_pbProcessSlash_clicked();
 
 signals:
 
