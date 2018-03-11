@@ -120,6 +120,7 @@ public:
 
     double crackRatio = 0.0;
     double slashRatio = 0.0;
+    double notSlashRatio = 0.0;
     double smutRatio = 0.0;
     //double moodDiversityFactor = 0.0;
 

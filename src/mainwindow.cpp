@@ -2487,14 +2487,14 @@ void MainWindow::ReprocessAllAuthors()
         });
         splitAction.run(false);
         TimedAction parseAction("Parse", [&](){
-        for(auto part: splittings.parts)
-        {
-            futures.push_back(QtConcurrent::run(job, page.url, part.data));
-        }
-        for(auto future: futures)
-        {
-            future.waitForFinished();
-        }
+            for(auto part: splittings.parts)
+            {
+                futures.push_back(QtConcurrent::run(job, page.url, part.data));
+            }
+            for(auto future: futures)
+            {
+                future.waitForFinished();
+            }
         });
         parseAction.run(false);
 
@@ -2511,13 +2511,13 @@ void MainWindow::ReprocessAllAuthors()
             FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
             authorsInterface->UpdateAuthorRecord(author);
 
-//            for(auto actualParser: finishedParsers)
-//                sumParser.processedStuff+=actualParser.processedStuff;
+            //            for(auto actualParser: finishedParsers)
+            //                sumParser.processedStuff+=actualParser.processedStuff;
             ////
             {
                 //WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
-//                if(fanficsInterface->skippedCounter > 0)
-//                    qDebug() << "skipped: " << fanficsInterface->skippedCounter;
+                //                if(fanficsInterface->skippedCounter > 0)
+                //                    qDebug() << "skipped: " << fanficsInterface->skippedCounter;
             }
 
         }
@@ -2547,6 +2547,69 @@ void MainWindow::ReprocessAllAuthors()
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
 }
+
+inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,QHash<int, int>& slashHash)
+{
+    for(auto author : authors)
+    {
+        auto fics = authorsInterface->GetFicList(author);
+        for(auto fic : fics)
+        {
+            auto ficPtr = fanficsInterface->GetFicById(fic);
+            if(!ficPtr)
+            {
+                qDebug() << "Could not load fic pointer:" << fic;
+                continue;
+            }
+            if(ficPtr->rated == "M")
+                slashHash[fic]++;
+        }
+    }
+}
+
+void MainWindow::CreateListOfSlashCandidates()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    QHash<int, QList<core::AuthorPtr>> slashAuthors;
+
+    for(auto author : authors)
+    {
+        auto& stats = author->stats.favouriteStats;
+        if(stats.slashRatio > 0.7)
+            slashAuthors[0].push_back(author);
+        if(stats.slashRatio > 0.5)
+            slashAuthors[1].push_back(author);
+        if(stats.slashRatio > 0.3)
+            slashAuthors[2].push_back(author);
+    }
+    // first is slash certainty, 0 is the highest
+    // second is fic id
+    // third is fic count
+
+    QHash<int, QHash<int, int>> slashFics;
+    AddToSlashHash(slashAuthors[0], slashFics[0]);
+    AddToSlashHash(slashAuthors[1], slashFics[1]);
+    AddToSlashHash(slashAuthors[2], slashFics[2]);
+    recsInterface->CreateRecommendationList("SlashSure", slashFics[0]);
+    recsInterface->CreateRecommendationList("SlashProbably", slashFics[1]);
+    recsInterface->CreateRecommendationList("SlashMaybe", slashFics[2]);
+    transaction.finalize();
+    // I can create a recommendation list from this
+
+}
+
+//QHash<int, int> MainWindow::CreateListOfNotSlashFics()
+//{
+
+//}
+
+//QHash<int, int> MainWindow::MatchSlashToNotSlash()
+//{
+
+//}
 
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
@@ -2791,6 +2854,8 @@ int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> pa
     qDebug() << "count of author ids: " << allAuthors.size();
     QList<int> filteredAuthors;
     filteredAuthors.reserve(allAuthors.size()/10);
+
+    //QSharedPointer<core::RecommendationList> params
     auto listId = recsInterface->GetListIdForName(params->name);
     recsInterface->DeleteList(listId);
     recsInterface->LoadListIntoDatabase(params);
@@ -3275,4 +3340,9 @@ void MainWindow::OnOpenAuthorListByID()
         on_pbOpenRecommendations_clicked();
     });
     action.run();
+}
+
+void MainWindow::on_pbCreateSlashList_clicked()
+{
+    CreateListOfSlashCandidates();
 }

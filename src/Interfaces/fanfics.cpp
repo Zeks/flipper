@@ -135,7 +135,12 @@ bool Fanfics::LoadFicToDB(core::FicPtr fic)
 
 core::FicPtr Fanfics::GetFicById(int id)
 {
-    return database::puresql::GetFicById(id, db);
+    if(idIndex.contains(id))
+        return idIndex[id];
+
+    auto fic = database::puresql::GetFicById(id, db);
+    AddFicToIndex(fic);
+    return fic;
 }
 
 

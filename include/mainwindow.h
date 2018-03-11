@@ -228,8 +228,8 @@ private:
                                        bool allowCacheRefresh = true);
 
     PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
-                                                     QString taskComment,
-                                                     bool allowCacheRefresh);
+                                          QString taskComment,
+                                          bool allowCacheRefresh);
     void UseFandomTask(PageTaskPtr);
 
     // the actual task that procecces he next wave of authors into database
@@ -277,6 +277,12 @@ private:
 
     void ReprocessAllAuthors();
 
+    inline void AddToSlashHash(QList<core::AuthorPtr> authors,
+                               QHash<int, int>& slashHash);
+    void CreateListOfSlashCandidates();
+//    QHash<int, int> CreateListOfNotSlashFics();
+//    QHash<int, int> MatchSlashToNotSlash();
+
     Ui::MainWindow *ui;
 
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
@@ -317,7 +323,7 @@ private:
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
     QMovie refreshSpin; // an indicator that some work is in progress
-                        // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
+    // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
 
     FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
     TableDataListHolder<core::Fic>* holder = nullptr; // an interface class that model uses to access the data
@@ -492,6 +498,8 @@ private slots:
 
     void on_pbReloadAllAuthors_clicked();
     void OnOpenAuthorListByID();
+
+    void on_pbCreateSlashList_clicked();
 
 signals:
 

@@ -141,6 +141,7 @@ bool Authors::LoadAuthor(QString name, QString website)
     auto author = database::puresql::GetAuthorByNameAndWebsite(name, website,db);
     if(!author)
         return false;
+    database::puresql::LoadAuthorStatistics(author, db);
     AddAuthorToIndex(author);
     return true;
 }
@@ -148,8 +149,11 @@ bool Authors::LoadAuthor(QString name, QString website)
 bool Authors::LoadAuthor(QString website, int id)
 {
     auto author = database::puresql::GetAuthorByIDAndWebsite(id, website, db);
+
     if(!author)
         return false;
+
+    database::puresql::LoadAuthorStatistics(author, db);
     AddAuthorToIndex(author);
     return true;
 }
@@ -159,6 +163,7 @@ bool Authors::LoadAuthor(int id)
     auto author = database::puresql::GetAuthorById(id,db);
     if(!author)
         return false;
+    database::puresql::LoadAuthorStatistics(author, db);
     AddAuthorToIndex(author);
     return true;
 }
@@ -272,6 +277,17 @@ int Authors::GetFicCount(int authorId)
 
 }
 
+QList<int> Authors::GetFicList(core::AuthorPtr author) const
+{
+    QList<int> result;
+    if(!author)
+        return result;
+
+    auto sqlResult = database::puresql::GetAllAuthorRecommendations(author->id,  db);
+    result = sqlResult.data;
+    return result;
+}
+
 int Authors::GetCountOfRecsForTag(int authorId, QString tag)
 {
     auto result = database::puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db);
@@ -281,6 +297,8 @@ int Authors::GetCountOfRecsForTag(int authorId, QString tag)
 bool Authors::LoadAuthors(QString website, bool )
 {
     authors = database::puresql::GetAllAuthors(website, db);
+    for(auto author: authors)
+        database::puresql::LoadAuthorStatistics(author, db);
     if(authors.size() == 0)
         return false;
     Reindex();
@@ -350,8 +368,8 @@ void Authors::AddAuthorToIndex(core::AuthorPtr author)
         authorsByWebID[key][webId] = author;
     }
     authorsById[author->id] = author;
-//    for(auto key : author->GetWebsites())
-//        authorsByUrl[author->url(key)] = author;
+    //    for(auto key : author->GetWebsites())
+    //        authorsByUrl[author->url(key)] = author;
 
 }
 

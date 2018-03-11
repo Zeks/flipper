@@ -341,6 +341,22 @@ bool RecommendationLists::SetFicsAsListOrigin(QList<int> ficIds, int listId)
     return database::puresql::SetFicsAsListOrigin(ficIds,listId, db);
 }
 
+bool RecommendationLists::CreateRecommendationList(QString name, QHash<int, int> fics)
+{
+    QSharedPointer<core::RecommendationList> dummyParams(new core::RecommendationList);
+    dummyParams->name = name;
+    dummyParams->ficCount = fics.keys().size();
+    dummyParams->created = QDateTime::currentDateTime();
+    auto listId = GetListIdForName(name);
+    DeleteList(listId);
+    LoadListIntoDatabase(dummyParams);
+    listId = GetListIdForName(name);
+    if(listId < 0)
+        return false;
+    database::puresql::FillRecommendationListWithData(listId, fics, db);
+    return true;
+}
+
 
 void RecommendationLists::LoadAvailableRecommendationLists()
 {

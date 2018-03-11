@@ -147,6 +147,7 @@ QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase
 
 core::AuthorPtr  GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
 core::AuthorPtr  GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase db);
+DiagnosticSQLResult<bool> LoadAuthorStatistics(core::AuthorPtr, QSqlDatabase db);
 
 core::AuthorPtr  GetAuthorByUrl(QString url,  QSqlDatabase db);
 core::AuthorPtr  GetAuthorById(int id,  QSqlDatabase db);
@@ -156,6 +157,8 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author,
 DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr author, QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteAuthorFavouriteFandomStatistics(core::AuthorPtr author, QSqlDatabase db);
 DiagnosticSQLResult<bool> WipeAuthorStatistics(core::AuthorPtr author, QSqlDatabase db);
+DiagnosticSQLResult<QList<int>>  GetAllAuthorRecommendations(int id, QSqlDatabase db);
+
 
 QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
 QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
@@ -183,6 +186,9 @@ bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
 QStringList GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
 bool SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
+DiagnosticSQLResult<bool>  FillRecommendationListWithData(int listId, QHash<int, int>, QSqlDatabase db);
+
+
 
 bool DeleteTagFromDatabase(QString tag, QSqlDatabase db);
 bool CreateTagInDatabase(QString tag, QSqlDatabase db);

@@ -774,6 +774,71 @@ core::AuthorPtr GetAuthorByIDAndWebsite(int id, QString website, QSqlDatabase db
     return result;
 }
 
+void AuthorStatisticsFromQuery(QSqlQuery& q,  core::AuthorPtr author)
+{
+    core::FicSectionStats& stats = author->stats.favouriteStats;
+    stats.favourites = q.value("favourites").toInt();
+    stats.ficWordCount = q.value("favourites_wordcount").toInt();
+    stats.averageLength = q.value("average_words_per_chapter").toInt();
+    stats.esrbType = static_cast<core::FicSectionStats::ESRBType>(q.value("esrb_type").toInt());
+    stats.prevalentMood = static_cast<core::FicSectionStats::MoodType>(q.value("prevalent_mood").toInt());
+    stats.mostFavouritedSize = static_cast<core::EntitySizeType>(q.value("most_favourited_size").toInt());
+    stats.sectionRelativeSize= static_cast<core::EntitySizeType>(q.value("favourites_type").toInt());
+    stats.averageLength = q.value("average_favourited_length").toDouble();
+    stats.fandomsDiversity = q.value("favourite_fandoms_diversity").toDouble();
+
+    stats.explorerFactor = q.value("explorer_factor").toDouble();
+    stats.megaExplorerFactor= q.value("mega_explorer_factor").toDouble();
+
+    stats.crossoverFactor  = q.value("crossover_factor").toDouble();
+    stats.unfinishedFactor = q.value("unfinished_factor").toDouble();
+
+    stats.esrbUniformityFactor = q.value("esrb_uniformity_factor").toDouble();
+    stats.esrbKiddy= q.value("esrb_kiddy").toDouble();
+    stats.esrbMature= q.value("esrb_mature").toDouble();
+
+    stats.genreDiversityFactor = q.value("genre_diversity_factor").toDouble();
+    stats.moodUniformity = q.value("mood_uniformity_factor").toDouble();
+
+    stats.moodSad= q.value("mood_sad").toDouble();
+    stats.moodNeutral= q.value("mood_neutral").toDouble();
+    stats.moodHappy= q.value("mood_happy").toDouble();
+
+    stats.crackRatio= q.value("crack_factor").toDouble();
+    stats.smutRatio= q.value("smut_factor").toDouble();
+    stats.slashRatio= q.value("slash_factor").toDouble();
+    stats.notSlashRatio= q.value("not_slash_factor").toDouble();
+    stats.prevalentGenre = q.value("prevalent_genre").toString();
+
+
+    stats.sizeFactors[0] = q.value("size_tiny").toDouble();
+    stats.sizeFactors[1] =  q.value("size_medium").toDouble();
+    stats.sizeFactors[2] =  q.value("size_large").toDouble();
+    stats.sizeFactors[3] = q.value("size_huge").toDouble();
+    stats.firstPublished = q.value("first_published").toDate();
+    stats.lastPublished= q.value("last_published").toDate();
+}
+
+DiagnosticSQLResult<bool> LoadAuthorStatistics(core::AuthorPtr author, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString qs = QString("select * from AuthorFavouritesStatistics  where author_id = :id");
+
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id",author->id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    AuthorStatisticsFromQuery(q, author);
+    return result;
+}
+
 core::AuthorPtr GetAuthorByUrl(QString url, QSqlDatabase db)
 {
     core::AuthorPtr result;
@@ -2768,6 +2833,64 @@ DiagnosticSQLResult<bool> WipeAuthorStatistics(core::AuthorPtr author, QSqlDatab
 
     return result;
 }
+
+DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendations(int id, QSqlDatabase db)
+{
+    DiagnosticSQLResult<QList<int>> result;
+    result.success = false;
+
+    QString qs = QString("select count(recommender_id) from recommendations where recommender_id = :id");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    q.bindValue(":id",id);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    int size = q.value(0).toInt();
+
+    result.data.reserve(size);
+    qs = QString("select * from recommendations where recommender_id = :id");
+    q.prepare(qs);
+    q.bindValue(":id", id);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+    while(q.next())
+    {
+        result.data.push_back(q.value("fic_id").toInt());
+    }
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId, QHash<int, int> fics, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString query = "INSERT INTO RecommendationListData ("
+                    "fic_id, list_id, match_count) "
+                    "VALUES ("
+                    ":fic_id, :list_id, :match_count)";
+    QSqlQuery q(db);
+    q.prepare(query);
+    for(auto fic : fics.keys())
+    {
+        q.bindValue(":list_id", listId);
+        q.bindValue(":fic_id", fic);
+        q.bindValue(":match_count",fics[fic]);
+        if(!result.ExecAndCheck(q, true))
+            return result;
+    }
+    result.success = true;
+
+    return result;
+}
+
 
 
 

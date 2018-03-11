@@ -98,7 +98,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>2</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -750,6 +750,26 @@
                          </property>
                          <item>
                           <layout class="QGridLayout" name="gridLayout_14">
+                           <item row="0" column="2">
+                            <widget class="QLabel" name="label_15">
+                             <property name="text">
+                              <string>List Name</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="3">
+                            <widget class="QComboBox" name="cbRecListNames">
+                             <property name="minimumSize">
+                              <size>
+                               <width>150</width>
+                               <height>0</height>
+                              </size>
+                             </property>
+                             <property name="editable">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
                            <item row="0" column="0">
                             <widget class="QPushButton" name="pbBuildRecs">
                              <property name="minimumSize">
@@ -763,34 +783,21 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="0" column="1">
-                            <widget class="QLabel" name="label_15">
-                             <property name="text">
-                              <string>List Name</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="0" column="2">
-                            <widget class="QComboBox" name="cbRecListNames">
-                             <property name="minimumSize">
-                              <size>
-                               <width>150</width>
-                               <height>0</height>
-                              </size>
-                             </property>
-                             <property name="editable">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="0" column="3" colspan="3">
+                           <item row="0" column="4" colspan="3">
                             <widget class="QLabel" name="label_10">
                              <property name="text">
                               <string>Build recommendations on tag: </string>
                              </property>
                             </widget>
                            </item>
-                           <item row="0" column="6" colspan="3">
+                           <item row="1" column="2">
+                            <widget class="QLabel" name="label_12">
+                             <property name="text">
+                              <string>Min match count:</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="7" colspan="3">
                             <widget class="QComboBox" name="cbRecTagBuildGroup">
                              <property name="minimumSize">
                               <size>
@@ -803,28 +810,42 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="1">
-                            <widget class="QLabel" name="label_12">
-                             <property name="text">
-                              <string>Min match count:</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="2">
+                           <item row="1" column="3">
                             <widget class="QSpinBox" name="sbMinRecMatch">
                              <property name="value">
                               <number>1</number>
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="3">
+                           <item row="1" column="4">
                             <widget class="QLabel" name="label_13">
                              <property name="text">
                               <string>Threshold ratio:</string>
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="4">
+                           <item row="1" column="0">
+                            <widget class="QPushButton" name="pbReprocessAuthors">
+                             <property name="text">
+                              <string>Build from File</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="8">
+                            <widget class="QSpinBox" name="sbAlwaysPickRecAt">
+                             <property name="value">
+                              <number>1</number>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="7">
+                            <widget class="QLabel" name="label_14">
+                             <property name="text">
+                              <string>Always pick on:</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="5">
                             <widget class="QDoubleSpinBox" name="dsbMinRecThreshhold">
                              <property name="suffix">
                               <string/>
@@ -837,24 +858,10 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="6">
-                            <widget class="QLabel" name="label_14">
+                           <item row="0" column="1">
+                            <widget class="QPushButton" name="pbCreateSlashList">
                              <property name="text">
-                              <string>Always pick on:</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="7">
-                            <widget class="QSpinBox" name="sbAlwaysPickRecAt">
-                             <property name="value">
-                              <number>1</number>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="0">
-                            <widget class="QPushButton" name="pbReprocessAuthors">
-                             <property name="text">
-                              <string>Build from File</string>
+                              <string>CreateSlashList</string>
                              </property>
                             </widget>
                            </item>

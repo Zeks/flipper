@@ -68,6 +68,7 @@ public:
     QStringList GetAllAuthorsFavourites(int id);
     QList<int> GetAllAuthorIds();
     int GetFicCount(int authorId);
+    QList<int> GetFicList(core::AuthorPtr author) const;
     int GetCountOfRecsForTag(int authorId, QString tag);
     QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list);
     //bool UploadLinkedAuthorsForAuthor(int authorId, QStringList);

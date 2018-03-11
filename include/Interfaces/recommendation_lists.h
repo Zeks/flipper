@@ -66,6 +66,8 @@ public:
     bool SetFicsAsListOrigin(QList<int> ficIds, int listId);
     bool IsAuthorInCurrentRecommendationSet(QString author);
 
+    bool CreateRecommendationList(QString name, QHash<int, int> fics);
+
     QStringList GetAllRecommendationListNames(bool forced = false);
     QList<core::AuhtorStatsPtr> GetAuthorStatsForList(int id, bool forced = false);
     core::AuhtorStatsPtr GetIndividualAuthorStatsForList(int id, int authorId);
