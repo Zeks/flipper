@@ -170,12 +170,14 @@ QString BouncingSearch(QString str, FieldSearcher finder)
 
 void CommonRegex::Init()
 {
-    universalSlashRegex = "(slash)|(\\smm(\\s|[,]))|(yaoi)|(lgbt)|((\\s|^|[.,])m[-/*x]m(\\s|$|[,.]))|(sho[u]{0,1}nen\\sai)|(\\sgay(\\s|[.]))|"
+    universalSlashRegex = "(slash([^a-z]|$))|(\\smm(\\s|[,]))|(yaoi)|(lgbt)|((\\s|^|[.,])m[-/*x]m(\\s|$|[,.]))|(sho[u]{0,1}nen[\\s-]ai)|(\\sgay(\\s|[.]))|"
                           "(queer)|(mpreg)|(boy\\slove)|((boy|guy)\\s{0,1}x\\s{0,1}(boy|guy))|(homosexual)|(00q)|((\\s|[.])(k|s|^)[-/*x&]{1}(k|s)(\\s|[.]|$))|"
                           "(\\stop[!][a-z])|(\\sbottom[!][a-z])";
 
-    QString characterSeparator = "\\s{0,1}[-/*x]{1}\\s{0,1}";
-    QString names = "((harry)|(hp)|(cedric)|(lv)|(lucius)|(ss)|(snape)|(sev(erus){0,1})|(draco)|(dm)|(sirius)|(sb)|(remus)|(rl)|(ron)|(rw)|(t[m]{0,1}r)|(voldemort)|(voldie))";
+    QString characterSeparator = "((\\s{0,1}[-/\\*x]{1}\\s{0,1})|([-/\\*x]{0,1}))";
+    QString names = "((harry)|(hp)|(cedric)|(lv)|(lucius)|(lm)|(ss)|(snape)|(sev(erus){0,1})"
+                    "|(draco)|(dm)|(sirius)|(sb)|(remus)|(rl)|(ron)|(rw)|(t[m]{0,1}r)|(voldemort)"
+                    "|(voldie)|(fenrir))";
     QString fixedNamesOnly = names + characterSeparator + names;
     QString fixedHpTerms = "(snarry)|(harrymort)|(drarry)";
     QString fixedHpFull = fixedHpTerms + "|(" + fixedNamesOnly + ")";
@@ -190,6 +192,7 @@ void CommonRegex::Init()
     names = "((ichi(go){0,1})|(ren(ji){0,1})|(zara(ki){0,1})|(hi(tsugaya){0,1})|(ikka(ku){0,1})|(byaku(ya){0,1})|(chad))";
     fixedNamesOnly = names + characterSeparator + names;
     slashRegexPerFandom["Bleach"] = fixedNamesOnly;
+    slashRegexPerFandom["Death Note"] = "(L/Light)|(Light/L)";
 
 
     characterSlashPerFandom["Naruto"] = "([\\[]Naruto\\sU[.][,]\\sSasuke\\sU[.][\\]])";
@@ -198,12 +201,13 @@ void CommonRegex::Init()
     characterSlashPerFandom["Avengers"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
     characterSlashPerFandom["Hobbit"] ="([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])";
 
-    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-)(slash|yaoi))|(jack\\sslash)|(fem[!]{0,1})|(naruko)|(\\sfem\\s)|(\\smentor)";
+    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(slash|yaoi))|(jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\smentor\\s)";
 
     QString notSlashCharacterSpecialCase;
     notSlashCharacterSpecialCase+="|(naru(to){0,1}\\s{0,1}" + characterSeparator + "\\s{0,1}naru(to){0,1})";
     notSlashCharacterSpecialCase+="|(harry\\s{0,1}" + characterSeparator + "\\s{0,1}harry)";
     notSlashCharacterSpecialCase+="|(ichigo\\s{0,1}" + characterSeparator + "\\s{0,1}ichigo)";
+    notSlashCharacterSpecialCase+="|femnaru|femharry|femichi";
     notSlash+=notSlashCharacterSpecialCase;
 
     smut = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)|"
@@ -269,15 +273,18 @@ bool CommonRegex::ContainsSlash(QString summary, QString characters, QString fan
     bool result = false;
     bool containsSlash = false;
     // apply universal regex
-
-    auto match = rxUniversal.match(summary);
+    bool doLogging = false;
+    QRegularExpressionMatch match;
+    match = rxUniversal.match(summary);
     containsSlash = match.hasMatch();
-    if(true && containsSlash)
+
+    if(doLogging && containsSlash)
     {
         qDebug().noquote() << summary;
         qDebug().noquote() << match.capturedTexts();
         qDebug().noquote() << "end match";
     }
+
 
     for(auto fandom : slashRegexPerFandom.keys())
     {
@@ -288,7 +295,7 @@ bool CommonRegex::ContainsSlash(QString summary, QString characters, QString fan
             match = rxHashSlashFandom[fandom].match(summary);
         }
         containsSlash = containsSlash || match.hasMatch();
-        if(true && match.hasMatch())
+        if(doLogging && match.hasMatch())
         {
             qDebug().noquote() << slashRegexPerFandom[fandom];
             qDebug().noquote() << summary;
@@ -304,7 +311,7 @@ bool CommonRegex::ContainsSlash(QString summary, QString characters, QString fan
         {
             match = rxHashCharacterSlashFandom[fandom].match(characters);
         }
-        if(true && match.hasMatch())
+        if(doLogging && match.hasMatch())
         {
             qDebug().noquote() << summary;
             qDebug() << match.capturedTexts();\
@@ -316,7 +323,13 @@ bool CommonRegex::ContainsSlash(QString summary, QString characters, QString fan
     bool containsNotSlash = false;
 
     match = rxNotSlash.match(summary);
-    containsNotSlash = match.hasMatch();
+    containsNotSlash = match.hasMatch() || characters.contains("Minerva");
+    if(doLogging && match.hasMatch())
+    {
+        qDebug().noquote() << summary;
+        qDebug() << match.capturedTexts();\
+        qDebug() << "end match";
+    }
     result = containsSlash && !containsNotSlash;
 //    if(result)
 //        result = result;

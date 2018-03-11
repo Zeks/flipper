@@ -2479,7 +2479,7 @@ void MainWindow::ReprocessAllAuthors()
         TimedAction fetchAction("Fetch", [&](){
             page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
         });
-        fetchAction.run();
+        fetchAction.run(false);
 
         SplitJobs splittings;
         TimedAction splitAction("Split", [&](){
@@ -2496,7 +2496,7 @@ void MainWindow::ReprocessAllAuthors()
             future.waitForFinished();
         }
         });
-        parseAction.run();
+        parseAction.run(false);
 
         ////
         FavouriteStoryParser sumParser;
@@ -2531,7 +2531,7 @@ void MainWindow::ReprocessAllAuthors()
         QCoreApplication::processEvents();
 
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
-        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        //qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
     }
     fandomsInterface->RecalculateFandomStats(fandoms.values());
