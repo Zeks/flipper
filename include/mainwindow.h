@@ -276,6 +276,7 @@ private:
     void CreateSimilarListForGivenFic(int);
 
     void ReprocessAllAuthors();
+    void ReprocessAllAuthorsV2();
     void DetectSlashForEverything();
 
     inline void AddToSlashHash(QList<core::AuthorPtr> authors,

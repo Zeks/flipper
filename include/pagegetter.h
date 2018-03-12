@@ -99,6 +99,7 @@ struct WebPage
     bool isLastPage = false;
     bool isFromCache = false;
     int pageIndex = 0;
+    int id = -1;
     QString LoadedIn() {
         QString decimal = QString::number(loadedIn/1000000);
         int offset = decimal == "0" ? 0 : decimal.length();

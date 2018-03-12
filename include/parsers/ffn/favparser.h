@@ -54,6 +54,7 @@ public:
     //QSharedPointer<interfaces::Fandoms> fandomInterface;
     QList<QSharedPointer<core::Fic>> processedStuff;
     static void MergeStats(core::AuthorPtr,  QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers);
+    static void MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<core::FicSectionStatsTemporaryToken> tokens);
     core::FicSectionStatsTemporaryToken statToken;
     core::FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
@@ -61,7 +62,7 @@ public:
     QString authorName;
     QSet<QString> fandoms;
     core::AuthorPtr authorStats;
-    static CommonRegex commonRegex;
+    CommonRegex commonRegex;
     QSet<int> knownSlashFics;
 };
 

@@ -194,20 +194,21 @@ void CommonRegex::Init()
     slashRegexPerFandom["Bleach"] = fixedNamesOnly;
     slashRegexPerFandom["Death Note"] = "(L/Light)|(Light/L)";
 
-
     characterSlashPerFandom["Naruto"] = "([\\[]Naruto\\sU[.][,]\\sSasuke\\sU[.][\\]])";
     characterSlashPerFandom["Naruto"] += "|([\\[]Kakashi\\sH[.][,]\\sIruka\\sU[.][\\]])";
     characterSlashPerFandom["Thor"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
     characterSlashPerFandom["Avengers"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
     characterSlashPerFandom["Hobbit"] ="([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])";
 
-    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a\\s{0,1}){0,1}(slash|yaoi))|(jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\smentor\\s)";
+    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a(\\s{0,1})){0,1}(slash|yaoi))|(jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\sfem-)|(fem(m){0,1}(e){0,1}slash)|(\\smentor\\s)"
+               "|(f/f)";
 
     QString notSlashCharacterSpecialCase;
     notSlashCharacterSpecialCase+="|(naru(to){0,1}\\s{0,1}" + characterSeparator + "\\s{0,1}naru(to){0,1})";
     notSlashCharacterSpecialCase+="|(harry\\s{0,1}" + characterSeparator + "\\s{0,1}harry)";
     notSlashCharacterSpecialCase+="|(ichigo\\s{0,1}" + characterSeparator + "\\s{0,1}ichigo)";
     notSlashCharacterSpecialCase+="|femnaru|femharry|femichi";
+    notSlashCharacterSpecialCase+="|kagsess|inukag|sesskag";
     notSlash+=notSlashCharacterSpecialCase;
 
     smut = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)|"

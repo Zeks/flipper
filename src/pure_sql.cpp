@@ -708,15 +708,19 @@ QList<core::AuthorPtr> GetAllAuthors(QString website,  QSqlDatabase db)
 
     qs = QString("select distinct id,name, url, ffn_id, ao3_id,sb_id, sv_id,  "
                  "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
-                 " from recommenders where website_type = :site");
+                 " from recommenders where website_type = :site order by id");
     q.prepare(qs);
     q.bindValue(":site",website);
     if(!ExecAndCheck(q))
         return result;
 
     result.reserve(size);
+    int counter = 0;
     while(q.next())
     {
+        counter++;
+//        if(counter > 100)
+//            break;
         auto author = AuthorFromQuery(q);
         result.push_back(author);
     }

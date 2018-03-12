@@ -33,6 +33,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "regex_utils.h"
 #include "Interfaces/tags.h"
 #include <QMessageBox>
+#include <QReadWriteLock>
+#include <QReadLocker>
 #include <QRegExp>
 #include <QDebug>
 #include <QSqlQuery>
@@ -141,17 +143,21 @@ QString ParseAuthorNameFromFavouritePage(QString data)
     return result;
 }
 
-SplitJobs SplitJob(QString data)
+SplitJobs SplitJob(QString data, bool splitOnThreads = true)
 {
     SplitJobs result;
-    int threadCount = QThread::idealThreadCount();
-    static QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
+    int threadCount;
+    if(splitOnThreads)
+        threadCount = QThread::idealThreadCount();
+    else
+        threadCount = 50;
+    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
 
-    static QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
+    thread_local QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
     index = rxAuthorStories.indexIn(data);
     int capturedAuthorStories = data.count(rxAuthorStories);
     result.authorStoryCountInWhole = capturedAuthorStories;
@@ -160,8 +166,8 @@ SplitJobs SplitJob(QString data)
     //qDebug() << "In packs of "  << partSize;
     index = 0;
 
-    if(partSize < 70)
-        partSize = 70;
+    if(partSize < 40)
+        partSize = 40;
 
     QList<int> splitPositions;
     int counter = 0;
@@ -2443,6 +2449,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     OpenRecommendationList("similar");
 }
 
+
 void MainWindow::ReprocessAllAuthors()
 {
     TaskProgressGuard guard(this);
@@ -2551,6 +2558,208 @@ void MainWindow::ReprocessAllAuthors()
     ui->edtResults->setReadOnly(true);
     holder->SetData(fanfics);
 }
+struct UserPagePageResult
+{
+    WebPage page;
+    int authorId = -1;
+    bool finished = false;
+};
+
+
+struct UserPageSource
+{
+    QList<WebPage>pages;
+    int initialSize = 0;
+    UserPagePageResult Get(){
+        QWriteLocker locker(&lock);
+
+        UserPagePageResult result;
+        if(pages.size() == 0)
+        {
+            result.finished = true;
+            return result;
+        }
+        result.page = pages.last();
+        pages.pop_back();
+        return result;
+    }
+    void Push(WebPage token){
+        QWriteLocker locker(&lock);
+        pages.push_back(token);
+    }
+    void Reserve(int size)
+    {
+        QReadLocker locker(&lock);
+        pages.clear();
+        pages.reserve(size);
+    }
+    int GetInitialSize() const {
+        QReadLocker locker(&lock);
+        return initialSize;
+    }
+    mutable QReadWriteLock lock;
+};
+
+struct UserPageSink
+{
+    QList<core::FicSectionStatsTemporaryToken>tokens;
+    int currentSize = 0;
+    void Push(core::FicSectionStatsTemporaryToken token){
+        QWriteLocker locker(&lock);
+        tokens.push_back(token);
+        currentSize++;
+    }
+    int GetSize() const {
+        QReadLocker locker(&lock);
+        return tokens.size();
+    }
+    mutable QReadWriteLock lock;
+};
+
+template <typename T, typename Y>
+void Combine(QHash<T, Y>& firstHash, QHash<T, Y> secondHash)
+{
+    for(auto key: secondHash.keys())
+    {
+        firstHash[key] += secondHash[key];
+    }
+}
+
+void MainWindow::ReprocessAllAuthorsV2()
+{
+    TaskProgressGuard guard(this);
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+
+    UserPageSource source;
+    UserPageSink sink;
+
+    QHash<int, QList<WebPage>>pages;
+    int counter = 0;
+
+    int chunkSize = 10001;
+    source.Reserve(chunkSize);
+    qDebug() << "loading pages";
+    int authorsSize = authors.size();
+    for(auto author: authors)
+    {
+        counter++;
+        if(!author)
+            continue;
+
+
+
+        auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+        page.id = author->id;
+        if(!page.isValid)
+            qDebug() << page.url << " is invalid";
+        source.Push(page);
+        if(counter%(chunkSize - 1) == 0 || counter == authorsSize)
+        {
+            source.initialSize = source.pages.size();
+            qDebug() << "starting to process pack: " << counter/1000 << " of size: " << source.GetInitialSize();
+
+
+            int threadCount = 12;
+            auto fanficsInterface = this->fanficsInterface;
+            auto authorsInterface = this->authorsInterface;
+            auto fandomsInterface = this->fandomsInterface;
+            auto slashRepo = fanficsInterface->GetAllKnownSlashFics();
+
+            auto processor = [&source, &sink, &slashRepo, &fanficsInterface](){
+                UserPagePageResult result;
+                FavouriteStoryParser parser(fanficsInterface);
+                parser.knownSlashFics = slashRepo;
+                forever{
+                    result = source.Get();
+                    if(result.finished)
+                    {
+                        qDebug() << "thread stopping";
+                        break;
+                    }
+
+                    SplitJobs splittings;
+                    splittings = SplitJob(result.page.content, false);
+
+                    QList<core::FicSectionStatsTemporaryToken> tokens;
+                    for(auto part: splittings.parts)
+                    {
+                        parser.ClearProcessed();
+                        parser.ProcessPage(result.page.url, part.data);
+                        tokens.push_back(parser.statToken);
+                    }
+                    core::FicSectionStatsTemporaryToken resultingToken;
+                    {
+                        for(auto statToken : tokens)
+                        {
+                            resultingToken.chapterKeeper += statToken.chapterKeeper;
+                            resultingToken.ficCount+= statToken.ficCount;
+
+                            if(!resultingToken.firstPublished.isValid())
+                                resultingToken.firstPublished = statToken.firstPublished;
+                            resultingToken.firstPublished = std::min(statToken.firstPublished, resultingToken.firstPublished);
+                            if(!resultingToken.lastPublished.isValid())
+                                resultingToken.lastPublished = statToken.lastPublished;
+                            resultingToken.lastPublished = std::min(statToken.lastPublished, resultingToken.lastPublished);
+
+                            resultingToken.sizes += statToken.sizes;
+
+                            Combine(resultingToken.crossKeeper, statToken.crossKeeper);
+                            Combine(resultingToken.esrbKeeper, statToken.esrbKeeper);
+                            Combine(resultingToken.fandomKeeper, statToken.fandomKeeper);
+                            Combine(resultingToken.favouritesSizeKeeper, statToken.favouritesSizeKeeper);
+                            Combine(resultingToken.ficSizeKeeper, statToken.ficSizeKeeper);
+                            Combine(resultingToken.genreKeeper, statToken.genreKeeper);
+                            Combine(resultingToken.moodKeeper, statToken.moodKeeper);
+                            Combine(resultingToken.popularUnpopularKeeper, statToken.popularUnpopularKeeper);
+                            Combine(resultingToken.unfinishedKeeper, statToken.unfinishedKeeper);
+                            Combine(resultingToken.wordsKeeper, statToken.wordsKeeper);
+                            resultingToken.wordCount += statToken.wordCount;
+                            if(statToken.bioLastUpdated.isValid())
+                                resultingToken.bioLastUpdated = statToken.bioLastUpdated;
+                            if(statToken.pageCreated.isValid())
+                                resultingToken.pageCreated = statToken.pageCreated;
+                        }
+
+                    }
+
+                    resultingToken.authorId = result.page.id;
+                    sink.Push(resultingToken);
+                }
+            };
+            qDebug() << "running threads pages";
+            for(int i = 0; i <threadCount; i++)
+            {
+                QtConcurrent::run(processor);
+            }
+            TimedAction processSlash("Process Pack", [&](){
+                while(sink.GetSize() != source.GetInitialSize())
+                {
+                    QApplication::processEvents();
+                }
+
+            });
+            processSlash.run();
+            QThread::msleep(100);
+            qDebug() << "writing results, have " << sink.tokens.size() << " tokens to merge";
+            for(auto token: sink.tokens)
+            {
+                auto author = authorsInterface->GetById(token.authorId);
+                FavouriteStoryParser::MergeStats(author,fandomsInterface, {token});
+                authorsInterface->UpdateAuthorRecord(author);
+            }
+            sink.tokens.clear();
+            sink.currentSize = 0;
+            qDebug() << "written results, loading more pages";
+            source.Reserve(chunkSize);
+        }
+
+    }
+    transaction.finalize();
+}
 
 void MainWindow::DetectSlashForEverything()
 {
@@ -2604,6 +2813,7 @@ inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors, QHash<int
         }
     }
 }
+
 
 void MainWindow::CreateListOfSlashCandidates()
 {
@@ -3420,7 +3630,8 @@ void MainWindow::on_pbIgnoreFandom_clicked()
 
 void MainWindow::on_pbReloadAllAuthors_clicked()
 {
-    ReprocessAllAuthors();
+    //ReprocessAllAuthors();
+    ReprocessAllAuthorsV2();
 }
 
 void MainWindow::OnOpenAuthorListByID()

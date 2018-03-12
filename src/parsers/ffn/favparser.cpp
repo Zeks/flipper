@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDatabase>
 #include <chrono>
 #include <algorithm>
-CommonRegex FavouriteStoryParser::commonRegex;
+//CommonRegex FavouriteStoryParser::commonRegex;
 FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics)
     : FFNParserBase(fanfics)
 {
@@ -383,7 +383,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 {
     thread_local FieldSearcher profilePageUpdatedFinder = CreateProfilePageUpdatedSearcher();
     thread_local FieldSearcher profilePageCreatedFinder = CreateProfilePageCreatedSearcher();
-
+    statToken = core::FicSectionStatsTemporaryToken();
     QList<QSharedPointer<core::Fic>>  sections;
     core::Section section;
     int currentPosition = 0;
@@ -405,8 +405,8 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     auto profileUpdateDate = BouncingSearch(str, profilePageUpdatedFinder);
     auto profileCreateDate = BouncingSearch(str, profilePageCreatedFinder);
 
-    author->stats.pageCreated    = DateFromXUtime(profileCreateDate);
-    author->stats.bioLastUpdated = DateFromXUtime(profileUpdateDate);
+    this->statToken.pageCreated    = DateFromXUtime(profileCreateDate);
+    this->statToken.bioLastUpdated = DateFromXUtime(profileUpdateDate);
 
     while(true)
     {
@@ -487,6 +487,9 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 void FavouriteStoryParser::ClearProcessed()
 {
     processedStuff.clear();
+    fandoms.clear();
+    diagnostics = QStringList{};
+    alreadyDone.clear();
     recommender = core::FavouritesPage();
 }
 
@@ -524,12 +527,12 @@ void ConvertFandomsToIds(core::AuthorPtr author, QSharedPointer<interfaces::Fand
     }
 }
 
-void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers)
+
+void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<core::FicSectionStatsTemporaryToken> tokens)
 {
     core::FicSectionStatsTemporaryToken resultingToken;
-    for(auto parser : parsers)
+    for(auto statToken : tokens)
     {
-        auto& statToken = parser.statToken;
         resultingToken.chapterKeeper += statToken.chapterKeeper;
         resultingToken.ficCount+= statToken.ficCount;
 
@@ -553,10 +556,10 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<int
         Combine(resultingToken.unfinishedKeeper, statToken.unfinishedKeeper);
         Combine(resultingToken.wordsKeeper, statToken.wordsKeeper);
         resultingToken.wordCount += statToken.wordCount;
-        if(parser.authorStats && parser.authorStats->stats.bioLastUpdated.isValid())
-            author->stats.bioLastUpdated = parser.authorStats->stats.bioLastUpdated;
-        if(parser.authorStats && parser.authorStats->stats.pageCreated.isValid())
-            author->stats.pageCreated = parser.authorStats->stats.pageCreated;
+        if(statToken.bioLastUpdated.isValid())
+            author->stats.bioLastUpdated = statToken.bioLastUpdated;
+        if(statToken.pageCreated.isValid())
+            author->stats.pageCreated = statToken.pageCreated;
     }
     // this needs to be done outside, after multithreading has finished
     ProcessFavouriteSectionSize(author, resultingToken.ficCount);
@@ -582,6 +585,16 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<int
     author->isValid = true;
 
     ConvertFandomsToIds(author, fandomsInterface);
+}
+
+void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers)
+{
+    QList<core::FicSectionStatsTemporaryToken> tokenList;
+    for(auto parser : parsers)
+    {
+      tokenList.push_back(parser.statToken);
+    }
+    MergeStats(author, fandomsInterface, tokenList);
 }
 
 QString FavouriteStoryParser::ExtractRecommenderNameFromUrl(QString url)

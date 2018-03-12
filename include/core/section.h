@@ -72,6 +72,9 @@ class FicSectionStatsTemporaryToken
     QDate lastPublished;
     int ficCount = 0;
     int wordCount = 0;
+    int authorId = -1;
+    QDate bioLastUpdated;
+    QDate pageCreated;
 };
 class FicSectionStats{
 public:
