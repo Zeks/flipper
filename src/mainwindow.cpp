@@ -2848,12 +2848,12 @@ void MainWindow::CreateListOfSlashCandidates()
         auto& stats = author->stats.favouriteStats;
         if(stats.slashRatio > 0.7)
             slashAuthors[0].push_back(author);
-        if(stats.slashRatio > 0.5)
+        if(stats.slashRatio > 0.35)
             slashAuthors[1].push_back(author);
 
         // will need to inject a minimal favourite count clause for fics that are present just once
         // catching odd slash in other fandoms which should be smut instead
-        if(stats.slashRatio > 0.3)
+        if(stats.slashRatio > 0.15)
             slashAuthors[2].push_back(author);
 
         if(stats.slashRatio < 0.01 && stats.favourites > 5)
@@ -2897,7 +2897,7 @@ void MainWindow::CreateListOfSlashCandidates()
             //auto ficPtr = fanficsInterface->GetFicById(fic);
             bool soleTMatch = (TRepo.contains(fic) && slashFics[2][fic]==1);
             bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
-            bool sufficientMatches = notSlashFics[fic] >= 5;
+            bool sufficientMatches = notSlashFics[fic] >= 3;
             if(!keyWordSlashRepo.contains(fic) && (cantTellReliably || soleTMatch || sufficientMatches))
                 intersection.push_back(fic);
             else

@@ -208,13 +208,19 @@ void CommonRegex::Init()
     notSlashCharacterSpecialCase+="|(harry\\s{0,1}" + characterSeparator + "\\s{0,1}harry)";
     notSlashCharacterSpecialCase+="|(ichigo\\s{0,1}" + characterSeparator + "\\s{0,1}ichigo)";
     notSlashCharacterSpecialCase+="|femnaru|femharry|femichi";
-    notSlashCharacterSpecialCase+="|kagsess|inukag|sesskag|kaginu";
+    notSlashCharacterSpecialCase+="|kagsess|inukag|sesskag|kaginu|hieikag|kaghiei";
+    notSlashCharacterSpecialCase+="|femshep";
     notSlash+=notSlashCharacterSpecialCase;
 
     smut = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)|"
            "(futanari)|(lemon)|(yuri)|(incest)|(succubus)|(incub)|(\\sanal\\s)|(vagina)";
 
     characterSlashPerFandom["D.Gray-Man"] ="([\\[]Allen\\sWalker[,]\\sKanda\\sYuu[\\]])";
+
+    characterNotSlashPerFandom["Harry Potter"] = "(Hermione)";
+    characterNotSlashPerFandom["Inuyasha"] = "(Kagome)";
+    characterNotSlashPerFandom["Naruto"] = "(Sakura)";
+    characterNotSlashPerFandom["Mass Effect"] = "Shepard\\s[\\()]F";
 
 
     rxUniversal.setPattern(universalSlashRegex);
@@ -236,6 +242,11 @@ void CommonRegex::Init()
     {
         rxHashCharacterSlashFandom[fandom].setPattern(characterSlashPerFandom[fandom]);
         rxHashCharacterSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+    }
+    for(auto fandom : characterNotSlashPerFandom.keys())
+    {
+        rxHashCharacterNotSlashFandom[fandom].setPattern(characterNotSlashPerFandom[fandom]);
+        rxHashCharacterNotSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
     }
     initComplete = true;
 }
@@ -275,6 +286,7 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
     bool containsSlash = false;
     // apply universal regex
     bool doLogging = false;
+    bool doNotSlashCharacterLogging = false;
     QRegularExpressionMatch match;
     match = rxUniversal.match(summary);
     containsSlash = match.hasMatch();
@@ -289,7 +301,6 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
 
     for(auto fandom : slashRegexPerFandom.keys())
     {
-        bool test = false;
         QRegularExpressionMatch match;
         if(fandoms.contains(fandom))
         {
@@ -306,7 +317,6 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
     }
     for(auto fandom : characterSlashPerFandom.keys())
     {
-        bool test = false;
         QRegularExpressionMatch match;
         if(fandoms.contains(fandom))
         {
@@ -331,6 +341,21 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
         qDebug().noquote() << summary;
         qDebug() << match.capturedTexts();\
         qDebug() << "end match";
+    }
+    for(auto fandom : characterNotSlashPerFandom.keys())
+    {
+        QRegularExpressionMatch match;
+        if(fandoms.contains(fandom))
+        {
+            match = rxHashCharacterNotSlashFandom[fandom].match(characters);
+        }
+        if(doNotSlashCharacterLogging && match.hasMatch())
+        {
+            qDebug().noquote() << summary;
+            qDebug() << match.capturedTexts();\
+            qDebug() << "end match";
+        }
+        containsNotSlash = containsNotSlash || match.hasMatch();
     }
     result.containsNotSlash = containsNotSlash;
 

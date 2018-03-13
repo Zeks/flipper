@@ -136,6 +136,7 @@ struct CommonRegex
     bool initComplete = false;
     QHash<QString, QString> slashRegexPerFandom;
     QHash<QString, QString> characterSlashPerFandom;
+    QHash<QString, QString> characterNotSlashPerFandom;
 
     QString universalSlashRegex;
     QString notSlash; // universal not slash
@@ -144,6 +145,7 @@ struct CommonRegex
 
     QHash<QString, QRegularExpression> rxHashSlashFandom;
     QHash<QString, QRegularExpression> rxHashCharacterSlashFandom;
+    QHash<QString, QRegularExpression> rxHashCharacterNotSlashFandom;
 
     QRegularExpression rxUniversal;
     QRegularExpression rxNotSlash; // universal not slash
