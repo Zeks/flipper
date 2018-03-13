@@ -980,12 +980,14 @@ void MainWindow::LoadData()
         SlashPresence slashToken;
         if(ui->chkInvertedSlashFilter->isChecked() || ui->chkOnlySlash->isChecked())
             slashToken = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
-        if(!ui->chkUseDBForSlash->isChecked() && ui->chkInvertedSlashFilter->isChecked())
+
+        bool slashFromDB = ui->chkUseDBForSlash->isChecked();
+        if(!slashFromDB && ui->chkInvertedSlashFilter->isChecked())
         {
             if(slashToken.IsSlash())
                 allow = false;
         }
-        if(!ui->chkUseDBForSlash->isChecked() && ui->chkOnlySlash->isChecked())
+        if(!slashFromDB && ui->chkOnlySlash->isChecked())
         {
             if(!slashToken.IsSlash())
                 allow = false;
@@ -2761,12 +2763,12 @@ void MainWindow::ReprocessAllAuthorsV2()
     transaction.finalize();
 }
 
-void MainWindow::ReprocessAllAuthorsJustSlash()
+void MainWindow::ReprocessAllAuthorsJustSlash(QString fieldUsed)
 {
     auto authors = authorsInterface->GetAllAuthors("ffn", true);
     //authorsInterface->WipeAuthorStatisticsRecords();
     //authorsInterface->CreateStatisticsRecordsForAuthors();
-    authorsInterface->CalculateSlashStatisticsPercentages();
+    authorsInterface->CalculateSlashStatisticsPercentages(fieldUsed);
 }
 
 void MainWindow::DetectSlashForEverything()
@@ -2831,7 +2833,7 @@ inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,
 }
 
 
-void MainWindow::CreateListOfSlashCandidates()
+void MainWindow::CreateListOfSlashCandidates(int neededNotslashMatches)
 {
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
@@ -2897,7 +2899,7 @@ void MainWindow::CreateListOfSlashCandidates()
             //auto ficPtr = fanficsInterface->GetFicById(fic);
             bool soleTMatch = (TRepo.contains(fic) && slashFics[2][fic]==1);
             bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
-            bool sufficientMatches = notSlashFics[fic] >= 3;
+            bool sufficientMatches = notSlashFics[fic] >= neededNotslashMatches;
             if(!keyWordSlashRepo.contains(fic) && (cantTellReliably || soleTMatch || sufficientMatches))
                 intersection.push_back(fic);
             else
@@ -3256,6 +3258,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.includeSlash = ui->chkUseDBForSlash->isChecked() && ui->chkOnlySlash->isChecked();
     filter.excludeSlash = ui->chkUseDBForSlash->isChecked() && ui->chkInvertedSlashFilter->isChecked();
+    filter.slashFilterLevel = ui->cbSlashFilterAggressiveness->currentIndex();
     filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();
@@ -3661,7 +3664,7 @@ void MainWindow::on_pbReloadAllAuthors_clicked()
 {
     //ReprocessAllAuthors();
     //ReprocessAllAuthorsV2();
-    ReprocessAllAuthorsJustSlash();
+    ReprocessAllAuthorsJustSlash("slash_keywords");
 }
 
 void MainWindow::OnOpenAuthorListByID()
@@ -3685,4 +3688,31 @@ void MainWindow::on_pbCreateSlashList_clicked()
 void MainWindow::on_pbProcessSlash_clicked()
 {
     DetectSlashForEverythingV2();
+}
+
+void MainWindow::on_pbReloadAllAuthorsIter1_clicked()
+{
+    auto result = fanficsInterface->AssignIterationOfSlash("first_slash_iteration");
+    if(!result)
+    {
+        qDebug() << "failed slash assignment";
+        return;
+    }
+    ReprocessAllAuthorsJustSlash("first_slash_iteration");
+}
+
+void MainWindow::on_pbCreateI1SlashList_clicked()
+{
+    CreateListOfSlashCandidates(1);
+}
+
+void MainWindow::on_pbReloadAllAuthorsIter2_clicked()
+{
+    auto result = fanficsInterface->AssignIterationOfSlash("second_slash_iteration");
+    if(!result)
+    {
+        qDebug() << "failed slash assignment";
+        return;
+    }
+    ReprocessAllAuthorsJustSlash("second_slash_iteration");
 }

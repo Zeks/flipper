@@ -3144,14 +3144,32 @@ DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db)
     return result;
 }
 
-DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QSqlDatabase db)
+DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField,  QSqlDatabase db)
 {
     DiagnosticSQLResult<bool> result;
     result.success = false;
 
     QString qs = QString("update AuthorFavouritesStatistics set slash_factor  = "
-                         " cast( (select count (ff.id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select id, slash_keywords from fanfics where slash_keywords = 1) ff on ff.id  = rs.fic_id) as float) "
-                         " /cast( (select count (ff.id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select id, slash_keywords from fanfics) ff on ff.id  = rs.fic_id) as float)");
+                         " cast( (select count (ff.id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select id, %1 from fanfics where %2 = 1) ff on ff.id  = rs.fic_id) as float) "
+                         " /cast( (select count (ff.id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select id, %3 from fanfics) ff on ff.id  = rs.fic_id) as float)");
+    qs = qs.arg(usedField).arg(usedField).arg(usedField);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString qs = QString("update fanfics set %1 = 1 where slash_keywords = 1 or id in "
+                         "(select fic_id from recommendationlistdata where list_id in (select id from recommendationlists where name = 'SlashCleaned'))");
+    qs = qs.arg(iteration);
     QSqlQuery q(db);
     q.prepare(qs);
     if(!result.ExecAndCheck(q))

@@ -443,9 +443,9 @@ bool Authors::CreateStatisticsRecordsForAuthors()
     return true;
 }
 
-bool Authors::CalculateSlashStatisticsPercentages()
+bool Authors::CalculateSlashStatisticsPercentages(QString fieldUsed)
 {
-    auto result = database::puresql::CalculateSlashStatisticsPercentages(db);
+    auto result = database::puresql::CalculateSlashStatisticsPercentages(fieldUsed, db);
     return result.success;
 }
 

@@ -277,14 +277,14 @@ private:
 
     void ReprocessAllAuthors();
     void ReprocessAllAuthorsV2();
-    void ReprocessAllAuthorsJustSlash();
+    void ReprocessAllAuthorsJustSlash(QString fieldUsed);
     void DetectSlashForEverything();
     void DetectSlashForEverythingV2();
 
     inline void AddToSlashHash(QList<core::AuthorPtr> authors,
                                QSet<int> knownSlashFics,
                                QHash<int, int>& slashHash, bool checkRx = true);
-    void CreateListOfSlashCandidates();
+    void CreateListOfSlashCandidates(int neededNotslashMatches = 3);
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
 
@@ -507,6 +507,12 @@ private slots:
     void on_pbCreateSlashList_clicked();
 
     void on_pbProcessSlash_clicked();
+
+    void on_pbReloadAllAuthorsIter1_clicked();
+
+    void on_pbCreateI1SlashList_clicked();
+
+    void on_pbReloadAllAuthorsIter2_clicked();
 
 signals:
 

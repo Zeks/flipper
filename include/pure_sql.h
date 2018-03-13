@@ -166,11 +166,12 @@ DiagnosticSQLResult<QSet<int>>  GetAllKnownSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownNotSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownFicIds(QString, QSqlDatabase db);
 
+DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase db);
 
 
 DiagnosticSQLResult<bool> WipeAuthorStatisticsRecords(QSqlDatabase db);
 DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db);
-DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages( QSqlDatabase db);
+DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField, QSqlDatabase db);
 
 
 

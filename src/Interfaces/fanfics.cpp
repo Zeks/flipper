@@ -226,6 +226,11 @@ bool Fanfics::AssignSlashForFic(int ficId, int source)
     return database::puresql::AssignSlashToFanfic(ficId, source, db);
 }
 
+bool Fanfics::AssignIterationOfSlash(QString iteration)
+{
+    return database::puresql::AssignIterationOfSlash(iteration, db).data;
+}
+
 void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
 {
     QWriteLocker lock(&mutex);

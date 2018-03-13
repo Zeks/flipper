@@ -77,7 +77,7 @@ public:
 
     bool WipeAuthorStatisticsRecords();
     bool CreateStatisticsRecordsForAuthors();
-    bool CalculateSlashStatisticsPercentages();
+    bool CalculateSlashStatisticsPercentages(QString fieldUsed);
 
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
 

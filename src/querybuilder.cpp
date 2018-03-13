@@ -192,10 +192,18 @@ QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter)
 {
     QString queryString;
+    QString slashField;
+    if(filter.slashFilterLevel == 0)
+        slashField = "slash_keywords";
+    else if(filter.slashFilterLevel == 1)
+        slashField = "first_slash_iteration";
+    else
+        slashField = "second_slash_iteration";
     if(filter.excludeSlash)
-        queryString += " and slash_probability < 0.9 ";
+        queryString += " and %1 < 0.9 ";
     if(filter.includeSlash)
-        queryString += " and slash_probability > 0.9 ";
+        queryString += " and %1 > 0.9 ";
+    queryString = queryString.arg(slashField);
     return queryString;
 }
 

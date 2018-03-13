@@ -37,6 +37,8 @@ alter table fanfics add column slash_probability real default 0;
 alter table fanfics add column slash_source integer default -1; -- -1 are nothing, 0 are words, 1 is statistics;
 alter table fanfics add column slash_keywords integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
 alter table fanfics add column not_slash_keywords integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
+alter table fanfics add column first_slash_iteration integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
+alter table fanfics add column second_slash_iteration integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
 
  CREATE VIEW vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
@@ -59,7 +61,11 @@ CREATE INDEX if not exists  I_FANFICS_FFN_ID ON fanfics (ffn_id ASC);
 CREATE INDEX if not exists  I_ALIVE ON fanfics (alive ASC);
 CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
 CREATE INDEX if not exists  I_FOR_FILL ON fanfics (for_fill ASC);
-CREATE INDEX if not exists  I_SLASH ON fanfics (slash_probability ASC);
+CREATE INDEX if not exists  I_SLASH_PROB ON fanfics (slash_probability ASC);
+CREATE INDEX if not exists  I_SLASH_KEYS ON fanfics (slash_keywords ASC);
+CREATE INDEX if not exists  I_NOT_SLASH_KEYS ON fanfics (not_slash_keywords ASC);
+CREATE INDEX if not exists  I_SLASH_FIRST ON fanfics (first_slash_iteration ASC);
+CREATE INDEX if not exists  I_SLASH_SECOND ON fanfics (second_slash_iteration ASC);
 
 -- fanfics sequence;
  CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);

@@ -80,6 +80,7 @@ struct StoryFilter{
     int minRecommendations = 0;
     int listForRecommendations;
     int recentAndPopularFavRatio;
+    int slashFilterLevel = 0;
 
     ESortMode sortMode;
     EReviewBiasMode reviewBias;

@@ -1157,6 +1157,27 @@
                       </widget>
                      </item>
                      <item>
+                      <widget class="QPushButton" name="pbReloadAllAuthorsIter1">
+                       <property name="text">
+                        <string>Iter1 -&gt; DB</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbCreateI1SlashList">
+                       <property name="text">
+                        <string>I1 DB -&gt; List</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="pbReloadAllAuthorsIter2">
+                       <property name="text">
+                        <string>Iter2-&gt;DB</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
                       <spacer name="horizontalSpacer_3">
                        <property name="orientation">
                         <enum>Qt::Horizontal</enum>
@@ -1573,6 +1594,32 @@
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_19">
+                  <property name="text">
+                   <string>Filter Aggressiveness</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="cbSlashFilterAggressiveness">
+                  <item>
+                   <property name="text">
+                    <string>Light</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Medium</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Strong</string>
+                   </property>
+                  </item>
+                 </widget>
                 </item>
                 <item>
                  <widget class="QCheckBox" name="chkUseDBForSlash">

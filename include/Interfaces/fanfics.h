@@ -79,6 +79,7 @@ class Fanfics : public IDBWebIDIndex {
 
     bool AssignChapter(int, int);
     bool AssignSlashForFic(int, int source);
+    bool AssignIterationOfSlash(QString iteration);
 
     // update interface
     QReadWriteLock mutex;
