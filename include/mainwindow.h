@@ -277,9 +277,12 @@ private:
 
     void ReprocessAllAuthors();
     void ReprocessAllAuthorsV2();
+    void ReprocessAllAuthorsJustSlash();
     void DetectSlashForEverything();
+    void DetectSlashForEverythingV2();
 
     inline void AddToSlashHash(QList<core::AuthorPtr> authors,
+                               QSet<int> knownSlashFics,
                                QHash<int, int>& slashHash, bool checkRx = true);
     void CreateListOfSlashCandidates();
 //    QHash<int, int> CreateListOfNotSlashFics();

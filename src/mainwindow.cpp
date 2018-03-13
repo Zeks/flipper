@@ -2761,6 +2761,14 @@ void MainWindow::ReprocessAllAuthorsV2()
     transaction.finalize();
 }
 
+void MainWindow::ReprocessAllAuthorsJustSlash()
+{
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    //authorsInterface->WipeAuthorStatisticsRecords();
+    //authorsInterface->CreateStatisticsRecordsForAuthors();
+    authorsInterface->CalculateSlashStatisticsPercentages();
+}
+
 void MainWindow::DetectSlashForEverything()
 {
     CommonRegex rx;
@@ -2786,7 +2794,24 @@ void MainWindow::DetectSlashForEverything()
     transaction.finalize();
 }
 
-inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors, QHash<int, int>& slashHash, bool checkRx)
+void MainWindow::DetectSlashForEverythingV2()
+{
+    TaskProgressGuard guard(this);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    CommonRegex rx;
+    rx.Init();
+    fanficsInterface->ProcessSlashFicsBasedOnWords( [&](QString summary, QString characters, QString fandoms){
+        auto result = rx.ContainsSlash(summary, characters, fandoms);
+        return result;
+    });
+    transaction.finalize();
+}
+
+inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,
+                                       QSet<int> knownNotSlashFics,
+                                       QHash<int, int>& slashHash,
+                                       bool checkRx)
 {
     CommonRegex rx;
     rx.Init();
@@ -2795,20 +2820,11 @@ inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors, QHash<int
         auto fics = authorsInterface->GetFicList(author);
         for(auto fic : fics)
         {
-            auto ficPtr = fanficsInterface->GetFicById(fic);
-
-            if(!ficPtr)
-            {
-                qDebug() << "Could not load fic pointer:" << fic;
-                continue;
-            }
             if(checkRx)
             {
-                auto result = rx.ContainsSlash(ficPtr->summary,ficPtr->charactersFull, ficPtr->fandom);
-                if(result.containsNotSlash)
+                if(knownNotSlashFics.contains(fic))
                     continue;
             }
-            //            if(ficPtr->rated == "M")
             slashHash[fic]++;
         }
     }
@@ -2820,9 +2836,12 @@ void MainWindow::CreateListOfSlashCandidates()
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
 
+    auto keyWordSlashRepo = fanficsInterface->GetAllKnownSlashFics();
+    auto keyWordNotSlashRepo = fanficsInterface->GetAllKnownNotSlashFics();
     auto authors = authorsInterface->GetAllAuthors("ffn", true);
     QHash<int, QList<core::AuthorPtr>> slashAuthors;
     QList<core::AuthorPtr> notSlashAuthors;
+
 
     for(auto author : authors)
     {
@@ -2840,17 +2859,18 @@ void MainWindow::CreateListOfSlashCandidates()
         if(stats.slashRatio < 0.01 && stats.favourites > 5)
             notSlashAuthors.push_back(author);
     }
+
     // first is slash certainty, 0 is the highest
     // second is fic id
     // third is fic count
-
+    qDebug() << "slash 2 authors: " << slashAuthors[2].size();
     QHash<int, QHash<int, int>> slashFics;
     QHash<int, int> notSlashFics;
 
     TimedAction processSlash("ProcSlash", [&](){
-        AddToSlashHash(slashAuthors[0], slashFics[0]);
-        AddToSlashHash(slashAuthors[1], slashFics[1]);
-        AddToSlashHash(slashAuthors[2], slashFics[2]);
+        AddToSlashHash(slashAuthors[0], keyWordNotSlashRepo, slashFics[0]);
+        AddToSlashHash(slashAuthors[1], keyWordNotSlashRepo, slashFics[1]);
+        AddToSlashHash(slashAuthors[2], keyWordNotSlashRepo, slashFics[2]);
     });
     processSlash.run();
 
@@ -2861,28 +2881,34 @@ void MainWindow::CreateListOfSlashCandidates()
     });
     writeSlashLists.run();
     TimedAction processNotSlash("ProcNotSlash", [&](){
-        AddToSlashHash(notSlashAuthors, notSlashFics, false);
+        AddToSlashHash(notSlashAuthors, keyWordSlashRepo, notSlashFics, false);
     });
     processNotSlash.run();
     QList<int> intersection;
     intersection.reserve(50000);
-    CommonRegex rx;
-    rx.Init();
+//    CommonRegex rx;
+//    rx.Init();
+
+    qDebug() << "Slash 2 size before filtering: " << slashFics[2].size();
+    auto TRepo = fanficsInterface->GetAllKnownFicIDs(" rated <> 'M' ");
     TimedAction intersect("Intersect", [&](){
         for(const auto& fic: slashFics[2].keys())
         {
-            auto ficPtr = fanficsInterface->GetFicById(fic);
-            bool soleTMatch = (ficPtr->rated != "M" && slashFics[2][fic]==1);
+            //auto ficPtr = fanficsInterface->GetFicById(fic);
+            bool soleTMatch = (TRepo.contains(fic) && slashFics[2][fic]==1);
             bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
             bool sufficientMatches = notSlashFics[fic] >= 5;
-            auto slashToken = rx.ContainsSlash(ficPtr->summary,ficPtr->charactersFull, ficPtr->fandom);
-            bool definiteSlaslh = slashToken.IsSlash();
-            if(!definiteSlaslh && (cantTellReliably || soleTMatch || sufficientMatches))
+            if(!keyWordSlashRepo.contains(fic) && (cantTellReliably || soleTMatch || sufficientMatches))
                 intersection.push_back(fic);
+            else
+            {
+                bool sufficientMatches = notSlashFics[fic] >= 5;
+            }
         }
     });
     intersect.run();
-    qDebug() << intersection;
+    qDebug() << "Intersection size: " << intersection.size();
+    //qDebug() << intersection;
     QHash<int, int> filteredSlashFics;
 
     TimedAction filter("Fill Intersection", [&](){
@@ -2893,12 +2919,15 @@ void MainWindow::CreateListOfSlashCandidates()
         }
     });
     filter.run();
+    qDebug() << "Slash 2 size after filtering: " << slashFics[2].size();
+    qDebug() << "Filtered size after filtering: " << filteredSlashFics.size();
 
     recsInterface->CreateRecommendationList("SlashCleaned", slashFics[2]);
     recsInterface->CreateRecommendationList("SlashFilteredOut", filteredSlashFics);
 
 
     transaction.finalize();
+    qDebug () << "finished";
     // I can create a recommendation list from this
 
 }
@@ -3631,7 +3660,8 @@ void MainWindow::on_pbIgnoreFandom_clicked()
 void MainWindow::on_pbReloadAllAuthors_clicked()
 {
     //ReprocessAllAuthors();
-    ReprocessAllAuthorsV2();
+    //ReprocessAllAuthorsV2();
+    ReprocessAllAuthorsJustSlash();
 }
 
 void MainWindow::OnOpenAuthorListByID()
@@ -3654,5 +3684,5 @@ void MainWindow::on_pbCreateSlashList_clicked()
 
 void MainWindow::on_pbProcessSlash_clicked()
 {
-    DetectSlashForEverything();
+    DetectSlashForEverythingV2();
 }

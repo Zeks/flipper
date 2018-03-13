@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "Interfaces/base.h"
 #include "core/section.h"
+#include "regex_utils.h"
 #include "QScopedPointer"
 #include <QSet>
 #include "QSharedPointer"
@@ -72,6 +73,9 @@ class Fanfics : public IDBWebIDIndex {
 
     QStringList GetFandomsForFicAsNames(int ficId);
     QSet<int> GetAllKnownSlashFics();
+    QSet<int> GetAllKnownNotSlashFics();
+    QSet<int> GetAllKnownFicIDs(QString where);
+    bool ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func);
 
     bool AssignChapter(int, int);
     bool AssignSlashForFic(int, int source);
@@ -121,3 +125,4 @@ private:
 
 };
 }
+

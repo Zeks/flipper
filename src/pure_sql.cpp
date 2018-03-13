@@ -1118,6 +1118,28 @@ bool DeleteRecommendationList(int listId, QSqlDatabase db )
 
     return true;
 }
+
+bool DeleteRecommendationListData(int listId, QSqlDatabase db)
+{
+    if(listId == 0)
+        return false;
+    QString qs;
+    QSqlQuery q(db);
+    qs = QString("delete from RecommendationListAuthorStats where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+
+    qs = QString("delete from RecommendationListData where list_id = :list_id");
+    q.prepare(qs);
+    q.bindValue(":list_id",listId);
+    if(!ExecAndCheck(q))
+        return false;
+
+    return true;
+}
+
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db )
 {
     QString qs = QString("insert into RecommendationListData (fic_id, list_id)"
@@ -2922,7 +2944,7 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownSlashFics(QSqlDatabase db)
     DiagnosticSQLResult<QSet<int>> result;
     result.success = false;
 
-    QString qs = QString("select count(id) from fanfics where slash_probability > 0.9");
+    QString qs = QString("select count(id) from fanfics where slash_keywords = 1");
     QSqlQuery q(db);
     q.prepare(qs);
     if(!result.ExecAndCheck(q))
@@ -2934,7 +2956,7 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownSlashFics(QSqlDatabase db)
     int size = q.value(0).toInt();
 
     result.data.reserve(size);
-    qs = QString("select ffn_id from fanfics where slash_probability > 0.9");
+    qs = QString("select id from fanfics where slash_keywords = 1");
     q.prepare(qs);
     if(!result.ExecAndCheck(q))
         return result;
@@ -2942,7 +2964,70 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownSlashFics(QSqlDatabase db)
         return result;
     while(q.next())
     {
-        result.data.insert(q.value("ffn_id").toInt());
+        result.data.insert(q.value("id").toInt());
+    }
+    result.success = true;
+    return result;
+}
+
+
+DiagnosticSQLResult<QSet<int> > GetAllKnownNotSlashFics(QSqlDatabase db)
+{
+    DiagnosticSQLResult<QSet<int>> result;
+    result.success = false;
+
+    QString qs = QString("select count(id) from fanfics where not_slash_keywords = 1");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    int size = q.value(0).toInt();
+
+    result.data.reserve(size);
+    qs = QString("select id from fanfics where not_slash_keywords = 1");
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+    while(q.next())
+    {
+        result.data.insert(q.value("id").toInt());
+    }
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db)
+{
+    DiagnosticSQLResult<QSet<int>> result;
+    result.success = false;
+
+    QString qs = QString("select count(id) from fanfics where " + where);
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    if(!result.CheckDataAvailability(q))
+        return result;
+
+    int size = q.value(0).toInt();
+
+    result.data.reserve(size);
+    qs = QString("select id from fanfics where " + where);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+    while(q.next())
+    {
+        result.data.insert(q.value("id").toInt());
     }
     result.success = true;
     return result;
@@ -2971,6 +3056,111 @@ DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId, QHash<int, 
 
     return result;
 }
+
+DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresence(QString, QString, QString)> func, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+    QSet<int> slashFics;
+    QSet<int> notSlashFics;
+    QString qs = QString("select id, summary, characters, fandom from fanfics order by id asc");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+    do
+    {
+        auto result = func(q.value("summary").toString(),
+                q.value("characters").toString(),
+                q.value("fandom").toString());
+        if(result.IsSlash())
+            slashFics.insert(q.value("id").toInt());
+        if(result.containsNotSlash)
+            notSlashFics.insert(q.value("id").toInt());
+
+
+    }while(q.next());
+    q.prepare("update fanfics set slash_keywords = 1 where id = :id");
+    QList<int> list = slashFics.values();
+    int counter = 0;
+    for(auto tempId: list)
+    {
+        counter++;
+        q.bindValue(":id", tempId);
+        if(!result.ExecAndCheck(q))
+        {
+            qDebug() << "failed to write slash";
+            return result;
+        }
+    }
+    q.prepare("update fanfics set not_slash_keywords = 1 where id = :id");
+    list = notSlashFics.values();
+    counter = 0;
+    for(auto tempId: list)
+    {
+        counter++;
+        q.bindValue(":id", tempId);
+        if(!result.ExecAndCheck(q))
+        {
+            qDebug() << "failed to write slash";
+            return result;
+        }
+    }
+    qDebug() << "finished OK";
+
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<bool> WipeAuthorStatisticsRecords(QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString qs = QString("delete from AuthorFavouritesStatistics");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString qs = QString("insert into AuthorFavouritesStatistics(author_id, favourites) select r.id, (select count(*) from recommendations where recommender_id = r.id) from recommenders r");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+
+    QString qs = QString("update AuthorFavouritesStatistics set slash_factor  = "
+                         " cast( (select count (ff.id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select id, slash_keywords from fanfics where slash_keywords = 1) ff on ff.id  = rs.fic_id) as float) "
+                         " /cast( (select count (ff.id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select id, slash_keywords from fanfics) ff on ff.id  = rs.fic_id) as float)");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    result.success = true;
+    return result;
+}
+
 
 
 

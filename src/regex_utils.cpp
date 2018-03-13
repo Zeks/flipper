@@ -208,7 +208,7 @@ void CommonRegex::Init()
     notSlashCharacterSpecialCase+="|(harry\\s{0,1}" + characterSeparator + "\\s{0,1}harry)";
     notSlashCharacterSpecialCase+="|(ichigo\\s{0,1}" + characterSeparator + "\\s{0,1}ichigo)";
     notSlashCharacterSpecialCase+="|femnaru|femharry|femichi";
-    notSlashCharacterSpecialCase+="|kagsess|inukag|sesskag";
+    notSlashCharacterSpecialCase+="|kagsess|inukag|sesskag|kaginu";
     notSlash+=notSlashCharacterSpecialCase;
 
     smut = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)|"

@@ -432,6 +432,23 @@ bool Authors::DeleteLinkedAuthorsForAuthor(int authorId)
         return false;
     return database::puresql::DeleteLinkedAuthorsForAuthor(authorId, db);
 }
+
+bool Authors::WipeAuthorStatisticsRecords()
+{
+    return true;
+}
+
+bool Authors::CreateStatisticsRecordsForAuthors()
+{
+    return true;
+}
+
+bool Authors::CalculateSlashStatisticsPercentages()
+{
+    auto result = database::puresql::CalculateSlashStatisticsPercentages(db);
+    return result.success;
+}
+
 // those are required for managing recommendation lists and somewhat outdated
 // moved them to dump temporarily
 //bool  Authors::RemoveAuthor(int id)

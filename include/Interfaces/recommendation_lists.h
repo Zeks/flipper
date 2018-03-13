@@ -46,6 +46,7 @@ public:
     QString GetListNameForId(int id);
 
     bool DeleteList(int listId);
+    bool DeleteListData(int listId);
 
 
     bool ReloadList(int listId);

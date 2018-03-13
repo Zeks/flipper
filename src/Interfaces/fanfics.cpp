@@ -199,6 +199,23 @@ QSet<int> Fanfics::GetAllKnownSlashFics()
     return database::puresql::GetAllKnownSlashFics(db).data;
 }
 
+QSet<int> Fanfics::GetAllKnownNotSlashFics()
+{
+    return database::puresql::GetAllKnownNotSlashFics(db).data;
+}
+
+QSet<int> Fanfics::GetAllKnownFicIDs(QString where)
+{
+    auto data = database::puresql::GetAllKnownFicIds(where, db);
+    return data.data;
+}
+
+bool Fanfics::ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func)
+{
+     auto result = database::puresql::ProcessSlashFicsBasedOnWords(func, db);
+     return result.success;
+}
+
 bool Fanfics::AssignChapter(int ficId, int chapter)
 {
     return database::puresql::AssignChapterToFanfic(chapter, ficId, db);

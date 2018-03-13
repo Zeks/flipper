@@ -6,6 +6,7 @@
 #include <QSqlError>
 #include <QSharedPointer>
 #include "core/section.h"
+#include "regex_utils.h"
 
 class BasePageTask;
 class PageTask;
@@ -102,6 +103,8 @@ bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
 bool AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
 
+DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresence(QString, QString, QString)>, QSqlDatabase db);
+
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 QList<core::FandomPtr> GetAllFandoms(QSqlDatabase db);
@@ -160,6 +163,15 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteFandomStatistics(core::AuthorPtr a
 DiagnosticSQLResult<bool> WipeAuthorStatistics(core::AuthorPtr author, QSqlDatabase db);
 DiagnosticSQLResult<QList<int>>  GetAllAuthorRecommendations(int id, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownSlashFics(QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>>  GetAllKnownNotSlashFics(QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>>  GetAllKnownFicIds(QString, QSqlDatabase db);
+
+
+
+DiagnosticSQLResult<bool> WipeAuthorStatisticsRecords(QSqlDatabase db);
+DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db);
+DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages( QSqlDatabase db);
+
 
 
 QList<core::AuhtorStatsPtr> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
@@ -177,6 +189,8 @@ int GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDa
 
 
 bool DeleteRecommendationList(int listId, QSqlDatabase db );
+bool DeleteRecommendationListData(int listId, QSqlDatabase db );
+
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
 bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db);
 bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db);

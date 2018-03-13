@@ -225,6 +225,16 @@ bool RecommendationLists::DeleteList(int listId)
 
 }
 
+bool RecommendationLists::DeleteListData(int listId)
+{
+    if(listId == -1 || !EnsureList(listId))
+        return true;
+
+    bool result = database::puresql::DeleteRecommendationListData(listId, db);
+    DeleteLocalList(listId);
+    return result;
+}
+
 void RecommendationLists::DeleteLocalList(int listId)
 {
     if(!idIndex.contains(listId))
@@ -348,7 +358,8 @@ bool RecommendationLists::CreateRecommendationList(QString name, QHash<int, int>
     dummyParams->ficCount = fics.keys().size();
     dummyParams->created = QDateTime::currentDateTime();
     auto listId = GetListIdForName(name);
-    DeleteList(listId);
+    dummyParams->id = listId;
+    DeleteListData(listId);
     LoadListIntoDatabase(dummyParams);
     listId = GetListIdForName(name);
     if(listId < 0)

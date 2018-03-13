@@ -75,6 +75,10 @@ public:
     bool UploadLinkedAuthorsForAuthor(int authorId, QString , QList<int>);
     bool DeleteLinkedAuthorsForAuthor(int authorId);
 
+    bool WipeAuthorStatisticsRecords();
+    bool CreateStatisticsRecordsForAuthors();
+    bool CalculateSlashStatisticsPercentages();
+
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
 
     //! todo those are required for managing recommendation lists and somewhat outdated
