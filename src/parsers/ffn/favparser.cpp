@@ -207,6 +207,7 @@ QHash<QString, int> CreateMoodRedirects(){
     result["Supernatural"] = 0;
     result["Suspense"] = 0;
     result["Romance"] = 0;
+    result["Drama"] = -1;
     result["not found"] = 0;
     result["Sci-Fi"] = 0;
     result["Fantasy"] = 0;
@@ -225,18 +226,19 @@ inline void UpdateGenreResults(QSharedPointer<core::Fic> fic,
                                )
 {
     thread_local QHash<QString, int> moodRedirects = CreateMoodRedirects();
-    int moodSum = 0;
+    //int moodSum = 0;
     for(auto genre: fic->genres)
     {
         genreKeeper[genre]++;
-        moodSum += moodRedirects[genre];
+        auto redirected = moodRedirects[genre];
+        if(redirected == 0)
+            moodKeeper[1]++;
+        else if(redirected < 0)
+            moodKeeper[0]++;
+        else
+            moodKeeper[2]++;
     }
-    if(moodSum == 0)
-        moodKeeper[1]++;
-    else if(moodSum < 0)
-        moodKeeper[0]++;
-    else
-        moodKeeper[2]++;
+
 }
 
 inline void ProcessFavouriteSectionSize(QSharedPointer<core::Author> author, int favouritesSize)
@@ -263,7 +265,7 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
     {
 
         double factor = static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal);
-        if(static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal) > 0.7)
+        if(static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal) > 0.5)
             totalInClumps+=genreKeeper[genre];
 
         if(factor > maxPrevalence)

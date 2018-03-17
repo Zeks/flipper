@@ -36,6 +36,7 @@ public:
     virtual bool BackupDatabase(QString dbname) = 0;
     virtual bool ReadDbFile(QString file, QString connectionName = "") = 0;
     virtual QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false) = 0;
+    virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false) = 0;
     QSqlDatabase GetDatabase() {return db;}
 protected:
 

@@ -36,6 +36,7 @@ struct StoryFilter{
         reccount=    5,
         wcrcr =      6,
         revtofav =   7,
+        genrevalues =8,
     };
     enum EReviewBiasMode{
         bias_none    = 0,
@@ -66,6 +67,7 @@ struct StoryFilter{
     bool showOriginsInLists = false;
     bool excludeSlash = false;
     bool includeSlash = false;
+    bool disableSlashFilterForSpecificFandoms = false;
 
 
     int useThisRecommenderOnly = -1;
@@ -97,6 +99,7 @@ struct StoryFilter{
     QStringList titleInclusion;
     QStringList activeTags;
     QDateTime recentCutoff;
+    QString genreSortField;
 
     double reviewBiasRatio = 0;
 

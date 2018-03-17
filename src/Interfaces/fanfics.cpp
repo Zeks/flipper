@@ -204,6 +204,11 @@ QSet<int> Fanfics::GetAllKnownNotSlashFics()
     return database::puresql::GetAllKnownNotSlashFics(db).data;
 }
 
+QSet<int> Fanfics::GetSingularFicsInLargeButSlashyLists()
+{
+    return database::puresql::GetSingularFicsInLargeButSlashyLists(db).data;
+}
+
 QSet<int> Fanfics::GetAllKnownFicIDs(QString where)
 {
     auto data = database::puresql::GetAllKnownFicIds(where, db);
@@ -229,6 +234,21 @@ bool Fanfics::AssignSlashForFic(int ficId, int source)
 bool Fanfics::AssignIterationOfSlash(QString iteration)
 {
     return database::puresql::AssignIterationOfSlash(iteration, db).data;
+}
+
+bool Fanfics::PerformGenreAssignment()
+{
+    return database::puresql::PerformGenreAssignment(db).success;
+}
+
+QHash<int, double> Fanfics::GetFicGenreData(QString genre, QString cutoff)
+{
+    return database::puresql::GetFicGenreData(genre, cutoff, db).data;
+}
+
+QHash<int, std::array<double, 21> > Fanfics::GetFullFicGenreData()
+{
+    return database::puresql::GetFullFicGenreData(db).data;
 }
 
 void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)

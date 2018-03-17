@@ -86,6 +86,7 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
     queryString+=ProcessSumRecs(filter);
     queryString+=ProcessTags(filter);
     queryString+=ProcessUrl(filter);
+    queryString+=ProcessGenreValues(filter);
     return queryString;
 }
 
@@ -179,6 +180,15 @@ QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
     return currentTagValue;
 }
 
+QString DefaultQueryBuilder::ProcessGenreValues(StoryFilter filter)
+{
+    if(filter.sortMode != StoryFilter::genrevalues)
+        return QString();
+    QString result = " (SELECT  %1  FROM FicGenreStatistics where fic_id = f.id) as genrevalue, \n";
+    result = result.arg(filter.genreSortField);
+    return result;
+}
+
 QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
 {
     QString queryString;
@@ -189,21 +199,31 @@ QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
     return queryString;
 }
 
-QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter)
+QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToFID)
 {
     QString queryString;
     QString slashField;
     if(filter.slashFilterLevel == 0)
-        slashField = "slash_keywords";
+        slashField = "keywords_pass_result";
     else if(filter.slashFilterLevel == 1)
-        slashField = "first_slash_iteration";
+        slashField = "pass_0";
     else
-        slashField = "second_slash_iteration";
+        slashField = "pass_1";
     if(filter.excludeSlash)
-        queryString += " and %1 < 0.9 ";
+        queryString += " and fid not in (select fic_id from algopasses sp where %1 = 1   ";
     if(filter.includeSlash)
-        queryString += " and %1 > 0.9 ";
+        queryString += " and fid in (select fic_id from algopasses sp where %1 = 1  ";
+
+    if(filter.disableSlashFilterForSpecificFandoms && filter.excludeSlash)
+    {
+        queryString += " and not exists (select fandom_id from ignored_fandoms_slash_filter where fandom_id in (select fandom_id from ficfandoms where fic_id = sp.fic_id))) ";
+    }
+    else if(filter.excludeSlash || filter.includeSlash)
+        queryString += " )";
+
     queryString = queryString.arg(slashField);
+    if(!renameToFID)
+        queryString.replace(" fid ", " ff.id ");
     return queryString;
 }
 
@@ -301,6 +321,8 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
         diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
     else if(filter.sortMode == StoryFilter::revtofav)
         diffField = " favourites /(reviews + 1) desc";
+    else if(filter.sortMode == StoryFilter::genrevalues)
+        diffField = " genrevalue desc";
     return diffField;
 }
 
@@ -522,7 +544,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
     QString where;
     {
         where+= ProcessWordcount(filter);
-        where+= ProcessSlashMode(filter);
+        where+= ProcessSlashMode(filter, false);
         where+= ProcessGenreIncluson(filter);
         where+= ProcessWordInclusion(filter);
         where+= ProcessBias(filter);

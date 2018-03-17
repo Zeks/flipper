@@ -74,12 +74,16 @@ class Fanfics : public IDBWebIDIndex {
     QStringList GetFandomsForFicAsNames(int ficId);
     QSet<int> GetAllKnownSlashFics();
     QSet<int> GetAllKnownNotSlashFics();
+    QSet<int> GetSingularFicsInLargeButSlashyLists();
     QSet<int> GetAllKnownFicIDs(QString where);
     bool ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func);
 
     bool AssignChapter(int, int);
     bool AssignSlashForFic(int, int source);
     bool AssignIterationOfSlash(QString iteration);
+    bool PerformGenreAssignment();
+    QHash<int, double> GetFicGenreData(QString genre, QString cutoff);
+    QHash<int, std::array<double, 21>> GetFullFicGenreData();
 
     // update interface
     QReadWriteLock mutex;

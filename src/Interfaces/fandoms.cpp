@@ -389,6 +389,38 @@ bool Fandoms::RemoveFandomFromIgnoredList(int id)
     return result.data;
 }
 
+bool Fandoms::IgnoreFandomSlashFilter(QString name)
+{
+    auto id = GetIDForName(name);
+    auto result = IgnoreFandomSlashFilter(id);
+    return result;
+}
+
+bool Fandoms::IgnoreFandomSlashFilter(int id)
+{
+    auto result = database::puresql::IgnoreFandomSlashFilter(id, db);
+    return result.data;
+}
+
+QStringList Fandoms::GetIgnoredFandomsSlashFilter() const
+{
+    auto result = database::puresql::GetIgnoredFandomsSlashFilter(db);
+    return result.data;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredListSlashFilter(QString name)
+{
+    auto id = GetIDForName(name);
+    auto result = RemoveFandomFromIgnoredListSlashFilter(id);
+    return result;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredListSlashFilter(int id)
+{
+    auto result = database::puresql::RemoveFandomFromIgnoredListSlashFilter(id, db);
+    return result.data;
+}
+
 void Fandoms::Reindex()
 {
     ClearIndex();

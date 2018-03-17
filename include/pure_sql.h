@@ -1,6 +1,8 @@
 #pragma once
 #include <functional>
 #include <QString>
+#include <memory>
+#include <array>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -103,7 +105,10 @@ bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
 bool AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
 
+DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db);
+
 DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresence(QString, QString, QString)>, QSqlDatabase db);
+DiagnosticSQLResult<bool> WipeSlashMetainformation(QSqlDatabase db);
 
 bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
@@ -114,6 +119,10 @@ core::FandomPtr GetFandom(QString name, QSqlDatabase db);
 DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
 DiagnosticSQLResult<QStringList>  GetIgnoredFandoms(QSqlDatabase db);
+
+DiagnosticSQLResult<bool>  IgnoreFandomSlashFilter(int id, QSqlDatabase db);
+DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredListSlashFilter(int id, QSqlDatabase db);
+DiagnosticSQLResult<QStringList>  GetIgnoredFandomsSlashFilter(QSqlDatabase db);
 
 bool CleanupFandom(int fandom_id,  QSqlDatabase db);
 DiagnosticSQLResult<bool> DeleteFandom(int fandom_id,  QSqlDatabase db);
@@ -134,6 +143,8 @@ int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
 core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db);
 core::FicPtr GetFicById(int ficId, QSqlDatabase db);
+
+
 
 bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
 bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
@@ -165,6 +176,12 @@ DiagnosticSQLResult<QList<int>>  GetAllAuthorRecommendations(int id, QSqlDatabas
 DiagnosticSQLResult<QSet<int>>  GetAllKnownSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownNotSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownFicIds(QString, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>>  GetSingularFicsInLargeButSlashyLists(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetListGenreData(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, double>>  GetFicGenreData(QString genre, QString cutoff, QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetFullFicGenreData(QSqlDatabase db);
+
+
 
 DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase db);
 

@@ -381,6 +381,11 @@ bool Authors::AssignNewNameForAuthor(core::AuthorPtr author, QString name)
     return database::puresql::AssignNewNameForAuthor(author, name, db);
 }
 
+QHash<int, std::array<double, 21> > Authors::GetListGenreData()
+{
+    return database::puresql::GetListGenreData(db).data;
+}
+
 
 QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list)
 {

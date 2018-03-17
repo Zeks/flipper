@@ -284,7 +284,11 @@ private:
     inline void AddToSlashHash(QList<core::AuthorPtr> authors,
                                QSet<int> knownSlashFics,
                                QHash<int, int>& slashHash, bool checkRx = true);
-    void CreateListOfSlashCandidates(int neededNotslashMatches = 3);
+    inline void AddToCountingHash(QList<core::AuthorPtr> authors, QHash<int, int>& countingHash, QHash<int, double> &valueHash, QHash<int, double> &totalHappiness, QHash<int, double> &totalSlash);
+    void CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr> authors);
+    void CreateListOfHumorCandidates(QList<core::AuthorPtr> authors);
+
+    void DoFullCycle();
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
 
@@ -335,6 +339,7 @@ private:
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
     QStringListModel* ignoredFandomsModel= nullptr;
+    QStringListModel* ignoredFandomsSlashFilterModel= nullptr;
     QStringListModel* recommendersModel = nullptr; // this keeps names of te authors in current recommendation list
 
     QLineEdit* currentExpandedEdit = nullptr; // expanded editor for line edits
@@ -350,6 +355,8 @@ private:
     ActionProgress* actionProgress = nullptr;
     QMenu fandomMenu;
     QMenu ignoreFandomMenu;
+    QMenu ignoreFandomSlashFilterMenu;
+    int lastI = 0;
 
 public slots:
     //broken and needs refactoring anyway
@@ -484,10 +491,12 @@ private slots:
 
     void OnRemoveFandomFromRecentList();
     void OnRemoveFandomFromIgnoredList();
+    void OnRemoveFandomFromSlashFilterIgnoredList();
 
 
     void OnFandomsContextMenu(const QPoint &pos);
     void OnIgnoredFandomsContextMenu(const QPoint &pos);
+    void OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos);
 
     void UpdateCategory(QString cat,
                         FFNFandomIndexParserBase* parser,
@@ -508,11 +517,18 @@ private slots:
 
     void on_pbProcessSlash_clicked();
 
-    void on_pbReloadAllAuthorsIter1_clicked();
+    void on_pbDoSlashFullCycle_clicked();
 
-    void on_pbCreateI1SlashList_clicked();
+    void on_pbOneMoreCycle_clicked();
 
-    void on_pbReloadAllAuthorsIter2_clicked();
+    void on_pbExcludeFandomFromSlashFiltering_clicked();
+
+    void on_pbDisplayHumor_clicked();
+
+    void on_pbReloadAuthors_clicked();
+
+    void OnPerformGenreAssignment();
+    void on_leOpenFicID_returnPressed();
 
 signals:
 

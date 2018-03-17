@@ -81,6 +81,8 @@ public:
 
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
 
+    QHash<int, std::array<double, 21>> GetListGenreData();
+
     //! todo those are required for managing recommendation lists and somewhat outdated
     // moved them to dump temporarily
 //    virtual bool  RemoveAuthor(int id);

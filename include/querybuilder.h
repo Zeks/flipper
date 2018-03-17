@@ -54,8 +54,9 @@ protected:
     QString ProcessSumRecs(StoryFilter, bool appendComma = true);
     QString ProcessTags(StoryFilter);
     QString ProcessUrl(StoryFilter);
+    QString ProcessGenreValues(StoryFilter);
     QString ProcessWordcount(StoryFilter);
-    QString ProcessSlashMode(StoryFilter);
+    QString ProcessSlashMode(StoryFilter, bool renameToFID = true);
     QString ProcessGenreIncluson(StoryFilter);
     QString ProcessWordInclusion(StoryFilter);
     QString ProcessActiveRecommendationsPart(StoryFilter);

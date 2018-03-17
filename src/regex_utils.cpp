@@ -185,7 +185,7 @@ void CommonRegex::Init()
 
 
 
-    names = "((kaka(shi){0,1})|(harry)|(sas(u){0,1}(ke){0,1})|(nar(u){0,1}(to){0,1})|(iru(ka){0,1})|(lee)|(gaa(ra){0,1})|(kiba)|(shika(maru){0,1}))";
+    names = "((kaka(shi){0,1})|(harry)|(sas(u){0,1}(ke){0,1})|(nar(u){0,1}(to){0,1})|(iru(ka){0,1})|(lee)|(gaa(ra){0,1})|(kiba)|(shika(maru){0,1})|(mina(to){0,1}))";
     fixedNamesOnly = names + characterSeparator + names;
     slashRegexPerFandom["Naruto"] = fixedNamesOnly;
 
@@ -200,7 +200,7 @@ void CommonRegex::Init()
     characterSlashPerFandom["Avengers"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
     characterSlashPerFandom["Hobbit"] ="([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])";
 
-    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a(\\s{0,1})){0,1}(slash|yaoi))|(jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\sfem-)|(fem(m){0,1}(e){0,1}slash)|(\\smentor\\s)"
+    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a(\\s{0,1})){0,1}(slash|yaoi))|((\\s)jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\sfem-)|(fem(m){0,1}(e){0,1}slash)|(\\smentor\\s)"
                "|(f/f)";
 
     QString notSlashCharacterSpecialCase;
@@ -217,7 +217,7 @@ void CommonRegex::Init()
 
     characterSlashPerFandom["D.Gray-Man"] ="([\\[]Allen\\sWalker[,]\\sKanda\\sYuu[\\]])";
 
-    characterNotSlashPerFandom["Harry Potter"] = "(Hermione)";
+    characterNotSlashPerFandom["Harry Potter"] = "(Hermione)|(Bella)|(lily)|(winky)";
     characterNotSlashPerFandom["Inuyasha"] = "(Kagome)";
     characterNotSlashPerFandom["Naruto"] = "(Sakura)";
     characterNotSlashPerFandom["Mass Effect"] = "Shepard\\s[\\()]F";

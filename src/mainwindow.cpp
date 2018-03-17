@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "timeutils.h"
 #include "regex_utils.h"
 #include "Interfaces/tags.h"
+#include "EGenres.h"
 #include <QMessageBox>
 #include <QReadWriteLock>
 #include <QReadLocker>
@@ -60,6 +61,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QMovie>
 #include <chrono>
 #include <algorithm>
+#include <math.h>
 
 #include "genericeventfilter.h"
 
@@ -269,6 +271,7 @@ void MainWindow::Init()
 
     recentFandomsModel = new QStringListModel;
     ignoredFandomsModel = new QStringListModel;
+    ignoredFandomsSlashFilterModel= new QStringListModel;
     recommendersModel= new QStringListModel;
 
 
@@ -280,6 +283,7 @@ void MainWindow::Init()
     auto fandomList = fandomsInterface->GetFandomList(true);
     ui->cbNormals->setModel(new QStringListModel(fandomList));
     ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
+    ui->cbIgnoreFandomSlashFilter->setModel(new QStringListModel(fandomList));
     ui->deCutoffLimit->setEnabled(false);
 
     actionProgress = new ActionProgress;
@@ -302,8 +306,10 @@ void MainWindow::Init()
 
     recentFandomsModel->setStringList(fandomsInterface->GetRecentFandoms());
     ignoredFandomsModel->setStringList(fandomsInterface->GetIgnoredFandoms());
+    ignoredFandomsSlashFilterModel->setStringList(fandomsInterface->GetIgnoredFandomsSlashFilter());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
     ui->lvIgnoredFandoms->setModel(ignoredFandomsModel);
+    ui->lvExcludedFandomsSlashFilter->setModel(ignoredFandomsSlashFilterModel);
     recsInterface->LoadAvailableRecommendationLists();
     fandomsInterface->FillFandomList(true);
 
@@ -330,8 +336,10 @@ void MainWindow::Init()
 
     fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
     ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
+    ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
     ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->edtResults->setOpenExternalLinks(true);
     ui->cbWordCutoff->setVisible(false);
 
@@ -412,8 +420,11 @@ void MainWindow::InitConnections()
     connect(worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
     connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
     connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
+    connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
     connect(ui->pbWipeCache, &QPushButton::clicked, this, &MainWindow::OnWipeCache);
+    connect(ui->pbAssignGenres, &QPushButton::clicked, this, &MainWindow::OnPerformGenreAssignment);
+
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -970,7 +981,7 @@ void MainWindow::LoadData()
     auto rx = GetSlashRegex();
     CommonRegex regexToken;
     regexToken.Init();
-    regexToken.Log();
+    //regexToken.Log();
     while(q.next())
     {
         counter++;
@@ -981,13 +992,13 @@ void MainWindow::LoadData()
         if(ui->chkInvertedSlashFilter->isChecked() || ui->chkOnlySlash->isChecked())
             slashToken = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
 
-        bool slashFromDB = ui->chkUseDBForSlash->isChecked();
-        if(!slashFromDB && ui->chkInvertedSlashFilter->isChecked())
+        bool applyLocalSlashFilter = ui->chkApplyLocalSlashFilter->isChecked();
+        if(applyLocalSlashFilter && ui->chkInvertedSlashFilterLocal->isChecked())
         {
             if(slashToken.IsSlash())
                 allow = false;
         }
-        if(!slashFromDB && ui->chkOnlySlash->isChecked())
+        if(applyLocalSlashFilter && ui->chkOnlySlashLocal->isChecked())
         {
             if(!slashToken.IsSlash())
                 allow = false;
@@ -2765,9 +2776,6 @@ void MainWindow::ReprocessAllAuthorsV2()
 
 void MainWindow::ReprocessAllAuthorsJustSlash(QString fieldUsed)
 {
-    auto authors = authorsInterface->GetAllAuthors("ffn", true);
-    //authorsInterface->WipeAuthorStatisticsRecords();
-    //authorsInterface->CreateStatisticsRecordsForAuthors();
     authorsInterface->CalculateSlashStatisticsPercentages(fieldUsed);
 }
 
@@ -2833,14 +2841,43 @@ inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,
 }
 
 
-void MainWindow::CreateListOfSlashCandidates(int neededNotslashMatches)
+inline void MainWindow::AddToCountingHash(QList<core::AuthorPtr> authors,
+                                          QHash<int, int>& countingHash,
+                                          QHash<int, double>& valueHash,
+                                          QHash<int, double>& totalHappiness,
+                                          QHash<int, double>& totalSlash)
+{
+    QList<double> coeffs ;
+    //coeffs = {0.3, 0.6, 0.8, 1}; //original
+    coeffs = {0.2, 0.4, 0.7, 1}; //second
+    for(auto author : authors)
+    {
+        auto fics = authorsInterface->GetFicList(author);
+        double listvalue;
+//        auto logFaves = log2(author->stats.favouriteStats.favourites) ;
+//        listvalue = logFaves < 1 ? 1 : logFaves;
+//        listvalue = logFaves > 1.5 ? 1.5 + (logFaves - 1.5)/8. : logFaves;
+        listvalue = 1;
+
+        for(auto fic : fics)
+        {
+            countingHash[fic]++;
+            valueHash[fic] += listvalue;// * pow(author->stats.favouriteStats.moodHappy, 1/2);
+            totalHappiness[fic] += author->stats.favouriteStats.moodHappy;
+            totalSlash[fic] += author->stats.favouriteStats.slashRatio;
+        }
+    }
+}
+
+
+void MainWindow::CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr > authors)
 {
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
 
     auto keyWordSlashRepo = fanficsInterface->GetAllKnownSlashFics();
     auto keyWordNotSlashRepo = fanficsInterface->GetAllKnownNotSlashFics();
-    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+
     QHash<int, QList<core::AuthorPtr>> slashAuthors;
     QList<core::AuthorPtr> notSlashAuthors;
 
@@ -2888,19 +2925,38 @@ void MainWindow::CreateListOfSlashCandidates(int neededNotslashMatches)
     processNotSlash.run();
     QList<int> intersection;
     intersection.reserve(50000);
-//    CommonRegex rx;
-//    rx.Init();
+    //    CommonRegex rx;
+    //    rx.Init();
 
+    // sufficient matches depends on if a fic is present in lists 0 and 1
+    // 0 - 2 matches or more requires 7 non slash
+    // 1 - 5 matches or more requires 5 non slash
+    QSet<int> inSoleLargeLists = fanficsInterface->GetSingularFicsInLargeButSlashyLists();
+    qDebug() << "Size of additional exclusions: " << inSoleLargeLists.size();
+    int sufficientMatchesCount = 3;
     qDebug() << "Slash 2 size before filtering: " << slashFics[2].size();
     auto TRepo = fanficsInterface->GetAllKnownFicIDs(" rated <> 'M' ");
+    int exclusionTriggers = 0;
     TimedAction intersect("Intersect", [&](){
         for(const auto& fic: slashFics[2].keys())
         {
+
+            if(slashFics[0][fic] >= 2)
+                sufficientMatchesCount = 7;
+            else if(slashFics[1][fic] >= 5)
+                sufficientMatchesCount = 5;
             //auto ficPtr = fanficsInterface->GetFicById(fic);
             bool soleTMatch = (TRepo.contains(fic) && slashFics[2][fic]==1);
             bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
-            bool sufficientMatches = notSlashFics[fic] >= neededNotslashMatches;
-            if(!keyWordSlashRepo.contains(fic) && (cantTellReliably || soleTMatch || sufficientMatches))
+            bool sufficientMatches = notSlashFics[fic] >= static_cast<double>(sufficientMatchesCount)/neededNotslashMatchesCoeff;
+            if(fic == 86768)
+            {
+                qDebug() << "Sole T: " << soleTMatch << " CantReliably: " << cantTellReliably << " Sufficient matches: "  << sufficientMatches;
+            }
+            bool exclusionTriggered = inSoleLargeLists.contains(fic);
+            if(exclusionTriggered)
+                exclusionTriggers++;
+            if(!keyWordSlashRepo.contains(fic) && (exclusionTriggered || cantTellReliably || soleTMatch || sufficientMatches))
                 intersection.push_back(fic);
             else
             {
@@ -2909,6 +2965,7 @@ void MainWindow::CreateListOfSlashCandidates(int neededNotslashMatches)
         }
     });
     intersect.run();
+    qDebug() << "Additional exclusion triggered: " << exclusionTriggers << " times";
     qDebug() << "Intersection size: " << intersection.size();
     //qDebug() << intersection;
     QHash<int, int> filteredSlashFics;
@@ -2931,6 +2988,137 @@ void MainWindow::CreateListOfSlashCandidates(int neededNotslashMatches)
     transaction.finalize();
     qDebug () << "finished";
     // I can create a recommendation list from this
+
+}
+
+
+
+
+void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+
+    QHash<int, std::array<double, 21>> authorGenreHash;
+    QHash<int, std::array<double, 21>> ficGenreHash;
+    TimedAction getGenres("getGenres", [&](){
+        authorGenreHash = authorsInterface->GetListGenreData();
+    });
+    getGenres.run();
+    TimedAction getFicGenres("getGenres", [&](){
+        ficGenreHash = fanficsInterface->GetFullFicGenreData();
+    });
+    getFicGenres.run();
+
+    QList<core::AuthorPtr> humorAuthors;
+    QList<core::AuthorPtr> validAuthors;
+    for(auto author : authors)
+    {
+        if(author->stats.favouriteStats.favourites < 50)
+            continue;
+        validAuthors.push_back(author);
+
+        auto& stats = author->stats.favouriteStats;
+        if(stats.moodHappy > 0.6 && authorGenreHash[author->id][10] < 0.5)
+            humorAuthors.push_back(author);
+    }
+    QHash<int, int> humorFics;
+    QHash<int, double> humorValues;
+    QHash<int, double> dummyValues;
+    QHash<int, int> allFics;
+    QHash<int, double> totalHappiness;
+    QHash<int, double> totalSlash;
+    QHash<int, double> dummyHappiness;
+    QHash<int, double> dummySlash;
+    TimedAction processHumor("ProcHumor", [&](){
+        AddToCountingHash(humorAuthors,
+                          humorFics,
+                          humorValues,
+                          totalHappiness,
+                          dummySlash);
+        AddToCountingHash(validAuthors, allFics, dummyValues, dummyHappiness,totalSlash );
+    });
+
+    processHumor.run();
+    QHash<int, int> relativeFics;
+    double maxFavouritesNormalization = 0.0;
+    double minFavouritesNormalization = 0.0;
+    for(auto fic:humorFics.keys())
+    {
+        double averagehappiness = totalHappiness[fic]/static_cast<double>(humorFics[fic]);
+        auto appearanceInHumor = static_cast<double>(humorFics[fic]);
+        double adjustedHumorValue;
+        double logvalue = log10(humorValues[fic]);
+        if(logvalue < 1)
+            logvalue = 1;
+        adjustedHumorValue = static_cast<double>(humorValues[fic])/logvalue;
+        double listSizeAdjustment = 1.;
+        if(appearanceInHumor < 5)
+            listSizeAdjustment = 0.2;
+        else if(appearanceInHumor < 10)
+            listSizeAdjustment = 0.4;
+        else if(appearanceInHumor < 50)
+            listSizeAdjustment = 0.8;
+        else
+            listSizeAdjustment = 1;
+
+        double ficGenreAdjuster = 1;
+        if(ficGenreHash[fic][genres::Humor] < 0.1)
+            ficGenreAdjuster = 0.3;
+        else if(ficGenreHash[fic][genres::Humor] < 0.2)
+            ficGenreAdjuster = 0.75;
+        else if(ficGenreHash[fic][genres::Humor] > 0.4)
+            ficGenreAdjuster = 1.2;
+
+        double genrePreferenceAdjuster = 1;
+        double preferenceValue = ficGenreHash[fic][genres::Humor]  + ficGenreHash[fic][genres::Parody];
+        if(preferenceValue > ficGenreHash[fic][genres::Romance] &&
+                preferenceValue > ficGenreHash[fic][genres::Adventure] &&
+                preferenceValue > ficGenreHash[fic][genres::Drama])
+            genrePreferenceAdjuster = 1.5;
+        if((ficGenreHash[fic][genres::Adventure] - preferenceValue) > 0.2 )
+            genrePreferenceAdjuster = 0.8;
+        if((ficGenreHash[fic][genres::Romance] - preferenceValue) > 0.15 )
+            genrePreferenceAdjuster = 0.5;
+
+
+
+        relativeFics[fic] = static_cast<int>(100*adjustedHumorValue*averagehappiness*listSizeAdjustment*ficGenreAdjuster*genrePreferenceAdjuster);
+    }
+
+    TimedAction writeSlashLists("WriteHumor", [&](){
+        recsInterface->CreateRecommendationList("HumorAlgo", relativeFics);
+    });
+    writeSlashLists.run();
+
+    transaction.finalize();
+    qDebug () << "finished";
+}
+
+void MainWindow::DoFullCycle()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    {
+        database::Transaction transaction(db);
+        DetectSlashForEverythingV2();
+
+        ReprocessAllAuthorsJustSlash("keywords_pass_result");
+        transaction.finalize();
+    }
+    for(int i = 1; i < ui->sbSlashPasses->value()+1; i++)
+    {
+        {
+            database::Transaction transaction(db);
+            auto authors = authorsInterface->GetAllAuthors("ffn", true);
+            CreateListOfSlashCandidates(i, authors);
+            fanficsInterface->AssignIterationOfSlash("pass_" + QString::number(i));
+            ReprocessAllAuthorsJustSlash("pass_" + QString::number(i));
+            transaction.finalize();
+            lastI = i;
+        }
+
+    }
 
 }
 
@@ -3256,8 +3444,9 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.crossoversOnly= ui->chkCrossovers->isChecked();
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
-    filter.includeSlash = ui->chkUseDBForSlash->isChecked() && ui->chkOnlySlash->isChecked();
-    filter.excludeSlash = ui->chkUseDBForSlash->isChecked() && ui->chkInvertedSlashFilter->isChecked();
+    filter.includeSlash = ui->chkOnlySlash->isChecked();
+    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
+    filter.disableSlashFilterForSpecificFandoms = ui->chkEnableSlashExceptions->isChecked();
     filter.slashFilterLevel = ui->cbSlashFilterAggressiveness->currentIndex();
     filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
@@ -3270,6 +3459,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex());
+    filter.genreSortField = ui->leGenreSortField->text();
     filter.showOriginsInLists = ui->chkShowOrigins->isChecked();
     filter.minRecommendations = ui->sbMinRecommendations->value();
     filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : -1;
@@ -3627,6 +3817,13 @@ void MainWindow::OnRemoveFandomFromIgnoredList()
     ignoredFandomsModel->setStringList(fandomsInterface->GetIgnoredFandoms());
 }
 
+void MainWindow::OnRemoveFandomFromSlashFilterIgnoredList()
+{
+    auto fandom = ui->lvExcludedFandomsSlashFilter->currentIndex().data(0).toString();
+    fandomsInterface->RemoveFandomFromIgnoredListSlashFilter(fandom);
+    ignoredFandomsSlashFilterModel->setStringList(fandomsInterface->GetIgnoredFandomsSlashFilter());
+}
+
 void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
     fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
@@ -3635,6 +3832,11 @@ void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 void MainWindow::OnIgnoredFandomsContextMenu(const QPoint &pos)
 {
     ignoreFandomMenu.popup(ui->lvIgnoredFandoms->mapToGlobal(pos));
+}
+
+void MainWindow::OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos)
+{
+    ignoreFandomSlashFilterMenu.popup(ui->lvExcludedFandomsSlashFilter->mapToGlobal(pos));
 }
 
 void MainWindow::on_pbFormattedList_clicked()
@@ -3660,6 +3862,12 @@ void MainWindow::on_pbIgnoreFandom_clicked()
     ignoredFandomsModel->setStringList(fandomsInterface->GetIgnoredFandoms());
 }
 
+void MainWindow::on_pbExcludeFandomFromSlashFiltering_clicked()
+{
+    fandomsInterface->IgnoreFandomSlashFilter(ui->cbIgnoreFandomSlashFilter->currentText());
+    ignoredFandomsSlashFilterModel->setStringList(fandomsInterface->GetIgnoredFandomsSlashFilter());
+}
+
 void MainWindow::on_pbReloadAllAuthors_clicked()
 {
     //ReprocessAllAuthors();
@@ -3682,7 +3890,8 @@ void MainWindow::OnOpenAuthorListByID()
 
 void MainWindow::on_pbCreateSlashList_clicked()
 {
-    CreateListOfSlashCandidates();
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    CreateListOfSlashCandidates(1, authors);
 }
 
 void MainWindow::on_pbProcessSlash_clicked()
@@ -3690,29 +3899,58 @@ void MainWindow::on_pbProcessSlash_clicked()
     DetectSlashForEverythingV2();
 }
 
-void MainWindow::on_pbReloadAllAuthorsIter1_clicked()
+void MainWindow::on_pbDoSlashFullCycle_clicked()
 {
-    auto result = fanficsInterface->AssignIterationOfSlash("first_slash_iteration");
-    if(!result)
-    {
-        qDebug() << "failed slash assignment";
-        return;
-    }
-    ReprocessAllAuthorsJustSlash("first_slash_iteration");
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    TimedAction filter("Full cycle", [&](){
+        DoFullCycle();
+    });
+    filter.run();
+    transaction.finalize();
 }
 
-void MainWindow::on_pbCreateI1SlashList_clicked()
+void MainWindow::on_pbOneMoreCycle_clicked()
 {
-    CreateListOfSlashCandidates(1);
+    lastI = lastI + 1;
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    CreateListOfSlashCandidates(lastI, authors);
+    fanficsInterface->AssignIterationOfSlash("pass_" + QString::number(lastI));
+    ReprocessAllAuthorsJustSlash("pass_" + QString::number(lastI));
+    transaction.finalize();
 }
 
-void MainWindow::on_pbReloadAllAuthorsIter2_clicked()
+
+
+void MainWindow::on_pbDisplayHumor_clicked()
 {
-    auto result = fanficsInterface->AssignIterationOfSlash("second_slash_iteration");
-    if(!result)
-    {
-        qDebug() << "failed slash assignment";
+    TaskProgressGuard guard(this);
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    CreateListOfHumorCandidates(authors);
+}
+
+void MainWindow::on_pbReloadAuthors_clicked()
+{
+    ReprocessAllAuthorsV2();
+}
+
+void MainWindow::OnPerformGenreAssignment()
+{
+    TaskProgressGuard guard(this);
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+    fanficsInterface->PerformGenreAssignment();
+    transaction.finalize();
+}
+
+void MainWindow::on_leOpenFicID_returnPressed()
+{
+    auto ficID = ui->leOpenFicID->text();
+    auto fic = fanficsInterface->GetFicById(ficID.toInt());
+    if(!fic)
         return;
-    }
-    ReprocessAllAuthorsJustSlash("second_slash_iteration");
+
+    QDesktopServices::openUrl(url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn"));
 }

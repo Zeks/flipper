@@ -66,6 +66,13 @@ public:
     bool RemoveFandomFromIgnoredList(QString name);
     bool RemoveFandomFromIgnoredList(int id);
 
+    bool IgnoreFandomSlashFilter(QString name);
+    bool IgnoreFandomSlashFilter(int id);
+    QStringList GetIgnoredFandomsSlashFilter() const;
+    bool RemoveFandomFromIgnoredListSlashFilter(QString name);
+    bool RemoveFandomFromIgnoredListSlashFilter(int id);
+
+
     virtual QStringList ListOfTrackedNames();
     virtual QList<core::FandomPtr> ListOfTrackedFandoms();
 

@@ -45,6 +45,8 @@ wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
 wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows
  from fanfics;
 
+
+ 
 CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_TAGS ON FANFICS (TAGS ASC);
@@ -71,6 +73,39 @@ CREATE INDEX if not exists  I_SLASH_SECOND ON fanfics (second_slash_iteration AS
  CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);
  INSERT INTO sqlite_sequence(name, seq) SELECT 'fanfics', 0 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name = 'fanfics');
  update sqlite_sequence set seq = (select max(id) from fanfics) where name = 'fanfics';
+  
+-- slash passes;
+ create table if not exists algopasses (fic_id integer primary key);
+ alter table algopasses add column keywords_yes integer default 0;
+ alter table algopasses add column keywords_no integer default 0;
+ alter table algopasses add column keywords_pass_result integer default 0;
+ alter table algopasses add column pass_1 integer default 0;
+ alter table algopasses add column pass_2 integer default 0;
+ alter table algopasses add column pass_3 integer default 0;
+ alter table algopasses add column pass_4 integer default 0;
+ alter table algopasses add column pass_5 integer default 0;
+ --alter table slashpasses add column pass_6 integer default 0;
+ --alter table slashpasses add column pass_7 integer default 0;
+ --alter table slashpasses add column pass_8 integer default 0;
+ --alter table slashpasses add column pass_9 integer default 0;
+ --alter table slashpasses add column pass_10 integer default 0;
+-- alter table slashpasses add column pass_XD integer default 0;
+ 
+ CREATE INDEX if not exists I_SP_FID ON algopasses (fic_id ASC);
+ CREATE INDEX if not exists I_SP_YES_KEY ON algopasses (keywords_yes ASC);
+ CREATE INDEX if not exists I_SP_NO_KEY ON algopasses (keywords_no ASC);
+ CREATE INDEX if not exists I_SP_KEY_PASS_RESULT ON algopasses (keywords_pass_result ASC);
+ CREATE INDEX if not exists I_SP_PASS_1 ON algopasses (pass_1 ASC);
+ CREATE INDEX if not exists I_SP_PASS_2 ON algopasses (pass_2 ASC);
+ CREATE INDEX if not exists I_SP_PASS_3 ON algopasses (pass_3 ASC);
+ CREATE INDEX if not exists I_SP_PASS_4 ON algopasses (pass_4 ASC);
+ CREATE INDEX if not exists I_SP_PASS_5 ON algopasses (pass_5 ASC);
+ --CREATE INDEX if not exists I_SP_PASS_6 ON slashpasses (pass_6 ASC);
+ --CREATE INDEX if not exists I_SP_PASS_7 ON slashpasses (pass_7 ASC);
+ --CREATE INDEX if not exists I_SP_PASS_8 ON slashpasses (pass_8 ASC);
+ --CREATE INDEX if not exists I_SP_PASS_9 ON slashpasses (pass_9 ASC);
+ --CREATE INDEX if not exists I_SP_PASS_10 ON slashpasses (pass_10 ASC);
+ --CREATE INDEX if not exists I_SP_PASS_XD ON slashpasses (pass_XD ASC);
  
 create table if not exists fandomindex (id integer, name VARCHAR NOT NULL, tracked integer default 0, primary key(id, name));
 alter table fandomindex add column updated datetime;
@@ -108,6 +143,9 @@ CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3
  INSERT INTO recent_fandoms(fandom, seq_num) SELECT 'base', 0 WHERE NOT EXISTS(SELECT 1 FROM fandom WHERE fandom = 'base');
  
  CREATE TABLE if not exists ignored_fandoms(fandom_id INTEGER PRIMARY KEY, including_crossovers integer default 0);
+CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id ASC);  
+
+ CREATE TABLE if not exists ignored_fandoms_slash_filter(fandom_id INTEGER PRIMARY KEY);
 CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id ASC);  
  
  CREATE TABLE if not exists Recommenders (id INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE , name VARCHAR NOT NULL , url VARCHAR NOT NULL , page_data BLOB, page_updated DATETIME, author_updated DATETIME);
@@ -198,6 +236,7 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  alter table AuthorFavouritesGenreStatistics add column Adventure real default 0;
  alter table AuthorFavouritesGenreStatistics add column Mystery real default 0;
  alter table AuthorFavouritesGenreStatistics add column Horror real default 0;
+ alter table AuthorFavouritesGenreStatistics add column Drama real default 0;
  alter table AuthorFavouritesGenreStatistics add column Parody real default 0;
  alter table AuthorFavouritesGenreStatistics add column Angst real default 0;
  alter table AuthorFavouritesGenreStatistics add column Supernatural real default 0;
@@ -214,7 +253,32 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  alter table AuthorFavouritesGenreStatistics add column HurtComfort real default 0;
  alter table AuthorFavouritesGenreStatistics add column Friendship real default 0;
  
- CREATE  INDEX if not exists I_AFGS_AID ON AuthorFavouritesGenreStatistics (author_id ASC);
+  -- contains averaged percentage per genre for fics;
+ CREATE TABLE if not exists FicGenreStatistics (fic_id INTEGER PRIMARY KEY NOT NULL UNIQUE);
+ alter table FicGenreStatistics add column General_ real default 0;
+ alter table FicGenreStatistics add column Humor real default 0;
+ alter table FicGenreStatistics add column Poetry real default 0;
+ alter table FicGenreStatistics add column Adventure real default 0;
+ alter table FicGenreStatistics add column Mystery real default 0;
+ alter table FicGenreStatistics add column Horror real default 0;
+ alter table FicGenreStatistics add column Drama real default 0;
+ alter table FicGenreStatistics add column Parody real default 0;
+ alter table FicGenreStatistics add column Angst real default 0;
+ alter table FicGenreStatistics add column Supernatural real default 0;
+ alter table FicGenreStatistics add column Suspense real default 0;
+ alter table FicGenreStatistics add column Romance real default 0;
+ alter table FicGenreStatistics add column NoGenre real default 0;
+ alter table FicGenreStatistics add column SciFi real default 0;
+ alter table FicGenreStatistics add column Fantasy real default 0;
+ alter table FicGenreStatistics add column Spiritual real default 0;
+ alter table FicGenreStatistics add column Tragedy real default 0;
+ alter table FicGenreStatistics add column Western real default 0;
+ alter table FicGenreStatistics add column Crime real default 0;
+ alter table FicGenreStatistics add column Family real default 0;
+ alter table FicGenreStatistics add column HurtComfort real default 0;
+ alter table FicGenreStatistics add column Friendship real default 0;
+ 
+ CREATE  INDEX if not exists I_FGS_FID ON FicGenreStatistics (fic_id ASC);
   
   -- need cluster relations in separate table;
  CREATE TABLE if not exists AuthorFavouritesFandomRatioStatistics (author_id INTEGER, fandom_id integer default null, fandom_ratio real default null, fic_count integer default 0, PRIMARY KEY (author_id, fandom_id));

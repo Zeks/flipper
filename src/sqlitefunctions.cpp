@@ -307,6 +307,21 @@ int CreateNewSubTask(int taskId, QSqlDatabase db)
     return id;
 }
 
+QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault)
+{
+    QSqlDatabase db;
+    if(setDefault)
+        db = QSqlDatabase::addDatabase("QSQLITE");
+    else
+        db = QSqlDatabase::addDatabase("QSQLITE", dbName);
+    db.setDatabaseName(filename + ".sqlite");
+    bool isOpen = db.open();
+    qDebug() << "Database status: " << dbName << ", open : " << isOpen;
+    InstallCustomFunctions(db);
+
+    return db;
+}
+
 
 
 
