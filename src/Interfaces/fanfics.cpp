@@ -251,6 +251,11 @@ QHash<int, std::array<double, 21> > Fanfics::GetFullFicGenreData()
     return database::puresql::GetFullFicGenreData(db).data;
 }
 
+QHash<int, double> Fanfics::GetDoubleValueHashForFics(QString fieldName)
+{
+    return database::puresql::GetDoubleValueHashForFics(fieldName, db).data;
+}
+
 void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
 {
     QWriteLocker lock(&mutex);

@@ -3001,6 +3001,12 @@ void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
 
     QHash<int, std::array<double, 21>> authorGenreHash;
     QHash<int, std::array<double, 21>> ficGenreHash;
+    QHash<int, double> reviewRatios;
+    TimedAction getReviewRatios("get review ratios", [&](){
+        reviewRatios = fanficsInterface->GetDoubleValueHashForFics("reviewstofavourites");
+    });
+    getReviewRatios.run();
+
     TimedAction getGenres("getGenres", [&](){
         authorGenreHash = authorsInterface->GetListGenreData();
     });
@@ -3009,6 +3015,8 @@ void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
         ficGenreHash = fanficsInterface->GetFullFicGenreData();
     });
     getFicGenres.run();
+
+
 
     QList<core::AuthorPtr> humorAuthors;
     QList<core::AuthorPtr> validAuthors;
@@ -3041,26 +3049,24 @@ void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
 
     processHumor.run();
     QHash<int, int> relativeFics;
-    double maxFavouritesNormalization = 0.0;
-    double minFavouritesNormalization = 0.0;
     for(auto fic:humorFics.keys())
     {
-        double averagehappiness = totalHappiness[fic]/static_cast<double>(humorFics[fic]);
+        double averageHappiness = totalHappiness[fic]/static_cast<double>(humorFics[fic]);
         auto appearanceInHumor = static_cast<double>(humorFics[fic]);
         double adjustedHumorValue;
         double logvalue = log10(humorValues[fic]);
         if(logvalue < 1)
             logvalue = 1;
         adjustedHumorValue = static_cast<double>(humorValues[fic])/logvalue;
-        double listSizeAdjustment = 1.;
+        double listSizeAdjuster = 1.;
         if(appearanceInHumor < 5)
-            listSizeAdjustment = 0.2;
+            listSizeAdjuster = 0.2;
         else if(appearanceInHumor < 10)
-            listSizeAdjustment = 0.4;
+            listSizeAdjuster = 0.4;
         else if(appearanceInHumor < 50)
-            listSizeAdjustment = 0.8;
+            listSizeAdjuster = 0.8;
         else
-            listSizeAdjustment = 1;
+            listSizeAdjuster = 1;
 
         double ficGenreAdjuster = 1;
         if(ficGenreHash[fic][genres::Humor] < 0.1)
@@ -3081,9 +3087,19 @@ void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
         if((ficGenreHash[fic][genres::Romance] - preferenceValue) > 0.15 )
             genrePreferenceAdjuster = 0.5;
 
+        double reviewRatioAdjuster = 1;
+        if(reviewRatios[fic] > 1.5)
+            reviewRatioAdjuster = 0.3;
 
 
-        relativeFics[fic] = static_cast<int>(100*adjustedHumorValue*averagehappiness*listSizeAdjustment*ficGenreAdjuster*genrePreferenceAdjuster);
+
+
+        relativeFics[fic] = static_cast<int>(100*adjustedHumorValue
+                                             *averageHappiness
+                                             *listSizeAdjuster
+                                             *ficGenreAdjuster
+                                             *genrePreferenceAdjuster
+                                             *reviewRatioAdjuster);
     }
 
     TimedAction writeSlashLists("WriteHumor", [&](){

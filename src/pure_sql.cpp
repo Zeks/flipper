@@ -3070,7 +3070,29 @@ DiagnosticSQLResult<QSet<int> > GetSingularFicsInLargeButSlashyLists(QSqlDatabas
     result.success = true;
     return result;
 }
+DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db)
+{
+    DiagnosticSQLResult<QHash<int, double> > result;
+    result.success = false;
 
+
+    QString qs = QString("select id, %1 from fanfics order by id");
+    qs= qs.arg(fieldName);
+    QSqlQuery q(db);
+
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    if(!result.CheckDataAvailability(q))
+        return result;
+    do
+    {
+        result.data[q.value("id").toInt()] =q.value(fieldName).toDouble();
+
+    }while(q.next());
+    result.success = true;
+    return result;
+}
 DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetListGenreData(QSqlDatabase db)
 {
     DiagnosticSQLResult<QHash<int, std::array<double, 21>>> result;
@@ -3509,6 +3531,8 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
     return exitVal;
 
 }
+
+
 
 
 

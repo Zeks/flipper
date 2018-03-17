@@ -84,6 +84,7 @@ class Fanfics : public IDBWebIDIndex {
     bool PerformGenreAssignment();
     QHash<int, double> GetFicGenreData(QString genre, QString cutoff);
     QHash<int, std::array<double, 21>> GetFullFicGenreData();
+    QHash<int, double> GetDoubleValueHashForFics(QString fieldName);
 
     // update interface
     QReadWriteLock mutex;

@@ -349,7 +349,7 @@ QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
     return queryString;
 }
 
-QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
+QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter, bool renameToFID)
 {
     QString queryString;
     if(filter.fandom.trimmed().isEmpty())
@@ -357,6 +357,10 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter)
     //todo this can be optimized if I pass fandom id directly
     QString add = " and fid in (select fic_id from ficfandoms where fandom_id = (select id from fandomindex where name = '%1')) ";
     queryString+=add.arg(filter.fandom);
+
+    if(!renameToFID)
+        queryString.replace(" fid ", " ff.id ");
+
     return queryString;
 
 }
@@ -555,7 +559,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
             where += " and favourites > :favourites ";
 
         where+= ProcessStatusFilters(filter);
-        where+= ProcessNormalOrCrossover(filter);
+        where+= ProcessNormalOrCrossover(filter, false);
         where+= ProcessFilteringMode(filter);
 
     }

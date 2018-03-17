@@ -64,7 +64,7 @@ protected:
 
     QString ProcessDiffField(StoryFilter);
     QString ProcessStatusFilters(StoryFilter);
-    QString ProcessNormalOrCrossover(StoryFilter);
+    QString ProcessNormalOrCrossover(StoryFilter, bool renameToFID = true);
     QString ProcessFilteringMode(StoryFilter);
     QString ProcessFandomIgnore(StoryFilter);
     QString ProcessCrossovers(StoryFilter);
