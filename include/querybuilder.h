@@ -51,6 +51,7 @@ protected:
     QString ProcessBias(StoryFilter);
     QString ProcessSumFaves(StoryFilter);
     QString ProcessFandoms(StoryFilter);
+    QString ProcessOtherFandomsMode(StoryFilter, bool renameToFID = true);
     QString ProcessSumRecs(StoryFilter, bool appendComma = true);
     QString ProcessTags(StoryFilter);
     QString ProcessUrl(StoryFilter);

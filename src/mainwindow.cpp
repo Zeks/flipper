@@ -3451,6 +3451,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureActive = ui->chkActive->isChecked();
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomName();
+    filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
     filter.genreExclusion = valueIfChecked(ui->chkGenreMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text(), "###"));
     filter.genreInclusion = valueIfChecked(ui->chkGenrePlus,core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text(), "###"));

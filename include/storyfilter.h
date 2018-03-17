@@ -68,6 +68,7 @@ struct StoryFilter{
     bool excludeSlash = false;
     bool includeSlash = false;
     bool disableSlashFilterForSpecificFandoms = false;
+    bool otherFandomsMode = false;
 
 
     int useThisRecommenderOnly = -1;

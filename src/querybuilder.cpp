@@ -96,6 +96,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     QString queryString;
 
     queryString+= ProcessWordcount(filter);
+    queryString+= ProcessOtherFandomsMode(filter);
     queryString+= ProcessSlashMode(filter);
     queryString+= ProcessGenreIncluson(filter);
     queryString+= ProcessWordInclusion(filter);
@@ -140,11 +141,26 @@ QString DefaultQueryBuilder::ProcessSumFaves(StoryFilter)
     return sumOfAuthorFavourites;
 }
 
-QString DefaultQueryBuilder::ProcessFandoms(StoryFilter filter)
+QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
 {
     //return QString();
     QString fandoms = " ( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n";
     return fandoms;
+}
+
+QString DefaultQueryBuilder::ProcessOtherFandomsMode(StoryFilter filter, bool renameToFID)
+{
+    QString queryString;
+    if(filter.otherFandomsMode)
+        queryString += " and not exists ("
+                       "select fandom_id from ficfandoms where fic_id = fid and fandom_id in "
+                       "(select id from fandomindex where name in (select distinct fandom from recent_fandoms)"
+                       "))" ;
+
+    if(!renameToFID)
+        queryString.replace(" fid ", " ff.id ");
+
+    return queryString;
 }
 
 // not exactly what its supposed to do but okay query to save
@@ -550,6 +566,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
         where+= ProcessWordcount(filter);
         where+= ProcessSlashMode(filter, false);
         where+= ProcessGenreIncluson(filter);
+        where+= ProcessOtherFandomsMode(filter, false);
         where+= ProcessWordInclusion(filter);
         where+= ProcessBias(filter);
         where+= ProcessWhereSortMode(filter);
