@@ -481,9 +481,6 @@ private slots:
     // used to get all favourites links for the current author on favourites page
     void OnGetAuthorFavouritesLinks();
 
-    //used to hide fandom results on timer
-    void OnHideFandomResults();
-
     // used to toggle enabled status of date cutoff mechanism for fandom parses
     void on_chkCutoffLimit_toggled(bool checked);
 

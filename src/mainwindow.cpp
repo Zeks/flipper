@@ -332,7 +332,6 @@ void MainWindow::Init()
     cleanupEditor = [&](void) {
         ui->edtResults->clear();
     };
-    ui->lblLoadResult->hide();
 
     fandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromRecentList()));
     ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
@@ -410,7 +409,6 @@ void MainWindow::InitConnections()
 
     });
     connect(&taskTimer, &QTimer::timeout, this, &MainWindow::OnCheckUnfinishedTasks);
-    connect(&fandomInfoTimer, &QTimer::timeout, this, &MainWindow::OnHideFandomResults);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     //! todo currently null
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
@@ -2416,8 +2414,7 @@ void MainWindow::CrawlFandom(QString fandomName)
     ui->edtResults->insertHtml(status.arg("Duplicate fics").arg("gray").arg(task->skippedFics));
 
     status = "Finished processing %1 fics";
-    ui->lblLoadResult->setText(status.arg(processedFics));
-    ui->lblLoadResult->setStyleSheet("font-weight: bold; color: darkGreen; font-size: 20px");
+
 
     //ui->lblLoadResult->show();
     fandomInfoTimer.setSingleShot(true);
@@ -3189,8 +3186,6 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     //ui->lblLoadResult->show();
     fandomInfoTimer.setSingleShot(true);
     fandomInfoTimer.start(7000);
-    ui->lblLoadResult->setText(status.arg(processedFics));
-    ui->lblLoadResult->setStyleSheet("font-weight: bold; color: darkGreen; font-size: 20px");
 }
 
 void MainWindow::on_pbLoadPage_clicked()
@@ -3716,10 +3711,6 @@ void MainWindow::OnGetAuthorFavouritesLinks()
 
 }
 
-void MainWindow::OnHideFandomResults()
-{
-    ui->lblLoadResult->hide();
-}
 
 void MainWindow::UpdateCategory(QString cat,
                                 FFNFandomIndexParserBase* parser,
