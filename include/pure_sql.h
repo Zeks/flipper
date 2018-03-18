@@ -9,6 +9,7 @@
 #include <QSharedPointer>
 #include "core/section.h"
 #include "regex_utils.h"
+#include "transaction.h"
 
 class BasePageTask;
 class PageTask;
@@ -61,6 +62,72 @@ struct DiagnosticSQLResult
     }
 };
 
+template <typename ResultType>
+struct SqlContext
+{
+    //SqlContext(QSqlDatabase db): q(db),transaction(db){}
+    SqlContext(QSqlDatabase db, QString qs = "") : q(db), transaction(db), qs(qs){
+        q.prepare(qs);
+    }
+    SqlContext(QSqlDatabase db, QString qs,  std::function<void(SqlContext<ResultType>*)> func) : q(db), transaction(db), qs(qs), func(func){
+        q.prepare(qs);
+        func(this);
+    }
+
+    SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) : q(db), transaction(db), qs(qs), func(func){
+        q.prepare(qs);
+        for(auto valName: hash.keys())
+            q.bindValue(valName, hash[valName]);
+    }
+    void ExecuteWithArgsSubstitution(QStringList keys){
+        for(auto key : keys)
+        {
+            QString newString = qs;
+            newString = newString.arg(key);
+            q.prepare(newString);
+            ExecAndCheck();
+            if(!result.success)
+                break;
+        }
+    }
+
+    template <typename HashKey, typename HashValue>
+    void ExecuteWithArgsBind(QStringList nameKeys, QHash<HashKey, HashValue> args){
+        for(auto key : args.keys())
+        {
+            for(QString nameKey: nameKeys)
+            {
+                q.bindValue(nameKey, key);
+                q.bindValue(nameKey, args[key]);
+            }
+            ExecAndCheck();
+            if(!result.success)
+                break;
+        }
+    }
+
+    ~SqlContext(){
+        if(!result.success)
+            transaction.cancel();
+    }
+    DiagnosticSQLResult<ResultType> operator()(bool ignoreUniqueness = false){
+        if(ExecAndCheck(ignoreUniqueness))
+            transaction.finalize();
+        return result;
+    }
+    bool ExecAndCheck(bool ignoreUniqueness = false){
+        return result.ExecAndCheck(q, ignoreUniqueness);
+    }
+    bool CheckDataAvailability(){
+        return result.CheckDataAvailability(q);
+    }
+    DiagnosticSQLResult<ResultType> result;
+    QString qs;
+    QSqlQuery q;
+    Transaction transaction;
+    std::function<void(SqlContext<ResultType>*)> func;
+};
+
 
 struct FanficIdRecord
 {
@@ -90,7 +157,7 @@ struct FicIdHash
     QHash<int, FanficIdRecord> records;
     FanficIdRecord emptyRecord;
 };
-bool SetFandomTracked(int id, bool tracked, QSqlDatabase);
+DiagnosticSQLResult<bool> SetFandomTracked(int id, bool tracked, QSqlDatabase);
 QStringList GetTrackedFandomList(QSqlDatabase db);
 
 bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);

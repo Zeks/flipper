@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDebug>
 namespace database {
 namespace puresql{
+
 static FicIdHash GetGlobalIDHash(QSqlDatabase db, QString where)
 {
     FicIdHash  result;
@@ -132,29 +133,15 @@ bool ExecuteQueryChain(QSqlQuery& q, QStringList queries)
     return true;
 }
 
-bool SetFandomTracked(int id, bool tracked,  QSqlDatabase db)
+#define SQLPARAMS
+#define CTXA [&](auto ctx)
+DiagnosticSQLResult<bool> SetFandomTracked(int id, bool tracked,  QSqlDatabase db)
 {
-    QSqlQuery q1(db);
-    QString qsl = " UPDATE fandomindex SET tracked = :tracked where id = :id";
-    q1.prepare(qsl);
-    q1.bindValue(":tracked",QString(tracked ? "1" : "0"));
-    q1.bindValue(":id",id);
-    if(!ExecAndCheck(q1))
-        return false;
-
-    return true;
+    return SqlContext<bool> (db,
+                             " UPDATE fandomindex SET tracked = :tracked where id = :id",
+                             SQLPARAMS{{":tracked",QString(tracked ? "1" : "0")},
+                                       {":id", id}})();
 }
-
-//void CalculateFandomsAverages(QSqlDatabase db)
-//{
-//    QString qs = QString("update fandomsources set average_faves_top_3 =  (select sum(favourites)/3 from fanfics f where f.fandom = fandoms.fandom and f.id "
-//                         "in (select id from fanfics where fanfics.fandom = fandoms.fandom order by favourites desc limit 3))");
-//    QSqlQuery q(db);
-//    q.prepare(qs);
-//    if(!ExecAndCheck(q))
-//        return;
-//    return;
-//}
 
 void CalculateFandomsFicCounts(QSqlDatabase db)
 {
@@ -2721,6 +2708,7 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
 //                     " where slash_keywords_result = 1 or slash_keywords = 1 or not_slash_keywords = 1 or first_slash_iteration = 1 or second_slash_iteration = 1 "
 //                     " order by id");
 
+
 DiagnosticSQLResult<bool> ExportSlashToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)
 {
     DiagnosticSQLResult<bool> result;
@@ -3318,108 +3306,34 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db
     return result;
 }
 
-DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId, QHash<int, int> fics, QSqlDatabase db)
+DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId,
+                                                         QHash<int, int> fics,
+                                                         QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
-    QString query = "INSERT INTO RecommendationListData ("
+    QString qs = "INSERT INTO RecommendationListData ("
                     "fic_id, list_id, match_count) "
                     "VALUES ("
                     ":fic_id, :list_id, :match_count)";
-    QSqlQuery q(db);
-    q.prepare(query);
-    for(auto fic : fics.keys())
-    {
-        q.bindValue(":list_id", listId);
-        q.bindValue(":fic_id", fic);
-        q.bindValue(":match_count",fics[fic]);
-        if(!result.ExecAndCheck(q, true))
-            return result;
-    }
-    result.success = true;
 
-    return result;
+    SqlContext<bool> ctx(db, qs);
+    ctx.q.bindValue(":list_id", listId);
+    ctx.ExecuteWithArgsBind({":fic_id", ":match_count"}, fics);
+    return ctx.result;
 }
 
 
 DiagnosticSQLResult<bool> CreateSlashInfoPerFic(QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
-    QString query = "insert into algopasses(fic_id) select id from fanfics";
-
-    QSqlQuery q(db);
-    q.prepare(query);
-
-    if(!result.ExecAndCheck(q, true))
-        return result;
-
-    result.success = true;
-
-    return result;
+    return SqlContext<bool>(db, "insert into algopasses(fic_id) select id from fanfics")();
 }
 
 DiagnosticSQLResult<bool> WipeSlashMetainformation(QSqlDatabase db)
 {
-    Transaction transaction(db);
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-    QSqlQuery q(db);
-    QString query;
-//    auto indexDrop = [&](QString indexName)
-//    {
-//        DiagnosticSQLResult<bool> result;
-//        query = QString("DROP INDEX %1;").arg(indexName);
-//        q.prepare(query);
-//        if(!result.ExecAndCheck(q))
-//            return result;
-//        result.success = true;
-//        return result;
-//    };
-//    auto indexCreate= [&](QString indexName)
-//    {
-//        DiagnosticSQLResult<bool> result;
-//        query = QString("Create INDEX if not exists %1;").arg(indexName);
-//        q.prepare(query);
-//        if(!result.ExecAndCheck(q))
-//            return result;
-//        result.success = true;
-//        return result;
-//    };
-//    indexDrop("I_SP_FID");
-//    indexDrop("I_SP_YES_KEY");
-//    indexDrop("I_SP_NO_KEY");
-//    indexDrop("I_SP_KEY_PASS_RESULT");
-//    indexDrop("I_SP_PASS_1");
-//    indexDrop("I_SP_PASS_2");
-//    indexDrop("I_SP_PASS_3");
-//    indexDrop("I_SP_PASS_4");
-//    indexDrop("I_SP_PASS_5");
-//    indexDrop("I_SP_PASS_6");
-//    indexDrop("I_SP_PASS_7");
-//    indexDrop("I_SP_PASS_8");
-//    indexDrop("I_SP_PASS_9");
-//    indexDrop("I_SP_PASS_10");
-//    indexDrop("I_SP_PASS_XD");
+    QString qs = "update algopasses set "
+                 " keywords_yes = 0, keywords_no = 0, keywords_pass_result = 0, "
+                 " pass_1 = 0, pass_2 = 0,pass_3 = 0,pass_4 = 0,pass_5 = 0 ";
 
-
-    query = "update algopasses set "
-                    " keywords_yes = 0, keywords_no = 0, keywords_pass_result = 0, "
-                    " pass_1 = 0, pass_2 = 0,pass_3 = 0,pass_4 = 0,pass_5 = 0 ";
-                    //" ,pass_6 = 0, pass_7 = 0, pass_8 = 0,pass_9 = 0,pass_10 = 0,pass_XD = 0";
-    q.prepare(query);
-
-    if(!result.ExecAndCheck(q))
-    {
-        transaction.cancel();
-        return result;
-    }
-
-    result.success = true;
-    transaction.finalize();
-    return result;
+    return SqlContext<bool>(db, qs)();
 }
 
 
@@ -3505,72 +3419,36 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
 
 DiagnosticSQLResult<bool> WipeAuthorStatisticsRecords(QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
     QString qs = QString("delete from AuthorFavouritesStatistics");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-
-    result.success = true;
-    return result;
+    return SqlContext<bool>(db, qs)();
 }
 
 DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
     QString qs = QString("insert into AuthorFavouritesStatistics(author_id, favourites) select r.id, (select count(*) from recommendations where recommender_id = r.id) from recommenders r");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-
-    result.success = true;
-    return result;
+    return SqlContext<bool>(db, qs)();
 }
 
 DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField,  QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
     QString qs = QString("update AuthorFavouritesStatistics set slash_factor  = "
-                         " cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses where %2 = 1) ff on ff.fic_id  = rs.fic_id) as float) "
-                         " /cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %3 from algopasses) ff on ff.fic_id  = rs.fic_id) as float)");
-    qs = qs.arg(usedField).arg(usedField).arg(usedField);
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-
-    result.success = true;
-    return result;
+                         " cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses where %1 = 1) ff on ff.fic_id  = rs.fic_id) as float) "
+                         " /cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses) ff on ff.fic_id  = rs.fic_id) as float)");
+    qs = qs.arg(usedField);
+    return SqlContext<bool>(db, qs)();
 }
 
 DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
     QString qs = QString("update algopasses set %1 = 1 where keywords_pass_result = 1 or fic_id in "
                          "(select fic_id from recommendationlistdata where list_id in (select id from recommendationlists where name = 'SlashCleaned'))");
     qs = qs.arg(iteration);
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-
-    result.success = true;
-    return result;
+    return SqlContext<bool>(db, qs)();
 }
 
 DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
 {
-    QHash<QString, int> result;
+    thread_local QHash<QString, int> result;
     result["General_"] = 0;
     result["Humor"] = 1;
     result["Poetry"] = 0;
@@ -3594,23 +3472,12 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
     result["HurtComfort"] = -1;
     result["Friendship"] = 1;
 
-    DiagnosticSQLResult<bool> exitVal;
-    exitVal.success = false;
-
     QString qs = QString("update ficgenrestatistics set %1 =  CASE WHEN  (select count(distinct recommender_id) from recommendations r where r.fic_id = ficgenrestatistics .fic_id) >= 5 "
-                         " THEN (select avg(%2) from AuthorFavouritesGenreStatistics afgs where afgs.author_id in (select distinct recommender_id from recommendations r where r.fic_id = ficgenrestatistics .fic_id))  "
-                            " ELSE 0 END ");
-    QSqlQuery q(db);
-    for(auto key : result.keys())
-    {
-        QString newString = qs;
-        newString = newString.arg(key).arg(key);
-        q.prepare(newString);
-        if(!exitVal.ExecAndCheck(q))
-            return exitVal;
-    }
-    exitVal.success = true;
-    return exitVal;
+                         " THEN (select avg(%1) from AuthorFavouritesGenreStatistics afgs where afgs.author_id in (select distinct recommender_id from recommendations r where r.fic_id = ficgenrestatistics .fic_id))  "
+                         " ELSE 0 END ");
+    SqlContext<bool> ctx(db, qs);
+    ctx.ExecuteWithArgs(result.keys());
+    return ctx.result;
 
 }
 
