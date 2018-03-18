@@ -254,7 +254,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>1</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -686,14 +686,14 @@
                          </property>
                          <item>
                           <layout class="QGridLayout" name="gridLayout_14">
-                           <item row="0" column="2">
+                           <item row="0" column="1">
                             <widget class="QLabel" name="label_15">
                              <property name="text">
                               <string>List Name</string>
                              </property>
                             </widget>
                            </item>
-                           <item row="0" column="3">
+                           <item row="0" column="2">
                             <widget class="QComboBox" name="cbRecListNames">
                              <property name="minimumSize">
                               <size>
@@ -719,21 +719,21 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="0" column="4" colspan="3">
+                           <item row="0" column="3" colspan="3">
                             <widget class="QLabel" name="label_10">
                              <property name="text">
                               <string>Build recommendations on tag: </string>
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="2">
+                           <item row="1" column="1">
                             <widget class="QLabel" name="label_12">
                              <property name="text">
                               <string>Min match count:</string>
                              </property>
                             </widget>
                            </item>
-                           <item row="0" column="7" colspan="3">
+                           <item row="0" column="6" colspan="3">
                             <widget class="QComboBox" name="cbRecTagBuildGroup">
                              <property name="minimumSize">
                               <size>
@@ -746,14 +746,14 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="3">
+                           <item row="1" column="2">
                             <widget class="QSpinBox" name="sbMinRecMatch">
                              <property name="value">
                               <number>1</number>
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="4">
+                           <item row="1" column="3">
                             <widget class="QLabel" name="label_13">
                              <property name="text">
                               <string>Threshold ratio:</string>
@@ -767,21 +767,21 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="8">
-                            <widget class="QSpinBox" name="sbAlwaysPickRecAt">
-                             <property name="value">
-                              <number>1</number>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="7">
+                           <item row="1" column="6">
                             <widget class="QLabel" name="label_14">
                              <property name="text">
                               <string>Always pick on:</string>
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="5">
+                           <item row="1" column="7">
+                            <widget class="QSpinBox" name="sbAlwaysPickRecAt">
+                             <property name="value">
+                              <number>1</number>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="4">
                             <widget class="QDoubleSpinBox" name="dsbMinRecThreshhold">
                              <property name="suffix">
                               <string/>
@@ -791,20 +791,6 @@
                              </property>
                              <property name="value">
                               <double>40.000000000000000</double>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="0" column="1">
-                            <widget class="QPushButton" name="pbCreateSlashList">
-                             <property name="text">
-                              <string>CreateSlashList</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="1">
-                            <widget class="QPushButton" name="pbProcessSlash">
-                             <property name="text">
-                              <string>ProcessSlash</string>
                              </property>
                             </widget>
                            </item>
@@ -1086,48 +1072,6 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QPushButton" name="pbReloadAuthors">
-                       <property name="text">
-                        <string>Reload All</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbReloadAllAuthors">
-                       <property name="text">
-                        <string>Reload Slash</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbDoSlashFullCycle">
-                       <property name="text">
-                        <string>Full</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QSpinBox" name="sbSlashPasses">
-                       <property name="value">
-                        <number>2</number>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbOneMoreCycle">
-                       <property name="text">
-                        <string>One more</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="pbDisplayHumor">
-                       <property name="text">
-                        <string>Humor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
                       <spacer name="horizontalSpacer_3">
                        <property name="orientation">
                         <enum>Qt::Horizontal</enum>
@@ -1187,23 +1131,6 @@
                       <property name="bottomMargin">
                        <number>0</number>
                       </property>
-                      <item row="0" column="0">
-                       <layout class="QHBoxLayout" name="horizontalLayout_16">
-                        <item>
-                         <spacer name="horizontalSpacer_9">
-                          <property name="orientation">
-                           <enum>Qt::Horizontal</enum>
-                          </property>
-                          <property name="sizeHint" stdset="0">
-                           <size>
-                            <width>40</width>
-                            <height>20</height>
-                           </size>
-                          </property>
-                         </spacer>
-                        </item>
-                       </layout>
-                      </item>
                      </layout>
                     </widget>
                    </item>
@@ -1213,50 +1140,139 @@
                   <attribute name="title">
                    <string>Analytics</string>
                   </attribute>
-                  <widget class="QPushButton" name="pbAssignGenres">
+                  <widget class="QPushButton" name="pbDisplayHumor">
                    <property name="geometry">
                     <rect>
                      <x>10</x>
-                     <y>10</y>
-                     <width>76</width>
+                     <y>80</y>
+                     <width>75</width>
                      <height>23</height>
                     </rect>
                    </property>
                    <property name="text">
-                    <string>Assign Genres</string>
+                    <string>Humor</string>
                    </property>
                   </widget>
-                  <widget class="QLineEdit" name="leOpenFicID">
+                  <widget class="QPushButton" name="pbProcessSlash">
                    <property name="geometry">
                     <rect>
-                     <x>92</x>
-                     <y>11</y>
-                     <width>133</width>
-                     <height>20</height>
+                     <x>10</x>
+                     <y>270</y>
+                     <width>75</width>
+                     <height>23</height>
                     </rect>
+                   </property>
+                   <property name="text">
+                    <string>ProcessSlash</string>
+                   </property>
+                  </widget>
+                  <widget class="QPushButton" name="pbCreateSlashList">
+                   <property name="geometry">
+                    <rect>
+                     <x>10</x>
+                     <y>660</y>
+                     <width>82</width>
+                     <height>23</height>
+                    </rect>
+                   </property>
+                   <property name="text">
+                    <string>CreateSlashList</string>
                    </property>
                   </widget>
                   <widget class="QWidget" name="layoutWidget">
                    <property name="geometry">
                     <rect>
-                     <x>240</x>
+                     <x>10</x>
                      <y>10</y>
-                     <width>234</width>
-                     <height>22</height>
+                     <width>457</width>
+                     <height>25</height>
                     </rect>
                    </property>
-                   <layout class="QHBoxLayout" name="horizontalLayout_17">
+                   <layout class="QHBoxLayout" name="horizontalLayout_19">
                     <item>
-                     <widget class="QLabel" name="label_21">
+                     <widget class="QPushButton" name="pbAssignGenres">
                       <property name="text">
-                       <string>Genre For Ordering</string>
+                       <string>Assign Genres</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="leGenreSortField">
+                     <widget class="QLineEdit" name="leOpenFicID"/>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_17">
+                      <item>
+                       <widget class="QLabel" name="label_21">
+                        <property name="text">
+                         <string>Genre For Ordering</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="leGenreSortField">
+                        <property name="text">
+                         <string>Humor</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="layoutWidget">
+                   <property name="geometry">
+                    <rect>
+                     <x>10</x>
+                     <y>50</y>
+                     <width>201</width>
+                     <height>25</height>
+                    </rect>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_20">
+                    <item>
+                     <widget class="QPushButton" name="pbDoSlashFullCycle">
                       <property name="text">
-                       <string>Humor</string>
+                       <string>Full</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QSpinBox" name="sbSlashPasses">
+                      <property name="value">
+                       <number>2</number>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pbOneMoreCycle">
+                      <property name="text">
+                       <string>One more</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="layoutWidget">
+                   <property name="geometry">
+                    <rect>
+                     <x>10</x>
+                     <y>240</y>
+                     <width>158</width>
+                     <height>25</height>
+                    </rect>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_21">
+                    <item>
+                     <widget class="QPushButton" name="pbReloadAllAuthors">
+                      <property name="text">
+                       <string>Reload Slash</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pbReloadAuthors">
+                      <property name="text">
+                       <string>Reload All</string>
                       </property>
                      </widget>
                     </item>
@@ -2067,185 +2083,6 @@
                 </item>
                </layout>
               </widget>
-              <widget class="QWidget" name="tab_12">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <attribute name="title">
-                <string>Slash Filter</string>
-               </attribute>
-               <layout class="QGridLayout" name="gridLayout_8">
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item row="0" column="0" colspan="9">
-                 <widget class="QListView" name="lvExcludedFandomsSlashFilter">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QCheckBox" name="chkEnableSlashExceptions">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Enable Fandom Exceptions</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QPushButton" name="pbExcludeFandomFromSlashFiltering">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>84</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>Add Exception</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2" colspan="7">
-                 <widget class="QComboBox" name="cbIgnoreFandomSlashFilter">
-                  <property name="editable">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_19">
-                  <property name="text">
-                   <string>Filter Aggressiveness</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QComboBox" name="cbSlashFilterAggressiveness">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>84</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="currentText">
-                   <string>Light</string>
-                  </property>
-                  <item>
-                   <property name="text">
-                    <string>Light</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Medium</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Strong</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-                <item row="2" column="2">
-                 <widget class="QLabel" name="label_20">
-                  <property name="text">
-                   <string>Display: </string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="3">
-                 <widget class="QCheckBox" name="chkOnlySlash">
-                  <property name="text">
-                   <string>Only Slash</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="4">
-                 <widget class="QCheckBox" name="chkInvertedSlashFilter">
-                  <property name="text">
-                   <string>No Slash</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="5">
-                 <spacer name="horizontalSpacer_12">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>507</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="2" column="6">
-                 <widget class="QCheckBox" name="chkApplyLocalSlashFilter">
-                  <property name="text">
-                   <string>Apply local</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="7">
-                 <widget class="QCheckBox" name="chkOnlySlashLocal">
-                  <property name="text">
-                   <string>Only Slash</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="8">
-                 <widget class="QCheckBox" name="chkInvertedSlashFilterLocal">
-                  <property name="text">
-                   <string>No Slash</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
               <widget class="QWidget" name="tab_11">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
@@ -2326,199 +2163,375 @@
                 </item>
                </layout>
               </widget>
+              <widget class="QWidget" name="tab_12">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <attribute name="title">
+                <string>Slash Filter</string>
+               </attribute>
+               <layout class="QGridLayout" name="gridLayout_25">
+                <item row="0" column="1">
+                 <layout class="QHBoxLayout" name="horizontalLayout_8">
+                  <item>
+                   <widget class="QLabel" name="label_19">
+                    <property name="text">
+                     <string>Filter Aggressiveness</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QComboBox" name="cbSlashFilterAggressiveness">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>84</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="currentText">
+                     <string>Light</string>
+                    </property>
+                    <item>
+                     <property name="text">
+                      <string>Light</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>Medium</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>Strong</string>
+                     </property>
+                    </item>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="2" column="1">
+                 <layout class="QGridLayout" name="gridLayout_8">
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_20">
+                    <property name="text">
+                     <string>Display: </string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QCheckBox" name="chkInvertedSlashFilter">
+                    <property name="text">
+                     <string>No Slash</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QCheckBox" name="chkOnlySlashLocal">
+                    <property name="text">
+                     <string>Only Slash</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QCheckBox" name="chkInvertedSlashFilterLocal">
+                    <property name="text">
+                     <string>No Slash</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QCheckBox" name="chkOnlySlash">
+                    <property name="text">
+                     <string>Only Slash</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QCheckBox" name="chkApplyLocalSlashFilter">
+                    <property name="text">
+                     <string>Apply local</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="0" column="0" rowspan="5">
+                 <layout class="QVBoxLayout" name="verticalLayout">
+                  <item>
+                   <widget class="QListView" name="lvExcludedFandomsSlashFilter">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_18">
+                    <item>
+                     <widget class="QPushButton" name="pbExcludeFandomFromSlashFiltering">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>84</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Add Exception</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="cbIgnoreFandomSlashFilter">
+                      <property name="editable">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QPushButton" name="pbImportSlashDatabase">
+                  <property name="text">
+                   <string>Import Slash DB</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <spacer name="verticalSpacer_2">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>64</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QCheckBox" name="chkEnableSlashExceptions">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Enable Fandom Exceptions</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
               <widget class="QWidget" name="tab_7">
                <attribute name="title">
                 <string>Sort Params</string>
                </attribute>
-               <widget class="QLineEdit" name="leBiasValue">
+               <widget class="QWidget" name="layoutWidget">
                 <property name="geometry">
                  <rect>
-                  <x>200</x>
-                  <y>70</y>
-                  <width>30</width>
-                  <height>20</height>
+                  <x>178</x>
+                  <y>9</y>
+                  <width>151</width>
+                  <height>48</height>
                  </rect>
                 </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>30</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="inputMask">
-                 <string>ddd.d</string>
-                </property>
-                <property name="text">
-                 <string>12.</string>
-                </property>
+                <layout class="QGridLayout" name="gridLayout_24">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_4">
+                   <property name="text">
+                    <string>FavrateCut: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QDateEdit" name="dteFavRateCut">
+                   <property name="calendarPopup">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_5">
+                   <property name="text">
+                    <string>FavRatio</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QSpinBox" name="sbFavrateValue">
+                   <property name="value">
+                    <number>4</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </widget>
-               <widget class="QLabel" name="label_7">
+               <widget class="QWidget" name="layoutWidget">
                 <property name="geometry">
                  <rect>
-                  <x>52</x>
-                  <y>44</y>
-                  <width>23</width>
-                  <height>16</height>
+                  <x>10</x>
+                  <y>10</y>
+                  <width>165</width>
+                  <height>50</height>
                  </rect>
                 </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Bias:</string>
-                </property>
-               </widget>
-               <widget class="QComboBox" name="cbBiasOperator">
-                <property name="geometry">
-                 <rect>
-                  <x>140</x>
-                  <y>70</y>
-                  <width>34</width>
-                  <height>20</height>
-                 </rect>
-                </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>200</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>&gt;</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>&lt;</string>
-                 </property>
-                </item>
-               </widget>
-               <widget class="QLabel" name="label_8">
-                <property name="geometry">
-                 <rect>
-                  <x>52</x>
-                  <y>70</y>
-                  <width>82</width>
-                  <height>16</height>
-                 </rect>
-                </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Review/Fav ratio</string>
-                </property>
-               </widget>
-               <widget class="QComboBox" name="cbBiasFavor">
-                <property name="geometry">
-                 <rect>
-                  <x>140</x>
-                  <y>44</y>
-                  <width>54</width>
-                  <height>20</height>
-                 </rect>
-                </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="currentText">
-                 <string>None</string>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>None</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Favor</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Hide</string>
-                 </property>
-                </item>
-               </widget>
-               <widget class="QLabel" name="label_5">
-                <property name="geometry">
-                 <rect>
-                  <x>270</x>
-                  <y>70</y>
-                  <width>43</width>
-                  <height>16</height>
-                 </rect>
-                </property>
-                <property name="text">
-                 <string>FavRatio</string>
-                </property>
-               </widget>
-               <widget class="QDateEdit" name="dteFavRateCut">
-                <property name="geometry">
-                 <rect>
-                  <x>338</x>
-                  <y>44</y>
-                  <width>81</width>
-                  <height>20</height>
-                 </rect>
-                </property>
-                <property name="calendarPopup">
-                 <bool>true</bool>
-                </property>
-               </widget>
-               <widget class="QSpinBox" name="sbFavrateValue">
-                <property name="geometry">
-                 <rect>
-                  <x>338</x>
-                  <y>70</y>
-                  <width>37</width>
-                  <height>20</height>
-                 </rect>
-                </property>
-                <property name="value">
-                 <number>4</number>
-                </property>
-               </widget>
-               <widget class="QLabel" name="label_4">
-                <property name="geometry">
-                 <rect>
-                  <x>270</x>
-                  <y>44</y>
-                  <width>62</width>
-                  <height>16</height>
-                 </rect>
-                </property>
-                <property name="text">
-                 <string>FavrateCut: </string>
-                </property>
+                <layout class="QGridLayout" name="gridLayout_23">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_7">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Bias:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QComboBox" name="cbBiasFavor">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>75</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="currentText">
+                    <string>None</string>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>None</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Favor</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Hide</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_8">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Review/Fav ratio</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                   <item>
+                    <widget class="QComboBox" name="cbBiasOperator">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>35</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>200</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>&gt;</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>&lt;</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="leBiasValue">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>30</width>
+                       <height>16777215</height>
+                      </size>
+                     </property>
+                     <property name="inputMask">
+                      <string>ddd.d</string>
+                     </property>
+                     <property name="text">
+                      <string>12.</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
                </widget>
               </widget>
              </widget>

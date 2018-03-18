@@ -87,11 +87,11 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
 bool Fandoms::RecalculateFandomStats(QStringList fandoms)
 {
     bool success = true;
-    for(auto fandom : fandoms)
-    {
-        fandom = core::Fandom::ConvertName(fandom.trimmed());
-        success = success && database::puresql::UpdateFandomStats(GetIDForName(fandom), db);
-    }
+//    for(auto fandom : fandoms)
+//    {
+//        fandom = core::Fandom::ConvertName(fandom.trimmed());
+//        success = success && database::puresql::UpdateFandomStats(GetIDForName(fandom), db);
+//    }
     return success;
 }
 

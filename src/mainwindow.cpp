@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fandoms.h"
 #include "Interfaces/fanfics.h"
 #include "Interfaces/db_interface.h"
+#include "Interfaces/interface_sqlite.h"
 #include "Interfaces/pagetask_interface.h"
 #include "actionprogress.h"
 #include "ui_actionprogress.h"
@@ -3343,7 +3344,17 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
 
 void MainWindow::on_pbOpenWholeList_clicked()
 {
-    OpenRecommendationList("");
+    filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
+                                       false,
+                                       ui->cbRecGroup->currentText());
+    ui->leAuthorUrl->setText("");
+    auto startRecLoad = std::chrono::high_resolution_clock::now();
+    LoadData();
+    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    ui->edtResults->setUpdatesEnabled(true);
+    ui->edtResults->setReadOnly(true);
+    holder->SetData(fanfics);
 }
 
 void MainWindow::OpenRecommendationList(QString listName)
@@ -3961,4 +3972,18 @@ void MainWindow::on_leOpenFicID_returnPressed()
         return;
 
     QDesktopServices::openUrl(url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn"));
+}
+
+void MainWindow::OnExportStatistics()
+{
+    auto closeDb = QSqlDatabase::database("StatisticsExport");
+    QSqlDatabase db = QSqlDatabase::database();
+    if(closeDb.isOpen())
+        closeDb.close();
+    QString exportFileName = "StatisticsDB";
+    bool success = QFile::remove(exportFileName + ".sql");
+    QSharedPointer<database::IDBWrapper> statisticsExportInterface (new database::SqliteInterface());
+    auto tagExportDb = statisticsExportInterface->InitDatabase(exportFileName, false);
+    statisticsExportInterface->ReadDbFile("dbcode/" + exportFileName + ".sql", exportFileName);
+    database::puresql::ExportTagsToDatabase(db, tagExportDb);
 }

@@ -231,6 +231,10 @@ bool CreateTagInDatabase(QString tag, QSqlDatabase db);
 DiagnosticSQLResult<bool>  ExportTagsToDatabase (QSqlDatabase originDB, QSqlDatabase targetDB);
 DiagnosticSQLResult<bool>  ImportTagsFromDatabase(QSqlDatabase originDB, QSqlDatabase targetDB);
 
+
+DiagnosticSQLResult<bool>  ExportSlashToDatabase (QSqlDatabase originDB, QSqlDatabase targetDB);
+DiagnosticSQLResult<bool>  ImportSlashFromDatabase(QSqlDatabase originDB, QSqlDatabase targetDB);
+
 bool AddAuthorFavouritesToList(int authorId, int listId, QSqlDatabase db);
 void ShortenFFNurlsForAllFics(QSqlDatabase db);
 

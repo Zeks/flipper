@@ -527,6 +527,8 @@ private slots:
     void OnPerformGenreAssignment();
     void on_leOpenFicID_returnPressed();
 
+    void OnExportStatistics();
+
 signals:
 
 

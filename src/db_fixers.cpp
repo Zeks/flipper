@@ -115,6 +115,50 @@ void TrimUserUrls(QSqlDatabase db)
 }
 
 
+database::puresql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(QSqlDatabase db)
+{
+    database::puresql::DiagnosticSQLResult<bool> result;
+
+    database::Transaction transaction(db);
+    // first we wipe the original slash table
+    QString qs = QString("delete from slash_data");
+    QSqlQuery q(db);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    QString insertQS = QString("insert into slash_data(fic_id, keywords_yes, keywords_no, keywords_result, first_iteration, second_iteration)"
+                               "  values(:fic_id, :keywords_yes, :keywords_no, :keywords_result, :first_iteration, :second_iteration)");
+    QSqlQuery insertQ(db);
+    insertQ.prepare(insertQS);
+
+    qs = QString("select id, slash_keywords, not_slash_keywords,slash_keywords_result, first_slash_iteration, second_slash_iteration from fanfics ");
+    if(!db.isOpen())
+        qDebug() << "not open";
+    QSqlQuery importTagsQ(db);
+    importTagsQ.prepare(qs);
+    if(!result.ExecAndCheck(importTagsQ))
+        return result;
+
+    while(importTagsQ.next())
+    {
+        bool slashresult = importTagsQ.value("slash_keywords").toBool() && !importTagsQ.value("not_slash_keywords").toBool();
+        insertQ.bindValue(":fic_id", importTagsQ.value("id").toInt());
+        insertQ.bindValue(":keywords_yes", importTagsQ.value("slash_keywords").toInt());
+        insertQ.bindValue(":keywords_no", importTagsQ.value("not_slash_keywords").toInt());
+        insertQ.bindValue(":keywords_result",  slashresult);
+        insertQ.bindValue(":first_iteration", importTagsQ.value("first_slash_iteration").toInt());
+        insertQ.bindValue(":second_iteration", importTagsQ.value("second_slash_iteration").toInt());
+
+        if(!result.ExecAndCheck(insertQ))
+            return result;
+    }
+    transaction.finalize();
+    result.data = true;
+    return result;
+}
+
+
 void ReplaceUrlInLinkedAuthorsWithID(QSqlDatabase db)
 {
     database::Transaction transaction(db);

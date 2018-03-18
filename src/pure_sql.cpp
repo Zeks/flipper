@@ -158,7 +158,7 @@ bool SetFandomTracked(int id, bool tracked,  QSqlDatabase db)
 
 void CalculateFandomsFicCounts(QSqlDatabase db)
 {
-    QString qs = QString("update fandomsources set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id)");
+    QString qs = QString("update fandomindex set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id)");
     QSqlQuery q(db);
     q.prepare(qs);
     if(!ExecAndCheck(q))
@@ -1159,6 +1159,7 @@ bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stat
 {
     if(!stats)
         return false;
+    DiagnosticSQLResult<bool> result;
 
     QString qs = QString("insert into RecommendationListAuthorStats (author_id, fic_count, match_count, match_ratio, list_id) "
                          "values(:author_id, :fic_count, :match_count, :match_ratio, :list_id)");
@@ -1170,7 +1171,7 @@ bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stat
     q.bindValue(":match_ratio",stats->matchRatio);
     //auto listId= GetRecommendationListIdForName(stats->listName);
     q.bindValue(":list_id",listId);
-    if(!ExecAndCheck(q))
+    if(!result.ExecAndCheck(q, true))
         return false;
     return true;
 }
@@ -2716,6 +2717,87 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
     return result;
 }
 
+//QString qs = QString("select ffn_id, slash_keywords_result, slash_keywords, not_slash_keywords, first_slash_iteration, second_slash_iteration from fanfics "
+//                     " where slash_keywords_result = 1 or slash_keywords = 1 or not_slash_keywords = 1 or first_slash_iteration = 1 or second_slash_iteration = 1 "
+//                     " order by id");
+
+DiagnosticSQLResult<bool> ExportSlashToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)
+{
+    DiagnosticSQLResult<bool> result;
+    QString qs = QString("select * from slash_data_ffn  ");
+
+    QSqlQuery q(originDB);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+    Transaction transaction(targetDB);
+    QString insertQS = QString("insert into slash_data_ffn(ffn_id, keywords_result, keywords_yes, keywords_no, filter_pass_1, filter_pass_2) "
+                               " values(:ffn_id, :keywords_result, :keywords_yes, :keywords_no, :filter_pass_1, :filter_pass_2) ");
+    QSqlQuery insertQ(targetDB);
+    insertQ.prepare(insertQS);
+
+    while(q.next())
+    {
+
+        insertQ.bindValue(":ffn_id",           q.value("ffn_id").toInt());
+        insertQ.bindValue(":keywords_result",  q.value("keywords_result").toInt());
+        insertQ.bindValue(":keywords_yes",     q.value("keywords_yes").toInt());
+        insertQ.bindValue(":keywords_no",      q.value("keywords_no").toInt());
+        insertQ.bindValue(":filter_pass_1",    q.value("filter_pass_1").toInt());
+        insertQ.bindValue(":filter_pass_2",    q.value("filter_pass_2").toInt());
+
+        if(!result.ExecAndCheck(insertQ))
+            return result;
+    }
+
+    transaction.finalize();
+    return result;
+}
+
+DiagnosticSQLResult<bool> ImportSlashFromDatabase(QSqlDatabase slashImportSourceDB, QSqlDatabase appDB)
+{
+    DiagnosticSQLResult<bool> result;
+
+    Transaction transaction(appDB);
+    // first we wipe the original slash table
+    QString qs = QString("delete from slash_data_ffn");
+    QSqlQuery q(appDB);
+    q.prepare(qs);
+    if(!result.ExecAndCheck(q))
+        return result;
+
+    QString insertQS = QString("insert into slash_data_ffn(ffn_id, keywords_yes, keywords_no, keywords_result, filter_pass_1, filter_pass_2)"
+                               "  values(:ffn_id, :keywords_yes, :keywords_no, :keywords_result, :filter_pass_1, :filter_pass_2)");
+    QSqlQuery insertQ(appDB);
+    insertQ.prepare(insertQS);
+
+    qs = QString("select * from slash_data");
+    if(!slashImportSourceDB.isOpen())
+        qDebug() << "not open";
+    QSqlQuery importTagsQ(slashImportSourceDB);
+    importTagsQ.prepare(qs);
+    if(!result.ExecAndCheck(importTagsQ))
+        return result;
+
+    while(importTagsQ.next())
+    {
+        insertQ.bindValue(":ffn_id", importTagsQ.value("ffn_id").toInt());
+        insertQ.bindValue(":keywords_yes", importTagsQ.value("keywords_yes").toInt());
+        insertQ.bindValue(":keywords_no", importTagsQ.value("keywords_no").toInt());
+        insertQ.bindValue(":keywords_result", importTagsQ.value("keywords_result").toInt());
+        insertQ.bindValue(":filter_pass_1", importTagsQ.value("filter_pass_1").toInt());
+        insertQ.bindValue(":filter_pass_2", importTagsQ.value("filter_pass_2").toInt());
+
+        if(!result.ExecAndCheck(insertQ))
+            return result;
+    }
+    transaction.finalize();
+    result.data = true;
+    return result;
+}
+
+
+
 FanficIdRecord::FanficIdRecord()
 {
     ids["ffn"] = -1;
@@ -3531,6 +3613,7 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
     return exitVal;
 
 }
+
 
 
 

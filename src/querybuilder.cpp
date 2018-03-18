@@ -52,14 +52,15 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     {
         if(useRecommendationFiltering)
         {
-            QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join fanfics ff  on ff.id = rt.fic_id  where rt.list_id = :list_id2 ";
+            QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join vfanficsslash ff  on ff.id = rt.fic_id  where"
+                           " rt.list_id = :list_id2 and rt.match_count > :match_count  ";
             if(!filter.showOriginsInLists)
-                temp+=" and is_origin <> 1 ";
+                temp+=" and rt.is_origin <> 1 ";
             temp += where + "order by rt.match_count desc" + CreateLimitQueryPart(filter) + ")";
             where = temp;
         }
         else
-            where = " and f.id in ( select id as fid from fanfics ff where 1=1 " + where + BuildSortMode(filter) + CreateLimitQueryPart(filter) + ")";
+            where = " and f.id in ( select id as fid from vfanficsslash ff where 1=1 " + where + BuildSortMode(filter) + CreateLimitQueryPart(filter) + ")";
         QString randomizer = ProcessRandomization(filter, where);
         if(!filter.randomizeResults)
             queryString += where  + BuildSortMode(filter);
@@ -220,26 +221,29 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
     QString queryString;
     QString slashField;
     if(filter.slashFilterLevel == 0)
-        slashField = "keywords_pass_result";
+        slashField = "keywords_result";
     else if(filter.slashFilterLevel == 1)
-        slashField = "pass_0";
+        slashField = "filter_pass_1";
     else
-        slashField = "pass_1";
+        slashField = "filter_pass_2";
+
     if(filter.excludeSlash)
-        queryString += " and fid not in (select fic_id from algopasses sp where %1 = 1   ";
+        queryString += " and ( not %1 = 1 or %1 is null) ";
     if(filter.includeSlash)
-        queryString += " and fid in (select fic_id from algopasses sp where %1 = 1  ";
+        queryString += " and  %1 = 1  ";
 
     if(filter.disableSlashFilterForSpecificFandoms && filter.excludeSlash)
     {
-        queryString += " and not exists (select fandom_id from ignored_fandoms_slash_filter where fandom_id in (select fandom_id from ficfandoms where fic_id = sp.fic_id))) ";
+        queryString += " and not exists (select fandom_id from ignored_fandoms_slash_filter where fandom_id in (select fandom_id from ficfandoms ffd where ffd.fic_id = fid )) ";
     }
-    else if(filter.excludeSlash || filter.includeSlash)
-        queryString += " )";
+//    else if(filter.excludeSlash || filter.includeSlash)
+//        queryString += " )";
 
     queryString = queryString.arg(slashField);
     if(!renameToFID)
+    {
         queryString.replace(" fid ", " ff.id ");
+    }
     return queryString;
 }
 
@@ -560,7 +564,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
     // recommendation list sorting can and needs to be inverted for instant results
     QString wrappignString =  "select count(fic_id) as records from RecommendationListData  where list_id = :list_id and match_count > :match_count and exists (%1)";
     QString normalString = "select count(id) as records %1 ";
-    queryString = "  from vFanfics ff where ff.alive = 1 " ;
+    queryString = "  from vfanficsslash ff where ff.alive = 1 " ;
     QString where;
     {
         where+= ProcessWordcount(filter);

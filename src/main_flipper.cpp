@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
 //    dbfix::ReplaceUrlInLinkedAuthorsWithID(mainDb);
     //dbfix::RebindDuplicateFandoms(mainDb);
     //dbfix::TrimUserUrls(pageCacheDb);
+    //dbfix::PassSlashDataIntoNewTable(mainDb);
 
     MainWindow w;
     w.dbInterface = dbInterface;
@@ -68,5 +69,6 @@ int main(int argc, char *argv[])
     w.StartTaskTimer();
 
     return a.exec();
+//    /return 0;
 }
 

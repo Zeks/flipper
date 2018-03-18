@@ -32,13 +32,7 @@ date_added datetime default null,
 date_deactivated datetime default null,
 for_fill integer default 0,
 ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);	
- 
-alter table fanfics add column slash_probability real default 0;
-alter table fanfics add column slash_source integer default -1; -- -1 are nothing, 0 are words, 1 is statistics;
-alter table fanfics add column slash_keywords integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
-alter table fanfics add column not_slash_keywords integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
-alter table fanfics add column first_slash_iteration integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
-alter table fanfics add column second_slash_iteration integer default 0; -- -1 are nothing, 0 are words, 1 is statistics;
+
 
  CREATE VIEW vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
@@ -63,18 +57,27 @@ CREATE INDEX if not exists  I_FANFICS_FFN_ID ON fanfics (ffn_id ASC);
 CREATE INDEX if not exists  I_ALIVE ON fanfics (alive ASC);
 CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
 CREATE INDEX if not exists  I_FOR_FILL ON fanfics (for_fill ASC);
-CREATE INDEX if not exists  I_SLASH_PROB ON fanfics (slash_probability ASC);
-CREATE INDEX if not exists  I_SLASH_KEYS ON fanfics (slash_keywords ASC);
-CREATE INDEX if not exists  I_NOT_SLASH_KEYS ON fanfics (not_slash_keywords ASC);
-CREATE INDEX if not exists  I_SLASH_FIRST ON fanfics (first_slash_iteration ASC);
-CREATE INDEX if not exists  I_SLASH_SECOND ON fanfics (second_slash_iteration ASC);
 
 -- fanfics sequence;
  CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);
  INSERT INTO sqlite_sequence(name, seq) SELECT 'fanfics', 0 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name = 'fanfics');
  update sqlite_sequence set seq = (select max(id) from fanfics) where name = 'fanfics';
-  
--- slash passes;
+
+-- slash ffn db;
+ create table if not exists slash_data_ffn (ffn_id integer primary key);
+ alter table slash_data_ffn add column keywords_yes integer default 0;
+ alter table slash_data_ffn add column keywords_no integer default 0;
+ alter table slash_data_ffn add column keywords_result integer default 0;
+ alter table slash_data_ffn add column filter_pass_1 integer default 0;
+ alter table slash_data_ffn add column filter_pass_2 integer default 0;
+CREATE INDEX if not exists  I_SDFFN_KEY ON slash_data_ffn (fic_id ASC);
+CREATE INDEX if not exists  I_SDFFN_KW_YES ON slash_data_ffn (keywords_yes ASC);
+CREATE INDEX if not exists  I_SDFFN_KW_NO ON slash_data_ffn (keywords_no ASC);
+CREATE INDEX if not exists  I_SDFFN_KW_RESULT ON slash_data_ffn (keywords_result ASC);
+CREATE INDEX if not exists  I_SDFFN_FIRST ON slash_data_ffn (filter_pass_1 ASC);
+CREATE INDEX if not exists  I_SDFFN_SECOND  ON slash_data_ffn (filter_pass_2 ASC);
+ 
+-- algo passes;
  create table if not exists algopasses (fic_id integer primary key);
  alter table algopasses add column keywords_yes integer default 0;
  alter table algopasses add column keywords_no integer default 0;
