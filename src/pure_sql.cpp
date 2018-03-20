@@ -2555,104 +2555,66 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
     return result;
 }
 
+// !!!! requires careful testing!
 DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)
 {
-    DiagnosticSQLResult<bool> result;
-    QString qs = QString("select fic_id, tag from fictags order by fic_id, tag");
-
-    QSqlQuery q(originDB);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-    Transaction transaction(targetDB);
-    QString insertQS = QString("insert into UserFicTags(ffn_id, ao3_id, sb_id, sv_id, tag) values(:ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
-    QSqlQuery insertQ(targetDB);
-    insertQ.prepare(insertQS);
-    static auto idHash = GetGlobalIDHash(originDB, " where id in (select distinct fic_id from fictags)");
-    while(q.next())
     {
+        thread_local auto idHash = GetGlobalIDHash(originDB, " where id in (select distinct fic_id from fictags)");
+        QStringList targetKeyList = {"ffn_id","ao3_id","sb_id","sv_id","tag",};
+        QStringList sourceKeyList = {"ffn","ao3","sb","sv","tag",};
+        QString insertQS = QString("insert into UserFicTags(ffn_id, ao3_id, sb_id, sv_id, tag) values(:ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
+        ParallelSqlContext<bool> ctx (originDB, "select fic_id, tag from fictags order by fic_id, tag", sourceKeyList,
+                                      targetDB, insertQS, targetKeyList);
 
-        auto record = idHash.GetRecord(q.value("fic_id").toInt());
-        insertQ.bindValue(":ffn_id", record.GetID(("ffn")));
-        insertQ.bindValue(":ao3_id", record.GetID(("ao3")));
-        insertQ.bindValue(":sb_id",  record.GetID(("sb")));
-        insertQ.bindValue(":sv_id",  record.GetID(("sv")));
-        insertQ.bindValue(":tag", q.value("tag").toString());
-        if(!result.ExecAndCheck(insertQ))
-            return result;
+        auto keyConverter = [&](QString sourceKey, QSqlQuery q, QSqlDatabase , auto& )->QVariant
+        {
+            auto record = idHash.GetRecord(q.value("fic_id").toInt());
+            return record.GetID(sourceKey);
+        };
+
+        ctx.valueConverters["ffn"] = keyConverter;
+        ctx.valueConverters["ao3"] = keyConverter;
+        ctx.valueConverters["sb"] = keyConverter;
+        ctx.valueConverters["sv"] = keyConverter;
+        ctx();
+        if(!ctx.result.success)
+            return ctx.result;
     }
-
-    // now we need to export actual user tags table
-    qs = QString("select * from tags");
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-    QList<QPair<QString, int>> tags;
-    while(q.next())
     {
-        tags.push_back({q.value("tag").toString(),
-                        q.value("id").toInt()});
+        QStringList keyList = {"tag","id"};
+        QString insertQS = QString("insert into UserTags(fic_id, tag) values(:id, :tag)");
+        ParallelSqlContext<bool> ctx (originDB, "select * from tags", keyList,
+                                  targetDB, insertQS, keyList);
+        return ctx();
     }
-
-    insertQS = QString("insert into UserTags(id, tag) values(:id, :tag)");
-    insertQ.prepare(insertQS);
-    for(auto pair : tags)
-    {
-        insertQ.bindValue(":tag", pair.first);
-        insertQ.bindValue(":id", pair.second);
-        if(!result.ExecAndCheck(insertQ))
-            return result;
-    }
-
-    transaction.finalize();
-    return result;
 }
 
-
+// !!!! requires careful testing!
 DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlDatabase tagImportSourceDB)
 {
-    DiagnosticSQLResult<bool> result;
-    // first we wipe the original tag tables
-    QString qs = QString("delete from fictags");
-    QSqlQuery q(currentDB);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-    qs = QString("delete from tags");
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-
-
-    Transaction transaction(currentDB);
-    // now we install new tag selection
-    QString insertQS = QString("insert into Tags(id, tag) values(:id, :tag)");
-    QSqlQuery insertQ(currentDB);
-    insertQ.prepare(insertQS);
-
-    qs = QString("select * from UserTags");
-    if(!tagImportSourceDB.isOpen())
-        qDebug() << "not open";
-    QSqlQuery importTagsQ(tagImportSourceDB);
-    importTagsQ.prepare(qs);
-    if(!result.ExecAndCheck(importTagsQ))
-        return result;
-
-    while(importTagsQ.next())
     {
-        insertQ.bindValue(":tag", importTagsQ.value("tag").toString());
-        insertQ.bindValue(":id", importTagsQ.value("id").toInt());
-        if(!result.ExecAndCheck(insertQ))
-            return result;
+        SqlContext<bool> ctxTarget(currentDB, {"delete from fictags","delete from tags"});
+        if(!ctxTarget.result.success)
+            return ctxTarget.result;
     }
-    // and finally restore fictags (which is the hardest part)
-    qs = QString("select * from UserFicTags");
-    importTagsQ.prepare(qs);
-    if(!result.ExecAndCheck(importTagsQ))
-        return result;
-    insertQS = QString("insert into FicTags(fic_id, tag) values(:id, :tag)");
-    insertQ.prepare(insertQS);
-    while(importTagsQ.next())
+
+    {
+        QStringList keyList = {"tag","id"};
+        QString insertQS = QString("insert into Tags(id, tag) values(:id, :tag)");
+        ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserTags", keyList,
+                                  currentDB, insertQS, keyList);
+        ctx();
+        if(!ctx.result.success)
+            return ctx.result;
+    }
+
+    QStringList keyList = {"tag","id"};
+    QString insertQS = QString("insert into FicTags(fic_id, tag) values(:id, :tag)");
+    ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserFicTags", keyList,
+                              currentDB, insertQS, keyList);
+
+    // this creates a fic in fanfics table to match tag record
+    ctx.valueConverters["id"] = [](QString, QSqlQuery importTagsQ, QSqlDatabase currentDB, auto& result)->QVariant
     {
         auto& idRecord = GrabFicIDFromQuery(importTagsQ, currentDB);
         auto dbId = idRecord.GetID("db");
@@ -2664,22 +2626,13 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
             {
                 result.success = false;
                 result.oracleError = recResult.oracleError;
-                return result;
+                return QVariant(dbId);
             }
             dbId = recResult.data;
-
         }
-        insertQ.bindValue(":tag", importTagsQ.value("tag").toString());
-        insertQ.bindValue(":id", dbId);
-        if(!result.ExecAndCheck(insertQ))
-        {
-            qDebug() << "Ffn id: " << idRecord.GetID("ffn") <<  " Db id: " << dbId << " tag:" <<  importTagsQ.value("tag").toString();
-            return result;
-        }
-    }
-    transaction.finalize();
-    result.data = true;
-    return result;
+        return QVariant(dbId);
+    };
+    return ctx();
 }
 
 //QString qs = QString("select ffn_id, slash_keywords_result, slash_keywords, not_slash_keywords, first_slash_iteration, second_slash_iteration from fanfics "

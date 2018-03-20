@@ -250,7 +250,8 @@ template <typename ResultType>
 struct ParallelSqlContext
 {
     ParallelSqlContext(QSqlDatabase source, QString sourceQuery, QStringList sourceFields,
-                       QSqlDatabase target, QString targetQuery, QStringList targetFields):sourceQ(source), targetQ(target), transaction(target) {
+                       QSqlDatabase target, QString targetQuery, QStringList targetFields):sourceQ(source), targetQ(target),
+        sourceDB(source), targetDB(target), transaction(target) {
         sourceQ.prepare(sourceQuery);
         targetQ.prepare(targetQuery);
         this->sourceFields = sourceFields;
@@ -268,7 +269,18 @@ struct ParallelSqlContext
         while(sourceQ.next())
         {
             for(int i = 0; i < sourceFields.size(); ++i )
-                targetQ.bindValue(":" + targetFields[i], sourceQ.value(sourceFields[i]));
+            {
+                QVariant value;
+                if(valueConverters.contains(sourceFields[i]))
+                {
+                    value = valueConverters[sourceFields[i]](sourceQ, targetDB, result);
+                    if(!result.success)
+                        return result;
+                }
+                else
+                    value = sourceQ.value(sourceFields[i]);
+                targetQ.bindValue(":" + targetFields[i], value);
+            }
 
             if(!result.ExecAndCheck(targetQ, ignoreUniqueness))
                 return result;
@@ -279,9 +291,12 @@ struct ParallelSqlContext
     DiagnosticSQLResult<ResultType> result;
     QSqlQuery sourceQ;
     QSqlQuery targetQ;
+    QSqlDatabase sourceDB;
+    QSqlDatabase targetDB;
     QStringList sourceFields;
     QStringList targetFields;
     Transaction transaction;
+    QHash<QString,std::function<QVariant(QString, QSqlQuery, QSqlDatabase, DiagnosticSQLResult<ResultType>&)>> valueConverters;
 };
 
 }
