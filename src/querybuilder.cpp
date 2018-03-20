@@ -48,15 +48,22 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
 
     //where+= CreateLimitQueryPart(filter);
     bool useRecommendationFiltering = filter.sortMode == StoryFilter::reccount || filter.minRecommendations > 0;
+    bool useRecommendationOrdering = filter.minRecommendations == 0;
     if(!where.trimmed().isEmpty() || useRecommendationFiltering)
     {
         if(useRecommendationFiltering)
         {
             QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join vfanficsslash ff  on ff.id = rt.fic_id  where"
-                           " rt.list_id = :list_id2 and rt.match_count > :match_count  ";
+                           " rt.list_id = :list_id2  and rt.match_count > :match_count";
+
+
             if(!filter.showOriginsInLists)
                 temp+=" and rt.is_origin <> 1 ";
-            temp += where + "order by rt.match_count desc" + CreateLimitQueryPart(filter) + ")";
+            temp += where + " %1 " + CreateLimitQueryPart(filter) + ")";
+            if(useRecommendationOrdering)
+                temp = temp.arg(" order by rt.match_count desc ");
+            else
+                temp = temp.arg(BuildSortMode(filter));
             where = temp;
         }
         else
@@ -228,7 +235,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
         slashField = "filter_pass_2";
 
     if(filter.excludeSlash)
-        queryString += " and ( not %1 = 1 or %1 is null) ";
+        queryString += " and (  %1 <> 1 or %1 is null) ";
     if(filter.includeSlash)
         queryString += " and  %1 = 1  ";
 

@@ -62,6 +62,7 @@ struct DiagnosticSQLResult
     }
 };
 
+
 template <typename ResultType>
 struct SqlContext
 {
@@ -69,6 +70,16 @@ struct SqlContext
     SqlContext(QSqlDatabase db, QString qs = "") : q(db), transaction(db), qs(qs){
         q.prepare(qs);
     }
+
+    SqlContext(QSqlDatabase db, QStringList queries) : q(db), transaction(db), qs(qs){
+        for(auto query : queries)
+        {
+            q.prepare(query);
+            BindValues();
+            ExecAndCheck();
+        }
+    }
+
     SqlContext(QSqlDatabase db, QString qs,  std::function<void(SqlContext<ResultType>*)> func) : q(db), transaction(db), qs(qs), func(func){
         q.prepare(qs);
         func(this);
@@ -79,12 +90,19 @@ struct SqlContext
         for(auto valName: hash.keys())
             q.bindValue(valName, hash[valName]);
     }
+
+    ~SqlContext(){
+        if(!result.success)
+            transaction.cancel();
+    }
+
     void ExecuteWithArgsSubstitution(QStringList keys){
         for(auto key : keys)
         {
             QString newString = qs;
             newString = newString.arg(key);
             q.prepare(newString);
+            BindValues();
             ExecAndCheck();
             if(!result.success)
                 break;
@@ -92,7 +110,8 @@ struct SqlContext
     }
 
     template <typename HashKey, typename HashValue>
-    void ExecuteWithArgsBind(QStringList nameKeys, QHash<HashKey, HashValue> args){
+    void ExecuteWithArgsHash(QStringList nameKeys, QHash<HashKey, HashValue> args, bool ignoreUniqueness = false){
+        BindValues();
         for(auto key : args.keys())
         {
             for(QString nameKey: nameKeys)
@@ -100,31 +119,128 @@ struct SqlContext
                 q.bindValue(nameKey, key);
                 q.bindValue(nameKey, args[key]);
             }
-            ExecAndCheck();
-            if(!result.success)
+            if(!ExecAndCheck(ignoreUniqueness))
                 break;
         }
     }
 
-    ~SqlContext(){
-        if(!result.success)
-            transaction.cancel();
-    }
     DiagnosticSQLResult<ResultType> operator()(bool ignoreUniqueness = false){
+        BindValues();
         if(ExecAndCheck(ignoreUniqueness))
             transaction.finalize();
         return result;
     }
     bool ExecAndCheck(bool ignoreUniqueness = false){
+        BindValues();
         return result.ExecAndCheck(q, ignoreUniqueness);
     }
     bool CheckDataAvailability(){
         return result.CheckDataAvailability(q);
     }
+    void FetchSelectFunctor(QString select, std::function<void(ResultType& data, QSqlQuery& q)> f)
+    {
+        q.prepare(select);
+        BindValues();
+
+        if(!ExecAndCheck())
+            return;
+        if(!CheckDataAvailability())
+            return;
+
+        do{
+            f(result.data, q);
+        } while(q.next());
+    }
+
+    void FetchLargeSelectIntoList(QString fieldName, QString actualQuery, QString countQuery = "")
+    {
+        if(countQuery.isEmpty())
+            qs = "select count(*) from ( " + actualQuery + " ) ";
+        else
+            qs = countQuery;
+        q.prepare(qs);
+        BindValues();
+
+        if(!ExecAndCheck())
+            return;
+
+        if(!CheckDataAvailability())
+            return;
+        int size = q.value(0).toInt();
+        result.data.reserve(size);
+
+        qs = actualQuery;
+        q.prepare(qs);
+        BindValues();
+
+        if(!ExecAndCheck())
+            return;
+        if(!CheckDataAvailability())
+            return;
+
+        do{
+            result.data += q.value(fieldName).template value<ResultType::value_type>();
+        } while(q.next());
+    }
+
+    void FetchSelectIntoHash(QString actualQuery, QString idFieldName, QString valueFieldName)
+    {
+        qs = actualQuery;
+        q.prepare(qs);
+        BindValues();
+
+
+        if(!ExecAndCheck())
+            return;
+        if(!CheckDataAvailability())
+            return;
+        do{
+            result.data[q.value(idFieldName).template value<ResultType::key_type>()] =  q.value(valueFieldName).template value<ResultType::mapped_type>();
+        } while(q.next());
+    }
+
+    void ExecuteList(QStringList queries){
+        bool execResult = true;
+        for(auto query : queries)
+        {
+            q.prepare(query);
+            BindValues();
+            if(!ExecAndCheck())
+            {
+                execResult = false;
+                break;
+            }
+        }
+        result.data = execResult;
+    }
+
+    template <typename KeyType>
+    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType key, QSqlQuery& q)> functor){
+        BindValues();
+        for(auto key : keyList)
+        {
+            functor(key, q);
+            if(!ExecAndCheck())
+                break;
+        }
+    }
+
+    void BindValues(){
+        for(auto bind : bindValues.keys())
+            q.bindValue(bind, bindValues[bind]);
+    }
+
+    template<typename KeyType>
+    void ProcessKeys(QList<KeyType> keys, std::function<void(QString key, QSqlQuery&)> func){
+        for(auto key : keys)
+            func(key, q);
+    }
+
     DiagnosticSQLResult<ResultType> result;
     QString qs;
     QSqlQuery q;
     Transaction transaction;
+    QVariantHash bindValues;
     std::function<void(SqlContext<ResultType>*)> func;
 };
 
