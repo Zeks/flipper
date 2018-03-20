@@ -6,12 +6,16 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QVariant>
+#include <QDebug>
 #include <QSharedPointer>
 #include "transaction.h"
 
 
 namespace database {
 namespace puresql{
+bool ExecAndCheck(QSqlQuery& q);
+
 template <typename T>
 struct DiagnosticSQLResult
 {
@@ -237,6 +241,47 @@ struct SqlContext
     Transaction transaction;
     QVariantHash bindValues;
     std::function<void(SqlContext<ResultType>*)> func;
+};
+
+
+
+
+template <typename ResultType>
+struct ParallelSqlContext
+{
+    ParallelSqlContext(QSqlDatabase source, QString sourceQuery, QStringList sourceFields,
+                       QSqlDatabase target, QString targetQuery, QStringList targetFields):sourceQ(source), targetQ(target), transaction(target) {
+        sourceQ.prepare(sourceQuery);
+        targetQ.prepare(targetQuery);
+        this->sourceFields = sourceFields;
+        this->targetFields = targetFields;
+    }
+
+    ~ParallelSqlContext(){
+        if(!result.success)
+            transaction.cancel();
+    }
+
+    DiagnosticSQLResult<ResultType> operator()(bool ignoreUniqueness = false){
+        if(!result.ExecAndCheck(sourceQ))
+            return result;
+        while(sourceQ.next())
+        {
+            for(int i = 0; i < sourceFields.size(); ++i )
+                targetQ.bindValue(":" + targetFields[i], sourceQ.value(sourceFields[i]));
+
+            if(!result.ExecAndCheck(targetQ, ignoreUniqueness))
+                return result;
+        }
+        return result;
+    }
+
+    DiagnosticSQLResult<ResultType> result;
+    QSqlQuery sourceQ;
+    QSqlQuery targetQ;
+    QStringList sourceFields;
+    QStringList targetFields;
+    Transaction transaction;
 };
 
 }

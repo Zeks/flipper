@@ -82,23 +82,23 @@ static const FanficIdRecord& GrabFicIDFromQuery(QSqlQuery& q, QSqlDatabase db)
     return result;
 }
 
-bool ExecAndCheck(QSqlQuery& q)
-{
-    q.exec();
-    if(q.lastError().isValid())
-    {
-        if(q.lastError().text().contains("record"))
-            qDebug() << "Error while performing a query: ";
-        qDebug() << "Error while performing a query: ";
-        qDebug().noquote() << q.lastQuery();
-        qDebug() << "Error was: " <<  q.lastError();
-        qDebug() << q.lastError().nativeErrorCode();
-        if(q.lastError().text().contains("Parameter"))
-            return false;
-        return false;
-    }
-    return true;
-}
+//bool ExecAndCheck(QSqlQuery& q)
+//{
+//    q.exec();
+//    if(q.lastError().isValid())
+//    {
+//        if(q.lastError().text().contains("record"))
+//            qDebug() << "Error while performing a query: ";
+//        qDebug() << "Error while performing a query: ";
+//        qDebug().noquote() << q.lastQuery();
+//        qDebug() << "Error was: " <<  q.lastError();
+//        qDebug() << q.lastError().nativeErrorCode();
+//        if(q.lastError().text().contains("Parameter"))
+//            return false;
+//        return false;
+//    }
+//    return true;
+//}
 bool CheckExecution(QSqlQuery& q)
 {
     if(q.lastError().isValid())
@@ -109,30 +109,7 @@ bool CheckExecution(QSqlQuery& q)
     }
     return true;
 }
-bool ExecuteQuery(QSqlQuery& q, QString query)
-{
-    QString qs = query;
-    q.prepare(qs);
-    q.exec();
 
-    if(q.lastError().isValid())
-    {
-        qDebug() << "SQLERROR: "<< q.lastError();
-        qDebug() << q.lastQuery();
-        return false;
-    }
-    return true;
-}
-
-bool ExecuteQueryChain(QSqlQuery& q, QStringList queries)
-{
-    for(auto query: queries)
-    {
-        if(!ExecuteQuery(q, query))
-            return false;
-    }
-    return true;
-}
 
 #define SQLPARAMS
 #define CTXA [&](auto ctx)
@@ -2712,77 +2689,29 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
 
 DiagnosticSQLResult<bool> ExportSlashToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)
 {
-    DiagnosticSQLResult<bool> result;
-    QString qs = QString("select * from slash_data_ffn  ");
 
-    QSqlQuery q(originDB);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-    Transaction transaction(targetDB);
+    QStringList keyList = {"ffn_id","keywords_result","keywords_yes","keywords_no","filter_pass_1", "filter_pass_2"};
     QString insertQS = QString("insert into slash_data_ffn(ffn_id, keywords_result, keywords_yes, keywords_no, filter_pass_1, filter_pass_2) "
                                " values(:ffn_id, :keywords_result, :keywords_yes, :keywords_no, :filter_pass_1, :filter_pass_2) ");
-    QSqlQuery insertQ(targetDB);
-    insertQ.prepare(insertQS);
 
-    while(q.next())
-    {
-
-        insertQ.bindValue(":ffn_id",           q.value("ffn_id").toInt());
-        insertQ.bindValue(":keywords_result",  q.value("keywords_result").toInt());
-        insertQ.bindValue(":keywords_yes",     q.value("keywords_yes").toInt());
-        insertQ.bindValue(":keywords_no",      q.value("keywords_no").toInt());
-        insertQ.bindValue(":filter_pass_1",    q.value("filter_pass_1").toInt());
-        insertQ.bindValue(":filter_pass_2",    q.value("filter_pass_2").toInt());
-
-        if(!result.ExecAndCheck(insertQ))
-            return result;
-    }
-
-    transaction.finalize();
-    return result;
+    return ParallelSqlContext<bool> (originDB, "select * from slash_data_ffn", keyList,
+                             targetDB, insertQS, keyList)();
 }
 
 DiagnosticSQLResult<bool> ImportSlashFromDatabase(QSqlDatabase slashImportSourceDB, QSqlDatabase appDB)
 {
-    DiagnosticSQLResult<bool> result;
 
-    Transaction transaction(appDB);
-    // first we wipe the original slash table
-    QString qs = QString("delete from slash_data_ffn");
-    QSqlQuery q(appDB);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
+    {
+        SqlContext<bool> ctxTarget(appDB, "delete from slash_data_ffn");
+        if(ctxTarget.ExecAndCheck())
+            return ctxTarget.result;
+    }
 
+    QStringList keyList = {"ffn_id","keywords_result","keywords_yes","keywords_no","filter_pass_1", "filter_pass_2"};
     QString insertQS = QString("insert into slash_data_ffn(ffn_id, keywords_yes, keywords_no, keywords_result, filter_pass_1, filter_pass_2)"
                                "  values(:ffn_id, :keywords_yes, :keywords_no, :keywords_result, :filter_pass_1, :filter_pass_2)");
-    QSqlQuery insertQ(appDB);
-    insertQ.prepare(insertQS);
-
-    qs = QString("select * from slash_data");
-    if(!slashImportSourceDB.isOpen())
-        qDebug() << "not open";
-    QSqlQuery importTagsQ(slashImportSourceDB);
-    importTagsQ.prepare(qs);
-    if(!result.ExecAndCheck(importTagsQ))
-        return result;
-
-    while(importTagsQ.next())
-    {
-        insertQ.bindValue(":ffn_id", importTagsQ.value("ffn_id").toInt());
-        insertQ.bindValue(":keywords_yes", importTagsQ.value("keywords_yes").toInt());
-        insertQ.bindValue(":keywords_no", importTagsQ.value("keywords_no").toInt());
-        insertQ.bindValue(":keywords_result", importTagsQ.value("keywords_result").toInt());
-        insertQ.bindValue(":filter_pass_1", importTagsQ.value("filter_pass_1").toInt());
-        insertQ.bindValue(":filter_pass_2", importTagsQ.value("filter_pass_2").toInt());
-
-        if(!result.ExecAndCheck(insertQ))
-            return result;
-    }
-    transaction.finalize();
-    result.data = true;
-    return result;
+    return ParallelSqlContext<bool> (slashImportSourceDB, "select * from slash_data_ffn", keyList,
+                             appDB, insertQS, keyList)();
 }
 
 

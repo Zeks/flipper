@@ -29,10 +29,9 @@ typedef QList<PageTaskActionPtr> PageTaskActions;
 namespace database {
 namespace puresql{
 
-bool ExecAndCheck(QSqlQuery& q);
+//bool ExecAndCheck(QSqlQuery& q);
 bool CheckExecution(QSqlQuery& q);
-bool ExecuteQuery(QSqlQuery& q, QString query);
-bool ExecuteQueryChain(QSqlQuery& q, QStringList queries);
+
 
 struct FanficIdRecord
 {

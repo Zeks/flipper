@@ -94,6 +94,7 @@ files: [
         "src/Interfaces/tags.cpp",
         "src/pagetask.cpp",
         "src/db_fixers.cpp",
+        "src/sqlcontext.cpp",
         "src/parsers/ffn/fandomparser.cpp",
         "src/parsers/ffn/favparser.cpp",
         "src/parsers/ffn/ffnparserbase.cpp",
