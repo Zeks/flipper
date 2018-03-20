@@ -2797,70 +2797,53 @@ FanficIdRecord::FanficIdRecord()
 
 DiagnosticSQLResult<int> FanficIdRecord::CreateRecord(QSqlDatabase db) const
 {
-    // will create an empty record with just ids to be filled later on
-    DiagnosticSQLResult<int> result;
-    result.success = false;
     QString query = "INSERT INTO FANFICS (ffn_id, sb_id, sv_id, ao3_id, for_fill) "
                     "VALUES ( :ffn_id, :sb_id, :sv_id, :ao3_id, 1)";
-    QSqlQuery q(db);
-    q.prepare(query);
-    q.bindValue(":ffn_id", ids["ffn"]);
-    q.bindValue(":sb_id",  ids["sb"]);
-    q.bindValue(":sv_id",  ids["sv"]);
-    q.bindValue(":ao3_id", ids["ao3"]);
-    if(!result.ExecAndCheck(q))
-        return result;
-    query = "select max(id) from fanfics";
-    q.prepare(query);
-    if(!result.ExecAndCheck(q))
-        return result;
-    if(!result.CheckDataAvailability(q))
-        return result;
-    result.success = true;
-    result.data = q.value(0).toInt();
-    return result;
+
+    SqlContext<int> ctx(db, query,
+    {{":ffn_id", ids["ffn"]},
+                        {":sb_id", ids["sb"]},
+                        {":sv_id", ids["sv"]},
+                        {":ao3_id", ids["ao3"]},});
+
+    if(!ctx.ExecAndCheck())
+        return ctx.result;
+
+    ctx.ReplaceQuery("select max(id) as mid from fanfics");
+    if(!ctx.ExecAndCheckForData())
+        return ctx.result;
+
+    ctx.result.data = ctx.value("mid").toInt();
+    return ctx.result;
 }
 
-
-
-
-bool AddFandomLink(int oldId, int newId, QSqlDatabase db)
+DiagnosticSQLResult<bool> AddFandomLink(int oldId, int newId, QSqlDatabase db)
 {
-    QString qs = QString("select * from fandoms where id = :old_id");
+    SqlContext<bool> ctx(db, "select * from fandoms where id = :old_id",
+    {{":old_id", oldId}});
+    if(!ctx.ExecAndCheckForData())
+        return ctx.result;
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":old_id", oldId);
-    if(!ExecAndCheck(q))
-        return false;
-    q.next();
     QStringList urls;
-    urls << q.value("normal_url").toString().trimmed();
-    urls << q.value("crossover_url").toString().trimmed();
+    urls << ctx.trimmedValue("normal_url");
+    urls << ctx.trimmedValue("crossover_url");
+
     urls.removeAll("");
     urls.removeAll("none");
-    QString custom = q.value("section").toString();
-    for(auto url : urls)
-    {
-        if(url.trimmed().isEmpty())
-            continue;
 
-        qs = QString("insert into fandomurls (global_id, url, website, custom) values(:new_id, :url, 'ffn', :custom)");
-        q.prepare(qs);
-        q.bindValue(":new_id", newId);
+    QString custom = ctx.trimmedValue("section");
+
+    ctx.ReplaceQuery("insert into fandomurls (global_id, url, website, custom) values(:new_id, :url, 'ffn', :custom)");
+    ctx.bindValues[":custom"] = custom;
+    ctx.bindValues[":new_id"] = newId;
+    ctx.ExecuteWithKeyListAndBindFunctor<QString>(urls, [](QString url, QSqlQuery& q){
         q.bindValue(":url", url);
-        q.bindValue(":custom", custom);
-        if(!ExecAndCheck(q))
-            return false;
-    }
-    return true;
+    });
+    return ctx.result;
 }
 
 DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
     QString query = "INSERT INTO AuthorFavouritesStatistics ("
                     "author_id, favourites, favourites_wordcount, average_words_per_chapter, esrb_type, prevalent_mood,"
                     "most_favourited_size,favourites_type,average_favourited_length,favourite_fandoms_diversity, explorer_factor, "
@@ -2877,54 +2860,49 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author,
                     ":crack_factor,:slash_factor,:smut_factor, :prevalent_genre, :size_tiny, :size_medium, :size_large, :size_huge,"
                     ":first_published, :last_published"
                     ")";
-    QSqlQuery q(db);
-    q.prepare(query);
-    q.bindValue(":author_id", author->id);
-    q.bindValue(":favourites", author->stats.favouriteStats.favourites);
-    q.bindValue(":favourites_wordcount", author->stats.favouriteStats.ficWordCount);
-    q.bindValue(":average_words_per_chapter", author->stats.favouriteStats.wordsPerChapter);
-    q.bindValue(":esrb_type", static_cast<int>(author->stats.favouriteStats.esrbType));
-    q.bindValue(":prevalent_mood", static_cast<int>(author->stats.favouriteStats.prevalentMood));
-    q.bindValue(":most_favourited_size", static_cast<int>(author->stats.favouriteStats.mostFavouritedSize));
-    q.bindValue(":favourites_type", static_cast<int>(author->stats.favouriteStats.sectionRelativeSize));
-    q.bindValue(":average_favourited_length", author->stats.favouriteStats.averageLength);
-    q.bindValue(":favourite_fandoms_diversity", author->stats.favouriteStats.fandomsDiversity);
-    q.bindValue(":explorer_factor", author->stats.favouriteStats.explorerFactor);
-    q.bindValue(":mega_explorer_factor", author->stats.favouriteStats.megaExplorerFactor);
-    q.bindValue(":crossover_factor", author->stats.favouriteStats.crossoverFactor);
-    q.bindValue(":unfinished_factor", author->stats.favouriteStats.unfinishedFactor);
-    q.bindValue(":esrb_uniformity_factor", author->stats.favouriteStats.esrbUniformityFactor);
-    q.bindValue(":esrb_kiddy", author->stats.favouriteStats.esrbKiddy);
-    q.bindValue(":esrb_mature", author->stats.favouriteStats.esrbMature);
-    q.bindValue(":genre_diversity_factor", author->stats.favouriteStats.genreDiversityFactor);
-    q.bindValue(":mood_uniformity_factor", author->stats.favouriteStats.moodUniformity);
-    q.bindValue(":mood_sad", author->stats.favouriteStats.moodSad);
-    q.bindValue(":mood_neutral", author->stats.favouriteStats.moodNeutral);
-    q.bindValue(":mood_happy", author->stats.favouriteStats.moodHappy);
-    q.bindValue(":crack_factor", author->stats.favouriteStats.crackRatio);
-    q.bindValue(":slash_factor", author->stats.favouriteStats.slashRatio);
-    q.bindValue(":smut_factor", author->stats.favouriteStats.smutRatio);
-    q.bindValue(":prevalent_genre", author->stats.favouriteStats.prevalentGenre);
-    q.bindValue(":size_tiny", author->stats.favouriteStats.sizeFactors[0]);
-    q.bindValue(":size_medium", author->stats.favouriteStats.sizeFactors[1]);
-    q.bindValue(":size_large", author->stats.favouriteStats.sizeFactors[2]);
-    q.bindValue(":size_huge", author->stats.favouriteStats.sizeFactors[3]);
-    q.bindValue(":first_published", author->stats.favouriteStats.firstPublished);
-    q.bindValue(":last_published", author->stats.favouriteStats.lastPublished);
+    SqlContext<bool> ctx(db, query);
 
-    if(!result.ExecAndCheck(q, true))
-        return result;
-    result.success = true;
+    auto& stats = author->stats.favouriteStats;
+    ctx.q.bindValue(":author_id", author->id);
+    ctx.q.bindValue(":favourites", stats.favourites);
+    ctx.q.bindValue(":favourites_wordcount", stats.ficWordCount);
+    ctx.q.bindValue(":average_words_per_chapter", stats.wordsPerChapter);
+    ctx.q.bindValue(":esrb_type", static_cast<int>(stats.esrbType));
+    ctx.q.bindValue(":prevalent_mood", static_cast<int>(stats.prevalentMood));
+    ctx.q.bindValue(":most_favourited_size", static_cast<int>(stats.mostFavouritedSize));
+    ctx.q.bindValue(":favourites_type", static_cast<int>(stats.sectionRelativeSize));
+    ctx.q.bindValue(":average_favourited_length", stats.averageLength);
+    ctx.q.bindValue(":favourite_fandoms_diversity", stats.fandomsDiversity);
+    ctx.q.bindValue(":explorer_factor", stats.explorerFactor);
+    ctx.q.bindValue(":mega_explorer_factor", stats.megaExplorerFactor);
+    ctx.q.bindValue(":crossover_factor", stats.crossoverFactor);
+    ctx.q.bindValue(":unfinished_factor", stats.unfinishedFactor);
+    ctx.q.bindValue(":esrb_uniformity_factor", stats.esrbUniformityFactor);
+    ctx.q.bindValue(":esrb_kiddy", stats.esrbKiddy);
+    ctx.q.bindValue(":esrb_mature", stats.esrbMature);
+    ctx.q.bindValue(":genre_diversity_factor", stats.genreDiversityFactor);
+    ctx.q.bindValue(":mood_uniformity_factor", stats.moodUniformity);
+    ctx.q.bindValue(":mood_sad", stats.moodSad);
+    ctx.q.bindValue(":mood_neutral", stats.moodNeutral);
+    ctx.q.bindValue(":mood_happy", stats.moodHappy);
+    ctx.q.bindValue(":crack_factor", stats.crackRatio);
+    ctx.q.bindValue(":slash_factor", stats.slashRatio);
+    ctx.q.bindValue(":smut_factor", stats.smutRatio);
+    ctx.q.bindValue(":prevalent_genre", stats.prevalentGenre);
+    ctx.q.bindValue(":size_tiny", stats.sizeFactors[0]);
+    ctx.q.bindValue(":size_medium", stats.sizeFactors[1]);
+    ctx.q.bindValue(":size_large", stats.sizeFactors[2]);
+    ctx.q.bindValue(":size_huge", stats.sizeFactors[3]);
+    ctx.q.bindValue(":first_published", stats.firstPublished);
+    ctx.q.bindValue(":last_published", stats.lastPublished);
+    ctx.ExecAndCheck();
 
-    return result;
+    return ctx.result;
 }
 
 
 DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr author, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
     QString query = "INSERT INTO AuthorFavouritesGenreStatistics (author_id, "
                     "General_,Humor,Poetry, Adventure, Mystery, Horror,Parody,Angst, Supernatural, Suspense, "
                     " Romance,SciFi, Fantasy,Spiritual,Tragedy, Drama, Western,Crime,Family,HurtComfort,Friendship, NoGenre) "
@@ -3262,19 +3240,6 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
     return ctx.result;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
 
