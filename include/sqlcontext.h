@@ -120,12 +120,23 @@ struct SqlContext
         }
     }
     template <typename KeyType>
-    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType key, QSqlQuery& q)> functor){
+    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType key, QSqlQuery& q)> functor, bool ignoreUniqueness = false){
         BindValues();
         for(auto key : keyList)
         {
             functor(key, q);
-            if(!ExecAndCheck())
+            if(!ExecAndCheck(ignoreUniqueness))
+                break;
+        }
+    }
+
+    template <typename KeyType>
+    void ExecuteWithValueList(QString keyName, QList<KeyType> valueList, bool ignoreUniqueness = false){
+        BindValues();
+        for(auto value : valueList)
+        {
+            q.bindValue(":" + keyName, value);
+            if(!ExecAndCheck(ignoreUniqueness))
                 break;
         }
     }
@@ -210,6 +221,22 @@ struct SqlContext
         } while(q.next());
     }
 
+    template <typename T>
+    void FetchSingleValue(QString valueName, ResultType defaultValue, QString select = ""){
+        result.data = defaultValue;
+        if(!select.isEmpty())
+        {
+            qs = select;
+            q.prepare(qs);
+            BindValues();
+        }
+        if(!ExecAndCheck())
+            return;
+        if(!CheckDataAvailability())
+            return;
+        result.data = q.value(valueName).template value<T>();
+    }
+
     void ExecuteList(QStringList queries){
         bool execResult = true;
         for(auto query : queries)
@@ -236,12 +263,24 @@ struct SqlContext
             func(key, q);
     }
 
+    void for_each(std::function<void(QSqlQuery&)> func){
+        while(q.next())
+            func(q);
+    }
+
+    DiagnosticSQLResult<ResultType> ForEachInSelect(std::function<void(QSqlQuery&)> func){
+        if(!ExecAndCheck())
+            return result;
+        for_each(func);
+        return result;
+    }
+
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
     void bindValue(QString key, QVariant value){
         bindValues[":" + key] = value;
     }
-
+    void SetDefaultValue(ResultType value) {result.data = value;}
     DiagnosticSQLResult<ResultType> result;
     QString qs;
     QSqlQuery q;

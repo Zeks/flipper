@@ -29,6 +29,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDebug>
 namespace database {
 namespace puresql{
+
+template <typename T>
+bool NullPtrGuard(T item)
+{
+    if(!item)
+    {
+        qDebug() << "attempted to fill a nullptr";
+        return false;
+    }
+    return true;
+}
 #define DATAQ [&](auto data, auto q)
 static FicIdHash GetGlobalIDHash(QSqlDatabase db, QString where)
 {
@@ -1863,261 +1874,127 @@ QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-    if(fandomID == -1)
-        return result;
-
     QString qs = QString(" insert into fandomurls (global_id, url, website, custom) "
                          " values (:global_id, :url, :website, :custom) ");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":global_id",fandomID);
-    q.bindValue(":url",url.GetUrl());
-    q.bindValue(":website",url.GetSource());
-    q.bindValue(":custom",url.GetType());
-    q.exec();
 
-    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
-    {
-        qDebug() << q.lastError();
-        qDebug() << q.lastQuery();
-        result.oracleError = q.lastError().text();
-        return result;
-    }
-    bool newFandom = !q.lastError().isValid();
-    if(url.GetType().isEmpty())
-        qDebug() << "empty type";
-    if(newFandom)
-        qDebug() << "new fandom url: " << url.GetUrl();
-
-    result.success = true;
-    return result;
-
+    SqlContext<bool> ctx(db, qs,{{":global_id",fandomID},
+                                       {":url",url.GetUrl()},
+                                       {":website",url.GetSource()},
+                                       {":custom",url.GetType()}});
+    if(fandomID == -1)
+        return ctx.result;
+    ctx.ExecAndCheck(true);
+    return ctx.result;
 }
 
-
-QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
+DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
 {
-    QList<int> result;
     QString qs = QString("Select distinct recommender_id from recommendations where fic_id = :fic_id");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":fic_id",ficId);
-    if(!ExecAndCheck(q))
-        return result;
-    while(q.next())
-        result.push_back(q.value("recommender_id").toInt());
-    return result;
+    SqlContext<QList<int>> ctx(db, qs,{{":fic_id",ficId}});
+    ctx.FetchLargeSelectIntoList("recommender_id", qs);
+    return ctx.result;
 }
 
-bool SetFicsAsListOrigin(QList<int> ficIds, int listId, QSqlDatabase db)
+DiagnosticSQLResult<bool> SetFicsAsListOrigin(QList<int> ficIds, int listId, QSqlDatabase db)
 {
     QString qs = QString("update RecommendationListData set is_origin = 1 where fic_id = :fic_id and list_id = :list_id");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    for(auto ficId :ficIds)
-    {
-        q.bindValue(":fic_id",ficId);
-        q.bindValue(":list_id",listId);
-        if(!ExecAndCheck(q))
-            return false;
-    }
-    return true;
+    SqlContext<bool> ctx(db, qs,{{":list_id",listId}});
+    ctx.ExecuteWithValueList<int>("fic_id", ficIds);
+    return ctx.result;
 }
 
-bool DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db)
+DiagnosticSQLResult<bool> DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db)
 {
     QString qs = QString("delete from LinkedAuthors where recommender_id = :author_id");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":author_id", authorId);
-    if(!ExecAndCheck(q))
-        return false;
-    return true;
+    return SqlContext<bool> (db, qs,{{":author_id",authorId}})();
 }
 
-//bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db)
-//{
-//    QSqlQuery q(db);
-//    QString qs = QString("insert into  LinkedAuthors(recommender_id, url) values(:author_id, :url)");
-//    q.prepare(qs);
-//    for(auto url :list)
-//    {
-//        q.bindValue(":author_id",authorId);
-//        q.bindValue(":url",url);
-//        q.exec();
-//        if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
-//        {
-//            qDebug() << q.lastError();
-//            qDebug() << q.lastQuery();
-//            return false;
-//        }
-//    }
-//    return true;
-//}
-bool UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db)
+DiagnosticSQLResult<bool>  UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db)
 {
-    QSqlQuery q(db);
     QString qs = QString("insert into  LinkedAuthors(recommender_id, %1_id) values(:author_id, :id)").arg(website);
-    q.prepare(qs);
-    for(auto id :ids)
-    {
-        q.bindValue(":author_id",authorId);
-        q.bindValue(":id",id);
-        q.exec();
-        if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
-        {
-            qDebug() << q.lastError();
-            qDebug() << q.lastQuery();
-            return false;
-        }
-    }
-    return true;
+    SqlContext<bool> ctx(db, qs,{{":author_id",authorId}});
+    ctx.ExecuteWithValueList<int>("id", ids);
+    return ctx.result;
 }
-QStringList GetLinkedPagesForList(int listId, QString website, QSqlDatabase db)
+
+DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString website, QSqlDatabase db)
 {
-    QStringList result;
     QString qs = QString("Select distinct %1_id from LinkedAuthors "
                          " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = 17) "
                          " and %1_id not in (select distinct %1_id from recommenders)"
                          " union all "
                          " select ffn_id from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
     qs=qs.arg(website);
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":list_id",listId);
-    if(!ExecAndCheck(q))
-        return result;
-    qDebug() << q.lastQuery();
-    while(q.next())
-    {
+
+    SqlContext<QStringList> ctx(db, qs, {{":list_id",listId}});
+    ctx.ForEachInSelect([&](QSqlQuery& q){
         auto authorUrl = url_utils::GetAuthorUrlFromWebId(q.value(QString("%1_id").arg(website)).toInt(), "ffn");
-        result.push_back(authorUrl);
-    }
-    return result;
+        ctx.result.data.push_back(authorUrl);
+    });
+    return ctx.result;
 }
 
-bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db)
+DiagnosticSQLResult<bool> RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db)
 {
     QString qs = QString("delete from recommendationlistauthorstats "
                          " where list_id = :list_id and author_id = :author_id");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":list_id", listId);
-    q.bindValue(":author_id", authorId);
-    if(!ExecAndCheck(q))
-        return false;
-    return true;
+    return SqlContext<bool>(db, qs, {{":list_id", listId},{":author_id", authorId}})();
 }
 
-bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db)
+DiagnosticSQLResult<bool> CreateFandomIndexRecord(int id, QString name, QSqlDatabase db)
 {
     QString qs = QString("insert into fandomindex(id, name) values(:id, :name)");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
-    q.bindValue(":name", name);
-    if(!ExecAndCheck(q))
-        return false;
-    return true;
+    return SqlContext<bool>(db, qs, {{":id", id},{":name", name}})();
 }
 
 
 
-QHash<int, QList<int>> GetWholeFicFandomsTable(QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, QList<int>>> GetWholeFicFandomsTable(QSqlDatabase db)
 {
-    QHash<int, QList<int>> result;
     QString qs = QString("select fic_id, fandom_id from ficfandoms");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!ExecAndCheck(q))
-        return result;
-    while(q.next())
-        result[q.value("fandom_id").toInt()].push_back(q.value("fic_id").toInt());
-    return result;
+    SqlContext<QHash<int, QList<int>>> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data[q.value("fandom_id").toInt()].push_back(q.value("fic_id").toInt());
+    });
+    return ctx.result;
 }
 
-bool EraseFicFandomsTable(QSqlDatabase db)
+DiagnosticSQLResult<bool> EraseFicFandomsTable(QSqlDatabase db)
 {
     QString qs = QString("delete from ficfandoms");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!ExecAndCheck(q))
-        return false;
-    return true;
+    return SqlContext<bool>(db, qs)();
 }
-bool SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db)
+
+DiagnosticSQLResult<bool> SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db)
 {
     QString qs = QString("update fandomindex set updated = :updated where id = :id");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":updated", date);
-    q.bindValue(":id", id);
-    if(!ExecAndCheck(q))
-        return false;
-    return true;
+    return SqlContext<bool>(db, qs, {{":updated", date},{":id", id}})();
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.success = false;
-
     QString qs = QString("delete from recent_fandoms where fandom = :name");
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":name", name);
-    if(!result.ExecAndCheck(q))
-        return result;
-    result.success = true;
-    return result;
+    return SqlContext<bool>(db, qs, {{":name", name}})();
 }
 
 
 DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db)
 {
-    DiagnosticSQLResult<int> result;
-    result.data = -1;
-    QString qs = QString("select max(id) from pagetasks");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-    if(!result.CheckDataAvailability(q))
-        return result;
-
-    result.data = q.value(0).toInt();
-    return result;
+    QString qs = QString("select max(id) as maxid from pagetasks");
+    SqlContext<int>ctx(db, qs);
+    ctx.FetchSingleValue<int>("maxid", -1);
+    return ctx.result;
 }
 
-bool GetTaskSuccessByID(int id, QSqlDatabase db)
+// new query limit
+DiagnosticSQLResult<bool> GetTaskSuccessByID(int id, QSqlDatabase db)
 {
     QString qs = QString("select success from pagetasks where id = :id");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
-    if(!ExecAndCheck(q))
-        return false;
-    auto success = q.value(0).toBool();
-    return success;
+    SqlContext<bool>ctx(db, qs, {{":id", id}});
+    ctx.FetchSingleValue<bool>("success", false);
+    return ctx.result;
 }
 
-template <typename T>
-bool NullPtrGuard(T item)
-{
-    if(!item)
-    {
-        qDebug() << "attempted to fill a nullptr";
-        return false;
-    }
-    return true;
-}
 
 void FillPageTaskBaseFromQuery(BaseTaskPtr task, QSqlQuery& q){
     if(!NullPtrGuard(task))
@@ -2185,39 +2062,25 @@ void FillSubTaskFromQuery(SubTaskPtr task, QSqlQuery& q){
 
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db)
 {
-    DiagnosticSQLResult<PageTaskPtr> result; // = PageTask::CreateNewTask();
-    result.data = PageTask::CreateNewTask();
     QString qs = QString("select * from pagetasks where id = :id");
+    SqlContext<PageTaskPtr>ctx(db, qs, {{":id", id}});
+    ctx.result.data = PageTask::CreateNewTask();
+    if(!ctx.ExecAndCheckForData())
+        return ctx.result;
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
-    if(!result.ExecAndCheck(q))
-        return result;
-    if(!result.CheckDataAvailability(q))
-        return result;
-
-    FillPageTaskFromQuery(result.data, q);
-    return result;
+    FillPageTaskFromQuery(ctx.result.data, ctx.q);
+    return ctx.result;
 }
 
 DiagnosticSQLResult<SubTaskList> GetSubTaskData(int id, QSqlDatabase db)
 {
-    DiagnosticSQLResult<SubTaskList> result;
     QString qs = QString("select * from PageTaskParts where task_id = :id");
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
-    if(!result.ExecAndCheck(q))
-        return result;
-    while(q.next())
-    {
-        auto subtask = PageSubTask::CreateNewSubTask();
-        FillSubTaskFromQuery(subtask, q);
-        result.data.push_back(subtask);
-    }
-    return result;
+    SqlContext<SubTaskList>ctx(db, qs, {{":id", id}});
+    return ctx.ForEachInSelect([&](QSqlQuery& q){
+                           auto subtask = PageSubTask::CreateNewSubTask();
+                           FillSubTaskFromQuery(subtask, q);
+                           ctx.result.data.push_back(subtask); });
 }
 
 void FillPageFailuresFromQuery(PageFailurePtr failure, QSqlQuery& q){
@@ -2235,31 +2098,6 @@ void FillPageFailuresFromQuery(PageFailurePtr failure, QSqlQuery& q){
     failure->error = q.value("error").toString();
 }
 
-
-DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id,  QSqlDatabase db, int subId)
-{
-    DiagnosticSQLResult<SubTaskErrors> result;
-    QString qs = QString("select * from PageWarnings where task_id = :id");
-    bool singleSubTask = subId != -1;
-    if(singleSubTask)
-        qs+= " and sub_id = :sub_id";
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
-    if(singleSubTask)
-        q.bindValue(":sub_id", subId);
-    if(!result.ExecAndCheck(q))
-        return result;
-    while(q.next())
-    {
-        auto failure = PageFailure::CreateNewPageFailure();
-        FillPageFailuresFromQuery(failure, q);
-        result.data.push_back(failure);
-    }
-    return result;
-}
-
 void FillActionFromQuery(PageTaskActionPtr action, QSqlQuery& q){
     if(!NullPtrGuard(action))
         return;
@@ -2274,29 +2112,48 @@ void FillActionFromQuery(PageTaskActionPtr action, QSqlQuery& q){
     action->isNewAction = false;
 }
 
-
-DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase db, int subId)
+DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id,  QSqlDatabase db, int subId)
 {
-    DiagnosticSQLResult<PageTaskActions> result;
-    QString qs = QString("select * from PageTaskActions where task_id = :id");
+    QString qs = QString("select * from PageWarnings where task_id = :id");
     bool singleSubTask = subId != -1;
     if(singleSubTask)
         qs+= " and sub_id = :sub_id";
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":id", id);
+    SqlContext<SubTaskErrors>ctx(db, qs, {{":id", id}});
+
     if(singleSubTask)
-        q.bindValue(":sub_id", subId);
-    if(!result.ExecAndCheck(q))
-        return result;
-    while(q.next())
-    {
+        ctx.bindValue(":sub_id", subId);
+    if(!ctx.ExecAndCheck())
+        return ctx.result;
+    ctx.for_each([&](QSqlQuery& q){
+        auto failure = PageFailure::CreateNewPageFailure();
+        FillPageFailuresFromQuery(failure, q);
+        ctx.result.data.push_back(failure);
+    });
+    return ctx.result;
+}
+
+DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase db, int subId)
+{
+
+    QString qs = QString("select * from PageTaskActions where task_id = :id");
+    bool singleSubTask = subId != -1;
+    if(singleSubTask)
+        qs+= " and sub_id = :sub_id";
+    SqlContext<PageTaskActions>ctx(db, qs, {{":id", id}});
+
+    if(singleSubTask)
+        ctx.bindValue(":sub_id", subId);
+    if(!ctx.ExecAndCheck())
+        return ctx.result;
+
+    ctx.for_each([&](QSqlQuery& q){
         auto action = PageTaskAction::CreateNewAction();
         FillActionFromQuery(action, q);
-        result.data.push_back(action);
-    }
-    return result;
+        ctx.result.data.push_back(action);
+    });
+
+    return ctx.result;
 }
 
 DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
@@ -2325,7 +2182,7 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     ctx.bindValue(":inserted_fics",     task->addedFics);
     ctx.bindValue(":inserted_authors",  task->addedAuthors);
     ctx.bindValue(":updated_authors",   task->updatedAuthors);
-    if(!ctx.ExecAndCheck(q))
+    if(!ctx.ExecAndCheck())
         return ctx.result;
 
     ctx.ReplaceQuery("select max(id) from PageTasks");
@@ -2488,7 +2345,7 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
     return ctx2.result;
 }
 
-// new query limit
+
 
 // !!!! requires careful testing!
 DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)

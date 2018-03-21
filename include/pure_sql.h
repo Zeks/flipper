@@ -99,12 +99,12 @@ bool CleanupFandom(int fandom_id,  QSqlDatabase db);
 DiagnosticSQLResult<bool> DeleteFandom(int fandom_id,  QSqlDatabase db);
 int GetFandomCountInDatabase(QSqlDatabase db);
 bool AddFandomForFic(int ficId, int fandomId, QSqlDatabase db);
-bool CreateFandomIndexRecord(int id, QString name, QSqlDatabase db);
+DiagnosticSQLResult<bool> CreateFandomIndexRecord(int id, QString name, QSqlDatabase db);
 //bool AddFandomLink(int oldId, int newId, QSqlDatabase db);
 //bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db);
-QHash<int, QList<int> > GetWholeFicFandomsTable(QSqlDatabase db);
-bool EraseFicFandomsTable(QSqlDatabase db);
-bool SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, QList<int>>> GetWholeFicFandomsTable(QSqlDatabase db);
+DiagnosticSQLResult<bool> EraseFicFandomsTable(QSqlDatabase db);
+DiagnosticSQLResult<bool> SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db);
 DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase db);
 
 QStringList GetFandomNamesForFicId(int ficId, QSqlDatabase db);
@@ -184,15 +184,15 @@ bool DeleteRecommendationListData(int listId, QSqlDatabase db );
 
 bool CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db);
 bool WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db);
-bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db);
+DiagnosticSQLResult<bool> RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db);
 //bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db);
-bool UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db);
-bool DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db);
+DiagnosticSQLResult<bool> UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db);
+DiagnosticSQLResult<bool> DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db);
 bool CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 bool UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
-QList<int> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
-QStringList GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
-bool SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
+DiagnosticSQLResult<QList<int> > GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
+DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
+DiagnosticSQLResult<bool> SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
 DiagnosticSQLResult<bool>  FillRecommendationListWithData(int listId, QHash<int, int>, QSqlDatabase db);
 
 
@@ -232,7 +232,7 @@ QSet<QString> GetAllGenres(QSqlDatabase db);
 
 // page tasks
 DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db);
-bool GetTaskSuccessByID(int id, QSqlDatabase db);
+DiagnosticSQLResult<bool> GetTaskSuccessByID(int id, QSqlDatabase db);
 
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db);
 DiagnosticSQLResult<SubTaskList> GetSubTaskData(int id, QSqlDatabase db);
