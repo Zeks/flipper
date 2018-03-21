@@ -77,7 +77,16 @@ struct SqlContext
     ~SqlContext(){
         if(!result.success)
             transaction.cancel();
+        else
+            transaction.finalize();
     }
+
+    DiagnosticSQLResult<ResultType> operator()(bool ignoreUniqueness = false){
+        BindValues();
+        ExecAndCheck(ignoreUniqueness);
+        return result;
+    }
+
     void ReplaceQuery(QString query){
         q.prepare(query);
         bindValues.clear();
@@ -121,12 +130,7 @@ struct SqlContext
         }
     }
 
-    DiagnosticSQLResult<ResultType> operator()(bool ignoreUniqueness = false){
-        BindValues();
-        if(ExecAndCheck(ignoreUniqueness))
-            transaction.finalize();
-        return result;
-    }
+
     bool ExecAndCheck(bool ignoreUniqueness = false){
         BindValues();
         return result.ExecAndCheck(q, ignoreUniqueness);
@@ -234,6 +238,9 @@ struct SqlContext
 
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
+    void bindValue(QString key, QVariant value){
+        bindValues[":" + key] = value;
+    }
 
     DiagnosticSQLResult<ResultType> result;
     QString qs;

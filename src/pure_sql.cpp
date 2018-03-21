@@ -2301,10 +2301,6 @@ DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase d
 
 DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
 {
-    DiagnosticSQLResult<int> result;
-    result.data = -1;
-    bool dbIsOpen = db.isOpen();
-    Transaction transaction(db);
     QString qs = QString("insert into PageTasks(type, parts, created_at, scheduled_to,  allowed_retry_count, "
                          "allowed_subtask_retry_count, cache_mode, refresh_if_needed, task_comment, task_size, success, finished,"
                          "parsed_pages, updated_fics,inserted_fics,inserted_authors,updated_authors) "
@@ -2312,248 +2308,187 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
                          ":allowed_subtask_retry_count, :cache_mode, :refresh_if_needed, :task_comment,:task_size, 0, 0,"
                          " :parsed_pages, :updated_fics,:inserted_fics,:inserted_authors,:updated_authors) ");
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":type", task->type);
-    q.bindValue(":parts", task->parts);
-    q.bindValue(":created_at", task->created);
-    q.bindValue(":scheduled_to", task->scheduledTo);
+    SqlContext<int>ctx(db, qs);
+    ctx.result.data = -1;
+    ctx.bindValue(":type", task->type);
+    ctx.bindValue(":parts", task->parts);
+    ctx.bindValue(":created_at", task->created);
+    ctx.bindValue(":scheduled_to", task->scheduledTo);
+    ctx.bindValue(":allowed_retry_count", task->allowedRetries);
+    ctx.bindValue(":allowed_subtask_retry_count", task->allowedSubtaskRetries);
+    ctx.bindValue(":cache_mode", static_cast<int>(task->cacheMode));
+    ctx.bindValue(":refresh_if_needed", task->refreshIfNeeded);
+    ctx.bindValue(":task_comment", task->taskComment);
+    ctx.bindValue(":task_size", task->size);
+    ctx.bindValue(":parsed_pages",      task->parsedPages);
+    ctx.bindValue(":updated_fics",      task->updatedFics);
+    ctx.bindValue(":inserted_fics",     task->addedFics);
+    ctx.bindValue(":inserted_authors",  task->addedAuthors);
+    ctx.bindValue(":updated_authors",   task->updatedAuthors);
+    if(!ctx.ExecAndCheck(q))
+        return ctx.result;
 
-    q.bindValue(":allowed_retry_count", task->allowedRetries);
-    q.bindValue(":allowed_subtask_retry_count", task->allowedSubtaskRetries);
-    q.bindValue(":cache_mode", static_cast<int>(task->cacheMode));
-    q.bindValue(":refresh_if_needed", task->refreshIfNeeded);
-    q.bindValue(":task_comment", task->taskComment);
-    q.bindValue(":task_size", task->size);
-    q.bindValue(":parsed_pages",      task->parsedPages);
-    q.bindValue(":updated_fics",      task->updatedFics);
-    q.bindValue(":inserted_fics",     task->addedFics);
-    q.bindValue(":inserted_authors",  task->addedAuthors);
-    q.bindValue(":updated_authors",   task->updatedAuthors);
+    ctx.ReplaceQuery("select max(id) from PageTasks");
+    if(!ctx.ExecAndCheckForData())
+        return ctx.result;
 
-    if(!result.ExecAndCheck(q))
-        return result;
+    ctx.result.data = ctx.q.value(0).toInt();
+    return ctx.result;
 
-    qs = QString("select max(id) from PageTasks");
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-    if(!result.CheckDataAvailability(q))
-        return result;
-
-    result.data = q.value(0).toInt();
-    transaction.finalize();
-    return result;
 }
 
 DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.data = false;
-    Transaction transaction(db);
     QString qs = QString("insert into PageTaskParts(task_id, type, sub_id, created_at, scheduled_to, content,task_size, success, finished, parse_up_to,"
                          "custom_data1, parsed_pages, updated_fics,inserted_fics,inserted_authors,updated_authors) "
                          "values(:task_id, :type, :sub_id, :created_at, :scheduled_to, :content,:task_size, 0,0, :parse_up_to,"
                          ":custom_data1, :parsed_pages, :updated_fics,:inserted_fics,:inserted_authors,:updated_authors) ");
+    SqlContext<bool>ctx(db, qs);
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":task_id", subtask->parentId);
-    q.bindValue(":type", subtask->type);
-    q.bindValue(":sub_id", subtask->id);
-    q.bindValue(":created_at", subtask->created);
-    q.bindValue(":scheduled_to", subtask->scheduledTo);
-    q.bindValue(":content", subtask->content->ToDB());
-    q.bindValue(":task_size", subtask->size);
-    q.bindValue(":parse_up_to", subtask->updateLimit);
+    ctx.bindValue(":task_id", subtask->parentId);
+    ctx.bindValue(":type", subtask->type);
+    ctx.bindValue(":sub_id", subtask->id);
+    ctx.bindValue(":created_at", subtask->created);
+    ctx.bindValue(":scheduled_to", subtask->scheduledTo);
+    ctx.bindValue(":content", subtask->content->ToDB());
+    ctx.bindValue(":task_size", subtask->size);
+    ctx.bindValue(":parse_up_to", subtask->updateLimit);
+
     QString customData = subtask->content->CustomData1();
-    q.bindValue(":custom_data1",      customData);
-    q.bindValue(":parsed_pages",      subtask->parsedPages);
-    q.bindValue(":updated_fics",      subtask->updatedFics);
-    q.bindValue(":inserted_fics",     subtask->addedFics);
-    q.bindValue(":inserted_authors",  subtask->addedAuthors);
-    q.bindValue(":updated_authors",   subtask->updatedAuthors);
+    ctx.bindValue(":custom_data1",      customData);
+    ctx.bindValue(":parsed_pages",      subtask->parsedPages);
+    ctx.bindValue(":updated_fics",      subtask->updatedFics);
+    ctx.bindValue(":inserted_fics",     subtask->addedFics);
+    ctx.bindValue(":inserted_authors",  subtask->addedAuthors);
+    ctx.bindValue(":updated_authors",   subtask->updatedAuthors);
+    return ctx();
 
-
-    if(!result.ExecAndCheck(q))
-        return result;
-    result.data = true;
-    transaction.finalize();
-    return result;
 }
 
 DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr action, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.data = false;
-    Transaction transaction(db);
     QString qs = QString("insert into PageTaskActions(action_uuid, task_id, sub_id, started_at, finished_at, success) "
                          "values(:action_uuid, :task_id, :sub_id, :started_at, :finished_at, :success) ");
+    SqlContext<bool>ctx(db, qs);
+    ctx.bindValue(":action_uuid", action->id.toString());
+    ctx.bindValue(":task_id", action->taskId);
+    ctx.bindValue(":sub_id", action->subTaskId);
+    ctx.bindValue(":started_at", action->started);
+    ctx.bindValue(":finished_at", action->finished);
+    ctx.bindValue(":success", action->success);
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":action_uuid", action->id.toString());
-    q.bindValue(":task_id", action->taskId);
-    q.bindValue(":sub_id", action->subTaskId);
-    q.bindValue(":started_at", action->started);
-    q.bindValue(":finished_at", action->finished);
-    q.bindValue(":success", action->success);
-
-    if(!result.ExecAndCheck(q))
-        return result;
-
-    result.data = true;
-    transaction.finalize();
-    return result;
+    return ctx();
 }
 
 DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors errors, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.data = false;
-    Transaction transaction(db);
     QString qs = QString("insert into PageWarnings(action_uuid, task_id, sub_id, url, attempted_at, last_seen_at, error_code, error_level, error) "
                          "values(:action_uuid, :task_id, :sub_id, :url, :attempted_at, :last_seen, :error_code, :error_level, :error) ");
 
-    for(auto error: errors)
-    {
-        QSqlQuery q(db);
-        q.prepare(qs);
-        q.bindValue(":action_uuid", error->action->id.toString());
-        q.bindValue(":task_id", error->action->taskId);
-        q.bindValue(":sub_id", error->action->subTaskId);
-        q.bindValue(":url", error->url);
-        q.bindValue(":attempted_at", error->attemptTimeStamp);
-        q.bindValue(":last_seen", error->lastSeen);
-        q.bindValue(":error_code", static_cast<int>(error->errorCode));
-        q.bindValue(":error_level", static_cast<int>(error->errorlevel));
-        q.bindValue(":error", error->error);
-        if(!result.ExecAndCheck(q))
-            return result;
-    }
-
-    result.data = true;
-    transaction.finalize();
-    return result;
+    SqlContext<bool>ctx(db, qs);
+    ctx.ExecuteWithKeyListAndBindFunctor<PageFailurePtr>(errors, [](PageFailurePtr error, QSqlQuery& q){
+            q.bindValue(":action_uuid", error->action->id.toString());
+            q.bindValue(":task_id", error->action->taskId);
+            q.bindValue(":sub_id", error->action->subTaskId);
+            q.bindValue(":url", error->url);
+            q.bindValue(":attempted_at", error->attemptTimeStamp);
+            q.bindValue(":last_seen", error->lastSeen);
+            q.bindValue(":error_code", static_cast<int>(error->errorCode));
+            q.bindValue(":error_level", static_cast<int>(error->errorlevel));
+            q.bindValue(":error", error->error);
+    });
+    return ctx.result;
 }
 
 DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.data = false;
-    Transaction transaction(db);
+
     QString qs = QString("update PageTasks set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished_at,"
                          " results = :results, retries = :retries, success = :success, task_size = :size, finished = :finished,"
                          " parsed_pages = :parsed_pages, updated_fics = :updated_fics, inserted_fics = :inserted_fics,"
                          " inserted_authors = :inserted_authors, updated_authors = :updated_authors"
                          " where id = :id");
+    SqlContext<bool>ctx(db, qs);
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":scheduled_to",    task->scheduledTo);
-    q.bindValue(":started_at",         task->startedAt);
-    q.bindValue(":finished_at",        task->finishedAt);
-    q.bindValue(":finished",        task->finished);
-    q.bindValue(":results",         task->results);
-    q.bindValue(":retries",         task->retries);
-    q.bindValue(":success",         task->success);
-    q.bindValue(":id",              task->id);
-    q.bindValue(":size",              task->size);
-    q.bindValue(":parsed_pages",      task->parsedPages);
-    q.bindValue(":updated_fics",      task->updatedFics);
-    q.bindValue(":inserted_fics",     task->addedFics);
-    q.bindValue(":inserted_authors",  task->addedAuthors);
-    q.bindValue(":updated_authors",   task->updatedAuthors);
+    ctx.bindValue(":scheduled_to",      task->scheduledTo);
+    ctx.bindValue(":started_at",        task->startedAt);
+    ctx.bindValue(":finished_at",       task->finishedAt);
+    ctx.bindValue(":finished",          task->finished);
+    ctx.bindValue(":results",           task->results);
+    ctx.bindValue(":retries",           task->retries);
+    ctx.bindValue(":success",           task->success);
+    ctx.bindValue(":id",                task->id);
+    ctx.bindValue(":size",              task->size);
+    ctx.bindValue(":parsed_pages",      task->parsedPages);
+    ctx.bindValue(":updated_fics",      task->updatedFics);
+    ctx.bindValue(":inserted_fics",     task->addedFics);
+    ctx.bindValue(":inserted_authors",  task->addedAuthors);
+    ctx.bindValue(":updated_authors",   task->updatedAuthors);
 
-    if(!result.ExecAndCheck(q))
-        return result;
-
-    result.data = true;
-    transaction.finalize();
-    return result;
+    return ctx();
 }
 
 DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.data = false;
-    Transaction transaction(db);
     QString qs = QString("update PageTaskParts set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished,"
                          " retries = :retries, success = :success, finished = :finished, "
                          " parsed_pages = :parsed_pages, updated_fics = :updated_fics, inserted_fics = :inserted_fics,"
                          " inserted_authors = :inserted_authors, updated_authors = :updated_authors, custom_data1 = :custom_data1"
                          " where task_id = :task_id and sub_id = :sub_id");
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":scheduled_to",     task->scheduledTo);
-    q.bindValue(":started_at",       task->startedAt);
-    q.bindValue(":finished_at",      task->finished);
-    q.bindValue(":retries",          task->retries);
-    q.bindValue(":success",          task->success);
-    q.bindValue(":finished",         task->finished);
-    q.bindValue(":task_id",          task->parentId);
-    q.bindValue(":sub_id",           task->id);
+    SqlContext<bool>ctx(db, qs);
+
+    ctx.bindValue(":scheduled_to",     task->scheduledTo);
+    ctx.bindValue(":started_at",       task->startedAt);
+    ctx.bindValue(":finished_at",      task->finished);
+    ctx.bindValue(":retries",          task->retries);
+    ctx.bindValue(":success",          task->success);
+    ctx.bindValue(":finished",         task->finished);
+    ctx.bindValue(":task_id",          task->parentId);
+    ctx.bindValue(":sub_id",           task->id);
+
     QString customData = task->content->CustomData1();
-    q.bindValue(":custom_data1",      customData);
-    q.bindValue(":parsed_pages",      task->parsedPages);
-    q.bindValue(":updated_fics",      task->updatedFics);
-    q.bindValue(":inserted_fics",     task->addedFics);
-    q.bindValue(":inserted_authors",  task->addedAuthors);
-    q.bindValue(":updated_authors",   task->updatedAuthors);
+    ctx.bindValue(":custom_data1",      customData);
+    ctx.bindValue(":parsed_pages",      task->parsedPages);
+    ctx.bindValue(":updated_fics",      task->updatedFics);
+    ctx.bindValue(":inserted_fics",     task->addedFics);
+    ctx.bindValue(":inserted_authors",  task->addedAuthors);
+    ctx.bindValue(":updated_authors",   task->updatedAuthors);
 
-    if(!result.ExecAndCheck(q))
-        return result;
+    return ctx();
 
-    result.data = true;
-    transaction.finalize();
-    return result;
+
 }
 
 DiagnosticSQLResult<bool> SetTaskFinished(int id, QSqlDatabase db)
 {
-    DiagnosticSQLResult<bool> result;
-    result.data = false;
-    Transaction transaction(db);
-    QString qs = QString("update PageTasks set finished = 1 where id = :task_id");
-
-    QSqlQuery q(db);
-    q.prepare(qs);
-    q.bindValue(":task_id", id);
-    if(!result.ExecAndCheck(q))
-        return result;
-
-    result.data = true;
-    transaction.finalize();
-    return result;
+    return SqlContext<bool> (db, "update PageTasks set finished = 1 where id = :task_id",{
+                                 {":task_id", id}
+                              })();
 }
 
 DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
 {
-    DiagnosticSQLResult<TaskList> result;
+    SqlContext<QList<int>> ctx1(db);
+    ctx1.FetchLargeSelectIntoList("id", "select id from pagetasks where finished = 0");
 
-    QString qs = QString("select id from pagetasks where finished = 0");
+    SqlContext<TaskList> ctx2(db, "select * from pagetasks where id = :task_id");
+    if(!ctx1.result.success)
+        return ctx2.result;
 
-    QSqlQuery q(db);
-    q.prepare(qs);
-    if(!result.ExecAndCheck(q))
-        return result;
-    if(!result.CheckDataAvailability(q))
-        return result;
-
-    do{
-        QSqlQuery tq(db);
-        qs = QString("select * from pagetasks where id = :task_id");
-        tq.prepare(qs);
-        tq.bindValue(":task_id", q.value(0).toInt());
-        if(!result.ExecAndCheck(tq) || !result.CheckDataAvailability(tq))
-            continue;
+    for(auto id: ctx1.result.data)
+    {
+        ctx2.bindValues[":task_id"] =  id;
+        if(!ctx2.ExecAndCheckForData())
+            return ctx2.result;
         auto task = PageTask::CreateNewTask();
-        FillPageTaskFromQuery(task, tq);
-        result.data.push_back(task);
-    }while(q.next());
-    return result;
+        FillPageTaskFromQuery(task, ctx2.q);
+        ctx2.result.data.push_back(task);
+    }
+    return ctx2.result;
 }
+
+// new query limit
 
 // !!!! requires careful testing!
 DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)
