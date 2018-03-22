@@ -121,7 +121,7 @@ struct SqlContext
         }
     }
     template <typename KeyType>
-    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType key, QSqlQuery& q)> functor, bool ignoreUniqueness = false){
+    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType& key, QSqlQuery& q)> functor, bool ignoreUniqueness = false){
         BindValues();
         for(auto key : keyList)
         {
@@ -290,6 +290,7 @@ struct SqlContext
         bindValues[":" + key] = value;
     }
     void SetDefaultValue(ResultType value) {result.data = value;}
+    bool Success() const {return result.success;}
     DiagnosticSQLResult<ResultType> result;
     QString qs;
     QSqlQuery q;
@@ -342,7 +343,7 @@ struct ParallelSqlContext
         }
         return result;
     }
-
+    bool Success() const {return result.success;}
     DiagnosticSQLResult<ResultType> result;
     QSqlQuery sourceQ;
     QSqlQuery targetQ;

@@ -247,7 +247,7 @@ DiagnosticSQLResult<bool> WriteFandomUrls(core::FandomPtr fandom, QSqlDatabase d
     QString qs = QString("insert into fandomurls(global_id, url, website, custom) values(:id, :url, :website, :custom)");
 
     SqlContext<bool> ctx(db, qs);
-    ctx.ExecuteWithKeyListAndBindFunctor<core::Url>(fandom->urls, [&](core::Url url, QSqlQuery& q){
+    ctx.ExecuteWithKeyListAndBindFunctor<core::Url>(fandom->urls, [&](core::Url& url, QSqlQuery& q){
         q.bindValue(":id", fandom->id);
         q.bindValue(":url", url.GetUrl());
         q.bindValue(":website", fandom->source);
@@ -334,7 +334,7 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
 
 DiagnosticSQLResult<core::FicPtr> GetFicByWebId(QString website, int webId, QSqlDatabase db)
 {
-    QString qs = " select * from fanfics where %1_id = :site_id";
+    QString qs = QString(" select * from fanfics where %1_id = :site_id").arg(website);
     SqlContext<core::FicPtr> ctx(db, qs, {{":site_id",webId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data =  LoadFicFromQuery(q);
@@ -369,7 +369,7 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
         countNamed = q.value("COUNT_NAMED").toInt();
         countUpdated = q.value("count_updated").toInt();
     });
-    if(!ctx.result.success)
+    if(!ctx.Success())
         return ctx.result;
 
     bool requiresInsert = countNamed == 0;
@@ -457,8 +457,7 @@ DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id
     if(!author || author->id < 0)
         return ctx.result;
 
-    ctx.ExecAndCheck(true);
-    return ctx.result;
+    return ctx(true);
 }
 DiagnosticSQLResult<int>  GetAuthorIdFromUrl(QString url, QSqlDatabase db)
 {
@@ -521,6 +520,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSql
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
                          " from recommenders where website_type = :site order by id");
 
+    //!!! bindvalue incorrect for first query?
     SqlContext<QList<core::AuthorPtr>> ctx(db, qs, {{":site",website}});
     ctx.FetchLargeSelectIntoList("", qs, "select count(id) from recommenders where website_type = :site",[](QSqlQuery& q){
         return AuthorFromQuery(q);
@@ -1173,7 +1173,13 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString name, QSqlDatabase db)
     ctx.ForEachInSelect([&](QSqlQuery& q){
         currentFandom = FandomfromQueryNew(q, currentFandom);
     });
-    GetFandomStats(currentFandom, db);
+    auto statResult = GetFandomStats(currentFandom, db);
+    if(!statResult.success)
+    {
+        ctx.result.success = false;
+        return ctx.result;
+    }
+
     ctx.result.data = currentFandom;
     return ctx.result;
 }
@@ -1182,8 +1188,7 @@ DiagnosticSQLResult<bool> IgnoreFandom(int id, bool includeCrossovers, QSqlDatab
 {
     QString qs = QString(" insert into ignored_fandoms (fandom_id, including_crossovers) values (:fandom_id, :including_crossovers) ");
     SqlContext<bool> ctx(db, qs, {{":fandom_id",id},{":including_crossovers", includeCrossovers}});
-    ctx.ExecAndCheck(true);
-    return ctx.result;
+    return ctx(true);
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int id, QSqlDatabase db)
@@ -1204,8 +1209,7 @@ DiagnosticSQLResult<bool> IgnoreFandomSlashFilter(int id, QSqlDatabase db)
 {
     QString qs = QString(" insert into ignored_fandoms_slash_filter (fandom_id) values (:fandom_id) ");
     SqlContext<bool> ctx(db, qs, {{":fandom_id",id}});
-    ctx.ExecAndCheck(true);
-    return ctx.result;
+    return ctx(true);
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromIgnoredListSlashFilter(int id, QSqlDatabase db)
@@ -1267,10 +1271,7 @@ DiagnosticSQLResult<bool> AddFandomForFic(int ficId, int fandomId, QSqlDatabase 
     if(ficId == -1 || fandomId == -1)
         return ctx.result;
 
-    ctx.ExecAndCheck(true);
-    return ctx.result;
-
-
+    return ctx(true);
 }
 
 DiagnosticSQLResult<QStringList>  GetFandomNamesForFicId(int ficId, QSqlDatabase db)
@@ -1296,8 +1297,7 @@ DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDataba
                                  {":custom",url.GetType()}});
     if(fandomID == -1)
         return ctx.result;
-    ctx.ExecAndCheck(true);
-    return ctx.result;
+    return ctx(true);
 }
 
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
@@ -1326,7 +1326,7 @@ DiagnosticSQLResult<bool>  UploadLinkedAuthorsForAuthor(int authorId, QString we
 {
     QString qs = QString("insert into  LinkedAuthors(recommender_id, %1_id) values(:author_id, :id)").arg(website);
     SqlContext<bool> ctx(db, qs,{{":author_id",authorId}});
-    ctx.ExecuteWithValueList<int>("id", ids);
+    ctx.ExecuteWithValueList<int>("id", ids, true);
     return ctx.result;
 }
 
@@ -1536,9 +1536,8 @@ DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id,  QSqlDatabase db,
 
     if(singleSubTask)
         ctx.bindValue(":sub_id", subId);
-    if(!ctx.ExecAndCheck())
-        return ctx.result;
-    ctx.for_each([&](QSqlQuery& q){
+
+    ctx.ForEachInSelect([&](QSqlQuery& q){
         auto failure = PageFailure::CreateNewPageFailure();
         FillPageFailuresFromQuery(failure, q);
         ctx.result.data.push_back(failure);
@@ -1557,10 +1556,8 @@ DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase d
 
     if(singleSubTask)
         ctx.bindValue(":sub_id", subId);
-    if(!ctx.ExecAndCheck())
-        return ctx.result;
 
-    ctx.for_each([&](QSqlQuery& q){
+    ctx.ForEachInSelect([&](QSqlQuery& q){
         auto action = PageTaskAction::CreateNewAction();
         FillActionFromQuery(action, q);
         ctx.result.data.push_back(action);
@@ -1598,11 +1595,8 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
     if(!ctx.ExecAndCheck())
         return ctx.result;
 
-    ctx.ReplaceQuery("select max(id) from PageTasks");
-    if(!ctx.ExecAndCheckForData())
-        return ctx.result;
-
-    ctx.result.data = ctx.q.value(0).toInt();
+    ctx.ReplaceQuery("select max(id) as maxid from PageTasks");
+    ctx.FetchSingleValue<int>("maxid", -1);
     return ctx.result;
 
 }
@@ -1782,7 +1776,7 @@ DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDataba
         ctx.valueConverters["sb"] = keyConverter;
         ctx.valueConverters["sv"] = keyConverter;
         ctx();
-        if(!ctx.result.success)
+        if(!ctx.Success())
             return ctx.result;
     }
     {
@@ -1809,7 +1803,7 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
         ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserTags", keyList,
                                       currentDB, insertQS, keyList);
         ctx();
-        if(!ctx.result.success)
+        if(!ctx.Success())
             return ctx.result;
     }
 
@@ -1897,10 +1891,7 @@ DiagnosticSQLResult<int> FanficIdRecord::CreateRecord(QSqlDatabase db) const
         return ctx.result;
 
     ctx.ReplaceQuery("select max(id) as mid from fanfics");
-    if(!ctx.ExecAndCheckForData())
-        return ctx.result;
-
-    ctx.result.data = ctx.value("mid").toInt();
+    ctx.FetchSingleValue<int>("mid", 0);
     return ctx.result;
 }
 
@@ -1982,7 +1973,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author,
     ctx.q.bindValue(":size_huge", stats.sizeFactors[3]);
     ctx.q.bindValue(":first_published", stats.firstPublished);
     ctx.q.bindValue(":last_published", stats.lastPublished);
-    ctx.ExecAndCheck();
+    ctx.ExecAndCheck(true);
 
     return ctx.result;
 }
@@ -2005,7 +1996,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr au
     ctx.ProcessKeys<QString>(interfaces::GenreConverter::Instance().GetCodeGenres(), [&](auto key, auto& q){
         q.bindValue(":" + converter.ToDB(key), genreFactors[key]);
     });
-    ctx.ExecAndCheck();
+    ctx.ExecAndCheck(true);
     return ctx.result;
 }
 
@@ -2046,7 +2037,7 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendations(int id, QSqlDatabase
     SqlContext<QList<int>> ctx(db);
     ctx.bindValues[":id"] = id;
     ctx.FetchLargeSelectIntoList("fic_id",
-                                 "select * from recommendations where recommender_id = :id",
+                                 "select fic_id from recommendations where recommender_id = :id",
                                  "select count(recommender_id) from recommendations where recommender_id = :id");
     return ctx.result;
 }
@@ -2171,7 +2162,8 @@ DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId,
 
 DiagnosticSQLResult<bool> CreateSlashInfoPerFic(QSqlDatabase db)
 {
-    return SqlContext<bool>(db, "insert into algopasses(fic_id) select id from fanfics")();
+    SqlContext<bool> ctx(db, "insert into algopasses(fic_id) select id from fanfics");
+    return ctx(true);
 }
 
 DiagnosticSQLResult<bool> WipeSlashMetainformation(QSqlDatabase db)
