@@ -194,9 +194,12 @@ void ReplaceUrlInLinkedAuthorsWithID(QSqlDatabase db)
     transaction.finalize();
 }
 
-void RebindDuplicateFandoms(QSqlDatabase db)
+bool RebindDuplicateFandoms(QSqlDatabase db)
 {
-    auto fandoms = database::puresql::GetAllFandoms(db);
+    auto result = database::puresql::GetAllFandoms(db);
+    if(!result.success)
+        return false;
+    auto fandoms = result.data;
     for(auto fandom: fandoms)
         fandom->SetName(core::Fandom::ConvertName(fandom->GetName()));
 
@@ -239,7 +242,11 @@ void RebindDuplicateFandoms(QSqlDatabase db)
         rebinds[fandom->GetName()].push_back(newFandomId);
     }
 
-    QHash<int, QList<int>> ficfandoms = database::puresql::GetWholeFicFandomsTable(db);
+    auto ficfandomsResult = database::puresql::GetWholeFicFandomsTable(db);
+    QHash<int, QList<int>> ficfandoms  = ficfandomsResult.data;
+    if(!ficfandomsResult.success)
+        return false;
+
     QHash<int, QList<int>> resultingList;
     for(int fandom : ficfandoms.keys())
         resultingList[fandomIdToNewId[fandom]] += ficfandoms[fandom];
@@ -267,14 +274,14 @@ void RebindDuplicateFandoms(QSqlDatabase db)
     try {
 
         bool result = true;
-        result = result && database::puresql::EraseFicFandomsTable(db);
+        result = result && database::puresql::EraseFicFandomsTable(db).success;
         for(auto key : resultingList.keys())
         {
             auto list = resultingList[key];
             auto last = std::unique(list.begin(), list.end());
             list.erase(last, list.end());
             for(auto id : list)
-                result = result && database::puresql::AddFandomForFic(id, key, db);
+                result = result && database::puresql::AddFandomForFic(id, key, db).success;
         }
         if(!result)
             throw std::logic_error("");
@@ -314,6 +321,7 @@ void RebindDuplicateFandoms(QSqlDatabase db)
 
     transaction.finalize();
     database::Transaction transaction1(db);
+    return true;
 }
 
 }

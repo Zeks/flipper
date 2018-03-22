@@ -188,7 +188,7 @@ DiagnosticSQLResult<QStringList> GetFandomListFromDB(QSqlDatabase db)
 
     SqlContext<QStringList> ctx(db, qs);
     ctx.result.data.push_back("");
-    ctx.FetchLargeSelectIntoList("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", qs);
     return ctx.result;
 }
 
@@ -522,7 +522,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSql
 
     //!!! bindvalue incorrect for first query?
     SqlContext<QList<core::AuthorPtr>> ctx(db, qs, {{"site",website}});
-    ctx.FetchLargeSelectIntoList("", qs, "select count(id) from recommenders where website_type = :site",[](QSqlQuery& q){
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs, "select count(id) from recommenders where website_type = :site",[](QSqlQuery& q){
         return AuthorFromQuery(q);
     });
     return ctx.result;
@@ -744,7 +744,7 @@ DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId,
     QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id");
     SqlContext<QVector<int>> ctx(db);
     ctx.bindValue("list_id",listId);
-    ctx.FetchLargeSelectIntoList("fic_id", qs);
+    ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
     return ctx.result;
 }
 
@@ -753,7 +753,7 @@ DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int list
     QString qs = QString("select name from recommenders where id in (select author_id from RecommendationListAuthorStats where list_id = :list_id)");
     SqlContext<QStringList> ctx(db);
     ctx.bindValue("list_id",listId);
-    ctx.FetchLargeSelectIntoList("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", qs);
     return ctx.result;
 }
 
@@ -922,7 +922,7 @@ DiagnosticSQLResult<QVector<int>> GetWebIdList(QString where, QString website, Q
     QString fieldName = website + "_id";
     QString qs = QString("select %1_id from fanfics %2").arg(website).arg(where);
     SqlContext<QVector<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList(fieldName, qs);
+    ctx.FetchLargeSelectIntoList<int>(fieldName, qs);
     return ctx.result;
 }
 
@@ -930,7 +930,7 @@ DiagnosticSQLResult<QVector<int>> GetIdList(QString where, QSqlDatabase db)
 {
     QString qs = QString("select id from fanfics %1 order by id asc").arg(where);
     SqlContext<QVector<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList("id", qs);
+    ctx.FetchLargeSelectIntoList<int>("id", qs);
     return ctx.result;
 }
 
@@ -1001,7 +1001,7 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
 {
     QString qs = QString("Select tag from tags");
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList("tag", qs);
+    ctx.FetchLargeSelectIntoList<QString>("tag", qs);
     return ctx.result;
 }
 
@@ -1032,7 +1032,7 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db)
     QString qs = QString("select distinct id from recommenders");
 
     SqlContext<QList<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList("id", qs);
+    ctx.FetchLargeSelectIntoList<int>("id", qs);
     return ctx.result;
 }
 
@@ -1087,7 +1087,7 @@ DiagnosticSQLResult<QSet<QString>> GetAllGenres(QSqlDatabase db)
 {
     QString qs = QString("select genre from genres");
     SqlContext<QSet<QString>> ctx(db);
-    ctx.FetchLargeSelectIntoList("genre", qs);
+    ctx.FetchLargeSelectIntoList<QString>("genre", qs);
     return ctx.result;
 }
 
@@ -1201,7 +1201,7 @@ DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
 {
     QString qs = QString("select name from fandomindex where id in (select fandom_id from ignored_fandoms) order by name asc");
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", qs);
     return ctx.result;
 }
 
@@ -1222,7 +1222,7 @@ DiagnosticSQLResult<QStringList> GetIgnoredFandomsSlashFilter(QSqlDatabase db)
 {
     QString qs = QString("select name from fandomindex where id in (select fandom_id from ignored_fandoms_slash_filter) order by name asc");
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", qs);
     return ctx.result;
 }
 
@@ -1250,7 +1250,7 @@ DiagnosticSQLResult<QStringList> GetTrackedFandomList(QSqlDatabase db)
 {
     QString qs = QString(" select name from fandomindex where tracked = 1 order by name asc");
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", qs);
     return ctx.result;
 }
 
@@ -1304,7 +1304,7 @@ DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSql
 {
     QString qs = QString("Select distinct recommender_id from recommendations where fic_id = :fic_id");
     SqlContext<QList<int>> ctx(db, qs,{{"fic_id",ficId}});
-    ctx.FetchLargeSelectIntoList("recommender_id", qs);
+    ctx.FetchLargeSelectIntoList<int>("recommender_id", qs);
     return ctx.result;
 }
 
@@ -1734,7 +1734,7 @@ DiagnosticSQLResult<bool> SetTaskFinished(int id, QSqlDatabase db)
 DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
 {
     SqlContext<QList<int>> ctx1(db);
-    ctx1.FetchLargeSelectIntoList("id", "select id from pagetasks where finished = 0");
+    ctx1.FetchLargeSelectIntoList<int>("id", "select id from pagetasks where finished = 0");
 
     SqlContext<TaskList> ctx2(db, "select * from pagetasks where id = :task_id");
     if(!ctx1.result.success)
@@ -2037,7 +2037,7 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendations(int id, QSqlDatabase
 {
     SqlContext<QList<int>> ctx(db);
     ctx.bindValues["id"] = id;
-    ctx.FetchLargeSelectIntoList("fic_id",
+    ctx.FetchLargeSelectIntoList<int>("fic_id",
                                  "select fic_id from recommendations where recommender_id = :id",
                                  "select count(recommender_id) from recommendations where recommender_id = :id");
     return ctx.result;
@@ -2046,7 +2046,7 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendations(int id, QSqlDatabase
 DiagnosticSQLResult<QSet<int> > GetAllKnownSlashFics(QSqlDatabase db) //todo wrong table
 {
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList("fic_id",
+    ctx.FetchLargeSelectIntoList<int>("fic_id",
                                  "select fic_id from algopasses where keywords_pass_result = 1",
                                  "select count(fic_id) from algopasses where keywords_pass_result = 1");
 
@@ -2057,7 +2057,7 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownSlashFics(QSqlDatabase db) //todo wro
 DiagnosticSQLResult<QSet<int> > GetAllKnownNotSlashFics(QSqlDatabase db) //todo wrong table
 {
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList("fic_id",
+    ctx.FetchLargeSelectIntoList<int>("fic_id",
                                  "select fic_id from algopasses where keywords_no = 1",
                                  "select count(fic_id) from algopasses where keywords_no = 1");
 
@@ -2073,7 +2073,7 @@ DiagnosticSQLResult<QSet<int> > GetSingularFicsInLargeButSlashyLists(QSqlDatabas
                          " ) "
                          " where cnt = 1 ");
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList("fic_id",qs);
+    ctx.FetchLargeSelectIntoList<int>("fic_id",qs);
 
     return ctx.result;
 }
@@ -2138,7 +2138,7 @@ DiagnosticSQLResult<QHash<int, double> > GetFicGenreData(QString genre, QString 
 DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db)
 {
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList("id",
+    ctx.FetchLargeSelectIntoList<int>("id",
                                  "select id from fanfics where " + where,
                                  "select count(id) from fanfics where " + where);
 

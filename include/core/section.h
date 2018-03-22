@@ -494,4 +494,4 @@ public:
 };
 
 }
-
+Q_DECLARE_METATYPE(core::AuthorPtr);

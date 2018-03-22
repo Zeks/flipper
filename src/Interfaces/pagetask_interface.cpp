@@ -66,7 +66,7 @@ bool PageTask::DropTaskId(int id)
 bool PageTask::IsLastTaskSuccessful()
 {
     auto id = database::puresql::GetLastExecutedTaskID(db);
-    bool success = database::puresql::GetTaskSuccessByID(id.data, db);
+    bool success = database::puresql::GetTaskSuccessByID(id.data, db).success;
     return success;
 }
 

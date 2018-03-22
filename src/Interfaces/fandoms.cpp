@@ -108,7 +108,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom)
     database::Transaction transaction(db);
     auto result = database::puresql::CreateFandomInDatabase(fandom, db);
 
-    if(!result)
+    if(!result.success)
         return false;
 
     //fandom->id = portableDBInterface->GetLastIdForTable("fandoms");
@@ -175,7 +175,7 @@ void Fandoms::FillFandomList(bool forced)
 {
     if(forced || fandomsList.isEmpty())
     {
-        fandomsList  = database::puresql::GetFandomListFromDB(db);
+        fandomsList  = database::puresql::GetFandomListFromDB(db).data;
     }
 }
 
@@ -294,8 +294,9 @@ bool Fandoms::Load()
         if(fandomPresent)
             this->recentFandoms.push_back(nameIndex[bit]);
     }
-    fandomCount = database::puresql::GetFandomCountInDatabase(db);
-    return hadErrors;
+    auto result = database::puresql::GetFandomCountInDatabase(db);
+    fandomCount = result.data;
+    return hadErrors || !result.success;
 }
 
 void Fandoms::ReloadRecentFandoms()
@@ -321,8 +322,9 @@ bool Fandoms::LoadTrackedFandoms(bool forced)
     if(!needsLoading)
         return true;
 
-    auto trackedList = database::puresql::GetTrackedFandomList(db);
-    if(trackedList.empty())
+    auto opResult = database::puresql::GetTrackedFandomList(db);
+    auto trackedList = opResult.data;
+    if(trackedList.empty() || !opResult.success)
         return false;
 
     trackedFandoms.clear();
@@ -343,7 +345,7 @@ bool Fandoms::LoadAllFandoms(bool forced)
     if(!needsLoading)
         return true;
 
-    fandoms = database::puresql::GetAllFandoms(db);
+    fandoms = database::puresql::GetAllFandoms(db).data;
     if(fandoms.empty())
         return false;
     return true;
@@ -448,7 +450,7 @@ bool Fandoms::WipeFandom(QString name)
     name = core::Fandom::ConvertName(name.trimmed());
     if(!EnsureFandom(name))
         return false;
-    return database::puresql::CleanupFandom(nameIndex[name]->id, db);
+    return database::puresql::CleanupFandom(nameIndex[name]->id, db).success;
 }
 
 int Fandoms::GetFandomCount()
@@ -522,7 +524,7 @@ QList<core::FandomPtr > Fandoms::ListOfTrackedFandoms()
 bool Fandoms::LoadFandom(QString name)
 {
     name = core::Fandom::ConvertName(name);
-    auto fandom = database::puresql::GetFandom(name, db);
+    auto fandom = database::puresql::GetFandom(name, db).data;
     if(!fandom)
         return false;
 

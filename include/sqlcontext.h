@@ -174,9 +174,9 @@ struct SqlContext
             f(result.data, q);
         } while(q.next());
     }
-
+    template <typename ValueType>
     void FetchLargeSelectIntoList(QString fieldName, QString actualQuery, QString countQuery = "",
-                                  std::function<typename ResultType::value_type(QSqlQuery&)> func = std::function<typename ResultType::value_type(QSqlQuery&)>())
+                                  std::function<ValueType(QSqlQuery&)> func = std::function<ValueType(QSqlQuery&)>())
     {
         if(countQuery.isEmpty())
             qs = "select count(*) from ( " + actualQuery + " ) ";
@@ -329,7 +329,7 @@ struct ParallelSqlContext
                 QVariant value;
                 if(valueConverters.contains(sourceFields[i]))
                 {
-                    value = valueConverters[sourceFields[i]](sourceQ, targetDB, result);
+                    value = valueConverters[sourceFields[i]](sourceFields[i], sourceQ, targetDB, result);
                     if(!result.success)
                         return result;
                 }

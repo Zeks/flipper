@@ -92,7 +92,7 @@ bool interfaces::Genres::IsGenreList(QStringList list)
 
 bool Genres::LoadGenres()
 {
-    genres = database::puresql::GetAllGenres(db);
+    genres = database::puresql::GetAllGenres(db).data;
     if(genres.empty())
         return false;
     return true;

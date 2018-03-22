@@ -105,10 +105,11 @@ bool Fanfics::EnsureFicLoaded(int id, QString website)
 
 bool Fanfics::LoadFicFromDB(int id, QString website)
 {
-    auto fic = database::puresql::GetFicByWebId(website, id, db);
-
-    if(!fic)
+    auto result = database::puresql::GetFicByWebId(website, id, db);
+    auto fic  = result.data;
+    if(!result.success || !fic)
         return false;
+
 
     AddFicToIndex(fic);
     return true;
@@ -120,7 +121,7 @@ bool Fanfics::LoadFicToDB(core::FicPtr fic)
         return false;
 
     database::Transaction transaction(db);
-    bool insertResult = database::puresql::InsertIntoDB(fic, db);
+    bool insertResult = database::puresql::InsertIntoDB(fic, db).success;
     if(!insertResult)
         return false;
     int idResult = GetIdFromDatabase(fic->webSite, fic->webId);
@@ -138,7 +139,11 @@ core::FicPtr Fanfics::GetFicById(int id)
     if(idIndex.contains(id))
         return idIndex[id];
 
-    auto fic = database::puresql::GetFicById(id, db);
+    auto result = database::puresql::GetFicById(id, db);
+    auto fic= result.data;
+    if(!result.success || !fic)
+        return fic;
+
     AddFicToIndex(fic);
     return fic;
 }
@@ -164,7 +169,7 @@ bool Fanfics::ReprocessFics(QString where, QString website, bool useDirectIds, s
     if(useDirectIds)
         list = database::puresql::GetIdList(where, db).data;
     else
-        list = database::puresql::GetWebIdList(where, website, db);
+        list = database::puresql::GetWebIdList(where, website, db).data;
     if(list.empty())
         return false;
     for(auto id : list)
@@ -181,7 +186,7 @@ bool Fanfics::IsEmptyQueues()
 
 bool Fanfics::DeactivateFic(int ficId, QString website)
 {
-    return database::puresql::DeactivateStory(ficId, website, db);
+    return database::puresql::DeactivateStory(ficId, website, db).success;
 }
 
 void Fanfics::ClearProcessedHash()
@@ -191,7 +196,7 @@ void Fanfics::ClearProcessedHash()
 
 QStringList Fanfics::GetFandomsForFicAsNames(int ficId)
 {
-    return database::puresql::GetFandomNamesForFicId(ficId, db);
+    return database::puresql::GetFandomNamesForFicId(ficId, db).data;
 }
 
 QSet<int> Fanfics::GetAllKnownSlashFics()
@@ -223,12 +228,12 @@ bool Fanfics::ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString
 
 bool Fanfics::AssignChapter(int ficId, int chapter)
 {
-    return database::puresql::AssignChapterToFanfic(chapter, ficId, db);
+    return database::puresql::AssignChapterToFanfic(chapter, ficId, db).success;
 }
 
 bool Fanfics::AssignSlashForFic(int ficId, int source)
 {
-    return database::puresql::AssignSlashToFanfic(ficId, source, db);
+    return database::puresql::AssignSlashToFanfic(ficId, source, db).success;
 }
 
 bool Fanfics::AssignIterationOfSlash(QString iteration)
@@ -346,12 +351,12 @@ bool Fanfics::FlushDataQueues()
     for(auto fic: insertQueue)
     {
         insertCounter++;
-        bool writeResult = database::puresql::InsertIntoDB(fic, db);
+        bool writeResult = database::puresql::InsertIntoDB(fic, db).success;
         hasFailures = hasFailures && writeResult;
         fic->id = GetIDFromWebID(fic->webId, "ffn");
         for(auto fandom: fic->fandoms)
         {
-            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db).success;
             hasFailures = hasFailures && result;
             if(!result)
             {
@@ -370,11 +375,11 @@ bool Fanfics::FlushDataQueues()
     for(auto fic: updateQueue)
     {
         fic->id = GetIDFromWebID(fic->webId, "ffn");
-        auto result = database::puresql::UpdateInDB(fic, db);
+        auto result = database::puresql::UpdateInDB(fic, db).success;
         hasFailures = hasFailures && result;
         for(auto fandom: fic->fandoms)
         {
-            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db);
+            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db).success;
             hasFailures = hasFailures && result;
             if(!result)
             {
@@ -405,7 +410,7 @@ bool Fanfics::FlushDataQueues()
 
 int Fanfics::GetIdFromDatabase(QString website, int id)
 {
-    return database::puresql::GetFicIdByWebId(website, id, db);
+    return database::puresql::GetFicIdByWebId(website, id, db).data;
 }
 
 

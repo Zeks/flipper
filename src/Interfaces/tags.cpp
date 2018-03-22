@@ -31,17 +31,17 @@ void Tags::LoadAlltags()
 
 bool Tags::DeleteTag(QString tag)
 {
-    return database::puresql::DeleteTagFromDatabase(tag, db);
+    return database::puresql::DeleteTagFromDatabase(tag, db).success;
 }
 
 bool Tags::CreateTag(QString tag)
 {
-    return database::puresql::CreateTagInDatabase(tag, db);
+    return database::puresql::CreateTagInDatabase(tag, db).success;
 }
 
 QStringList Tags::ReadUserTags()
 {
-    QStringList tags = database::puresql::ReadUserTags(db);
+    QStringList tags = database::puresql::ReadUserTags(db).data;
     if(tags.empty())
     {
         tags = CreateDefaultTagList();
@@ -62,7 +62,7 @@ bool Tags::SetTagForFic(int ficId, QString tag)
 
 bool Tags::RemoveTagFromFic(int ficId, QString tag)
 {
-    return database::puresql::RemoveTagFromFanfic(tag, ficId, db);
+    return database::puresql::RemoveTagFromFanfic(tag, ficId, db).success;
 }
 
 QStringList Tags::CreateDefaultTagList()
