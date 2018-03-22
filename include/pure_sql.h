@@ -64,24 +64,24 @@ struct FicIdHash
 DiagnosticSQLResult<bool> SetFandomTracked(int id, bool tracked, QSqlDatabase);
 DiagnosticSQLResult<QStringList> GetTrackedFandomList(QSqlDatabase db);
 
-bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
-QStringList GetFandomListFromDB(QSqlDatabase db);
+DiagnosticSQLResult<QStringList> GetFandomListFromDB(QSqlDatabase db);
 //void CalculateFandomsAverages(QSqlDatabase db);
-void CalculateFandomsFicCounts(QSqlDatabase db);
-bool UpdateFandomStats(int fandomId, QSqlDatabase db);
-void AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers = false);
-void AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
-bool RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
-bool AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
-bool AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
+DiagnosticSQLResult<bool> CalculateFandomsFicCounts(QSqlDatabase db);
+DiagnosticSQLResult<bool> UpdateFandomStats(int fandomId, QSqlDatabase db);
+DiagnosticSQLResult<bool> AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers = false);
+DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
+DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
+DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
+DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
 
 DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db);
 
 DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresence(QString, QString, QString)>, QSqlDatabase db);
 DiagnosticSQLResult<bool> WipeSlashMetainformation(QSqlDatabase db);
 
-bool CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
+DiagnosticSQLResult<bool> CreateFandomInDatabase(QSharedPointer<core::Fandom> fandom, QSqlDatabase db);
 
 DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandoms(QSqlDatabase db);
 QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db);
@@ -110,33 +110,33 @@ DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase 
 DiagnosticSQLResult<QStringList> GetFandomNamesForFicId(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDatabase);
 
-int GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
-int GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
-core::FicPtr GetFicByWebId(QString website, int webId, QSqlDatabase db);
-core::FicPtr GetFicById(int ficId, QSqlDatabase db);
+DiagnosticSQLResult<int>  GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
+DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
+DiagnosticSQLResult<core::FicPtr> GetFicByWebId(QString website, int webId, QSqlDatabase db);
+DiagnosticSQLResult<core::FicPtr> GetFicById(int ficId, QSqlDatabase db);
 
 
 
-bool SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
-bool InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
-bool UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
-bool WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
-int GetAuthorIdFromUrl(QString url, QSqlDatabase db);
-int GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
+DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
+DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
+DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
+DiagnosticSQLResult<int> GetAuthorIdFromUrl(QString url, QSqlDatabase db);
+DiagnosticSQLResult<int> GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
 DiagnosticSQLResult<bool>  AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db);
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
 
-QList<core::AuthorPtr > GetAllAuthors(QString website,  QSqlDatabase db);
-QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
+DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website,  QSqlDatabase db);
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
 
-core::AuthorPtr  GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
-core::AuthorPtr  GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase db);
+DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
+DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase db);
 DiagnosticSQLResult<bool> LoadAuthorStatistics(core::AuthorPtr, QSqlDatabase db);
 
-core::AuthorPtr  GetAuthorByUrl(QString url,  QSqlDatabase db);
-core::AuthorPtr  GetAuthorById(int id,  QSqlDatabase db);
+DiagnosticSQLResult<core::AuthorPtr> GetAuthorByUrl(QString url,  QSqlDatabase db);
+DiagnosticSQLResult<core::AuthorPtr> GetAuthorById(int id,  QSqlDatabase db);
 
 
 DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author, QSqlDatabase db);
@@ -166,7 +166,7 @@ DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField,
 
 
 DiagnosticSQLResult<QList<core::AuhtorStatsPtr>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
-QList<QSharedPointer<core::RecommendationList>> GetAvailableRecommendationLists(QSqlDatabase db);
+DiagnosticSQLResult<QList<QSharedPointer<core::RecommendationList>>> GetAvailableRecommendationLists(QSqlDatabase db);
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList> > GetRecommendationList(int listid, QSqlDatabase db);
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationList(QString name, QSqlDatabase db);
 
@@ -250,7 +250,7 @@ DiagnosticSQLResult<bool> SetTaskFinished(int, QSqlDatabase);
 DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase);
 
 namespace Internal{
-bool WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
+DiagnosticSQLResult<bool> WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
                                  QString condition,
                                  QSqlDatabase db,
                                  std::function<void(QSharedPointer<core::Fandom>, QDateTime)> writer

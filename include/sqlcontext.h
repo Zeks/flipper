@@ -49,6 +49,7 @@ struct DiagnosticSQLResult
 template <typename ResultType>
 struct SqlContext
 {
+    //typedef typename ResultType::value_type ResultListValue;
     //SqlContext(QSqlDatabase db): q(db),transaction(db){}
     SqlContext(QSqlDatabase db, QString qs = "") : q(db), transaction(db), qs(qs){
         q.prepare(qs);
@@ -174,7 +175,8 @@ struct SqlContext
         } while(q.next());
     }
 
-    void FetchLargeSelectIntoList(QString fieldName, QString actualQuery, QString countQuery = "")
+    void FetchLargeSelectIntoList(QString fieldName, QString actualQuery, QString countQuery = "",
+                                  std::function<typename ResultType::value_type(QSqlQuery&)> func = std::function<typename ResultType::value_type(QSqlQuery&)>())
     {
         if(countQuery.isEmpty())
             qs = "select count(*) from ( " + actualQuery + " ) ";
@@ -201,9 +203,13 @@ struct SqlContext
             return;
 
         do{
-            result.data += q.value(fieldName).template value<ResultType::value_type>();
+            if(!func)
+                result.data += q.value(fieldName).template value<ResultType::value_type>();
+            else
+                result.data += func(q);
         } while(q.next());
     }
+
 
     void FetchSelectIntoHash(QString actualQuery, QString idFieldName, QString valueFieldName)
     {
