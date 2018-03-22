@@ -1116,15 +1116,18 @@ static DiagnosticSQLResult<bool> GetFandomStats(core::FandomPtr fandom, QSqlData
 {
     QString qs = QString("select * from fandomsources where global_id = :id");
     SqlContext<bool> ctx(db, qs, {{"id",fandom->id}});
-    if(!fandom || !ctx.ExecAndCheckForData())
+    if(!fandom)
         return ctx.result;
-
-    fandom->source = ctx.value("website").toString();
-    fandom->ficCount = ctx.value("fic_count").toInt();
-    fandom->averageFavesTop3 = ctx.value("average_faves_top_3").toDouble();
-    fandom->dateOfCreation = ctx.value("date_of_creation").toDate();
-    fandom->dateOfFirstFic = ctx.value("date_of_first_fic").toDate();
-    fandom->dateOfLastFic = ctx.value("date_of_last_fic").toDate();
+    ctx.ExecAndCheck();
+    if(ctx.Next())
+    {
+        fandom->source = ctx.value("website").toString();
+        fandom->ficCount = ctx.value("fic_count").toInt();
+        fandom->averageFavesTop3 = ctx.value("average_faves_top_3").toDouble();
+        fandom->dateOfCreation = ctx.value("date_of_creation").toDate();
+        fandom->dateOfFirstFic = ctx.value("date_of_first_fic").toDate();
+        fandom->dateOfLastFic = ctx.value("date_of_last_fic").toDate();
+    }
     return ctx.result;
 }
 

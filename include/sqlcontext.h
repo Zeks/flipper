@@ -51,26 +51,28 @@ struct SqlContext
 {
     //typedef typename ResultType::value_type ResultListValue;
     //SqlContext(QSqlDatabase db): q(db),transaction(db){}
-    SqlContext(QSqlDatabase db, QString qs = "") : q(db), transaction(db), qs(qs){
-        q.prepare(qs);
+    SqlContext(QSqlDatabase db) : q(db), transaction(db){
+    }
+    SqlContext(QSqlDatabase db, QString qs) : q(db), transaction(db), qs(qs){
+        Prepare(qs);
     }
 
     SqlContext(QSqlDatabase db, QStringList queries) : q(db), transaction(db), qs(qs){
         for(auto query : queries)
         {
-            q.prepare(query);
+            Prepare(query);
             BindValues();
             ExecAndCheck();
         }
     }
 
     SqlContext(QSqlDatabase db, QString qs,  std::function<void(SqlContext<ResultType>*)> func) : q(db), transaction(db), qs(qs), func(func){
-        q.prepare(qs);
+        Prepare(qs);
         func(this);
     }
 
     SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) : q(db), transaction(db), qs(qs), func(func){
-        q.prepare(qs);
+        Prepare(qs);
         for(auto valName: hash.keys())
             q.bindValue(":" + valName, hash[valName]);
     }
@@ -89,7 +91,7 @@ struct SqlContext
     }
 
     void ReplaceQuery(QString query){
-        q.prepare(query);
+        Prepare(query);
         bindValues.clear();
     }
 
@@ -98,7 +100,7 @@ struct SqlContext
         {
             QString newString = qs;
             newString = newString.arg(key);
-            q.prepare(newString);
+            Prepare(newString);
             BindValues();
             ExecAndCheck();
             if(!result.success)
@@ -162,7 +164,7 @@ struct SqlContext
     }
     void FetchSelectFunctor(QString select, std::function<void(ResultType& data, QSqlQuery& q)> f)
     {
-        q.prepare(select);
+        Prepare(select);
         BindValues();
 
         if(!ExecAndCheck())
@@ -182,7 +184,7 @@ struct SqlContext
             qs = "select count(*) from ( " + actualQuery + " ) ";
         else
             qs = countQuery;
-        q.prepare(qs);
+        Prepare(qs);
         BindValues();
 
         if(!ExecAndCheck())
@@ -191,10 +193,12 @@ struct SqlContext
         if(!CheckDataAvailability())
             return;
         int size = q.value(0).toInt();
+        if(size == 0)
+            return;
         result.data.reserve(size);
 
         qs = actualQuery;
-        q.prepare(qs);
+        Prepare(qs);
         BindValues();
 
         if(!ExecAndCheck())
@@ -214,7 +218,7 @@ struct SqlContext
     void FetchSelectIntoHash(QString actualQuery, QString idFieldName, QString valueFieldName)
     {
         qs = actualQuery;
-        q.prepare(qs);
+        Prepare(qs);
         BindValues();
 
 
@@ -236,7 +240,7 @@ struct SqlContext
         if(!select.isEmpty())
         {
             qs = select;
-            q.prepare(qs);
+            Prepare(qs);
             BindValues();
         }
         if(!ExecAndCheck())
@@ -250,7 +254,7 @@ struct SqlContext
         bool execResult = true;
         for(auto query : queries)
         {
-            q.prepare(query);
+            Prepare(query);
             BindValues();
             if(!ExecAndCheck())
             {
@@ -283,6 +287,15 @@ struct SqlContext
         for_each(func);
         return result;
     }
+    bool Prepare(QString qs){
+        if(qs.isEmpty())
+        {
+            qDebug() << "passed empty query";
+            return true;
+        }
+        bool success = q.prepare(qs);
+        return success;
+    }
 
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
@@ -291,6 +304,7 @@ struct SqlContext
     }
     void SetDefaultValue(ResultType value) {result.data = value;}
     bool Success() const {return result.success;}
+    bool Next() { return q.next();}
     DiagnosticSQLResult<ResultType> result;
     QString qs;
     QSqlQuery q;
