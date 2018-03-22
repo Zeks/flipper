@@ -72,7 +72,7 @@ struct SqlContext
     SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) : q(db), transaction(db), qs(qs), func(func){
         q.prepare(qs);
         for(auto valName: hash.keys())
-            q.bindValue(valName, hash[valName]);
+            q.bindValue(":" + valName, hash[valName]);
     }
 
     ~SqlContext(){
@@ -113,8 +113,8 @@ struct SqlContext
         {
             for(QString nameKey: nameKeys)
             {
-                q.bindValue(nameKey, key);
-                q.bindValue(nameKey, args[key]);
+                q.bindValue(":" + nameKey, key);
+                q.bindValue(":" + nameKey, args[key]);
             }
             if(!ExecAndCheck(ignoreUniqueness))
                 break;
@@ -263,7 +263,7 @@ struct SqlContext
 
     void BindValues(){
         for(auto bind : bindValues.keys())
-            q.bindValue(bind, bindValues[bind]);
+            q.bindValue(":" + bind, bindValues[bind]);
     }
 
     template<typename KeyType>
