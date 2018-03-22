@@ -222,7 +222,10 @@ struct SqlContext
     }
 
     template <typename T>
-    void FetchSingleValue(QString valueName, ResultType defaultValue, QString select = ""){
+    void FetchSingleValue(QString valueName,
+                          ResultType defaultValue,
+
+                          QString select = ""){
         result.data = defaultValue;
         if(!select.isEmpty())
         {
