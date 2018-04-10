@@ -1456,7 +1456,8 @@ void MainWindow::LoadMoreAuthors()
 {
     TaskProgressGuard guard(this);
     filter.mode = core::StoryFilter::filtering_in_recommendations;
-    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(ui->cbRecGroup->currentText()));
+    QString listName = ui->cbRecGroup->currentText();
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(listName));
     QStringList authorUrls = recsInterface->GetLinkedPagesForList(recsInterface->GetCurrentRecommendationList(), "ffn");
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
     QString comment = "Loading more authors from list: " + QString::number(recsInterface->GetCurrentRecommendationList());

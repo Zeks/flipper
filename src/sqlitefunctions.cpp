@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDriver>
 #include <QFile>
 #include <QDebug>
+#include <QSettings>
 #include <QTextStream>
 #include <third_party/quazip/quazip.h>
 #include <third_party/quazip/JlCompress.h>
@@ -122,6 +123,10 @@ bool ReadDbFile(QString file, QString connectionName)
 {
     QFile data(file);
 
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    auto reportSchemaErrors = settings.value("Settings/reportSchemaErrors", false).toBool();
+
     qDebug() << "Reading init file: " << file;
     if (data.open(QFile::ReadOnly))
     {
@@ -144,7 +149,7 @@ bool ReadDbFile(QString file, QString connectionName)
             //bool isOpen = db.isOpen();
             QSqlQuery q(db);
             q.prepare(statement.trimmed());
-            database::puresql::ExecAndCheck(q);
+            database::puresql::ExecAndCheck(q, reportSchemaErrors);
         }
     }
     else

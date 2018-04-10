@@ -41,6 +41,13 @@ bool NullPtrGuard(T item)
     return true;
 }
 #define DATAQ [&](auto data, auto q)
+#define COMMAND(NAME)  { #NAME, NAME}
+
+#define BP1(X) {COMMAND(X)}
+#define BP2(X, Y) {COMMAND(X), COMMAND(Y)}
+//#define BP3(X, Y, Z) {{"X", X}, {"Y", Y},{"Z", Z}}
+//#define BP4(X, Y, Z, W) {{"X", X}, {"Y", Y},{"Z", Z},{"W", W}}
+
 static DiagnosticSQLResult<FicIdHash> GetGlobalIDHash(QSqlDatabase db, QString where)
 {
     QString qs = QString("select id, ffn_id, ao3_id, sb_id, sv_id from fanfics ");
@@ -211,6 +218,9 @@ DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabas
     QString qs = "INSERT INTO FicTags(fic_id, tag) values(:fic_id, :tag)";
     SqlContext<bool> ctx(db, qs, {{"tag", tag},{"fic_id", fic_id}});
     ctx.ExecAndCheck(true);
+    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id");
+    ctx.bindValue("fic_id", fic_id);
+    ctx.ExecAndCheck(true);
     return ctx.result;
 }
 
@@ -218,7 +228,15 @@ DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabas
 DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db)
 {
     QString qs = "delete from FicTags where fic_id = :fic_id and tag = :tag";
-    return SqlContext<bool> (db, qs, {{"tag", tag},{"fic_id", fic_id}})();
+    SqlContext<bool> ctx (db, qs, {{"tag", tag},{"fic_id", fic_id}});
+    ctx();
+    ctx.ReplaceQuery("update fanfics set hidden = case "
+                     " when (select count(fic_id) from fictags where fic_id = :fic_id) > 0 then 1 "
+                     " else 0 end "
+                     " where id = :fic_id");
+    ctx.bindValue("fic_id", fic_id);
+    ctx.ExecAndCheck();
+    return ctx.result;
 }
 
 DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db)
@@ -231,13 +249,14 @@ DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDataba
 DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db)
 {
     QString qs = QString("update fanfics set at_chapter = :chapter where id = :fic_id");
-    return SqlContext<bool> (db, qs, {{"chapter", chapter},{"fic_id", fic_id}})();
+    //return SqlContext<bool> (db, qs, {{"chapter", chapter},{"fic_id", fic_id}})();
+    return SqlContext<bool> (db, qs, BP2(chapter,fic_id))();
 }
 
-DiagnosticSQLResult<bool> GetLastFandomID(QSqlDatabase db){
+DiagnosticSQLResult<int> GetLastFandomID(QSqlDatabase db){
     QString qs = QString("Select max(id) as maxid from fandomindex");
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<int> ctx(db, qs);
     ctx.FetchSingleValue<int>("maxid", -1);
     return ctx.result;
 }
@@ -1115,9 +1134,10 @@ static core::FandomPtr FandomfromQueryNew (QSqlQuery& q, core::FandomPtr fandom 
 static DiagnosticSQLResult<bool> GetFandomStats(core::FandomPtr fandom, QSqlDatabase db)
 {
     QString qs = QString("select * from fandomsources where global_id = :id");
-    SqlContext<bool> ctx(db, qs, {{"id",fandom->id}});
+    SqlContext<bool> ctx(db, qs);
     if(!fandom)
         return ctx.result;
+    ctx.bindValue("id",fandom->id);
     ctx.ExecAndCheck();
     if(ctx.Next())
     {
@@ -1164,14 +1184,14 @@ DiagnosticSQLResult<QList<core::FandomPtr>> GetAllFandoms(QSqlDatabase db)
     return ctx.result;
 }
 
-DiagnosticSQLResult<core::FandomPtr> GetFandom(QString name, QSqlDatabase db)
+DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, QSqlDatabase db)
 {
     core::FandomPtr currentFandom;
 
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
                          " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
                          " where name = :fandom ");
-    SqlContext<core::FandomPtr> ctx(db, qs, {{"fandom", name}});
+    SqlContext<core::FandomPtr> ctx(db, qs, BP1(fandom));
 
     ctx.ForEachInSelect([&](QSqlQuery& q){
         currentFandom = FandomfromQueryNew(q, currentFandom);
@@ -1187,17 +1207,17 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString name, QSqlDatabase db)
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db)
+DiagnosticSQLResult<bool> IgnoreFandom(int fandom_id, bool including_crossovers, QSqlDatabase db)
 {
     QString qs = QString(" insert into ignored_fandoms (fandom_id, including_crossovers) values (:fandom_id, :including_crossovers) ");
-    SqlContext<bool> ctx(db, qs, {{"fandom_id",id},{"including_crossovers", includeCrossovers}});
+    SqlContext<bool> ctx(db, qs,  BP2(fandom_id,including_crossovers));
     return ctx(true);
 }
 
-DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int id, QSqlDatabase db)
+DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int fandom_id, QSqlDatabase db)
 {
     QString qs = QString(" delete from ignored_fandoms where fandom_id  = :fandom_id");
-    return SqlContext<bool>(db, qs, {{"fandom_id",id}})();
+    return SqlContext<bool>(db, qs, BP1(fandom_id))();
 }
 
 DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
@@ -1208,17 +1228,17 @@ DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> IgnoreFandomSlashFilter(int id, QSqlDatabase db)
+DiagnosticSQLResult<bool> IgnoreFandomSlashFilter(int fandom_id, QSqlDatabase db)
 {
     QString qs = QString(" insert into ignored_fandoms_slash_filter (fandom_id) values (:fandom_id) ");
-    SqlContext<bool> ctx(db, qs, {{"fandom_id",id}});
+    SqlContext<bool> ctx(db, qs, BP1(fandom_id));
     return ctx(true);
 }
 
-DiagnosticSQLResult<bool> RemoveFandomFromIgnoredListSlashFilter(int id, QSqlDatabase db)
+DiagnosticSQLResult<bool> RemoveFandomFromIgnoredListSlashFilter(int fandom_id, QSqlDatabase db)
 {
     QString qs = QString(" delete from ignored_fandoms_slash_filter where fandom_id  = :fandom_id");
-    return SqlContext<bool>(db, qs, {{"fandom_id",id}})();
+    return SqlContext<bool>(db, qs, BP1(fandom_id))();
 }
 
 DiagnosticSQLResult<QStringList> GetIgnoredFandomsSlashFilter(QSqlDatabase db)
@@ -1266,21 +1286,21 @@ DiagnosticSQLResult<int> GetFandomCountInDatabase(QSqlDatabase db)
 }
 
 
-DiagnosticSQLResult<bool> AddFandomForFic(int ficId, int fandomId, QSqlDatabase db)
+DiagnosticSQLResult<bool> AddFandomForFic(int fic_id, int fandom_id, QSqlDatabase db)
 {
     QString qs = QString(" insert into ficfandoms (fic_id, fandom_id) values (:fic_id, :fandom_id) ");
-    SqlContext<bool> ctx(db, qs, {{"fic_id",ficId}, {"fandom_id",fandomId}});
+    SqlContext<bool> ctx(db, qs, BP2(fic_id,fandom_id));
 
-    if(ficId == -1 || fandomId == -1)
+    if(fic_id == -1 || fandom_id == -1)
         return ctx.result;
 
     return ctx(true);
 }
 
-DiagnosticSQLResult<QStringList>  GetFandomNamesForFicId(int ficId, QSqlDatabase db)
+DiagnosticSQLResult<QStringList>  GetFandomNamesForFicId(int fic_id, QSqlDatabase db)
 {
     QString qs = QString("select name from fandomindex where fandomindex.id in (select fandom_id from ficfandoms ff where ff.fic_id = :fic_id)");
-    SqlContext<QStringList> ctx(db, qs, {{"fic_id",ficId}});
+    SqlContext<QStringList> ctx(db, qs, BP1(fic_id));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto fandom = q.value("name").toString().trimmed();
         if(!fandom.contains("????"))
@@ -1303,46 +1323,46 @@ DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDataba
     return ctx(true);
 }
 
-DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db)
+DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSqlDatabase db)
 {
     QString qs = QString("Select distinct recommender_id from recommendations where fic_id = :fic_id");
-    SqlContext<QList<int>> ctx(db, qs,{{"fic_id",ficId}});
+    SqlContext<QList<int>> ctx(db, qs, BP1(fic_id));
     ctx.FetchLargeSelectIntoList<int>("recommender_id", qs);
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> SetFicsAsListOrigin(QList<int> ficIds, int listId, QSqlDatabase db)
+DiagnosticSQLResult<bool> SetFicsAsListOrigin(QList<int> ficIds, int list_id, QSqlDatabase db)
 {
     QString qs = QString("update RecommendationListData set is_origin = 1 where fic_id = :fic_id and list_id = :list_id");
-    SqlContext<bool> ctx(db, qs,{{"list_id",listId}});
+    SqlContext<bool> ctx(db, qs, BP1(list_id));
     ctx.ExecuteWithValueList<int>("fic_id", ficIds);
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db)
+DiagnosticSQLResult<bool> DeleteLinkedAuthorsForAuthor(int author_id,  QSqlDatabase db)
 {
     QString qs = QString("delete from LinkedAuthors where recommender_id = :author_id");
-    return SqlContext<bool> (db, qs,{{"author_id",authorId}})();
+    return SqlContext<bool> (db, qs, BP1(author_id))();
 }
 
-DiagnosticSQLResult<bool>  UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db)
+DiagnosticSQLResult<bool>  UploadLinkedAuthorsForAuthor(int author_id, QString website, QList<int> ids, QSqlDatabase db)
 {
     QString qs = QString("insert into  LinkedAuthors(recommender_id, %1_id) values(:author_id, :id)").arg(website);
-    SqlContext<bool> ctx(db, qs,{{"author_id",authorId}});
+    SqlContext<bool> ctx(db, qs, BP1(author_id));
     ctx.ExecuteWithValueList<int>("id", ids, true);
     return ctx.result;
 }
 
-DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString website, QSqlDatabase db)
+DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int list_id, QString website, QSqlDatabase db)
 {
     QString qs = QString("Select distinct %1_id from LinkedAuthors "
-                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = 17) "
+                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = %2) "
                          " and %1_id not in (select distinct %1_id from recommenders)"
                          " union all "
                          " select ffn_id from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
-    qs=qs.arg(website);
+    qs=qs.arg(website).arg(list_id);
 
-    SqlContext<QStringList> ctx(db, qs, {{"list_id",listId}});
+    SqlContext<QStringList> ctx(db, qs, BP1(list_id));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto authorUrl = url_utils::GetAuthorUrlFromWebId(q.value(QString("%1_id").arg(website)).toInt(), "ffn");
         ctx.result.data.push_back(authorUrl);
@@ -1350,17 +1370,17 @@ DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString websi
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId, QSqlDatabase db)
+DiagnosticSQLResult<bool> RemoveAuthorRecommendationStatsFromDatabase(int list_id, int author_id, QSqlDatabase db)
 {
     QString qs = QString("delete from recommendationlistauthorstats "
                          " where list_id = :list_id and author_id = :author_id");
-    return SqlContext<bool>(db, qs, {{"list_id", listId},{"author_id", authorId}})();
+    return SqlContext<bool>(db, qs, BP2(list_id,author_id))();
 }
 
 DiagnosticSQLResult<bool> CreateFandomIndexRecord(int id, QString name, QSqlDatabase db)
 {
     QString qs = QString("insert into fandomindex(id, name) values(:id, :name)");
-    return SqlContext<bool>(db, qs, {{"id", id},{"name", name}})();
+    return SqlContext<bool>(db, qs, BP2(name, id))();
 }
 
 
@@ -1381,16 +1401,16 @@ DiagnosticSQLResult<bool> EraseFicFandomsTable(QSqlDatabase db)
     return SqlContext<bool>(db, qs)();
 }
 
-DiagnosticSQLResult<bool> SetLastUpdateDateForFandom(int id, QDate date, QSqlDatabase db)
+DiagnosticSQLResult<bool> SetLastUpdateDateForFandom(int id, QDate updated, QSqlDatabase db)
 {
     QString qs = QString("update fandomindex set updated = :updated where id = :id");
-    return SqlContext<bool>(db, qs, {{"updated", date},{"id", id}})();
+    return SqlContext<bool>(db, qs, BP2(updated, id))();
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase db)
 {
     QString qs = QString("delete from recent_fandoms where fandom = :name");
-    return SqlContext<bool>(db, qs, {{"name", name}})();
+    return SqlContext<bool>(db, qs, BP1(name))();
 }
 
 
@@ -1406,7 +1426,7 @@ DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db)
 DiagnosticSQLResult<bool> GetTaskSuccessByID(int id, QSqlDatabase db)
 {
     QString qs = QString("select success from pagetasks where id = :id");
-    SqlContext<bool>ctx(db, qs, {{"id", id}});
+    SqlContext<bool>ctx(db, qs, BP1(id));
     ctx.FetchSingleValue<bool>("success", false);
     return ctx.result;
 }
@@ -1479,7 +1499,7 @@ void FillSubTaskFromQuery(SubTaskPtr task, QSqlQuery& q){
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db)
 {
     QString qs = QString("select * from pagetasks where id = :id");
-    SqlContext<PageTaskPtr>ctx(db, qs, {{"id", id}});
+    SqlContext<PageTaskPtr>ctx(db, qs, BP1(id));
     ctx.result.data = PageTask::CreateNewTask();
     if(!ctx.ExecAndCheckForData())
         return ctx.result;
@@ -1535,7 +1555,7 @@ DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id,  QSqlDatabase db,
     if(singleSubTask)
         qs+= " and sub_id = :sub_id";
 
-    SqlContext<SubTaskErrors>ctx(db, qs, {{"id", id}});
+    SqlContext<SubTaskErrors>ctx(db, qs, BP1(id));
 
     if(singleSubTask)
         ctx.bindValue("sub_id", subId);
@@ -1555,7 +1575,7 @@ DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase d
     bool singleSubTask = subId != -1;
     if(singleSubTask)
         qs+= " and sub_id = :sub_id";
-    SqlContext<PageTaskActions>ctx(db, qs, {{"id", id}});
+    SqlContext<PageTaskActions>ctx(db, qs, BP1(id));
 
     if(singleSubTask)
         ctx.bindValue("sub_id", subId);

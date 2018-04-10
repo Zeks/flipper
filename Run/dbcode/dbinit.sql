@@ -32,18 +32,17 @@ date_added datetime default null,
 date_deactivated datetime default null,
 for_fill integer default 0,
 ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);	
+alter table fanfics add column hidden integer default 0;
 
-
- CREATE VIEW vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
+ CREATE VIEW if not exists vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
-wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows
+wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows, hidden
  from fanfics;
 
 
  
 CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC);
-CREATE  INDEX if  not exists main.I_FANFICS_TAGS ON FANFICS (TAGS ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_ID ON FANFICS (ID ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC);
 CREATE INDEX if not exists  I_WCR ON fanfics (wcr ASC);
@@ -52,14 +51,13 @@ CREATE INDEX if not exists  I_age ON fanfics (age ASC);
 CREATE INDEX if not exists  I_reviewstofavourites ON fanfics (reviewstofavourites ASC);
 CREATE INDEX if not exists  I_FANFIC_UPDATED ON fanfics (UPDATED ASC);
 CREATE INDEX if not exists  I_FANFIC_PUBLISHED ON fanfics (PUBLISHED ASC);
-CREATE INDEX if not exists  I_AUTHOR_WEB_ID ON fanfics (author_web_id ASC);
 CREATE INDEX if not exists  I_FANFICS_FFN_ID ON fanfics (ffn_id ASC);
 CREATE INDEX if not exists  I_ALIVE ON fanfics (alive ASC);
 CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
 CREATE INDEX if not exists  I_FOR_FILL ON fanfics (for_fill ASC);
+CREATE INDEX if not exists  I_FANFICS_HIDDEN on fanfics (hidden ASC);
 
 -- fanfics sequence;
- CREATE TABLE if not exists sqlite_sequence(name varchar, seq integer);
  INSERT INTO sqlite_sequence(name, seq) SELECT 'fanfics', 0 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name = 'fanfics');
  update sqlite_sequence set seq = (select max(id) from fanfics) where name = 'fanfics';
 
@@ -140,11 +138,9 @@ CREATE INDEX if not exists I_FSOURCE_LASTUPDATE ON fandomsources (last_update AS
 CREATE INDEX if not exists I_FSOURCE_AVGF3 ON fandomsources (average_faves_top_3 ASC);
 
  
- update fandoms set id = rowid where id is null;
- 
+  
  CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);
- INSERT INTO recent_fandoms(fandom, seq_num) SELECT 'base', 0 WHERE NOT EXISTS(SELECT 1 FROM fandom WHERE fandom = 'base');
- 
+  
  CREATE TABLE if not exists ignored_fandoms(fandom_id INTEGER PRIMARY KEY, including_crossovers integer default 0);
 CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id ASC);  
 
@@ -153,7 +149,6 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  
  CREATE TABLE if not exists Recommenders (id INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE , name VARCHAR NOT NULL , url VARCHAR NOT NULL , page_data BLOB, page_updated DATETIME, author_updated DATETIME);
  
- alter table Recommenders add column wave integer default 0;
  alter table Recommenders add column favourites integer default -1;
  alter table Recommenders add column fics integer default -1;
  alter table Recommenders add column ffn_id integer default -1;
@@ -289,20 +284,13 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
   
  CREATE TABLE if not exists Recommendations (recommender_id INTEGER NOT NULL , fic_id INTEGER NOT NULL , PRIMARY KEY (recommender_id, fic_id));
  CREATE INDEX if not exists  I_RECOMMENDATIONS ON Recommendations (recommender_id ASC);
- CREATE INDEX if not exists I_RECOMMENDATIONS_FIC_TAG ON Recommendations (tag ASC, fic_id asc);
- CREATE INDEX if not exists I_RECOMMENDATIONS_REC_FIC ON Recommendations (recommender_id ASC, fic_id asc);
- CREATE INDEX if not exists I_RECOMMENDATIONS_TAG ON Recommendations (tag ASC);
- CREATE INDEX if not exists I_RECOMMENDATIONS_FIC ON Recommendations (fic_id ASC);
+  CREATE INDEX if not exists I_RECOMMENDATIONS_REC_FIC ON Recommendations (recommender_id ASC, fic_id asc);
+  CREATE INDEX if not exists I_RECOMMENDATIONS_FIC ON Recommendations (fic_id ASC);
  CREATE  INDEX if not exists I_FIC_ID ON Recommendations (fic_id ASC);
  
-CREATE  INDEX if  not exists main.I_FANDOMS_FANDOM ON FANDOMS (FANDOM ASC);
-CREATE  INDEX if  not exists main.I_FANDOMS_SECTION ON FANDOMS (SECTION ASC);
-CREATE INDEX if not exists  I_FANDOM_SECTION ON fandoms (FANDOM ASC, SECTION ASC);
-update fandoms set id = rowid where id is null;
-
 
  CREATE INDEX if not exists  I_FICS_FAVOURITES ON fanfics (favourites ASC);
-CREATE VIEW fandom_stats AS  select fandom, 
+CREATE VIEW if not exists fandom_stats AS  select fandom, 
 cast (strftime('%s',CURRENT_TIMESTAMP)-strftime('%s',min(published)) AS real )/60/60/24/365  as age,
 min(published) as origin,
 (select sum(wcr) from fanfics where wcr < 200000 and fandom = fs.fandom)/(select count(id) from fanfics where wcr < 200000  and fandom = fs.fandom) as averagewcr,
@@ -379,7 +367,8 @@ CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (N
 CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists (created asc);
 
 -- data for fandoms present in the list;
-create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer deault 0, fic_count integer, PRIMARY KEY (list_id, fandom_id))
+create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer deault 0, 
+fic_count integer, PRIMARY KEY (list_id, fandom_id));
 CREATE INDEX if not exists I_RecommendationListsFandoms_PK ON RecommendationListsFandoms (list_id ASC, fandom_id asc);
 CREATE INDEX if not exists  I_RecommendationListsFandoms_LIST_ID ON RecommendationListsFandoms (list_id asc);
 CREATE INDEX if not exists  I_RecommendationListsFandoms_fandom_id ON RecommendationListsFandoms (fandom_id asc);

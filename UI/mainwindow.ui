@@ -254,7 +254,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>1</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -686,10 +686,10 @@
                          </property>
                          <item>
                           <layout class="QGridLayout" name="gridLayout_14">
-                           <item row="0" column="1">
-                            <widget class="QLabel" name="label_15">
+                           <item row="1" column="1">
+                            <widget class="QLabel" name="label_12">
                              <property name="text">
-                              <string>List Name</string>
+                              <string>Min match count:</string>
                              </property>
                             </widget>
                            </item>
@@ -726,13 +726,6 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="1">
-                            <widget class="QLabel" name="label_12">
-                             <property name="text">
-                              <string>Min match count:</string>
-                             </property>
-                            </widget>
-                           </item>
                            <item row="0" column="6" colspan="3">
                             <widget class="QComboBox" name="cbRecTagBuildGroup">
                              <property name="minimumSize">
@@ -753,10 +746,10 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="3">
-                            <widget class="QLabel" name="label_13">
+                           <item row="1" column="6">
+                            <widget class="QLabel" name="label_14">
                              <property name="text">
-                              <string>Threshold ratio:</string>
+                              <string>Always pick on:</string>
                              </property>
                             </widget>
                            </item>
@@ -767,10 +760,10 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="1" column="6">
-                            <widget class="QLabel" name="label_14">
+                           <item row="1" column="3">
+                            <widget class="QLabel" name="label_13">
                              <property name="text">
-                              <string>Always pick on:</string>
+                              <string>Threshold ratio:</string>
                              </property>
                             </widget>
                            </item>
@@ -791,6 +784,13 @@
                              </property>
                              <property name="value">
                               <double>40.000000000000000</double>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QLabel" name="label_15">
+                             <property name="text">
+                              <string>List Name</string>
                              </property>
                             </widget>
                            </item>
@@ -1531,7 +1531,7 @@
                        <string>Use Ignored Fandoms</string>
                       </property>
                       <property name="checked">
-                       <bool>false</bool>
+                       <bool>true</bool>
                       </property>
                      </widget>
                     </item>
@@ -1564,7 +1564,7 @@
                        <string>Ignore All Tags</string>
                       </property>
                       <property name="checked">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                      </widget>
                     </item>
@@ -1750,7 +1750,7 @@
                        <string>Page Size</string>
                       </property>
                       <property name="checked">
-                       <bool>false</bool>
+                       <bool>true</bool>
                       </property>
                      </widget>
                     </item>
@@ -1785,7 +1785,7 @@
                      <string>Random fics</string>
                     </property>
                     <property name="checked">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>

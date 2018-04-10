@@ -1,20 +1,24 @@
 #pragma once
-#include <functional>
+#include "transaction.h"
+
 #include <QString>
-#include <memory>
-#include <array>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QVariant>
 #include <QDebug>
 #include <QSharedPointer>
-#include "transaction.h"
+
+#include <functional>
+#include <memory>
+#include <array>
+
+
 
 
 namespace database {
 namespace puresql{
-bool ExecAndCheck(QSqlQuery& q);
+bool ExecAndCheck(QSqlQuery& q, bool reportErrors = true);
 
 template <typename T>
 struct DiagnosticSQLResult
@@ -23,7 +27,7 @@ struct DiagnosticSQLResult
     QString oracleError;
     T data;
     bool ExecAndCheck(QSqlQuery& q, bool ignoreUniqueness = false) {
-        bool success = database::puresql::ExecAndCheck(q);
+        bool success = database::puresql::ExecAndCheck(q, false);
         bool uniqueTriggered = ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed");
         if(uniqueTriggered)
             return true;
@@ -31,6 +35,8 @@ struct DiagnosticSQLResult
         {
             success = false;
             oracleError = q.lastError().text();
+            qDebug().noquote() << oracleError;
+            qDebug().noquote() << q.lastQuery();
         }
         return success;
     }
@@ -49,8 +55,6 @@ struct DiagnosticSQLResult
 template <typename ResultType>
 struct SqlContext
 {
-    //typedef typename ResultType::value_type ResultListValue;
-    //SqlContext(QSqlDatabase db): q(db),transaction(db){}
     SqlContext(QSqlDatabase db) : q(db), transaction(db){
     }
     SqlContext(QSqlDatabase db, QString qs) : q(db), transaction(db), qs(qs){
@@ -74,7 +78,7 @@ struct SqlContext
     SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) : q(db), transaction(db), qs(qs), func(func){
         Prepare(qs);
         for(auto valName: hash.keys())
-            q.bindValue(":" + valName, hash[valName]);
+            bindValue(valName, hash[valName]);
     }
 
     ~SqlContext(){
@@ -282,6 +286,7 @@ struct SqlContext
     }
 
     DiagnosticSQLResult<ResultType> ForEachInSelect(std::function<void(QSqlQuery&)> func){
+        BindValues();
         if(!ExecAndCheck())
             return result;
         for_each(func);
@@ -300,7 +305,7 @@ struct SqlContext
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
     void bindValue(QString key, QVariant value){
-        bindValues[":" + key] = value;
+        bindValues[key] = value;
     }
     void SetDefaultValue(ResultType value) {result.data = value;}
     bool Success() const {return result.success;}

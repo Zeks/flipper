@@ -148,7 +148,8 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     qDebug() << "entering wait phase";
     while(!reply->isFinished() && retries > 0)
     {
-        qDebug() << "retries left: " << retries;
+        if(retries%10 == 0)
+            qDebug() << "retries left: " << retries;
         if(reply->isFinished())
             break;
         retries--;

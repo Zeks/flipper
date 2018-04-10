@@ -91,9 +91,9 @@ CREATE TABLE if not exists PageWarnings (
  error_level integer default 0,
  error varchar);
 CREATE INDEX if not exists I_PW_ID ON PageWarnings (id asc);
-CREATE INDEX if not exists I_PW_ACTION_ID ON PageWarnings (action_id asc);
+CREATE INDEX if not exists I_PW_ACTION_ID ON PageWarnings (action_uuid asc);
 CREATE INDEX if not exists I_PW_TASK_ID ON PageWarnings (task_id asc);
-CREATE INDEX if not exists I_PW_SUBTASK_ID ON PageWarnings (subtask_id asc);
+CREATE INDEX if not exists I_PW_SUBTASK_ID ON PageWarnings (sub_id asc);
 CREATE INDEX if not exists I_PW_ERROR_CODE ON PageWarnings (error_code asc);
 CREATE INDEX if not exists I_PW_URL ON PageWarnings (URL asc);
 CREATE INDEX if not exists I_PW_ERROR_LEVEL ON PageWarnings (error_level asc);

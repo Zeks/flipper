@@ -54,7 +54,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
         if(useRecommendationFiltering)
         {
             QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join vfanficsslash ff  on ff.id = rt.fic_id  where"
-                           " rt.list_id = :list_id2  and rt.match_count > :match_count";
+                           " rt.list_id = :list_id2  and rt.match_count >= :match_count";
 
 
             if(!filter.showOriginsInLists)
@@ -403,7 +403,7 @@ QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
         if(filter.ignoreAlreadyTagged)
             queryString += QString("");
         else
-            queryString += QString(" and not exists  (select fic_id from fictags where fic_id = fid)");
+            queryString += QString(" and ff.hidden = 0 ");
 
     }
     return queryString;
@@ -569,7 +569,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
 
     // special cases that need to be optimised in order of necessity
     // recommendation list sorting can and needs to be inverted for instant results
-    QString wrappignString =  "select count(fic_id) as records from RecommendationListData  where list_id = :list_id and match_count > :match_count and exists (%1)";
+    QString wrappignString =  "select count(fic_id) as records from RecommendationListData  where list_id = :list_id and match_count >= :match_count and exists (%1)";
     QString normalString = "select count(id) as records %1 ";
     queryString = "  from vfanficsslash ff where ff.alive = 1 " ;
     QString where;
