@@ -3488,6 +3488,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.minRecommendations = ui->sbMinRecommendations->value();
     filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : -1;
     filter.recordPage = ui->chkLimitPageSize->isChecked() ?  0 : -1;
+    filter.listOpenMode = ui->chkListMode->isChecked();
     //if(ui->cbSortMode->currentText())
     if(listToUse.isEmpty())
         filter.listForRecommendations = recsInterface->GetListIdForName(ui->cbRecGroup->currentText());

@@ -254,7 +254,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>0</number>
+                  <number>1</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -1100,6 +1100,13 @@
                      </item>
                      <item>
                       <widget class="QSpinBox" name="sbMinRecommendations"/>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="chkListMode">
+                       <property name="text">
+                        <string>List Mode</string>
+                       </property>
+                      </widget>
                      </item>
                      <item>
                       <widget class="QPushButton" name="pbOpenWholeList">
