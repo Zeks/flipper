@@ -27,7 +27,7 @@ struct DiagnosticSQLResult
     QString oracleError;
     T data;
     bool ExecAndCheck(QSqlQuery& q, bool ignoreUniqueness = false) {
-        bool success = database::puresql::ExecAndCheck(q, false);
+        bool success = database::puresql::ExecAndCheck(q, true);
         bool uniqueTriggered = ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed");
         if(uniqueTriggered)
             return true;
@@ -117,13 +117,17 @@ struct SqlContext
         BindValues();
         for(auto key : args.keys())
         {
-            for(QString nameKey: nameKeys)
-            {
-                q.bindValue(":" + nameKey, key);
-                q.bindValue(":" + nameKey, args[key]);
-            }
+//            for(QString nameKey: nameKeys)
+//            {
+                //qDebug() << "cycling";
+                q.bindValue(":" + nameKeys[0], key);
+                q.bindValue(":" + nameKeys[1], args[key]);
+            //}
             if(!ExecAndCheck(ignoreUniqueness))
+            {
+                qDebug() << "breaking out of cycle";
                 break;
+            }
         }
     }
     template <typename KeyType>

@@ -2868,6 +2868,18 @@ inline void MainWindow::AddToCountingHash(QList<core::AuthorPtr> authors,
     }
 }
 
+inline void MainWindow::AddToHumorHash(QList<core::AuthorPtr> authors,QHash<int, int>& countingHash)
+{
+    for(auto author : authors)
+    {
+        auto fics = authorsInterface->GetFicList(author);
+        for(auto fic : fics)
+        {
+            //qDebug() << "adding fic: " << fic;
+            countingHash[fic]++;
+        }
+    }
+}
 
 void MainWindow::CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr > authors)
 {
@@ -3106,6 +3118,51 @@ void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
     });
     writeSlashLists.run();
 
+    transaction.finalize();
+    qDebug () << "finished";
+}
+
+void MainWindow::CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+
+    QHash<int, std::array<double, 21>> authorGenreHash;
+
+    TimedAction getGenres("getGenres", [&](){
+        authorGenreHash = authorsInterface->GetListGenreData();
+    });
+    getGenres.run();
+
+    QList<core::AuthorPtr> humorAuthors;
+    QList<core::AuthorPtr> validAuthors;
+    for(auto author : authors)
+    {
+        if(author->stats.favouriteStats.favourites < 50)
+            continue;
+
+        auto& stats = author->stats.favouriteStats;
+        if(stats.moodHappy > 0.5)
+            humorAuthors.push_back(author);
+    }
+    qDebug() << "humor size: " << humorAuthors.size();
+    QHash<int, int> humorFics;
+    QHash<int, double> humorValues;
+    QHash<int, double> dummyValues;
+    QHash<int, int> allFics;
+    QHash<int, double> totalHappiness;
+    QHash<int, double> totalSlash;
+    QHash<int, double> dummyHappiness;
+    QHash<int, double> dummySlash;
+    TimedAction processHumor("ProcHumor", [&](){
+        AddToHumorHash(humorAuthors,humorFics);
+    });
+    processHumor.run();
+
+    TimedAction writeSlashLists("WriteHumor", [&](){
+        recsInterface->CreateRecommendationList("HumorRecs", humorFics);
+    });
+    writeSlashLists.run();
     transaction.finalize();
     qDebug () << "finished";
 }
@@ -3988,4 +4045,11 @@ void MainWindow::OnExportStatistics()
     auto tagExportDb = statisticsExportInterface->InitDatabase(exportFileName, false);
     statisticsExportInterface->ReadDbFile("dbcode/" + exportFileName + ".sql", exportFileName);
     database::puresql::ExportTagsToDatabase(db, tagExportDb);
+}
+
+void MainWindow::on_pbComedy_clicked()
+{
+    TaskProgressGuard guard(this);
+    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    CreateRecListOfHumorProfiles(authors);
 }

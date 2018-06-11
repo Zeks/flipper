@@ -147,3 +147,16 @@ void core::Fic::FicCalcStats::Log()
     qDebug() << "Age:" << age;
     qDebug() << "DaysRunning:" << daysRunning;
 }
+
+void core::RecommendationList::Log()
+{
+
+    qDebug() << "List id: " << id ;
+    qDebug() << "name: " << name ;
+    qDebug() << "ficCount: " << ficCount ;
+    qDebug() << "tagToUse: " << tagToUse ;
+    qDebug() << "minimumMatch: " << minimumMatch ;
+    qDebug() << "alwaysPickAt: " << alwaysPickAt ;
+    qDebug() << "pickRatio: " << pickRatio ;
+    qDebug() << "created: " << created ;
+}

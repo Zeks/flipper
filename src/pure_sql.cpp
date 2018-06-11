@@ -2178,7 +2178,7 @@ DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId,
                  ":fic_id, :list_id, :match_count)";
 
     SqlContext<bool> ctx(db, qs);
-    ctx.q.bindValue("list_id", listId);
+    ctx.bindValue("list_id", listId);
     ctx.ExecuteWithArgsHash({"fic_id", "match_count"}, fics);
     return ctx.result;
 }

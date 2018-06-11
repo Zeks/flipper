@@ -483,6 +483,7 @@ typedef QSharedPointer<RecommendationList> RecPtr;
 class RecommendationList : public DBEntity{
 public:
     static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
+    void Log();
     int id = -1;
     int ficCount =-1;
     QString name;

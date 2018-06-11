@@ -285,8 +285,10 @@ private:
                                QSet<int> knownSlashFics,
                                QHash<int, int>& slashHash, bool checkRx = true);
     inline void AddToCountingHash(QList<core::AuthorPtr> authors, QHash<int, int>& countingHash, QHash<int, double> &valueHash, QHash<int, double> &totalHappiness, QHash<int, double> &totalSlash);
+    inline void AddToHumorHash(QList<core::AuthorPtr> authors,QHash<int, int>& countingHash);
     void CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr> authors);
     void CreateListOfHumorCandidates(QList<core::AuthorPtr> authors);
+    void CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors);
 
     void DoFullCycle();
 //    QHash<int, int> CreateListOfNotSlashFics();
@@ -528,6 +530,8 @@ private slots:
     void on_leOpenFicID_returnPressed();
 
     void OnExportStatistics();
+
+    void on_pbComedy_clicked();
 
 signals:
 

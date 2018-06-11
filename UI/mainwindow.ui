@@ -254,7 +254,7 @@
                   </sizepolicy>
                  </property>
                  <property name="currentIndex">
-                  <number>1</number>
+                  <number>2</number>
                  </property>
                  <widget class="QWidget" name="tab_6">
                   <property name="sizePolicy">
@@ -1284,6 +1284,19 @@
                      </widget>
                     </item>
                    </layout>
+                  </widget>
+                  <widget class="QPushButton" name="pbComedy">
+                   <property name="geometry">
+                    <rect>
+                     <x>10</x>
+                     <y>200</y>
+                     <width>75</width>
+                     <height>23</height>
+                    </rect>
+                   </property>
+                   <property name="text">
+                    <string>BuildComedy</string>
+                   </property>
                   </widget>
                  </widget>
                 </widget>

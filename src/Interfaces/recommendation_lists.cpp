@@ -364,11 +364,14 @@ bool RecommendationLists::CreateRecommendationList(QString name, QHash<int, int>
     dummyParams->created = QDateTime::currentDateTime();
     auto listId = GetListIdForName(name);
     dummyParams->id = listId;
+    dummyParams->Log();
     DeleteListData(listId);
     LoadListIntoDatabase(dummyParams);
     listId = GetListIdForName(name);
+    qDebug()  << "list Id: " << listId;
     if(listId < 0)
         return false;
+    qDebug() << "filling fics";
     database::puresql::FillRecommendationListWithData(listId, fics, db);
     return true;
 }

@@ -2,36 +2,36 @@ syntax = "proto3";
 
 message Filter{
 enum SortMode {
-	sm_undefined         = 0;
-	sm_favourites		 = 1;
-	sm_fav_rate 		 = 2;
-	sm_update_date 	     = 3;
-	sm_publish_date 	 = 4;
-	sm_rec_count		 = 5;
-	sm_wcr_cr 			 = 6;
-	sm_rev_to_fav 	     = 7;
-	sm_genre_values 	 = 8;
+    sm_undefined         = 0;
+    sm_favourites        = 1;
+    sm_fav_rate          = 2;
+    sm_update_date 	     = 3;
+    sm_publish_date      = 4;
+    sm_rec_count         = 5;
+    sm_wcr_cr            = 6;
+    sm_rev_to_fav        = 7;
+    sm_genre_values      = 8;
   }
    enum ReviewBiasMode{
         bias_undefined      = 0;
-		bias_none           = 1;
+        bias_none           = 1;
         bias_favor          = 2;
         bias_exclude        = 3;
     };
     enum BiasOperator{
         bo_undefined        = 0;
-		bo_more             = 1;
+        bo_more             = 1;
         bo_less             = 2;
     };
     enum FilterMode{
         filtering_undefined          = 0;
-		filtering_in_fics            = 1;
+        filtering_in_fics            = 1;
         filtering_in_recommendations = 2;
         filtering_whole_list         = 3;
     };
-	
-	
-	bool include_crossovers = 1;
+    
+    
+    bool include_crossovers = 1;
     bool ignore_already_tagged = 2;
     bool crossovers_only = 3;
     bool ignore_fFandoms = 4;
@@ -59,19 +59,19 @@ enum SortMode {
     int32 min_recommendations = 25;
     int32 recent_and_popular_fav_ratio = 26;
     int32 slash_filter_level = 27;
-	
-	int64 last_fetched_record_id  = 28;
-	int64 list_for_recommendations = 29;
+    
+    int64 last_fetched_record_id  = 28;
+    int64 list_for_recommendations = 29;
 
-	SortMode sort_mode = 30;
+    SortMode sort_mode = 30;
     ReviewBiasMode review_bias = 31;
     BiasOperator bias_operator = 32;
     FilterMode filterign_mode = 33;
-	
+    
     string fandom = 33;
     string website = 34;
-	QString genre_sort_field  = 35;
-	
+    string genre_sort_field  = 35;
+    
     repeated string genre_exclusion = 36;
     repeated string genre_inclusion = 37;
     repeated string word_exclusion = 38;
@@ -79,8 +79,7 @@ enum SortMode {
     repeated string title_inclusion= 40;
     repeated string active_tags = 41;
     string recent_cutoff = 42;
-    
+   
 
     double review_bias_ratio = 43;
-	
 }
