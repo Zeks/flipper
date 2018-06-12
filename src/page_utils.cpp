@@ -1,6 +1,9 @@
 #include "include/page_utils.h"
+#include "include/transaction.h"
+#include "include/Interfaces/pagetask_interface.h"
 #include <QThread>
-
+#include <QDebug>
+namespace page_utils{
 SplitJobs SplitJob(QString data, bool splitOnThreads)
 {
     SplitJobs result;
@@ -50,4 +53,62 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
         partSizes.push_back(QString::number(result.parts.last().data.length()));
     }
     return result;
+}
+
+
+PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>pageTask,
+                                   QDateTime currentDateTime,
+                                   QStringList urls,
+                                   QString taskComment,
+                                   int subTaskSize,
+                                   int subTaskRetries,
+                                   ECacheMode cacheMode,
+                                   bool allowCacheRefresh)
+{
+    database::Transaction transaction(pageTask->db);
+
+    auto timestamp = currentDateTime;
+    qDebug() << "Task timestamp" << timestamp;
+    auto task = PageTask::CreateNewTask();
+    task->allowedSubtaskRetries = subTaskRetries;
+    task->cacheMode = cacheMode;
+    task->parts = urls.size() / subTaskSize;
+    task->refreshIfNeeded = allowCacheRefresh;
+    task->taskComment = taskComment;
+    task->type = 0;
+    task->allowedRetries = 2;
+    task->created = timestamp;
+    task->isValid = true;
+    task->scheduledTo = timestamp;
+    task->startedAt = timestamp;
+    pageTask->WriteTaskIntoDB(task);
+
+    SubTaskPtr subtask;
+    int i = 0;
+    int counter = 0;
+    do{
+        auto last = i + subTaskSize <= urls.size() ? urls.begin() + i + subTaskSize : urls.end();
+        subtask = PageSubTask::CreateNewSubTask();
+        subtask->parent = task;
+        auto content = SubTaskAuthorContent::NewContent();
+        auto cast = static_cast<SubTaskAuthorContent*>(content.data());
+        std::copy(urls.begin() + i, last, std::back_inserter(cast->authors));
+        subtask->content = content;
+        subtask->parentId = task->id;
+        subtask->created = timestamp;
+        subtask->size = last - (urls.begin() + i); // fucking idiot
+        task->size += subtask->size;
+        subtask->id = counter;
+        subtask->isValid = true;
+        subtask->allowedRetries = subTaskRetries;
+        subtask->success = false;
+        task->subTasks.push_back(subtask);
+        i += subTaskSize;
+        counter++;
+    }while(i < urls.size());
+    // now with subtasks
+    pageTask->WriteTaskIntoDB(task);
+    transaction.finalize();
+    return task;
+}
 }

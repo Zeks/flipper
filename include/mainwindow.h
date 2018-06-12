@@ -205,10 +205,7 @@ private:
     // fill a recommendation list token to be passed into recommendation builder from ui
     QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
 
-    // creates the task and subtasks to load more authors from urls found in the database
-    PageTaskPtr CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize = 100,
-                                       int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
-                                       bool allowCacheRefresh = true);
+
 
 //    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
 //                                          QString taskComment,
@@ -218,12 +215,6 @@ private:
     PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandom,
                               QString taskComment,
                               bool allowCacheRefresh);
-
-    // the actual task that procecces he next wave of authors into database
-    void UseAuthorsPageTask(PageTaskPtr,
-                            std::function<void(int)>callProgress,
-                            std::function<void(QString)>callProgressText,
-                            std::function<void(void)> cleanupFunctor);
 
     // used to download the next wave of author favourites
     void LoadMoreAuthors();
@@ -278,6 +269,7 @@ private:
     void CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors);
 
     void DoFullCycle();
+    void UseAuthorTask(PageTaskPtr);
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
 
@@ -498,6 +490,7 @@ private slots:
 
     void OnUpdatedProgressValue(int);
     void OnNewProgressString(QString);
+    void OnResetTextEditor();
     void OnProgressBarRequested(int);
 
 signals:

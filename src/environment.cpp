@@ -4,6 +4,15 @@
 #include "include/regex_utils.h"
 #include "include/Interfaces/recommendation_lists.h"
 #include "include/Interfaces/fandoms.h"
+#include "include/Interfaces/fanfics.h"
+#include "include/Interfaces/authors.h"
+#include "include/Interfaces/db_interface.h"
+#include "include/Interfaces/genres.h"
+#include "include/Interfaces/tags.h"
+#include "include/Interfaces/pagetask_interface.h"
+#include "include/Interfaces/ffn/ffn_authors.h"
+#include "include/Interfaces/ffn/ffn_fanfics.h"
+#include "include/db_fixers.h"
 #include <QSqlQuery>
 #include <QSqlError>
 
@@ -132,5 +141,59 @@ inline core::Fic CoreEnvironment::LoadFanfic(QSqlQuery& q)
     result.complete= q.value("COMPLETE").toInt();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     result.recommendations= q.value("SUMRECS").toInt();
+    return result;
+}
+void CoreEnvironment::InitInterfaces()
+{
+    interfaces.authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    interfaces.fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    interfaces.recs   = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
+    interfaces.fandoms = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
+    interfaces.tags   = QSharedPointer<interfaces::Tags> (new interfaces::Tags());
+    interfaces.genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    interfaces.pageTask= QSharedPointer<interfaces::PageTask> (new interfaces::PageTask());
+
+    // probably need to change this to db accessor
+    // to ensure db availability for later
+
+    interfaces.authors->portableDBInterface = interfaces.db;
+    interfaces.fanfics->authorInterface = interfaces.authors;
+    interfaces.fanfics->fandomInterface = interfaces.fandoms;
+    interfaces.recs->portableDBInterface = interfaces.db;
+    interfaces.recs->authorInterface = interfaces.authors;
+    interfaces.fandoms->portableDBInterface = interfaces.db;
+    interfaces.tags->fandomInterface = interfaces.fandoms;
+
+    //bool isOpen = interfaces.db.tags->GetDatabase().isOpen();
+    interfaces.authors->db = interfaces.db->GetDatabase();
+    interfaces.fanfics->db = interfaces.db->GetDatabase();
+    interfaces.recs->db    = interfaces.db->GetDatabase();
+    interfaces.fandoms->db = interfaces.db->GetDatabase();
+    interfaces.tags->db    = interfaces.db->GetDatabase();
+    interfaces.genres->db  = interfaces.db->GetDatabase();
+    queryBuilder.portableDBInterface = interfaces.db;
+    countQueryBuilder.portableDBInterface = interfaces.db;
+    interfaces.pageTask->db  = interfaces.tasks->GetDatabase();
+    interfaces.fandoms->Load();
+}
+
+WebPage CoreEnvironment::RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
+{
+    WebPage result;
+    An<PageManager> pager;
+    pager->SetDatabase(QSqlDatabase::database());
+    result = pager->GetPage(pageUrl, cacheMode);
+    if(autoSaveToDB)
+        pager->SavePageToDB(result);
+    return result;
+}
+int CoreEnvironment::GetResultCount()
+{
+    auto q = BuildQuery(true);
+    q.setForwardOnly(true);
+    if(!database::puresql::ExecAndCheck(q))
+        return -1;
+    q.next();
+    auto result =  q.value("records").toInt();
     return result;
 }

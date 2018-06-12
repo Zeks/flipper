@@ -49,10 +49,17 @@ public:
     };
     void Init();
     static void InitMetatypes();
+    // used to set up connections between database and interfaces
+    // and between differnt interfaces themselves
+    void InitInterfaces();
+
     // used to build the actual query to be used in the database from filters
     QSqlQuery BuildQuery(bool countOnly = false);
     inline core::Fic LoadFanfic(QSqlQuery& q);
     void LoadData(SlashFilterState);
+
+    WebPage RequestPage(QString pageUrl, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
+    int GetResultCount();
 
     core::DefaultQueryBuilder queryBuilder; // builds search queries
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;

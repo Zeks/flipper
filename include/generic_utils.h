@@ -16,3 +16,4 @@ QList<T> SortedList(T list)
     qSort(list.begin(),list.end());
     return list;
 }
+QString MicrosecondsToString(int value);
