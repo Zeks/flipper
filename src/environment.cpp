@@ -14,8 +14,11 @@
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/db_fixers.h"
 #include "include/parsers/ffn/favparser.h"
+#include "include/timeutils.h"
+#include "include/url_utils.h"
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QTextCodec>
 
 
 void CoreEnvironment::InitMetatypes()
@@ -101,8 +104,20 @@ void CoreEnvironment::LoadData(SlashFilterState slashFilter)
 
 CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj)
 {
+    ReadSettings();
+}
+
+void CoreEnvironment::ReadSettings()
+{
 
 }
+
+void CoreEnvironment::WriteSettings()
+{
+
+}
+
+
 
 void CoreEnvironment::Init()
 {
@@ -183,16 +198,6 @@ void CoreEnvironment::InitInterfaces()
     interfaces.fandoms->Load();
 }
 
-WebPage CoreEnvironment::RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
-{
-    WebPage result;
-    An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database());
-    result = pager->GetPage(pageUrl, cacheMode);
-    if(autoSaveToDB)
-        pager->SavePageToDB(result);
-    return result;
-}
 int CoreEnvironment::GetResultCount()
 {
     auto q = BuildQuery(true);
@@ -379,4 +384,172 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
     qDebug() << "processed authors: " << counter;
     qDebug() << "all authors: " << alLCounter;
     return params->id;
+}
+
+void CoreEnvironment::ResumeUnfinishedTasks()
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    if(settings.value("Settings/skipUnfinishedTasksCheck",true).toBool())
+        return;
+    auto tasks = interfaces.pageTask->GetUnfinishedTasks();
+    TaskList tasksToResume;
+    for(auto task : tasks)
+    {
+        QString diagnostics;
+        diagnostics+= "Unfinished task:\n";
+        diagnostics+= task->taskComment + "\n";
+        diagnostics+= "Started: " + task->startedAt.toString("yyyyMMdd hh:mm") + "\n";
+        Log(diagnostics);
+        tasksToResume.push_back(task);
+    }
+
+    // later this needs to be preceded by code that routes tasks based on their type.
+    // hard coding for now to make sure base functionality works
+    {
+        for(auto task : tasksToResume)
+        {
+            auto fullTask = interfaces.pageTask->GetTaskById(task->id);
+            if(fullTask->type == 0)
+                UseAuthorTask(fullTask);
+            else
+            {
+                if(!task)
+                    return;
+
+                QSqlDatabase db = QSqlDatabase::database();
+                FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
+
+                proc.Run(fullTask);
+
+                thread_local QString status = "%1:%2\n";
+                QString diagnostics;
+                diagnostics+= "Finished the job:\n";
+                diagnostics+= status.arg("Inserted fics").arg(fullTask->addedFics);
+                diagnostics+= status.arg("Updated fics").arg(fullTask->updatedFics);
+                diagnostics+= status.arg("Duplicate fics").arg(fullTask->skippedFics);
+            }
+        }
+    }
+}
+
+void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
+{
+    static bool authorsLoaded = false;
+    database::Transaction transaction(db);
+    QSharedPointer<core::RecommendationList> params = core::RecommendationList::NewRecList();
+    params->alwaysPickAt = 1;
+    params->minimumMatch = 1;
+    params->name = "similar";
+    params->tagToUse = "generictag";
+    params->pickRatio = 9999999999;
+    interfaces.tags->SetTagForFic(id, "generictag");
+    BuildRecommendations(params, !authorsLoaded);
+    interfaces.tags->DeleteTag("generictag");
+    interfaces.recs->SetFicsAsListOrigin({id}, params->id);
+    transaction.finalize();
+}
+
+core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
+{
+    WebPage page;
+    TimedAction fetchAction("Author page fetch", [&](){
+        page = env::RequestPage(url.trimmed(),  ECacheMode::dont_use_cache);
+    });
+    fetchAction.run(false);
+    emit resetEditorText();
+    FavouriteStoryParser parser(interfaces.fanfics);
+    QString name = ParseAuthorNameFromFavouritePage(page.content);
+    parser.authorName = name;
+    parser.ProcessPage(page.url, page.content);
+    emit updateInfo(parser.diagnostics.join(""));
+    database::Transaction transaction(db);
+    QSet<QString> fandoms;
+    interfaces.authors->EnsureId(parser.recommender.author); // assuming ffn
+    auto author =interfaces.authors->GetByWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
+    parser.authorStats->id = author->id;
+    FavouriteStoryParser::MergeStats(author,interfaces.fandoms, {parser});
+
+    interfaces.authors->UpdateAuthorRecord(author);
+    {
+        interfaces.fanfics->ProcessIntoDataQueues(parser.processedStuff);
+        fandoms =interfaces.fandoms->EnsureFandoms(parser.processedStuff);
+        QList<core::FicRecommendation> recommendations;
+        recommendations.reserve(parser.processedStuff.size());
+        for(auto& section : parser.processedStuff)
+            recommendations.push_back({section, author});
+        interfaces.fanfics->AddRecommendations(recommendations);
+        auto result =interfaces.fanfics->FlushDataQueues();
+        Q_UNUSED(result);
+        interfaces.fandoms->RecalculateFandomStats(fandoms.values());
+    }
+    transaction.finalize();
+    return author;
+}
+
+void CoreEnvironment::UseFandomTask(PageTaskPtr task)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
+
+    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
+    connect(&proc, &FandomLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
+    connect(&proc, &FandomLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
+    proc.Run(task);
+}
+
+//fixes the crossover url and selects between 60 and 100k words to add to search params
+static QString CreatePrototypeWithSearchParams(QString cutoffText)
+{
+    QString lastPart = "?&srt=1&lan=1&r=10&len=%1";
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    int lengthCutoff = cutoffText == "100k Words" ? 100 : 60;
+    lastPart=lastPart.arg(lengthCutoff);
+    QString resultString = "https://www.fanfiction.net%1" + lastPart;
+    qDebug() << resultString;
+    return resultString;
+}
+
+PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
+                                                  QString taskComment,
+                                                  bool allowCacheRefresh,
+                                                  ECacheMode cacheMode,
+                                                  QString cutoffText,
+                                                  ForcedFandomUpdateDate forcedDate)
+{
+    interfaces.fanfics->ClearProcessedHash();
+    QSqlDatabase db = QSqlDatabase::database();
+    FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
+
+    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
+    connect(&proc, &FandomLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
+    connect(&proc, &FandomLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
+
+    auto result = proc.CreatePageTaskFromFandoms(fandoms,
+                                                 CreatePrototypeWithSearchParams(cutoffText),
+                                                 taskComment,
+                                                 cacheMode,
+                                                 allowCacheRefresh,
+                                                 forcedDate);
+
+    proc.Run(result);
+    return result;
+}
+void CoreEnvironment::Log(QString value)
+{
+    qDebug() << value;
+}
+
+
+namespace env {
+WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
+{
+    WebPage result;
+    An<PageManager> pager;
+    pager->SetDatabase(QSqlDatabase::database());
+    result = pager->GetPage(pageUrl, cacheMode);
+    if(autoSaveToDB)
+        pager->SavePageToDB(result);
+    return result;
+}
 }

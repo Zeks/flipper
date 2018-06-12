@@ -207,11 +207,6 @@ private:
 
 
 
-//    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
-//                                          QString taskComment,
-//                                          bool allowCacheRefresh);
-    void UseFandomTask(PageTaskPtr);
-
     PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandom,
                               QString taskComment,
                               bool allowCacheRefresh);
@@ -232,8 +227,8 @@ private:
     // collects information from the ui into a token to be passed to a query generator
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false, QString listToUse = QString());
 
-    //fixes the crossover url and selects between 60 and 100k words to add to search params
-    QString CreatePrototypeWithSearchParams();
+
+
 
     // pushes fandom to top of recent and reinits the recent fandom listview
     void ReinitRecent(QString name);
@@ -251,7 +246,6 @@ private:
 
     void CreateSimilarListForGivenFic(int);
 
-    void ReprocessAllAuthors();
     void ReprocessAllAuthorsV2();
     void ReprocessAllAuthorsJustSlash(QString fieldUsed);
     void DetectSlashForEverything();

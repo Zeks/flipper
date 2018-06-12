@@ -130,6 +130,10 @@ App{
         "include/page_utils.h",
         "src/environment.cpp",
         "include/environment.h",
+        "src/statistics_utils.cpp",
+        "include/statistics_utils.h",
+        "src/tasks/author_stats_processor.cpp",
+        "include/tasks/author_stats_processor.h",
     ]
 
     cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]

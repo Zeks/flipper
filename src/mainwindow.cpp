@@ -75,9 +75,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/transaction.h"
 #include "include/tasks/fandom_task_processor.h"
 #include "include/tasks/author_task_processor.h"
+#include "include/tasks/author_stats_processor.h"
 #include "include/page_utils.h"
 #include "include/environment.h"
 #include "include/generic_utils.h"
+#include "include/statistics_utils.h"
 
 
 #include "Interfaces/ffn/ffn_authors.h"
@@ -513,6 +515,7 @@ void MainWindow::OnDisplayExactPage(int page)
 MainWindow::~MainWindow()
 {
     WriteSettings();
+    env.WriteSettings();
     delete ui;
 }
 
@@ -534,7 +537,7 @@ WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool auto
     pbMain->setTextVisible(false);
     pbMain->show();
 
-    return env.RequestPage(pageUrl, cacheMode, autoSaveToDB);
+    return env::RequestPage(pageUrl, cacheMode, autoSaveToDB);
 }
 
 
@@ -657,7 +660,6 @@ void MainWindow::EnableAllLoadButtons()
 
 void MainWindow::OnNewPage(PageResult result)
 {
-    //qDebug() << "received page: " << result.data.pageIndex;
     if(result.data.isValid)
         env.pageQueue.data.push_back(result.data);
     if(result.finished)
@@ -965,7 +967,6 @@ QString MainWindow::GetCurrentFandomName()
 void MainWindow::OnChapterUpdated(QVariant id, QVariant chapter)
 {
     env.interfaces.fanfics->AssignChapter(id.toInt(), chapter.toInt());
-
 }
 
 
@@ -990,17 +991,6 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
     typetableModel->updateAll();
 }
 
-QString MainWindow::CreatePrototypeWithSearchParams()
-{
-    QString lastPart = "?&srt=1&lan=1&r=10&len=%1";
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
-    lastPart=lastPart.arg(lengthCutoff);
-    QString resultString = "https://www.fanfiction.net%1" + lastPart;
-    qDebug() << resultString;
-    return resultString;
-}
 
 void MainWindow::ReinitRecent(QString name)
 {
@@ -1015,6 +1005,9 @@ void MainWindow::StartTaskTimer()
     taskTimer.start(1000);
 }
 
+
+// this has too much gui code to be properly separated
+// creating a split function just for server instead
 void MainWindow::CheckUnfinishedTasks()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
@@ -1066,7 +1059,7 @@ void MainWindow::CheckUnfinishedTasks()
                     return;
                 ReinitProgressbar(fullTask->size);
                 DisableAllLoadButtons();
-                UseFandomTask(fullTask);
+                env.UseFandomTask(fullTask);
                 thread_local QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
                 AddToProgressLog("Finished the job <br>");
                 ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(fullTask->addedFics));
@@ -1137,7 +1130,7 @@ void MainWindow::OnTagToggled(int id, QString tag, bool checked)
         UnsetTag(id, tag);
 }
 
-
+// needed to bind values to reasonable limits
 void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
@@ -1295,45 +1288,8 @@ void MainWindow::FillRecommenderListView(bool forceRefresh)
 core::AuthorPtr MainWindow::LoadAuthor(QString url)
 {
     TaskProgressGuard guard(this);
-    auto startPageRequest = std::chrono::high_resolution_clock::now();
-    auto page = RequestPage(url.trimmed(),  ECacheMode::dont_use_cache);
-    auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-    qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    FavouriteStoryParser parser(env.interfaces.fanfics);
-    auto startPageProcess = std::chrono::high_resolution_clock::now();
-    QString name = ParseAuthorNameFromFavouritePage(page.content);
-    parser.authorName = name;
-    parser.ProcessPage(page.url, page.content);
-
-    elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
-    qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ui->edtResults->clear();
-    ui->edtResults->insertHtml(parser.diagnostics.join(""));
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-    QSet<QString> fandoms;
-    env.interfaces.authors->EnsureId(parser.recommender.author); // assuming ffn
-    auto author = env.interfaces.authors->GetByWebID("ffn", url_utils::GetWebId(ui->leAuthorUrl->text(), "ffn").toInt());
-    parser.authorStats->id = author->id;
-    FavouriteStoryParser::MergeStats(author,env.interfaces.fandoms, {parser});
-
-    env.interfaces.authors->UpdateAuthorRecord(author);
-    {
-        env.interfaces.fanfics->ProcessIntoDataQueues(parser.processedStuff);
-        fandoms = env.interfaces.fandoms->EnsureFandoms(parser.processedStuff);
-        QList<core::FicRecommendation> recommendations;
-        recommendations.reserve(parser.processedStuff.size());
-        for(auto& section : parser.processedStuff)
-            recommendations.push_back({section, author});
-        env.interfaces.fanfics->AddRecommendations(recommendations);
-        auto result = env.interfaces.fanfics->FlushDataQueues();
-
-        env.interfaces.fandoms->RecalculateFandomStats(fandoms.values());
-    }
-    transaction.finalize();
-    return author;
+    return env.LoadAuthor(url, QSqlDatabase::database());
 }
-
 
 void MainWindow::on_chkTrackedFandom_toggled(bool checked)
 {
@@ -1369,21 +1325,6 @@ bool MainWindow::WarnFullParse()
     return true;
 }
 
-void MainWindow::UseFandomTask(PageTaskPtr task)
-{
-    TaskProgressGuard guard(this);
-    DisableAllLoadButtons();
-
-    QSqlDatabase db = QSqlDatabase::database();
-    FandomLoadProcessor proc(db, env.interfaces.fanfics, env.interfaces.fandoms, env.interfaces.pageTask, env.interfaces.db);
-
-    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
-    connect(&proc, &FandomLoadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
-    connect(&proc, &FandomLoadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
-    proc.Run(task);
-    EnableAllLoadButtons();
-}
-
 PageTaskPtr MainWindow::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms, QString taskComment, bool allowCacheRefresh)
 {
     ForcedFandomUpdateDate forcedDate;
@@ -1397,21 +1338,12 @@ PageTaskPtr MainWindow::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms, QSt
         forcedDate.isValid = true;
         forcedDate.date = QDate();
     }
-
-    QSqlDatabase db = QSqlDatabase::database();
-    FandomLoadProcessor proc(db, env.interfaces.fanfics, env.interfaces.fandoms, env.interfaces.pageTask, env.interfaces.db);
-
-    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
-    connect(&proc, &FandomLoadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
-    connect(&proc, &FandomLoadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
-    auto result = proc.CreatePageTaskFromFandoms(fandoms,
-                                                 CreatePrototypeWithSearchParams(),
-                                                 taskComment,
-                                                 GetCurrentCacheMode(),
-                                                 allowCacheRefresh,
-                                                 forcedDate);
-
-    proc.Run(result);
+    auto result = env.ProcessFandomsAsTask(fandoms,
+                             taskComment,
+                             allowCacheRefresh,
+                             GetCurrentCacheMode(),
+                             ui->cbWordCutoff->currentText(),
+                             forcedDate);
     return result;
 }
 
@@ -1422,15 +1354,15 @@ void MainWindow::CrawlFandom(QString fandomName)
 
     TaskProgressGuard guard(this);
     DisableAllLoadButtons();
-    env.interfaces.fanfics->ClearProcessedHash();
     auto fandom = env.interfaces.fandoms->GetFandom(fandomName);
     if(!fandom)
         return;
-    auto urls = fandom->GetUrls();
 
+    auto urls = fandom->GetUrls();
     ui->edtResults->clear();
 
     auto task = ProcessFandomsAsTask({fandom}, "Loading the fandom: " + fandomName, true);
+
     QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");
     ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(task->addedFics));
@@ -1460,335 +1392,25 @@ ECacheMode MainWindow::GetCurrentCacheMode() const
 
 void MainWindow::CreateSimilarListForGivenFic(int id)
 {
-    static bool authorsLoaded = false;
     TaskProgressGuard guard(this);
     QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-    QSharedPointer<core::RecommendationList> params = core::RecommendationList::NewRecList();
-    params->alwaysPickAt = 1;
-    params->minimumMatch = 1;
-    params->name = "similar";
-    params->tagToUse = "generictag";
-    params->pickRatio = 9999999999;
-    SetTag(id, "generictag");
-    BuildRecommendations(params, !authorsLoaded);
-    env.interfaces.tags->DeleteTag("generictag");
+    env.CreateSimilarListForGivenFic(id, db);
     ui->cbNormals->setCurrentText("");
-    env.interfaces.recs->SetFicsAsListOrigin({id}, params->id);
-    transaction.finalize();
     OpenRecommendationList("similar");
 }
 
-
-void MainWindow::ReprocessAllAuthors()
-{
-    TaskProgressGuard guard(this);
-    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-
-    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-    pbMain->setMaximum(authors.size());
-    pbMain->show();
-    pbMain->setValue(0);
-    pbMain->setTextVisible(true);
-    pbMain->setFormat("%v");
-    int counter = 0;
-    QSet<QString> fandoms;
-    QList<core::FicRecommendation> recommendations;
-    auto fanficsInterface = env.interfaces.fanfics;
-    auto authorsInterface = env.interfaces.authors;
-    auto fandomsInterface = env.interfaces.fandoms;
-    auto slashRepo = env.interfaces.fanfics->GetAllKnownSlashFics();
-    auto job = [fanficsInterface,authorsInterface, fandomsInterface, slashRepo](QString url, QString content){
-        QList<QSharedPointer<core::Fic> > sections;
-        FavouriteStoryParser parser(fanficsInterface);
-        parser.knownSlashFics = slashRepo;
-        parser.ProcessPage(url, content);
-        return parser;
-    };
-
-    for(auto author: authors)
-    {
-        counter++;
-        auto startPageProcess = std::chrono::high_resolution_clock::now();
-        QList<QSharedPointer<core::Fic>> sections;
-        QList<QFuture<FavouriteStoryParser>> futures;
-        QSet<int> uniqueAuthors;
-        env.interfaces.authors->DeleteLinkedAuthorsForAuthor(author->id);
-        WebPage page;
-        TimedAction fetchAction("Fetch", [&](){
-            page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
-        });
-        fetchAction.run(false);
-
-        page_utils::SplitJobs splittings;
-        TimedAction splitAction("Split", [&](){
-            splittings = page_utils::SplitJob(page.content);
-        });
-        splitAction.run(false);
-        TimedAction parseAction("Parse", [&](){
-            for(auto part: splittings.parts)
-            {
-                futures.push_back(QtConcurrent::run(job, page.url, part.data));
-            }
-            for(auto future: futures)
-            {
-                future.waitForFinished();
-            }
-        });
-        parseAction.run(false);
-
-        ////
-        FavouriteStoryParser sumParser;
-        sumParser.SetAuthor(author);
-
-        if(true)
-        {
-            QList<FavouriteStoryParser> finishedParsers;
-            for(auto actualParser: futures)
-                finishedParsers.push_back(actualParser.result());
-
-            FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
-            env.interfaces.authors->UpdateAuthorRecord(author);
-
-            //            for(auto actualParser: finishedParsers)
-            //                sumParser.processedStuff+=actualParser.processedStuff;
-            ////
-            {
-                //WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
-                //                if(fanficsInterface->skippedCounter > 0)
-                //                    qDebug() << "skipped: " << env.interfaces.fanfics->skippedCounter;
-            }
-
-        }
-
-        ui->edtResults->clear();
-        //ui->edtResults->insertHtml(parser.diagnostics.join(""));
-        pbMain->setValue(pbMain->value()+1);
-        pbMain->setTextVisible(true);
-        pbMain->setFormat("%v");
-
-        QCoreApplication::processEvents();
-
-        auto elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
-        //qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-
-    }
-    env.interfaces.fandoms->RecalculateFandomStats(fandoms.values());
-    transaction.finalize();
-    env.interfaces.fanfics->ClearProcessedHash();
-    //pbMain->hide();
-    ui->leAuthorUrl->setText("");
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    LoadData();
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(env.fanfics);
-}
-struct UserPagePageResult
-{
-    WebPage page;
-    int authorId = -1;
-    bool finished = false;
-};
-
-
-struct UserPageSource
-{
-    QList<WebPage>pages;
-    int initialSize = 0;
-    UserPagePageResult Get(){
-        QWriteLocker locker(&lock);
-
-        UserPagePageResult result;
-        if(pages.size() == 0)
-        {
-            result.finished = true;
-            return result;
-        }
-        result.page = pages.last();
-        pages.pop_back();
-        return result;
-    }
-    void Push(WebPage token){
-        QWriteLocker locker(&lock);
-        pages.push_back(token);
-    }
-    void Reserve(int size)
-    {
-        QReadLocker locker(&lock);
-        pages.clear();
-        pages.reserve(size);
-    }
-    int GetInitialSize() const {
-        QReadLocker locker(&lock);
-        return initialSize;
-    }
-    mutable QReadWriteLock lock;
-};
-
-struct UserPageSink
-{
-    QList<core::FicSectionStatsTemporaryToken>tokens;
-    int currentSize = 0;
-    void Push(core::FicSectionStatsTemporaryToken token){
-        QWriteLocker locker(&lock);
-        tokens.push_back(token);
-        currentSize++;
-    }
-    int GetSize() const {
-        QReadLocker locker(&lock);
-        return tokens.size();
-    }
-    mutable QReadWriteLock lock;
-};
-
-template <typename T, typename Y>
-void Combine(QHash<T, Y>& firstHash, QHash<T, Y> secondHash)
-{
-    for(auto key: secondHash.keys())
-    {
-        firstHash[key] += secondHash[key];
-    }
-}
 
 void MainWindow::ReprocessAllAuthorsV2()
 {
     TaskProgressGuard guard(this);
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+
     QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-
-    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-
-    UserPageSource source;
-    UserPageSink sink;
-
-    QHash<int, QList<WebPage>>pages;
-    int counter = 0;
-
-    int chunkSize = 10001;
-    source.Reserve(chunkSize);
-    qDebug() << "loading pages";
-    int authorsSize = authors.size();
-    for(auto author: authors)
-    {
-        counter++;
-        if(!author)
-            continue;
-
-
-
-        auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
-        page.id = author->id;
-        if(!page.isValid)
-            qDebug() << page.url << " is invalid";
-        source.Push(page);
-        if(counter%(chunkSize - 1) == 0 || counter == authorsSize)
-        {
-            source.initialSize = source.pages.size();
-            qDebug() << "starting to process pack: " << counter/1000 << " of size: " << source.GetInitialSize();
-
-
-            int threadCount = 12;
-            auto fanficsInterface = env.interfaces.fanfics;
-            auto authorsInterface = env.interfaces.authors;
-            auto fandomsInterface = env.interfaces.fandoms;
-            auto slashRepo = env.interfaces.fanfics->GetAllKnownSlashFics();
-
-            auto processor = [&source, &sink, &slashRepo, &fanficsInterface](){
-                UserPagePageResult result;
-                FavouriteStoryParser parser(fanficsInterface);
-                parser.knownSlashFics = slashRepo;
-                forever{
-                    result = source.Get();
-                    if(result.finished)
-                    {
-                        qDebug() << "thread stopping";
-                        break;
-                    }
-
-                    page_utils::SplitJobs splittings;
-                    splittings = page_utils::SplitJob(result.page.content, false);
-
-                    QList<core::FicSectionStatsTemporaryToken> tokens;
-                    for(auto part: splittings.parts)
-                    {
-                        parser.ClearProcessed();
-                        parser.ProcessPage(result.page.url, part.data);
-                        tokens.push_back(parser.statToken);
-                    }
-                    core::FicSectionStatsTemporaryToken resultingToken;
-                    {
-                        for(auto statToken : tokens)
-                        {
-                            resultingToken.chapterKeeper += statToken.chapterKeeper;
-                            resultingToken.ficCount+= statToken.ficCount;
-
-                            if(!resultingToken.firstPublished.isValid())
-                                resultingToken.firstPublished = statToken.firstPublished;
-                            resultingToken.firstPublished = std::min(statToken.firstPublished, resultingToken.firstPublished);
-                            if(!resultingToken.lastPublished.isValid())
-                                resultingToken.lastPublished = statToken.lastPublished;
-                            resultingToken.lastPublished = std::min(statToken.lastPublished, resultingToken.lastPublished);
-
-                            resultingToken.sizes += statToken.sizes;
-
-                            Combine(resultingToken.crossKeeper, statToken.crossKeeper);
-                            Combine(resultingToken.esrbKeeper, statToken.esrbKeeper);
-                            Combine(resultingToken.fandomKeeper, statToken.fandomKeeper);
-                            Combine(resultingToken.favouritesSizeKeeper, statToken.favouritesSizeKeeper);
-                            Combine(resultingToken.ficSizeKeeper, statToken.ficSizeKeeper);
-                            Combine(resultingToken.genreKeeper, statToken.genreKeeper);
-                            Combine(resultingToken.moodKeeper, statToken.moodKeeper);
-                            Combine(resultingToken.popularUnpopularKeeper, statToken.popularUnpopularKeeper);
-                            Combine(resultingToken.unfinishedKeeper, statToken.unfinishedKeeper);
-                            Combine(resultingToken.wordsKeeper, statToken.wordsKeeper);
-                            resultingToken.wordCount += statToken.wordCount;
-                            if(statToken.bioLastUpdated.isValid())
-                                resultingToken.bioLastUpdated = statToken.bioLastUpdated;
-                            if(statToken.pageCreated.isValid())
-                                resultingToken.pageCreated = statToken.pageCreated;
-                        }
-
-                    }
-
-                    resultingToken.authorId = result.page.id;
-                    sink.Push(resultingToken);
-                }
-            };
-            qDebug() << "running threads pages";
-            for(int i = 0; i <threadCount; i++)
-            {
-                QtConcurrent::run(processor);
-            }
-            TimedAction processSlash("Process Pack", [&](){
-                while(sink.GetSize() != source.GetInitialSize())
-                {
-                    QApplication::processEvents();
-                }
-
-            });
-            processSlash.run();
-            QThread::msleep(100);
-            qDebug() << "writing results, have " << sink.tokens.size() << " tokens to merge";
-            for(auto token: sink.tokens)
-            {
-                auto author = env.interfaces.authors->GetById(token.authorId);
-                FavouriteStoryParser::MergeStats(author,fandomsInterface, {token});
-                env.interfaces.authors->UpdateAuthorRecord(author);
-            }
-            sink.tokens.clear();
-            sink.currentSize = 0;
-            qDebug() << "written results, loading more pages";
-            source.Reserve(chunkSize);
-        }
-
-    }
-    transaction.finalize();
+    AuthorStatsProcessor authorProcessor(db,
+                                         env.interfaces.fanfics,
+                                         env.interfaces.fandoms,
+                                         env.interfaces.authors);
+    authorProcessor.ReprocessAllAuthorsStats(ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
 }
 
 void MainWindow::ReprocessAllAuthorsJustSlash(QString fieldUsed)

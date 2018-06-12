@@ -52,6 +52,13 @@ public:
         QSharedPointer<database::IDBWrapper> pageCache;
         QSharedPointer<database::IDBWrapper> tasks;
     };
+
+
+    // reads settings into a files
+    void ReadSettings();
+    // writes settings into a files
+    void WriteSettings();
+
     void Init();
     static void InitMetatypes();
     // used to set up connections between database and interfaces
@@ -63,11 +70,19 @@ public:
     inline core::Fic LoadFanfic(QSqlQuery& q);
     void LoadData(SlashFilterState);
 
-    WebPage RequestPage(QString pageUrl, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
+
     int GetResultCount();
 
     void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
     void UseAuthorTask(PageTaskPtr task);
+    void UseFandomTask(PageTaskPtr task);
+    PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
+                                     QString taskComment,
+                                     bool allowCacheRefresh,
+                                     ECacheMode cacheMode,
+                                     QString cutoffText,
+                                     ForcedFandomUpdateDate forcedDate = ForcedFandomUpdateDate());
+
 
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
     // used to fix author names when one of the parsers gets a bunch wrong
@@ -77,7 +92,13 @@ public:
     void ProcessListIntoRecommendations(QString list);
     int  BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
 
+    void ResumeUnfinishedTasks();
 
+    void CreateSimilarListForGivenFic(int id,  QSqlDatabase db);
+
+    void Log(QString);
+
+    core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
 
     core::DefaultQueryBuilder queryBuilder; // builds search queries
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
@@ -106,3 +127,7 @@ signals:
     void updateCounter(int);
     void updateInfo(QString);
 };
+namespace env {
+    WebPage RequestPage(QString pageUrl, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
+}
+
