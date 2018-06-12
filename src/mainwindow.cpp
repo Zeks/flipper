@@ -288,6 +288,11 @@ void MainWindow::InitConnections()
     connect(ui->pbWipeCache, &QPushButton::clicked, this, &MainWindow::OnWipeCache);
     connect(ui->pbAssignGenres, &QPushButton::clicked, this, &MainWindow::OnPerformGenreAssignment);
 
+    connect(&env, &CoreEnvironment::resetEditorText, this, &MainWindow::OnResetTextEditor);
+    connect(&env, &CoreEnvironment::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+    connect(&env, &CoreEnvironment::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+    connect(&env, &CoreEnvironment::updateInfo, this, &MainWindow::OnNewProgressString);
+
 }
 
 void MainWindow::InitUIFromTask(PageTaskPtr task)
@@ -556,11 +561,11 @@ void MainWindow::LoadData()
     ui->edtResults->setUpdatesEnabled(false);
 
     SlashFilterState slashState{
-                         ui->chkApplyLocalSlashFilter->isChecked(),
-                         ui->chkInvertedSlashFilter->isChecked(),
-                         ui->chkOnlySlash->isChecked(),
-                         ui->chkInvertedSlashFilterLocal->isChecked(),
-                         ui->chkOnlySlashLocal->isChecked()};
+        ui->chkApplyLocalSlashFilter->isChecked(),
+                ui->chkInvertedSlashFilter->isChecked(),
+                ui->chkOnlySlash->isChecked(),
+                ui->chkInvertedSlashFilterLocal->isChecked(),
+                ui->chkOnlySlashLocal->isChecked()};
 
     env.LoadData(slashState);
 }
@@ -599,40 +604,14 @@ void MainWindow::UnsetTag(int id, QString tag)
     tagList = env.interfaces.tags->ReadUserTags();
 }
 
-core::AuthorPtr CreateAuthorFromNameAndUrl(QString name, QString url)
-{
-    core::AuthorPtr author(new core::Author);
-    author->name = name;
-    author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
-    return author;
-}
-
 void MainWindow::LoadMoreAuthors()
 {
     TaskProgressGuard guard(this);
-    env.filter.mode = core::StoryFilter::filtering_in_recommendations;
     QString listName = ui->cbRecGroup->currentText();
-    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(listName));
-    QStringList authorUrls = env.interfaces.recs->GetLinkedPagesForList(env.interfaces.recs->GetCurrentRecommendationList(), "ffn");
     auto cacheMode = ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache;
-    QString comment = "Loading more authors from list: " + QString::number(env.interfaces.recs->GetCurrentRecommendationList());
-
-    auto pageTask = page_utils::CreatePageTaskFromUrls(env.interfaces.pageTask,
-                                           env.interfaces.db->GetCurrentDateTime(),
-                                           authorUrls,
-                                           comment,
-                                           500,
-                                           3,
-                                           cacheMode,
-                                           true);
-
-
-    AddToProgressLog("Authors: " + QString::number(authorUrls.size()));
-    ReinitProgressbar(authorUrls.size());
-
-
     DisableAllLoadButtons();
-    UseAuthorTask(pageTask);
+
+    env.LoadMoreAuthors(listName, cacheMode);
 
     ui->edtResults->clear();
     AddToProgressLog(" Found recommenders: ");
@@ -646,98 +625,16 @@ void MainWindow::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Au
 {
     TaskProgressGuard guard(this);
     env.filter.mode = core::StoryFilter::filtering_in_recommendations;
-    auto authors = env.interfaces.authors->GetAllAuthors("ffn");
-    AddToProgressLog("Authors: " + QString::number(authors.size()));
-
-    ReinitProgressbar(authors.size());
     DisableAllLoadButtons();
-    An<PageManager> pager;
 
-    for(auto author: authors)
-    {
-        auto webPage = pager->GetPage(author->url("ffn"), ECacheMode::use_only_cache);
-        qDebug() << "Page loaded in: " << webPage.LoadedIn();
-        pbMain->setValue(pbMain->value()+1);
-        pbMain->setTextVisible(true);
-        pbMain->setFormat("%v");
-        updater(author, webPage);
-    }
-    //parser.ClearDoneCache();
-    ui->edtResults->clear();
+    env.ReprocessAuthorNamesFromTheirPages();
+
     ShutdownProgressbar();
+    ui->edtResults->clear();
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     EnableAllLoadButtons();
 }
-
-void MainWindow::ReprocessAuthorNamesFromTheirPages()
-{
-    TaskProgressGuard guard(this);
-    auto functor = [&](QSharedPointer<core::Author> author, WebPage webPage){
-        //auto splittings = SplitJob(webPage.content);
-        if(!author || author->id == -1)
-            return;
-        QString authorName = ParseAuthorNameFromFavouritePage(webPage.content);
-        author->name = authorName;
-        env.interfaces.authors->AssignNewNameForAuthor(author, authorName);
-    };
-    UpdateAllAuthorsWith(functor);
-}
-
-void MainWindow::ProcessListIntoRecommendations(QString list)
-{
-    TaskProgressGuard guard(this);
-    QFile data(list);
-    QSqlDatabase db = QSqlDatabase::database();
-    QStringList usedList;
-    QList<int> usedIdList;
-    if (data.open(QFile::ReadOnly))
-    {
-        QTextStream in(&data);
-        QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-        params->name = in.readLine().split("#").at(1);
-        params->minimumMatch= in.readLine().split("#").at(1).toInt();
-        params->pickRatio = in.readLine().split("#").at(1).toDouble();
-        params->alwaysPickAt = in.readLine().split("#").at(1).toInt();
-        env.interfaces.recs->LoadListIntoDatabase(params);
-        database::Transaction transaction(db);
-        QString str;
-        do{
-            str = in.readLine();
-            QRegExp rx("/s/(\\d+)");
-            int pos = rx.indexIn(str);
-            QString ficIdPart;
-            if(pos != -1)
-            {
-                ficIdPart = rx.cap(1);
-            }
-            if(ficIdPart.isEmpty())
-                continue;
-            //int id = database::GetFicDBIdByDelimitedSiteId(ficIdPart);
-
-            if(ficIdPart.toInt() <= 0)
-                continue;
-            auto webId = ficIdPart.toInt();
-            // at the moment works only for ffn and doesnt try to determine anything else
-
-            auto id = env.interfaces.fanfics->GetIDFromWebID(webId, "ffn");
-            if(id == -1)
-                continue;
-            qDebug()<< "Settign tag: " << "generictag" << " to: " << id;
-            usedList.push_back(str);
-            usedIdList.push_back(id);
-            SetTag(id, "generictag");
-        }while(!str.isEmpty());
-        params->tagToUse ="generictag";
-        BuildRecommendations(params);
-        env.interfaces.tags->DeleteTag("generictag");
-        env.interfaces.recs->SetFicsAsListOrigin(usedIdList, params->id);
-        transaction.finalize();
-        qDebug() << "using list: " << usedList;
-    }
-}
-
-
 
 
 void MainWindow::DisableAllLoadButtons()
@@ -1494,7 +1391,7 @@ PageTaskPtr MainWindow::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms, QSt
     {
         forcedDate.isValid = true;
         forcedDate.date = ui->deCutoffLimit->date();
-   }
+    }
     if(ui->chkIgnoreUpdateDate->isChecked())
     {
         forcedDate.isValid = true;
@@ -1974,9 +1871,9 @@ inline void MainWindow::AddToCountingHash(QList<core::AuthorPtr> authors,
     {
         auto fics = env.interfaces.authors->GetFicList(author);
         double listvalue;
-//        auto logFaves = log2(author->stats.favouriteStats.favourites) ;
-//        listvalue = logFaves < 1 ? 1 : logFaves;
-//        listvalue = logFaves > 1.5 ? 1.5 + (logFaves - 1.5)/8. : logFaves;
+        //        auto logFaves = log2(author->stats.favouriteStats.favourites) ;
+        //        listvalue = logFaves < 1 ? 1 : logFaves;
+        //        listvalue = logFaves > 1.5 ? 1.5 + (logFaves - 1.5)/8. : logFaves;
         listvalue = 1;
 
         for(auto fic : fics)
@@ -2317,19 +2214,7 @@ void MainWindow::DoFullCycle()
 
 void MainWindow::UseAuthorTask(PageTaskPtr task)
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlDatabase tasksDb = QSqlDatabase::database("Tasks");
-    AuthorLoadProcessor authorLoader(db,
-                                     tasksDb,
-                                     env.interfaces.fanfics,
-                                     env.interfaces.fandoms,
-                                     env.interfaces.authors,
-                                     env.interfaces.pageTask);
-    connect(&authorLoader, &AuthorLoadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
-    connect(&authorLoader, &AuthorLoadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
-    connect(&authorLoader, &AuthorLoadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
-    connect(&authorLoader, &AuthorLoadProcessor::resetEditorText, this, &MainWindow::OnResetTextEditor);
-    authorLoader.Run(task);
+    env.UseAuthorTask(task);
 }
 
 //QHash<int, int> MainWindow::CreateListOfNotSlashFics()
@@ -2511,8 +2396,8 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
 void MainWindow::on_pbOpenWholeList_clicked()
 {
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
-                                       false,
-                                       ui->cbRecGroup->currentText());
+                                           false,
+                                           ui->cbRecGroup->currentText());
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     LoadData();
@@ -2526,8 +2411,8 @@ void MainWindow::on_pbOpenWholeList_clicked()
 void MainWindow::OpenRecommendationList(QString listName)
 {
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
-                                       false,
-                                       listName);
+                                           false,
+                                           listName);
     env.filter.sortMode = core::StoryFilter::reccount;
 
     ui->leAuthorUrl->setText("");
@@ -2550,62 +2435,12 @@ void MainWindow::on_pbFirstWave_clicked()
 int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
     TaskProgressGuard guard(this);
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
+    auto result = env.BuildRecommendations(params, clearAuthors);
 
-    if(clearAuthors)
-        env.interfaces.authors->Clear();
-    env.interfaces.authors->LoadAuthors("ffn");
-    env.interfaces.recs->Clear();
-    //fanficsInterface->ClearIndex()
-    QList<int> allAuthors = env.interfaces.authors->GetAllAuthorIds();;
-    std::sort(std::begin(allAuthors),std::end(allAuthors));
-    qDebug() << "count of author ids: " << allAuthors.size();
-    QList<int> filteredAuthors;
-    filteredAuthors.reserve(allAuthors.size()/10);
+    FillRecTagCombobox();
+    FillRecommenderListView();
 
-    //QSharedPointer<core::RecommendationList> params
-    auto listId = env.interfaces.recs->GetListIdForName(params->name);
-    env.interfaces.recs->DeleteList(listId);
-    env.interfaces.recs->LoadListIntoDatabase(params);
-    int counter = 0;
-    int alLCounter = 0;
-    int authorCounter = 0;
-    for(auto authorId: allAuthors)
-    {
-        ++authorCounter;
-        if(authorCounter%10 == 0)
-            QApplication::processEvents();
-        auto stats = env.interfaces.authors->GetStatsForTag(authorId, params);
-
-
-        if( stats->matchesWithReference >= params->alwaysPickAt
-                || (stats->matchRatio <= params->pickRatio && stats->matchesWithReference >= params->minimumMatch) )
-        {
-            alLCounter++;
-            auto author = env.interfaces.authors->GetById(authorId);
-            if(author)
-                qDebug() << "Fit for criteria: " << author->name;
-            env.interfaces.recs->LoadAuthorRecommendationsIntoList(authorId, params->id);
-            env.interfaces.recs->LoadAuthorRecommendationStatsIntoDatabase(params->id, stats);
-            env.interfaces.recs->IncrementAllValuesInListMatchingAuthorFavourites(authorId,params->id);
-            filteredAuthors.push_back(authorId);
-            counter++;
-        }
-    }
-
-    env.interfaces.recs->UpdateFicCountInDatabase(params->id);
-    env.interfaces.recs->SetCurrentRecommendationList(params->id);
-    if(filteredAuthors.size() > 0)
-    {
-        FillRecTagCombobox();
-        FillRecommenderListView();
-    }
-
-    transaction.finalize();
-    qDebug() << "processed authors: " << counter;
-    qDebug() << "all authors: " << alLCounter;
-    return params->id;
+    return result;
 }
 
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode, bool useAuthorLink, QString listToUse)
@@ -2696,9 +2531,8 @@ void MainWindow::on_pbOpenAuthorUrl_clicked()
 
 void MainWindow::on_pbReprocessAuthors_clicked()
 {
-    //ReprocessTagSumRecs();
     TaskProgressGuard guard(this);
-    ProcessListIntoRecommendations("lists/source.txt");
+    env.ProcessListIntoRecommendations("lists/source.txt");
 }
 
 void MainWindow::on_cbRecTagBuildGroup_currentTextChanged(const QString &newText)

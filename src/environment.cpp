@@ -1,5 +1,5 @@
 #include "include/environment.h"
-#include "include/tasks/fandom_task_processor.h"
+
 #include "include/page_utils.h"
 #include "include/regex_utils.h"
 #include "include/Interfaces/recommendation_lists.h"
@@ -13,6 +13,7 @@
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/db_fixers.h"
+#include "include/parsers/ffn/favparser.h"
 #include <QSqlQuery>
 #include <QSqlError>
 
@@ -96,6 +97,11 @@ void CoreEnvironment::LoadData(SlashFilterState slashFilter)
         currentLastFanficId = fanfics.last().id;
 
     qDebug() << "loaded fics:" << counter;
+}
+
+CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj)
+{
+
 }
 
 void CoreEnvironment::Init()
@@ -196,4 +202,181 @@ int CoreEnvironment::GetResultCount()
     q.next();
     auto result =  q.value("records").toInt();
     return result;
+}
+void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlDatabase tasksDb = QSqlDatabase::database("Tasks");
+    AuthorLoadProcessor authorLoader(db,
+                                     tasksDb,
+                                     interfaces.fanfics,
+                                     interfaces.fandoms,
+                                     interfaces.authors,
+                                     interfaces.pageTask);
+    connect(&authorLoader, &AuthorLoadProcessor::requestProgressbar, this, &CoreEnvironment::requestProgressbar);
+    connect(&authorLoader, &AuthorLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
+    connect(&authorLoader, &AuthorLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
+    connect(&authorLoader, &AuthorLoadProcessor::resetEditorText, this, &CoreEnvironment::resetEditorText);
+    authorLoader.Run(task);
+}
+
+void CoreEnvironment::LoadMoreAuthors(QString listName, ECacheMode cacheMode)
+{
+    filter.mode = core::StoryFilter::filtering_in_recommendations;
+    interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(listName));
+    QStringList authorUrls = interfaces.recs->GetLinkedPagesForList(interfaces.recs->GetCurrentRecommendationList(), "ffn");
+    emit requestProgressbar(authorUrls.size());
+    emit updateInfo("Authors: " + QString::number(authorUrls.size()));
+    QString comment = "Loading more authors from list: " + QString::number(interfaces.recs->GetCurrentRecommendationList());
+    auto pageTask = page_utils::CreatePageTaskFromUrls(interfaces.pageTask,
+                                                       interfaces.db->GetCurrentDateTime(),
+                                                       authorUrls,
+                                                       comment,
+                                                       500,
+                                                       3,
+                                                       cacheMode,
+                                                       true);
+
+    UseAuthorTask(pageTask);
+
+}
+
+
+void CoreEnvironment::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater)
+{
+    auto authors = interfaces.authors->GetAllAuthors("ffn");
+    emit updateInfo("Authors: " + QString::number(authors.size()));
+    emit requestProgressbar(authors.size());
+    An<PageManager> pager;
+    int counter = 0;
+    for(auto author: authors)
+    {
+        auto webPage = pager->GetPage(author->url("ffn"), ECacheMode::use_only_cache);
+        //qDebug() << "Page loaded in: " << webPage.LoadedIn();
+        emit updateCounter(counter);
+        updater(author, webPage);
+        counter++;
+    }
+}
+
+
+void CoreEnvironment::ReprocessAuthorNamesFromTheirPages()
+{
+    auto functor = [&](QSharedPointer<core::Author> author, WebPage webPage){
+        //auto splittings = SplitJob(webPage.content);
+        if(!author || author->id == -1)
+            return;
+        QString authorName = ParseAuthorNameFromFavouritePage(webPage.content);
+        author->name = authorName;
+        interfaces.authors->AssignNewNameForAuthor(author, authorName);
+    };
+    UpdateAllAuthorsWith(functor);
+}
+
+
+
+void CoreEnvironment::ProcessListIntoRecommendations(QString list)
+{
+    QFile data(list);
+    QSqlDatabase db = QSqlDatabase::database();
+    QStringList usedList;
+    QList<int> usedIdList;
+    if (data.open(QFile::ReadOnly))
+    {
+        QTextStream in(&data);
+        QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+        params->name = in.readLine().split("#").at(1);
+        params->minimumMatch= in.readLine().split("#").at(1).toInt();
+        params->pickRatio = in.readLine().split("#").at(1).toDouble();
+        params->alwaysPickAt = in.readLine().split("#").at(1).toInt();
+        interfaces.recs->LoadListIntoDatabase(params);
+        database::Transaction transaction(db);
+        QString str;
+        do{
+            str = in.readLine();
+            QRegExp rx("/s/(\\d+)");
+            int pos = rx.indexIn(str);
+            QString ficIdPart;
+            if(pos != -1)
+            {
+                ficIdPart = rx.cap(1);
+            }
+            if(ficIdPart.isEmpty())
+                continue;
+
+            if(ficIdPart.toInt() <= 0)
+                continue;
+            auto webId = ficIdPart.toInt();
+
+            // at the moment works only for ffn and doesnt try to determine anything else
+            auto id = interfaces.fanfics->GetIDFromWebID(webId, "ffn");
+            if(id == -1)
+                continue;
+            qDebug()<< "Settign tag: " << "generictag" << " to: " << id;
+            usedList.push_back(str);
+            usedIdList.push_back(id);
+            interfaces.tags->SetTagForFic(id, "generictag");
+        }while(!str.isEmpty());
+        params->tagToUse ="generictag";
+        BuildRecommendations(params);
+        interfaces.tags->DeleteTag("generictag");
+        interfaces.recs->SetFicsAsListOrigin(usedIdList, params->id);
+        transaction.finalize();
+        qDebug() << "using list: " << usedList;
+    }
+}
+
+int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    database::Transaction transaction(db);
+
+    if(clearAuthors)
+        interfaces.authors->Clear();
+    interfaces.authors->LoadAuthors("ffn");
+    interfaces.recs->Clear();
+    //fanficsInterface->ClearIndex()
+    QList<int> allAuthors = interfaces.authors->GetAllAuthorIds();;
+    std::sort(std::begin(allAuthors),std::end(allAuthors));
+    qDebug() << "count of author ids: " << allAuthors.size();
+    QList<int> filteredAuthors;
+    filteredAuthors.reserve(allAuthors.size()/10);
+
+    //QSharedPointer<core::RecommendationList> params
+    auto listId = interfaces.recs->GetListIdForName(params->name);
+    interfaces.recs->DeleteList(listId);
+    interfaces.recs->LoadListIntoDatabase(params);
+    int counter = 0;
+    int alLCounter = 0;
+    int authorCounter = 0;
+    for(auto authorId: allAuthors)
+    {
+        ++authorCounter;
+        if(authorCounter%10 == 0)
+            QCoreApplication::processEvents();
+        auto stats = interfaces.authors->GetStatsForTag(authorId, params);
+
+
+        if( stats->matchesWithReference >= params->alwaysPickAt
+                || (stats->matchRatio <= params->pickRatio && stats->matchesWithReference >= params->minimumMatch) )
+        {
+            alLCounter++;
+            auto author = interfaces.authors->GetById(authorId);
+            if(author)
+                qDebug() << "Fit for criteria: " << author->name;
+            interfaces.recs->LoadAuthorRecommendationsIntoList(authorId, params->id);
+            interfaces.recs->LoadAuthorRecommendationStatsIntoDatabase(params->id, stats);
+            interfaces.recs->IncrementAllValuesInListMatchingAuthorFavourites(authorId,params->id);
+            filteredAuthors.push_back(authorId);
+            counter++;
+        }
+    }
+
+    interfaces.recs->UpdateFicCountInDatabase(params->id);
+    interfaces.recs->SetCurrentRecommendationList(params->id);
+
+    transaction.finalize();
+    qDebug() << "processed authors: " << counter;
+    qDebug() << "all authors: " << alLCounter;
+    return params->id;
 }

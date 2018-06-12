@@ -4,6 +4,8 @@
 #include "libs/UniversalModels/include/TableDataInterface.h"
 #include "libs/UniversalModels/include/TableDataListHolder.h"
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
+#include "include/tasks/fandom_task_processor.h"
+#include "include/tasks/author_task_processor.h"
 #include "qml_ficmodel.h"
 #include "include/core/section.h"
 #include "include/pagetask.h"
@@ -31,9 +33,12 @@ struct SlashFilterState
 
 };
 
-class CoreEnvironment
+class CoreEnvironment : public QObject
 {
+Q_OBJECT
 public:
+    CoreEnvironment(QObject* obj = nullptr);
+
     struct Interfaces{
         // the interface classes used to avoid direct database access in the application
         QSharedPointer<interfaces::Fandoms> fandoms;
@@ -61,6 +66,19 @@ public:
     WebPage RequestPage(QString pageUrl, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
     int GetResultCount();
 
+    void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
+    void UseAuthorTask(PageTaskPtr task);
+
+    void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
+    // used to fix author names when one of the parsers gets a bunch wrong
+    void ReprocessAuthorNamesFromTheirPages();
+
+    // used to create recommendation list from lists/source.txt
+    void ProcessListIntoRecommendations(QString list);
+    int  BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
+
+
+
     core::DefaultQueryBuilder queryBuilder; // builds search queries
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
@@ -80,4 +98,11 @@ public:
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 
     int lastI = 0; // used in slash filtering
+
+    // in case of non-gui applications these will just fire without an effect and its correct
+signals:
+    void requestProgressbar(int);
+    void resetEditorText();
+    void updateCounter(int);
+    void updateInfo(QString);
 };

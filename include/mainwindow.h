@@ -222,11 +222,9 @@ private:
     // a utility to pass a functor to all the authors
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
 
-    // used to fix author names when one of the parsers gets a bunch wrong
-    void ReprocessAuthorNamesFromTheirPages();
 
-    // used to create recommendation list from lists/source.txt
-    void ProcessListIntoRecommendations(QString list);
+
+
 
     // creates a recommendation list from passed params
     int BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
