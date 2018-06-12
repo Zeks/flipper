@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"
 #include "include/Interfaces/pagetask_interface.h"
+#include "include/url_utils.h"
 #include "include/timeutils.h"
 
 #include <QThread>
@@ -31,11 +32,13 @@ FandomLoadProcessor::FandomLoadProcessor(QSqlDatabase db,
                                          QSharedPointer<interfaces::Fanfics> fanficInterface,
                                          QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                          QSharedPointer<interfaces::PageTask> pageInterface,
+                                         QSharedPointer<database::IDBWrapper> dbInterface,
                                          QObject *obj) : PageConsumer(obj)
 {
     this->fanficsInterface = fanficInterface;
     this->fandomsInterface = fandomsInterface;
     this->pageInterface = pageInterface;
+    this->dbInterface = dbInterface;
     this->db = db;
     CreatePageThreadWorker();
     connect(this, &FandomLoadProcessor::taskStarted, worker.data(), &PageThreadWorker::FandomTask);
@@ -202,4 +205,94 @@ void FandomLoadProcessor::Run(PageTaskPtr task)
     task->finished = true;
 
     pageInterface->WriteTaskIntoDB(task);
+}
+static QString FixCrossoverUrl(QString url){
+    if(url.contains("/crossovers/"))
+    {
+        QStringList temp = url.split("/");
+        url = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
+        url= url + "/0/";
+    }
+    return url;
+}
+PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms,
+                                                           QString prototype,
+                                                           QString taskComment,
+                                                           ECacheMode cacheMode,
+                                                           bool allowCacheRefresh,
+                                                           ForcedFandomUpdateDate forcedDate)
+{
+    database::Transaction transaction(pageInterface->db);
+
+    auto timestamp = dbInterface->GetCurrentDateTime();
+    qDebug() << "Task timestamp" << timestamp;
+    auto task = PageTask::CreateNewTask();
+    task->allowedRetries = 3;
+    task->allowedSubtaskRetries = 3;
+    task->cacheMode = cacheMode;
+    task->parts = 0;
+    for(auto fandom : fandoms)
+        task->parts += fandom->GetUrls().size();
+    task->refreshIfNeeded = allowCacheRefresh;
+    task->taskComment = taskComment;
+    task->type = 1;
+    task->created = timestamp;
+    task->isValid = true;
+    task->scheduledTo = timestamp;
+    task->startedAt = timestamp;
+    pageInterface->WriteTaskIntoDB(task);
+    int counter = 0;
+    An<PageManager> pager;
+    pager->GetPage("", cacheMode);
+    for(auto fandom : fandoms)
+    {
+        auto lastUpdated = fandom->lastUpdateDate;
+        if(forcedDate.isValid)
+            lastUpdated = forcedDate.date;
+
+        SubTaskPtr subtask;
+
+        auto urls = fandom->GetUrls();
+        emit updateInfo("Scheduling fandom: Date:" + lastUpdated.toString("yyMMdd") + " Name: " + fandom->GetName() + "<br>");
+
+        for(auto url : urls)
+        {
+            emit updateInfo("Scheduling section:" + url.GetUrl() + "<br>");
+
+            auto urlString = prototype.arg(FixCrossoverUrl(url.GetUrl()));
+            WebPage currentPage = pager->GetPage(urlString, cacheMode);
+            FandomParser parser(fanficsInterface);
+            QString lastUrl = parser.GetLast(currentPage.content, urlString);
+
+            subtask = PageSubTask::CreateNewSubTask();
+            subtask->size = url_utils::GetLastPageIndex(lastUrl);
+            subtask->parent = task;
+            subtask->type = 1;
+            subtask->updateLimit.setDate(lastUpdated);
+            auto content = SubTaskFandomContent::NewContent();
+            auto cast = static_cast<SubTaskFandomContent*>(content.data());
+            cast->urlLinks.push_back(urlString);
+            cast->fandom = fandom->GetName();
+
+            auto baseUrl= urlString;
+            for(int i = 2; i <= subtask->size; i ++)
+                cast->urlLinks.push_back(baseUrl + "&p=" + QString::number(i));
+
+            subtask->content = content;
+            subtask->parentId = task->id;
+            subtask->created = timestamp;
+
+            task->size += subtask->size;
+            subtask->id = counter;
+            subtask->isValid = true;
+            subtask->allowedRetries = 3;
+            subtask->success = false;
+            task->subTasks.push_back(subtask);
+            counter++;
+        }
+    }
+    // now with subtasks
+    pageInterface->WriteTaskIntoDB(task);
+    transaction.finalize();
+    return task;
 }

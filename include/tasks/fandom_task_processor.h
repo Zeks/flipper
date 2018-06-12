@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QSharedPointer>
 #include "ECacheMode.h"
 #include "include/pageconsumer.h"
-
+#include "include/core/section.h"
 struct FandomParseTask{
     FandomParseTask() = default;
     FandomParseTask(QStringList parts,
@@ -60,8 +60,16 @@ class Fanfics;
 class Fandoms;
 class PageTask;
 }
+namespace database{
+class IDBWrapper;
+}
 class PageTask;
 typedef QSharedPointer<PageTask> PageTaskPtr;
+
+struct ForcedFandomUpdateDate{
+    bool isValid = false;
+    QDate date;
+};
 class FandomLoadProcessor: public PageConsumer{
 Q_OBJECT
 public:
@@ -69,15 +77,24 @@ public:
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::PageTask> pageInterface,
+                        QSharedPointer<database::IDBWrapper> dbInterface,
                         QObject* obj = nullptr);
     FandomParseTaskResult Run(FandomParseTask task);
     void Run(PageTaskPtr task);
+    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms,
+                                          QString prototype,
+                                                      QString taskComment,
+                                                      ECacheMode cacheMode,
+                                                      bool allowCacheRefresh,
+                                                      ForcedFandomUpdateDate forcedDate = ForcedFandomUpdateDate());
+
 private:
     FandomParseTask task;
     QSqlDatabase db;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::PageTask> pageInterface;
+    QSharedPointer<database::IDBWrapper> dbInterface;
 signals:
     void taskStarted(FandomParseTask);
     void requestProgressbar(int);

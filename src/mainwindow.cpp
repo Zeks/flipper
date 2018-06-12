@@ -935,91 +935,6 @@ SubTaskPtr CreateAdditionalSubtask(PageTaskPtr task)
     return result;
 }
 
-
-PageTaskPtr MainWindow::CreatePageTaskFromFandoms(QList<core::FandomPtr> fandoms,
-                                                  QString taskComment,
-                                                  bool allowCacheRefresh)
-{
-    database::Transaction transaction(pageTaskInterface->db);
-
-    auto timestamp = dbInterface->GetCurrentDateTime();
-    qDebug() << "Task timestamp" << timestamp;
-    auto task = PageTask::CreateNewTask();
-    task->allowedRetries = 3;
-    task->allowedSubtaskRetries = 3;
-    auto cacheMode = GetCurrentCacheMode();
-    //auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
-    task->cacheMode = cacheMode;
-    task->parts = 0;
-    for(auto fandom : fandoms)
-        task->parts += fandom->GetUrls().size();
-    task->refreshIfNeeded = allowCacheRefresh;
-    task->taskComment = taskComment;
-    task->type = 1;
-    task->created = timestamp;
-    task->isValid = true;
-    task->scheduledTo = timestamp;
-    task->startedAt = timestamp;
-    pageTaskInterface->WriteTaskIntoDB(task);
-    int counter = 0;
-    An<PageManager> pager;
-    pager->GetPage("", cacheMode);
-    for(auto fandom : fandoms)
-    {
-        auto lastUpdated = fandom->lastUpdateDate;
-        if(ui->chkCutoffLimit->isChecked())
-            lastUpdated = ui->deCutoffLimit->date();
-        if(ui->chkIgnoreUpdateDate->isChecked())
-            lastUpdated = QDate();
-
-        SubTaskPtr subtask;
-
-        auto urls = fandom->GetUrls();
-
-        AddToProgressLog("Scheduling fandom: Date:" + lastUpdated.toString("yyMMdd") + " Name: " + fandom->GetName() + "<br>");
-
-        for(auto url : urls)
-        {
-            AddToProgressLog("Scheduling section:" + url.GetUrl() + "<br>");
-            auto urlString = AppendCurrentSearchParameters(url.GetUrl());
-            WebPage currentPage = pager->GetPage(urlString, cacheMode);
-            FandomParser parser(fanficsInterface);
-            QString lastUrl = parser.GetLast(currentPage.content, urlString);
-
-            subtask = PageSubTask::CreateNewSubTask();
-            subtask->size = url_utils::GetLastPageIndex(lastUrl);
-            subtask->parent = task;
-            subtask->type = 1;
-            subtask->updateLimit.setDate(lastUpdated);
-            auto content = SubTaskFandomContent::NewContent();
-            auto cast = static_cast<SubTaskFandomContent*>(content.data());
-            cast->urlLinks.push_back(urlString);
-            cast->fandom = fandom->GetName();
-
-            auto baseUrl= urlString;
-            for(int i = 2; i <= subtask->size; i ++)
-                cast->urlLinks.push_back(baseUrl + "&p=" + QString::number(i));
-
-            subtask->content = content;
-            subtask->parentId = task->id;
-            subtask->created = timestamp;
-
-            task->size += subtask->size;
-            subtask->id = counter;
-            subtask->isValid = true;
-            subtask->allowedRetries = 3;
-            subtask->success = false;
-            task->subTasks.push_back(subtask);
-            counter++;
-        }
-    }
-    // now with subtasks
-    pageTaskInterface->WriteTaskIntoDB(task);
-    transaction.finalize();
-    return task;
-}
-
-
 core::AuthorPtr CreateAuthorFromNameAndUrl(QString name, QString url)
 {
     core::AuthorPtr author(new core::Author);
@@ -1725,25 +1640,14 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
     typetableModel->updateAll();
 }
 
-QString MainWindow::AppendCurrentSearchParameters(QString url)
+QString MainWindow::CreatePrototypeWithSearchParams()
 {
-    if(url.contains("/crossovers/"))
-    {
-        QStringList temp = url.split("/");
-        url = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
-        url= url + "/0/";
-    }
     QString lastPart = "?&srt=1&lan=1&r=10&len=%1";
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
     lastPart=lastPart.arg(lengthCutoff);
-    QString resultString = "https://www.fanfiction.net" + url + lastPart;
-
-
-
-
-
+    QString resultString = "https://www.fanfiction.net%1" + lastPart;
     qDebug() << resultString;
     return resultString;
 }
@@ -2121,7 +2025,7 @@ void MainWindow::UseFandomTask(PageTaskPtr task)
     DisableAllLoadButtons();
 
     QSqlDatabase db = QSqlDatabase::database();
-    FandomLoadProcessor proc(db, fanficsInterface, fandomsInterface, pageTaskInterface);
+    FandomLoadProcessor proc(db, fanficsInterface, fandomsInterface, pageTaskInterface, dbInterface);
 
     connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
     connect(&proc, &FandomLoadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
@@ -2130,25 +2034,55 @@ void MainWindow::UseFandomTask(PageTaskPtr task)
     EnableAllLoadButtons();
 }
 
+PageTaskPtr MainWindow::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms, QString taskComment, bool allowCacheRefresh)
+{
+    ForcedFandomUpdateDate forcedDate;
+    if(ui->chkCutoffLimit->isChecked())
+    {
+        forcedDate.isValid = true;
+        forcedDate.date = ui->deCutoffLimit->date();
+   }
+    if(ui->chkIgnoreUpdateDate->isChecked())
+    {
+        forcedDate.isValid = true;
+        forcedDate.date = QDate();
+    }
+
+    QSqlDatabase db = QSqlDatabase::database();
+    FandomLoadProcessor proc(db, fanficsInterface, fandomsInterface, pageTaskInterface, dbInterface);
+
+    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+    connect(&proc, &FandomLoadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+    connect(&proc, &FandomLoadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
+    auto result = proc.CreatePageTaskFromFandoms(fandoms,
+                                                 CreatePrototypeWithSearchParams(),
+                                                 taskComment,
+                                                 GetCurrentCacheMode(),
+                                                 allowCacheRefresh,
+                                                 forcedDate);
+
+    proc.Run(result);
+    return result;
+}
+
 void MainWindow::CrawlFandom(QString fandomName)
 {
     if(!WarnCutoffLimit() || !WarnFullParse())
         return;
 
     TaskProgressGuard guard(this);
+    DisableAllLoadButtons();
     fanficsInterface->ClearProcessedHash();
     processedFics = 0;
     auto fandom = fandomsInterface->GetFandom(fandomName);
     if(!fandom)
         return;
     auto urls = fandom->GetUrls();
-    //currentFilterUrls = GetCurrentFilterUrls(GetFandomName(), ui->rbCrossovers->isChecked(), true);
 
     ui->edtResults->clear();
     nextUrl = QString();
 
-    auto task = CreatePageTaskFromFandoms({fandom}, "Loading the fandom: " + fandomName, true);
-    UseFandomTask(task);
+    auto task = ProcessFandomsAsTask({fandom}, "Loading the fandom: " + fandomName, true);
     QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");
     ui->edtResults->insertHtml(status.arg("Inserted fics").arg("darkGreen").arg(task->addedFics));
@@ -2157,13 +2091,12 @@ void MainWindow::CrawlFandom(QString fandomName)
 
     status = "Finished processing %1 fics";
 
-
-    //ui->lblLoadResult->show();
     fandomInfoTimer.setSingleShot(true);
     fandomInfoTimer.start(7000);
 
     ReinitRecent(fandom->GetName());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
+    EnableAllLoadButtons();
 }
 
 ECacheMode MainWindow::GetCurrentCacheMode() const
@@ -2972,8 +2905,7 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
     }
 
     AddToProgressLog(QString("Starting load of tracked %1 fandoms <br>").arg(fandoms.size()));
-    auto task = CreatePageTaskFromFandoms(fandoms, "", true);
-    UseFandomTask(task);
+    auto task = ProcessFandomsAsTask(fandoms, "", true);
 
     QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");

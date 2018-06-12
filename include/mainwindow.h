@@ -228,10 +228,14 @@ private:
                                        int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
                                        bool allowCacheRefresh = true);
 
-    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
-                                          QString taskComment,
-                                          bool allowCacheRefresh);
+//    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
+//                                          QString taskComment,
+//                                          bool allowCacheRefresh);
     void UseFandomTask(PageTaskPtr);
+
+    PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandom,
+                              QString taskComment,
+                              bool allowCacheRefresh);
 
     // the actual task that procecces he next wave of authors into database
     void UseAuthorsPageTask(PageTaskPtr,
@@ -258,7 +262,7 @@ private:
     core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false, QString listToUse = QString());
 
     //fixes the crossover url and selects between 60 and 100k words to add to search params
-    QString AppendCurrentSearchParameters(QString url);
+    QString CreatePrototypeWithSearchParams();
 
     // pushes fandom to top of recent and reinits the recent fandom listview
     void ReinitRecent(QString name);

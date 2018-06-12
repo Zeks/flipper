@@ -406,10 +406,10 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
 {
     QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
-                    " wcr, reviewstofavourites, age, daysrunning, at_chapter ) "
+                    " wcr, reviewstofavourites, age, daysrunning, at_chapter, lastupdate ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
                     " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,"
-                    " :wcr, :reviewstofavourites, :age, :daysrunning, 0 )";
+                    " :wcr, :reviewstofavourites, :age, :daysrunning, 0, date('now'))";
     query=query.arg(section->webSite);
 
     SqlContext<bool> ctx(db, query);
@@ -440,7 +440,7 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
     QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
                     "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
                     "summary = :summary, genres= :genres, published = :published, updated = :updated, author_id = :author_id,"
-                    "wcr= :wcr,  author= :author, title= :title, reviewstofavourites = :reviewstofavourites, age = :age, daysrunning = :daysrunning "
+                    "wcr= :wcr,  author= :author, title= :title, reviewstofavourites = :reviewstofavourites, age = :age, daysrunning = :daysrunning, lastupdate = date('now')"
                     " where %1_id = :site_id";
     query=query.arg(section->webSite);
     SqlContext<bool> ctx(db, query);
@@ -1902,8 +1902,8 @@ FanficIdRecord::FanficIdRecord()
 
 DiagnosticSQLResult<int> FanficIdRecord::CreateRecord(QSqlDatabase db) const
 {
-    QString query = "INSERT INTO FANFICS (ffn_id, sb_id, sv_id, ao3_id, for_fill) "
-                    "VALUES ( :ffn_id, :sb_id, :sv_id, :ao3_id, 1)";
+    QString query = "INSERT INTO FANFICS (ffn_id, sb_id, sv_id, ao3_id, for_fill, lastupdate) "
+                    "VALUES ( :ffn_id, :sb_id, :sv_id, :ao3_id, 1, date('now'))";
 
     SqlContext<int> ctx(db, query,
     {{"ffn_id", ids["ffn"]},
