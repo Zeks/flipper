@@ -27,6 +27,7 @@ class CoreEnvironment
 {
 public:
     struct Interfaces{
+        // the interface classes used to avoid direct database access in the application
         QSharedPointer<interfaces::Fandoms> fandoms;
         QSharedPointer<interfaces::Fanfics> fanfics;
         QSharedPointer<interfaces::Authors> authors;
@@ -45,6 +46,19 @@ public:
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
     Interfaces interfaces;
-    // the interface classes used to avoid direct database access in the application
 
+    int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
+    int pageOfCurrentQuery = 0; // current page that the used search query is at
+    int currentLastFanficId = -1;
+
+
+    QList<core::Fic> fanfics; // filtered fanfic data
+
+    QThread pageThread; // thread for pagegetter worker to live in
+    PageThreadWorker* worker = nullptr;
+    PageQueue pageQueue; // collects data sent from PageThreadWorker
+
+    QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
+
+    int lastI = 0; // used in slash filtering
 };

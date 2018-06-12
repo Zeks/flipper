@@ -87,7 +87,7 @@ public:
         lfbp_search = 0,
         lfbp_recs = 1
     };
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
 
     //initalizes widgets
     void Init();
@@ -284,46 +284,22 @@ private:
 
     Ui::MainWindow *ui;
 
-
-
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
 
     bool cancelCurrentTaskPressed = false;
 
-    int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
-    int pageOfCurrentQuery = 0; // current page that the used search query is at
-
-    int processedFics = 0; // amount of fics processed by the last operation
-    int currentLastFanficId = -1;
-
-    QString nextUrl;
-    QString currentFilterUrl;
-
     QStringList tagList; // user tags used in the system
 
-    QList<core::Fic> fanfics; // filtered fanfic data
-
-    QDateTime lastUpdated; // candidate for deletion
-
     QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
-    QTimer fandomInfoTimer; // used to hide the information about the amount of loaded fics
-
-    QThread pageThread; // thread for pagegetter worker to live in
-
-    PageThreadWorker* worker = nullptr;
-    PageQueue pageQueue; // collects data sent from PageThreadWorker
-
 
     std::function<void(int)> callProgress; // temporary shit while I decouple page getter from ui
     std::function<void(void)> cleanupEditor; // temporary shit while I decouple page getter from ui
     std::function<void(QString)> callProgressText; // temporary shit while I decouple page getter from ui
 
-    QSharedPointer<TableDataInterface> typetableInterface;
-
-    QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
     QMovie refreshSpin; // an indicator that some work is in progress
     // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
 
+    QSharedPointer<TableDataInterface> typetableInterface;
     FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
     TableDataListHolder<core::Fic>* holder = nullptr; // an interface class that model uses to access the data
 
@@ -346,7 +322,7 @@ private:
     QMenu fandomMenu;
     QMenu ignoreFandomMenu;
     QMenu ignoreFandomSlashFilterMenu;
-    int lastI = 0;
+
 
 public slots:
     //broken and needs refactoring anyway
