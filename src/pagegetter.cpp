@@ -121,6 +121,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
             qDebug() << "Error getting page from database: " << q.lastError();
             return result;
         }
+
         if(!dataFound)
             return result;
         //qDebug() << q.record();
@@ -172,7 +173,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     result.content = data;
 
     result.isValid = true;
-    result.url = currentRequest.url().toString();
+    result.url = url;
     result.source = EPageSource::network;
     return result;
 }
