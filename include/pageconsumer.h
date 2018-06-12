@@ -14,37 +14,36 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
-#include <QString>
-#include <QDateTime>
-#include <QSqlDatabase>
 #include <QSharedPointer>
-#include <QUuid>
-#include "pagetask.h"
-class PageSubTask;
-class PageTask;
+#include <QObject>
+#include "include/webpage.h"
 
-namespace interfaces {
-class PageTask{
+class PageThreadWorker;
+struct PageQueue{
+    bool pending = true;
+    QList<WebPage> data;
+};
+class  PageResult{
 public:
-    void WriteTaskIntoDB(PageTaskPtr);
-    void WriteSubTaskIntoDB(SubTaskPtr);
+    PageResult() = default;
+    PageResult(WebPage page, bool _finished): finished(_finished),data(page){}
+    bool finished = false;
+    WebPage data;
+};
+class PageConsumer : public QObject
+{
+        Q_OBJECT
+public:
+    PageConsumer(QObject* obj = nullptr);
+protected:
+    void CreatePageThreadWorker();
+    void StartPageWorker();
+    void StopPageWorker();
 
-    bool DropLastTask();
-    bool DropTaskId(int id);
-    bool IsLastTaskSuccessful();
-    PageTaskPtr GetLastTask();
-    int GetLastTaskId();
-    TaskList GetUnfinishedTasks();
-    PageTaskPtr GetTaskById(int id);
-    SubTaskErrors GetErrorsForTask(int id, int subId = -1, int cutoffLevel = 1);
-
-    void SetCurrentTask(PageTaskPtr);
-    PageTaskPtr GetCurrentTask();
-
-    PageTaskPtr currentTask;
-    QSqlDatabase db;
+    QSharedPointer<PageThreadWorker> worker;
+    PageQueue pageQueue; // collects data sent from PageThreadWorker
+    QThread pageThread; // thread for pagegetter worker to live in
+public slots:
+    void OnNewPage(PageResult result);
 };
 
-
-
-}

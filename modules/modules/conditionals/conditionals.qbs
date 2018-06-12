@@ -2,6 +2,6 @@ import qbs
 Module {
 	Depends { name: "cpp" }
     property string debugAppend: ""
-    property string projectPath: "C:/Programming/crawler"
+    property string projectPath: "E:/Programming/Flipper"
     property bool logger : true
 }

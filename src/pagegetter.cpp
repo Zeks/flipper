@@ -248,7 +248,7 @@ PageManager::PageManager() : d(new PageGetterPrivate)
 
 PageManager::~PageManager()
 {
-    qDebug() << "deleting page worker";
+    qDebug() << "deleting page manager";
 }
 
 void PageManager::SetDatabase(QSqlDatabase _db)
@@ -559,6 +559,4 @@ void PageThreadWorker::SetAutomaticCacheForCurrentDate(bool value)
 {
     automaticCacheForCurrentDate = value;
 }
-
-
 

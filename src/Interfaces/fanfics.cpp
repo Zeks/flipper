@@ -377,18 +377,6 @@ bool Fanfics::FlushDataQueues()
         fic->id = GetIDFromWebID(fic->webId, "ffn");
         auto result = database::puresql::UpdateInDB(fic, db).success;
         hasFailures = hasFailures && result;
-        for(auto fandom: fic->fandoms)
-        {
-            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db).success;
-            hasFailures = hasFailures && result;
-            if(!result)
-            {
-                qDebug() << "failed to write fandom for: " << fic->webId;
-                fandomInterface->GetIDForName(fandom);
-            }
-            if(hasFailures)
-                break;
-        }
         updateCounter++;
         if(hasFailures)
             break;

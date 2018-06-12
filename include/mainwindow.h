@@ -44,6 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "qml_ficmodel.h"
 #include "include/core/section.h"
 #include "include/pagetask.h"
+#include "include/tasks/fandom_task_processor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
 #include <QMovie>
@@ -532,6 +533,10 @@ private slots:
     void OnExportStatistics();
 
     void on_pbComedy_clicked();
+
+    void OnUpdatedProgressValue(int);
+    void OnNewProgressString(QString);
+    void OnProgressBarRequested(int);
 
 signals:
 

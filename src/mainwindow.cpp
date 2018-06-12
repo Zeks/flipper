@@ -69,10 +69,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include "include/parsers/ffn/favparser.h"
 #include "include/parsers/ffn/fandomparser.h"
-#include "parsers/ffn/fandomindexparser.h"
+#include "include/parsers/ffn/fandomindexparser.h"
 #include "include/url_utils.h"
 #include "include/pure_sql.h"
 #include "include/transaction.h"
+#include "include/tasks/fandom_task_processor.h"
+
 
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/ffn/ffn_fanfics.h"
@@ -682,213 +684,6 @@ void MainWindow::InitInterfaces()
     countQueryBuilder.portableDBInterface = dbInterface;
     pageTaskInterface->db  = tasksInterface->GetDatabase();
     fandomsInterface->Load();
-}
-
-
-//bool MainWindow::RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString page)
-//{
-//    nextUrl = page;
-//    bool result = true;
-//    qDebug() << "dateArrived as: " << lastFandomUpdatedate;
-//    if(ui->chkCutoffLimit->isChecked())
-//        lastFandomUpdatedate = ui->deCutoffLimit->date();
-//    if(ui->chkIgnoreUpdateDate->isChecked())
-//        lastFandomUpdatedate = QDate();
-//    qDebug() << "after if as: " << lastFandomUpdatedate;
-//    //bool noSpecificTime = !ui->chkIgnoreUpdateDate->isChecked() && ui->cbUseDateCutoff->isChecked();
-
-//    StartPageWorker();
-//    DisableAllLoadButtons();
-
-//    An<PageManager> pager;
-//    auto cacheMode = ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache;
-//    qDebug() << "will request url:" << nextUrl;
-//    WebPage currentPage = pager->GetPage(nextUrl, cacheMode);
-//    FandomParser parser(fanficsInterface);
-//    QString lastUrl = parser.GetLast(currentPage.content, page);
-//    int pageCount = lastUrl.mid(lastUrl.lastIndexOf("=")+1).toInt();
-//    if(pageCount != 0)
-//    {
-//        pbMain->show();
-//        pbMain->setMaximum(pageCount);
-//    }
-//    qDebug() << "emitting page task:" << nextUrl << "\n" << lastUrl << "\n" << lastFandomUpdatedate;
-//    emit pageTask(nextUrl, lastUrl, lastFandomUpdatedate, ui->chkCacheMode->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache, ui->chkIgnoreUpdateDate->isChecked());
-//    int counter = 0;
-//    WebPage webPage;
-//    QSqlDatabase db = QSqlDatabase::database();
-
-//    QSet<QString> updatedFandoms;
-//    database::Transaction transaction(db);
-//    do
-//    {
-//        while(pageQueue.pending && pageQueue.data.isEmpty())
-//        {
-//            QThread::msleep(500);
-//            //qDebug() << "worker value is: " << worker->value;
-//            if(!worker->working)
-//                pageThread.start(QThread::HighPriority);
-//            QCoreApplication::processEvents();
-//        }
-//        if(!pageQueue.pending && pageQueue.data.isEmpty())
-//            break;
-
-
-//        webPage = pageQueue.data.at(0);
-
-//        pageQueue.data.pop_front();
-//        webPage.crossover = webPage.url.contains("Crossovers");
-//        webPage.fandom =  fandom;
-//        webPage.type = EPageType::sorted_ficlist;
-//        auto startPageProcessing= std::chrono::high_resolution_clock::now();
-//        parser.ProcessPage(webPage);
-//        auto elapsed = std::chrono::high_resolution_clock::now() - startPageProcessing;
-//        qDebug() << "Page processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-//        if(webPage.source == EPageSource::network)
-//            pager->SavePageToDB(webPage);
-
-//        QCoreApplication::processEvents();
-
-//        if(pageCount == 0)
-//            pbMain->setValue((pbMain->value()+10)%pbMain->maximum());
-//        else
-//            pbMain->setValue(counter++);
-
-
-//        AddToProgressLog("Page: " + QString::number(webPage.pageIndex) + "<br>");
-//        auto startPageRequest = std::chrono::high_resolution_clock::now();
-
-//        {
-//            auto startQueue= std::chrono::high_resolution_clock::now();
-
-//            fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
-//            auto elapsedQueue = std::chrono::high_resolution_clock::now() - startQueue;
-//            qDebug() << "Queue processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedQueue).count();
-//            auto startFandoms= std::chrono::high_resolution_clock::now();
-//            auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
-//            auto elapsedFandoms = std::chrono::high_resolution_clock::now() - startFandoms;
-//            qDebug() << "Fandoms processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedFandoms).count();
-//            updatedFandoms.intersect(fandoms);
-
-//            auto startFlush= std::chrono::high_resolution_clock::now();
-//            auto flushResult = fanficsInterface->FlushDataQueues();
-//            if(!flushResult)
-//                result = false;
-
-//            auto elapsedFlush= std::chrono::high_resolution_clock::now() - startFlush;
-//            qDebug() << "Flush processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedFlush).count();
-//        }
-//        processedFics+=parser.processedStuff.size();
-
-//        elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-//        qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-//    }while(pageQueue.pending || pageQueue.data.size() > 0);
-//    fandomsInterface->RecalculateFandomStats(updatedFandoms.values());
-//    transaction.finalize();
-//    StopPageWorker();
-//    ShutdownProgressbar();
-//    EnableAllLoadButtons();
-//    return result;
-//}
-
-FandomParseTaskResult MainWindow::ProcessFandomSubTask(FandomParseTask task)
-{
-    StartPageWorker();
-    DisableAllLoadButtons();
-
-    if(task.parts.size() != 0)
-    {
-        pbMain->show();
-        pbMain->setMaximum(task.parts.size());
-    }
-    emit pageTask(task);
-    int counter = 0;
-    WebPage webPage;
-    QSqlDatabase db = QSqlDatabase::database();
-
-    QSet<QString> updatedFandoms;
-    database::Transaction transaction(db);
-    FandomParser parser(fanficsInterface);
-    An<PageManager> pager;
-    FandomParseTaskResult result;
-    do
-    {
-        while(pageQueue.pending && pageQueue.data.isEmpty())
-        {
-            QThread::msleep(500);
-            if(!worker->working)
-                pageThread.start(QThread::HighPriority);
-            QCoreApplication::processEvents();
-        }
-        if(!pageQueue.pending && pageQueue.data.isEmpty())
-            break;
-
-        webPage = pageQueue.data.at(0);
-
-        pageQueue.data.pop_front();
-        webPage.crossover = webPage.url.contains("Crossovers");
-        webPage.fandom =  task.fandom;
-        webPage.type = EPageType::sorted_ficlist;
-
-        if(webPage.failedToAcquire)
-        {
-            result.failedParts.push_back(webPage.url);
-            result.failedToAcquirePages = true;
-            continue;
-        }
-
-        auto startPageProcessing= std::chrono::high_resolution_clock::now();
-        parser.ProcessPage(webPage);
-        auto elapsed = std::chrono::high_resolution_clock::now() - startPageProcessing;
-        qDebug() << "Page processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-        if(webPage.source == EPageSource::network)
-            pager->SavePageToDB(webPage);
-
-        QCoreApplication::processEvents();
-        pbMain->setValue(counter++);
-        QString pageProto = "Min Update: " + webPage.minFicDate.toString("yyMMdd") + " Url: %1 <br>";
-        thread_local QString url_proto = "<a href=\"%1\"> %1 </a>";
-        QString source = webPage.isFromCache ? "CACHE:" : "WEB:";
-        AddToProgressLog(source + " " + pageProto.arg(url_proto.arg(webPage.url)));
-        //QString toInsert = "<a href=\"" + pageUrl + "\"> %1 </a>";
-        auto startPageRequest = std::chrono::high_resolution_clock::now();
-
-        {
-            auto startQueue= std::chrono::high_resolution_clock::now();
-
-            fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
-            auto elapsedQueue = std::chrono::high_resolution_clock::now() - startQueue;
-            qDebug() << "Queue processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedQueue).count();
-            auto startFandoms= std::chrono::high_resolution_clock::now();
-            auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
-            auto elapsedFandoms = std::chrono::high_resolution_clock::now() - startFandoms;
-            qDebug() << "Fandoms processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedFandoms).count();
-            updatedFandoms.intersect(fandoms);
-
-            auto startFlush= std::chrono::high_resolution_clock::now();
-            auto flushResult = fanficsInterface->FlushDataQueues();
-            if(!flushResult)
-                result.criticalErrors = true;
-
-            result.updatedFics += fanficsInterface->updatedCounter;
-            result.addedFics   += fanficsInterface->insertedCounter;
-            result.skippedFics += fanficsInterface->skippedCounter;
-            result.parsedPages += counter;
-            auto elapsedFlush= std::chrono::high_resolution_clock::now() - startFlush;
-            qDebug() << "Flush processed in: " << std::chrono::duration_cast<std::chrono::microseconds>(elapsedFlush).count();
-        }
-        processedFics+=parser.processedStuff.size();
-
-        elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-        qDebug() << "Written into Db in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    }while(pageQueue.pending || pageQueue.data.size() > 0);
-    fandomsInterface->RecalculateFandomStats(updatedFandoms.values());
-    result.finished = true;
-    transaction.finalize();
-    StopPageWorker();
-    ShutdownProgressbar();
-    EnableAllLoadButtons();
-    return result;
 }
 
 WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
@@ -2218,6 +2013,7 @@ void MainWindow::AddToProgressLog(QString value)
 {
     ui->edtResults->insertHtml(value);
     ui->edtResults->ensureCursorVisible();
+    QCoreApplication::processEvents();
 }
 
 
@@ -2322,73 +2118,17 @@ bool MainWindow::WarnFullParse()
 void MainWindow::UseFandomTask(PageTaskPtr task)
 {
     TaskProgressGuard guard(this);
-    processedFics = 0;
-    //ui->edtResults->clear();
+    DisableAllLoadButtons();
 
-    if(!task->taskComment .isEmpty())
-        AddToProgressLog(task->taskComment + "<br>");
-    QStringList acquisitioFailures;
-    QList<SubTaskPtr> subsToInsert;
-    for(auto subtask : task->subTasks)
-    {
-        if(subtask->finished)
-            continue;
-        acquisitioFailures.clear();
-        auto urlList= subtask->content->ToDB().split("\n",QString::SkipEmptyParts);
+    QSqlDatabase db = QSqlDatabase::database();
+    FandomLoadProcessor proc(db, fanficsInterface, fandomsInterface, pageTaskInterface);
 
-        FandomParseTask fpt;
-        fpt.cacheMode = task->cacheMode;
-        fpt.pageRetries = subtask->allowedRetries;
-        fpt.parts = urlList;
-        fpt.stopAt = subtask->updateLimit.date();
-        fpt.fandom = subtask->content->CustomData1();
-
-
-        auto result = ProcessFandomSubTask(fpt);
-        task->updatedFics += result.updatedFics;
-        task->addedFics   += result.addedFics;
-        task->skippedFics += result.skippedFics;
-        task->parsedPages += result.parsedPages;
-
-        if(result.failedToAcquirePages)
-        {
-            // need to write pages that we failed to acquire into errors
-            acquisitioFailures +=result.failedParts;
-            subtask->success = false;
-        }
-        else
-            subtask->success = true;
-        subtask->finished = true;
-
-        SubTaskPtr sub;
-        if(acquisitioFailures.size() > 0)
-        {
-            task->success = false;
-            sub = CreateAdditionalSubtask(task);
-        }
-        if(sub)
-        {
-            sub->taskComment = "Failed pages";
-            sub->isValid = true;
-            auto content = sub->content;
-            auto cast = static_cast<SubTaskFandomContent*>(content.data());
-            cast->fandom = subtask->content->CustomData1();
-            cast->urlLinks = acquisitioFailures;
-            subsToInsert.push_back(sub);
-        }
-        fandomsInterface->SetLastUpdateDate(subtask->content->CustomData1(), QDateTime::currentDateTimeUtc().date());
-    }
-    if(subsToInsert.size() == 0)
-        task->success = true;
-    else
-        task->success =false;
-    for(auto sub: subsToInsert )
-        task->subTasks.push_back(sub);
-    task->finished = true;
-
-    pageTaskInterface->WriteTaskIntoDB(task);
+    connect(&proc, &FandomLoadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+    connect(&proc, &FandomLoadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+    connect(&proc, &FandomLoadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
+    proc.Run(task);
+    EnableAllLoadButtons();
 }
-
 
 void MainWindow::CrawlFandom(QString fandomName)
 {
@@ -4052,4 +3792,20 @@ void MainWindow::on_pbComedy_clicked()
     TaskProgressGuard guard(this);
     auto authors = authorsInterface->GetAllAuthors("ffn", true);
     CreateRecListOfHumorProfiles(authors);
+}
+
+void MainWindow::OnUpdatedProgressValue(int value)
+{
+    pbMain->setValue(value);
+}
+
+void MainWindow::OnNewProgressString(QString value)
+{
+    AddToProgressLog(value);
+}
+
+void MainWindow::OnProgressBarRequested(int value)
+{
+    pbMain->setMaximum(value);
+    pbMain->show();
 }

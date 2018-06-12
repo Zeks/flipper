@@ -1,3 +1,18 @@
+/*Flipper is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 
 #include <functional>
@@ -26,4 +41,21 @@ struct TimedAction{
     }
     std::function<void()> action;
     QString actionName;
+};
+
+struct TimeKeeper{
+    TimeKeeper(){
+        times["start"] = std::chrono::high_resolution_clock::now();
+    }
+    void Log(QString value, QString startPoint,  bool inSeconds = false){
+        times[value] = std::chrono::high_resolution_clock::now();
+        if(!inSeconds)
+            qDebug() << "Time spent in " << value << " "
+                     << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - times[startPoint]).count();
+        else
+            qDebug() << "Time spent in " << value << " "
+                     << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - times[startPoint]).count();
+    }
+    void Track(QString value){times[value] = std::chrono::high_resolution_clock::now();}
+    QHash<QString, std::chrono::steady_clock::time_point> times;
 };

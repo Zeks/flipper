@@ -21,106 +21,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QByteArray>
 #include <QScopedPointer>
 #include <QSqlDatabase>
+#include <QThread>
 #include "GlobalHeaders/SingletonHolder.h"
+#include "include/tasks/fandom_task_processor.h"
+#include "include/webpage.h"
 #include "ECacheMode.h"
 #include <atomic>
 
 
-enum class EPageType
-{
-    hub_page = 0,
-    sorted_ficlist = 1,
-    author_profile = 2,
-    fic_page = 3
-};
-
-enum class EPageSource
-{
-    none = -1,
-    network = 0,
-    cache = 1,
-};
-
-struct FandomParseTask{
-    FandomParseTask() = default;
-    FandomParseTask(QStringList parts,
-                    QDate stopAt,
-                    ECacheMode cacheMode,
-                    int pageRetries = 3){
-        this->stopAt = stopAt;
-        this->cacheMode = cacheMode;
-        this->pageRetries = pageRetries;
-        this->parts = parts;
-    }
-    QString fandom;
-    QStringList parts;
-    int pageRetries = 3;
-    QDate stopAt;
-    ECacheMode cacheMode = ECacheMode::dont_use_cache;
-
-};
-
-
-struct FandomParseTaskResult
-{
-    FandomParseTaskResult(){}
-    bool finished = false;
-    bool failedToAcquirePages = false;
-    bool criticalErrors = false;
-    int parsedPages = 0;
-    int addedFics = 0;
-    int skippedFics = 0;
-    int addedAuthors= 0;
-    int updatedFics= 0;
-    int updatedAuthors= 0;
-    QStringList failedParts;
-};
 
 class PageThreadWorker;
-struct WebPage
-{
-    friend class PageThreadWorker;
-    QString url;
-    QDateTime generated;
-    QDate minFicDate;
-    //QString stringContent;
-    QString content;
-    QString previousUrl;
-    QString nextUrl;
-    QStringList referencedFics;
-    QString fandom;
-    bool crossover;
-    EPageType type;
-    bool isValid = false;
-    bool failedToAcquire = false;
-    EPageSource source = EPageSource::none;
-    QString error;
-    QString comment;
-    bool isLastPage = false;
-    bool isFromCache = false;
-    int pageIndex = 0;
-    int id = -1;
-    QString LoadedIn() {
-        QString decimal = QString::number(loadedIn/1000000);
-        int offset = decimal == "0" ? 0 : decimal.length();
-        QString partial = QString::number(loadedIn).mid(offset,1);
-        return decimal + "." + partial;}
-private:
-    int loadedIn = 0;
-};
 
-struct PageQueue{
-    bool pending = true;
-    QList<WebPage> data;
-};
 
-class  PageResult{
-public:
-    PageResult() = default;
-    PageResult(WebPage page, bool _finished): finished(_finished),data(page){}
-    bool finished = false;
-    WebPage data;
-};
+
+
+
 
 
 class PageGetterPrivate;
@@ -167,6 +82,5 @@ public slots:
 signals:
     void pageResult(PageResult);
 };
-
 
 BIND_TO_SELF_SINGLE(PageManager);
