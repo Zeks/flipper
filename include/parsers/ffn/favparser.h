@@ -66,3 +66,4 @@ public:
     QSet<int> knownSlashFics;
 };
 
+QString ParseAuthorNameFromFavouritePage(QString data);

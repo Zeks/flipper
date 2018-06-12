@@ -4,39 +4,39 @@ import "BaseDefines.qbs" as App
 
 
 App{
-name: "flipper"
-consoleApplication:false
-type:"application"
-qbsSearchPaths: sourceDirectory + "/modules"
-Depends { name: "Qt.core"}
-Depends { name: "Qt.sql" }
-Depends { name: "Qt.core" }
-Depends { name: "Qt.widgets" }
-Depends { name: "Qt.network" }
-Depends { name: "Qt.gui" }
+    name: "flipper"
+    consoleApplication:false
+    type:"application"
+    qbsSearchPaths: sourceDirectory + "/modules"
+    Depends { name: "Qt.core"}
+    Depends { name: "Qt.sql" }
+    Depends { name: "Qt.core" }
+    Depends { name: "Qt.widgets" }
+    Depends { name: "Qt.network" }
+    Depends { name: "Qt.gui" }
 
-Depends { name: "Qt.quick" }
-Depends { name: "Qt.concurrent" }
-Depends { name: "Qt.quickwidgets" }
-Depends { name: "cpp" }
-Depends { name: "UniversalModels" }
-Depends { name: "logger" }
+    Depends { name: "Qt.quick" }
+    Depends { name: "Qt.concurrent" }
+    Depends { name: "Qt.quickwidgets" }
+    Depends { name: "cpp" }
+    Depends { name: "UniversalModels" }
+    Depends { name: "logger" }
 
-cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY",
-                          //"QT_QML_DEBUG"
-                         // ,"QT_LOGGING_TO_CONSOLE=1"
-                         ])
-cpp.includePaths: [
-                sourceDirectory,
-                sourceDirectory + "/include",
-                sourceDirectory + "/libs",
-                sourceDirectory + "/third_party/zlib",
-                sourceDirectory + "/libs/Logger/include",
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY",
+                              //"QT_QML_DEBUG"
+                              // ,"QT_LOGGING_TO_CONSOLE=1"
+                             ])
+    cpp.includePaths: [
+        sourceDirectory,
+        sourceDirectory + "/include",
+        sourceDirectory + "/libs",
+        sourceDirectory + "/third_party/zlib",
+        sourceDirectory + "/libs/Logger/include",
 
 
-]
+    ]
 
-files: [
+    files: [
         "forms.qrc",
         "icons.qrc",
         "include/Interfaces/authors.h",
@@ -52,6 +52,7 @@ files: [
         "include/Interfaces/recommendation_lists.h",
         "include/Interfaces/tags.h",
         "include/container_utils.h",
+        "include/generic_utils.h",
         "include/pageconsumer.h",
         "include/pagetask.h",
         "include/db_fixers.h",
@@ -66,6 +67,7 @@ files: [
         "src/actionprogress.cpp",
         "include/actionprogress.h",
         "UI/actionprogress.ui",
+        "src/generic_utils.cpp",
         "src/parsers/ffn/fandomindexparser.cpp",
         "include/mainwindow.h",
         "include/pagegetter.h",
@@ -122,7 +124,11 @@ files: [
         "src/mainwindow.cpp",
         "src/tagwidget.cpp",
         "src/fanficdisplay.cpp",
+        "src/page_utils.cpp",
+        "include/page_utils.h",
+        "src/environment.cpp",
+        "include/environment.h",
     ]
 
-cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]
+    cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]
 }

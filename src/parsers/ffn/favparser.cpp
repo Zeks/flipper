@@ -634,3 +634,15 @@ void FavouriteStoryParser::GetTitleAndUrl(core::Section & section, int& currentP
 }
 
 
+QString ParseAuthorNameFromFavouritePage(QString data)
+{
+    QString result;
+    QRegExp rx("title>([A-Za-z0-9.\\-\\s']+)(?=\\s|\\sFanFiction)");
+    int index = rx.indexIn(data);
+    if(index == -1)
+        return result;
+    result = rx.cap(1);
+    if(result.trimmed().isEmpty())
+        result = rx.cap(1);
+    return result;
+}

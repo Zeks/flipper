@@ -47,6 +47,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/fandom_task_processor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
+#include "include/environment.h"
+
 #include <QMovie>
 
 class QSortFilterProxyModel;
@@ -55,16 +57,7 @@ class QQuickView;
 class QStringListModel;
 class ActionProgress;
 class FFNFandomIndexParserBase;
-namespace interfaces{
-class Fandoms;
-class Fanfics;
-class Authors;
-class Tags;
-class Genres;
-class PageTask;
 
-class RecommendationLists;
-}
 namespace database {
 class IDBWrapper;
 }
@@ -120,18 +113,8 @@ public:
     // used to indicate failure of the performed action to the user
     void SetFailureStatus();
 
-    // the interface classes used to avoid direct database access in the application
-    QSharedPointer<interfaces::Fandoms> fandomsInterface;
-    QSharedPointer<interfaces::Fanfics> fanficsInterface;
-    QSharedPointer<interfaces::Authors> authorsInterface;
-    QSharedPointer<interfaces::Tags> tagsInterface;
-    QSharedPointer<interfaces::Genres> genresInterface;
-    QSharedPointer<interfaces::PageTask> pageTaskInterface;
-    QSharedPointer<interfaces::RecommendationLists> recsInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
-    QSharedPointer<database::IDBWrapper> pageCacheInterface;
-    QSharedPointer<database::IDBWrapper> tasksInterface;
 
+    CoreEnvironment env;
 
 private:
 
@@ -301,6 +284,8 @@ private:
 
     Ui::MainWindow *ui;
 
+
+
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
 
     bool cancelCurrentTaskPressed = false;
@@ -327,9 +312,7 @@ private:
 
     PageThreadWorker* worker = nullptr;
     PageQueue pageQueue; // collects data sent from PageThreadWorker
-    core::DefaultQueryBuilder queryBuilder; // builds search queries
-    core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
-    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
+
 
     std::function<void(int)> callProgress; // temporary shit while I decouple page getter from ui
     std::function<void(void)> cleanupEditor; // temporary shit while I decouple page getter from ui

@@ -59,9 +59,9 @@ int main(int argc, char *argv[])
     //dbfix::PassSlashDataIntoNewTable(mainDb);
 
     MainWindow w;
-    w.dbInterface = dbInterface;
-    w.pageCacheInterface = pageCacheInterface;
-    w.tasksInterface = tasksInterface;
+    w.env.interfaces.db = dbInterface;
+    w.env.interfaces.pageCache= pageCacheInterface;
+    w.env.interfaces.tasks = tasksInterface;
     w.InitInterfaces();
     w.Init();
     w.InitConnections();
