@@ -159,8 +159,7 @@ private:
     // to separate stuff into pages
     int GetResultCount();
 
-    // used to build the actual query to be used in the database from filters
-    QSqlQuery BuildQuery(bool countOnly = false);
+
 
     // used to fill fandom database with new data from web
     void UpdateFandomList(UpdateFandomTask);

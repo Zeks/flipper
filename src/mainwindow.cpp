@@ -221,7 +221,6 @@ void MainWindow::InitConnections()
 {
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
     connect(ui->pbOpenID, SIGNAL(clicked(bool)), this, SLOT(OnOpenAuthorListByID()));
-    //connect(ui->pbFormattedList, &QPushButton::clicked, this, &MainWindow::OnDoFormattedListByFandoms);
     connect(ui->pbGetFavouriteLinks, &QPushButton::clicked, this, &MainWindow::OnGetAuthorFavouritesLinks);
     connect(ui->pbPauseTask, &QPushButton::clicked, [&](){
         cancelCurrentTaskPressed = true;
@@ -450,9 +449,7 @@ void MainWindow::SetupFanficTable()
 
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
 
-    //connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
-    //connect(childObject, SIGNAL(tagClicked(QVariant, QVariant, QVariant)), this, SLOT(OnTagClicked(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
@@ -572,35 +569,6 @@ WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool auto
 }
 
 
-
-inline core::Fic LoadFanfic(QSqlQuery& q)
-{
-    core::Fic result;
-    result.id = q.value("ID").toInt();
-    result.fandom = q.value("FANDOM").toString();
-    result.author = core::Author::NewAuthor();
-    result.author->name = q.value("AUTHOR").toString();
-    result.title = q.value("TITLE").toString();
-    result.summary = q.value("SUMMARY").toString();
-    result.genreString = q.value("GENRES").toString();
-    result.charactersFull = q.value("CHARACTERS").toString().replace("not found", "");
-    result.rated = q.value("RATED").toString();
-    auto published = q.value("PUBLISHED").toDateTime();
-    auto updated   = q.value("UPDATED").toDateTime();
-    result.published = published;
-    result.updated= updated;
-    result.SetUrl("ffn",q.value("URL").toString());
-    result.tags = q.value("TAGS").toString();
-    result.wordCount = q.value("WORDCOUNT").toString();
-    result.favourites = q.value("FAVOURITES").toString();
-    result.reviews = q.value("REVIEWS").toString();
-    result.chapters = QString::number(q.value("CHAPTERS").toInt() + 1);
-    result.complete= q.value("COMPLETE").toInt();
-    result.atChapter = q.value("AT_CHAPTER").toInt();
-    result.recommendations= q.value("SUMRECS").toInt();
-    return result;
-}
-
 void MainWindow::LoadData()
 {
     if(ui->cbMinWordCount->currentText().trimmed().isEmpty())
@@ -619,61 +587,17 @@ void MainWindow::LoadData()
         windowObject->setProperty("havePagesAfter", env.filter.recordLimit > 0 && env.sizeOfCurrentQuery > env.filter.recordLimit);
 
     }
-
-    auto q = BuildQuery();
-    q.setForwardOnly(true);
-    q.exec();
-    qDebug().noquote() << q.lastQuery();
-    if(q.lastError().isValid())
-    {
-        qDebug() << "Error loading data:" << q.lastError();
-        qDebug().noquote() << q.lastQuery();
-    }
     ui->edtResults->setOpenExternalLinks(true);
     ui->edtResults->clear();
-    //ui->edtResults->setFont(QFont("Verdana", 20));
-    int counter = 0;
     ui->edtResults->setUpdatesEnabled(false);
-    env.fanfics.clear();
-    //ui->edtResults->insertPlainText(q.lastQuery());
-    env.currentLastFanficId = -1;
-    auto rx = GetSlashRegex();
-    CommonRegex regexToken;
-    regexToken.Init();
-    //regexToken.Log();
-    while(q.next())
-    {
-        counter++;
-        bool allow = true;
-        auto fic = LoadFanfic(q);
-        QRegularExpression slashRx(rx, QRegularExpression::CaseInsensitiveOption);
-        SlashPresence slashToken;
-        if(ui->chkInvertedSlashFilter->isChecked() || ui->chkOnlySlash->isChecked())
-            slashToken = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);
 
-        bool applyLocalSlashFilter = ui->chkApplyLocalSlashFilter->isChecked();
-        if(applyLocalSlashFilter && ui->chkInvertedSlashFilterLocal->isChecked())
-        {
-            if(slashToken.IsSlash())
-                allow = false;
-        }
-        if(applyLocalSlashFilter && ui->chkOnlySlashLocal->isChecked())
-        {
-            if(!slashToken.IsSlash())
-                allow = false;
-        }
-        if(allow)
-            env.fanfics.push_back(fic);
-        if(counter%10000 == 0)
-            qDebug() << "tick " << counter/1000;
-        //qDebug() << "tick " << counter;
-    }
-    if(env.fanfics.size() > 0)
-        env.currentLastFanficId = env.fanfics.last().id;
-
-    qDebug() << "loaded fics:" << counter;
-
-
+    SlashFilterState slashState{
+                         ui->chkApplyLocalSlashFilter->isChecked(),
+                         ui->chkInvertedSlashFilter->isChecked(),
+                         ui->chkOnlySlash->isChecked(),
+                         ui->chkInvertedSlashFilterLocal->isChecked(),
+                         ui->chkOnlySlashLocal->isChecked()};
+    env.LoadData(slashState);
 }
 
 int MainWindow::GetResultCount()
@@ -681,7 +605,7 @@ int MainWindow::GetResultCount()
     if(ui->chkRandomizeSelection->isChecked())
         return ui->sbMaxRandomFicCount->value()-1;
 
-    auto q = BuildQuery(true);
+    auto q = env.BuildQuery(true);
     q.setForwardOnly(true);
     if(!database::puresql::ExecAndCheck(q))
         return -1;
@@ -690,28 +614,7 @@ int MainWindow::GetResultCount()
     return result;
 }
 
-QSqlQuery MainWindow::BuildQuery(bool countOnly)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    if(countOnly)
-        env.currentQuery = env.countQueryBuilder.Build(env.filter);
-    else
-        env.currentQuery = env.queryBuilder.Build(env.filter);
-    QSqlQuery q(db);
-    q.prepare(env.currentQuery->str);
-    auto it = env.currentQuery->bindings.begin();
-    auto end = env.currentQuery->bindings.end();
-    while(it != end)
-    {
-        if(env.currentQuery->str.contains(it.key()))
-        {
-            qDebug() << it.key() << " " << it.value();
-            q.bindValue(it.key(), it.value());
-        }
-        ++it;
-    }
-    return q;
-}
+
 
 void MainWindow::ProcessTagsIntoGui()
 {

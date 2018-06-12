@@ -21,7 +21,15 @@ class PageTask;
 class RecommendationLists;
 }
 
+struct SlashFilterState
+{
+    bool applyLocalEnabled;
+    bool invertedEnabled;
+    bool slashOnlyEnabled;
+    bool invertedLocalEnabled;
+    bool slashOnlyLocalEnabled;
 
+};
 
 class CoreEnvironment
 {
@@ -41,6 +49,10 @@ public:
     };
     void Init();
     static void InitMetatypes();
+    // used to build the actual query to be used in the database from filters
+    QSqlQuery BuildQuery(bool countOnly = false);
+    inline core::Fic LoadFanfic(QSqlQuery& q);
+    void LoadData(SlashFilterState);
 
     core::DefaultQueryBuilder queryBuilder; // builds search queries
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
