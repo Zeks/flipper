@@ -118,7 +118,7 @@ public:
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 
-    int lastI = 0; // used in slash filtering
+
 
     // in case of non-gui applications these will just fire without an effect and its correct
 signals:

@@ -2296,7 +2296,7 @@ DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField,
 {
     QString qs = QString("update AuthorFavouritesStatistics set slash_factor  = "
                          " cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses where %1 = 1) ff on ff.fic_id  = rs.fic_id) as float) "
-                         " /cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses) ff on ff.fic_id  = rs.fic_id) as float)");
+                         "/cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses)              ff on ff.fic_id  = rs.fic_id) as float)");
     qs = qs.arg(usedField);
     return SqlContext<bool>(db, qs)();
 }

@@ -535,6 +535,8 @@ PageTaskPtr CoreEnvironment::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms
     proc.Run(result);
     return result;
 }
+
+
 void CoreEnvironment::Log(QString value)
 {
     qDebug() << value;

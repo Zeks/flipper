@@ -248,15 +248,10 @@ private:
 
     void ReprocessAllAuthorsV2();
     void ReprocessAllAuthorsJustSlash(QString fieldUsed);
-    void DetectSlashForEverything();
     void DetectSlashForEverythingV2();
 
-    inline void AddToSlashHash(QList<core::AuthorPtr> authors,
-                               QSet<int> knownSlashFics,
-                               QHash<int, int>& slashHash, bool checkRx = true);
     inline void AddToCountingHash(QList<core::AuthorPtr> authors, QHash<int, int>& countingHash, QHash<int, double> &valueHash, QHash<int, double> &totalHappiness, QHash<int, double> &totalSlash);
     inline void AddToHumorHash(QList<core::AuthorPtr> authors,QHash<int, int>& countingHash);
-    void CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr> authors);
     void CreateListOfHumorCandidates(QList<core::AuthorPtr> authors);
     void CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors);
 
@@ -465,7 +460,7 @@ private slots:
 
     void on_pbDoSlashFullCycle_clicked();
 
-    void on_pbOneMoreCycle_clicked();
+    //void on_pbOneMoreCycle_clicked();
 
     void on_pbExcludeFandomFromSlashFiltering_clicked();
 

@@ -76,6 +76,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/fandom_task_processor.h"
 #include "include/tasks/author_task_processor.h"
 #include "include/tasks/author_stats_processor.h"
+#include "include/tasks/slash_task_processor.h"
 #include "include/page_utils.h"
 #include "include/environment.h"
 #include "include/generic_utils.h"
@@ -1418,67 +1419,19 @@ void MainWindow::ReprocessAllAuthorsJustSlash(QString fieldUsed)
     env.interfaces.authors->CalculateSlashStatisticsPercentages(fieldUsed);
 }
 
-void MainWindow::DetectSlashForEverything()
-{
-    CommonRegex rx;
-    rx.Init();
-
-    TaskProgressGuard guard(this);
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-
-    auto ficList = env.interfaces.recs->GetAllFicIDs(env.interfaces.recs->GetListIdForName("SlashCleaned"));
-    QSet<int> slashFics;
-    slashFics.reserve(ficList.size());
-    for(auto fic: ficList)
-        slashFics.insert(fic);
-    env.interfaces.fanfics->ReprocessFics("", "ffn", true, [&](int id){
-        auto fic = env.interfaces.fanfics->GetFicById(id);
-        auto slash = rx.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
-        bool isSlash = slashFics.contains(id) || slash.IsSlash();
-        bool slashType = slash.IsSlash() ? 0 : 1;
-        if(isSlash)
-            env.interfaces.fanfics->AssignSlashForFic(id, slashType);
-    });
-    transaction.finalize();
-}
-
 void MainWindow::DetectSlashForEverythingV2()
 {
     TaskProgressGuard guard(this);
     QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-    CommonRegex rx;
-    rx.Init();
-    env.interfaces.fanfics->ProcessSlashFicsBasedOnWords( [&](QString summary, QString characters, QString fandoms){
-        auto result = rx.ContainsSlash(summary, characters, fandoms);
-        return result;
-    });
-    transaction.finalize();
+    SlashProcessor slashProcessor(db,
+                                  env.interfaces.fanfics,
+                                  env.interfaces.fandoms,
+                                  env.interfaces.pageTask,
+                                  env.interfaces.authors,
+                                  env.interfaces.recs,
+                                  env.interfaces.db);
+    slashProcessor.AssignSlashKeywordsMetaInfomation(db);
 }
-
-inline void MainWindow::AddToSlashHash(QList<core::AuthorPtr> authors,
-                                       QSet<int> knownNotSlashFics,
-                                       QHash<int, int>& slashHash,
-                                       bool checkRx)
-{
-    CommonRegex rx;
-    rx.Init();
-    for(auto author : authors)
-    {
-        auto fics = env.interfaces.authors->GetFicList(author);
-        for(auto fic : fics)
-        {
-            if(checkRx)
-            {
-                if(knownNotSlashFics.contains(fic))
-                    continue;
-            }
-            slashHash[fic]++;
-        }
-    }
-}
-
 
 inline void MainWindow::AddToCountingHash(QList<core::AuthorPtr> authors,
                                           QHash<int, int>& countingHash,
@@ -1487,15 +1440,11 @@ inline void MainWindow::AddToCountingHash(QList<core::AuthorPtr> authors,
                                           QHash<int, double>& totalSlash)
 {
     QList<double> coeffs ;
-    //coeffs = {0.3, 0.6, 0.8, 1}; //original
     coeffs = {0.2, 0.4, 0.7, 1}; //second
     for(auto author : authors)
     {
         auto fics = env.interfaces.authors->GetFicList(author);
         double listvalue;
-        //        auto logFaves = log2(author->stats.favouriteStats.favourites) ;
-        //        listvalue = logFaves < 1 ? 1 : logFaves;
-        //        listvalue = logFaves > 1.5 ? 1.5 + (logFaves - 1.5)/8. : logFaves;
         listvalue = 1;
 
         for(auto fic : fics)
@@ -1520,130 +1469,6 @@ inline void MainWindow::AddToHumorHash(QList<core::AuthorPtr> authors,QHash<int,
         }
     }
 }
-
-void MainWindow::CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr > authors)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-
-    auto keyWordSlashRepo = env.interfaces.fanfics->GetAllKnownSlashFics();
-    auto keyWordNotSlashRepo = env.interfaces.fanfics->GetAllKnownNotSlashFics();
-
-    QHash<int, QList<core::AuthorPtr>> slashAuthors;
-    QList<core::AuthorPtr> notSlashAuthors;
-
-
-    for(auto author : authors)
-    {
-        auto& stats = author->stats.favouriteStats;
-        if(stats.slashRatio > 0.7)
-            slashAuthors[0].push_back(author);
-        if(stats.slashRatio > 0.35)
-            slashAuthors[1].push_back(author);
-
-        // will need to inject a minimal favourite count clause for fics that are present just once
-        // catching odd slash in other fandoms which should be smut instead
-        if(stats.slashRatio > 0.15)
-            slashAuthors[2].push_back(author);
-
-        if(stats.slashRatio < 0.01 && stats.favourites > 5)
-            notSlashAuthors.push_back(author);
-    }
-
-    // first is slash certainty, 0 is the highest
-    // second is fic id
-    // third is fic count
-    qDebug() << "slash 2 authors: " << slashAuthors[2].size();
-    QHash<int, QHash<int, int>> slashFics;
-    QHash<int, int> notSlashFics;
-
-    TimedAction processSlash("ProcSlash", [&](){
-        AddToSlashHash(slashAuthors[0], keyWordNotSlashRepo, slashFics[0]);
-        AddToSlashHash(slashAuthors[1], keyWordNotSlashRepo, slashFics[1]);
-        AddToSlashHash(slashAuthors[2], keyWordNotSlashRepo, slashFics[2]);
-    });
-    processSlash.run();
-
-    TimedAction writeSlashLists("WriteSlash", [&](){
-        env.interfaces.recs->CreateRecommendationList("SlashSure", slashFics[0]);
-        env.interfaces.recs->CreateRecommendationList("SlashProbably", slashFics[1]);
-        env.interfaces.recs->CreateRecommendationList("SlashMaybe", slashFics[2]);
-    });
-    writeSlashLists.run();
-    TimedAction processNotSlash("ProcNotSlash", [&](){
-        AddToSlashHash(notSlashAuthors, keyWordSlashRepo, notSlashFics, false);
-    });
-    processNotSlash.run();
-    QList<int> intersection;
-    intersection.reserve(50000);
-    //    CommonRegex rx;
-    //    rx.Init();
-
-    // sufficient matches depends on if a fic is present in lists 0 and 1
-    // 0 - 2 matches or more requires 7 non slash
-    // 1 - 5 matches or more requires 5 non slash
-    QSet<int> inSoleLargeLists = env.interfaces.fanfics->GetSingularFicsInLargeButSlashyLists();
-    qDebug() << "Size of additional exclusions: " << inSoleLargeLists.size();
-    int sufficientMatchesCount = 3;
-    qDebug() << "Slash 2 size before filtering: " << slashFics[2].size();
-    auto TRepo = env.interfaces.fanfics->GetAllKnownFicIDs(" rated <> 'M' ");
-    int exclusionTriggers = 0;
-    TimedAction intersect("Intersect", [&](){
-        for(const auto& fic: slashFics[2].keys())
-        {
-
-            if(slashFics[0][fic] >= 2)
-                sufficientMatchesCount = 7;
-            else if(slashFics[1][fic] >= 5)
-                sufficientMatchesCount = 5;
-            //auto ficPtr = env.interfaces.fanfics->GetFicById(fic);
-            bool soleTMatch = (TRepo.contains(fic) && slashFics[2][fic]==1);
-            bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
-            bool sufficientMatches = notSlashFics[fic] >= static_cast<double>(sufficientMatchesCount)/neededNotslashMatchesCoeff;
-            if(fic == 86768)
-            {
-                qDebug() << "Sole T: " << soleTMatch << " CantReliably: " << cantTellReliably << " Sufficient matches: "  << sufficientMatches;
-            }
-            bool exclusionTriggered = inSoleLargeLists.contains(fic);
-            if(exclusionTriggered)
-                exclusionTriggers++;
-            if(!keyWordSlashRepo.contains(fic) && (exclusionTriggered || cantTellReliably || soleTMatch || sufficientMatches))
-                intersection.push_back(fic);
-            else
-            {
-                bool sufficientMatches = notSlashFics[fic] >= 5;
-            }
-        }
-    });
-    intersect.run();
-    qDebug() << "Additional exclusion triggered: " << exclusionTriggers << " times";
-    qDebug() << "Intersection size: " << intersection.size();
-    //qDebug() << intersection;
-    QHash<int, int> filteredSlashFics;
-
-    TimedAction filter("Fill Intersection", [&](){
-        for(auto fic : intersection)
-        {
-            filteredSlashFics[fic]=slashFics[2][fic];
-            slashFics[2].remove(fic);
-        }
-    });
-    filter.run();
-    qDebug() << "Slash 2 size after filtering: " << slashFics[2].size();
-    qDebug() << "Filtered size after filtering: " << filteredSlashFics.size();
-
-    env.interfaces.recs->CreateRecommendationList("SlashCleaned", slashFics[2]);
-    env.interfaces.recs->CreateRecommendationList("SlashFilteredOut", filteredSlashFics);
-
-
-    transaction.finalize();
-    qDebug () << "finished";
-    // I can create a recommendation list from this
-
-}
-
-
-
 
 void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
 {
@@ -1810,28 +1635,14 @@ void MainWindow::CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors)
 void MainWindow::DoFullCycle()
 {
     QSqlDatabase db = QSqlDatabase::database();
-    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-    {
-        database::Transaction transaction(db);
-        DetectSlashForEverythingV2();
-
-        ReprocessAllAuthorsJustSlash("keywords_pass_result");
-        transaction.finalize();
-    }
-    for(int i = 1; i < ui->sbSlashPasses->value()+1; i++)
-    {
-        {
-            database::Transaction transaction(db);
-            auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-            CreateListOfSlashCandidates(i, authors);
-            env.interfaces.fanfics->AssignIterationOfSlash("pass_" + QString::number(i));
-            ReprocessAllAuthorsJustSlash("pass_" + QString::number(i));
-            transaction.finalize();
-            env.lastI = i;
-        }
-
-    }
-
+    SlashProcessor slashProcessor(db,
+                                  env.interfaces.fanfics,
+                                  env.interfaces.fandoms,
+                                  env.interfaces.pageTask,
+                                  env.interfaces.authors,
+                                  env.interfaces.recs,
+                                  env.interfaces.db);
+    slashProcessor.DoFullCycle(db, ui->sbSlashPasses->value());
 }
 
 void MainWindow::UseAuthorTask(PageTaskPtr task)
@@ -2533,7 +2344,15 @@ void MainWindow::OnOpenAuthorListByID()
 void MainWindow::on_pbCreateSlashList_clicked()
 {
     auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-    CreateListOfSlashCandidates(1, authors);
+    QSqlDatabase db = QSqlDatabase::database();
+    SlashProcessor slashProcessor(db,
+                                  env.interfaces.fanfics,
+                                  env.interfaces.fandoms,
+                                  env.interfaces.pageTask,
+                                  env.interfaces.authors,
+                                  env.interfaces.recs,
+                                  env.interfaces.db);
+    slashProcessor.CreateListOfSlashCandidates(1, authors);
 }
 
 void MainWindow::on_pbProcessSlash_clicked()
@@ -2552,17 +2371,17 @@ void MainWindow::on_pbDoSlashFullCycle_clicked()
     transaction.finalize();
 }
 
-void MainWindow::on_pbOneMoreCycle_clicked()
-{
-    env.lastI = env.lastI + 1;
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-    CreateListOfSlashCandidates(env.lastI, authors);
-    env.interfaces.fanfics->AssignIterationOfSlash("pass_" + QString::number(env.lastI));
-    ReprocessAllAuthorsJustSlash("pass_" + QString::number(env.lastI));
-    transaction.finalize();
-}
+//void MainWindow::on_pbOneMoreCycle_clicked()
+//{
+//    env.lastI = env.lastI + 1;
+//    QSqlDatabase db = QSqlDatabase::database();
+//    database::Transaction transaction(db);
+//    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
+//    CreateListOfSlashCandidates(env.lastI, authors);
+//    env.interfaces.fanfics->AssignIterationOfSlash("pass_" + QString::number(env.lastI));
+//    ReprocessAllAuthorsJustSlash("pass_" + QString::number(env.lastI));
+//    transaction.finalize();
+//}
 
 
 
