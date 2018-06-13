@@ -138,6 +138,8 @@ App{
         "include/tasks/slash_task_processor.h",
         "src/tasks/humor_task_processor.cpp",
         "include/tasks/humor_task_processor.h",
+        "src/tasks/recommendations_reload_precessor.cpp",
+        "include/tasks/recommendations_reload_precessor.h",
     ]
 
     cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]

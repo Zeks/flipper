@@ -78,6 +78,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/author_stats_processor.h"
 #include "include/tasks/slash_task_processor.h"
 #include "include/tasks/humor_task_processor.h"
+#include "include/tasks/recommendations_reload_precessor.h"
 #include "include/page_utils.h"
 #include "include/environment.h"
 #include "include/generic_utils.h"
@@ -1523,85 +1524,21 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
 
-    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
-    auto recList = env.interfaces.recs->GetCurrentRecommendationList();
-    auto authors = env.interfaces.recs->GetAuthorsForRecommendationList(recList);
-    pbMain->setMaximum(authors.size());
-    pbMain->show();
     pbMain->setValue(0);
     pbMain->setTextVisible(true);
     pbMain->setFormat("%v");
 
-    QSet<QString> fandoms;
-    QList<core::FicRecommendation> recommendations;
-    auto fanficsInterface = env.interfaces.fanfics;
-    auto authorsInterface = env.interfaces.authors;
-    auto fandomsInterface = env.interfaces.fandoms;
-    auto job = [fanficsInterface,authorsInterface, fandomsInterface](QString url, QString content){
-        QList<QSharedPointer<core::Fic> > sections;
-        FavouriteStoryParser parser(fanficsInterface);
-        parser.ProcessPage(url, content);
-        return parser;
-    };
+    RecommendationsProcessor reloader(db, env.interfaces.fanfics,
+                                            env.interfaces.fandoms,
+                                            env.interfaces.authors,
+                                            env.interfaces.recs);
 
-    for(auto author: authors)
-    {
-        QList<QSharedPointer<core::Fic>> sections;
-        QList<QFuture<FavouriteStoryParser>> futures;
-        QSet<int> uniqueAuthors;
-        env.interfaces.authors->DeleteLinkedAuthorsForAuthor(author->id);
-        auto startPageRequest = std::chrono::high_resolution_clock::now();
-        auto page = RequestPage(author->url("ffn"), ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
-        auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-        auto startPageProcess = std::chrono::high_resolution_clock::now();
-        FavouriteStoryParser parser(fanficsInterface);
-        //parser.ProcessPage(page.url, page.content);
+    connect(&reloader, &RecommendationsProcessor::resetEditorText, this, &MainWindow::OnResetTextEditor);
+    connect(&reloader, &RecommendationsProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+    connect(&reloader, &RecommendationsProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+    connect(&reloader, &RecommendationsProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
+    reloader.ReloadRecommendationsList(ui->leAuthorUrl->text(), GetCurrentCacheMode());
 
-        auto splittings = page_utils::SplitJob(page.content);
-        for(auto part: splittings.parts)
-        {
-            futures.push_back(QtConcurrent::run(job, page.url, part.data));
-        }
-        for(auto future: futures)
-        {
-            future.waitForFinished();
-        }
-
-        ////
-        FavouriteStoryParser sumParser;
-        sumParser.SetAuthor(author);
-
-        QList<FavouriteStoryParser> finishedParsers;
-        for(auto actualParser: futures)
-            finishedParsers.push_back(actualParser.result());
-
-        FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
-        env.interfaces.authors->UpdateAuthorRecord(author);
-
-        for(auto actualParser: finishedParsers)
-            sumParser.processedStuff+=actualParser.processedStuff;
-        ////
-        {
-            WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
-            if(fanficsInterface->skippedCounter > 0)
-                qDebug() << "skipped: " << env.interfaces.fanfics->skippedCounter;
-        }
-
-        ui->edtResults->clear();
-        ui->edtResults->insertHtml(parser.diagnostics.join(""));
-        pbMain->setValue(pbMain->value()+1);
-        pbMain->setTextVisible(true);
-        pbMain->setFormat("%v");
-        QCoreApplication::processEvents();
-
-        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
-        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-    }
-    env.interfaces.fandoms->RecalculateFandomStats(fandoms.values());
-    transaction.finalize();
-    env.interfaces.fanfics->ClearProcessedHash();
-    //pbMain->hide();
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
     LoadData();
@@ -1841,26 +1778,15 @@ void MainWindow::on_pbAddAuthorToList_clicked()
         QMessageBox::warning(nullptr, "Warning!", "You need at least some name to create a new list. Please enter the list name.");
     }
 
+    RecommendationsProcessor recProcessor(db, env.interfaces.fanfics,
+                                            env.interfaces.fandoms,
+                                            env.interfaces.authors,
+                                            env.interfaces.recs);
 
-    auto listId = env.interfaces.recs->GetListIdForName(ui->leCurrentListName->text().trimmed());
-    if(listId == -1)
-    {
-        QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-        params->name = listName;
-        env.interfaces.recs->LoadListIntoDatabase(params);
-        listId = env.interfaces.recs->GetListIdForName(ui->leCurrentListName->text().trimmed());
-    }
-    auto author = env.interfaces.authors->GetByWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
-    if(!author)
-        return;
-    QSharedPointer<core::AuthorRecommendationStats> stats(new core::AuthorRecommendationStats);
-    stats->authorId = author->id;
-    stats->listId = listId;
-    stats->authorName = author->name;
-    env.interfaces.recs->LoadAuthorRecommendationsIntoList(author->id, listId);
-    env.interfaces.recs->LoadAuthorRecommendationStatsIntoDatabase(listId, stats);
-    env.interfaces.recs->IncrementAllValuesInListMatchingAuthorFavourites(author->id,listId);
-    transaction.finalize();
+    if(!recProcessor.AddAuthorToRecommendationList(ui->leCurrentListName->text().trimmed(), url))
+        return; //todo add warning
+
+
     auto lists = env.interfaces.recs->GetAllRecommendationListNames();
     ui->cbRecGroup->setModel(new QStringListModel(lists));
     if(ui->cbRecGroup->currentText()== ui->leCurrentListName->text().trimmed())
@@ -1874,18 +1800,15 @@ void MainWindow::on_pbRemoveAuthorFromList_clicked()
     database::Transaction transaction(db);
     if(url.isEmpty())
         return;
-    auto author = env.interfaces.authors->GetByWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
-    if(!author)
-        return;
 
-    QString listName = ui->leCurrentListName->text().trimmed();
-    auto listId = env.interfaces.recs->GetListIdForName(listName);
-    if(listId == -1)
-        return;
+    RecommendationsProcessor recProcessor(db, env.interfaces.fanfics,
+                                            env.interfaces.fandoms,
+                                            env.interfaces.authors,
+                                            env.interfaces.recs);
 
-    env.interfaces.recs->RemoveAuthorRecommendationStatsFromDatabase(listId, author->id);
-    env.interfaces.recs->DecrementAllValuesInListMatchingAuthorFavourites(author->id,listId);
-    transaction.finalize();
+    if(!recProcessor.RemoveAuthorFromRecommendationList(ui->leCurrentListName->text().trimmed(), url))
+        return; //todo add warning
+
     if(ui->cbRecGroup->currentText()== ui->leCurrentListName->text().trimmed())
         FillRecommenderListView(true);
 }
