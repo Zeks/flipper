@@ -486,6 +486,33 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
     return author;
 }
 
+PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate,
+                                                ECacheMode cacheMode,
+                                                QString wordCutoff)
+{
+    interfaces.fanfics->ClearProcessedHash();
+    auto fandoms = interfaces.fandoms->ListOfTrackedFandoms();
+    qDebug() << "Tracked fandoms: " << fandoms;
+    emit resetEditorText();
+
+    QStringList nameList;
+    for(auto fandom : fandoms)
+    {
+        if(!fandom)
+            continue;
+        nameList.push_back(fandom->GetName());
+    }
+
+    emit updateInfo(QString("Starting load of tracked %1 fandoms <br>").arg(fandoms.size()));
+    auto result = ProcessFandomsAsTask(fandoms,
+                             "",
+                             true,
+                             cacheMode,
+                             wordCutoff,
+                             forcedDate);
+    return result;
+}
+
 void CoreEnvironment::UseFandomTask(PageTaskPtr task)
 {
     QSqlDatabase db = QSqlDatabase::database();

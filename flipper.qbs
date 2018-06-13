@@ -136,6 +136,8 @@ App{
         "include/tasks/author_stats_processor.h",
         "src/tasks/slash_task_processor.cpp",
         "include/tasks/slash_task_processor.h",
+        "src/tasks/humor_task_processor.cpp",
+        "include/tasks/humor_task_processor.h",
     ]
 
     cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]

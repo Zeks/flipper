@@ -77,6 +77,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/author_task_processor.h"
 #include "include/tasks/author_stats_processor.h"
 #include "include/tasks/slash_task_processor.h"
+#include "include/tasks/humor_task_processor.h"
 #include "include/page_utils.h"
 #include "include/environment.h"
 #include "include/generic_utils.h"
@@ -1328,17 +1329,7 @@ bool MainWindow::WarnFullParse()
 
 PageTaskPtr MainWindow::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms, QString taskComment, bool allowCacheRefresh)
 {
-    ForcedFandomUpdateDate forcedDate;
-    if(ui->chkCutoffLimit->isChecked())
-    {
-        forcedDate.isValid = true;
-        forcedDate.date = ui->deCutoffLimit->date();
-    }
-    if(ui->chkIgnoreUpdateDate->isChecked())
-    {
-        forcedDate.isValid = true;
-        forcedDate.date = QDate();
-    }
+    ForcedFandomUpdateDate forcedDate = CreateForcedUpdateDateFromGUI();
     auto result = env.ProcessFandomsAsTask(fandoms,
                              taskComment,
                              allowCacheRefresh,
@@ -1433,205 +1424,6 @@ void MainWindow::DetectSlashForEverythingV2()
     slashProcessor.AssignSlashKeywordsMetaInfomation(db);
 }
 
-inline void MainWindow::AddToCountingHash(QList<core::AuthorPtr> authors,
-                                          QHash<int, int>& countingHash,
-                                          QHash<int, double>& valueHash,
-                                          QHash<int, double>& totalHappiness,
-                                          QHash<int, double>& totalSlash)
-{
-    QList<double> coeffs ;
-    coeffs = {0.2, 0.4, 0.7, 1}; //second
-    for(auto author : authors)
-    {
-        auto fics = env.interfaces.authors->GetFicList(author);
-        double listvalue;
-        listvalue = 1;
-
-        for(auto fic : fics)
-        {
-            countingHash[fic]++;
-            valueHash[fic] += listvalue;// * pow(author->stats.favouriteStats.moodHappy, 1/2);
-            totalHappiness[fic] += author->stats.favouriteStats.moodHappy;
-            totalSlash[fic] += author->stats.favouriteStats.slashRatio;
-        }
-    }
-}
-
-inline void MainWindow::AddToHumorHash(QList<core::AuthorPtr> authors,QHash<int, int>& countingHash)
-{
-    for(auto author : authors)
-    {
-        auto fics = env.interfaces.authors->GetFicList(author);
-        for(auto fic : fics)
-        {
-            //qDebug() << "adding fic: " << fic;
-            countingHash[fic]++;
-        }
-    }
-}
-
-void MainWindow::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-
-    QHash<int, std::array<double, 21>> authorGenreHash;
-    QHash<int, std::array<double, 21>> ficGenreHash;
-    QHash<int, double> reviewRatios;
-    TimedAction getReviewRatios("get review ratios", [&](){
-        reviewRatios = env.interfaces.fanfics->GetDoubleValueHashForFics("reviewstofavourites");
-    });
-    getReviewRatios.run();
-
-    TimedAction getGenres("getGenres", [&](){
-        authorGenreHash = env.interfaces.authors->GetListGenreData();
-    });
-    getGenres.run();
-    TimedAction getFicGenres("getGenres", [&](){
-        ficGenreHash = env.interfaces.fanfics->GetFullFicGenreData();
-    });
-    getFicGenres.run();
-
-
-
-    QList<core::AuthorPtr> humorAuthors;
-    QList<core::AuthorPtr> validAuthors;
-    for(auto author : authors)
-    {
-        if(author->stats.favouriteStats.favourites < 50)
-            continue;
-        validAuthors.push_back(author);
-
-        auto& stats = author->stats.favouriteStats;
-        if(stats.moodHappy > 0.6 && authorGenreHash[author->id][10] < 0.5)
-            humorAuthors.push_back(author);
-    }
-    QHash<int, int> humorFics;
-    QHash<int, double> humorValues;
-    QHash<int, double> dummyValues;
-    QHash<int, int> allFics;
-    QHash<int, double> totalHappiness;
-    QHash<int, double> totalSlash;
-    QHash<int, double> dummyHappiness;
-    QHash<int, double> dummySlash;
-    TimedAction processHumor("ProcHumor", [&](){
-        AddToCountingHash(humorAuthors,
-                          humorFics,
-                          humorValues,
-                          totalHappiness,
-                          dummySlash);
-        AddToCountingHash(validAuthors, allFics, dummyValues, dummyHappiness,totalSlash );
-    });
-
-    processHumor.run();
-    QHash<int, int> relativeFics;
-    for(auto fic:humorFics.keys())
-    {
-        double averageHappiness = totalHappiness[fic]/static_cast<double>(humorFics[fic]);
-        auto appearanceInHumor = static_cast<double>(humorFics[fic]);
-        double adjustedHumorValue;
-        double logvalue = log10(humorValues[fic]);
-        if(logvalue < 1)
-            logvalue = 1;
-        adjustedHumorValue = static_cast<double>(humorValues[fic])/logvalue;
-        double listSizeAdjuster = 1.;
-        if(appearanceInHumor < 5)
-            listSizeAdjuster = 0.2;
-        else if(appearanceInHumor < 10)
-            listSizeAdjuster = 0.4;
-        else if(appearanceInHumor < 50)
-            listSizeAdjuster = 0.8;
-        else
-            listSizeAdjuster = 1;
-
-        double ficGenreAdjuster = 1;
-        if(ficGenreHash[fic][genres::Humor] < 0.1)
-            ficGenreAdjuster = 0.3;
-        else if(ficGenreHash[fic][genres::Humor] < 0.2)
-            ficGenreAdjuster = 0.75;
-        else if(ficGenreHash[fic][genres::Humor] > 0.4)
-            ficGenreAdjuster = 1.2;
-
-        double genrePreferenceAdjuster = 1;
-        double preferenceValue = ficGenreHash[fic][genres::Humor]  + ficGenreHash[fic][genres::Parody];
-        if(preferenceValue > ficGenreHash[fic][genres::Romance] &&
-                preferenceValue > ficGenreHash[fic][genres::Adventure] &&
-                preferenceValue > ficGenreHash[fic][genres::Drama])
-            genrePreferenceAdjuster = 1.5;
-        if((ficGenreHash[fic][genres::Adventure] - preferenceValue) > 0.2 )
-            genrePreferenceAdjuster = 0.8;
-        if((ficGenreHash[fic][genres::Romance] - preferenceValue) > 0.15 )
-            genrePreferenceAdjuster = 0.5;
-
-        double reviewRatioAdjuster = 1;
-        if(reviewRatios[fic] > 1.5)
-            reviewRatioAdjuster = 0.3;
-
-
-
-
-        relativeFics[fic] = static_cast<int>(100*adjustedHumorValue
-                                             *averageHappiness
-                                             *listSizeAdjuster
-                                             *ficGenreAdjuster
-                                             *genrePreferenceAdjuster
-                                             *reviewRatioAdjuster);
-    }
-
-    TimedAction writeSlashLists("WriteHumor", [&](){
-        env.interfaces.recs->CreateRecommendationList("HumorAlgo", relativeFics);
-    });
-    writeSlashLists.run();
-
-    transaction.finalize();
-    qDebug () << "finished";
-}
-
-void MainWindow::CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
-
-    QHash<int, std::array<double, 21>> authorGenreHash;
-
-    TimedAction getGenres("getGenres", [&](){
-        authorGenreHash = env.interfaces.authors->GetListGenreData();
-    });
-    getGenres.run();
-
-    QList<core::AuthorPtr> humorAuthors;
-    QList<core::AuthorPtr> validAuthors;
-    for(auto author : authors)
-    {
-        if(author->stats.favouriteStats.favourites < 50)
-            continue;
-
-        auto& stats = author->stats.favouriteStats;
-        if(stats.moodHappy > 0.5)
-            humorAuthors.push_back(author);
-    }
-    qDebug() << "humor size: " << humorAuthors.size();
-    QHash<int, int> humorFics;
-    QHash<int, double> humorValues;
-    QHash<int, double> dummyValues;
-    QHash<int, int> allFics;
-    QHash<int, double> totalHappiness;
-    QHash<int, double> totalSlash;
-    QHash<int, double> dummyHappiness;
-    QHash<int, double> dummySlash;
-    TimedAction processHumor("ProcHumor", [&](){
-        AddToHumorHash(humorAuthors,humorFics);
-    });
-    processHumor.run();
-
-    TimedAction writeSlashLists("WriteHumor", [&](){
-        env.interfaces.recs->CreateRecommendationList("HumorRecs", humorFics);
-    });
-    writeSlashLists.run();
-    transaction.finalize();
-    qDebug () << "finished";
-}
-
 void MainWindow::DoFullCycle()
 {
     QSqlDatabase db = QSqlDatabase::database();
@@ -1650,15 +1442,21 @@ void MainWindow::UseAuthorTask(PageTaskPtr task)
     env.UseAuthorTask(task);
 }
 
-//QHash<int, int> MainWindow::CreateListOfNotSlashFics()
-//{
-
-//}
-
-//QHash<int, int> MainWindow::MatchSlashToNotSlash()
-//{
-
-//}
+ForcedFandomUpdateDate MainWindow::CreateForcedUpdateDateFromGUI()
+{
+    ForcedFandomUpdateDate forcedDate;
+    if(ui->chkCutoffLimit->isChecked())
+    {
+        forcedDate.isValid = true;
+        forcedDate.date = ui->deCutoffLimit->date();
+    }
+    if(ui->chkIgnoreUpdateDate->isChecked())
+    {
+        forcedDate.isValid = true;
+        forcedDate.date = QDate();
+    }
+    return forcedDate;
+}
 
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
@@ -1673,21 +1471,9 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
         return;
 
     TaskProgressGuard guard(this);
-    env.interfaces.fanfics->ClearProcessedHash();
-    auto fandoms = env.interfaces.fandoms->ListOfTrackedFandoms();
-    qDebug() << "Tracked fandoms: " << fandoms;
-    ui->edtResults->clear();
-
-    QStringList nameList;
-    for(auto fandom : fandoms)
-    {
-        if(!fandom)
-            continue;
-        nameList.push_back(fandom->GetName());
-    }
-
-    AddToProgressLog(QString("Starting load of tracked %1 fandoms <br>").arg(fandoms.size()));
-    auto task = ProcessFandomsAsTask(fandoms, "", true);
+    auto task = env.LoadTrackedFandoms(CreateForcedUpdateDateFromGUI(),
+                           GetCurrentCacheMode(),
+                           ui->cbWordCutoff->currentText());
 
     QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");
@@ -1705,7 +1491,7 @@ void MainWindow::on_pbLoadPage_clicked()
     //ui->leAuthorUrl->text()
 
     TimedAction action("Full open",[&](){
-        LoadAuthor(ui->leAuthorUrl->text());
+        env.LoadAuthor(ui->leAuthorUrl->text(), QSqlDatabase::database());
     });
     action.run();
     LoadData();
@@ -2371,25 +2157,21 @@ void MainWindow::on_pbDoSlashFullCycle_clicked()
     transaction.finalize();
 }
 
-//void MainWindow::on_pbOneMoreCycle_clicked()
-//{
-//    env.lastI = env.lastI + 1;
-//    QSqlDatabase db = QSqlDatabase::database();
-//    database::Transaction transaction(db);
-//    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-//    CreateListOfSlashCandidates(env.lastI, authors);
-//    env.interfaces.fanfics->AssignIterationOfSlash("pass_" + QString::number(env.lastI));
-//    ReprocessAllAuthorsJustSlash("pass_" + QString::number(env.lastI));
-//    transaction.finalize();
-//}
-
 
 
 void MainWindow::on_pbDisplayHumor_clicked()
 {
     TaskProgressGuard guard(this);
     auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-    CreateListOfHumorCandidates(authors);
+    QSqlDatabase db = QSqlDatabase::database();
+    HumorProcessor humorProcessor(db,
+                                  env.interfaces.fanfics,
+                                  env.interfaces.fandoms,
+                                  env.interfaces.pageTask,
+                                  env.interfaces.authors,
+                                  env.interfaces.recs,
+                                  env.interfaces.db);
+    humorProcessor.CreateListOfHumorCandidates(authors);
 }
 
 void MainWindow::on_pbReloadAuthors_clicked()
@@ -2434,7 +2216,15 @@ void MainWindow::on_pbComedy_clicked()
 {
     TaskProgressGuard guard(this);
     auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-    CreateRecListOfHumorProfiles(authors);
+    QSqlDatabase db = QSqlDatabase::database();
+    HumorProcessor humorProcessor(db,
+                                  env.interfaces.fanfics,
+                                  env.interfaces.fandoms,
+                                  env.interfaces.pageTask,
+                                  env.interfaces.authors,
+                                  env.interfaces.recs,
+                                  env.interfaces.db);
+    humorProcessor.CreateRecListOfHumorProfiles(authors);
 }
 
 void MainWindow::OnUpdatedProgressValue(int value)
@@ -2457,3 +2247,16 @@ void MainWindow::OnProgressBarRequested(int value)
     pbMain->setMaximum(value);
     pbMain->show();
 }
+
+//void MainWindow::on_pbOneMoreCycle_clicked()
+//{
+//    env.lastI = env.lastI + 1;
+//    QSqlDatabase db = QSqlDatabase::database();
+//    database::Transaction transaction(db);
+//    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
+//    CreateListOfSlashCandidates(env.lastI, authors);
+//    env.interfaces.fanfics->AssignIterationOfSlash("pass_" + QString::number(env.lastI));
+//    ReprocessAllAuthorsJustSlash("pass_" + QString::number(env.lastI));
+//    transaction.finalize();
+//}
+

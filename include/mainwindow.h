@@ -250,13 +250,13 @@ private:
     void ReprocessAllAuthorsJustSlash(QString fieldUsed);
     void DetectSlashForEverythingV2();
 
-    inline void AddToCountingHash(QList<core::AuthorPtr> authors, QHash<int, int>& countingHash, QHash<int, double> &valueHash, QHash<int, double> &totalHappiness, QHash<int, double> &totalSlash);
-    inline void AddToHumorHash(QList<core::AuthorPtr> authors,QHash<int, int>& countingHash);
     void CreateListOfHumorCandidates(QList<core::AuthorPtr> authors);
     void CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors);
 
     void DoFullCycle();
     void UseAuthorTask(PageTaskPtr);
+    ForcedFandomUpdateDate CreateForcedUpdateDateFromGUI();
+
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
 

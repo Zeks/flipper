@@ -100,6 +100,8 @@ public:
 
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
 
+    PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
+
     core::DefaultQueryBuilder queryBuilder; // builds search queries
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
