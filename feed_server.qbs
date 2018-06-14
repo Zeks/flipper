@@ -1,13 +1,14 @@
 import qbs 1.0
 import qbs.Process
 import "BaseDefines.qbs" as App
+import "Precompiled.qbs" as Precompiled
 
 
 App{
     name: "feed_server"
     consoleApplication:false
     type:"application"
-    qbsSearchPaths: sourceDirectory + "/modules"
+    qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]
     Depends { name: "Qt.core"}
     Depends { name: "Qt.sql" }
     Depends { name: "Qt.core" }
@@ -16,10 +17,18 @@ App{
     Depends { name: "Qt.concurrent" }
     Depends { name: "cpp" }
     Depends { name: "logger" }
+    Depends { name: "proto_generation" }
+    Depends { name: "grpc_generation" }
+    Depends { name: "grpc_generation" }
+    Depends { name: "projecttype" }
+
+    Precompiled{condition:conditionals.usePrecompiledHeader}
+    cpp.minimumWindowsVersion: "6.0"
 
     cpp.defines: base.concat(["L_LOGGER_LIBRARY"])
     cpp.includePaths: [
         sourceDirectory,
+        sourceDirectory + "/../",
         sourceDirectory + "/include",
         sourceDirectory + "/libs",
         sourceDirectory + "/third_party/zlib",
@@ -66,5 +75,27 @@ App{
         "include/pagetask.h",
     ]
 
-    cpp.staticLibraries: ["logger", "zlib", "quazip"]
+    cpp.staticLibraries: {
+        var libs = ["UniversalModels", "logger", "quazip"]
+        libs = libs.concat(conditionals.zlib)
+        if(qbs.toolchain.contains("msvc"))
+            libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
+        if(conditionals.grpc)
+            libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
+        return libs
+    }
+
+    Group{
+        name:"grpc files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        grpc_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        grpc_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        grpc_generation.toolchain : qbs.toolchain
+        files: [
+            "proto/filter.proto",
+        ]
+        fileTags: ["grpc", "proto"]
+    }
 }

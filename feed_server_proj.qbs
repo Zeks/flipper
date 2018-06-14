@@ -6,6 +6,7 @@ Project {
     name: "feed_proj"
     references: [
         "feed_server.qbs",
+        "core_condition.qbs",
         "libs/Logger/logger.qbs",
     ]
 }

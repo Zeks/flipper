@@ -1,13 +1,13 @@
 import qbs 1.0
 import qbs.Process
 import "BaseDefines.qbs" as App
-
+import "Precompiled.qbs" as Precompiled
 
 App{
     name: "flipper"
+    qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]
     consoleApplication:false
     type:"application"
-    qbsSearchPaths: sourceDirectory + "/modules"
     Depends { name: "Qt.core"}
     Depends { name: "Qt.sql" }
     Depends { name: "Qt.core" }
@@ -21,20 +21,23 @@ App{
     Depends { name: "cpp" }
     Depends { name: "UniversalModels" }
     Depends { name: "logger" }
+    Depends { name: "proto_generation" }
+    Depends { name: "grpc_generation" }
+    Depends { name: "projecttype" }
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY",
-                              //"QT_QML_DEBUG"
-                              // ,"QT_LOGGING_TO_CONSOLE=1"
+    Precompiled{condition:conditionals.usePrecompiledHeader}
+
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601"
                              ])
     cpp.includePaths: [
         sourceDirectory,
+        sourceDirectory + "/../",
         sourceDirectory + "/include",
         sourceDirectory + "/libs",
         sourceDirectory + "/third_party/zlib",
         sourceDirectory + "/libs/Logger/include",
-
-
     ]
+    cpp.minimumWindowsVersion: "6.0"
 
     files: [
         "forms.qrc",
@@ -144,5 +147,27 @@ App{
         "include/tasks/fandom_list_reload_processor.h",
     ]
 
-    cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]
+    cpp.staticLibraries: {
+        var libs = ["UniversalModels", "logger", "quazip"]
+        libs = libs.concat(conditionals.zlib)
+        if(qbs.toolchain.contains("msvc"))
+            libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
+        if(conditionals.grpc)
+            libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
+        return libs
+    }
+
+//    Group{
+//        name:"grpc files"
+//        proto_generation.rootDir: conditionals.projectPath + "/proto"
+//        grpc_generation.rootDir: conditionals.projectPath + "/proto"
+//        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+//        grpc_generation.protobufDependencyDir: conditionals.projectPath + "../"
+//        proto_generation.toolchain : qbs.toolchain
+//        grpc_generation.toolchain : qbs.toolchain
+//        files: [
+//            "proto/filter.proto",
+//        ]
+//        fileTags: ["grpc", "proto"]
+//    }
 }

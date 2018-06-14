@@ -68,18 +68,18 @@ enum SortMode {
     BiasOperator bias_operator = 32;
     FilterMode filterign_mode = 33;
     
-    string fandom = 33;
-    string website = 34;
-    string genre_sort_field  = 35;
+    string fandom = 34;
+    string website = 35;
+    string genre_sort_field  = 36;
     
-    repeated string genre_exclusion = 36;
-    repeated string genre_inclusion = 37;
-    repeated string word_exclusion = 38;
-    repeated string word_inclusion = 39;
-    repeated string title_inclusion= 40;
-    repeated string active_tags = 41;
-    string recent_cutoff = 42;
+    repeated string genre_exclusion = 37;
+    repeated string genre_inclusion = 38;
+    repeated string word_exclusion = 39;
+    repeated string word_inclusion = 40;
+    repeated string title_inclusion= 41;
+    repeated string active_tags = 42;
+    string recent_cutoff = 44;
    
 
-    double review_bias_ratio = 43;
+    double review_bias_ratio = 45;
 }
