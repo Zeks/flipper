@@ -79,6 +79,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/slash_task_processor.h"
 #include "include/tasks/humor_task_processor.h"
 #include "include/tasks/recommendations_reload_precessor.h"
+#include "include/tasks/fandom_list_reload_processor.h"
 #include "include/page_utils.h"
 #include "include/environment.h"
 #include "include/generic_utils.h"
@@ -1865,61 +1866,6 @@ void MainWindow::OnGetAuthorFavouritesLinks()
 
 }
 
-
-void MainWindow::UpdateCategory(QString cat,
-                                FFNFandomIndexParserBase* parser,
-                                QSharedPointer<interfaces::Fandoms> fandomInterface)
-{
-    An<PageManager> pager;
-    QString link = "https://www.fanfiction.net" + cat;
-    AddToProgressLog("Processing: " + link + "<br>");
-    WebPage result = pager->GetPage(link, ECacheMode::dont_use_cache);
-    database::Transaction transaction(fandomInterface->db);
-    if(result.isValid)
-    {
-        parser->SetPage(result);
-        parser->Process();
-        if(!parser->HadErrors())
-        {
-            for(auto fandom : parser->results)
-            {
-                fandom->section = cat;
-                bool exists = fandomInterface->EnsureFandom(fandom->GetName());
-                if(!exists)
-                    fandomInterface->CreateFandom(fandom);
-                for(auto url : fandom->GetUrls())
-                {
-                    url.SetType(cat);
-                    //QString urlToPass = url.GetUrl();
-                    //                    if(url.GetSource() == "ffn" && url.GetUrl().rightRef(1) != "/")
-                    //                        urlToPass = urlToPass + "/";
-
-                    fandomInterface->AddFandomLink(fandom->GetName(), url);
-                }
-            }
-        }
-        else
-        {
-            QString pageMissingPrototype = "Page format unexpected: %1\nNew fandoms from it will be unavailable until the next succeesful reload";
-            pageMissingPrototype=pageMissingPrototype.arg(link);
-            QMessageBox::information(nullptr, "Attention!", pageMissingPrototype);
-            transaction.cancel();
-            return;
-        }
-
-    }
-    else
-    {
-        QString pageMissingPrototype = "Could not load page: %1\nNew fandoms from it will be unavailable until the next succeesful reload";
-        pageMissingPrototype=pageMissingPrototype.arg(link);
-        QMessageBox::information(nullptr, "Attention!", pageMissingPrototype);
-        transaction.cancel();
-        return;
-    }
-    transaction.finalize();
-
-}
-
 void MainWindow::OnOpenLogUrl(const QUrl & url)
 {
     QDesktopServices::openUrl(url);
@@ -1937,19 +1883,16 @@ void MainWindow::UpdateFandomList(UpdateFandomTask task)
     TaskProgressGuard guard(this);
 
     ui->edtResults->clear();
-    AddToProgressLog("Started fandom update task.<br>");
-    if(task.ffn)
-    {
-        FFNFandomParser fandomParser;
-        FFNCrossoverFandomParser crossoverParser;
-        QStringList categoryList = {"anime", "book", "cartoon", "comic", "game", "misc", "movie", "play", "tv"};
-        for(auto cat : categoryList)
-            UpdateCategory("/" + cat, &fandomParser, env.interfaces.fandoms);
-        for(auto cat : categoryList)
-            UpdateCategory("/crossovers/" + cat + "/", &crossoverParser, env.interfaces.fandoms);
-    }
+
+    QSqlDatabase db = QSqlDatabase::database();
+    FandomListReloadProcessor proc(db, env.interfaces.fanfics, env.interfaces.fandoms, env.interfaces.pageTask, env.interfaces.db);
+    connect(&proc, &FandomListReloadProcessor::displayWarning, this, &MainWindow::OnWarningRequested);
+    connect(&proc, &FandomListReloadProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+    connect(&proc, &FandomListReloadProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+    connect(&proc, &FandomListReloadProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
+    proc.UpdateFandomList();
 }
-//
+
 
 void MainWindow::on_chkCutoffLimit_toggled(bool checked)
 {
@@ -2121,19 +2064,19 @@ void MainWindow::on_leOpenFicID_returnPressed()
     QDesktopServices::openUrl(url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn"));
 }
 
-void MainWindow::OnExportStatistics()
-{
-    auto closeDb = QSqlDatabase::database("StatisticsExport");
-    QSqlDatabase db = QSqlDatabase::database();
-    if(closeDb.isOpen())
-        closeDb.close();
-    QString exportFileName = "StatisticsDB";
-    bool success = QFile::remove(exportFileName + ".sql");
-    QSharedPointer<database::IDBWrapper> statisticsExportInterface (new database::SqliteInterface());
-    auto tagExportDb = statisticsExportInterface->InitDatabase(exportFileName, false);
-    statisticsExportInterface->ReadDbFile("dbcode/" + exportFileName + ".sql", exportFileName);
-    database::puresql::ExportTagsToDatabase(db, tagExportDb);
-}
+//void MainWindow::OnExportStatistics()
+//{
+//    auto closeDb = QSqlDatabase::database("StatisticsExport");
+//    QSqlDatabase db = QSqlDatabase::database();
+//    if(closeDb.isOpen())
+//        closeDb.close();
+//    QString exportFileName = "StatisticsDB";
+//    bool success = QFile::remove(exportFileName + ".sql");
+//    QSharedPointer<database::IDBWrapper> statisticsExportInterface (new database::SqliteInterface());
+//    auto tagExportDb = statisticsExportInterface->InitDatabase(exportFileName, false);
+//    statisticsExportInterface->ReadDbFile("dbcode/" + exportFileName + ".sql", exportFileName);
+//    database::puresql::ExportTagsToDatabase(db, tagExportDb);
+//}
 
 void MainWindow::on_pbComedy_clicked()
 {
@@ -2169,6 +2112,11 @@ void MainWindow::OnProgressBarRequested(int value)
 {
     pbMain->setMaximum(value);
     pbMain->show();
+}
+
+void MainWindow::OnWarningRequested(QString value)
+{
+    QMessageBox::information(nullptr, "Attention!", value);
 }
 
 //void MainWindow::on_pbOneMoreCycle_clicked()

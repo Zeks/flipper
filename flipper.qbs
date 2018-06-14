@@ -140,6 +140,8 @@ App{
         "include/tasks/humor_task_processor.h",
         "src/tasks/recommendations_reload_precessor.cpp",
         "include/tasks/recommendations_reload_precessor.h",
+        "src/tasks/fandom_list_reload_processor.cpp",
+        "include/tasks/fandom_list_reload_processor.h",
     ]
 
     cpp.staticLibraries: ["UniversalModels", "logger", "zlib", "quazip"]

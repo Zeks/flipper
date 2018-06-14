@@ -439,9 +439,9 @@ private slots:
     void OnIgnoredFandomsContextMenu(const QPoint &pos);
     void OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos);
 
-    void UpdateCategory(QString cat,
-                        FFNFandomIndexParserBase* parser,
-                        QSharedPointer<interfaces::Fandoms> fandomInterface);
+//    void UpdateCategory(QString cat,
+//                        FFNFandomIndexParserBase* parser,
+//                        QSharedPointer<interfaces::Fandoms> fandomInterface);
     void OnOpenLogUrl(const QUrl&);
 
     void OnWipeCache();
@@ -471,7 +471,7 @@ private slots:
     void OnPerformGenreAssignment();
     void on_leOpenFicID_returnPressed();
 
-    void OnExportStatistics();
+    //void OnExportStatistics();
 
     void on_pbComedy_clicked();
 
@@ -479,6 +479,7 @@ private slots:
     void OnNewProgressString(QString);
     void OnResetTextEditor();
     void OnProgressBarRequested(int);
+    void OnWarningRequested(QString value);
 
 signals:
 
