@@ -18,7 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include <QStringList>
 #include <QDateTime>
-
+struct SlashFilterState
+{
+    bool applyLocalEnabled;
+    bool invertedEnabled;
+    bool slashOnlyEnabled;
+    bool invertedLocalEnabled;
+    bool slashOnlyLocalEnabled;
+    int slashFilterLevel;
+};
 namespace core{
 struct StoryFilter{
     static QStringList ProcessDelimited(QString str, QString delimiter){
@@ -70,7 +78,7 @@ struct StoryFilter{
     bool disableSlashFilterForSpecificFandoms = false;
     bool otherFandomsMode = false;
     bool listOpenMode= false;
-
+    SlashFilterState slashFilter;
 
     int useThisRecommenderOnly = -1;
     int recordLimit = -1;
@@ -84,7 +92,6 @@ struct StoryFilter{
     int minRecommendations = 0;
     int listForRecommendations;
     int recentAndPopularFavRatio;
-    int slashFilterLevel = 0;
 
     ESortMode sortMode;
     EReviewBiasMode reviewBias;

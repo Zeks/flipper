@@ -36,6 +36,10 @@ App{
     ]
 
     files: [
+        "include/grpc/grpc_source.h",
+        "include/Interfaces/data_source.h",
+        "src/grpc/grpc_source.cpp",
+        "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",
         "include/Interfaces/genres.h",
         "include/Interfaces/db_interface.h",

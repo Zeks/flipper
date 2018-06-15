@@ -2,6 +2,7 @@
 #include "storyfilter.h"
 #include "include/core/section.h"
 #include "querybuilder.h"
+#include "storyfilter.h"
 
 namespace interfaces{
 class Fandoms;
@@ -13,15 +14,7 @@ class PageTask;
 class RecommendationLists;
 }
 
-struct SlashFilterState
-{
-    bool applyLocalEnabled;
-    bool invertedEnabled;
-    bool slashOnlyEnabled;
-    bool invertedLocalEnabled;
-    bool slashOnlyLocalEnabled;
 
-};
 
 class FeederEnvironment : public QObject
 {

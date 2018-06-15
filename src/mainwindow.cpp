@@ -567,14 +567,8 @@ void MainWindow::LoadData()
     ui->edtResults->clear();
     ui->edtResults->setUpdatesEnabled(false);
 
-    SlashFilterState slashState{
-        ui->chkApplyLocalSlashFilter->isChecked(),
-                ui->chkInvertedSlashFilter->isChecked(),
-                ui->chkOnlySlash->isChecked(),
-                ui->chkInvertedSlashFilterLocal->isChecked(),
-                ui->chkOnlySlashLocal->isChecked()};
-
-    env.LoadData(slashState);
+    env.LoadData();
+    holder->SetData(env.fanfics);
 }
 
 int MainWindow::GetResultCount()
@@ -582,6 +576,7 @@ int MainWindow::GetResultCount()
     // for random walking size doesn't mater
     if(ui->chkRandomizeSelection->isChecked())
         return ui->sbMaxRandomFicCount->value()-1;
+
 
     return env.GetResultCount();
 }
@@ -1628,7 +1623,17 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.includeSlash = ui->chkOnlySlash->isChecked();
     filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
     filter.disableSlashFilterForSpecificFandoms = ui->chkEnableSlashExceptions->isChecked();
-    filter.slashFilterLevel = ui->cbSlashFilterAggressiveness->currentIndex();
+
+    SlashFilterState slashState{
+        ui->chkApplyLocalSlashFilter->isChecked(),
+                ui->chkInvertedSlashFilter->isChecked(),
+                ui->chkOnlySlash->isChecked(),
+                ui->chkInvertedSlashFilterLocal->isChecked(),
+                ui->chkOnlySlashLocal->isChecked(),
+                ui->cbSlashFilterAggressiveness->currentIndex()
+    };
+
+    filter.slashFilter = slashState;
     filter.maxFics = valueIfChecked(ui->chkRandomizeSelection, ui->sbMaxRandomFicCount->value());
     filter.minFavourites = valueIfChecked(ui->chkFaveLimitActivated, ui->sbMinimumFavourites->value());
     filter.maxWords= ui->cbMaxWordCount->currentText().toInt();

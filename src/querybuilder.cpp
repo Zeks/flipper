@@ -227,9 +227,9 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
 {
     QString queryString;
     QString slashField;
-    if(filter.slashFilterLevel == 0)
+    if(filter.slashFilter.slashFilterLevel == 0)
         slashField = "keywords_result";
-    else if(filter.slashFilterLevel == 1)
+    else if(filter.slashFilter.slashFilterLevel == 1)
         slashField = "filter_pass_1";
     else
         slashField = "filter_pass_2";

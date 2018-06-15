@@ -48,7 +48,6 @@ void FeederEnvironment::LoadData(SlashFilterState slashFilter)
     int counter = 0;
     fanfics.clear();
     currentLastFanficId = -1;
-    auto rx = GetSlashRegex();
     CommonRegex regexToken;
     regexToken.Init();
     while(q.next())
@@ -56,7 +55,6 @@ void FeederEnvironment::LoadData(SlashFilterState slashFilter)
         counter++;
         bool allow = true;
         auto fic = LoadFanfic(q);
-        QRegularExpression slashRx(rx, QRegularExpression::CaseInsensitiveOption);
         SlashPresence slashToken;
         if(slashFilter.invertedEnabled || slashFilter.slashOnlyEnabled)
             slashToken = regexToken.ContainsSlash(fic.summary, fic.charactersFull, fic.fandom);

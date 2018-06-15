@@ -23,15 +23,7 @@ class PageTask;
 class RecommendationLists;
 }
 
-struct SlashFilterState
-{
-    bool applyLocalEnabled;
-    bool invertedEnabled;
-    bool slashOnlyEnabled;
-    bool invertedLocalEnabled;
-    bool slashOnlyLocalEnabled;
-
-};
+class FicSource;
 
 class CoreEnvironment : public QObject
 {
@@ -64,13 +56,7 @@ public:
     // used to set up connections between database and interfaces
     // and between differnt interfaces themselves
     void InitInterfaces();
-
-    // used to build the actual query to be used in the database from filters
-    QSqlQuery BuildQuery(bool countOnly = false);
-    inline core::Fic LoadFanfic(QSqlQuery& q);
-    void LoadData(SlashFilterState);
-
-
+    void LoadData();
     int GetResultCount();
 
     void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
@@ -102,8 +88,8 @@ public:
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
 
-    core::DefaultQueryBuilder queryBuilder; // builds search queries
-    core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
+//    core::DefaultQueryBuilder queryBuilder; // builds search queries
+//    core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
     Interfaces interfaces;
 
@@ -120,7 +106,7 @@ public:
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 
-
+    QSharedPointer<FicSource> ficSource;
 
     // in case of non-gui applications these will just fire without an effect and its correct
 signals:
