@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+package ProtoSpace;
 
 message SlashFilter{
     bool  use_slash_filter                           = 1;
@@ -70,6 +71,7 @@ message ContentMatchFilter
 message TagFilter{
     bool ignore_already_tagged  = 1;
     repeated string active_tags = 2;
+    repeated int32 all_tagged   = 3; // will see how this affects perfomance 
 }
 
 message SizeLimits{

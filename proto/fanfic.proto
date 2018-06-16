@@ -1,7 +1,9 @@
 syntax = "proto3";
 
+package ProtoSpace;
+
 message SiteData{
-    bool isValid    = 1;
+    bool is_valid    = 1;
     string url      = 2;
     int32 id        = 3;
 }
@@ -15,12 +17,12 @@ message SitePack{
 // tags will be stored locally for the time being
 message Fanfic{
 
-    bool isValid                    = 1;
+    bool is_valid                    = 1;
     int32 id                        = 2;
-    int32 complete=3;
+    int32 complete                  = 3;
     int32 recommendations           = 4;
 
-    string wordCount                = 5;
+    string word_count                = 5;
     string chapters                 = 6;
     string reviews                  = 7;
     string favourites               = 8;
@@ -36,5 +38,5 @@ message Fanfic{
     
     repeated string fandoms         = 18;
     repeated string genres          = 19;    
-    SitePack sitePack               = 20;
+    SitePack site_pack               = 20;
 }

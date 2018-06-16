@@ -243,12 +243,12 @@ public:
     int webId = -1;
     int id = -1;
 
-    QString wordCount = 0;
-    QString chapters = 0;
-    QString reviews = 0;
-    QString favourites= 0;
-    QString follows= 0;
-    QString rated= 0;
+    QString wordCount;
+    QString chapters;
+    QString reviews;
+    QString favourites;
+    QString follows;
+    QString rated;
 
     QString fandom;
     QStringList fandoms;

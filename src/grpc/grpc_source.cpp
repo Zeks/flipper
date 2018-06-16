@@ -1,5 +1,7 @@
-#include "grpc/grpc_source.h"
+#include "include/grpc/grpc_source.h"
+#include "include/url_utils.h"
 #include "proto/filter.pb.h"
+#include "proto/fanfic.pb.h"
 #include <memory>
 
 FicSourceGRPC::FicSourceGRPC()
@@ -12,11 +14,20 @@ FicSourceGRPC::~FicSourceGRPC()
 
 }
 
-static Filter StoryFilterIntoSlashFlter(core::StoryFilter filter)
+
+static inline int GetChapterForFic(int ficId){
+    return 0;
+}
+
+static inline QList<int> GetTaggedIDs(){
+    return QList<int>();
+}
+
+static ProtoSpace::Filter StoryFilterIntoProtoFlter(core::StoryFilter filter)
 {
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
-    Filter result;
+    ProtoSpace::Filter result;
     result.set_randomize_results(filter.randomizeResults);
     auto* basicFilters = result.mutable_basic_filters();
     basicFilters->set_website(filter.website.toStdString());
@@ -32,16 +43,16 @@ static Filter StoryFilterIntoSlashFlter(core::StoryFilter filter)
     basicFilters->set_ensure_active(filter.ensureActive);
     basicFilters->set_ensure_completed(filter.ensureCompleted);
 
-    result.set_filtering_mode(static_cast<Filter::FilterMode>(filter.mode));
-    result.set_sort_mode(static_cast<Filter::SortMode>(filter.sortMode));
+    result.set_filtering_mode(static_cast<ProtoSpace::Filter::FilterMode>(filter.mode));
+    result.set_sort_mode(static_cast<ProtoSpace::Filter::SortMode>(filter.sortMode));
 
     auto* sizeLimits = result.mutable_size_limits();
     sizeLimits->set_record_limit(filter.recordLimit);
     sizeLimits->set_record_page(filter.recordPage);
 
     auto* reviewBias = result.mutable_review_bias();
-    reviewBias->set_bias_mode(static_cast<ReviewBias::ReviewBiasMode>(filter.reviewBias));
-    reviewBias->set_bias_operator(static_cast<ReviewBias::BiasOperator>(filter.biasOperator));
+    reviewBias->set_bias_mode(static_cast<ProtoSpace::ReviewBias::ReviewBiasMode>(filter.reviewBias));
+    reviewBias->set_bias_operator(static_cast<ProtoSpace::ReviewBias::BiasOperator>(filter.biasOperator));
     reviewBias->set_bias_ratio(filter.reviewBiasRatio);
 
     auto* recentPopular = result.mutable_recent_and_popular();
@@ -71,6 +82,11 @@ static Filter StoryFilterIntoSlashFlter(core::StoryFilter filter)
     for(auto tag : filter.activeTags)
         tagFilter->add_active_tags(tag.toStdString());
 
+    auto allTagged = GetTaggedIDs();
+
+    for(auto id : allTagged)
+        tagFilter->add_all_tagged(id);
+
     auto* slashFilter = result.mutable_slash_filter();
     slashFilter->set_use_slash_filter(filter.slashFilter.slashFilterEnabled);
     slashFilter->set_exclude_slash(filter.slashFilter.excludeSlash);
@@ -90,6 +106,58 @@ static Filter StoryFilterIntoSlashFlter(core::StoryFilter filter)
     return result;
 }
 
+static inline QString FS(const std::string& s)
+{
+    return QString::fromStdString(s);
+}
+
+static inline QDateTime DFS(const std::string& s)
+{
+    return QDateTime::fromString(QString::fromStdString(s), "yyyyMMdd");
+}
+
+bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
+{
+    coreFic.isValid = protoFic.is_valid();
+    if(!coreFic.isValid)
+        return false;
+
+    coreFic.id = protoFic.id();
+
+    // I will probably disable this for now in the ui
+    coreFic.atChapter = GetChapterForFic(coreFic.id);
+
+    coreFic.complete = protoFic.complete();
+    coreFic.recommendations = protoFic.recommendations();
+    coreFic.wordCount = FS(protoFic.word_count());
+    coreFic.chapters = FS(protoFic.chapters());
+    coreFic.reviews = FS(protoFic.reviews());
+    coreFic.favourites = FS(protoFic.favourites());
+    coreFic.follows = FS(protoFic.follows());
+    coreFic.rated = FS(protoFic.rated());
+    coreFic.fandom = FS(protoFic.fandom());
+    coreFic.title = FS(protoFic.title());
+    coreFic.summary = FS(protoFic.summary());
+    coreFic.language = FS(protoFic.language());
+    coreFic.published = DFS(protoFic.published());
+    coreFic.updated = DFS(protoFic.updated());
+    coreFic.charactersFull = FS(protoFic.characters());
+
+    for(int i = 0; i < protoFic.fandoms_size(); i++)
+        coreFic.fandoms.push_back(FS(protoFic.fandoms(i)));
+    coreFic.isCrossover = coreFic.fandoms.size() > 1;
+
+    for(int i = 0; i < protoFic.genres_size(); i++)
+        coreFic.genres.push_back(FS(protoFic.genres(i)));
+    coreFic.genreString = coreFic.genres.join(" ");
+    coreFic.webId = protoFic.site_pack().ffn().id(); // temporary
+    coreFic.ffn_id = coreFic.webId; // temporary
+    coreFic.webSite = "ffn"; // temporary
+
+    coreFic.urls["ffn"] = url_utils::GetStoryUrlFromWebId(coreFic.webId, "ffn"); // temporary
+    coreFic.urlFFN = coreFic.urls["ffn"];
+    return true;
+}
 
 void FicSourceGRPC::FetchData(core::StoryFilter filter, QList<core::Fic> *)
 {
