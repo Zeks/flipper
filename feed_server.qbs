@@ -99,6 +99,7 @@ App{
         grpc_generation.toolchain : qbs.toolchain
         files: [
             "proto/filter.proto",
+            "proto/fanfic.proto",
         ]
         fileTags: ["grpc", "proto"]
     }

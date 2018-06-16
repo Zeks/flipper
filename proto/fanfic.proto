@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+message SiteData{
+    bool isValid    = 1;
+    string url      = 2;
+    int32 id        = 3;
+}
+
+message SitePack{
+    SiteData ffn    = 1;
+    SiteData ao3    = 2;
+    // ...
+}
+
+// tags will be stored locally for the time being
+message Fanfic{
+
+    bool isValid                    = 1;
+    int32 id                        = 2;
+    int32 complete=3;
+    int32 recommendations           = 4;
+
+    string wordCount                = 5;
+    string chapters                 = 6;
+    string reviews                  = 7;
+    string favourites               = 8;
+    string follows                  = 9;
+    string rated                    = 10;
+    string fandom                   = 11;
+    string title                    = 12;
+    string summary                  = 13;
+    string language                 = 14;
+    string published                = 15; // yyyyMMdd
+    string updated                  = 16;   // yyyyMMdd
+    string characters               = 17;
+    
+    repeated string fandoms         = 18;
+    repeated string genres          = 19;    
+    SitePack sitePack               = 20;
+}
