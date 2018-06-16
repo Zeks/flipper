@@ -1565,7 +1565,7 @@ void MainWindow::OpenRecommendationList(QString listName)
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
                                            false,
                                            listName);
-    env.filter.sortMode = core::StoryFilter::reccount;
+    env.filter.sortMode = core::StoryFilter::sm_reccount;
 
     ui->leAuthorUrl->setText("");
     auto startRecLoad = std::chrono::high_resolution_clock::now();
@@ -1620,16 +1620,18 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.crossoversOnly= ui->chkCrossovers->isChecked();
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
-    filter.includeSlash = ui->chkOnlySlash->isChecked();
-    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
-    filter.disableSlashFilterForSpecificFandoms = ui->chkEnableSlashExceptions->isChecked();
+//    filter.includeSlash = ui->chkOnlySlash->isChecked();
+//    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
 
     SlashFilterState slashState{
-        ui->chkApplyLocalSlashFilter->isChecked(),
+                ui->chkEnableSlashFilter->isChecked(),
+                ui->chkApplyLocalSlashFilter->isChecked(),
                 ui->chkInvertedSlashFilter->isChecked(),
                 ui->chkOnlySlash->isChecked(),
                 ui->chkInvertedSlashFilterLocal->isChecked(),
                 ui->chkOnlySlashLocal->isChecked(),
+                ui->chkEnableSlashExceptions->isChecked(),
+                QList<int>{}, // temporary placeholder
                 ui->cbSlashFilterAggressiveness->currentIndex()
     };
 
@@ -1659,7 +1661,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
-    filter.lastFetchedRecordID = env.currentLastFanficId;
+    //filter.lastFetchedRecordID = env.currentLastFanficId;
     QString authorUrl = ui->leAuthorUrl->text();
     auto author = env.interfaces.authors->GetByWebID("ffn", url_utils::GetWebId(authorUrl, "ffn").toInt());
     if(author && useAuthorLink)

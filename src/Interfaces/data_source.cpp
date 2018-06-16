@@ -136,15 +136,15 @@ bool FicFilterSlash::Passed(core::Fic * fic, const SlashFilterState& slashFilter
 {
     bool allow = true;
     SlashPresence slashToken;
-    if(slashFilter.invertedEnabled || slashFilter.slashOnlyEnabled)
+    if(slashFilter.excludeSlash || slashFilter.includeSlash)
         slashToken = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
 
-    if(slashFilter.applyLocalEnabled && slashFilter.invertedLocalEnabled)
+    if(slashFilter.applyLocalEnabled && slashFilter.excludeSlashLocal)
     {
         if(slashToken.IsSlash())
             allow = false;
     }
-    if(slashFilter.applyLocalEnabled && slashFilter.slashOnlyLocalEnabled)
+    if(slashFilter.applyLocalEnabled && slashFilter.includeSlashLocal)
     {
         if(!slashToken.IsSlash())
             allow = false;

@@ -1,7 +1,90 @@
 syntax = "proto3";
 
+
+message SlashFilter{
+    bool  use_slash_filter                           = 1;
+    int32 slash_filter_level                         = 2;
+    bool  exclude_slash                              = 3;
+    bool  include_slash                              = 4;
+    bool  enable_exceptions                          = 5;
+    repeated int32 fandom_exceptions                 = 6; 
+}
+
+message Recommendations{
+    bool list_open_mode                             = 1;
+    int32 list_for_recommendations                  = 2;
+    int32 use_this_recommender_only                 = 3;
+    int32 min_recommendations                       = 4;
+    bool show_origins_in_lists                      = 5;
+}
+
+message BasicFilters{
+
+
+    string website                  = 1;
+    int32 min_words                 = 2;
+    int32 max_words                 = 3;
+    int32 max_fics                  = 4;
+    int32 min_favourites            = 5;
+    bool allow_unfinished           = 6;
+    bool allow_no_genre             = 7;
+    bool ensure_completed           = 8;
+    bool ensure_active              = 9;
+}
+
+message ReviewBias{
+    enum ReviewBiasMode{
+        bias_none           = 0;
+        bias_favor          = 1;
+        bias_exclude        = 2;
+    };
+    enum BiasOperator{
+        bo_more             = 0;
+        bo_less             = 1;
+    };
+
+    ReviewBiasMode bias_mode   = 1;
+    BiasOperator bias_operator = 2;
+    double bias_ratio          = 3;
+}
+
+message RecentAndPopular{
+    int32  fav_ratio   = 1;
+    string date_cutoff = 2;
+}
+
+
+message ContentMatchFilter
+{
+    string fandom                       = 1; 
+    bool include_crossovers             = 2;
+    bool crossovers_only                = 3;
+    bool other_fandoms_mode             = 4;
+    
+    repeated string genre_exclusion     = 5;
+    repeated string genre_inclusion     = 6;
+    repeated string word_exclusion      = 7;
+    repeated string word_inclusion      = 8;
+}
+
+message TagFilter{
+    bool ignore_already_tagged  = 1;
+    repeated string active_tags = 2;
+}
+
+message SizeLimits{
+    int32 record_limit              = 1;
+    int32 record_page               = 2;
+}
+
 message Filter{
-enum SortMode {
+    enum FilterMode{
+        filtering_undefined          = 0;
+        filtering_in_fics            = 1;
+        filtering_in_recommendations = 2;
+        filtering_whole_list         = 3;
+    };
+    enum SortMode {
     sm_undefined         = 0;
     sm_favourites        = 1;
     sm_fav_rate          = 2;
@@ -11,75 +94,19 @@ enum SortMode {
     sm_wcr_cr            = 6;
     sm_rev_to_fav        = 7;
     sm_genre_values      = 8;
+    sm_wordcount         = 9;
   }
-   enum ReviewBiasMode{
-        bias_undefined      = 0;
-        bias_none           = 1;
-        bias_favor          = 2;
-        bias_exclude        = 3;
-    };
-    enum BiasOperator{
-        bo_undefined        = 0;
-        bo_more             = 1;
-        bo_less             = 2;
-    };
-    enum FilterMode{
-        filtering_undefined          = 0;
-        filtering_in_fics            = 1;
-        filtering_in_recommendations = 2;
-        filtering_whole_list         = 3;
-    };
     
-    
-    bool include_crossovers = 1;
-    bool ignore_already_tagged = 2;
-    bool crossovers_only = 3;
-    bool ignore_fFandoms = 4;
-    bool randomize_results = 5;
-    bool ensure_completed = 6;
-    bool ensure_active = 7;
-    bool allow_unfinished = 8;
-    bool allow_no_genre = 9;
-    bool show_origins_in_lists = 10;
-    bool exclude_slash = 11;
-    bool include_slash = 12;
-    bool disable_slash_filter_for_specific_fandoms = 13;
-    bool other_fandoms_mode = 14;
-    bool list_open_mode = 15;
-
-
-    int32 use_this_recommender_only  = 16;
-    int32 record_limit  = 17;
-    int32 record_page  = 18;
-    int32 physical_record_limit  = 19;
-    int32 min_words = 21;
-    int32 max_words = 22;
-    int32 max_fics = 23;
-    int32 min_favourites = 24;
-    int32 min_recommendations = 25;
-    int32 recent_and_popular_fav_ratio = 26;
-    int32 slash_filter_level = 27;
-    
-    int64 last_fetched_record_id  = 28;
-    int64 list_for_recommendations = 29;
-
-    SortMode sort_mode = 30;
-    ReviewBiasMode review_bias = 31;
-    BiasOperator bias_operator = 32;
-    FilterMode filterign_mode = 33;
-    
-    string fandom = 34;
-    string website = 35;
-    string genre_sort_field  = 36;
-    
-    repeated string genre_exclusion = 37;
-    repeated string genre_inclusion = 38;
-    repeated string word_exclusion = 39;
-    repeated string word_inclusion = 40;
-    repeated string title_inclusion= 41;
-    repeated string active_tags = 42;
-    string recent_cutoff = 44;
-   
-
-    double review_bias_ratio = 45;
+    bool randomize_results                      = 1;
+    BasicFilters basic_filters                  = 2;
+    FilterMode filtering_mode                   = 3;
+    SizeLimits size_limits                      = 4;
+    SortMode sort_mode                          = 5;
+                
+    ReviewBias review_bias                      = 6;
+    RecentAndPopular recent_and_popular         = 7;
+    ContentMatchFilter content_filter           = 8;
+    TagFilter tag_filter                        = 9;
+    SlashFilter slash_filter                    = 10;
+    Recommendations recommendations             = 11;
 }
