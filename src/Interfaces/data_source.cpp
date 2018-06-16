@@ -28,7 +28,6 @@ void FicSource::ClearFilters()
     filters.clear();
 }
 
-
 QSqlQuery FicSourceDirect::BuildQuery(core::StoryFilter filter, bool countOnly)
 {
     QSqlDatabase db = QSqlDatabase::database();

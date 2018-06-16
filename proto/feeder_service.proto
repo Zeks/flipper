@@ -1,0 +1,20 @@
+syntax = "proto3";
+import "fanfic.proto";
+import "filter.proto";
+
+package ProtoSpace;
+
+message SearchTask{
+    Filter filter = 1;
+}
+
+message SearchResponse{
+    repeated Fanfic fanfics = 1;
+}
+
+
+service Feeder {
+    // процедура разора текста
+    rpc Search(SearchTask) returns (SearchResponse) {}
+}
+//grpc::CreateChannel(connectString.toStdString(), grpc::InsecureChannelCredentials());

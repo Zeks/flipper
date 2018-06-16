@@ -2,7 +2,17 @@
 #include "include/url_utils.h"
 #include "proto/filter.pb.h"
 #include "proto/fanfic.pb.h"
+#include "proto/feeder_service.pb.h"
+#include "proto/feeder_service.grpc.pb.h"
 #include <memory>
+#include <QList>
+#include <QVector>
+
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/security/credentials.h>
+
 
 FicSourceGRPC::FicSourceGRPC()
 {
@@ -169,24 +179,82 @@ int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
     return 0;
 }
 
+
 class FicSourceGRPCImpl{
     //    friend class GrpcServiceBase;
-    //public:
-    //    FicSourceGRPCImpl(QString connectionString, int deadline)
-    //        {
-    //        stub_.reset(Services::Feeder::NewStub(wrapper.channel));
-    //        timeout = deadline;
-    //    }
-    //    bool HasErrors() const { return hasErrors; }
-    //    void SetServiceName(QString);
-    //    std::unique_ptr<Services::Feeder::Stub> stub_;
-    //    QString requestString;
-    //    QString responseString;
-    //    int timeout = 3000;
+public:
 
-    //private:
-    //    QString connectionString;
-    //   bool hasErrors = false;
-    //    QString error;
-    //    bool isResponsive = true;
+    FicSourceGRPCImpl(QString connectionString, int deadline)
+        :stub_(ProtoSpace::Feeder::NewStub(grpc::CreateChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials()))),
+          deadline(deadline)
+    {
+    }
+    void ProcessStandardError(grpc::Status status);
+    void FetchData(core::StoryFilter filter, std::vector<core::Fic> * fics)
+    {
+        grpc::ClientContext context;
+
+        ProtoSpace::SearchTask task;
+
+        ProtoSpace::Filter protoFilter = StoryFilterIntoProtoFlter(filter);
+        task.set_allocated_filter(&protoFilter);
+
+        QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
+        std::chrono::system_clock::time_point deadline =
+                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+        context.set_deadline(deadline);
+
+        grpc::Status status = stub_->Search(&context, task, response.data());
+
+        ProcessStandardError(status);
+
+        fics->resize(static_cast<size_t>(response->fanfics_size()));
+        for(int i = 0; i < response->fanfics_size(); i++)
+        {
+            ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
+        }
+    }
+
+    std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
+    QString error;
+    bool hasErrors = false;
+    int deadline = 60;
 };
+
+void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
+{
+    error.clear();
+    if(status.ok())
+    {
+        hasErrors = false;
+    }
+    hasErrors = true;
+    switch(status.error_code())
+    {
+    case 1:
+        error+="Client application cancelled the request\n";
+        break;
+    case 4:
+        error+="Deadline for request Exceeded\n";
+        break;
+    case 12:
+        error+="Requested method is not implemented on the server\n";
+        break;
+    case 14:
+        error+="Server is shutting down or is unavailable\n";
+        break;
+    case 2:
+        error+="Server has thrown an unknown exception\n";
+        break;
+    case 8:
+        error+="Server out of resources, or no memory on client\n";
+        break;
+    case 13:
+        error+="Flow control violation\n";
+        break;
+    default:
+        //intentionally empty
+        break;
+    }
+    error+=QString::fromStdString(status.error_message());
+}

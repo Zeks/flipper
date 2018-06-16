@@ -98,9 +98,19 @@ App{
         proto_generation.toolchain : qbs.toolchain
         grpc_generation.toolchain : qbs.toolchain
         files: [
+            "proto/feeder_service.proto",
+        ]
+        fileTags: ["grpc", "proto"]
+    }
+    Group{
+        name:"proto files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        files: [
             "proto/filter.proto",
             "proto/fanfic.proto",
         ]
-        fileTags: ["grpc", "proto"]
+        fileTags: ["proto"]
     }
 }
