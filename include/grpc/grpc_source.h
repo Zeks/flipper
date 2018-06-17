@@ -11,6 +11,7 @@ struct StoryFilter;
 namespace ProtoSpace {
 class Filter;
 class Fanfic;
+class Fandom;
 }
 
 class FicSourceGRPC : public FicSource
@@ -31,3 +32,6 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter);
 
 bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic);
 bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic *protoFic);
+
+void LocalFandomToProtoFandom(const core::Fandom& coreFandom, ProtoSpace::Fandom* protoFandom);
+void ProtoFandomToLocalFandom(const ProtoSpace::Fandom& protoFandom, core::Fandom &coreFandom);

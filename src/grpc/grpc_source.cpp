@@ -1,7 +1,9 @@
 #include "include/grpc/grpc_source.h"
 #include "include/url_utils.h"
+#include "include/Interfaces/fandoms.h"
 #include "proto/filter.pb.h"
 #include "proto/fanfic.pb.h"
+#include "proto/fandom.pb.h"
 #include "proto/feeder_service.pb.h"
 #include "proto/feeder_service.grpc.pb.h"
 #include <memory>
@@ -130,6 +132,19 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
     return result;
 }
 
+
+void LocalFandomToProtoFandom(const core::Fandom& coreFandom, ProtoSpace::Fandom* protoFandom)
+{
+    protoFandom->set_id(coreFandom.id);
+    protoFandom->set_name(TS(coreFandom.GetName()));
+    protoFandom->set_website("ffn");
+}
+
+void ProtoFandomToLocalFandom(const ProtoSpace::Fandom& protoFandom, core::Fandom& coreFandom)
+{
+    coreFandom.id = protoFandom.id();
+    coreFandom.SetName(FS(protoFandom.name()));
+}
 
 
 core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
@@ -340,6 +355,32 @@ public:
         ProcessStandardError(status);
         task.release_filter();
         return response->fic_count();
+    }
+
+    bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms)
+    {
+        grpc::ClientContext context;
+
+        ProtoSpace::SyncFandomListTask task;
+        task.set_last_fandom_id(lastFandomID);
+
+        QScopedPointer<ProtoSpace::SyncFandomListResponse> response (new ProtoSpace::SyncFandomListResponse);
+        std::chrono::system_clock::time_point deadline =
+                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+        context.set_deadline(deadline);
+
+        grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
+
+        ProcessStandardError(status);
+        if(!response->needs_update())
+            return false;
+
+        fandoms->resize(response->fandoms_size());
+        for(int i = 0; i < response->fandoms_size(); i++)
+        {
+            ProtoFandomToLocalFandom(response->fandoms(i), (*fandoms)[static_cast<size_t>(i)]);
+        }
+        return true;
     }
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;

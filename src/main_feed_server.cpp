@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
+#include "Interfaces/fandoms.h"
 #include "include/sqlitefunctions.h"
 #include "include/db_fixers.h"
 #include "include/feeder_environment.h"
@@ -140,6 +141,38 @@ public:
         }).run();
 
         response->set_fic_count(count);
+        QLOG_INFO() << " ";
+        QLOG_INFO() << " ";
+        QLOG_INFO() << " ";
+        return Status::OK;
+    }
+
+    Status SyncFandomList(ServerContext* context, const ProtoSpace::SyncFandomListTask* task,
+                 ProtoSpace::SyncFandomListResponse* response) override
+    {
+        Q_UNUSED(context);
+        QLOG_INFO() << "////////////Received sync fandoms task from: " << QString::fromStdString(task->controls().user_token());
+
+        QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+        auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+        dbInterface->ReadDbFile("dbcode/dbinit.sql");
+        QSharedPointer<interfaces::Fandoms> fandomInterface (new interfaces::Fandoms());
+        fandomInterface->portableDBInterface = dbInterface;
+        auto lastServerFandomID = fandomInterface->GetLastFandomID();
+        if(lastServerFandomID == task->last_fandom_id())
+            response->set_needs_update(false);
+        else
+        {
+            fandomInterface->LoadAllFandoms(true);
+            auto fandoms = fandomInterface->GetAllLoadedFandoms();
+            for(auto coreFandom: fandoms)
+            {
+                auto* protoFandom = response->add_fandoms();
+                LocalFandomToProtoFandom(*coreFandom, protoFandom);
+            }
+        }
+
+
         QLOG_INFO() << " ";
         QLOG_INFO() << " ";
         QLOG_INFO() << " ";

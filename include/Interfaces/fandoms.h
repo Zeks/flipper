@@ -52,6 +52,7 @@ public:
 
     bool WipeFandom(QString name);
     int GetFandomCount();
+    int GetLastFandomID();
 
     virtual int GetIDForName(QString) ;
     virtual core::FandomPtr GetFandom(QString);
@@ -63,6 +64,8 @@ public:
     bool IgnoreFandom(QString name, bool includeCrossovers);
     bool IgnoreFandom(int id, bool includeCrossovers);
     QStringList GetIgnoredFandoms() const;
+    QList<core::FandomPtr> GetAllLoadedFandoms();
+
     bool RemoveFandomFromIgnoredList(QString name);
     bool RemoveFandomFromIgnoredList(int id);
 

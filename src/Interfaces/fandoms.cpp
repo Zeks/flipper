@@ -378,6 +378,11 @@ QStringList Fandoms::GetIgnoredFandoms() const
     return result.data;
 }
 
+QList<core::FandomPtr> Fandoms::GetAllLoadedFandoms()
+{
+    return fandoms;
+}
+
 bool Fandoms::RemoveFandomFromIgnoredList(QString name)
 {
     auto id = GetIDForName(name);
@@ -456,6 +461,11 @@ bool Fandoms::WipeFandom(QString name)
 int Fandoms::GetFandomCount()
 {
     return fandomCount;
+}
+
+int Fandoms::GetLastFandomID()
+{
+    return database::puresql::GetLastFandomID(db).data;
 }
 
 Fandoms::~Fandoms()
