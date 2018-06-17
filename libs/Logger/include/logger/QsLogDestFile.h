@@ -89,8 +89,9 @@ class FileDestination : public Destination
 {
 public:
     FileDestination(const QString& filePath, RotationStrategyPtr rotationStrategy);
-    virtual void write(const QString& message, Level level);
+    virtual void write(const QString& message, Level level, Level currentLoggingLevel);
     virtual void close(const QString& message, Level level);
+    void Rotate();
     virtual bool isValid();
 
 protected:

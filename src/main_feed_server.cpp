@@ -21,9 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/db_fixers.h"
 #include "include/feeder_environment.h"
 #include "include/Interfaces/data_source.h"
+#include "include/timeutils.h"
 #include "grpc/grpc_source.h"
 #include "proto/feeder_service.grpc.pb.h"
 #include "proto/feeder_service.pb.h"
+#include "logger/QsLog.h"
+
 
 #include <QCoreApplication>
 #include <QSettings>
@@ -48,6 +51,28 @@ using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
 using grpc::Status;
 
+void SetupLogger()
+{
+    QSettings settings("settings_server.ini", QSettings::IniFormat);
+
+    An<QsLogging::Logger> logger;
+    logger->setLoggingLevel(static_cast<QsLogging::Level>(settings.value("Logging/loglevel").toInt()));
+    QString logFile = settings.value("Logging/filename").toString();
+    QsLogging::DestinationPtr fileDestination(
+
+    QsLogging::DestinationFactory::MakeFileDestination(logFile,
+                                                          settings.value("Logging/rotate", true).toBool(),
+                                                          settings.value("Logging/filesize", 512).toInt()*1000000,
+                                                          settings.value("Logging/amountOfFilesToKeep", 50).toInt()));
+
+    QsLogging::DestinationPtr debugDestination(
+                QsLogging::DestinationFactory::MakeDebugOutputDestination() );
+    logger->addDestination(debugDestination);
+    logger->addDestination(fileDestination);
+
+}
+
+
 
 class FeederService final : public ProtoSpace::Feeder::Service {
 public:
@@ -55,8 +80,13 @@ public:
                  ProtoSpace::SearchResponse* response) override
     {
         Q_UNUSED(context);
+        QLOG_INFO() << "////////////Received search task from: " << QString::fromStdString(task->controls().user_token());
 
-        auto filter = ProtoFilterIntoStoryFilter(task->filter());
+        core::StoryFilter filter;
+        TimedAction ("Converting filter",[&](){
+            filter = ProtoFilterIntoStoryFilter(task->filter());
+        }).run();
+        filter.Log();
 
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
@@ -65,9 +95,23 @@ public:
         QSharedPointer<FicSource> ficSource;
         ficSource.reset(new FicSourceDirect(dbInterface));
         QVector<core::Fic> data;
-        ficSource->FetchData(filter, &data);
-        for(const auto& fic: data)
-            LocalFicToProtoFic(fic, response->add_fanfics());
+
+        TimedAction action("Fetching data",[&](){
+            ficSource->FetchData(filter, &data);
+        });
+        action.run();
+        QLOG_INFO() << "Fetch performed in: " << action.ms;
+        TimedAction convertAction("Converting data",[&](){
+            for(const auto& fic: data)
+                LocalFicToProtoFic(fic, response->add_fanfics());
+        });
+        convertAction.run();
+        QLOG_INFO() << "Convert performed in: " << convertAction.ms;
+
+        QLOG_INFO() << "Fetched fics: " << data.size();
+        QLOG_INFO() << " ";
+        QLOG_INFO() << " ";
+        QLOG_INFO() << " ";
         return Status::OK;
     }
 
@@ -75,8 +119,12 @@ public:
                  ProtoSpace::FicCountResponse* response) override
     {
         Q_UNUSED(context);
-
-        auto filter = ProtoFilterIntoStoryFilter(task->filter());
+        QLOG_INFO() << "////////////Received fic count task from: " << QString::fromStdString(task->controls().user_token());
+        core::StoryFilter filter;
+        TimedAction ("Converting filter",[&](){
+            filter = ProtoFilterIntoStoryFilter(task->filter());
+        }).run();
+        filter.Log();
 
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
@@ -85,8 +133,16 @@ public:
         QSharedPointer<FicSource> ficSource;
         ficSource.reset(new FicSourceDirect(dbInterface));
         QVector<core::Fic> data;
-        int count = ficSource->GetFicCount(filter);
+
+        int count = 0;
+        TimedAction ("Getting fic count",[&](){
+            count = ficSource->GetFicCount(filter);
+        }).run();
+
         response->set_fic_count(count);
+        QLOG_INFO() << " ";
+        QLOG_INFO() << " ";
+        QLOG_INFO() << " ";
         return Status::OK;
     }
 
@@ -103,6 +159,9 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     a.setApplicationName("Flipper");
+    SetupLogger();
+    QLOG_INFO() << "Feeder app started server";
+
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
 
     QSettings settings("settings.ini", QSettings::IniFormat);
@@ -110,11 +169,13 @@ int main(int argc, char *argv[])
     auto port = settings.value("Settings/serverPort", "3055").toString();
 
     std::string server_address = CreateConnectString(ip, port);
+    QLOG_INFO() << "Connection string is: " << QString::fromStdString(server_address);
     FeederService service;
     ServerBuilder builder;
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&service);
     std::unique_ptr<Server> server(builder.BuildAndStart());
+    QLOG_INFO() << "Starting server";
     server->Wait();
     return a.exec();
 }

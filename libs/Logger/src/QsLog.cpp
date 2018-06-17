@@ -34,25 +34,27 @@
 #include <QVector>
 #include <QDateTime>
 #include <QtGlobal>
+#include <QReadWriteLock>
 #include <cassert>
 #include <cstdlib>
 #include <stdexcept>
+#include "Tracer.h"
+
 
 namespace QsLogging
 {
 
-
-static const char TraceString[] = "TRACE";
-static const char DebugString[] = "DEBUG";
-static const char InfoString[]  = "INFO";
-static const char WarnString[]  = "WARN";
-static const char ErrorString[] = "ERROR";
-static const char FatalString[] = "FATAL";
+static const QString TraceString = "TRACE";
+static const QString DebugString = "DEBUG";
+static const QString InfoString  = "INFO";
+static const QString WarnString  = "WARN";
+static const QString ErrorString = "ERROR";
+static const QString FatalString = "FATAL";
 
 // not using Qt::ISODate because we need the milliseconds too
 static const QString fmtDateTime("dd hh:mm:ss.zzz");
 
-static const char* LevelToText(Level theLevel)
+static inline QString LevelToText(Level theLevel)
 {
     switch (theLevel) {
         case TraceLevel:
@@ -99,7 +101,7 @@ class LoggerImpl
 {
 public:
     LoggerImpl() :
-        level(InfoLevel)
+        logMutex(QReadWriteLock::Recursive),level(InfoLevel)
     {
         // assume at least file + console
         destList.reserve(2);
@@ -111,7 +113,7 @@ public:
 #ifdef QS_LOG_SEPARATE_THREAD
     QThreadPool threadPool;
 #else
-    QMutex logMutex;
+    QReadWriteLock logMutex;
 #endif
     Level level;
     DestinationList destList;
@@ -130,28 +132,39 @@ Logger::~Logger()
 void Logger::addDestination(DestinationPtr destination)
 {
     assert(destination.data());
+    QWriteLocker lock(&d->logMutex);
     d->destList.push_back(destination);
 }
 
 void Logger::replaceDestination(DestinationPtr destination)
 {
     assert(destination.data());
+    QWriteLocker lock(&d->logMutex);
     d->destList.clear();
     d->destList.push_back(destination);
 }
 
+void Logger::clearDestinationList()
+{
+    QWriteLocker lock(&d->logMutex);
+    d->destList.clear();
+}
+
 void Logger::setLoggingLevel(Level newLevel)
 {
+    QWriteLocker lock(&d->logMutex);
     d->level = newLevel;
 }
 
 Level Logger::loggingLevel() const
 {
+    QReadLocker lock(&d->logMutex);
     return d->level;
 }
 
 void Logger::clearDestinationQueues()
 {
+    QWriteLocker lock(&d->logMutex);
     for(DestinationPtr dest : d->destList)
     {
         dest->clearQueue();
@@ -160,26 +173,30 @@ void Logger::clearDestinationQueues()
 
 DestinationList Logger::GetDestinations()
 {
+    QReadLocker lock(&d->logMutex);
     return d->destList;
+}
+
+void Logger::ResetDestinations()
+{
+    QWriteLocker lock(&d->logMutex);
+    d->destList.clear();
 }
 
 //! creates the complete log message and passes it to the logger
 void Logger::Helper::writeToLog()
 {
-    const char* const levelName = LevelToText(level);
-    const QString completeMessage = writeServiceInfo ?
-                                                       QString(QString("%1 %2 %3")
-                                                      .arg(levelName, 5)
-                                                      .arg(QDateTime::currentDateTime().toString(fmtDateTime))
-                                                      .arg(buffer)
-                                                      ) : buffer;
-    loggerInstance->enqueueWrite(completeMessage, level);
+    if(writeServiceInfo)
+        loggerInstance->enqueueWrite(LevelToText(level) + " " + QDateTime::currentDateTimeUtc().toString(fmtDateTime) + " " + buffer, level);
+    else
+        loggerInstance->enqueueWrite(buffer, level);
 }
 
 Logger::Helper::Helper(Level logLevel, Logger *_loggerInstance, bool _writeServiceInfo) :
     level(logLevel),
     qtDebug(&buffer), loggerInstance(_loggerInstance), writeServiceInfo(_writeServiceInfo)
 {
+    assert(loggerInstance);
 #if QT_VERSION == QT_VERSION_CHECK(5, 5, 0)
     qtDebug = qtDebug.noquote();
 #endif
@@ -194,7 +211,7 @@ Logger::Helper::~Helper()
     catch(std::exception&) {
         // you shouldn't throw exceptions from a sink
         assert(!"exception in logger helper destructor");
-        throw;
+        //throw;
     }
 }
 
@@ -205,7 +222,7 @@ void Logger::enqueueWrite(const QString& message, Level level)
     LogWriterRunnable *r = new LogWriterRunnable(message, level);
     d->threadPool.start(r);
 #else
-    QMutexLocker lock(&d->logMutex);
+
     write(message, level);
 #endif
 }
@@ -214,9 +231,10 @@ void Logger::enqueueWrite(const QString& message, Level level)
 //! it's useful for processing in the destination.
 void Logger::write(const QString& message, Level level)
 {
+    QWriteLocker lock(&d->logMutex);
     for (auto it = d->destList.begin(), endIt = d->destList.end(); it != endIt;++it)
     {
-        (*it)->write(message, level);
+            (*it)->write(message, level, d->level);
     }
 }
 

@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <chrono>
 #include <QString>
 #include <QDebug>
+#include "logger/QsLog.h"
+
 
 struct TimedAction{
     TimedAction(QString name, std::function<void()> action)
@@ -32,8 +34,8 @@ struct TimedAction{
             auto start = std::chrono::high_resolution_clock::now();
             action();
             auto elapsed = std::chrono::high_resolution_clock::now() - start;
-            auto ms = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-            qDebug() << "Action: " << actionName << " Performed in: " << ms;
+            ms = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+            QLOG_INFO() << "Action: " << actionName << " Performed in: " << ms;
         }
         else
             action();
@@ -41,6 +43,8 @@ struct TimedAction{
     }
     std::function<void()> action;
     QString actionName;
+    long long ms;
+
 };
 
 struct TimeKeeper{
@@ -50,10 +54,10 @@ struct TimeKeeper{
     void Log(QString value, QString startPoint,  bool inSeconds = false){
         times[value] = std::chrono::high_resolution_clock::now();
         if(!inSeconds)
-            qDebug() << "Time spent in " << value << " "
+            QLOG_INFO() << "Time spent in " << value << " "
                      << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - times[startPoint]).count();
         else
-            qDebug() << "Time spent in " << value << " "
+            QLOG_INFO() << "Time spent in " << value << " "
                      << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - times[startPoint]).count();
     }
     void Track(QString value){times[value] = std::chrono::high_resolution_clock::now();}

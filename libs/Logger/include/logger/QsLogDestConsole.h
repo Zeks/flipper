@@ -43,7 +43,7 @@ namespace QsLogging
 class L_LOGGERSHARED_EXPORT DebugOutputDestination : public Destination
 {
 public:
-    virtual void write(const QString& message, Level level);
+    virtual void write(const QString& message, Level level, Level currentLoggingLevel);
     virtual bool isValid();
 };
 

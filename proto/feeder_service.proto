@@ -4,8 +4,13 @@ import "filter.proto";
 
 package ProtoSpace;
 
+message ControlInfo{
+    string user_token = 1;
+}
+
 message SearchTask{
-    Filter filter = 1;
+    ControlInfo controls    = 1;
+    Filter filter           = 2;
 }
 
 message SearchResponse{
@@ -13,13 +18,23 @@ message SearchResponse{
 }
 
 message FicCountTask{
-    Filter filter = 1;
+    ControlInfo controls    = 1;
+    Filter filter           = 2;
 }
 
 message FicCountResponse{
     int32 fic_count = 1;
 }
 
+// will need to synchronize fandoms on app start somehow
+// can't leave fandom information on user side
+// because I dont want users to parse anything
+
+// same thing for genres, prbbaly better to receive the on launch
+
+
+// RecommendationListsFandoms needs to be returned with recommendation list data
+// I want to be able to display this to users ideally
 
 service Feeder {
     rpc Search(SearchTask) returns (SearchResponse) {}

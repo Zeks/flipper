@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDateTime>
 struct SlashFilterState
 {
+    void Log();
     bool slashFilterEnabled;
     bool applyLocalEnabled;
     bool excludeSlash;
@@ -32,6 +33,8 @@ struct SlashFilterState
 };
 namespace core{
 struct StoryFilter{
+    void Log();
+
     static QStringList ProcessDelimited(QString str, QString delimiter){
         if(str.contains(delimiter))
             return str.split(delimiter);

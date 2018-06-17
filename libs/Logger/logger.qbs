@@ -1,26 +1,39 @@
-import qbs 1.0
-import qbs.Process
 import "../../BaseDefines.qbs" as Library
-
+import "../../Precompiled.qbs" as Precompiled
 
 Library{
-name: "logger"
-type:"staticlibrary"
-Depends { name: "Qt.core"}
-Depends { name: "cpp" }
-Depends { name: "conditionals" }
+    type: conditionals.dllProject == true ? "dynamiclibrary" : "staticlibrary"
+    Depends { name: "Qt.core"}
+    Depends { name: "cpp" }
+    Depends { name: "SettingsProjectLevel"}
+    Depends { name: "conditionals" }
+    Depends { name: "projecttype"}
+    Depends { name: "Qt.sql"}
+    Depends { name: "Qt.concurrent"}
+    Depends {
+        name: "Qt.widgets"
+        condition: projecttype.useGuiLib
+    }
+    Depends {
+        name: "Qt.gui"
+        condition: projecttype.useGuiLib
+    }
+    Precompiled{condition:conditionals.usePrecompiledHeader}
+    cpp.combineCxxSources: conditionals.useCombinedSources
+    Export{
+        Depends { name: "cpp" }
+        cpp.includePaths: [product.sourceDirectory + "/include"]
+    }
 
-qbsSearchPaths: sourceDirectory + "/../../modules"
+    cpp.defines: base.concat(["L_LOGGER_LIBRARY"])
+    cpp.includePaths: [
+        "../",
+        "../../",
+        "include/logger",
+        "include"
+    ]
 
-cpp.defines: base.concat(["L_LOGGER_LIBRARY"])
-cpp.includePaths: [
-                "../",
-                "../../",
-                "include/logger",
-                "include"
-]
-
-files: [
+    files: [
         "include/logger/version/version.h",
         "src/QsLog.cpp",
         "src/QsLogDest.cpp",
@@ -33,7 +46,9 @@ files: [
         "include/logger/QsLogDestFile.h",
         "include/logger/QsLogDisableForThisFile.h",
         "include/logger/QsLogLevel.h",
+        "include/logger/Tracer.h",
         "include/logger/QsLogger.h",
+        "src/version/version.cpp"
     ]
-    //destinationDirectory: "../../build"
+
 }
