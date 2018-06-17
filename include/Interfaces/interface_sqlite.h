@@ -36,7 +36,7 @@ public:
     bool ReadDbFile(QString file, QString connectionName);
     QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false);
     virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false);
-
+    bool EnsureUUIDForUserDatabase();
 };
 
 }

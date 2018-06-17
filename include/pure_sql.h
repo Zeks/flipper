@@ -248,6 +248,8 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr, QSqlDatabase);
 DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr, QSqlDatabase);
 DiagnosticSQLResult<bool> SetTaskFinished(int, QSqlDatabase);
 DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase);
+DiagnosticSQLResult<bool>  EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db);
+
 
 namespace Internal{
 DiagnosticSQLResult<bool> WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,

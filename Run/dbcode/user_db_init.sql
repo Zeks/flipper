@@ -1,5 +1,7 @@
 
-CREATE TABLE if not exists user_settings(name varchar, value integer);
+CREATE TABLE if not exists user_settings(name varchar unique, value integer);
+INSERT INTO user_settings(name, name) values('Last Fandom Id', 0);
+
  
 CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);
 
@@ -52,3 +54,10 @@ CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC
 CREATE INDEX if not exists  I_IS_ORIGIN ON RecommendationListData (is_origin ASC);
 CREATE INDEX if not exists  I_LISTDATA_FIC ON RecommendationListData (fic_id ASC);
 CREATE INDEX if not exists  I_LISTDATA_MATCHCOUNT ON RecommendationListData (match_count ASC);
+
+
+create table if not exists fandomindex (id integer, name VARCHAR NOT NULL,  primary key(id, name));
+alter table fandomindex add column updated datetime;
+CREATE INDEX if not exists I_FANDOMINDEX_PK ON fandomindex (id ASC, name asc);
+CREATE INDEX if not exists I_FANDOMINDEX_ID ON fandomindex (id ASC);
+CREATE INDEX if not exists I_FANDOMINDEX_NAME ON fandomindex (name ASC);

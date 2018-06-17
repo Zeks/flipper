@@ -2344,6 +2344,13 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
 
 }
 
+DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
+{
+    QString qs = QString("insert into user_settings(name, value) values('db_uuid', '%1')");
+    qs = qs.arg(id.toString());
+    return SqlContext<bool>(db, qs)();
+}
+
 }
 
 }

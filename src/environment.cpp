@@ -493,3 +493,8 @@ WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
     return result;
 }
 }
+
+void UserInterface::EnsureUUIDForUserTbale(QSqlDatabase db)
+{
+
+}

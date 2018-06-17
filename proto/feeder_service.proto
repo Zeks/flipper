@@ -1,5 +1,6 @@
 syntax = "proto3";
 import "fanfic.proto";
+import "fandom.proto";
 import "filter.proto";
 
 package ProtoSpace;
@@ -15,6 +16,16 @@ message SearchTask{
 
 message SearchResponse{
     repeated Fanfic fanfics = 1;
+}
+
+message SynchFandomListTask{
+    ControlInfo controls    = 1;
+    int32 last_fandom_id    = 2;
+}
+
+message SynchFandomListResponse{
+    bool needs_update       = 1;
+    repeated Fandom fandoms = 2;
 }
 
 message FicCountTask{
@@ -39,4 +50,5 @@ message FicCountResponse{
 service Feeder {
     rpc Search(SearchTask) returns (SearchResponse) {}
     rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
+    rpc SynchFandomList(SynchFandomListTask) returns (SynchFandomListResponse) {}
 }

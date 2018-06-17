@@ -383,3 +383,7 @@ CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC
 CREATE INDEX if not exists  I_IS_ORIGIN ON RecommendationListData (is_origin ASC);
 CREATE INDEX if not exists  I_LISTDATA_FIC ON RecommendationListData (fic_id ASC);
 CREATE INDEX if not exists  I_LISTDATA_MATCHCOUNT ON RecommendationListData (match_count ASC);
+
+
+CREATE TABLE if not exists user_settings(name varchar unique, value integer);
+INSERT INTO tags(name, name) values('Last Fandom Id', 0);

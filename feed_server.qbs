@@ -112,6 +112,7 @@ App{
         files: [
             "proto/filter.proto",
             "proto/fanfic.proto",
+            "proto/fandom.proto",
         ]
         fileTags: ["proto"]
     }
