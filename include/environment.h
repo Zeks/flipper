@@ -41,6 +41,7 @@ public:
         QSharedPointer<interfaces::PageTask> pageTask;
         QSharedPointer<interfaces::RecommendationLists> recs;
         QSharedPointer<database::IDBWrapper> db;
+        QSharedPointer<database::IDBWrapper> userDb;
         QSharedPointer<database::IDBWrapper> pageCache;
         QSharedPointer<database::IDBWrapper> tasks;
     };

@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+    QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
 
@@ -37,10 +38,23 @@ int main(int argc, char *argv[])
     if(settings.value("Settings/doBackups", true).toBool())
         dbInterface->BackupDatabase("CrawlerDB");
     qDebug() << "current appPath is: " << QDir::currentPath();
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-    dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
+    bool mainDBIsCrawler= settings.value("Settings/thinClient").toBool();
+    QSqlDatabase mainDb, userDb;
+    if(mainDBIsCrawler)
+    {
+        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+        userDb = userDbInterface->InitDatabase("UserDB", false);
+    }
+    else
+    {
+       mainDb = dbInterface->InitDatabase("CrawlerDB", false);
+       userDb = userDbInterface->InitDatabase("UserDB", true);
+    }
     auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+
+    dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
+    userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
     pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
 
     QSqlDatabase tasksDb;
@@ -49,17 +63,9 @@ int main(int argc, char *argv[])
     tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
 
 
-
-
-    //dbfix::EnsureFandomIndexExists(mainDb);
-//    dbfix::FillFFNId(mainDb);
-//    dbfix::ReplaceUrlInLinkedAuthorsWithID(mainDb);
-    //dbfix::RebindDuplicateFandoms(mainDb);
-    //dbfix::TrimUserUrls(pageCacheDb);
-    //dbfix::PassSlashDataIntoNewTable(mainDb);
-
     MainWindow w;
     w.env.interfaces.db = dbInterface;
+    w.env.interfaces.userDb = userDbInterface;
     w.env.interfaces.pageCache= pageCacheInterface;
     w.env.interfaces.tasks = tasksInterface;
     w.InitInterfaces();
@@ -69,6 +75,5 @@ int main(int argc, char *argv[])
     w.StartTaskTimer();
 
     return a.exec();
-//    /return 0;
 }
 

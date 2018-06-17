@@ -368,7 +368,7 @@ CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (N
 CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists (created asc);
 
 -- data for fandoms present in the list;
-create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer deault 0, 
+create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer default 0, 
 fic_count integer, PRIMARY KEY (list_id, fandom_id));
 CREATE INDEX if not exists I_RecommendationListsFandoms_PK ON RecommendationListsFandoms (list_id ASC, fandom_id asc);
 CREATE INDEX if not exists  I_RecommendationListsFandoms_LIST_ID ON RecommendationListsFandoms (list_id asc);
