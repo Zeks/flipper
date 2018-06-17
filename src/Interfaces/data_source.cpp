@@ -90,7 +90,7 @@ int FicSourceDirect::GetFicCount(core::StoryFilter filter)
     return result;
 }
 
-void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QList<core::Fic> * data)
+void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fic> *data)
 {
     if(!data)
         return;
@@ -120,7 +120,7 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QList<core::Fic>
             qDebug() << "tick " << counter/1000;
     }
     if(data->size() > 0)
-        lastFicId = data->last().id;
+        lastFicId = (*data)[data->size() - 1].id;
     qDebug() << "loaded fics:" << counter;
 }
 

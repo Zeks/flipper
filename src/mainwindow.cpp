@@ -60,6 +60,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDriver>
 #include <QClipboard>
 #include <QMovie>
+#include <QVector>
 #include <chrono>
 #include <algorithm>
 #include <math.h>
@@ -423,7 +424,7 @@ void MainWindow::SetupTableAccess()
 
 void MainWindow::SetupFanficTable()
 {
-    holder = new TableDataListHolder<core::Fic>();
+    holder = new TableDataListHolder<QVector, core::Fic>();
     typetableModel = new FicModel();
 
     SetupTableAccess();

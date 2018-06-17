@@ -10,6 +10,7 @@
 #include "include/Interfaces/genres.h"
 #include "include/Interfaces/tags.h"
 #include "include/Interfaces/data_source.h"
+#include "include/grpc/grpc_source.h"
 #include "include/Interfaces/pagetask_interface.h"
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"
@@ -51,15 +52,29 @@ void CoreEnvironment::WriteSettings()
 {
 
 }
+static inline QString CreateConnectString(QString ip,QString port)
+{
+    QString server_address_proto("%1:%2");
+    QString server_address = server_address_proto.arg(ip).arg(port);
+    return server_address;
+}
 
 void CoreEnvironment::Init()
 {
     InitMetatypes();
 
-    ficSource.reset(new FicSourceDirect(interfaces.db));
+    QSettings settings("settings.ini", QSettings::IniFormat);
+
+    auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
+    auto port = settings.value("Settings/serverPort", "3055").toString();
+
+    if(settings.value("Settings/thinClient").toBool())
+        ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), 160));
+    else
+        ficSource.reset(new FicSourceDirect(interfaces.db));
+
     ficSource->AddFicFilter(QSharedPointer<FicFilter>(new FicFilterSlash));
 
-    QSettings settings("settings.ini", QSettings::IniFormat);
     auto storedRecList = settings.value("Settings/currentList").toString();
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(storedRecList));
 

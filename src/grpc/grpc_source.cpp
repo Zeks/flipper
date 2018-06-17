@@ -14,15 +14,7 @@
 #include <grpc++/security/credentials.h>
 
 
-FicSourceGRPC::FicSourceGRPC()
-{
 
-}
-
-FicSourceGRPC::~FicSourceGRPC()
-{
-
-}
 
 
 static inline int GetChapterForFic(int ficId){
@@ -33,7 +25,29 @@ static inline QList<int> GetTaggedIDs(){
     return QList<int>();
 }
 
-static ProtoSpace::Filter StoryFilterIntoProtoFlter(core::StoryFilter filter)
+static inline QString FS(const std::string& s)
+{
+    return QString::fromStdString(s);
+}
+
+static inline std::string TS(const QString& s)
+{
+    return s.toStdString();
+}
+
+
+static inline QDateTime DFS(const std::string& s)
+{
+    return QDateTime::fromString(QString::fromStdString(s), "yyyyMMdd");
+}
+
+static inline std::string DTS(const QDateTime & date)
+{
+    return date.toString("yyyyMMdd").toStdString();
+}
+
+
+ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
 {
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
@@ -116,15 +130,81 @@ static ProtoSpace::Filter StoryFilterIntoProtoFlter(core::StoryFilter filter)
     return result;
 }
 
-static inline QString FS(const std::string& s)
+
+
+core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
 {
-    return QString::fromStdString(s);
+    // ignore fandoms intentionally not passed because likely use case can be done locally
+
+    core::StoryFilter result;
+    result.randomizeResults = filter.randomize_results();
+    result.website = FS(filter.basic_filters().website());
+    result.minWords = filter.basic_filters().min_words();
+    result.maxWords = filter.basic_filters().max_words();
+
+    result.minFavourites = filter.basic_filters().min_favourites();
+    result.maxFics = filter.basic_filters().max_fics();
+
+
+    result.allowUnfinished = filter.basic_filters().allow_unfinished();
+    result.allowNoGenre = filter.basic_filters().allow_no_genre();
+
+    result.ensureActive = filter.basic_filters().ensure_active();
+    result.ensureCompleted = filter.basic_filters().ensure_completed();
+
+    result.mode = static_cast<core::StoryFilter::EFilterMode>(filter.filtering_mode());
+    result.sortMode = static_cast<core::StoryFilter::ESortMode>(filter.sort_mode());
+
+    result.recordLimit = filter.size_limits().record_limit();
+    result.recordPage = filter.size_limits().record_page();
+
+    result.reviewBias = static_cast<core::StoryFilter::EReviewBiasMode>(filter.review_bias().bias_mode());
+    result.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(filter.review_bias().bias_operator());
+    result.reviewBiasRatio = filter.review_bias().bias_ratio();
+
+    result.recentAndPopularFavRatio = filter.recent_and_popular().fav_ratio();
+    result.recentCutoff = DFS(filter.recent_and_popular().date_cutoff());
+
+    result.fandom = FS(filter.content_filter().fandom());
+    result.includeCrossovers = filter.content_filter().include_crossovers();
+    result.crossoversOnly = filter.content_filter().crossovers_only();
+    result.otherFandomsMode = filter.content_filter().other_fandoms_mode();
+
+    for(int i = 0; i < filter.content_filter().genre_exclusion_size(); i++)
+        result.genreExclusion.push_back(FS(filter.content_filter().genre_exclusion(i)));
+    for(int i = 0; i < filter.content_filter().genre_inclusion_size(); i++)
+        result.genreInclusion.push_back(FS(filter.content_filter().genre_inclusion(i)));
+    for(int i = 0; i < filter.content_filter().word_exclusion_size(); i++)
+        result.wordExclusion.push_back(FS(filter.content_filter().word_exclusion(i)));
+    for(int i = 0; i < filter.content_filter().word_inclusion_size(); i++)
+        result.wordInclusion.push_back(FS(filter.content_filter().word_inclusion(i)));
+
+    result.ignoreAlreadyTagged = filter.tag_filter().ignore_already_tagged();
+    for(int i = 0; i < filter.tag_filter().active_tags_size(); i++)
+        result.activeTags.push_back(FS(filter.tag_filter().active_tags(i)));
+
+    for(int i = 0; i < filter.tag_filter().all_tagged_size(); i++)
+        result.taggedIDs.push_back(filter.tag_filter().all_tagged(i));
+
+    result.slashFilter.slashFilterEnabled = filter.slash_filter().use_slash_filter();
+    result.slashFilter.excludeSlash = filter.slash_filter().exclude_slash();
+    result.slashFilter.includeSlash = filter.slash_filter().include_slash();
+    result.slashFilter.enableFandomExceptions = filter.slash_filter().enable_exceptions();
+
+    for(int i = 0; i < filter.slash_filter().fandom_exceptions_size(); i++)
+        result.slashFilter.fandomExceptions.push_back(filter.slash_filter().fandom_exceptions(i));
+
+    result.listOpenMode = filter.recommendations().list_open_mode();
+    result.listForRecommendations = filter.recommendations().list_open_mode();
+    result.useThisRecommenderOnly = filter.recommendations().use_this_recommender_only();
+    result.minRecommendations = filter.recommendations().min_recommendations();
+    result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
+
+    return result;
 }
 
-static inline QDateTime DFS(const std::string& s)
-{
-    return QDateTime::fromString(QString::fromStdString(s), "yyyyMMdd");
-}
+
+
 
 bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
 {
@@ -157,9 +237,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
         coreFic.fandoms.push_back(FS(protoFic.fandoms(i)));
     coreFic.isCrossover = coreFic.fandoms.size() > 1;
 
-    for(int i = 0; i < protoFic.genres_size(); i++)
-        coreFic.genres.push_back(FS(protoFic.genres(i)));
-    coreFic.genreString = coreFic.genres.join(" ");
+    coreFic.genreString = FS(protoFic.genres());
     coreFic.webId = protoFic.site_pack().ffn().id(); // temporary
     coreFic.ffn_id = coreFic.webId; // temporary
     coreFic.webSite = "ffn"; // temporary
@@ -169,15 +247,42 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     return true;
 }
 
-void FicSourceGRPC::FetchData(core::StoryFilter filter, QList<core::Fic> *)
+bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 {
+    protoFic->set_is_valid(true);
+    protoFic->set_id(coreFic.id);
 
+    protoFic->set_chapters(TS(coreFic.chapters));
+    protoFic->set_complete(coreFic.complete);
+    protoFic->set_recommendations(coreFic.recommendations);
+
+    protoFic->set_word_count(TS(coreFic.wordCount));
+    protoFic->set_reviews(TS(coreFic.reviews));
+    protoFic->set_favourites(TS(coreFic.favourites));
+    protoFic->set_follows(TS(coreFic.follows));
+    protoFic->set_rated(TS(coreFic.rated));
+    protoFic->set_fandom(TS(coreFic.fandom));
+    protoFic->set_title(TS(coreFic.title));
+    protoFic->set_summary(TS(coreFic.summary));
+    protoFic->set_language(TS(coreFic.language));
+    protoFic->set_genres(TS(coreFic.genreString));
+
+    protoFic->set_published(DTS(coreFic.published));
+    protoFic->set_updated(DTS(coreFic.updated));
+    protoFic->set_characters(TS(coreFic.charactersFull));
+
+
+    for(auto fandom : coreFic.fandoms)
+        protoFic->add_fandoms(TS(fandom));
+
+
+    protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.ffn_id);
+
+    return true;
 }
 
-int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
-{
-    return 0;
-}
+
+
 
 
 class FicSourceGRPCImpl{
@@ -190,13 +295,13 @@ public:
     {
     }
     void ProcessStandardError(grpc::Status status);
-    void FetchData(core::StoryFilter filter, std::vector<core::Fic> * fics)
+    void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
     {
         grpc::ClientContext context;
 
         ProtoSpace::SearchTask task;
 
-        ProtoSpace::Filter protoFilter = StoryFilterIntoProtoFlter(filter);
+        ProtoSpace::Filter protoFilter = StoryFilterIntoProtoFilter(filter);
         task.set_allocated_filter(&protoFilter);
 
         QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
@@ -213,6 +318,28 @@ public:
         {
             ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
         }
+        task.release_filter();
+    }
+
+    int GetFicCount(core::StoryFilter filter)
+    {
+        grpc::ClientContext context;
+
+        ProtoSpace::FicCountTask task;
+
+        ProtoSpace::Filter protoFilter = StoryFilterIntoProtoFilter(filter);
+        task.set_allocated_filter(&protoFilter);
+
+        QScopedPointer<ProtoSpace::FicCountResponse> response (new ProtoSpace::FicCountResponse);
+        std::chrono::system_clock::time_point deadline =
+                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+        context.set_deadline(deadline);
+
+        grpc::Status status = stub_->GetFicCount(&context, task, response.data());
+
+        ProcessStandardError(status);
+        task.release_filter();
+        return response->fic_count();
     }
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
@@ -257,4 +384,27 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
         break;
     }
     error+=QString::fromStdString(status.error_message());
+}
+
+FicSourceGRPC::FicSourceGRPC(QString connectionString, int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
+{
+
+}
+
+FicSourceGRPC::~FicSourceGRPC()
+{
+
+}
+void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics)
+{
+    if(!impl)
+        return;
+    impl->FetchData(filter, fics);
+}
+
+int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
+{
+    if(!impl)
+        return 0;
+    return impl->GetFicCount(filter);
 }

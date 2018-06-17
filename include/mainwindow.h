@@ -48,6 +48,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagegetter.h"
 #include "querybuilder.h"
 #include "include/environment.h"
+#include <vector>
 
 #include <QMovie>
 
@@ -279,7 +280,7 @@ private:
 
     QSharedPointer<TableDataInterface> typetableInterface;
     FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
-    TableDataListHolder<core::Fic>* holder = nullptr; // an interface class that model uses to access the data
+    TableDataListHolder<QVector, core::Fic>* holder = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
     QStringListModel* ignoredFandomsModel= nullptr;

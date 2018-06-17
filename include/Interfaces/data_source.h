@@ -29,7 +29,7 @@ public:
     FicSource();
     virtual ~FicSource();
 
-    virtual void FetchData(core::StoryFilter filter, QList<core::Fic>*) = 0;
+    virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*) = 0;
     virtual int GetFicCount(core::StoryFilter filter) = 0;
 
     void AddFicFilter(QSharedPointer<FicFilter>);
@@ -48,7 +48,7 @@ class FicSourceDirect : public FicSource
 public:
     FicSourceDirect(QSharedPointer<database::IDBWrapper> db);
     virtual ~FicSourceDirect();
-    virtual void FetchData(core::StoryFilter filter, QList<core::Fic>*);
+    virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*);
     QSqlQuery BuildQuery(core::StoryFilter filter, bool countOnly = false) ;
     inline core::Fic LoadFanfic(QSqlQuery& q);
     int GetFicCount(core::StoryFilter filter);

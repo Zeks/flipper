@@ -82,6 +82,8 @@ App{
     cpp.staticLibraries: {
         var libs = ["UniversalModels", "logger", "quazip"]
         libs = libs.concat(conditionals.zlib)
+        libs = libs.concat(conditionals.ssl)
+
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(conditionals.grpc)

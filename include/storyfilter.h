@@ -113,6 +113,8 @@ struct StoryFilter{
 
     double reviewBiasRatio = 0;
 
+    QList<int> taggedIDs;
+
 };
 }
 

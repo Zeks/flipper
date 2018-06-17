@@ -98,7 +98,7 @@ public:
     int currentLastFanficId = -1;
 
 
-    QList<core::Fic> fanfics; // filtered fanfic data
+    QVector<core::Fic> fanfics; // filtered fanfic data
 
     QThread pageThread; // thread for pagegetter worker to live in
     PageThreadWorker* worker = nullptr;

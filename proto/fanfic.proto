@@ -37,6 +37,6 @@ message Fanfic{
     string characters               = 17;
     
     repeated string fandoms         = 18;
-    repeated string genres          = 19;    
-    SitePack site_pack               = 20;
+    string genres                   = 19;    
+    SitePack site_pack              = 20;
 }

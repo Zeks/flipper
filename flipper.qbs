@@ -44,7 +44,6 @@ App{
         "icons.qrc",
         "include/Interfaces/authors.h",
         "include/Interfaces/base.h",
-        "include/Interfaces/data_source.h",
         "include/Interfaces/db_interface.h",
         "include/Interfaces/fandoms.h",
         "include/Interfaces/fanfics.h",
@@ -69,7 +68,6 @@ App{
         "include/tasks/author_task_processor.h",
         "include/timeutils.h",
         "include/webpage.h",
-        "src/Interfaces/data_source.cpp",
         "src/actionprogress.cpp",
         "include/actionprogress.h",
         "UI/actionprogress.ui",
@@ -147,11 +145,16 @@ App{
         "include/tasks/recommendations_reload_precessor.h",
         "src/tasks/fandom_list_reload_processor.cpp",
         "include/tasks/fandom_list_reload_processor.h",
+        "include/grpc/grpc_source.h",
+        "include/Interfaces/data_source.h",
+        "src/grpc/grpc_source.cpp",
+        "src/Interfaces/data_source.cpp",
     ]
 
     cpp.staticLibraries: {
         var libs = ["UniversalModels", "logger", "quazip"]
         libs = libs.concat(conditionals.zlib)
+        libs = libs.concat(conditionals.ssl)
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(conditionals.grpc)
@@ -159,17 +162,28 @@ App{
         return libs
     }
 
-//    Group{
-//        name:"grpc files"
-//        proto_generation.rootDir: conditionals.projectPath + "/proto"
-//        grpc_generation.rootDir: conditionals.projectPath + "/proto"
-//        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
-//        grpc_generation.protobufDependencyDir: conditionals.projectPath + "../"
-//        proto_generation.toolchain : qbs.toolchain
-//        grpc_generation.toolchain : qbs.toolchain
-//        files: [
-//            "proto/filter.proto",
-//        ]
-//        fileTags: ["grpc", "proto"]
-//    }
+    Group{
+        name:"grpc files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        grpc_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        grpc_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        grpc_generation.toolchain : qbs.toolchain
+        files: [
+            "proto/feeder_service.proto",
+        ]
+        fileTags: ["grpc", "proto"]
+    }
+    Group{
+        name:"proto files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        files: [
+            "proto/filter.proto",
+            "proto/fanfic.proto",
+        ]
+        fileTags: ["proto"]
+    }
 }

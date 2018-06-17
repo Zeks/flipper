@@ -12,9 +12,16 @@ message SearchResponse{
     repeated Fanfic fanfics = 1;
 }
 
+message FicCountTask{
+    Filter filter = 1;
+}
+
+message FicCountResponse{
+    int32 fic_count = 1;
+}
+
 
 service Feeder {
-    // процедура разора текста
     rpc Search(SearchTask) returns (SearchResponse) {}
+    rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
 }
-//grpc::CreateChannel(connectString.toStdString(), grpc::InsecureChannelCredentials());
