@@ -177,8 +177,6 @@ private:
     // used to call a widget that llows editing of lineedit contents in a larger box
     void CallExpandedWidget();
 
-    // creates page worker that gets pages from ffn in a thread
-    void CreatePageThreadWorker();
     // starts page worker thread execution
     void StartPageWorker();
     // stops page worker thread execution
@@ -320,8 +318,6 @@ public slots:
     // triggered when user removes tag from a fic in qml
     void OnTagRemove(QVariant tag, QVariant row);
 
-    // when new page arrives from page worker
-    void OnNewPage(PageResult result);
     // places into the clipboard, the url of the fic clicked in qml
     void OnCopyFicUrl(QString);
     // used to open author pages on heart click that contain the current fic in their favourites

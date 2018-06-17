@@ -195,7 +195,7 @@ void MainWindow::Init()
     ReadSettings();
     SetupFanficTable();
     FillRecommenderListView();
-    CreatePageThreadWorker();
+    //CreatePageThreadWorker();
     callProgress = [&](int counter) {
         pbMain->setTextVisible(true);
         pbMain->setFormat("%v");
@@ -285,9 +285,6 @@ void MainWindow::InitConnections()
     //! todo currently null
     connect(ui->lvRecommenders->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecommenderList);
 
-    connect(this, &MainWindow::pageTask, env.worker, &PageThreadWorker::FandomTask);
-    connect(this, &MainWindow::pageTaskList, env.worker, &PageThreadWorker::TaskList);
-    connect(env.worker, &PageThreadWorker::pageResult, this, &MainWindow::OnNewPage);
     connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
     connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
@@ -550,7 +547,7 @@ void MainWindow::LoadData()
 {
     if(ui->cbMinWordCount->currentText().trimmed().isEmpty())
     {
-        QMessageBox::warning(0, "warning!", "Please set minimum word count");
+        QMessageBox::warning(nullptr, "warning!", "Please set minimum word count");
         return;
     }
     if(env.filter.recordPage == 0)
@@ -655,15 +652,6 @@ void MainWindow::EnableAllLoadButtons()
     ui->pbLoadTrackedFandoms->setEnabled(true);
     ui->pbLoadPage->setEnabled(true);
     ui->pbLoadAllRecommenders->setEnabled(true);
-}
-
-
-void MainWindow::OnNewPage(PageResult result)
-{
-    if(result.data.isValid)
-        env.pageQueue.data.push_back(result.data);
-    if(result.finished)
-        env.pageQueue.pending = false;
 }
 
 void MainWindow::OnCopyFicUrl(QString text)
@@ -1222,26 +1210,26 @@ void MainWindow::CallExpandedWidget()
 
 
 
-void MainWindow::CreatePageThreadWorker()
-{
-    env.worker = new PageThreadWorker;
-    env.worker->moveToThread(&env.pageThread);
+//void MainWindow::CreatePageThreadWorker()
+//{
+//    env.worker = new PageThreadWorker;
+//    env.worker->moveToThread(&env.pageThread);
 
-}
+//}
 
-void MainWindow::StartPageWorker()
-{
-    env.pageQueue.data.clear();
-    env.pageQueue.pending = true;
-    //worker->SetAutomaticCache(QDate::currentDate());
-    env.pageThread.start(QThread::HighPriority);
+//void MainWindow::StartPageWorker()
+//{
+//    env.pageQueue.data.clear();
+//    env.pageQueue.pending = true;
+//    //worker->SetAutomaticCache(QDate::currentDate());
+//    env.pageThread.start(QThread::HighPriority);
 
-}
+//}
 
-void MainWindow::StopPageWorker()
-{
-    env.pageThread.quit();
-}
+//void MainWindow::StopPageWorker()
+//{
+//    env.pageThread.quit();
+//}
 
 void MainWindow::ReinitProgressbar(int maxValue)
 {

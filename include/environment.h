@@ -89,8 +89,6 @@ public:
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
 
-//    core::DefaultQueryBuilder queryBuilder; // builds search queries
-//    core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
     Interfaces interfaces;
 
@@ -100,10 +98,6 @@ public:
 
 
     QVector<core::Fic> fanfics; // filtered fanfic data
-
-    QThread pageThread; // thread for pagegetter worker to live in
-    PageThreadWorker* worker = nullptr;
-    PageQueue pageQueue; // collects data sent from PageThreadWorker
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 
