@@ -27,9 +27,10 @@ QString WrapTag(QString tag)
     return tag;
 }
 
-DefaultQueryBuilder::DefaultQueryBuilder()
+DefaultQueryBuilder::DefaultQueryBuilder(bool client, QString userToken)
 {
     query = NewQuery();
+    InitTagFilterBuilder(client, userToken);
 }
 
 QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
@@ -117,7 +118,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
 
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
-    queryString+= ProcessFilteringMode(filter);
+    queryString+= tagFilterBuilder->GetString(filter);
     queryString+= ProcessFandomIgnore(filter);
     queryString+= ProcessCrossovers(filter);
 
@@ -536,6 +537,18 @@ QSharedPointer<Query> DefaultQueryBuilder::NewQuery()
     return QSharedPointer<Query>(new Query);
 }
 
+void DefaultQueryBuilder::InitTagFilterBuilder(bool client, QString userToken)
+{
+
+    if(client)
+    {
+        tagFilterBuilder.reset(new TagFilteringClient);
+        tagFilterBuilder->userToken = userToken;
+    }
+    else
+        tagFilterBuilder.reset(new TagFilteringFullDB);
+}
+
 
 QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
 {
@@ -556,9 +569,8 @@ QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
     return currentList[value];
 }
 
-CountQueryBuilder::CountQueryBuilder()
+CountQueryBuilder::CountQueryBuilder(bool client, QString userToken) : DefaultQueryBuilder(client, userToken)
 {
-
 }
 
 QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
@@ -588,7 +600,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
 
         where+= ProcessStatusFilters(filter);
         where+= ProcessNormalOrCrossover(filter, false);
-        where+= ProcessFilteringMode(filter);
+        where+= tagFilterBuilder->GetString(filter);
 
     }
     queryString+= where;
@@ -621,6 +633,54 @@ QString CountQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
                       " and updated > date('now', '-60 days') ";
 
     // this doesnt require sumrecs as it's inverted
+    return queryString;
+}
+
+ITagFiltering::~ITagFiltering()
+{
+
+}
+
+TagFilteringFullDB::~TagFilteringFullDB()
+{
+
+}
+
+QString TagFilteringFullDB::GetString(StoryFilter filter)
+{
+    QString queryString;
+    QString part =  "'" + filter.activeTags.join("','") + "'";
+    if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
+        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = ff.id) ").arg(part);
+    else
+    {
+        if(filter.ignoreAlreadyTagged)
+            queryString += QString("");
+        else
+            queryString += QString(" and ff.hidden = 0 ");
+
+    }
+    return queryString;
+}
+
+TagFilteringClient::~TagFilteringClient()
+{
+
+}
+
+QString TagFilteringClient::GetString(StoryFilter filter)
+{
+    QString queryString;
+    if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
+        queryString += QString(" and cfInActiveTags(ff.id, '%1') = 1 ").arg(userToken);
+    else
+    {
+        if(filter.ignoreAlreadyTagged)
+            queryString += QString("");
+        else
+            queryString += QString(" and cfInTags(ff.id, '%1') = 0 ").arg(userToken);
+
+    }
     return queryString;
 }
 

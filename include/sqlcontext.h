@@ -1,5 +1,6 @@
 #pragma once
 #include "transaction.h"
+#include "logger/QsLog.h"
 
 #include <QString>
 #include <QSqlDatabase>

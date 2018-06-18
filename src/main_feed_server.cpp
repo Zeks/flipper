@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/feeder_environment.h"
 #include "include/Interfaces/data_source.h"
 #include "include/timeutils.h"
+#include "include/in_tag_accessor.h"
 #include "grpc/grpc_source.h"
 #include "proto/feeder_service.grpc.pb.h"
 #include "proto/feeder_service.pb.h"
@@ -81,7 +82,8 @@ public:
                  ProtoSpace::SearchResponse* response) override
     {
         Q_UNUSED(context);
-        QLOG_INFO() << "////////////Received search task from: " << QString::fromStdString(task->controls().user_token());
+        QString userToken = QString::fromStdString(task->controls().user_token());
+        QLOG_INFO() << "////////////Received search task from: " << userToken;
 
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
@@ -95,7 +97,17 @@ public:
 
         QSharedPointer<FicSource> ficSource;
         ficSource.reset(new FicSourceDirect(dbInterface));
+        FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+        convertedFicSource->InitQueryType(true, userToken);
+
         QVector<core::Fic> data;
+        UserTags userTags;
+        for(int i = 0; i < task->usertags().searched_tags_size(); i++)
+            userTags.activeTags.insert(task->usertags().searched_tags(i));
+        for(int i = 0; i < task->usertags().all_tags_size(); i++)
+            userTags.allTags.insert(task->usertags().all_tags(i));
+
+        InTagAccessor::userTags[userToken] = userTags;
 
         TimedAction action("Fetching data",[&](){
             ficSource->FetchData(filter, &data);
@@ -159,20 +171,24 @@ public:
         QSharedPointer<interfaces::Fandoms> fandomInterface (new interfaces::Fandoms());
         fandomInterface->portableDBInterface = dbInterface;
         auto lastServerFandomID = fandomInterface->GetLastFandomID();
+        QLOG_INFO() << "Client last fandom ID: " << task->last_fandom_id();
+        QLOG_INFO() << "Server last fandom ID: " << lastServerFandomID;
         if(lastServerFandomID == task->last_fandom_id())
             response->set_needs_update(false);
         else
         {
-            fandomInterface->LoadAllFandoms(true);
-            auto fandoms = fandomInterface->GetAllLoadedFandoms();
+            TimedAction ("Processing fandoms",[&](){
+            response->set_needs_update(true);
+            auto fandoms = fandomInterface->LoadAllFandomsAfter(task->last_fandom_id());
+            QLOG_INFO() << "Sending new fandoms to the client:" << fandoms.size();
             for(auto coreFandom: fandoms)
             {
                 auto* protoFandom = response->add_fandoms();
                 LocalFandomToProtoFandom(*coreFandom, protoFandom);
             }
+            }).run();
         }
-
-
+        QLOG_INFO() << "Finished fandom sync task";
         QLOG_INFO() << " ";
         QLOG_INFO() << " ";
         QLOG_INFO() << " ";

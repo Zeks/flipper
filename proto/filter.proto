@@ -88,15 +88,15 @@ message Filter{
     };
     enum SortMode {
     sm_undefined         = 0;
-    sm_favourites        = 1;
-    sm_fav_rate          = 2;
-    sm_update_date 	     = 3;
-    sm_publish_date      = 4;
-    sm_rec_count         = 5;
-    sm_wcr_cr            = 6;
-    sm_rev_to_fav        = 7;
-    sm_genre_values      = 8;
-    sm_wordcount         = 9;
+    sm_wordcount         = 1;
+    sm_favourites        = 2;
+    sm_fav_rate          = 3;
+    sm_update_date 	     = 4;
+    sm_publish_date      = 5;
+    sm_rec_count         = 6;
+    sm_wcr_cr            = 7;
+    sm_rev_to_fav        = 8;
+    sm_genre_values      = 9;
   }
     
     bool randomize_results                      = 1;

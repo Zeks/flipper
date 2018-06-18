@@ -1,4 +1,5 @@
 #include "sqlcontext.h"
+#include "logger/QsLog.h"
 namespace database {
 namespace puresql{
 bool ExecAndCheck(QSqlQuery& q, bool reportErrors)
@@ -9,13 +10,13 @@ bool ExecAndCheck(QSqlQuery& q, bool reportErrors)
         if(reportErrors)
         {
             if(q.lastError().text().contains("record"))
-                qDebug() << "Error while performing a query: ";
-            qDebug() << "Error while performing a query: ";
-            qDebug().noquote() << q.lastQuery();
-            qDebug() << "Error was: " <<  q.lastError();
-            qDebug() << q.lastError().nativeErrorCode();
-            qDebug() << q.lastError().driverText();
-            qDebug() << q.lastError().databaseText();
+                QLOG_ERROR() << "Error while performing a query: ";
+            QLOG_ERROR() << "Error while performing a query: ";
+            QLOG_ERROR_PURE()<< q.lastQuery();
+            QLOG_ERROR() << "Error was: " <<  q.lastError();
+            QLOG_ERROR() << q.lastError().nativeErrorCode();
+            QLOG_ERROR() << q.lastError().driverText();
+            QLOG_ERROR() << q.lastError().databaseText();
         }
         return false;
     }

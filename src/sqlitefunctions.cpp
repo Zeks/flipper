@@ -28,7 +28,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <third_party/quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
 #include "include/transaction.h"
+#include "include/in_tag_accessor.h"
 #include "pure_sql.h"
+#include "logger/QsLog.h"
 
 namespace database{
 
@@ -65,6 +67,38 @@ void cfRegexp(sqlite3_context* ctx, int , sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
     }
 }
+
+void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    QRegExp regex;
+    int ficId = sqlite3_value_int(argv[0]);
+    QString userToken((const char*)sqlite3_value_text(argv[1]));
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto& userTags = InTagAccessor::userTags;
+    if(!userTags.contains(userToken))
+        sqlite3_result_int(ctx, 0);
+
+    if(userTags[userToken].allTags.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
+void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    QRegExp regex;
+    int ficId = sqlite3_value_int(argv[0]);
+    QString userToken((const char*)sqlite3_value_text(argv[1]));
+
+    if(!InTagAccessor::userTags.contains(userToken))
+        sqlite3_result_int(ctx, 0);
+
+    if(InTagAccessor::userTags[userToken].activeTags.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
 void cfReturnCapture(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QString pattern((const char*)sqlite3_value_text(argv[0]));
@@ -103,6 +137,7 @@ void cfGetSecondFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
 
 bool InstallCustomFunctions(QSqlDatabase db)
 {
+    QLOG_INFO() << "Installing custom sqlite functions";
     QVariant v = db.driver()->handle();
     if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
     {
@@ -110,12 +145,16 @@ bool InstallCustomFunctions(QSqlDatabase db)
         if (db_handle != 0) {
             sqlite3_initialize();
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInTags, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInActiveTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActiveTags, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfReturnCapture", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfReturnCapture, NULL, NULL);
+            QLOG_INFO() << "Installed funcs succesfully";
             return true;
         }
     }
+    QLOG_INFO() << "Func install failed";
     return false;
 }
 

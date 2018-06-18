@@ -8,6 +8,7 @@
 #include "proto/feeder_service.grpc.pb.h"
 #include <memory>
 #include <QList>
+#include <QUuid>
 #include <QVector>
 
 #include <grpc++/channel.h>
@@ -309,6 +310,8 @@ public:
           deadline(deadline)
     {
     }
+    UserTags userTags;
+
     void ProcessStandardError(grpc::Status status);
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
     {
@@ -323,6 +326,13 @@ public:
         std::chrono::system_clock::time_point deadline =
                 std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
         context.set_deadline(deadline);
+        auto* controls = task.mutable_controls();
+        controls->set_user_token(QUuid::createUuid().toString().toStdString());
+        auto* tags = task.mutable_usertags();
+        for(auto tag : userTags.allTags)
+            tags->add_all_tags(tag);
+        for(auto tag : userTags.activeTags)
+            tags->add_searched_tags(tag);
 
         grpc::Status status = stub_->Search(&context, task, response.data());
 
@@ -333,6 +343,7 @@ public:
         {
             ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
         }
+
         task.release_filter();
     }
 
@@ -344,6 +355,8 @@ public:
 
         ProtoSpace::Filter protoFilter = StoryFilterIntoProtoFilter(filter);
         task.set_allocated_filter(&protoFilter);
+        auto* controls = task.mutable_controls();
+        controls->set_user_token(QUuid::createUuid().toString().toStdString());
 
         QScopedPointer<ProtoSpace::FicCountResponse> response (new ProtoSpace::FicCountResponse);
         std::chrono::system_clock::time_point deadline =
@@ -440,6 +453,7 @@ void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics
 {
     if(!impl)
         return;
+    impl->userTags = userTags;
     impl->FetchData(filter, fics);
 }
 
@@ -448,4 +462,11 @@ int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
     if(!impl)
         return 0;
     return impl->GetFicCount(filter);
+}
+
+bool FicSourceGRPC::GetFandomListFromServer(int lastFandomID, QVector<core::Fandom> *fandoms)
+{
+    if(!impl)
+        return false;
+    return impl->GetFandomListFromServer(lastFandomID, fandoms);
 }

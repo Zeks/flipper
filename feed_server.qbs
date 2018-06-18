@@ -79,6 +79,8 @@ App{
         "include/transaction.h",
         "src/pagetask.cpp",
         "include/pagetask.h",
+        "include/in_tag_accessor.h",
+        "src/in_tag_accessor.cpp",
     ]
 
     cpp.staticLibraries: {

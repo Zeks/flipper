@@ -9,9 +9,16 @@ message ControlInfo{
     string user_token = 1;
 }
 
-message SearchTask{
+message Tags{
+    repeated int32 all_tags       = 1;
+    repeated int32 searched_tags  = 2;
+}
+
+message SearchTask
+{
     ControlInfo controls    = 1;
     Filter filter           = 2;
+    Tags userTags           = 3;
 }
 
 message SearchResponse{

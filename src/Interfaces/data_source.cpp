@@ -90,6 +90,12 @@ int FicSourceDirect::GetFicCount(core::StoryFilter filter)
     return result;
 }
 
+void FicSourceDirect::InitQueryType(bool client, QString userToken)
+{
+    queryBuilder.InitTagFilterBuilder(client, userToken);
+    countQueryBuilder.InitTagFilterBuilder(client, userToken);
+}
+
 void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fic> *data)
 {
     if(!data)

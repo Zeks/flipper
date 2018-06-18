@@ -43,15 +43,16 @@ struct StoryFilter{
     enum ESortMode
     {
         sm_undefined    = 0,
-        sm_favourites   = 1,
-        sm_favrate      = 2,
-        sm_updatedate   = 3,
-        sm_publisdate   = 4,
-        sm_reccount     = 5,
-        sm_wcrcr        = 6,
-        sm_revtofav     = 7,
-        sm_genrevalues  = 8,
-        sm_wordcount    = 9,
+        sm_wordcount    = 1,
+        sm_favourites   = 2,
+        sm_favrate      = 3,
+        sm_updatedate   = 4,
+        sm_publisdate   = 5,
+        sm_reccount     = 6,
+        sm_wcrcr        = 7,
+        sm_revtofav     = 8,
+        sm_genrevalues  = 9,
+
     };
     enum EReviewBiasMode{
         bias_none    = 0,

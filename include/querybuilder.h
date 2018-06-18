@@ -32,14 +32,34 @@ struct DefaultRNGgenerator : public IRNGGenerator{
 };
 
 
+class ITagFiltering{
+public:
+    virtual ~ITagFiltering();
+    virtual QString GetString(StoryFilter filter) = 0;
+    QString userToken;
+};
+
+class TagFilteringFullDB : public ITagFiltering{
+public:
+    virtual ~TagFilteringFullDB();
+    virtual QString GetString(StoryFilter filter);
+};
+class TagFilteringClient : public ITagFiltering{
+public:
+    virtual ~TagFilteringClient();
+    virtual QString GetString(StoryFilter filter);
+
+};
+
 class DefaultQueryBuilder : public IQueryBuilder
 {
 public:
-    DefaultQueryBuilder();
-    virtual ~DefaultQueryBuilder(){}
-    virtual QSharedPointer<Query> Build(StoryFilter);
+    DefaultQueryBuilder(bool client = false, QString userToken = QString());
+    virtual ~DefaultQueryBuilder() override {}
+    virtual QSharedPointer<Query> Build(StoryFilter) override;
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
     virtual void ProcessBindings(StoryFilter, QSharedPointer<Query>);
+    void InitTagFilterBuilder(bool client = false, QString userToken = QString());
     QScopedPointer<IRNGGenerator> rng;
 
 protected:
@@ -79,12 +99,13 @@ protected:
     QString BuildIdListQuery(StoryFilter);
     bool HasIdListForQuery(QString);
     QSharedPointer<Query> NewQuery();
+
     QString queryString;
     QString diffField;
     QString activeTags;
     QString wherePart;
     //bool countOnlyQuery = false;
-
+    QSharedPointer<ITagFiltering> tagFilterBuilder;
     QSharedPointer<Query> query;
     QSqlDatabase db;
 };
@@ -92,19 +113,19 @@ protected:
 class CountQueryBuilder : public DefaultQueryBuilder
 {
 public:
-    CountQueryBuilder();
-    QSharedPointer<Query> Build(StoryFilter);
+    CountQueryBuilder(bool client = false, QString userToken = QString());
+    QSharedPointer<Query> Build(StoryFilter) override;
 private:
     QString CreateWhere(StoryFilter,
                         bool usePageLimiter = false);
 
     virtual QString ProcessWhereSortMode(StoryFilter) override;
 
-    QString queryString;
-    QString diffField;
-    QString wherePart;
+//    QString queryString;
+//    QString diffField;
+//    QString wherePart;
 
-    QSharedPointer<Query> query;
-    QSqlDatabase db;
+//    QSharedPointer<Query> query;
+//    QSqlDatabase db;
 };
 }

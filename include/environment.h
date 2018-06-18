@@ -25,10 +25,10 @@ class RecommendationLists;
 
 class FicSource;
 
-class UserInterface
+class ClientInterface
 {
 public:
-    void EnsureUUIDForUserTbale(QSqlDatabase db);
+
 };
 
 class CoreEnvironment : public QObject

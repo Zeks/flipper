@@ -275,31 +275,39 @@ DiagnosticSQLResult<bool> WriteFandomUrls(core::FandomPtr fandom, QSqlDatabase d
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> CreateFandomInDatabase(core::FandomPtr fandom, QSqlDatabase db)
+DiagnosticSQLResult<bool> CreateFandomInDatabase(core::FandomPtr fandom, QSqlDatabase db, bool writeUrls, bool useSuppliedIds)
 {
     SqlContext<bool> ctx(db);
-    auto lastId = GetLastFandomID(db);
 
-    if(!lastId.success)
-        ctx.result.success = false;
 
-    auto newFandomId = lastId.data + 1;
+    int newFandomId;
+    if(useSuppliedIds)
+        newFandomId  = fandom->id;
+    else
+    {
+        auto lastId = GetLastFandomID(db);
+
+        if(!lastId.success)
+            ctx.result.success = false;
+        newFandomId = lastId.data + 1;
+    }
     if(newFandomId == -1)
         return ctx.result;
 
     QString qs = QString("insert into fandomindex(id, name) "
                          " values(:id, :name)");
-
+    ctx.ReplaceQuery(qs);
     ctx.bindValue("name", fandom->GetName());
     ctx.bindValue("id", newFandomId);
-
+    //qDebug() << db.isOpen();
     if(!ctx.ExecAndCheck())
         return ctx.result;
 
     qDebug() << "new fandom: " << fandom->GetName();
 
     fandom->id = newFandomId;
-    ctx.result.success = WriteFandomUrls(fandom, db).success;
+    if(writeUrls)
+        ctx.result.success = WriteFandomUrls(fandom, db).success;
     return ctx.result;
 
 }
@@ -1183,7 +1191,38 @@ DiagnosticSQLResult<QList<core::FandomPtr>> GetAllFandoms(QSqlDatabase db)
     });
     return ctx.result;
 }
+DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandomsAfter(int id, QSqlDatabase db)
+{
+    int fandomsSize = 0;
+    {
+        QString qs = QString(" select count(id) as cn from fandomindex where id > :id");
+        SqlContext<int> ctx(db, qs, BP1(id));
+        ctx.FetchSingleValue<int>("cn", 1000);
+        fandomsSize = ctx.result.data;
+    }
 
+    core::FandomPtr currentFandom;
+    int lastId = -1;
+    QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
+                         " urls.custom as section, ind.updated as updated "
+                         " from fandomindex ind left join fandomurls urls"
+                         " on ind.id = urls.global_id where ind.id > :id order by id asc ");
+    SqlContext<QList<core::FandomPtr>> ctx(db, qs, BP1(id));
+    ctx.result.data.reserve(fandomsSize);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        auto currentId= q.value("id").toInt();
+        if(currentId != lastId)
+        {
+            currentFandom = FandomfromQueryNew(q);
+            //GetFandomStats(currentFandom, db);
+            ctx.result.data.push_back(currentFandom);
+        }
+        else
+            currentFandom = FandomfromQueryNew(q, currentFandom);
+        lastId = currentId;
+    });
+    return ctx.result;
+}
 DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, QSqlDatabase db)
 {
     core::FandomPtr currentFandom;
@@ -1328,6 +1367,16 @@ DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSq
     QString qs = QString("Select distinct recommender_id from recommendations where fic_id = :fic_id");
     SqlContext<QList<int>> ctx(db, qs, BP1(fic_id));
     ctx.FetchLargeSelectIntoList<int>("recommender_id", qs);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase db)
+{
+    QString qs = QString("select distinct fic_id from fictags ");
+    if(tags.size() > 0)
+        qs += QString(" where tag in (%1)").arg(tags.join(","));
+    SqlContext<QSet<int>> ctx(db, qs);
+    ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
     return ctx.result;
 }
 
@@ -2350,6 +2399,10 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
     qs = qs.arg(id.toString());
     return SqlContext<bool>(db, qs)();
 }
+
+
+
+
 
 }
 

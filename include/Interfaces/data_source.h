@@ -4,6 +4,7 @@
 #include "queryinterfaces.h"
 #include "querybuilder.h"
 #include "regex_utils.h"
+#include "in_tag_accessor.h"
 #include <QSqlQuery>
 
 class FicFilter
@@ -39,7 +40,7 @@ public:
     int availablePages = 0;
     int currentPage = 0;
     int lastFicId = 0;
-
+    UserTags userTags;
 };
 
 
@@ -52,7 +53,7 @@ public:
     QSqlQuery BuildQuery(core::StoryFilter filter, bool countOnly = false) ;
     inline core::Fic LoadFanfic(QSqlQuery& q);
     int GetFicCount(core::StoryFilter filter);
-
+    void InitQueryType(bool client = false, QString userToken = QString());
     QSharedPointer<core::Query> currentQuery;
     core::DefaultQueryBuilder queryBuilder; // builds search queries
     core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;

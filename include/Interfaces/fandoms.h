@@ -42,9 +42,11 @@ public:
     virtual bool Load() ;
     bool LoadTrackedFandoms(bool forced = false);
     bool LoadAllFandoms(bool forced = false);
+    QList<core::FandomPtr> LoadAllFandomsAfter(int id);
     virtual bool LoadFandom(QString name);
     virtual bool EnsureFandom(QString name);
     QSet<QString> EnsureFandoms(QList<core::FicPtr>);
+    bool UploadFandomsIntoDatabase(QVector<core::Fandom>);
     bool RecalculateFandomStats(QStringList fandoms);
     void Reindex();
     void AddToIndex(core::FandomPtr);
@@ -79,7 +81,9 @@ public:
     virtual QStringList ListOfTrackedNames();
     virtual QList<core::FandomPtr> ListOfTrackedFandoms();
 
-    virtual bool CreateFandom(core::FandomPtr);
+    virtual bool CreateFandom(core::FandomPtr,
+                              bool writeUrls = true,
+                              bool useSuppliedIds = false);
     virtual bool CreateFandom(QString);
     virtual bool AddFandomLink(QString fandom, core::Url);
     virtual bool AssignTagToFandom(QString, QString tag, bool includeCrosses = false);

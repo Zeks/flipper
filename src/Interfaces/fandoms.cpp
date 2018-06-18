@@ -84,6 +84,19 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
     return uniqueFandoms;
 }
 
+bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms)
+{
+    bool result = true;
+    database::Transaction transaction(db);
+    for(auto fandom: fandoms)
+    {
+        core::FandomPtr fandomPtr(&fandom, [](core::Fandom*){});
+        result = result && CreateFandom(fandomPtr, false, true);
+    }
+    transaction.finalize();
+    return result;
+}
+
 bool Fandoms::RecalculateFandomStats(QStringList fandoms)
 {
     bool success = true;
@@ -95,7 +108,9 @@ bool Fandoms::RecalculateFandomStats(QStringList fandoms)
     return success;
 }
 
-bool Fandoms::CreateFandom(core::FandomPtr fandom)
+bool Fandoms::CreateFandom(core::FandomPtr fandom,
+                           bool writeUrls,
+                           bool useSuppliedIds )
 {
     if(!fandom)
         return false;
@@ -106,7 +121,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom)
     if(current && current->id != -1)
         return true;
     database::Transaction transaction(db);
-    auto result = database::puresql::CreateFandomInDatabase(fandom, db);
+    auto result = database::puresql::CreateFandomInDatabase(fandom, db, writeUrls, useSuppliedIds);
 
     if(!result.success)
         return false;
@@ -349,6 +364,11 @@ bool Fandoms::LoadAllFandoms(bool forced)
     if(fandoms.empty())
         return false;
     return true;
+}
+
+QList<core::FandomPtr> Fandoms::LoadAllFandomsAfter(int id)
+{
+    return database::puresql::GetAllFandomsAfter(id, db).data;
 }
 
 bool Fandoms::IsTracked(QString fandom)

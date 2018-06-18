@@ -23,7 +23,7 @@ public:
     QSharedPointer<FicSourceGRPCImpl> impl;
     virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*) override;
     virtual int GetFicCount(core::StoryFilter filter) override;
-
+    bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
 
 };
 

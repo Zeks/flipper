@@ -17,6 +17,7 @@
 #include "include/db_fixers.h"
 #include "include/parsers/ffn/favparser.h"
 #include "include/timeutils.h"
+#include "include/in_tag_accessor.h"
 #include "include/url_utils.h"
 #include <QSqlQuery>
 #include <QSqlError>
@@ -34,7 +35,19 @@ void CoreEnvironment::InitMetatypes()
 
 void CoreEnvironment::LoadData()
 {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+
+    if(settings.value("Settings/thinClient").toBool())
+    {
+        UserTags userTags;
+        userTags.allTags = interfaces.tags->GetAllTaggedFics();
+        if(filter.activeTags.size() > 0)
+            userTags.activeTags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+        ficSource->userTags = userTags;
+    }
+
     ficSource->FetchData(filter, &fanfics);
+
     currentLastFanficId = ficSource->lastFicId;
 }
 
@@ -68,8 +81,16 @@ void CoreEnvironment::Init()
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Settings/serverPort", "3055").toString();
 
-    if(settings.value("Settings/thinClient").toBool())
+    bool thinClient = settings.value("Settings/thinClient").toBool();
+    if(thinClient)
+    {
         ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), 160));
+        auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+        QVector<core::Fandom> fandoms;
+        grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);
+        if(fandoms.size() > 0)
+            interfaces.fandoms->UploadFandomsIntoDatabase(fandoms);
+    }
     else
         ficSource.reset(new FicSourceDirect(interfaces.db));
 
@@ -84,6 +105,15 @@ void CoreEnvironment::Init()
 
 void CoreEnvironment::InitInterfaces()
 {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSharedPointer<database::IDBWrapper> userDBInterface;
+    bool thinClient = settings.value("Settings/thinClient").toBool();
+    if(thinClient)
+        userDBInterface = interfaces.userDb;
+    else
+        userDBInterface = interfaces.db;
+
+
     interfaces.authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     interfaces.fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     interfaces.recs   = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
@@ -95,21 +125,21 @@ void CoreEnvironment::InitInterfaces()
     // probably need to change this to db accessor
     // to ensure db availability for later
 
-    interfaces.authors->portableDBInterface = interfaces.db;
+    interfaces.authors->portableDBInterface = userDBInterface;
     interfaces.fanfics->authorInterface = interfaces.authors;
     interfaces.fanfics->fandomInterface = interfaces.fandoms;
-    interfaces.recs->portableDBInterface = interfaces.db;
+    interfaces.recs->portableDBInterface = userDBInterface;
     interfaces.recs->authorInterface = interfaces.authors;
-    interfaces.fandoms->portableDBInterface = interfaces.db;
+    interfaces.fandoms->portableDBInterface = userDBInterface;
     interfaces.tags->fandomInterface = interfaces.fandoms;
 
     //bool isOpen = interfaces.db.tags->GetDatabase().isOpen();
-    interfaces.authors->db = interfaces.db->GetDatabase();
-    interfaces.fanfics->db = interfaces.db->GetDatabase();
-    interfaces.recs->db    = interfaces.db->GetDatabase();
-    interfaces.fandoms->db = interfaces.db->GetDatabase();
+    interfaces.authors->db = userDBInterface->GetDatabase();
+    interfaces.fanfics->db = userDBInterface->GetDatabase();
+    interfaces.recs->db    = userDBInterface->GetDatabase();
+    interfaces.fandoms->db = userDBInterface->GetDatabase();
     interfaces.tags->db    = interfaces.db->GetDatabase();
-    interfaces.genres->db  = interfaces.db->GetDatabase();
+    interfaces.genres->db  = userDBInterface->GetDatabase();
 
     interfaces.pageTask->db  = interfaces.tasks->GetDatabase();
     interfaces.fandoms->Load();
@@ -494,7 +524,5 @@ WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
 }
 }
 
-void UserInterface::EnsureUUIDForUserTbale(QSqlDatabase db)
-{
 
-}
+

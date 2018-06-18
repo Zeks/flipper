@@ -149,6 +149,8 @@ App{
         "include/Interfaces/data_source.h",
         "src/grpc/grpc_source.cpp",
         "src/Interfaces/data_source.cpp",
+        "include/in_tag_accessor.h",
+        "src/in_tag_accessor.cpp",
     ]
 
     cpp.staticLibraries: {
