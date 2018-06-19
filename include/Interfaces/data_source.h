@@ -40,7 +40,7 @@ public:
     int availablePages = 0;
     int currentPage = 0;
     int lastFicId = 0;
-    UserTags userTags;
+    UserData userData;
 };
 
 

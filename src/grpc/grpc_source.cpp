@@ -92,6 +92,7 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
     contentFilter->set_include_crossovers(filter.includeCrossovers);
     contentFilter->set_crossovers_only(filter.crossoversOnly);
     contentFilter->set_other_fandoms_mode(filter.otherFandomsMode);
+    contentFilter->set_use_ignored_fandoms(filter.ignoreFandoms);
 
 
     for(auto genre : filter.genreExclusion)
@@ -185,6 +186,7 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
     result.includeCrossovers = filter.content_filter().include_crossovers();
     result.crossoversOnly = filter.content_filter().crossovers_only();
     result.otherFandomsMode = filter.content_filter().other_fandoms_mode();
+    result.ignoreFandoms = filter.content_filter().use_ignored_fandoms();
 
     for(int i = 0; i < filter.content_filter().genre_exclusion_size(); i++)
         result.genreExclusion.push_back(FS(filter.content_filter().genre_exclusion(i)));
@@ -310,7 +312,7 @@ public:
           deadline(deadline)
     {
     }
-    UserTags userTags;
+    UserData userData;
 
     void ProcessStandardError(grpc::Status status);
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
@@ -328,11 +330,21 @@ public:
         context.set_deadline(deadline);
         auto* controls = task.mutable_controls();
         controls->set_user_token(QUuid::createUuid().toString().toStdString());
-        auto* tags = task.mutable_usertags();
-        for(auto tag : userTags.allTags)
+
+        auto* userData = task.mutable_user_data();
+        auto* tags = userData->mutable_user_tags();
+
+        for(auto tag : this->userData.allTags)
             tags->add_all_tags(tag);
-        for(auto tag : userTags.activeTags)
+        for(auto tag : this->userData.activeTags)
             tags->add_searched_tags(tag);
+
+        auto* ignoredFandoms = userData->mutable_ignored_fandoms();
+        for(auto key: this->userData.ignoredFandoms.keys())
+        {
+            ignoredFandoms->add_fandom_ids(key);
+            ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+        }
 
         grpc::Status status = stub_->Search(&context, task, response.data());
 
@@ -453,7 +465,7 @@ void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics
 {
     if(!impl)
         return;
-    impl->userTags = userTags;
+    impl->userData = userData;
     impl->FetchData(filter, fics);
 }
 

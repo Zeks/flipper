@@ -58,14 +58,15 @@ message RecentAndPopular{
 message ContentMatchFilter
 {
     string fandom                       = 1; 
-    bool include_crossovers             = 2;
-    bool crossovers_only                = 3;
-    bool other_fandoms_mode             = 4;
+    bool use_ignored_fandoms            = 2;
+    bool include_crossovers             = 3;
+    bool crossovers_only                = 4;
+    bool other_fandoms_mode             = 5;
     
-    repeated string genre_exclusion     = 5;
-    repeated string genre_inclusion     = 6;
-    repeated string word_exclusion      = 7;
-    repeated string word_inclusion      = 8;
+    repeated string genre_exclusion     = 6;
+    repeated string genre_inclusion     = 7;
+    repeated string word_exclusion      = 8;
+    repeated string word_inclusion      = 9;
 }
 
 message TagFilter{

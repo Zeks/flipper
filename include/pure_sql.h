@@ -94,6 +94,7 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString name, QSqlDatabase db);
 DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
 DiagnosticSQLResult<QStringList>  GetIgnoredFandoms(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db);
 
 DiagnosticSQLResult<bool>  IgnoreFandomSlashFilter(int id, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredListSlashFilter(int id, QSqlDatabase db);

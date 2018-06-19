@@ -3,13 +3,19 @@
 #include <QHash>
 #include <QSet>
 
-struct UserTags{
+//struct IgnoredFandom{
+//    int fandomId;
+//    bool ignoredCrosses;
+//};
+
+struct UserData{
   QSet<int> allTags;
   QSet<int> activeTags;
+  QHash<int, bool> ignoredFandoms;
 };
 
-class InTagAccessor{
+class UserInfoAccessor{
 public:
-    static QHash<QString, UserTags> userTags;
+    static QHash<QString, UserData> userData;
 };
 

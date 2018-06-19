@@ -266,6 +266,8 @@ DiagnosticSQLResult<bool> WriteFandomUrls(core::FandomPtr fandom, QSqlDatabase d
     QString qs = QString("insert into fandomurls(global_id, url, website, custom) values(:id, :url, :website, :custom)");
 
     SqlContext<bool> ctx(db, qs);
+    if(fandom->urls.size() == 0)
+        fandom->urls.push_back(core::Url("", "ffn"));
     ctx.ExecuteWithKeyListAndBindFunctor<core::Url>(fandom->urls, [&](core::Url& url, QSqlQuery& q){
         q.bindValue(":id", fandom->id);
         q.bindValue(":url", url.GetUrl());
@@ -1264,6 +1266,16 @@ DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
     QString qs = QString("select name from fandomindex where id in (select fandom_id from ignored_fandoms) order by name asc");
     SqlContext<QStringList> ctx(db);
     ctx.FetchLargeSelectIntoList<QString>("name", qs);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
+{
+    QString qs = QString("select fandom_id, including_crossovers from ignored_fandoms order by fandom_id asc");
+    SqlContext<QHash<int, bool> > ctx(db);
+    ctx.FetchSelectFunctor(qs, [](QHash<int, bool>& data, QSqlQuery& q){
+        data[q.value("fandom_id").toInt()] = q.value("including_crossovers").toBool();
+    });
     return ctx.result;
 }
 
@@ -2399,6 +2411,8 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
     qs = qs.arg(id.toString());
     return SqlContext<bool>(db, qs)();
 }
+
+
 
 
 

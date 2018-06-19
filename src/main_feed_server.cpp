@@ -75,6 +75,24 @@ void SetupLogger()
 }
 
 
+void ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken)
+{
+    const auto& taskTags = user_data.user_tags();
+
+
+    UserData userTags;
+    for(int i = 0; i < taskTags.searched_tags_size(); i++)
+        userTags.activeTags.insert(taskTags.searched_tags(i));
+    for(int i = 0; i < taskTags.all_tags_size(); i++)
+        userTags.allTags.insert(taskTags.all_tags(i));
+
+    const auto& ignoredFandoms = user_data.ignored_fandoms();
+    for(int i = 0; i < ignoredFandoms.fandom_ids_size(); i++)
+        userTags.ignoredFandoms[ignoredFandoms.fandom_ids(i)] = ignoredFandoms.ignore_crossovers(i);
+
+    UserInfoAccessor::userData[userToken] = userTags;
+}
+
 
 class FeederService final : public ProtoSpace::Feeder::Service {
 public:
@@ -89,7 +107,7 @@ public:
         TimedAction ("Converting filter",[&](){
             filter = ProtoFilterIntoStoryFilter(task->filter());
         }).run();
-        filter.Log();
+        //filter.Log();
 
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
@@ -100,15 +118,9 @@ public:
         FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
         convertedFicSource->InitQueryType(true, userToken);
 
+        ProcessUserToken(task->user_data(), userToken);
+
         QVector<core::Fic> data;
-        UserTags userTags;
-        for(int i = 0; i < task->usertags().searched_tags_size(); i++)
-            userTags.activeTags.insert(task->usertags().searched_tags(i));
-        for(int i = 0; i < task->usertags().all_tags_size(); i++)
-            userTags.allTags.insert(task->usertags().all_tags(i));
-
-        InTagAccessor::userTags[userToken] = userTags;
-
         TimedAction action("Fetching data",[&](){
             ficSource->FetchData(filter, &data);
         });
@@ -132,12 +144,13 @@ public:
                  ProtoSpace::FicCountResponse* response) override
     {
         Q_UNUSED(context);
-        QLOG_INFO() << "////////////Received fic count task from: " << QString::fromStdString(task->controls().user_token());
+        QString userToken = QString::fromStdString(task->controls().user_token());
+        QLOG_INFO() << "////////////Received fic count task from: " << userToken;
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
             filter = ProtoFilterIntoStoryFilter(task->filter());
         }).run();
-        filter.Log();
+        //filter.Log();
 
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
@@ -146,6 +159,8 @@ public:
         QSharedPointer<FicSource> ficSource;
         ficSource.reset(new FicSourceDirect(dbInterface));
         QVector<core::Fic> data;
+
+        ProcessUserToken(task->user_data(), userToken);
 
         int count = 0;
         TimedAction ("Getting fic count",[&](){

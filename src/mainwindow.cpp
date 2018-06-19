@@ -219,6 +219,7 @@ void MainWindow::Init()
     //ui->edtResults->setOpenExternalLinks(true);
     ui->cbWordCutoff->setVisible(false);
 
+
 }
 
 void MainWindow::InitConnections()

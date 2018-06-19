@@ -32,23 +32,33 @@ struct DefaultRNGgenerator : public IRNGGenerator{
 };
 
 
-class ITagFiltering{
+class IWhereFilter{
 public:
-    virtual ~ITagFiltering();
+    virtual ~IWhereFilter();
     virtual QString GetString(StoryFilter filter) = 0;
     QString userToken;
 };
 
-class TagFilteringFullDB : public ITagFiltering{
+class TagFilteringFullDB : public IWhereFilter{
 public:
     virtual ~TagFilteringFullDB();
     virtual QString GetString(StoryFilter filter);
 };
-class TagFilteringClient : public ITagFiltering{
+class TagFilteringClient : public IWhereFilter{
 public:
     virtual ~TagFilteringClient();
     virtual QString GetString(StoryFilter filter);
+};
 
+class FandomIgnoreClient : public IWhereFilter{
+public:
+    virtual ~FandomIgnoreClient();
+    virtual QString GetString(StoryFilter filter);
+};
+class FandomIgnoreFullDB : public IWhereFilter{
+public:
+    virtual ~FandomIgnoreFullDB();
+    virtual QString GetString(StoryFilter filter);
 };
 
 class DefaultQueryBuilder : public IQueryBuilder
@@ -105,7 +115,8 @@ protected:
     QString activeTags;
     QString wherePart;
     //bool countOnlyQuery = false;
-    QSharedPointer<ITagFiltering> tagFilterBuilder;
+    QSharedPointer<IWhereFilter> tagFilterBuilder;
+    QSharedPointer<IWhereFilter> ignoredFandomsBuilder;
     QSharedPointer<Query> query;
     QSqlDatabase db;
 };

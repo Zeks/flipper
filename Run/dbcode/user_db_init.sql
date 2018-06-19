@@ -56,8 +56,14 @@ CREATE INDEX if not exists  I_LISTDATA_FIC ON RecommendationListData (fic_id ASC
 CREATE INDEX if not exists  I_LISTDATA_MATCHCOUNT ON RecommendationListData (match_count ASC);
 
 
-create table if not exists fandomindex (id integer, name VARCHAR NOT NULL,  primary key(id, name));
+create table if not exists fandomindex (id integer, name VARCHAR NOT NULL, tracked integer default 0, primary key(id, name));
 alter table fandomindex add column updated datetime;
 CREATE INDEX if not exists I_FANDOMINDEX_PK ON fandomindex (id ASC, name asc);
 CREATE INDEX if not exists I_FANDOMINDEX_ID ON fandomindex (id ASC);
 CREATE INDEX if not exists I_FANDOMINDEX_NAME ON fandomindex (name ASC);
+
+create table if not exists fandomurls (global_id integer, url VARCHAR NOT NULL, website varchar not null, custom VARCHAR, primary key(global_id, url));
+CREATE INDEX if not exists I_FURL_ID ON fandomurls (global_id ASC);
+CREATE INDEX if not exists I_FURL_URL ON fandomurls (url ASC);
+CREATE INDEX if not exists I_FURL_CUSTOM ON fandomurls (custom ASC);
+CREATE INDEX if not exists I_FURL_WEBSITE ON fandomurls (website ASC);

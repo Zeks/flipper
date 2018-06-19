@@ -91,7 +91,7 @@ bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms)
     for(auto fandom: fandoms)
     {
         core::FandomPtr fandomPtr(&fandom, [](core::Fandom*){});
-        result = result && CreateFandom(fandomPtr, false, true);
+        result = result && CreateFandom(fandomPtr, true, true);
     }
     transaction.finalize();
     return result;
@@ -395,6 +395,12 @@ bool Fandoms::IgnoreFandom(int id, bool includeCrossovers)
 QStringList Fandoms::GetIgnoredFandoms() const
 {
     auto result = database::puresql::GetIgnoredFandoms(db);
+    return result.data;
+}
+
+QHash<int, bool> Fandoms::GetIgnoredFandomsIDs() const
+{
+    auto result = database::puresql::GetIgnoredFandomIDs(db);
     return result.data;
 }
 

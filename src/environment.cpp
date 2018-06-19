@@ -39,11 +39,12 @@ void CoreEnvironment::LoadData()
 
     if(settings.value("Settings/thinClient").toBool())
     {
-        UserTags userTags;
-        userTags.allTags = interfaces.tags->GetAllTaggedFics();
+        UserData userData;
+        userData.allTags = interfaces.tags->GetAllTaggedFics();
         if(filter.activeTags.size() > 0)
-            userTags.activeTags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
-        ficSource->userTags = userTags;
+            userData.activeTags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+        userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
+        ficSource->userData = userData;
     }
 
     ficSource->FetchData(filter, &fanfics);
@@ -90,6 +91,15 @@ void CoreEnvironment::Init()
         grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);
         if(fandoms.size() > 0)
             interfaces.fandoms->UploadFandomsIntoDatabase(fandoms);
+        auto recentFandoms = interfaces.fandoms->GetRecentFandoms();
+        if(recentFandoms.size() == 0)
+        {
+            interfaces.fandoms->PushFandomToTopOfRecent("Naruto");
+            interfaces.fandoms->PushFandomToTopOfRecent("RWBY");
+            interfaces.fandoms->PushFandomToTopOfRecent("Worm");
+            interfaces.fandoms->PushFandomToTopOfRecent("High School DxD");
+            interfaces.fandoms->PushFandomToTopOfRecent("Harry Potter");
+        }
     }
     else
         ficSource.reset(new FicSourceDirect(interfaces.db));
@@ -98,7 +108,7 @@ void CoreEnvironment::Init()
 
     auto storedRecList = settings.value("Settings/currentList").toString();
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(storedRecList));
-
+    interfaces.fandoms->Load();
     interfaces.recs->LoadAvailableRecommendationLists();
     interfaces.fandoms->FillFandomList(true);
 }
@@ -142,7 +152,7 @@ void CoreEnvironment::InitInterfaces()
     interfaces.genres->db  = userDBInterface->GetDatabase();
 
     interfaces.pageTask->db  = interfaces.tasks->GetDatabase();
-    interfaces.fandoms->Load();
+
 }
 
 int CoreEnvironment::GetResultCount()

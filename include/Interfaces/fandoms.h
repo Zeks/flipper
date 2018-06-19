@@ -66,6 +66,7 @@ public:
     bool IgnoreFandom(QString name, bool includeCrossovers);
     bool IgnoreFandom(int id, bool includeCrossovers);
     QStringList GetIgnoredFandoms() const;
+    QHash<int, bool> GetIgnoredFandomsIDs() const;
     QList<core::FandomPtr> GetAllLoadedFandoms();
 
     bool RemoveFandomFromIgnoredList(QString name);

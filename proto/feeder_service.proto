@@ -14,11 +14,23 @@ message Tags{
     repeated int32 searched_tags  = 2;
 }
 
+
+message IgnoredFandoms{
+    repeated int32 fandom_ids           = 1;
+    repeated bool  ignore_crossovers    = 2;
+}
+
+message UserData{
+    Tags user_tags                       = 1;
+    IgnoredFandoms ignored_fandoms      = 2;
+
+}
+
 message SearchTask
 {
     ControlInfo controls    = 1;
     Filter filter           = 2;
-    Tags userTags           = 3;
+    UserData user_data      = 3;
 }
 
 message SearchResponse{
@@ -38,6 +50,7 @@ message SyncFandomListResponse{
 message FicCountTask{
     ControlInfo controls    = 1;
     Filter filter           = 2;
+    UserData user_data      = 3;
 }
 
 message FicCountResponse{

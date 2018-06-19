@@ -1,3 +1,3 @@
 #include"in_tag_accessor.h"
 
-QHash<QString, UserTags> InTagAccessor::userTags;
+QHash<QString, UserData> UserInfoAccessor::userData;

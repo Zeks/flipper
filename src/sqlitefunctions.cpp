@@ -70,11 +70,10 @@ void cfRegexp(sqlite3_context* ctx, int , sqlite3_value** argv)
 
 void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
-    QRegExp regex;
     int ficId = sqlite3_value_int(argv[0]);
     QString userToken((const char*)sqlite3_value_text(argv[1]));
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    auto& userTags = InTagAccessor::userTags;
+    auto& userTags = UserInfoAccessor::userData;
     if(!userTags.contains(userToken))
         sqlite3_result_int(ctx, 0);
 
@@ -83,17 +82,61 @@ void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
     else
         sqlite3_result_int(ctx, 0);
 }
+void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    QString userToken((const char*)sqlite3_value_text(argv[1]));
+
+    auto& userData = UserInfoAccessor::userData;
+    if(!userData.contains(userToken))
+        sqlite3_result_int(ctx, 0);
+
+    QString fandomString((const char*)sqlite3_value_text(argv[0]));
+    QStringList fandoms = fandomString.split("&", QString::SkipEmptyParts);
+    if(!fandoms.size())
+        sqlite3_result_int(ctx, 0);
+
+    if(fandoms.size() == 1)
+    {
+        if(userData[userToken].ignoredFandoms.contains(fandoms.at(0).toInt()))
+            sqlite3_result_int(ctx, 1);
+        else
+            sqlite3_result_int(ctx, 0);
+    }
+    else
+    {
+        bool hasUnignored = false;
+        for(auto fandom: fandoms)
+        {
+            auto it = userData[userToken].ignoredFandoms.find(fandom.toInt());
+            if(it == userData[userToken].ignoredFandoms.end())
+            {
+                hasUnignored = true;
+                continue;
+            }
+            if(it.value() == true)
+            {
+                sqlite3_result_int(ctx, 1);
+                break;
+            }
+        }
+        if(hasUnignored)
+            sqlite3_result_int(ctx, 0);
+        else
+            sqlite3_result_int(ctx, 1);
+
+    }
+
+}
 
 void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
-    QRegExp regex;
     int ficId = sqlite3_value_int(argv[0]);
     QString userToken((const char*)sqlite3_value_text(argv[1]));
 
-    if(!InTagAccessor::userTags.contains(userToken))
+    if(!UserInfoAccessor::userData.contains(userToken))
         sqlite3_result_int(ctx, 0);
 
-    if(InTagAccessor::userTags[userToken].activeTags.contains(ficId))
+    if(UserInfoAccessor::userData[userToken].activeTags.contains(ficId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);
@@ -146,6 +189,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
             sqlite3_initialize();
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInTags, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInActiveTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActiveTags, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);

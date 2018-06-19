@@ -119,7 +119,8 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
     queryString+= tagFilterBuilder->GetString(filter);
-    queryString+= ProcessFandomIgnore(filter);
+    queryString+= ignoredFandomsBuilder->GetString(filter);
+    //queryString+= ProcessFandomIgnore(filter);
     queryString+= ProcessCrossovers(filter);
 
 
@@ -539,14 +540,18 @@ QSharedPointer<Query> DefaultQueryBuilder::NewQuery()
 
 void DefaultQueryBuilder::InitTagFilterBuilder(bool client, QString userToken)
 {
-
     if(client)
     {
         tagFilterBuilder.reset(new TagFilteringClient);
         tagFilterBuilder->userToken = userToken;
+        ignoredFandomsBuilder.reset(new FandomIgnoreClient);
+        ignoredFandomsBuilder->userToken = userToken;
     }
     else
+    {
         tagFilterBuilder.reset(new TagFilteringFullDB);
+        ignoredFandomsBuilder.reset(new FandomIgnoreFullDB);
+    }
 }
 
 
@@ -636,7 +641,7 @@ QString CountQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
     return queryString;
 }
 
-ITagFiltering::~ITagFiltering()
+IWhereFilter::~IWhereFilter()
 {
 
 }
@@ -680,6 +685,52 @@ QString TagFilteringClient::GetString(StoryFilter filter)
         else
             queryString += QString(" and cfInTags(ff.id, '%1') = 0 ").arg(userToken);
 
+    }
+    return queryString;
+}
+
+
+
+FandomIgnoreFullDB::~FandomIgnoreFullDB()
+{
+
+}
+
+QString FandomIgnoreFullDB::GetString(StoryFilter filter)
+{
+    QString queryString;
+    {
+        if(filter.ignoreFandoms)
+            queryString += QString(" and (not ("
+                                   "(select case (select count(fandom_id) from ficfandoms where fic_id = fid) when 1"
+                                   "   then (select count(fandom_id) from ignored_fandoms ignf where ignf.fandom_id in (select fandom_id from ficfandoms where fic_id = fid))"
+                                   "   else (select count(fandom_id) from ignored_fandoms ignf where ignf.including_crossovers = 1 "
+                                   "   and ignf.fandom_id in (select fandom_id from ficfandoms where fic_id = fid)) end"
+                                   " ) > 0  "
+                                   "or ( (select count(fandom_id) from ficfandoms where fic_id = fid) > 1 ) "
+                                   "and  (select fandom_id from ficfandoms where fic_id = fid limit 1) in (select fandom_id from ignored_fandoms) "
+                                   "and  (select fandom_id from ficfandoms where fic_id = fid limit 1 offset 1) in (select fandom_id from ignored_fandoms) "
+                                   "))");
+
+        else
+            queryString += QString("");
+    }
+    return queryString;
+}
+
+FandomIgnoreClient::~FandomIgnoreClient()
+{
+
+}
+
+QString FandomIgnoreClient::GetString(StoryFilter filter)
+{
+    QString queryString;
+    {
+        if(filter.ignoreFandoms)
+            queryString += QString(" and not cfInIgnoredFandoms((select group_concat(fandom_id, ' & ') from ficfandoms where fic_id = fid), '%1') = 1").arg(userToken);
+        else
+            queryString += QString("");
     }
     return queryString;
 }
