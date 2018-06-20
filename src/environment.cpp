@@ -16,6 +16,7 @@
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/db_fixers.h"
 #include "include/parsers/ffn/favparser.h"
+#include "include/in_tag_accessor.h"
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
 #include "include/url_utils.h"
@@ -282,6 +283,26 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
     }
 }
 
+class RecommendationsCreator{
+public:
+    RecommendationsCreator();
+    void Run(){
+        RecommendationsInfoAccessor::recommendatonsData[userToken].sourceFics = sourceFics;
+        RecommendationsInfoAccessor::recommendatonsData[userToken].matchedAuthors = authors->GetAllMatchesWithRecsUID(params, userToken);
+        RecommendationsInfoAccessor::recommendatonsData[userToken].listData = recs->GetMatchesForUID(userToken);
+    }
+
+    QString userToken;
+    QSet<int> sourceFics;
+    QSharedPointer<core::RecommendationList> params;
+    QSharedPointer<interfaces::Authors> authors;
+    QSharedPointer<interfaces::RecommendationLists> recs;
+    bool clearAuthors;
+
+};
+
+
+
 int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
     QSqlDatabase db = QSqlDatabase::database();
@@ -456,11 +477,11 @@ PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDat
 
     emit updateInfo(QString("Starting load of tracked %1 fandoms <br>").arg(fandoms.size()));
     auto result = ProcessFandomsAsTask(fandoms,
-                             "",
-                             true,
-                             cacheMode,
-                             wordCutoff,
-                             forcedDate);
+                                       "",
+                                       true,
+                                       cacheMode,
+                                       wordCutoff,
+                                       forcedDate);
     return result;
 }
 

@@ -82,6 +82,22 @@ void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
     else
         sqlite3_result_int(ctx, 0);
 }
+
+void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    QString uidToken((const char*)sqlite3_value_text(argv[1]));
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto& recommendationsSource = RecommendationsInfoAccessor::recommendatonsData;
+    if(!recommendationsSource.contains(uidToken))
+        sqlite3_result_int(ctx, 0);
+
+    if(recommendationsSource[uidToken].sourceFics.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
 void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QString userToken((const char*)sqlite3_value_text(argv[1]));
@@ -189,6 +205,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
             sqlite3_initialize();
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInTags, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInRecommendations", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInActiveTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActiveTags, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);

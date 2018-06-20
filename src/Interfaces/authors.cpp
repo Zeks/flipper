@@ -199,6 +199,11 @@ QList<core::AuthorPtr> Authors::GetAllByName(QString name)
     return result;
 }
 
+QSet<int> Authors::GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid)
+{
+    return database::puresql::GetAllMatchesWithRecsUID(params, uid, db).data;
+}
+
 core::AuthorPtr Authors::GetByWebID(QString website, int id)
 {
     core::AuthorPtr result;

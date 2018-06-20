@@ -131,6 +131,9 @@ DiagnosticSQLResult<int> GetAuthorIdFromWebID(int id, QString website, QSqlDatab
 DiagnosticSQLResult<bool>  AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db);
+DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString, QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db);
+
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
 
 DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website,  QSqlDatabase db);

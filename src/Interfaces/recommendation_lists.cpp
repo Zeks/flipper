@@ -425,6 +425,11 @@ QStringList RecommendationLists::GetLinkedPagesForList(int listId, QString websi
     return result;
 }
 
+QHash<int, int> RecommendationLists::GetMatchesForUID(QString uid)
+{
+    return  database::puresql::GetMatchesForUID(uid,  db).data;
+}
+
 void RecommendationLists::SetCurrentRecommendationList(int value)
 {
     currentRecommendationList = value;

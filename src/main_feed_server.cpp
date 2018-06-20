@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/fandoms.h"
+#include "Interfaces/recommendation_lists.h"
 #include "include/sqlitefunctions.h"
 #include "include/db_fixers.h"
 #include "include/feeder_environment.h"
@@ -62,10 +63,10 @@ void SetupLogger()
     QString logFile = settings.value("Logging/filename").toString();
     QsLogging::DestinationPtr fileDestination(
 
-    QsLogging::DestinationFactory::MakeFileDestination(logFile,
-                                                          settings.value("Logging/rotate", true).toBool(),
-                                                          settings.value("Logging/filesize", 512).toInt()*1000000,
-                                                          settings.value("Logging/amountOfFilesToKeep", 50).toInt()));
+                QsLogging::DestinationFactory::MakeFileDestination(logFile,
+                                                                   settings.value("Logging/rotate", true).toBool(),
+                                                                   settings.value("Logging/filesize", 512).toInt()*1000000,
+                                                                   settings.value("Logging/amountOfFilesToKeep", 50).toInt()));
 
     QsLogging::DestinationPtr debugDestination(
                 QsLogging::DestinationFactory::MakeDebugOutputDestination() );
@@ -93,11 +94,23 @@ void ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken
     UserInfoAccessor::userData[userToken] = userTags;
 }
 
+class DatabaseContext{
+
+public:
+    DatabaseContext(){
+        QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+        auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+        dbInterface->ReadDbFile("dbcode/dbinit.sql");
+    }
+
+    QSharedPointer<database::IDBWrapper> dbInterface;
+};
+
 
 class FeederService final : public ProtoSpace::Feeder::Service {
 public:
     Status Search(ServerContext* context, const ProtoSpace::SearchTask* task,
-                 ProtoSpace::SearchResponse* response) override
+                  ProtoSpace::SearchResponse* response) override
     {
         Q_UNUSED(context);
         QString userToken = QString::fromStdString(task->controls().user_token());
@@ -141,7 +154,7 @@ public:
     }
 
     Status GetFicCount(ServerContext* context, const ProtoSpace::FicCountTask* task,
-                 ProtoSpace::FicCountResponse* response) override
+                       ProtoSpace::FicCountResponse* response) override
     {
         Q_UNUSED(context);
         QString userToken = QString::fromStdString(task->controls().user_token());
@@ -175,7 +188,7 @@ public:
     }
 
     Status SyncFandomList(ServerContext* context, const ProtoSpace::SyncFandomListTask* task,
-                 ProtoSpace::SyncFandomListResponse* response) override
+                          ProtoSpace::SyncFandomListResponse* response) override
     {
         Q_UNUSED(context);
         QLOG_INFO() << "////////////Received sync fandoms task from: " << QString::fromStdString(task->controls().user_token());
@@ -193,20 +206,35 @@ public:
         else
         {
             TimedAction ("Processing fandoms",[&](){
-            response->set_needs_update(true);
-            auto fandoms = fandomInterface->LoadAllFandomsAfter(task->last_fandom_id());
-            QLOG_INFO() << "Sending new fandoms to the client:" << fandoms.size();
-            for(auto coreFandom: fandoms)
-            {
-                auto* protoFandom = response->add_fandoms();
-                LocalFandomToProtoFandom(*coreFandom, protoFandom);
-            }
+                response->set_needs_update(true);
+                auto fandoms = fandomInterface->LoadAllFandomsAfter(task->last_fandom_id());
+                QLOG_INFO() << "Sending new fandoms to the client:" << fandoms.size();
+                for(auto coreFandom: fandoms)
+                {
+                    auto* protoFandom = response->add_fandoms();
+                    LocalFandomToProtoFandom(*coreFandom, protoFandom);
+                }
             }).run();
         }
         QLOG_INFO() << "Finished fandom sync task";
         QLOG_INFO() << " ";
         QLOG_INFO() << " ";
         QLOG_INFO() << " ";
+        return Status::OK;
+    }
+    Status RecommendationListCreation(ServerContext* context, const ProtoSpace::RecommendationListCreationRequest* task,
+                                      ProtoSpace::RecommendationListCreationResponse* response) override
+    {
+
+        Q_UNUSED(context);
+        QLOG_INFO() << "////////////Received sync fandoms task from: " << QString::fromStdString(task->controls().user_token());
+
+        DatabaseContext dbContext;
+
+        QSharedPointer<interfaces::RecommendationLists> recsInterface (new interfaces::RecommendationLists());
+        recsInterface->portableDBInterface = dbContext.dbInterface;
+
+
         return Status::OK;
     }
 

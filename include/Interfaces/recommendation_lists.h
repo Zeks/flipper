@@ -78,6 +78,7 @@ public:
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QList<int> GetRecommendersForFicId(int ficId);
     QStringList GetLinkedPagesForList(int listId, QString website);
+    QHash<int, int> GetMatchesForUID(QString uid);
 
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);

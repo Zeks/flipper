@@ -1065,6 +1065,39 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db)
     return ctx.result;
 }
 
+
+DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid, QSqlDatabase db)
+{
+    SqlContext<QSet<int>> ctx(db);
+    ctx.bindValue("uid", uid);
+    ctx.bindValue("ratio", params->pickRatio);
+    ctx.bindValue("always_pick_at", params->alwaysPickAt);
+    ctx.FetchLargeSelectIntoList<int>("recommender_id",
+                                      "select recommender_id from recommenders rs "
+                                      " where "
+                                      " ("
+                                      "    (cast (select count(recommender_id) from recommendations where recommender_id = rs.recommender_id) as float)"
+                                      "    /"
+                                      "    cast((select count(recommender_id) from recommendations where cfInRecommendations(fic_id, :uid) = 1 and recommender_id = rs.recommender_id) as float) <= :ratio "
+                                      " )"
+                                      "or (select count(recommender_id) from recommendations where cfInRecommendations(fic_id, :uid) = 1 and recommender_id = rs.recommender_id) > :always_pick_at");
+
+    return ctx.result;
+}
+
+
+DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db)
+{
+    QString qs = QString("select fic_id, count(fic_id) as cnt from recommendations where cfInAuthors(recommender_id, :uid) > 0 group by fic_id");
+    SqlContext<QHash<int, int> > ctx(db);
+    ctx.bindValue("uid", uid);
+    ctx.FetchSelectFunctor(qs, [](QHash<int, int>& data, QSqlQuery& q){
+        data[q.value("fic_id").toInt()] = q.value("cnt").toInt();
+    });
+    return ctx.result;
+}
+
+
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db)
 {
     QString qs = QString("select id, ffn_id, ao3_id, sb_id, sv_id from fanfics where id in (select fic_id from recommendations where recommender_id = :author_id )");
@@ -2411,6 +2444,7 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
     qs = qs.arg(id.toString());
     return SqlContext<bool>(db, qs)();
 }
+
 
 
 

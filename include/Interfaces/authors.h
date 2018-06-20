@@ -60,6 +60,7 @@ public:
 
     core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website);
     QList<core::AuthorPtr> GetAllByName(QString name);
+    QSet<int> GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid);
     //core::AuthorPtr GetByUrl(QString url);
     core::AuthorPtr GetByWebID(QString website, int id);
     core::AuthorPtr GetById(int id);
