@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/authors.h"
 #include "include/Interfaces/pagetask_interface.h"
 #include "include/Interfaces/recommendation_lists.h"
+//#include "include/environment.h"
+#include "include/in_tag_accessor.h"
 #include "include/url_utils.h"
 #include "include/environment.h"
 #include "include/timeutils.h"
@@ -39,11 +41,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QtConcurrent>
 
 RecommendationsProcessor::RecommendationsProcessor(QSqlDatabase db,
-                                                               QSharedPointer<interfaces::Fanfics> fanficInterface,
-                                                               QSharedPointer<interfaces::Fandoms> fandomsInterface,
-                                                               QSharedPointer<interfaces::Authors> authorsInterface,
-                                                               QSharedPointer<interfaces::RecommendationLists> recsInterface,
-                                                               QObject *obj) : QObject(obj)
+                                                   QSharedPointer<interfaces::Fanfics> fanficInterface,
+                                                   QSharedPointer<interfaces::Fandoms> fandomsInterface,
+                                                   QSharedPointer<interfaces::Authors> authorsInterface,
+                                                   QSharedPointer<interfaces::RecommendationLists> recsInterface,
+                                                   QObject *obj) : QObject(obj)
 
 {
     this->fanficsInterface = fanficInterface;
@@ -179,3 +181,4 @@ bool RecommendationsProcessor::RemoveAuthorFromRecommendationList(QString listNa
     transaction.finalize();
     return true;
 }
+

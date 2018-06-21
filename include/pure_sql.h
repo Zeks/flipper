@@ -132,6 +132,10 @@ DiagnosticSQLResult<bool>  AssignNewNameForAuthor(core::AuthorPtr author, QStrin
 
 DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString, QSqlDatabase db);
+
+
+
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db);
 
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
@@ -239,6 +243,10 @@ DiagnosticSQLResult<QSet<QString> > GetAllGenres(QSqlDatabase db);
 // moved them to dump temporarily
 //void RemoveAuthor(const core::Author &recommender);
 //void RemoveAuthor(int id);
+DiagnosticSQLResult<bool> FillFicDataForList(int listId, const QVector<int>&, const QVector<int>&, QSqlDatabase db);
+
+// potentially ethically problematic. better not do this
+//DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int>&, QSqlDatabase db);
 
 // page tasks
 DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db);

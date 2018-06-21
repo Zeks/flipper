@@ -86,6 +86,10 @@ class Fanfics : public IDBWebIDIndex {
     QHash<int, std::array<double, 21>> GetFullFicGenreData();
     QHash<int, double> GetDoubleValueHashForFics(QString fieldName);
 
+    // this uses preloaded fics from static data
+    // to return an ID list for recommendations creator
+    QSet<int> ConvertFFNSourceFicsToDB(QString userToken);
+
     // update interface
     QReadWriteLock mutex;
 

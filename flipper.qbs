@@ -47,8 +47,9 @@ App{
         "include/Interfaces/db_interface.h",
         "include/Interfaces/fandoms.h",
         "include/Interfaces/fanfics.h",
-        "include/Interfaces/ffn/ffn_authors.h",
         "include/Interfaces/ffn/ffn_fanfics.h",
+        "include/Interfaces/ffn/ffn_authors.h",
+
         "include/Interfaces/genres.h",
         "include/Interfaces/interface_sqlite.h",
         "include/Interfaces/pagetask_interface.h",
@@ -97,8 +98,9 @@ App{
         "src/Interfaces/db_interface.cpp",
         "src/Interfaces/fandoms.cpp",
         "src/Interfaces/fanfics.cpp",
-        "src/Interfaces/ffn/ffn_authors.cpp",
         "src/Interfaces/ffn/ffn_fanfics.cpp",
+        "src/Interfaces/ffn/ffn_authors.cpp",
+
         "src/Interfaces/genres.cpp",
         "src/Interfaces/interface_sqlite.cpp",
         "src/Interfaces/pagetask_interface.cpp",

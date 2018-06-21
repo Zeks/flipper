@@ -194,7 +194,6 @@ struct SqlContext
         else
             qs = countQuery;
         Prepare(qs);
-        BindValues();
 
         if(!ExecAndCheck())
             return;
@@ -202,6 +201,7 @@ struct SqlContext
         if(!CheckDataAvailability())
             return;
         int size = q.value(0).toInt();
+        //qDebug () << "query size: " << size;
         if(size == 0)
             return;
         result.data.reserve(size);
@@ -276,7 +276,10 @@ struct SqlContext
 
     void BindValues(){
         for(auto bind : bindValues.keys())
-            q.bindValue(":" + bind, bindValues[bind]);
+        {
+            //qDebug() << "binding: " << bind << " as: " << bindValues[bind];
+            q.bindValue(QString(":") + bind, bindValues[bind]);
+        }
     }
 
     template<typename KeyType>

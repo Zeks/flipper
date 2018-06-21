@@ -333,6 +333,15 @@ bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
     return result.success;
 }
 
+bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
+                                                         const QVector<int> &fics,
+                                                         const QVector<int> &matches)
+{
+    bool result = true;
+    result = result && database::puresql::FillFicDataForList(listId, fics, matches, db).success;
+    return result;
+}
+
 bool RecommendationLists::UpdateFicCountInDatabase(int listId)
 {
     return database::puresql::UpdateFicCountForRecommendationList(listId, db).success;

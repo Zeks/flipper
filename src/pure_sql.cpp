@@ -27,6 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QVector>
 #include <QVariant>
 #include <QDebug>
+#include <algorithm>
+#include<QSqlDriver>
+#include<QSqlDatabase>
 namespace database {
 namespace puresql{
 
@@ -169,9 +172,9 @@ DiagnosticSQLResult<bool> WriteMaxUpdateDateForFandom(QSharedPointer<core::Fando
 
 
 DiagnosticSQLResult<bool>  Internal::WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
-                                           QString condition,
-                                           QSqlDatabase db,
-                                           std::function<void(QSharedPointer<core::Fandom>,QDateTime)> writer                                           )
+                                                                 QString condition,
+                                                                 QSqlDatabase db,
+                                                                 std::function<void(QSharedPointer<core::Fandom>,QDateTime)> writer                                           )
 {
     QString qs = QString("select max(updated) as updated from fanfics where id in (select distinct fic_id from FicFandoms where fandom_id = :fandom_id %1");
     qs=qs.arg(condition);
@@ -1065,26 +1068,72 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db)
     return ctx.result;
 }
 
+// not working, no idea why
+//DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid, QSqlDatabase db)
+//{
+//    SqlContext<QSet<int>> ctx(db);
+//    ctx.bindValue("uid", uid);
+//    ctx.bindValue("ratio", params->pickRatio);
+//    ctx.bindValue("always_pick_at", params->alwaysPickAt);
+//    ctx.bindValue("min", params->minimumMatch);
+//    QLOG_INFO() << "always: " << params->alwaysPickAt;
+//    QLOG_INFO() << "ratio: " << params->pickRatio;
+//    QLOG_INFO() << "min: " << params->minimumMatch;
+//    ctx.FetchLargeSelectIntoList<int>("id",
+//                                      "select distinct id from recommenders rs where  ( "
+//                                      " (select count(recommender_id) from recommendations where cfInRecommendations(fic_id, :uid) = 1 and recommender_id = rs.id) >= :min "
+//                                      " and ( "
+//                                      " (cast((select count(recommender_id) from recommendations where recommender_id = rs.id)  as float) "
+//                                      " / "
+//                                      " (cast((select count(recommender_id) from recommendations where cfInRecommendations(fic_id, :uid) = 1 and recommender_id = rs.id) as float))) <= :ratio)"
+//                                      ") "
+//                                      );
+//    return ctx.result;
+//}
 
 DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid, QSqlDatabase db)
 {
+    QLOG_INFO() << "always: " << params->alwaysPickAt;
+    QLOG_INFO() << "ratio: " << params->pickRatio;
+    QLOG_INFO() << "min: " << params->minimumMatch;
+    QLOG_INFO() << "///////////FIRST FETCH////////";
     SqlContext<QSet<int>> ctx(db);
-    ctx.bindValue("uid", uid);
+    ctx.bindValue("uid1", uid);
+    ctx.bindValue("uid2", uid);
     ctx.bindValue("ratio", params->pickRatio);
+    ctx.bindValue("min", params->minimumMatch);
     ctx.bindValue("always_pick_at", params->alwaysPickAt);
-    ctx.FetchLargeSelectIntoList<int>("recommender_id",
-                                      "select recommender_id from recommenders rs "
-                                      " where "
-                                      " ("
-                                      "    (cast (select count(recommender_id) from recommendations where recommender_id = rs.recommender_id) as float)"
-                                      "    /"
-                                      "    cast((select count(recommender_id) from recommendations where cfInRecommendations(fic_id, :uid) = 1 and recommender_id = rs.recommender_id) as float) <= :ratio "
-                                      " )"
-                                      "or (select count(recommender_id) from recommendations where cfInRecommendations(fic_id, :uid) = 1 and recommender_id = rs.recommender_id) > :always_pick_at");
+    //qDebug() << "feature avail: " << db.driver()->hasFeature(QSqlDriver::NamedPlaceholders);
+    ctx.FetchLargeSelectIntoList<int>("id",
+                                       "select id,  "
+                                       " (select count(recommender_id) from recommendations rs where "
+                                       " cfInRecommendations(rs.fic_id, :uid1) = 1 and rs.recommender_id = id ) as matches, "
+
+                                       " ("
+                                       " (cast((select count(recommender_id) from recommendations rs1 where rs1.recommender_id = id)  as float) "
+                                       " / "
+                                       " (cast((select count(recommender_id) from recommendations rs2 where"
+                                       " cfInRecommendations(rs2.fic_id, :uid2) = 1"
+                                       " and rs2.recommender_id = id) as float)))"
+                                       " )  as ratio"
+
+                                       " from recommenders  "
+                                       " where (ratio <= :ratio and  matches >= :min ) or matches >= :always_pick_at "
+                                      );
 
     return ctx.result;
 }
 
+
+DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDatabase db)
+{
+    SqlContext<QSet<int>> ctx(db);
+    ctx.bindValue("uid", uid);
+    ctx.FetchLargeSelectIntoList<int>("id",
+                                      "select id from fanfics where cfInRecommendations(ffn_id, :uid)");
+
+    return ctx.result;
+}
 
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db)
 {
@@ -2155,8 +2204,8 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendations(int id, QSqlDatabase
     SqlContext<QList<int>> ctx(db);
     ctx.bindValues["id"] = id;
     ctx.FetchLargeSelectIntoList<int>("fic_id",
-                                 "select fic_id from recommendations where recommender_id = :id",
-                                 "select count(recommender_id) from recommendations where recommender_id = :id");
+                                      "select fic_id from recommendations where recommender_id = :id",
+                                      "select count(recommender_id) from recommendations where recommender_id = :id");
     return ctx.result;
 }
 
@@ -2164,8 +2213,8 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownSlashFics(QSqlDatabase db) //todo wro
 {
     SqlContext<QSet<int>> ctx(db);
     ctx.FetchLargeSelectIntoList<int>("fic_id",
-                                 "select fic_id from algopasses where keywords_pass_result = 1",
-                                 "select count(fic_id) from algopasses where keywords_pass_result = 1");
+                                      "select fic_id from algopasses where keywords_pass_result = 1",
+                                      "select count(fic_id) from algopasses where keywords_pass_result = 1");
 
     return ctx.result;
 }
@@ -2175,8 +2224,8 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownNotSlashFics(QSqlDatabase db) //todo 
 {
     SqlContext<QSet<int>> ctx(db);
     ctx.FetchLargeSelectIntoList<int>("fic_id",
-                                 "select fic_id from algopasses where keywords_no = 1",
-                                 "select count(fic_id) from algopasses where keywords_no = 1");
+                                      "select fic_id from algopasses where keywords_no = 1",
+                                      "select count(fic_id) from algopasses where keywords_no = 1");
 
     return ctx.result;
 }
@@ -2256,8 +2305,8 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db
 {
     SqlContext<QSet<int>> ctx(db);
     ctx.FetchLargeSelectIntoList<int>("id",
-                                 "select id from fanfics where " + where,
-                                 "select count(id) from fanfics where " + where);
+                                      "select id from fanfics where " + where,
+                                      "select count(id) from fanfics where " + where);
 
     return ctx.result;
 }
@@ -2444,6 +2493,42 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
     qs = qs.arg(id.toString());
     return SqlContext<bool>(db, qs)();
 }
+
+DiagnosticSQLResult<bool> FillFicDataForList(int listId, const QVector<int> & fics, const QVector<int> & matchCounts, QSqlDatabase db)
+{
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count) values(:listId, :ficId, :matchCount)");
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("listId", listId);
+    for(int i = 0; i < fics.size(); i++)
+    {
+        ctx.bindValue("ficId", fics.at(i));
+        ctx.bindValue("matchCount", matchCounts.at(i));
+        if(!ctx.ExecAndCheck())
+        {
+            ctx.result.success = false;
+            break;
+        }
+    }
+    return ctx.result;
+}
+
+//DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
+//{
+//    QString qs = QString("insert into RecommendationListAuthorStats(list_id, author_id, match_count) values(:listId, :ficId, :matchCount)");
+//    SqlContext<bool> ctx(db, qs);
+//    ctx.bindValue("listId", listId);
+//    for(int i = 0; i < fics.size(); i++)
+//    {
+//        ctx.bindValue("ficId", fics.at(i));
+//        ctx.bindValue("matchCount", matchCounts.at(i));
+//        if(!ctx.ExecAndCheck())
+//        {
+//            ctx.result.success = false;
+//            break;
+//        }
+//    }
+//    return ctx.result;
+//}
 
 
 

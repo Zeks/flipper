@@ -16,10 +16,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 #include <QObject>
 #include <QDate>
+#include <QSqlDatabase>
 #include <QSharedPointer>
+#include <QSet>
 #include "ECacheMode.h"
-//#include "include/pageconsumer.h"
-#include "include/environment.h"
+
 #include "include/core/section.h"
 
 namespace interfaces{
@@ -63,3 +64,5 @@ signals:
     void updateCounter(int);
     void updateInfo(QString);
 };
+
+

@@ -28,26 +28,29 @@ static inline QList<int> GetTaggedIDs(){
     return QList<int>();
 }
 
-static inline QString FS(const std::string& s)
+namespace proto_converters
+{
+QString FS(const std::string& s)
 {
     return QString::fromStdString(s);
 }
 
-static inline std::string TS(const QString& s)
+std::string TS(const QString& s)
 {
     return s.toStdString();
 }
 
 
-static inline QDateTime DFS(const std::string& s)
+QDateTime DFS(const std::string& s)
 {
     return QDateTime::fromString(QString::fromStdString(s), "yyyyMMdd");
 }
 
-static inline std::string DTS(const QDateTime & date)
+std::string DTS(const QDateTime & date)
 {
     return date.toString("yyyyMMdd").toStdString();
 }
+
 
 
 ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
@@ -298,10 +301,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 
     return true;
 }
-
-
-
-
+}
 
 class FicSourceGRPCImpl{
     //    friend class GrpcServiceBase;
@@ -321,7 +321,7 @@ public:
 
         ProtoSpace::SearchTask task;
 
-        ProtoSpace::Filter protoFilter = StoryFilterIntoProtoFilter(filter);
+        ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
         task.set_allocated_filter(&protoFilter);
 
         QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
@@ -353,7 +353,7 @@ public:
         fics->resize(static_cast<size_t>(response->fanfics_size()));
         for(int i = 0; i < response->fanfics_size(); i++)
         {
-            ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
+            proto_converters::ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
         }
 
         task.release_filter();
@@ -365,7 +365,7 @@ public:
 
         ProtoSpace::FicCountTask task;
 
-        ProtoSpace::Filter protoFilter = StoryFilterIntoProtoFilter(filter);
+        ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
         task.set_allocated_filter(&protoFilter);
         auto* controls = task.mutable_controls();
         controls->set_user_token(QUuid::createUuid().toString().toStdString());
@@ -403,7 +403,45 @@ public:
         fandoms->resize(response->fandoms_size());
         for(int i = 0; i < response->fandoms_size(); i++)
         {
-            ProtoFandomToLocalFandom(response->fandoms(i), (*fandoms)[static_cast<size_t>(i)]);
+            proto_converters::ProtoFandomToLocalFandom(response->fandoms(i), (*fandoms)[static_cast<size_t>(i)]);
+        }
+        return true;
+    }
+
+    bool GetRecommendationListFromServer(RecommendationListGRPC& recList)
+    {
+        grpc::ClientContext context;
+
+        ProtoSpace::RecommendationListCreationRequest task;
+
+
+        QScopedPointer<ProtoSpace::RecommendationListCreationResponse> response (new ProtoSpace::RecommendationListCreationResponse);
+        std::chrono::system_clock::time_point deadline =
+                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+        context.set_deadline(deadline);
+        auto* ffn = task.mutable_id_packs();
+        for(auto fic: recList.fics)
+            ffn->add_ffn_ids(fic);
+        task.set_list_name(proto_converters::TS(recList.listParams.name));
+        task.set_always_pick_at(recList.listParams.alwaysPickAt);
+        task.set_min_fics_to_match(recList.listParams.minimumMatch);
+        task.set_max_unmatched_to_one_matched(recList.listParams.pickRatio);
+        auto* controls = task.mutable_controls();
+        controls->set_user_token(QUuid::createUuid().toString().toStdString());
+
+        grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
+
+        ProcessStandardError(status);
+        if(!response->list().list_ready())
+            return false;
+
+        recList.fics.clear();
+        recList.fics.reserve(response->list().fic_ids_size());
+        recList.matchCounts.reserve(response->list().fic_ids_size());
+        for(int i = 0; i < response->list().fic_ids_size(); i++)
+        {
+            recList.fics.push_back(response->list().fic_ids(i));
+            recList.matchCounts.push_back(response->list().fic_matches(i));
         }
         return true;
     }
@@ -481,4 +519,11 @@ bool FicSourceGRPC::GetFandomListFromServer(int lastFandomID, QVector<core::Fand
     if(!impl)
         return false;
     return impl->GetFandomListFromServer(lastFandomID, fandoms);
+}
+
+bool FicSourceGRPC::GetRecommendationListFromServer(RecommendationListGRPC &recList)
+{
+    if(!impl)
+        return false;
+    return impl->GetRecommendationListFromServer(recList);
 }

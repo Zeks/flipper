@@ -1,5 +1,5 @@
 #include "include/environment.h"
-
+#include "include/tagwidget.h"
 #include "include/page_utils.h"
 #include "include/regex_utils.h"
 #include "include/Interfaces/recommendation_lists.h"
@@ -283,27 +283,60 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
     }
 }
 
-class RecommendationsCreator{
-public:
-    RecommendationsCreator();
-    void Run(){
-        RecommendationsInfoAccessor::recommendatonsData[userToken].sourceFics = sourceFics;
-        RecommendationsInfoAccessor::recommendatonsData[userToken].matchedAuthors = authors->GetAllMatchesWithRecsUID(params, userToken);
-        RecommendationsInfoAccessor::recommendatonsData[userToken].listData = recs->GetMatchesForUID(userToken);
+int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params)
+{
+    QFile data("lists/source.txt");
+    QVector<int> sourceList;
+    if (data.open(QFile::ReadOnly))
+    {
+        QTextStream in(&data);
+        QString str;
+        do{
+            str = in.readLine();
+            QRegExp rx("/s/(\\d+)");
+            int pos = rx.indexIn(str);
+            QString ficIdPart;
+            if(pos != -1)
+            {
+                ficIdPart = rx.cap(1);
+            }
+            if(ficIdPart.isEmpty())
+                continue;
+
+            if(ficIdPart.toInt() <= 0)
+                continue;
+            auto webId = ficIdPart.toInt();
+
+            // at the moment works only for ffn and doesnt try to determine anything else
+            sourceList.push_back(webId);
+        }while(!str.isEmpty());
     }
 
-    QString userToken;
-    QSet<int> sourceFics;
-    QSharedPointer<core::RecommendationList> params;
-    QSharedPointer<interfaces::Authors> authors;
-    QSharedPointer<interfaces::RecommendationLists> recs;
-    bool clearAuthors;
 
-};
+    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    RecommendationListGRPC list;
+    list.listParams = *params;
+    list.fics = sourceList;
+    bool result = grpcSource->GetRecommendationListFromServer(list);
+    if(!result)
+    {
+        QLOG_ERROR() << "list creation failed";
+        return -1;
+    }
 
+//    database::Transaction transaction(interfaces.recs->db);
+//    auto listId = interfaces.recs->GetListIdForName(params->name);
+//    interfaces.recs->DeleteList(listId);
+//    interfaces.recs->LoadListIntoDatabase(params);
+//    interfaces.recs->LoadListFromServerIntoDatabase(listId, list.fics, list.matchCounts);
 
+//    interfaces.recs->UpdateFicCountInDatabase(params->id);
+//    interfaces.recs->SetCurrentRecommendationList(params->id);
+//    transaction.finalize();
+    return -1;
+}
 
-int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
@@ -356,6 +389,18 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
     qDebug() << "processed authors: " << counter;
     qDebug() << "all authors: " << alLCounter;
     return params->id;
+}
+
+
+int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    int result = -1;
+    if(settings.value("Settings/thinClient").toBool())
+        result =  BuildRecommendationsServerFetch(params);
+    else
+        result = BuildRecommendationsLocalVersion(params, clearAuthors);
+    return result;
 }
 
 void CoreEnvironment::ResumeUnfinishedTasks()

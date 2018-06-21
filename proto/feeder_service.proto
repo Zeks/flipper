@@ -64,17 +64,31 @@ message SiteIDPack{
     repeated int32 sb_ids  = 3;
     repeated int32 sv_ids  = 4;
 }
- 
+
+message RecommendationListData{
+    bool list_ready             = 1;
+    string list_name            = 2;
+    repeated int32 fic_ids      = 3;
+    repeated int32 fic_matches  = 4;
+    
+    // ethically complicated
+    // probably best to disable this for release
+    // don't want personal data seeping through
+    // repeated int32 author_ids   = 4;
+}
 
 message RecommendationListCreationRequest{
     ControlInfo controls                = 1;
-    int32 min_fics_to_match             = 2;
-    int32 max_unmatched_to_one_matched  = 3;
-    SiteIDPack id_packs                 = 4;
+    string list_name                    = 2;
+    int32 min_fics_to_match             = 3;
+    int32 max_unmatched_to_one_matched  = 4;
+    int32 always_pick_at                = 5;
+    SiteIDPack id_packs                 = 6;
 }
 
 message RecommendationListCreationResponse{
-    string list_token = 1;
+    string list_token           = 1;
+    RecommendationListData list = 2;
 }
 
 message RecommendationListFetchRequest{
@@ -83,10 +97,9 @@ message RecommendationListFetchRequest{
 }
 
 message RecommendationListFetchResponse{
-    bool list_available         = 1;
-    bool position_in_queue      = 2;
-    repeated int32 fic_ids      = 3;
-    repeated int32 fic_matches  = 4;
+    bool list_available              = 1;
+    bool position_in_queue           = 2;
+    RecommendationListData list_data = 3;
 }
 
 // will need to synchronize fandoms on app start somehow

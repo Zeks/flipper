@@ -1,5 +1,5 @@
 #pragma once
-#include "tagwidget.h"
+
 #include "storyfilter.h"
 #include "libs/UniversalModels/include/TableDataInterface.h"
 #include "libs/UniversalModels/include/TableDataListHolder.h"
@@ -83,6 +83,9 @@ public:
 
     // used to create recommendation list from lists/source.txt
     void ProcessListIntoRecommendations(QString list);
+
+    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params);
+    int  BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
     int  BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
 
     void ResumeUnfinishedTasks();
