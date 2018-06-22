@@ -131,6 +131,7 @@ void RecommendationsCreator::Run(QString userToken,
     QLOG_INFO() << "Source fics count" << sourceFics.size();
     data.matchedAuthors = authors->GetAllMatchesWithRecsUID(params, userToken);
     QLOG_INFO() << "Matched authors count: " << data.matchedAuthors.size();
+    QLOG_INFO() << "Matched authors: " << data.matchedAuthors;
     QVector<int> ts;
     for(auto val : data.sourceFics)
     {
@@ -169,6 +170,8 @@ public:
         convertedFicSource->InitQueryType(true, userToken);
 
         ProcessUserToken(task->user_data(), userToken);
+
+        RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recSet;
 
         QVector<core::Fic> data;
         TimedAction action("Fetching data",[&](){
@@ -264,10 +267,18 @@ public:
     {
 
         Q_UNUSED(context);
-        QString userToken = QString::fromStdString(task->controls().user_token());
+        bool firstRun = true;
+        static QString userToken = QString::fromStdString(task->controls().user_token());
+
         QLOG_INFO() << "////////////Received search task from: " << userToken;
 
         DatabaseContext dbContext;
+
+        QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+        params->name =  proto_converters::FS(task->list_name());
+        params->minimumMatch = task->min_fics_to_match();
+        params->pickRatio = task->max_unmatched_to_one_matched();
+        params->alwaysPickAt = task->always_pick_at();
 
         QSharedPointer<interfaces::RecommendationLists> recsInterface (new interfaces::RecommendationLists());
         recsInterface->portableDBInterface = dbContext.dbInterface;
@@ -276,34 +287,30 @@ public:
         QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
         recsInterface->portableDBInterface = dbContext.dbInterface;
 
-        QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-        params->name =  proto_converters::FS(task->list_name());
-        params->minimumMatch = task->min_fics_to_match();
-        params->pickRatio = task->max_unmatched_to_one_matched();
-        params->alwaysPickAt = task->always_pick_at();
+        static RecommendationsCreator creator;
+        if(firstRun)
+        {
+            QSet<int> sourceFics;
+            for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
+                sourceFics.insert(task->id_packs().ffn_ids(i));
+            if(sourceFics.size() == 0)
+                return Status::OK;
+            RecommendationsInfoAccessor::recommendatonsData[userToken].sourceFics = sourceFics;
+            sourceFics = fanficsInterface->ConvertFFNSourceFicsToDB(userToken);
 
 
-        QSet<int> sourceFics;
-
-
-        for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
-            sourceFics.insert(task->id_packs().ffn_ids(i));
-        if(sourceFics.size() == 0)
-            return Status::OK;
-        RecommendationsInfoAccessor::recommendatonsData[userToken].sourceFics = sourceFics;
-        sourceFics = fanficsInterface->ConvertFFNSourceFicsToDB(userToken);
-
-        RecommendationsCreator creator;
-        creator.recs = recsInterface;
-        creator.authors = authorsInterface;
-        creator.Run(userToken, sourceFics, params);
-
-        auto list = RecommendationsInfoAccessor::recommendatonsData[userToken].listData;
+            creator.recs = recsInterface;
+            creator.authors = authorsInterface;
+            creator.Run(userToken, sourceFics, params);
+            firstRun = false;
+        }
+        auto& list = RecommendationsInfoAccessor::recommendatonsData[userToken].listData;
         auto* targetList = response->mutable_list();
         targetList->set_list_name(proto_converters::TS(params->name));
         targetList->set_list_ready(true);
-        for(auto key: list)
+        for(int key: list.keys())
         {
+            QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             targetList->add_fic_ids(key);
             targetList->add_fic_matches(list[key]);
         }

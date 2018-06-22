@@ -555,24 +555,6 @@ void DefaultQueryBuilder::InitTagFilterBuilder(bool client, QString userToken)
 }
 
 
-QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
-{
-    QString where = query->str;
-
-    if(!randomIdLists.contains(where))
-    {
-        auto idList = portableDBInterface->GetIdListForQuery(query);
-        if(idList.size() == 0)
-            idList.push_back("-1");
-        randomIdLists[where] = idList;
-    }
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 eng(rd()); // seed the generator
-    auto& currentList = randomIdLists[where];
-    std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
-    auto value = distr(eng);
-    return currentList[value];
-}
 
 CountQueryBuilder::CountQueryBuilder(bool client, QString userToken) : DefaultQueryBuilder(client, userToken)
 {

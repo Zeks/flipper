@@ -31,11 +31,6 @@ struct Query
     QVariantHash bindings;
 };
 
-struct IRNGGenerator{
-    virtual ~IRNGGenerator(){}
-    virtual QString Get(QSharedPointer<Query>, QSqlDatabase db)  = 0;
-};
-
 class IQueryBuilder
 {
 public:

@@ -107,6 +107,9 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
     for(auto word : filter.wordInclusion)
         contentFilter->add_word_inclusion(word.toStdString());
 
+    auto* recommendations = result.mutable_recommendations();
+    for(auto fic : filter.recFics)
+        recommendations->add_current_list(fic);
 
     auto* tagFilter = result.mutable_tag_filter();
     tagFilter->set_ignore_already_tagged(filter.ignoreAlreadyTagged);
@@ -206,6 +209,9 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
 
     for(int i = 0; i < filter.tag_filter().all_tagged_size(); i++)
         result.taggedIDs.push_back(filter.tag_filter().all_tagged(i));
+
+    for(int i = 0; i < filter.recommendations().current_list_size(); i++)
+        result.recSet.insert(filter.recommendations().current_list(i));
 
     result.slashFilter.slashFilterEnabled = filter.slash_filter().use_slash_filter();
     result.slashFilter.excludeSlash = filter.slash_filter().exclude_slash();
@@ -345,6 +351,9 @@ public:
             ignoredFandoms->add_fandom_ids(key);
             ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
         }
+
+
+
 
         grpc::Status status = stub_->Search(&context, task, response.data());
 

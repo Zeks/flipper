@@ -771,9 +771,11 @@ DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int lis
     return ctx.result;
 }
 
-DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db)
+DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, int minRecs, QSqlDatabase db)
 {
     QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id");
+    if(minRecs != 0)
+        qs += QString("and match_count = %1").arg(minRecs);
     SqlContext<QVector<int>> ctx(db);
     ctx.bindValue("list_id",listId);
     ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
@@ -1137,11 +1139,14 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
 
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id, count(fic_id) as cnt from recommendations where cfInAuthors(recommender_id, :uid) > 0 group by fic_id");
+    QString qs = QString("select fic_id, count(fic_id) as cnt from recommendations where cfInAuthors(recommender_id, :uid) = 1 group by fic_id");
     SqlContext<QHash<int, int> > ctx(db);
     ctx.bindValue("uid", uid);
     ctx.FetchSelectFunctor(qs, [](QHash<int, int>& data, QSqlQuery& q){
-        data[q.value("fic_id").toInt()] = q.value("cnt").toInt();
+        int fic = q.value("fic_id").toInt();
+        int matches = q.value("cnt").toInt();
+        //QLOG_INFO() << " fic_id: " << fic << " matches: " << matches;
+        data[fic] = matches;
     });
     return ctx.result;
 }

@@ -47,8 +47,14 @@ void CoreEnvironment::LoadData()
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
     }
-
-    ficSource->FetchData(filter, &fanfics);
+    QVector<int> recFics;
+    if(filter.sortMode == core::StoryFilter::sm_reccount)
+    {
+        // need to pass the list to the server
+        filter.recFics = interfaces.recs->GetAllFicIDs(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
+    }
+    ficSource->FetchData(filter,
+                         &fanfics);
 
     currentLastFanficId = ficSource->lastFicId;
 }
@@ -56,6 +62,7 @@ void CoreEnvironment::LoadData()
 CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj)
 {
     ReadSettings();
+    rngGenerator.reset(new core::DefaultRNGgenerator);
 }
 
 void CoreEnvironment::ReadSettings()
@@ -324,15 +331,16 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         return -1;
     }
 
-//    database::Transaction transaction(interfaces.recs->db);
-//    auto listId = interfaces.recs->GetListIdForName(params->name);
-//    interfaces.recs->DeleteList(listId);
-//    interfaces.recs->LoadListIntoDatabase(params);
-//    interfaces.recs->LoadListFromServerIntoDatabase(listId, list.fics, list.matchCounts);
+    database::Transaction transaction(interfaces.recs->db);
+    auto listId = interfaces.recs->GetListIdForName(params->name);
+    interfaces.recs->DeleteList(listId);
+    interfaces.recs->LoadListIntoDatabase(params);
+    qDebug() << list.fics;
+    interfaces.recs->LoadListFromServerIntoDatabase(listId, list.fics, list.matchCounts);
 
-//    interfaces.recs->UpdateFicCountInDatabase(params->id);
-//    interfaces.recs->SetCurrentRecommendationList(params->id);
-//    transaction.finalize();
+    interfaces.recs->UpdateFicCountInDatabase(params->id);
+    interfaces.recs->SetCurrentRecommendationList(params->id);
+    transaction.finalize();
     return -1;
 }
 

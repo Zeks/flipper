@@ -17,21 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
 
-#include "queryinterfaces.h"
+#include "include/queryinterfaces.h"
+#include "include/rng.h"
 
 #include <QSqlDatabase>
 #include <functional>
 #include <random>
 
 namespace core{
-
-struct DefaultRNGgenerator : public IRNGGenerator{
-    virtual QString Get(QSharedPointer<Query> where, QSqlDatabase db);
-    QHash<QString, QStringList> randomIdLists;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
-};
-
-
 class IWhereFilter{
 public:
     virtual ~IWhereFilter();

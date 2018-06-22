@@ -178,19 +178,19 @@ int RecommendationLists::GetMatchCountForRecommenderOnList(int authorId, int lis
     return data->matchesWithReference;
 }
 
-QVector<int> RecommendationLists::GetAllFicIDs(int listId)
+QVector<int> RecommendationLists::GetAllFicIDs(int listId, int minRecs)
 {
     QVector<int> result;
     if(!EnsureList(listId))
         return result;
 
-    if(!ficsCacheForLists.contains(listId))
+    if(!ficsCacheForLists.contains({listId,minRecs}))
     {
-        result = database::puresql::GetAllFicIDsFromRecommendationList(listId, db).data;
-        ficsCacheForLists[listId] = result;
+        result = database::puresql::GetAllFicIDsFromRecommendationList(listId, minRecs, db).data;
+        ficsCacheForLists[{listId,minRecs}] = result;
     }
     else
-        result = ficsCacheForLists[listId];
+        result = ficsCacheForLists[{listId,minRecs}];
 
     return result;
 
@@ -243,7 +243,13 @@ void RecommendationLists::DeleteLocalList(int listId)
     auto list = idIndex[listId];
     idIndex.remove(list->id);
     nameIndex.remove(list->name);
-    ficsCacheForLists.remove(list->id);
+    QList<QPair<int,int>> toRemove;
+    for(auto key : ficsCacheForLists.keys())
+        if(key.first == list->id)
+            toRemove.push_back(key);
+    for(auto key: toRemove)
+        ficsCacheForLists.remove(key);
+
     authorsCacheForLists.remove(list->id);
     cachedAuthorStats.remove(list->id);
     if(currentRecommendationList == list->id)

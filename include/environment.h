@@ -9,6 +9,7 @@
 #include "qml_ficmodel.h"
 #include "include/core/section.h"
 #include "include/pagetask.h"
+#include "include/rng.h"
 #include "include/tasks/fandom_task_processor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
@@ -111,6 +112,9 @@ public:
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 
     QSharedPointer<FicSource> ficSource;
+    QSharedPointer<core::IRNGGenerator> rngGenerator;
+
+
 
     // in case of non-gui applications these will just fire without an effect and its correct
 signals:

@@ -77,6 +77,8 @@ App{
         "src/sqlitefunctions.cpp",
         "src/storyfilter.cpp",
         "src/url_utils.cpp",
+        "src/rng.cpp",
+        "include/rng.h",
         "src/feeder_environment.cpp",
         "include/feeder_environment.h",
         "src/transaction.cpp",

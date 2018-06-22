@@ -153,6 +153,8 @@ App{
         "src/Interfaces/data_source.cpp",
         "include/in_tag_accessor.h",
         "src/in_tag_accessor.cpp",
+        "src/rng.cpp",
+        "include/rng.h",
     ]
 
     cpp.staticLibraries: {

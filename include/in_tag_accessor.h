@@ -19,6 +19,7 @@ struct RecommendationsData{
   QSet<int> sourceFics;
   QSet<int> matchedAuthors;
   QHash<int, int> listData;
+  QSet<int> recommendationList;
 };
 class RecommendationsInfoAccessor{
 public:

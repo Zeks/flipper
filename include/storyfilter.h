@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include <QStringList>
 #include <QDateTime>
+#include <QVector>
+#include <QSet>
 struct SlashFilterState
 {
     void Log();
@@ -118,6 +120,8 @@ struct StoryFilter{
     double reviewBiasRatio = 0;
 
     QList<int> taggedIDs;
+    QVector<int> recFics;
+    QSet<int> recSet; // for use on the server
 
 };
 }

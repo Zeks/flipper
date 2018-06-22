@@ -17,6 +17,7 @@ message Recommendations{
     int32 use_this_recommender_only                 = 3;
     int32 min_recommendations                       = 4;
     bool show_origins_in_lists                      = 5;
+    repeated int32 current_list                     = 6;
 }
 
 message BasicFilters{
