@@ -69,7 +69,7 @@ CREATE INDEX if not exists  I_FANFICS_HIDDEN on fanfics (hidden ASC);
  alter table slash_data_ffn add column keywords_result integer default 0;
  alter table slash_data_ffn add column filter_pass_1 integer default 0;
  alter table slash_data_ffn add column filter_pass_2 integer default 0;
-CREATE INDEX if not exists  I_SDFFN_KEY ON slash_data_ffn (fic_id ASC);
+CREATE INDEX if not exists  I_SDFFN_KEY ON slash_data_ffn (ffn_id ASC);
 CREATE INDEX if not exists  I_SDFFN_KW_YES ON slash_data_ffn (keywords_yes ASC);
 CREATE INDEX if not exists  I_SDFFN_KW_NO ON slash_data_ffn (keywords_no ASC);
 CREATE INDEX if not exists  I_SDFFN_KW_RESULT ON slash_data_ffn (keywords_result ASC);

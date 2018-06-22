@@ -41,7 +41,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
     queryString = "ID, ";
     queryString+= CreateCustomFields(filter) + " f.* ";
 
-    queryString+=" from vFanfics f where f.alive = 1 " ;
+    queryString+=" from vFanfics f where f.alive <> 0 " ;
     QString where = CreateWhere(filter);
     qDebug().noquote() << "WHERE IS: " << where;
     ProcessBindings(filter, query);
@@ -78,7 +78,9 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
             }
         }
         else
-            where = " and f.id in ( select id as fid from vfanficsslash ff where 1=1 " + where + BuildSortMode(filter) + CreateLimitQueryPart(filter) + ")";
+        {
+            //where += BuildSortMode(filter) + CreateLimitQueryPart(filter);
+        }
         QString randomizer = ProcessRandomization(filter, where);
         if(!filter.randomizeResults)
             queryString += where  + BuildSortMode(filter);
@@ -281,7 +283,11 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
     {
         if(!filter.slashFilter.excludeSlash && !filter.slashFilter.includeSlash)
             return queryString;
-        QString start = "and f.id not in ( select ffn_id from slash_data_ffn sdf where sdf.ffn_id = f.id ";
+        QString start = "and  %1  ( select 1 from slash_data_ffn sdf where sdf.ffn_id = f.ffn_id ";
+        if(filter.slashFilter.includeSlash)
+            start = start.arg(" exists ");
+        else
+            start = start.arg(" not exists ");
         if(filter.slashFilter.slashFilterLevel == 0)
             slashField = "keywords_result";
         else if(filter.slashFilter.slashFilterLevel == 1)
@@ -290,7 +296,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
             slashField = "filter_pass_2";
 
         if(filter.slashFilter.excludeSlash)
-            queryString += "  and  %1 <> 1 or %1 is null ";
+            queryString += "  and  (%1 <> 1 or %1 is null) ";
         if(filter.slashFilter.includeSlash)
             queryString += " and  %1 = 1  ";
 
@@ -634,7 +640,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
 
 
     QString normalString = "select count(id) as records %1 ";
-    queryString = "  from fanfics ff where ff.alive = 1 " ;
+    queryString = "  from fanfics ff where ff.alive <> 0 " ;
     QString where;
     {
         where+= ProcessWordcount(filter);
