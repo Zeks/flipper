@@ -42,6 +42,8 @@ void FeederEnvironment::LoadData(SlashFilterState slashFilter)
     qDebug().noquote() << q.lastQuery();
     if(q.lastError().isValid())
     {
+        qDebug() << " ";
+        qDebug() << " ";
         qDebug() << "Error loading data:" << q.lastError();
         qDebug().noquote() << q.lastQuery();
     }
@@ -132,6 +134,7 @@ inline core::Fic FeederEnvironment::LoadFanfic(QSqlQuery& q)
     result.complete= q.value("COMPLETE").toInt();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     result.recommendations= q.value("SUMRECS").toInt();
+    //QLOG_INFO() << "recs value: " << result.recommendations;
     return result;
 }
 void FeederEnvironment::InitInterfaces()

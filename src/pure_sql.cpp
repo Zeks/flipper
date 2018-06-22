@@ -771,14 +771,23 @@ DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int lis
     return ctx.result;
 }
 
-DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, int minRecs, QSqlDatabase db)
+DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db)
 {
     QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id");
-    if(minRecs != 0)
-        qs += QString("and match_count = %1").arg(minRecs);
     SqlContext<QVector<int>> ctx(db);
     ctx.bindValue("list_id",listId);
     ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db)
+{
+    QString qs = QString("select fic_id, match_count from RecommendationListData where list_id = :list_id");
+    SqlContext<QHash<int,int>> ctx(db, qs);
+    ctx.bindValue("list_id",listId);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data[q.value("fic_id").toInt()] = q.value("match_count").toInt();
+    });
     return ctx.result;
 }
 

@@ -184,7 +184,8 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
 
 DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
 
-DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, int minRecs, QSqlDatabase db);
+DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db);
+DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db);
 DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db);
 
 DiagnosticSQLResult<int> GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db);

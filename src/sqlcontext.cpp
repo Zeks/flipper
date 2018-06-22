@@ -11,6 +11,8 @@ bool ExecAndCheck(QSqlQuery& q, bool reportErrors)
         {
             if(q.lastError().text().contains("record"))
                 QLOG_ERROR() << "Error while performing a query: ";
+            QLOG_ERROR() << " ";
+            QLOG_ERROR() << " ";
             QLOG_ERROR() << "Error while performing a query: ";
             QLOG_ERROR_PURE()<< q.lastQuery();
             QLOG_ERROR() << "Error was: " <<  q.lastError();

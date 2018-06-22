@@ -51,7 +51,7 @@ void CoreEnvironment::LoadData()
     if(filter.sortMode == core::StoryFilter::sm_reccount)
     {
         // need to pass the list to the server
-        filter.recFics = interfaces.recs->GetAllFicIDs(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
+        filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList());
     }
     ficSource->FetchData(filter,
                          &fanfics);

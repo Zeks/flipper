@@ -43,6 +43,17 @@ public:
     virtual QString GetString(StoryFilter filter);
 };
 
+class InRecommendationsFullDB : public IWhereFilter{
+public:
+    virtual ~InRecommendationsFullDB();
+    virtual QString GetString(StoryFilter filter);
+};
+class InRecommendationsClient : public IWhereFilter{
+public:
+    virtual ~InRecommendationsClient();
+    virtual QString GetString(StoryFilter filter);
+};
+
 class FandomIgnoreClient : public IWhereFilter{
 public:
     virtual ~FandomIgnoreClient();
@@ -97,7 +108,7 @@ protected:
 
 
     QString BuildSortMode(StoryFilter);
-    QString CreateLimitQueryPart(StoryFilter);
+    QString CreateLimitQueryPart(StoryFilter, bool collate = true);
 
     QString BuildIdListQuery(StoryFilter);
     bool HasIdListForQuery(QString);
@@ -110,8 +121,11 @@ protected:
     //bool countOnlyQuery = false;
     QSharedPointer<IWhereFilter> tagFilterBuilder;
     QSharedPointer<IWhereFilter> ignoredFandomsBuilder;
+    QSharedPointer<IWhereFilter> inRecommendationsBuilder;
     QSharedPointer<Query> query;
     QSqlDatabase db;
+    QString userToken;
+    bool thinClientMode = false;
 };
 
 class CountQueryBuilder : public DefaultQueryBuilder

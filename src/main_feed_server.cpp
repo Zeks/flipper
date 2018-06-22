@@ -171,7 +171,7 @@ public:
 
         ProcessUserToken(task->user_data(), userToken);
 
-        RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recSet;
+        RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
 
         QVector<core::Fic> data;
         TimedAction action("Fetching data",[&](){

@@ -68,7 +68,7 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.published = published;
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
-    result.tags = q.value("TAGS").toString();
+    //result.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
@@ -76,6 +76,7 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.complete= q.value("COMPLETE").toInt();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     result.recommendations= q.value("SUMRECS").toInt();
+    //QLOG_INFO() << "recs value: " << q.value("sumrecs").toInt();
     return result;
 }
 
@@ -104,9 +105,11 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
     auto q = BuildQuery(searchfilter);
     q.setForwardOnly(true);
     q.exec();
-    qDebug().noquote() << q.lastQuery();
+    //qDebug().noquote() << q.lastQuery();
     if(q.lastError().isValid())
     {
+        qDebug() << " ";
+        qDebug() << " ";
         qDebug() << "Error loading data:" << q.lastError();
         qDebug().noquote() << q.lastQuery();
     }
@@ -125,6 +128,7 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
         if(counter%10000 == 0)
             qDebug() << "tick " << counter/1000;
     }
+    QLOG_INFO() << "EXECUTED QUERY:" << q.lastQuery();
     if(data->size() > 0)
         lastFicId = (*data)[data->size() - 1].id;
     qDebug() << "loaded fics:" << counter;

@@ -107,9 +107,7 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
     for(auto word : filter.wordInclusion)
         contentFilter->add_word_inclusion(word.toStdString());
 
-    auto* recommendations = result.mutable_recommendations();
-    for(auto fic : filter.recFics)
-        recommendations->add_current_list(fic);
+
 
     auto* tagFilter = result.mutable_tag_filter();
     tagFilter->set_ignore_already_tagged(filter.ignoreAlreadyTagged);
@@ -136,7 +134,11 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
     recommendations->set_use_this_recommender_only(filter.useThisRecommenderOnly);
     recommendations->set_min_recommendations(filter.minRecommendations);
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
-
+    for(auto fic : filter.recsHash.keys())
+    {
+        recommendations->add_list_of_fics(fic);
+        recommendations->add_list_of_matches(filter.recsHash[fic]);
+    }
     return result;
 }
 
@@ -210,8 +212,9 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
     for(int i = 0; i < filter.tag_filter().all_tagged_size(); i++)
         result.taggedIDs.push_back(filter.tag_filter().all_tagged(i));
 
-    for(int i = 0; i < filter.recommendations().current_list_size(); i++)
-        result.recSet.insert(filter.recommendations().current_list(i));
+    for(int i = 0; i < filter.recommendations().list_of_fics_size(); i++)
+        result.recsHash[filter.recommendations().list_of_fics(i)] = filter.recommendations().list_of_matches(i);
+
 
     result.slashFilter.slashFilterEnabled = filter.slash_filter().use_slash_filter();
     result.slashFilter.excludeSlash = filter.slash_filter().exclude_slash();
