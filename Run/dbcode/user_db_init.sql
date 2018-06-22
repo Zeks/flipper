@@ -1,6 +1,6 @@
 
-CREATE TABLE if not exists user_settings(name varchar unique, value integer);
-INSERT INTO user_settings(name, name) values('Last Fandom Id', 0);
+CREATE TABLE if not exists user_settings(name varchar unique, value integer unique);
+INSERT INTO user_settings(name, value) values('Last Fandom Id', 0);
 
  
 CREATE TABLE if not exists recent_fandoms(fandom varchar, seq_num integer);

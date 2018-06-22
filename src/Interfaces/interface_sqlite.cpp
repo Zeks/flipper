@@ -88,5 +88,10 @@ bool SqliteInterface::EnsureUUIDForUserDatabase()
     return database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
 }
 
+QString SqliteInterface::GetUserToken()
+{
+    return database::puresql::GetUserToken(db).data;
+}
+
 }
 

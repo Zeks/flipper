@@ -93,7 +93,7 @@ void CoreEnvironment::Init()
     bool thinClient = settings.value("Settings/thinClient").toBool();
     if(thinClient)
     {
-        ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), 160));
+        ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port),interfaces.db->userToken,  160));
         auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
         QVector<core::Fandom> fandoms;
         grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);

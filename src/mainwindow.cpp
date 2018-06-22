@@ -1639,7 +1639,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
     filter.genreSortField = ui->leGenreSortField->text();
     filter.showOriginsInLists = ui->chkShowOrigins->isChecked();
-    filter.minRecommendations = ui->sbMinRecommendations->value();
+    filter.minRecommendations =  ui->sbMinRecommendations->value();
     filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : -1;
     filter.recordPage = ui->chkLimitPageSize->isChecked() ?  0 : -1;
     filter.listOpenMode = ui->chkListMode->isChecked();

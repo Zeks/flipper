@@ -98,6 +98,7 @@ void FeederEnvironment::WriteSettings()
 
 void FeederEnvironment::Init()
 {
+    QLOG_INFO() << "RNG INIT";
     std::unique_ptr<core::DefaultRNGgenerator> rng (new core::DefaultRNGgenerator());
     rng->portableDBInterface = interfaces.db;
     queryBuilder.SetIdRNGgenerator(rng.release());

@@ -338,7 +338,7 @@ public:
                 std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
         context.set_deadline(deadline);
         auto* controls = task.mutable_controls();
-        controls->set_user_token(QUuid::createUuid().toString().toStdString());
+        controls->set_user_token(proto_converters::TS(userToken));
 
         auto* userData = task.mutable_user_data();
         auto* tags = userData->mutable_user_tags();
@@ -380,7 +380,7 @@ public:
         ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
         task.set_allocated_filter(&protoFilter);
         auto* controls = task.mutable_controls();
-        controls->set_user_token(QUuid::createUuid().toString().toStdString());
+        controls->set_user_token(proto_converters::TS(userToken));
 
         QScopedPointer<ProtoSpace::FicCountResponse> response (new ProtoSpace::FicCountResponse);
         std::chrono::system_clock::time_point deadline =
@@ -439,7 +439,7 @@ public:
         task.set_min_fics_to_match(recList.listParams.minimumMatch);
         task.set_max_unmatched_to_one_matched(recList.listParams.pickRatio);
         auto* controls = task.mutable_controls();
-        controls->set_user_token(QUuid::createUuid().toString().toStdString());
+        controls->set_user_token(proto_converters::TS(userToken));
 
         grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
 
@@ -457,11 +457,11 @@ public:
         }
         return true;
     }
-
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
     bool hasErrors = false;
     int deadline = 60;
+    QString userToken;
 };
 
 void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
@@ -502,9 +502,11 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
     error+=QString::fromStdString(status.error_message());
 }
 
-FicSourceGRPC::FicSourceGRPC(QString connectionString, int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
+FicSourceGRPC::FicSourceGRPC(QString connectionString,
+                             QString userToken,
+                             int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
 {
-
+    impl->userToken = userToken;
 }
 
 FicSourceGRPC::~FicSourceGRPC()

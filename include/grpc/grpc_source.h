@@ -27,7 +27,7 @@ struct RecommendationListGRPC
 class FicSourceGRPC : public FicSource
 {
 public:
-    FicSourceGRPC(QString connectionString, int deadline);
+    FicSourceGRPC(QString connectionString, QString userToken, int deadline);
     virtual ~FicSourceGRPC() override;
 
     QSharedPointer<FicSourceGRPCImpl> impl;
@@ -35,6 +35,7 @@ public:
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
+    QString userToken;
 };
 
 

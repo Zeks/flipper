@@ -8,6 +8,7 @@ QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
 {
     QString where = query->str;
 
+    //QLOG_INFO() << "RANDOM USING WHERE:" <<
     if(!randomIdLists.contains(where))
     {
         auto idList = portableDBInterface->GetIdListForQuery(query);

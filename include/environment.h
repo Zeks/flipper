@@ -113,7 +113,7 @@ public:
 
     QSharedPointer<FicSource> ficSource;
     QSharedPointer<core::IRNGGenerator> rngGenerator;
-
+    QString userToken;
 
 
     // in case of non-gui applications these will just fire without an effect and its correct

@@ -164,8 +164,7 @@ public:
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
         dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
-        QSharedPointer<FicSource> ficSource;
-        ficSource.reset(new FicSourceDirect(dbInterface));
+        static QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface));
         FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
         convertedFicSource->InitQueryType(true, userToken);
 
@@ -310,7 +309,7 @@ public:
         targetList->set_list_ready(true);
         for(int key: list.keys())
         {
-            QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
+            //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             targetList->add_fic_ids(key);
             targetList->add_fic_matches(list[key]);
         }

@@ -38,9 +38,10 @@ public:
     virtual QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false) = 0;
     virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false) = 0;
     virtual bool EnsureUUIDForUserDatabase() = 0;
+    virtual QString GetUserToken() = 0;
     QSqlDatabase GetDatabase() {return db;}
+    QString userToken;
 protected:
-
     QSqlDatabase db;
 };
 }

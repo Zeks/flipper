@@ -123,7 +123,6 @@ struct StoryFilter{
     QList<int> taggedIDs;
     QVector<int> recFics;
     QHash<int, int> recsHash; // for use on the server
-
 };
 }
 

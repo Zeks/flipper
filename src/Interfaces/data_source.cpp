@@ -14,6 +14,7 @@ FicSourceDirect::FicSourceDirect(QSharedPointer<database::IDBWrapper> dbInterfac
     rng->portableDBInterface = dbInterface;
     queryBuilder.portableDBInterface = dbInterface;
     countQueryBuilder.portableDBInterface = dbInterface;
+    QLOG_INFO() << "RNG INIT";
     queryBuilder.SetIdRNGgenerator(rng.release());
 }
 FicSourceDirect::~FicSourceDirect(){}
@@ -68,7 +69,7 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.published = published;
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
-    //result.tags = q.value("TAGS").toString();
+    result.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
@@ -128,7 +129,7 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
         if(counter%10000 == 0)
             qDebug() << "tick " << counter/1000;
     }
-    QLOG_INFO() << "EXECUTED QUERY:" << q.lastQuery();
+    QLOG_INFO_PURE() << "EXECUTED QUERY:" << q.lastQuery();
     if(data->size() > 0)
         lastFicId = (*data)[data->size() - 1].id;
     qDebug() << "loaded fics:" << counter;

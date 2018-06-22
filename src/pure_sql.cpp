@@ -2526,6 +2526,15 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId, const QVector<int> & fi
     return ctx.result;
 }
 
+DiagnosticSQLResult<QString> GetUserToken(QSqlDatabase db)
+{
+    QString qs = QString("Select value from user_settings where name = 'db_uuid'");
+
+    SqlContext<QString> ctx(db, qs);
+    ctx.FetchSingleValue<QString>("value", "");
+    return ctx.result;
+}
+
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
 //{
 //    QString qs = QString("insert into RecommendationListAuthorStats(list_id, author_id, match_count) values(:listId, :ficId, :matchCount)");
