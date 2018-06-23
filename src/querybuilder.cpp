@@ -420,15 +420,15 @@ QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
     QString queryString;
     QString activeString = " cast("
                            "("
-                           " strftime('%s',ff.updated)-strftime('%s',CURRENT_TIMESTAMP) "
+                           " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
                            " ) AS real "
                            " )/60/60/24 >-365";
 
     if(filter.ensureCompleted)
-        queryString+=QString(" and  ff.complete = 1");
+        queryString+=QString(" and  f.complete = 1");
 
     if(!filter.allowUnfinished)
-        queryString+=QString(" and  ( ff.complete = 1 or " + activeString + " )");
+        queryString+=QString(" and  ( f.complete = 1 or " + activeString + " )");
 
     if(!filter.allowNoGenre)
         queryString+=QString(" and  ( genres != 'not found' )");
@@ -459,13 +459,13 @@ QString DefaultQueryBuilder::ProcessFilteringMode(StoryFilter filter)
     QString queryString;
     QString part =  "'" + filter.activeTags.join("','") + "'";
     if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
-        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = ff.id) ").arg(part);
+        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = f.id) ").arg(part);
     else
     {
         if(filter.ignoreAlreadyTagged)
             queryString += QString("");
         else
-            queryString += QString(" and ff.hidden = 0 ");
+            queryString += QString(" and f.hidden = 0 ");
 
     }
     return queryString;
@@ -640,7 +640,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
 
 
     QString normalString = "select count(id) as records %1 ";
-    queryString = "  from fanfics ff where ff.alive <> 0 " ;
+    queryString = "  from fanfics f where f.alive <> 0 " ;
     QString where;
     {
         where+= ProcessWordcount(filter);
@@ -662,7 +662,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
     }
     queryString+= where;
     if(!queryString.contains("as fid"))
-        queryString.replace("= fid", "= ff.id");
+        queryString.replace("= fid", "= f.id");
     ProcessBindings(filter, query);
 
 
@@ -713,13 +713,13 @@ QString TagFilteringFullDB::GetString(StoryFilter filter)
     QString queryString;
     QString part =  "'" + filter.activeTags.join("','") + "'";
     if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
-        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = ff.id) ").arg(part);
+        queryString += QString(" and exists (select fic_id from fictags where tag in (%1) and fic_id = f.id) ").arg(part);
     else
     {
         if(filter.ignoreAlreadyTagged)
             queryString += QString("");
         else
-            queryString += QString(" and ff.hidden = 0 ");
+            queryString += QString(" and f.hidden = 0 ");
 
     }
     return queryString;
@@ -734,7 +734,7 @@ QString TagFilteringClient::GetString(StoryFilter filter)
 {
     QString queryString;
     if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
-        queryString += QString(" and cfInActiveTags(ff.id, '%1') = 1 ").arg(userToken);
+        queryString += QString(" and cfInActiveTags(f.id, '%1') = 1 ").arg(userToken);
     else
     {
         if(filter.ignoreAlreadyTagged)

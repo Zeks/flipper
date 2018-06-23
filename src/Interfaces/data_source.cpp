@@ -69,6 +69,8 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.published = published;
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
+    result.ffn_id = q.value("URL").toInt();
+    QLOG_INFO() << "ffn_id:" <<  q.value("URL").toString();
     result.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();

@@ -272,7 +272,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.ffn_id = coreFic.webId; // temporary
     coreFic.webSite = "ffn"; // temporary
 
-    coreFic.urls["ffn"] = url_utils::GetStoryUrlFromWebId(coreFic.webId, "ffn"); // temporary
+    coreFic.urls["ffn"] = QString::number(coreFic.webId); // temporary
     coreFic.urlFFN = coreFic.urls["ffn"];
     return true;
 }
