@@ -37,6 +37,8 @@ public:
     bool ExportToFile(QString);
     bool ImportFromFile(QString);
     QSet<int> GetAllTaggedFics(QStringList = QStringList());
+    QVector<core::IdPack> GetAllFicsThatDontHaveDBID();
+
 
 QSqlDatabase db;
 QSharedPointer<Fandoms> fandomInterface;

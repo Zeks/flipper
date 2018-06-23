@@ -1505,6 +1505,13 @@ DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase 
     ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
     return ctx.result;
 }
+DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID(QSqlDatabase db)
+{
+    QString qs = QString("select distinct ffn_id from fictags where fic_id = 0 or fic_id is null ");
+    SqlContext<QVector<int>> ctx(db, qs);
+    ctx.FetchLargeSelectIntoList<int>("ffn_id", qs);
+    return ctx.result;
+}
 
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QList<int> ficIds, int list_id, QSqlDatabase db)
 {
@@ -2006,36 +2013,12 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
             return ctx.result;
     }
 
-    QStringList keyList = {"tag","id"};
-    QString insertQS = QString("insert into FicTags(fic_id, tag) values(:id, :tag)");
+    QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag"};
+    QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag) values(:fic_id, :ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
     ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserFicTags", keyList,
                                   currentDB, insertQS, keyList);
-
-    // this creates a fic in fanfics table to match tag record
-    ctx.valueConverters["id"] = [](QString, QSqlQuery importTagsQ, QSqlDatabase currentDB, auto& result)->QVariant
-    {
-        auto& idRecord = GrabFicIDFromQuery(importTagsQ, currentDB);
-        auto dbId = idRecord.GetID("db");
-        if(dbId == -1)
-        {
-            auto recResult = idRecord.CreateRecord(currentDB);
-            qDebug() << "Creating fic record";
-            if(!recResult.success)
-            {
-                result.success = false;
-                result.oracleError = recResult.oracleError;
-                return QVariant(dbId);
-            }
-            dbId = recResult.data;
-        }
-        return QVariant(dbId);
-    };
     return ctx();
 }
-
-//QString qs = QString("select ffn_id, slash_keywords_result, slash_keywords, not_slash_keywords, first_slash_iteration, second_slash_iteration from fanfics "
-//                     " where slash_keywords_result = 1 or slash_keywords = 1 or not_slash_keywords = 1 or first_slash_iteration = 1 or second_slash_iteration = 1 "
-//                     " order by id");
 
 
 DiagnosticSQLResult<bool> ExportSlashToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)

@@ -110,12 +110,18 @@ bool Tags::ImportFromFile(QString filename)
     auto tagImportDb = tagImportInterface->InitDatabase("TagExport", false);
     tagImportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagImport");
     database::puresql::ImportTagsFromDatabase(db, tagImportInterface->GetDatabase());
+
     return true;
 }
 
 QSet<int> Tags::GetAllTaggedFics(QStringList tags)
 {
     return database::puresql::GetAllTaggedFics(tags, db).data;
+}
+
+QList<core::IdPack> Tags::GetAllFicsThatDontHaveDBID()
+{
+    return database::puresql::GetAllFicsThatDontHaveDBID(db).data;
 }
 
 }

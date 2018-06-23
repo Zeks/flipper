@@ -206,6 +206,8 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 DiagnosticSQLResult<QList<int> > GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase db);
+DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID( QSqlDatabase db);
+
 DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QList<int> ficIds, int listId,QSqlDatabase db);
 DiagnosticSQLResult<bool>  FillRecommendationListWithData(int listId, QHash<int, int>, QSqlDatabase db);

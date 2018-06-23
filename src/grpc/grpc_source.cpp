@@ -330,6 +330,49 @@ public:
     {
     }
     UserData userData;
+    bool GetInternalIDsForFics(QVector<core::IdPack> * ficList){
+        grpc::ClientContext context;
+
+        ProtoSpace::SearchTask task;
+
+        if(!ficList->size())
+            return true;
+
+
+        QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
+        std::chrono::system_clock::time_point deadline =
+                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+        context.set_deadline(deadline);
+        auto* controls = task.mutable_controls();
+        controls->set_user_token(proto_converters::TS(userToken));
+
+        auto* userData = task.mutable_user_data();
+        auto* tags = userData->mutable_user_tags();
+
+        for(auto tag : this->userData.allTags)
+            tags->add_all_tags(tag);
+        for(auto tag : this->userData.activeTags)
+            tags->add_searched_tags(tag);
+
+        auto* ignoredFandoms = userData->mutable_ignored_fandoms();
+        for(auto key: this->userData.ignoredFandoms.keys())
+        {
+            ignoredFandoms->add_fandom_ids(key);
+            ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+        }
+
+        grpc::Status status = stub_->Search(&context, task, response.data());
+
+        ProcessStandardError(status);
+
+        fics->resize(static_cast<size_t>(response->fanfics_size()));
+        for(int i = 0; i < response->fanfics_size(); i++)
+        {
+            proto_converters::ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
+        }
+
+        task.release_filter();
+    }
 
     void ProcessStandardError(grpc::Status status);
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
@@ -548,4 +591,11 @@ bool FicSourceGRPC::GetRecommendationListFromServer(RecommendationListGRPC &recL
     if(!impl)
         return false;
     return impl->GetRecommendationListFromServer(recList);
+}
+
+bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::IdPack> * ficList)
+{
+    if(!impl)
+        return false;
+    return impl->GetInternalIDsForFics(ficList);
 }

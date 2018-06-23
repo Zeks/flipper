@@ -76,6 +76,15 @@ class FicSectionStatsTemporaryToken
     QDate bioLastUpdated;
     QDate pageCreated;
 };
+
+struct IdPack{
+  int db;
+  int ffn;
+  int ao3;
+  int sb;
+  int sv;
+};
+
 class FicSectionStats{
 public:
     enum class FavouritesType{

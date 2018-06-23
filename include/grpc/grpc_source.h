@@ -35,6 +35,7 @@ public:
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
+    bool GetInternalIDsForFics(QVector<core::IdPack>*);
     QString userToken;
 };
 

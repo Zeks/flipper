@@ -12,18 +12,30 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
 CREATE TABLE if not exists ignored_fandoms_slash_filter(fandom_id INTEGER PRIMARY KEY);
 CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id ASC);  
 
--- user tags;
-create table if not exists tags (tag VARCHAR unique NOT NULL, id integer);
-INSERT INTO tags(tag, id) values('Dead', 1);
-INSERT INTO tags(tag, id) values('Moar_pls', 2);
-INSERT INTO tags(tag, id) values('Hide', 3);
-INSERT INTO tags(tag, id) values('Meh', 4);
-INSERT INTO tags(tag, id) values('Liked', 5);
-INSERT INTO tags(tag, id) values('Disgusting', 6);
-INSERT INTO tags(tag, id) values('Reading', 7);
-INSERT INTO tags(tag, id) values('Read_Queue', 8);
-INSERT INTO tags(tag, id) values('Finished', 9);
-INSERT INTO tags(tag, id) values('WTF', 10);
+-- fictag table;
+CREATE TABLE if not exists FicTags (
+ fic_id integer default -1,
+ ffn_id integer default -1,
+ ao3_id integer default -1,
+ sb_id integer default -1,
+ sv_id integer default -1,
+ tag varchar );
+
+ -- tag table; 
+ CREATE TABLE if not exists Tags (
+ id integer default 0,
+ tag unique varchar NOT NULL);
+
+INSERT INTO UserTags(tag, id) values('Dead', 1);
+INSERT INTO UserTags(tag, id) values('Moar_pls', 2);
+INSERT INTO UserTags(tag, id) values('Hide', 3);
+INSERT INTO UserTags(tag, id) values('Meh', 4);
+INSERT INTO UserTags(tag, id) values('Liked', 5);
+INSERT INTO UserTags(tag, id) values('Disgusting', 6);
+INSERT INTO UserTags(tag, id) values('Reading', 7);
+INSERT INTO UserTags(tag, id) values('Read_Queue', 8);
+INSERT INTO UserTags(tag, id) values('Finished', 9);
+INSERT INTO UserTags(tag, id) values('WTF', 10);
 
 
 -- manually assigned tags for fics;

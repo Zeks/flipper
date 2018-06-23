@@ -59,10 +59,11 @@ message FicCountResponse{
 
 
 message SiteIDPack{
-    repeated int32 ffn_ids = 1;
-    repeated int32 ao3_ids = 2;
-    repeated int32 sb_ids  = 3;
-    repeated int32 sv_ids  = 4;
+    repeated int32 db_ids =  1;
+    repeated int32 ffn_ids = 2;
+    repeated int32 ao3_ids = 3;
+    repeated int32 sb_ids  = 4;
+    repeated int32 sv_ids  = 5;
 }
 
 message RecommendationListData{
@@ -100,6 +101,15 @@ message RecommendationListFetchResponse{
     bool list_available              = 1;
     bool position_in_queue           = 2;
     RecommendationListData list_data = 3;
+}
+
+message FicIdRequest{
+    ControlInfo controls             = 1;
+    SiteIDPack  ids                  = 2;
+}
+
+message FicIdResponse{
+    SiteIDPack  ids                  = 1;
 }
 
 // will need to synchronize fandoms on app start somehow
