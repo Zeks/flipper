@@ -57,6 +57,9 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     core::Fic result;
     result.id = q.value("ID").toInt();
     result.fandom = q.value("FANDOM").toString();
+    //QLOG_INFO() << "fandom ids:" <<  q.value("FANDOMIDS").toString();
+    for(auto id: q.value("FANDOMIDS").toString().split("&"))
+        result.fandomIds.push_back(id.toInt());
     result.author = core::Author::NewAuthor();
     result.author->name = q.value("AUTHOR").toString();
     result.title = q.value("TITLE").toString();
@@ -70,7 +73,7 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
     result.ffn_id = q.value("URL").toInt();
-    QLOG_INFO() << "ffn_id:" <<  q.value("URL").toString();
+    //QLOG_INFO() << "ffn_id:" <<  q.value("URL").toString();
     result.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();

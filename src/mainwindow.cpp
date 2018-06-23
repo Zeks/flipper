@@ -705,61 +705,49 @@ void MainWindow::OnDoFormattedListByFandoms()
     for(int i = 0; i < typetableModel->rowCount(); i ++)
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
-    QMap<QString, QList<int>> byFandoms;
-    for(auto id : ficIds)
+    QMap<int, QList<core::Fic*>> byFandoms;
+    for(core::Fic& fic : env.fanfics)
     {
-        auto ficPtr = env.interfaces.fanfics->GetFicById(id);
+        auto* ficPtr = &fic;
 
-        auto fandoms = env.interfaces.fanfics->GetFandomsForFicAsNames(id);
-        bool validGenre = true;
-        //        for(auto genre : ficPtr->genres)
-        //        {
-        //            if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
-        //               validGenre = true;
-        //        }
-        //        qDebug() <<  validGenre  << " " << ficPtr->title;
-        //        qDebug() <<  ficPtr->genres.join("/")  << " " << ficPtr->title;
-        if(!validGenre)
-            continue;
+        auto fandoms = ficPtr->fandomIds;
         if(fandoms.size() == 0)
         {
             auto fandom = ficPtr->fandom.trimmed();
-            byFandoms[fandom].push_back(id);
             qDebug() << "no fandoms written for: " << "http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">";
         }
         for(auto fandom: fandoms)
         {
-            byFandoms[fandom].push_back(id);
+            byFandoms[fandom].push_back(ficPtr);
         }
     }
+    QHash<int, QString> fandomnNames;
+    fandomnNames = env.interfaces.fandoms->GetFandomNamesForIDs(byFandoms.keys());
 
     result += "<ul>";
-    //    if(ui->chkGroupFandoms->isChecked())
-    //    {
     for(auto fandomKey : byFandoms.keys())
-        result+= "<li><a href=\"#" + fandomKey.toLower().replace(" ","_") +"\">" + fandomKey + "</a></li>";
-    //}
+    {
+        QString name = fandomnNames[fandomKey];
+        result+= "<li><a href=\"#" + name.toLower().replace(" ","_") +"\">" + name + "</a></li>";
+    }
     An<PageManager> pager;
     pager->SetDatabase(QSqlDatabase::database());
     for(auto fandomKey : byFandoms.keys())
     {
-        result+="<h4 id=\""+ fandomKey.toLower().replace(" ","_") +  "\">" + fandomKey + "</h4>";
+        QString name = fandomnNames[fandomKey];
+        result+="<h4 id=\""+ name.toLower().replace(" ","_") +  "\">" + name + "</h4>";
 
         for(auto fic : byFandoms[fandomKey])
         {
-            QPair<QString, int> key = {fandomKey, fic};
+            auto* ficPtr = fic;
+            QPair<QString, int> key = {name, fic->id};
+
             if(already.contains(key))
                 continue;
             already.insert(key);
-            auto ficPtr = env.interfaces.fanfics->GetFicById(fic);
 
             auto genreString = ficPtr->genreString;
             bool validGenre = true;
-            //            for(auto genre : ficPtr->genres)
-            //            {
-            //                if(genre.trimmed().contains("Humor") || genre.trimmed().contains("Parody") || genre.trimmed().contains("not found"))
-            //                   validGenre = true;
-            //            }
             if(validGenre)
             {
                 result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
@@ -788,9 +776,10 @@ void MainWindow::OnDoFormattedList()
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
     QMap<QString, QList<int>> byFandoms;
-    for(auto id : ficIds)
+    for(core::Fic& fic : env.fanfics)
     {
-        auto ficPtr = env.interfaces.fanfics->GetFicById(id);
+        //auto ficPtr = env.interfaces.fanfics->GetFicById(id);
+        auto* ficPtr = &fic;
         auto genreString = ficPtr->genreString;
         bool validGenre = true;
         if(validGenre)

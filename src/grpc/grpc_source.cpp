@@ -263,8 +263,13 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.updated = DFS(protoFic.updated());
     coreFic.charactersFull = FS(protoFic.characters());
 
+    coreFic.author = core::Author::NewAuthor();
+    coreFic.author->name = FS(protoFic.author());
+
     for(int i = 0; i < protoFic.fandoms_size(); i++)
         coreFic.fandoms.push_back(FS(protoFic.fandoms(i)));
+    for(int i = 0; i < protoFic.fandom_ids_size(); i++)
+        coreFic.fandomIds.push_back(protoFic.fandom_ids(i));
     coreFic.isCrossover = coreFic.fandoms.size() > 1;
 
     coreFic.genreString = FS(protoFic.genres());
@@ -296,6 +301,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     protoFic->set_summary(TS(coreFic.summary));
     protoFic->set_language(TS(coreFic.language));
     protoFic->set_genres(TS(coreFic.genreString));
+    protoFic->set_author(TS(coreFic.author->name));
 
     protoFic->set_published(DTS(coreFic.published));
     protoFic->set_updated(DTS(coreFic.updated));
@@ -304,6 +310,8 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 
     for(auto fandom : coreFic.fandoms)
         protoFic->add_fandoms(TS(fandom));
+    for(auto fandom : coreFic.fandomIds)
+        protoFic->add_fandom_ids(fandom);
 
 
     protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.ffn_id);

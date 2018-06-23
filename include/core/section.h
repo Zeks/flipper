@@ -269,8 +269,11 @@ public:
     QString charactersFull;
     QStringList characters;
     bool isValid =false;
+
     int authorId = -1;
+    QString authorName;
     QSharedPointer<Author> author;
+
 
     QHash<QString, QString> urls;
 
@@ -313,6 +316,7 @@ public:
     QString webSite = "ffn";
     UpdateMode updateMode = UpdateMode::none;
     FicCalcStats calcStats;
+    QList<int> fandomIds;
 };
 
 class Section : public DBEntity

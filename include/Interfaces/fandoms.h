@@ -68,6 +68,7 @@ public:
     QStringList GetIgnoredFandoms() const;
     QHash<int, bool> GetIgnoredFandomsIDs() const;
     QList<core::FandomPtr> GetAllLoadedFandoms();
+    QHash<int, QString> GetFandomNamesForIDs(QList<int>);
 
     bool RemoveFandomFromIgnoredList(QString name);
     bool RemoveFandomFromIgnoredList(int id);

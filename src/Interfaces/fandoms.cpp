@@ -409,6 +409,11 @@ QList<core::FandomPtr> Fandoms::GetAllLoadedFandoms()
     return fandoms;
 }
 
+QHash<int, QString> Fandoms::GetFandomNamesForIDs(QList<int> fandoms)
+{
+    return database::puresql::GetFandomNamesForIDs(fandoms, db).data;
+}
+
 bool Fandoms::RemoveFandomFromIgnoredList(QString name)
 {
     auto id = GetIDForName(name);

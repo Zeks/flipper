@@ -1365,6 +1365,23 @@ DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
     return ctx.result;
 }
 
+DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>ids, QSqlDatabase db)
+{
+    SqlContext<QHash<int, QString> > ctx(db);
+    QString qs = QString("select id, name from fandomindex where id in (%1)");
+    QStringList inParts;
+    for(auto id: ids)
+        inParts.push_back("'" + QString::number(id) + "'");
+    if(inParts.size() == 0)
+        return ctx.result;
+    qs = qs.arg(inParts.join(","));
+
+    ctx.FetchSelectFunctor(qs, [](QHash<int, QString>& data, QSqlQuery& q){
+        data[q.value("id").toInt()] = q.value("name").toString();
+    });
+    return ctx.result;
+}
+
 DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
 {
     QString qs = QString("select fandom_id, including_crossovers from ignored_fandoms order by fandom_id asc");
@@ -1374,6 +1391,7 @@ DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
     });
     return ctx.result;
 }
+
 
 DiagnosticSQLResult<bool> IgnoreFandomSlashFilter(int fandom_id, QSqlDatabase db)
 {
