@@ -62,7 +62,8 @@ struct SqlContext
         Prepare(qs);
     }
 
-    SqlContext(QSqlDatabase db, QStringList queries) : q(db), transaction(db), qs(qs){
+    SqlContext(QSqlDatabase db, QStringList queries) : q(db), transaction(db)
+    {
         for(auto query : queries)
         {
             Prepare(query);
@@ -243,7 +244,6 @@ struct SqlContext
     template <typename T>
     void FetchSingleValue(QString valueName,
                           ResultType defaultValue,
-
                           QString select = ""){
         result.data = defaultValue;
         if(!select.isEmpty())
@@ -333,7 +333,8 @@ template <typename ResultType>
 struct ParallelSqlContext
 {
     ParallelSqlContext(QSqlDatabase source, QString sourceQuery, QStringList sourceFields,
-                       QSqlDatabase target, QString targetQuery, QStringList targetFields):sourceQ(source), targetQ(target),
+                       QSqlDatabase target, QString targetQuery, QStringList targetFields):
+        sourceQ(source), targetQ(target),
         sourceDB(source), targetDB(target), transaction(target) {
         sourceQ.prepare(sourceQuery);
         targetQ.prepare(targetQuery);
@@ -353,6 +354,7 @@ struct ParallelSqlContext
         {
             for(int i = 0; i < sourceFields.size(); ++i )
             {
+                //qDebug() << "binding field: " << sourceFields[i];
                 QVariant value;
                 if(valueConverters.contains(sourceFields[i]))
                 {
@@ -361,7 +363,11 @@ struct ParallelSqlContext
                         return result;
                 }
                 else
-                    value = sourceQ.value(sourceFields[i]);
+                {
+                    value = sourceQ.value(sourceFields[i]).toInt();
+                    //qDebug() << "binding value: " << value;
+                }
+                //qDebug() << "to target field: " << targetFields[i];
                 targetQ.bindValue(":" + targetFields[i], value);
             }
 

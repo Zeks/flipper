@@ -215,6 +215,7 @@ void TagWidget::OnTagImport()
     if(m.clickedButton() == dropTask)
         return;
     tagsInterface->ImportFromFile("TagExport.sqlite");
+    emit dbIDRequest();
 }
 
 

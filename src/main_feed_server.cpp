@@ -284,7 +284,6 @@ public:
         QSharedPointer<interfaces::Authors> authorsInterface (new interfaces::FFNAuthors());
         recsInterface->portableDBInterface = dbContext.dbInterface;
         QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
-        recsInterface->portableDBInterface = dbContext.dbInterface;
 
         static RecommendationsCreator creator;
         if(firstRun)
@@ -312,6 +311,35 @@ public:
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             targetList->add_fic_ids(key);
             targetList->add_fic_matches(list[key]);
+        }
+        return Status::OK;
+    }
+
+    Status GetDBFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
+                                      ProtoSpace::FicIdResponse* response) override
+    {
+        Q_UNUSED(context);
+        static QString userToken = QString::fromStdString(task->controls().user_token());
+
+        QLOG_INFO() << "////////////Received search task from: " << userToken;
+        DatabaseContext dbContext;
+
+        QHash<int, int> idsToFill;
+        for(int i = 0; i < task->ids().ffn_ids_size(); i++)
+            idsToFill[task->ids().ffn_ids(i)] = -1;
+        QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+        bool result = fanficsInterface->ConvertFFNTaggedFicsToDB(idsToFill);
+        if(!result)
+        {
+            response->set_success(false);
+            return Status::OK;
+        }
+        response->set_success(true);
+        for(int fic: idsToFill.keys())
+        {
+            QLOG_INFO() << "Returning fic ids: " << "DB: " << idsToFill[fic] << " FFN: " << fic;
+            response->mutable_ids()->add_ffn_ids(fic);
+            response->mutable_ids()->add_db_ids(idsToFill[fic]);
         }
         return Status::OK;
     }

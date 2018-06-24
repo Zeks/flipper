@@ -1146,6 +1146,29 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
     return ctx.result;
 }
 
+DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDatabase db)
+{
+    SqlContext<int> ctx(db);
+
+    for(int ffn_id: hash.keys())
+    {
+        ctx.bindValue("ffn_id", ffn_id);
+        ctx.FetchSingleValue<int>("id", -1,"select id from fanfics where ffn_id = :ffn_id");
+        QString error = ctx.result.oracleError;
+        if(!error.isEmpty() && error != "no data to read")
+        {
+            ctx.result.success = false;
+            break;
+        }
+        hash[ffn_id] = ctx.result.data;
+    }
+
+    SqlContext<bool> ctx1(db);
+    ctx1.result.success = ctx.result.success;
+    ctx1.result.oracleError = ctx.result.oracleError;
+    return ctx1.result;
+}
+
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db)
 {
     QString qs = QString("select fic_id, count(fic_id) as cnt from recommendations where cfInAuthors(recommender_id, :uid) = 1 group by fic_id");
@@ -1507,9 +1530,29 @@ DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase 
 }
 DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID(QSqlDatabase db)
 {
-    QString qs = QString("select distinct ffn_id from fictags where fic_id = 0 or fic_id is null ");
+    QString qs = QString("select distinct ffn_id from fictags where fic_id < 1");
     SqlContext<QVector<int>> ctx(db, qs);
     ctx.FetchLargeSelectIntoList<int>("ffn_id", qs);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack> pack, QSqlDatabase db)
+{
+    QString qs = QString("update fictags set fic_id = :id where ffn_id = :ffn_id");
+    SqlContext<bool> ctx(db, qs);
+    for(const core::IdPack& id: pack)
+    {
+        if(id.db < 1)
+            continue;
+
+        ctx.bindValue("id", id.db);
+        ctx.bindValue("ffn_id", id.ffn);
+        if(!ctx.ExecAndCheck())
+        {
+            ctx.result.success = false;
+            break;
+        }
+    }
     return ctx.result;
 }
 
@@ -1998,7 +2041,7 @@ DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDataba
 DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlDatabase tagImportSourceDB)
 {
     {
-        SqlContext<bool> ctxTarget(currentDB, {"delete from fictags","delete from tags"});
+        SqlContext<bool> ctxTarget(currentDB, QStringList{"delete from fictags","delete from tags"});
         if(!ctxTarget.result.success)
             return ctxTarget.result;
     }
@@ -2012,9 +2055,21 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
         if(!ctx.Success())
             return ctx.result;
     }
+    // need to ensure fic_id in the source database
+    SqlContext<bool> ctxTarget(tagImportSourceDB, QStringList{"alter table UserFicTags add column fic_id integer default -1"});
+    ctxTarget();
+    if(!ctxTarget.result.success)
+        return ctxTarget.result;
+
+//    SqlContext<bool> ctxTest(currentDB, QStringList{"insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag)"
+//                                                    " values(-1, -1, -1, -1, -1, -1)"});
+//    ctxTest();
+//    if(!ctxTest.result.success)
+//        return ctxTest.result;
 
     QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag"};
     QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag) values(:fic_id, :ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
+    bool isOpen = currentDB.isOpen();
     ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserFicTags", keyList,
                                   currentDB, insertQS, keyList);
     return ctx();
@@ -2535,6 +2590,8 @@ DiagnosticSQLResult<QString> GetUserToken(QSqlDatabase db)
     ctx.FetchSingleValue<QString>("value", "");
     return ctx.result;
 }
+
+
 
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
 //{

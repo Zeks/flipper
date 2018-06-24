@@ -37,7 +37,7 @@ database::Transaction::~Transaction()
 {
     if(isOpen)
     {
-        qDebug() << "cancelling transaction";
+        qDebug() << "deleting transaction";
         db.rollback();
         QWriteLocker locker(&lock);
         transactionSet.remove(db.connectionName());
@@ -72,7 +72,7 @@ bool database::Transaction::finalize()
         return false;
     if(!db.commit())
         return false;
-    //qDebug() << "closing transaction";
+    qDebug() << "finalizing transaction";
     transactionSet.remove(db.connectionName());
     isOpen = false;
     return true;

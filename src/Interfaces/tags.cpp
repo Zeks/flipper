@@ -109,8 +109,9 @@ bool Tags::ImportFromFile(QString filename)
     QSharedPointer<database::IDBWrapper> tagImportInterface (new database::SqliteInterface());
     auto tagImportDb = tagImportInterface->InitDatabase("TagExport", false);
     tagImportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagImport");
+    database::Transaction transaction(db);
     database::puresql::ImportTagsFromDatabase(db, tagImportInterface->GetDatabase());
-
+    transaction.finalize();
     return true;
 }
 
@@ -119,9 +120,21 @@ QSet<int> Tags::GetAllTaggedFics(QStringList tags)
     return database::puresql::GetAllTaggedFics(tags, db).data;
 }
 
-QList<core::IdPack> Tags::GetAllFicsThatDontHaveDBID()
+QVector<core::IdPack> Tags::GetAllFicsThatDontHaveDBID()
 {
-    return database::puresql::GetAllFicsThatDontHaveDBID(db).data;
+    auto result =  database::puresql::GetAllFicsThatDontHaveDBID(db).data;
+    QVector<core::IdPack> pack;
+    pack.reserve(result.size());
+    for(auto id: result)
+    {
+        pack.push_back({-1, id, -1,-1, -1});
+    }
+    return pack;
+}
+
+bool Tags::FillDBIDsForFics(QVector<core::IdPack> pack)
+{
+    return database::puresql::FillDBIDsForFics(pack, db).success;
 }
 
 }

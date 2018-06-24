@@ -477,6 +477,7 @@ private slots:
     void OnResetTextEditor();
     void OnProgressBarRequested(int);
     void OnWarningRequested(QString value);
+    void OnFillDBIdsForTags();
 
 signals:
 

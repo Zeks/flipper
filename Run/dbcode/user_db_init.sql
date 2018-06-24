@@ -22,27 +22,25 @@ CREATE TABLE if not exists FicTags (
  tag varchar );
 
  -- tag table; 
- CREATE TABLE if not exists Tags (
- id integer default 0,
- tag unique varchar NOT NULL);
+ CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT NULL);
 
-INSERT INTO UserTags(tag, id) values('Dead', 1);
-INSERT INTO UserTags(tag, id) values('Moar_pls', 2);
-INSERT INTO UserTags(tag, id) values('Hide', 3);
-INSERT INTO UserTags(tag, id) values('Meh', 4);
-INSERT INTO UserTags(tag, id) values('Liked', 5);
-INSERT INTO UserTags(tag, id) values('Disgusting', 6);
-INSERT INTO UserTags(tag, id) values('Reading', 7);
-INSERT INTO UserTags(tag, id) values('Read_Queue', 8);
-INSERT INTO UserTags(tag, id) values('Finished', 9);
-INSERT INTO UserTags(tag, id) values('WTF', 10);
+INSERT INTO Tags(tag, id) values('Dead', 1);
+INSERT INTO Tags(tag, id) values('Moar_pls', 2);
+INSERT INTO Tags(tag, id) values('Hide', 3);
+INSERT INTO Tags(tag, id) values('Meh', 4);
+INSERT INTO Tags(tag, id) values('Liked', 5);
+INSERT INTO Tags(tag, id) values('Disgusting', 6);
+INSERT INTO Tags(tag, id) values('Reading', 7);
+INSERT INTO Tags(tag, id) values('Read_Queue', 8);
+INSERT INTO Tags(tag, id) values('Finished', 9);
+INSERT INTO Tags(tag, id) values('WTF', 10);
 
 
 -- manually assigned tags for fics;
-CREATE TABLE if not exists FicTags (fic_id INTEGER NOT NULL, tag varchar,  PRIMARY KEY (fic_id asc, tag asc));
-CREATE INDEX if not exists  I_FIC_TAGS_PK ON FicTags (fic_id asc, tag ASC);
-CREATE INDEX if not exists  I_FIC_TAGS_TAG ON FicTags (tag ASC);
-CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicTags (fic_id ASC);
+--CREATE TABLE if not exists FicTags (fic_id INTEGER NOT NULL, tag varchar,  PRIMARY KEY (fic_id asc, tag asc));
+--CREATE INDEX if not exists  I_FIC_TAGS_PK ON FicTags (fic_id asc, tag ASC);
+--CREATE INDEX if not exists  I_FIC_TAGS_TAG ON FicTags (tag ASC);
+--CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicTags (fic_id ASC);
  
 -- a list of all recommendaton lists with their names and statistics;
 create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUTOINCREMENT default 1, name VARCHAR unique NOT NULL, minimum integer NOT NULL default 1, pick_ratio double not null default 1, always_pick_at integer not null default 9999, fic_count integer default 0,  created DATETIME);

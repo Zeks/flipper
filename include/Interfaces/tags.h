@@ -38,6 +38,7 @@ public:
     bool ImportFromFile(QString);
     QSet<int> GetAllTaggedFics(QStringList = QStringList());
     QVector<core::IdPack> GetAllFicsThatDontHaveDBID();
+    bool FillDBIDsForFics(QVector<core::IdPack>);
 
 
 QSqlDatabase db;

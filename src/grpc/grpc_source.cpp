@@ -333,45 +333,35 @@ public:
     bool GetInternalIDsForFics(QVector<core::IdPack> * ficList){
         grpc::ClientContext context;
 
-        ProtoSpace::SearchTask task;
+        ProtoSpace::FicIdRequest task;
 
         if(!ficList->size())
             return true;
 
 
-        QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
+        QScopedPointer<ProtoSpace::FicIdResponse> response (new ProtoSpace::FicIdResponse);
         std::chrono::system_clock::time_point deadline =
                 std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
         context.set_deadline(deadline);
         auto* controls = task.mutable_controls();
         controls->set_user_token(proto_converters::TS(userToken));
 
-        auto* userData = task.mutable_user_data();
-        auto* tags = userData->mutable_user_tags();
-
-        for(auto tag : this->userData.allTags)
-            tags->add_all_tags(tag);
-        for(auto tag : this->userData.activeTags)
-            tags->add_searched_tags(tag);
-
-        auto* ignoredFandoms = userData->mutable_ignored_fandoms();
-        for(auto key: this->userData.ignoredFandoms.keys())
+        for(core::IdPack& fic : *ficList)
         {
-            ignoredFandoms->add_fandom_ids(key);
-            ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+            task.mutable_ids()->add_db_ids(fic.db);
+            task.mutable_ids()->add_ffn_ids(fic.ffn);
         }
 
-        grpc::Status status = stub_->Search(&context, task, response.data());
+        grpc::Status status = stub_->GetDBFicIDS(&context, task, response.data());
 
         ProcessStandardError(status);
 
-        fics->resize(static_cast<size_t>(response->fanfics_size()));
-        for(int i = 0; i < response->fanfics_size(); i++)
+        for(int i = 0; i < response->ids().db_ids_size(); i++)
         {
-            proto_converters::ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
+            (*ficList)[i].db = response->ids().db_ids(i);
+            (*ficList)[i].ffn = response->ids().ffn_ids(i);
         }
-
-        task.release_filter();
+        return true;
     }
 
     void ProcessStandardError(grpc::Status status);

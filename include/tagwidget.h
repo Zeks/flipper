@@ -54,6 +54,7 @@ signals:
     void tagAdded(QString);
     void tagDeleted(QString);
     void refilter();
+    void dbIDRequest();
 
 
 public slots:

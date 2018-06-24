@@ -158,7 +158,7 @@ void CoreEnvironment::InitInterfaces()
     interfaces.fanfics->db = userDBInterface->GetDatabase();
     interfaces.recs->db    = userDBInterface->GetDatabase();
     interfaces.fandoms->db = userDBInterface->GetDatabase();
-    interfaces.tags->db    = interfaces.db->GetDatabase();
+    interfaces.tags->db    = userDBInterface->GetDatabase();
     interfaces.genres->db  = userDBInterface->GetDatabase();
 
     interfaces.pageTask->db  = interfaces.tasks->GetDatabase();
@@ -538,6 +538,16 @@ PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDat
                                        wordCutoff,
                                        forcedDate);
     return result;
+}
+
+void CoreEnvironment::FillDBIDsForTags()
+{
+    database::Transaction transaction(interfaces.tags->db);
+    auto pack = interfaces.tags->GetAllFicsThatDontHaveDBID();
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    grpcSource->GetInternalIDsForFics(&pack);
+    auto result = interfaces.tags->FillDBIDsForFics(pack);
+    transaction.finalize();
 }
 
 void CoreEnvironment::UseFandomTask(PageTaskPtr task)

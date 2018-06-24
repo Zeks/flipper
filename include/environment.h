@@ -98,6 +98,7 @@ public:
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
+    void FillDBIDsForTags();
 
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
     Interfaces interfaces;

@@ -21,7 +21,7 @@ message IgnoredFandoms{
 }
 
 message UserData{
-    Tags user_tags                       = 1;
+    Tags user_tags                      = 1;
     IgnoredFandoms ignored_fandoms      = 2;
 
 }
@@ -109,7 +109,8 @@ message FicIdRequest{
 }
 
 message FicIdResponse{
-    SiteIDPack  ids                  = 1;
+    bool success        = 1;
+    SiteIDPack ids      = 2;
 }
 
 // will need to synchronize fandoms on app start somehow
@@ -127,4 +128,5 @@ service Feeder {
     rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
     rpc SyncFandomList(SyncFandomListTask) returns (SyncFandomListResponse) {}
     rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
+    rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
 }

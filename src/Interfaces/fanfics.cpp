@@ -266,6 +266,11 @@ QSet<int> Fanfics::ConvertFFNSourceFicsToDB(QString userToken)
     return database::puresql::ConvertFFNSourceFicsToDB(userToken, db).data;
 }
 
+bool Fanfics::ConvertFFNTaggedFicsToDB(QHash<int, int>& hash)
+{
+    return database::puresql::ConvertFFNTaggedFicsToDB(hash, db).success;
+}
+
 void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
 {
     QWriteLocker lock(&mutex);

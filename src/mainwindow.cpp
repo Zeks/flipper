@@ -281,6 +281,7 @@ void MainWindow::InitConnections()
         }
 
     });
+    connect(ui->wdgTagsPlaceholder, &TagWidget::dbIDRequest, this, &MainWindow::OnFillDBIdsForTags);
     connect(&taskTimer, &QTimer::timeout, this, &MainWindow::OnCheckUnfinishedTasks);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     //! todo currently null
@@ -2103,6 +2104,11 @@ void MainWindow::OnProgressBarRequested(int value)
 void MainWindow::OnWarningRequested(QString value)
 {
     QMessageBox::information(nullptr, "Attention!", value);
+}
+
+void MainWindow::OnFillDBIdsForTags()
+{
+    env.FillDBIDsForTags();
 }
 
 //void MainWindow::on_pbOneMoreCycle_clicked()
