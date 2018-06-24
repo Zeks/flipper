@@ -137,4 +137,9 @@ bool Tags::FillDBIDsForFics(QVector<core::IdPack> pack)
     return database::puresql::FillDBIDsForFics(pack, db).success;
 }
 
+bool Tags::FetchTagsForFics(QVector<core::Fic> * fics)
+{
+    return database::puresql::FetchTagsForFics(fics, db).success;
+}
+
 }

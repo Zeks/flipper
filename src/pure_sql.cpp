@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "url_utils.h"
 #include "Interfaces/genres.h"
 #include "EGenres.h"
+#include "include/in_tag_accessor.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QVector>
@@ -1553,6 +1554,24 @@ DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack> pack, QSqlDatab
             break;
         }
     }
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db)
+{
+    QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInRecommendations(fic_id, 'TEST') > 0 group by fic_id");
+    QHash<int, QString> tags;
+
+    auto& sources = RecommendationsInfoAccessor::recommendatonsData["TEST"].sourceFics;
+    for(const auto& fic : *fics)
+        sources.insert(fic.id);
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        tags[q.value("fic_id").toInt()] = q.value("tags").toString();
+    });
+    for(auto& fic : *fics)
+        fic.tags = tags[fic.id];
     return ctx.result;
 }
 

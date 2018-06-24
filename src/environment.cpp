@@ -37,8 +37,8 @@ void CoreEnvironment::InitMetatypes()
 void CoreEnvironment::LoadData()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
-
-    if(settings.value("Settings/thinClient").toBool())
+    bool thinClient = settings.value("Settings/thinClient").toBool();
+    if(thinClient)
     {
         UserData userData;
         userData.allTags = interfaces.tags->GetAllTaggedFics();
@@ -55,6 +55,8 @@ void CoreEnvironment::LoadData()
     }
     ficSource->FetchData(filter,
                          &fanfics);
+    if(thinClient)
+        interfaces.tags->FetchTagsForFics(&fanfics);
 
     currentLastFanficId = ficSource->lastFicId;
 }

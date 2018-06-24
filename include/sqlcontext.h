@@ -364,7 +364,7 @@ struct ParallelSqlContext
                 }
                 else
                 {
-                    value = sourceQ.value(sourceFields[i]).toInt();
+                    value = sourceQ.value(sourceFields[i]);
                     //qDebug() << "binding value: " << value;
                 }
                 //qDebug() << "to target field: " << targetFields[i];

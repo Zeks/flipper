@@ -20,7 +20,8 @@ CREATE TABLE if not exists FicTags (
  sb_id integer default -1,
  sv_id integer default -1,
  tag varchar );
-
+CREATE INDEX if not exists I_FICTAGS_DBID ON FicTags (fic_id ASC);
+CREATE INDEX if not exists I_FICTAGS_FFNID ON FicTags (ffn_id ASC);
  -- tag table; 
  CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT NULL);
 
