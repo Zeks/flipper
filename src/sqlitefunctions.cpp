@@ -331,8 +331,8 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
     auto end = query->bindings.end();
     while(it != end)
     {
-        qDebug() << it.key() << " " << it.value();
-        q.bindValue(it.key(), it.value());
+        qDebug() << it->key << " " << it->value;
+        q.bindValue(it->key, it->value);
         ++it;
     }
     QLOG_INFO_PURE() << "RANDOM: " << qs;

@@ -52,8 +52,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
         if(useRecommendationOrdering)
         {
             queryString += " , cfRecommendationsMatches(f.id, '%1') as sumrecs ";
-//            queryString += ", ( select group_concat(id, ' & ')   from fandomindex "
-//                           "where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandomIDs ";
+            //            queryString += ", ( select group_concat(id, ' & ')   from fandomindex "
+            //                           "where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandomIDs ";
             queryString = queryString.arg(userToken);
         }
     }
@@ -194,9 +194,9 @@ QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
 {
     //return QString();
     QString fandoms = " "
-                      //"( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n"
-                      "cast(fandom1 as text)||'&'||cast(fandom2 as text)  as fandomids, \n"
-                      "";
+            //"( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n"
+            "cast(fandom1 as text)||'&'||cast(fandom2 as text)  as fandomids, \n"
+            "";
     return fandoms;
 }
 
@@ -345,12 +345,24 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
 {
     QString queryString;
     if(filter.genreInclusion.size() > 0)
+    {
+        int counter = 0;
         for(auto genre : filter.genreInclusion)
-            queryString += QString(" AND genres like '%%1%' ").arg(genre);
+        {
+            auto counter1 = ++counter;
+            queryString += QString(" AND genres like '%'||:genreinc%1||'%'").arg(QString::number(counter1));
+        }
+    }
 
     if(filter.genreExclusion.size() > 0)
+    {
+        int counter = 0;
         for(auto genre : filter.genreExclusion)
-            queryString += QString(" AND genres not like '%%1%' ").arg(genre);
+        {
+            auto counter1 = ++counter;
+            queryString += QString(" AND genres not like '%'||:genreexc%1||'%'").arg(QString::number(counter1));
+        }
+    }
     return queryString;
 }
 
@@ -359,20 +371,29 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
     QString queryString;
     if(filter.wordInclusion.size() > 0)
     {
+        int counter = 0;
         for(QString word: filter.wordInclusion)
         {
             if(word.trimmed().isEmpty())
                 continue;
-            queryString += QString(" AND ((summary like '%%1%' and summary not like '%not %1%') or (title like '%%1%' and title not like '%not %1%') ) ").arg(word);
+            auto counter1 = ++counter;
+            auto counter2 = ++counter;
+            queryString += QString(" AND (summary like '%'||:incword%1||'%' "
+                                   "or title like '%'||:incword%2||'%') ")
+                    .arg(QString::number(counter1)).arg(QString::number(counter2));
         }
     }
     if(filter.wordExclusion.size() > 0)
     {
+        int counter = 0;
         for(QString word: filter.wordExclusion)
         {
             if(word.trimmed().isEmpty())
                 continue;
-            queryString += QString(" AND summary not like '%%1%' and summary not like '%not %1%'").arg(word);
+            auto counter1 = ++counter;
+            auto counter2 = ++counter;
+            queryString += QString(" AND summary not like '%'||:excword%1||'%' and title not like '%'||:excword%2||'%'")
+                    .arg(QString::number(counter1)).arg(QString::number(counter2));
         }
     }
     return queryString;
@@ -569,24 +590,60 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
                                           QSharedPointer<Query> q)
 {
     if(filter.minWords > 0)
-        q->bindings[":minwordcount"] = filter.minWords;
+        q->bindings.push_back({":minwordcount",filter.minWords});
     if(filter.maxWords > 0)
-        q->bindings[":maxwordcount"] = filter.maxWords;
+        q->bindings.push_back({":maxwordcount", filter.maxWords});
     if(filter.minFavourites> 0)
-        q->bindings[":favourites"] = filter.minFavourites;
+        q->bindings.push_back({":favourites",filter.minFavourites});
     if(filter.listForRecommendations > -1)
     {
-        q->bindings[":list_id"] = filter.listForRecommendations;
-        q->bindings[":list_id2"] = filter.listForRecommendations;
+        q->bindings.push_back({":list_id",filter.listForRecommendations});
+        q->bindings.push_back({":list_id2",filter.listForRecommendations});
     }
     if(filter.minRecommendations > -1 && filter.listOpenMode)
-        q->bindings[":match_count"] = filter.minRecommendations;
+        q->bindings.push_back({":match_count",filter.minRecommendations});
     else if (filter.minRecommendations > -1)
-        q->bindings[":match_count"] = filter.minRecommendations + 1;
+        q->bindings.push_back({":match_count",filter.minRecommendations + 1});
+
+    if(!filter.genreInclusion.isEmpty())
+    {
+        int counter = 1;
+        for(auto genre : filter.genreInclusion)
+            q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+    }
+    if(!filter.genreExclusion.isEmpty())
+    {
+        int counter = 1;
+        for(auto genre : filter.genreExclusion)
+            q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+    }
+    if(!filter.wordInclusion.isEmpty())
+    {
+        int counter = 1;
+        for(QString word: filter.wordInclusion)
+        {
+            if(word.trimmed().isEmpty())
+                continue;
+            q->bindings.push_back({":incword" + QString::number(counter++),word});
+            q->bindings.push_back({":incword" + QString::number(counter++),word});
+        }
+    }
+    if(!filter.wordExclusion.isEmpty())
+    {
+        int counter = 1;
+        for(QString word: filter.wordExclusion)
+        {
+            if(word.trimmed().isEmpty())
+                continue;
+            q->bindings.push_back({":excword" + QString::number(counter++),word});
+            q->bindings.push_back({":excword" + QString::number(counter++),word}); // todo change on DB switch
+        }
+    }
     if(filter.recordLimit > 0)
-        q->bindings[":record_limit"] = filter.recordLimit;
+        q->bindings.push_back({":record_limit",filter.recordLimit});
     if(filter.recordPage > -1)
-        q->bindings[":record_offset"] = filter.recordPage * filter.recordLimit;
+        q->bindings.push_back({":record_offset",filter.recordPage * filter.recordLimit});
+
 }
 
 void DefaultQueryBuilder::InitQuery()

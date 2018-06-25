@@ -23,12 +23,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "storyfilter.h"
 //#include "Interfaces/db_interface.h"
 namespace database { class IDBWrapper; }
+
 namespace core {
+struct QueryBinding{
+    QString key;
+    QVariant value;
+};
 struct Query
 {
     void Clear(){ str.clear(); bindings.clear();}
     QString str;
-    QVariantHash bindings;
+    QList<QueryBinding> bindings;
+    //QVariantHash bindings;
 };
 
 class IQueryBuilder

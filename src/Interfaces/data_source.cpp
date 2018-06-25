@@ -42,10 +42,10 @@ QSqlQuery FicSourceDirect::BuildQuery(core::StoryFilter filter, bool countOnly)
     auto end = currentQuery->bindings.end();
     while(it != end)
     {
-        if(currentQuery->str.contains(it.key()))
+        if(currentQuery->str.contains(it->key))
         {
-            qDebug() << it.key() << " " << it.value();
-            q.bindValue(it.key(), it.value());
+            qDebug() << it->key << " " << it->value;
+            q.bindValue(it->key, it->value);
         }
         ++it;
     }

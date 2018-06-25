@@ -66,6 +66,8 @@ CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC);
 CREATE INDEX if not exists  I_WCR ON fanfics (wcr ASC);
 CREATE INDEX if not exists  I_DAYSRUNNING ON fanfics (daysrunning ASC);
 CREATE INDEX if not exists  I_age ON fanfics (age ASC);
+CREATE INDEX if not exists  I_fanfics_favourites ON fanfics (favourites ASC);
+CREATE INDEX if not exists  I_fanfics_reviews ON fanfics (reviews ASC);
 CREATE INDEX if not exists  I_complete ON fanfics (complete ASC);
 CREATE INDEX if not exists  I_reviewstofavourites ON fanfics (reviewstofavourites ASC);
 CREATE INDEX if not exists  I_FANFIC_UPDATED ON fanfics (UPDATED ASC);
@@ -75,6 +77,8 @@ CREATE INDEX if not exists  I_ALIVE ON fanfics (alive ASC);
 CREATE INDEX if not exists  I_DATE_ADDED ON fanfics (date_added ASC);
 CREATE INDEX if not exists  I_FOR_FILL ON fanfics (for_fill ASC);
 CREATE INDEX if not exists  I_FANFICS_HIDDEN on fanfics (hidden ASC);
+CREATE INDEX if not exists  I_FANFICS_SUMMARY on fanfics (summary ASC);
+CREATE INDEX if not exists  I_FANFICS_TITLE on fanfics (title ASC);
 
 -- fanfics sequence;
  INSERT INTO sqlite_sequence(name, seq) SELECT 'fanfics', 0 WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name = 'fanfics');
