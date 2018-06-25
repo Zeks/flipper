@@ -8,6 +8,10 @@ package ProtoSpace;
 message ControlInfo{
     string user_token = 1;
 }
+message ResponseInfo{
+    bool is_valid               = 1;
+    bool has_usertoken_error    = 2;
+}
 
 message Tags{
     repeated int32 all_tags       = 1;
@@ -35,6 +39,7 @@ message SearchTask
 
 message SearchResponse{
     repeated Fanfic fanfics = 1;
+    ResponseInfo response_info            = 2;
 }
 
 message SyncFandomListTask{
@@ -45,6 +50,7 @@ message SyncFandomListTask{
 message SyncFandomListResponse{
     bool needs_update       = 1;
     repeated Fandom fandoms = 2;
+    ResponseInfo response_info            = 3;
 }
 
 message FicCountTask{
@@ -55,6 +61,7 @@ message FicCountTask{
 
 message FicCountResponse{
     int32 fic_count = 1;
+    ResponseInfo response_info    = 2;
 }
 
 
@@ -90,6 +97,7 @@ message RecommendationListCreationRequest{
 message RecommendationListCreationResponse{
     string list_token           = 1;
     RecommendationListData list = 2;
+    ResponseInfo response_info                = 3;
 }
 
 message RecommendationListFetchRequest{
@@ -101,6 +109,7 @@ message RecommendationListFetchResponse{
     bool list_available              = 1;
     bool position_in_queue           = 2;
     RecommendationListData list_data = 3;
+    ResponseInfo response_info       = 4;
 }
 
 message FicIdRequest{
@@ -111,6 +120,7 @@ message FicIdRequest{
 message FicIdResponse{
     bool success        = 1;
     SiteIDPack ids      = 2;
+    ResponseInfo response_info        = 3;
 }
 
 // will need to synchronize fandoms on app start somehow

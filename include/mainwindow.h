@@ -134,6 +134,8 @@ private:
     // (without mentioning GUI element each time)
     QString GetCurrentFandomName();
 
+    int GetCurrentFandomID();
+
     // a wrapper over pagegetter to request pages for fandom parsing
     //bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
 

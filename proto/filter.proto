@@ -22,8 +22,6 @@ message Recommendations{
 }
 
 message BasicFilters{
-
-
     string website                  = 1;
     int32 min_words                 = 2;
     int32 max_words                 = 3;
@@ -59,7 +57,7 @@ message RecentAndPopular{
 
 message ContentMatchFilter
 {
-    string fandom                       = 1; 
+    int32 fandom                        = 1; 
     bool use_ignored_fandoms            = 2;
     bool include_crossovers             = 3;
     bool crossovers_only                = 4;

@@ -79,9 +79,23 @@ void SetupLogger()
 
 }
 
-
-void ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken)
+bool VerifyUserToken(QString userToken)
 {
+    QRegularExpression rx("{[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}}");
+    if(userToken.length() != 38)
+        return false;
+    auto match = rx.match(userToken);
+    if(!match.hasMatch())
+        return false;
+    return true;
+}
+
+
+bool ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken)
+{
+    if(!VerifyUserToken(userToken))
+        return false;
+
     const auto& taskTags = user_data.user_tags();
 
 
@@ -96,6 +110,7 @@ void ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken
         userTags.ignoredFandoms[ignoredFandoms.fandom_ids(i)] = ignoredFandoms.ignore_crossovers(i);
 
     UserInfoAccessor::userData[userToken] = userTags;
+    return true;
 }
 
 class DatabaseContext{
@@ -145,6 +160,11 @@ void RecommendationsCreator::Run(QString userToken,
 }
 
 
+void SetTokenError(ProtoSpace::ResponseInfo* info){
+    info->set_is_valid(false);
+    info->set_has_usertoken_error(true);
+}
+
 class FeederService final : public ProtoSpace::Feeder::Service {
 public:
     Status Search(ServerContext* context, const ProtoSpace::SearchTask* task,
@@ -167,7 +187,11 @@ public:
         FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
         convertedFicSource->InitQueryType(true, userToken);
 
-        ProcessUserToken(task->user_data(), userToken);
+        if(!ProcessUserToken(task->user_data(), userToken))
+        {
+            SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
 
         RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
 
@@ -212,7 +236,11 @@ public:
         convertedFicSource->InitQueryType(true, userToken);
         QVector<core::Fic> data;
 
-        ProcessUserToken(task->user_data(), userToken);
+        if(!ProcessUserToken(task->user_data(), userToken))
+        {
+            SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
         RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
 
         int count = 0;
@@ -231,8 +259,14 @@ public:
                           ProtoSpace::SyncFandomListResponse* response) override
     {
         Q_UNUSED(context);
-        QLOG_INFO() << "////////////Received sync fandoms task from: " << QString::fromStdString(task->controls().user_token());
+        QString userToken = QString::fromStdString(task->controls().user_token());
+        QLOG_INFO() << "////////////Received sync fandoms task from: " << userToken;
 
+        if(!VerifyUserToken(userToken))
+        {
+            SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
         dbInterface->ReadDbFile("dbcode/dbinit.sql");
@@ -268,9 +302,15 @@ public:
 
         Q_UNUSED(context);
         bool firstRun = true;
-        static QString userToken = QString::fromStdString(task->controls().user_token());
 
-        QLOG_INFO() << "////////////Received search task from: " << userToken;
+        QString userToken = QString::fromStdString(task->controls().user_token());
+        QLOG_INFO() << "////////////Received sync fandoms task from: " << userToken;
+
+        if(!VerifyUserToken(userToken))
+        {
+            SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
 
         DatabaseContext dbContext;
 
@@ -320,9 +360,15 @@ public:
                                       ProtoSpace::FicIdResponse* response) override
     {
         Q_UNUSED(context);
-        static QString userToken = QString::fromStdString(task->controls().user_token());
+        QString userToken = QString::fromStdString(task->controls().user_token());
+        QLOG_INFO() << "////////////Received sync fandoms task from: " << userToken;
 
-        QLOG_INFO() << "////////////Received search task from: " << userToken;
+        if(!VerifyUserToken(userToken))
+        {
+            SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
+
         DatabaseContext dbContext;
 
         QHash<int, int> idsToFill;

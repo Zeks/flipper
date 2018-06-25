@@ -487,15 +487,13 @@ QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter, bool renameToFID)
 {
     QString queryString;
-    if(filter.fandom.trimmed().isEmpty())
+    if(filter.fandom == -1)
         return queryString;
     //todo this can be optimized if I pass fandom id directly
-    QString add = " and ("
-                  "f.fandom1 = (select id from fandomindex where name = '%1')"
-                  "or f.fandom2 = (select id from fandomindex where name = '%1')"
+    queryString = " and ("
+                  "f.fandom1 = :fandom_id1 "
+                  "or f.fandom2 = :fandom_id2"
                   ")";
-    queryString+=add.arg(filter.fandom);
-
     if(!renameToFID)
         queryString.replace(" fid ", " ff.id ");
 
@@ -616,6 +614,11 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         int counter = 1;
         for(auto genre : filter.genreExclusion)
             q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+    }
+    if(filter.fandom != -1)
+    {
+        q->bindings.push_back({":fandom_id1",filter.fandom});
+        q->bindings.push_back({":fandom_id2",filter.fandom});
     }
     if(!filter.wordInclusion.isEmpty())
     {

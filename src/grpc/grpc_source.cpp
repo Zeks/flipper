@@ -91,7 +91,7 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
 
 
     auto* contentFilter = result.mutable_content_filter();
-    contentFilter->set_fandom(filter.fandom.toStdString());
+    contentFilter->set_fandom(filter.fandom);
     contentFilter->set_include_crossovers(filter.includeCrossovers);
     contentFilter->set_crossovers_only(filter.crossoversOnly);
     contentFilter->set_other_fandoms_mode(filter.otherFandomsMode);
@@ -190,7 +190,7 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
     result.recentAndPopularFavRatio = filter.recent_and_popular().fav_ratio();
     result.recentCutoff = DFS(filter.recent_and_popular().date_cutoff());
 
-    result.fandom = FS(filter.content_filter().fandom());
+    result.fandom = filter.content_filter().fandom();
     result.includeCrossovers = filter.content_filter().include_crossovers();
     result.crossoversOnly = filter.content_filter().crossovers_only();
     result.otherFandomsMode = filter.content_filter().other_fandoms_mode();

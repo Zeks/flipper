@@ -944,6 +944,12 @@ QString MainWindow::GetCurrentFandomName()
     return core::Fandom::ConvertName(ui->cbNormals->currentText());
 }
 
+int MainWindow::GetCurrentFandomID()
+{
+    return env.interfaces.fandoms->GetIDForName(core::Fandom::ConvertName(ui->cbNormals->currentText()));
+    //return core::Fandom::ConvertName(ui->cbNormals->currentText());
+}
+
 void MainWindow::OnChapterUpdated(QVariant id, QVariant chapter)
 {
     env.interfaces.fanfics->AssignChapter(id.toInt(), chapter.toInt());
@@ -1590,7 +1596,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.allowUnfinished = ui->chkShowUnfinished->isChecked();
     filter.ensureActive = ui->chkActive->isChecked();
     filter.ensureCompleted= ui->chkComplete->isChecked();
-    filter.fandom = GetCurrentFandomName();
+    filter.fandom = GetCurrentFandomID();
     filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
     filter.genreExclusion = valueIfChecked(ui->chkGenreMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text(), "###"));

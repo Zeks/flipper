@@ -107,7 +107,7 @@ struct StoryFilter{
     EBiasOperator biasOperator;
     EFilterMode mode;
 
-    QString fandom;
+    int fandom = -1;
     QString website;
 
     QStringList genreExclusion;
