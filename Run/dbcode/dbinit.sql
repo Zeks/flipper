@@ -54,7 +54,7 @@ CREATE INDEX if not exists  I_FANFICS_SECOND  ON fanfics (filter_pass_2 ASC);
  CREATE VIEW if not exists vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
 wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows, hidden, keywords_yes, keywords_no, keywords_result,
-filter_pass_1,filter_pass_2
+filter_pass_1,filter_pass_2, fandom1, fandom2
  from fanfics;
 
 

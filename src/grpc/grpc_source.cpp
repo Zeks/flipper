@@ -432,7 +432,8 @@ public:
 
         ProcessStandardError(status);
         task.release_filter();
-        return response->fic_count();
+        int result = response->fic_count();
+        return result;
     }
 
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms)

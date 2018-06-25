@@ -47,17 +47,22 @@ void CoreEnvironment::LoadData()
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
     }
+
     QVector<int> recFics;
     if(filter.sortMode == core::StoryFilter::sm_reccount)
     {
         // need to pass the list to the server
         filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList());
     }
+    QVector<core::Fic> newFanfics;
     ficSource->FetchData(filter,
-                         &fanfics);
+                         &newFanfics);
     if(thinClient)
-        interfaces.tags->FetchTagsForFics(&fanfics);
-
+    {
+        interfaces.fandoms->FetchFandomsForFics(&newFanfics);
+        interfaces.tags->FetchTagsForFics(&newFanfics);
+    }
+    fanfics = newFanfics;
     currentLastFanficId = ficSource->lastFicId;
 }
 
@@ -171,6 +176,24 @@ void CoreEnvironment::InitInterfaces()
 
 int CoreEnvironment::GetResultCount()
 {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    bool thinClient = settings.value("Settings/thinClient").toBool();
+    if(thinClient)
+    {
+        UserData userData;
+        userData.allTags = interfaces.tags->GetAllTaggedFics();
+        if(filter.activeTags.size() > 0)
+            userData.activeTags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+        userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
+        ficSource->userData = userData;
+    }
+    QVector<int> recFics;
+    if(filter.sortMode == core::StoryFilter::sm_reccount)
+    {
+        // need to pass the list to the server
+        filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList());
+    }
+
     return ficSource->GetFicCount(filter);
 }
 void CoreEnvironment::UseAuthorTask(PageTaskPtr task)

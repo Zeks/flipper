@@ -38,7 +38,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
     query = NewQuery();
 
     queryString.clear();
-
+    bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.minRecommendations > 0;
+    bool useRecommendationOrdering = !filter.listOpenMode;
     if(createLimits)
     {
         queryString = "ID, ";
@@ -47,22 +48,30 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
     }
     else
     {
-        queryString = "count(ID) as records ";
+        queryString = " f.ID as id ";
+        if(useRecommendationOrdering)
+        {
+            queryString += " , cfRecommendationsMatches(f.id, '%1') as sumrecs ";
+//            queryString += ", ( select group_concat(id, ' & ')   from fandomindex "
+//                           "where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandomIDs ";
+            queryString = queryString.arg(userToken);
+        }
     }
+
 
     queryString+=" from vFanfics f where f.alive <> 0 " ;
     QString where = CreateWhere(filter);
-    qDebug().noquote() << "WHERE IS: " << where;
+    //qDebug().noquote() << "WHERE IS: " << where;
     ProcessBindings(filter, query);
 
 
     //where+= CreateLimitQueryPart(filter);
-    bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.minRecommendations > 0;
-    bool useRecommendationOrdering = !filter.listOpenMode;
+
     if(!where.trimmed().isEmpty() || useRecommendationFiltering)
     {
         if(useRecommendationFiltering)
         {
+
             if(!thinClientMode)
             {
                 QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join vfanficsslash ff  on ff.id = rt.fic_id  where"
@@ -74,7 +83,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
                 temp += where + " %1 " + CreateLimitQueryPart(filter) + ")";
                 if(useRecommendationOrdering)
                     temp = temp.arg(" order by rt.match_count desc ");
-                else
+                else if(createLimits)
                     temp = temp.arg(BuildSortMode(filter));
                 where = temp;
             }
@@ -92,18 +101,21 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
         }
         QString randomizer = ProcessRandomization(filter, where);
         if(!filter.randomizeResults)
-            queryString += where  + BuildSortMode(filter);
+            queryString += where;
         else
-            queryString += randomizer  + BuildSortMode(filter);
+            queryString += randomizer;
+        if(createLimits)
+            queryString += BuildSortMode(filter);
+
         if(thinClientMode && createLimits)
             queryString += CreateLimitQueryPart(filter, false);
     }
     else
     {
         QString randomizer = ProcessRandomization(filter, where);
-        queryString += where + randomizer + BuildSortMode(filter);
+        queryString += where + randomizer;
         if(createLimits)
-            queryString += CreateLimitQueryPart(filter);
+            queryString += BuildSortMode(filter) + CreateLimitQueryPart(filter);
     }
 
     query->str = "select " + queryString;
@@ -182,8 +194,8 @@ QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
 {
     //return QString();
     QString fandoms = " "
-                      "( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n"
-                      "( select group_concat(id, ' & ')   from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandomIDs, \n"
+                      //"( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n"
+                      "cast(fandom1 as text)||'&'||cast(fandom2 as text)  as fandomids, \n"
                       "";
     return fandoms;
 }
@@ -283,7 +295,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
             slashField = "filter_pass_2";
 
         if(filter.slashFilter.excludeSlash)
-            queryString += " and (  %1 <> 1 or %1 is null) ";
+            queryString += " and (  %1 = 0 ) ";
         if(filter.slashFilter.includeSlash)
             queryString += " and  %1 = 1  ";
 
@@ -457,7 +469,10 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter, bool r
     if(filter.fandom.trimmed().isEmpty())
         return queryString;
     //todo this can be optimized if I pass fandom id directly
-    QString add = " and f.id in (select fic_id from ficfandoms where fandom_id = (select id from fandomindex where name = '%1')) ";
+    QString add = " and ("
+                  "f.fandom1 = (select id from fandomindex where name = '%1')"
+                  "or f.fandom2 = (select id from fandomindex where name = '%1')"
+                  ")";
     queryString+=add.arg(filter.fandom);
 
     if(!renameToFID)
@@ -641,9 +656,14 @@ CountQueryBuilder::CountQueryBuilder(bool client, QString userToken) : DefaultQu
 QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter, bool createLimits)
 {
     // todo note : randomized queries don't need size queries as size is known beforehand
+    QLOG_INFO_PURE() << "//////////";
+    QLOG_INFO() << "BUILDING COUNT QUERY";
+    QLOG_INFO_PURE() << "//////////";
     auto q = DefaultQueryBuilder::Build(filter, createLimits);
-    //q->str = "select count(id) from ("+ q->str +")";
+    q->str = "select count(id) as records from ("+ q->str +")";
+    QLOG_INFO_PURE() << "//////////";
     QLOG_INFO_PURE() << "COUNT QUERY:" << q->str;
+    QLOG_INFO_PURE() << "//////////";
     return q;
 }
 
@@ -750,7 +770,7 @@ QString FandomIgnoreClient::GetString(StoryFilter filter)
     QString queryString;
     {
         if(filter.ignoreFandoms)
-            queryString += QString(" and not cfInIgnoredFandoms((select group_concat(fandom_id, ' & ') from ficfandoms where fic_id = f.id), '%1') = 1").arg(userToken);
+            queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2, '%1') < 1").arg(userToken);
         else
             queryString += QString("");
     }

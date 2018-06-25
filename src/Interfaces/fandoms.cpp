@@ -361,6 +361,8 @@ bool Fandoms::LoadAllFandoms(bool forced)
         return true;
 
     fandoms = database::puresql::GetAllFandoms(db).data;
+    for(auto fandom: fandoms)
+        indexFandomsById[fandom->id] = fandom->GetName();
     if(fandoms.empty())
         return false;
     return true;
@@ -412,6 +414,24 @@ QList<core::FandomPtr> Fandoms::GetAllLoadedFandoms()
 QHash<int, QString> Fandoms::GetFandomNamesForIDs(QList<int> fandoms)
 {
     return database::puresql::GetFandomNamesForIDs(fandoms, db).data;
+}
+
+bool Fandoms::FetchFandomsForFics(QVector<core::Fic> *fics)
+{
+    static bool loadFandoms = true;
+    LoadAllFandoms(loadFandoms);
+    loadFandoms = false;
+    for(auto& fic: *fics)
+    {
+        for(int i = 0; i < fic.fandomIds.size(); i++)
+        {
+            auto index = fic.fandomIds[i];
+            if(index != -1)
+                fic.fandoms.push_back(indexFandomsById[fic.fandomIds[i]]);
+        }
+        fic.fandom = fic.fandoms.join(" & ");
+    }
+    return true;
 }
 
 bool Fandoms::RemoveFandomFromIgnoredList(QString name)

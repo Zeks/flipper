@@ -163,14 +163,15 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
     if(!userData.contains(userToken))
         sqlite3_result_int(ctx, 0);
 
-    QString fandomString((const char*)sqlite3_value_text(argv[0]));
-    QStringList fandoms = fandomString.split("&", QString::SkipEmptyParts);
+    int fandom1 = sqlite3_value_int(argv[0]);
+    int fandom2 = sqlite3_value_int(argv[0]);
+    QList<int> fandoms = {fandom1, fandom2};
     if(!fandoms.size())
         sqlite3_result_int(ctx, 0);
 
     if(fandoms.size() == 1)
     {
-        if(userData[userToken].ignoredFandoms.contains(fandoms.at(0).toInt()))
+        if(userData[userToken].ignoredFandoms.contains(fandoms.at(0)))
             sqlite3_result_int(ctx, 1);
         else
             sqlite3_result_int(ctx, 0);
@@ -180,7 +181,7 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
         bool hasUnignored = false;
         for(auto fandom: fandoms)
         {
-            auto it = userData[userToken].ignoredFandoms.find(fandom.toInt());
+            auto it = userData[userToken].ignoredFandoms.find(fandom);
             if(it == userData[userToken].ignoredFandoms.end())
             {
                 hasUnignored = true;
@@ -266,7 +267,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
             sqlite3_create_function(db_handle, "cfInActualRecommendations", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActualRecommendations, NULL, NULL);
             sqlite3_create_function(db_handle, "cfRecommendationsMatches", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatches, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInAuthors", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInAuthors, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInActiveTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActiveTags, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);

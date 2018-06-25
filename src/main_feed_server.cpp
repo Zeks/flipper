@@ -162,7 +162,6 @@ public:
 
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-        dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
         static QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface));
         FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
@@ -206,7 +205,6 @@ public:
 
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-        dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
         static QSharedPointer<FicSource> ficSource;
         ficSource.reset(new FicSourceDirect(dbInterface));
@@ -215,6 +213,7 @@ public:
         QVector<core::Fic> data;
 
         ProcessUserToken(task->user_data(), userToken);
+        RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
 
         int count = 0;
         TimedAction ("Getting fic count",[&](){
