@@ -68,15 +68,15 @@ bool Tags::RemoveTagFromFic(int ficId, QString tag)
 QStringList Tags::CreateDefaultTagList()
 {
     QStringList temp;
-    temp += "Meh" ;
-    temp += "Unknown_fandom" ;
-    temp += "Limbo" ;
-    temp += "Read_queue";
+    temp += "Dead" ;
+    temp += "Moar_pls" ;
+    temp += "Hide" ;
+    temp += "Meh";
+    temp += "Liked" ;
+    temp += "Disgusting";
     temp += "Reading" ;
-    temp += "Smut";
-    temp += "Finished" ;
-    temp += "Accumulating" ;
-    temp += "Deleted";
+    temp += "Read_Queue" ;
+    temp += "Finished";
     temp +=  "WTF" ;
     return temp;
 }

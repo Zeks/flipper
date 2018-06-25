@@ -216,6 +216,7 @@ void TagWidget::OnTagImport()
         return;
     tagsInterface->ImportFromFile("TagExport.sqlite");
     emit dbIDRequest();
+    emit tagReloadRequested();
 }
 
 

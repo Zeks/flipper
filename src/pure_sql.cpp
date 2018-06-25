@@ -1524,7 +1524,7 @@ DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase 
 {
     QString qs = QString("select distinct fic_id from fictags ");
     if(tags.size() > 0)
-        qs += QString(" where tag in (%1)").arg(tags.join(","));
+        qs += QString(" where tag in ('%1')").arg(tags.join("','"));
     SqlContext<QSet<int>> ctx(db, qs);
     ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
     return ctx.result;

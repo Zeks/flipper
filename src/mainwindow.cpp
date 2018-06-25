@@ -282,6 +282,7 @@ void MainWindow::InitConnections()
 
     });
     connect(ui->wdgTagsPlaceholder, &TagWidget::dbIDRequest, this, &MainWindow::OnFillDBIdsForTags);
+    connect(ui->wdgTagsPlaceholder, &TagWidget::tagReloadRequested, this, &MainWindow::OnTagReloadRequested);
     connect(&taskTimer, &QTimer::timeout, this, &MainWindow::OnCheckUnfinishedTasks);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     //! todo currently null
@@ -2109,6 +2110,13 @@ void MainWindow::OnWarningRequested(QString value)
 void MainWindow::OnFillDBIdsForTags()
 {
     env.FillDBIDsForTags();
+}
+
+void MainWindow::OnTagReloadRequested()
+{
+    ProcessTagsIntoGui();
+    tagList = env.interfaces.tags->ReadUserTags();
+    qwFics->rootContext()->setContextProperty("tagModel", tagList);
 }
 
 //void MainWindow::on_pbOneMoreCycle_clicked()

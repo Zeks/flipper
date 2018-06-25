@@ -116,6 +116,8 @@ void CoreEnvironment::Init()
     else
         ficSource.reset(new FicSourceDirect(interfaces.db));
 
+    auto result = interfaces.tags->ReadUserTags();
+
     ficSource->AddFicFilter(QSharedPointer<FicFilter>(new FicFilterSlash));
 
     auto storedRecList = settings.value("Settings/currentList").toString();

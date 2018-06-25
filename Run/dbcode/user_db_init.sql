@@ -23,18 +23,18 @@ CREATE TABLE if not exists FicTags (
 CREATE INDEX if not exists I_FICTAGS_DBID ON FicTags (fic_id ASC);
 CREATE INDEX if not exists I_FICTAGS_FFNID ON FicTags (ffn_id ASC);
  -- tag table; 
- CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT NULL);
 
-INSERT INTO Tags(tag, id) values('Dead', 1);
-INSERT INTO Tags(tag, id) values('Moar_pls', 2);
-INSERT INTO Tags(tag, id) values('Hide', 3);
-INSERT INTO Tags(tag, id) values('Meh', 4);
-INSERT INTO Tags(tag, id) values('Liked', 5);
-INSERT INTO Tags(tag, id) values('Disgusting', 6);
-INSERT INTO Tags(tag, id) values('Reading', 7);
-INSERT INTO Tags(tag, id) values('Read_Queue', 8);
-INSERT INTO Tags(tag, id) values('Finished', 9);
-INSERT INTO Tags(tag, id) values('WTF', 10);
+CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT NULL);
+--INSERT INTO Tags(tag, id) values('Dead', 1);
+--INSERT INTO Tags(tag, id) values('Moar_pls', 2);
+--INSERT INTO Tags(tag, id) values('Hide', 3);
+--INSERT INTO Tags(tag, id) values('Meh', 4);
+--INSERT INTO Tags(tag, id) values('Liked', 5);
+--INSERT INTO Tags(tag, id) values('Disgusting', 6);
+--INSERT INTO Tags(tag, id) values('Reading', 7);
+--INSERT INTO Tags(tag, id) values('Read_Queue', 8);
+--INSERT INTO Tags(tag, id) values('Finished', 9);
+--INSERT INTO Tags(tag, id) values('WTF', 10);
 
 
 -- manually assigned tags for fics;

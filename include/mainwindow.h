@@ -478,6 +478,7 @@ private slots:
     void OnProgressBarRequested(int);
     void OnWarningRequested(QString value);
     void OnFillDBIdsForTags();
+    void OnTagReloadRequested();
 
 signals:
 
