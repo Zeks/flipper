@@ -33,13 +33,22 @@ DefaultQueryBuilder::DefaultQueryBuilder(bool client, QString userToken)
     InitTagFilterBuilder(client, userToken);
 }
 
-QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
+QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool createLimits)
 {
     query = NewQuery();
 
     queryString.clear();
-    queryString = "ID, ";
-    queryString+= CreateCustomFields(filter) + " f.* ";
+
+    if(createLimits)
+    {
+        queryString = "ID, ";
+        queryString+= CreateCustomFields(filter);
+        queryString+=  + " f.* ";
+    }
+    else
+    {
+        queryString = "count(ID) as records ";
+    }
 
     queryString+=" from vFanfics f where f.alive <> 0 " ;
     QString where = CreateWhere(filter);
@@ -86,14 +95,15 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter)
             queryString += where  + BuildSortMode(filter);
         else
             queryString += randomizer  + BuildSortMode(filter);
-        if(thinClientMode)
+        if(thinClientMode && createLimits)
             queryString += CreateLimitQueryPart(filter, false);
     }
     else
     {
         QString randomizer = ProcessRandomization(filter, where);
         queryString += where + randomizer + BuildSortMode(filter);
-        queryString += CreateLimitQueryPart(filter);
+        if(createLimits)
+            queryString += CreateLimitQueryPart(filter);
     }
 
     query->str = "select " + queryString;
@@ -628,61 +638,13 @@ CountQueryBuilder::CountQueryBuilder(bool client, QString userToken) : DefaultQu
 {
 }
 
-QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter)
+QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter, bool createLimits)
 {
     // todo note : randomized queries don't need size queries as size is known beforehand
-    query = NewQuery();
-    queryString.clear();
-
-    // special cases that need to be optimised in order of necessity
-    // recommendation list sorting can and needs to be inverted for instant results
-    QString wrappignString;
-    if(!thinClientMode)
-        wrappignString =  "select count(fic_id) as records from RecommendationListData  where list_id = :list_id and match_count >= :match_count and exists (%1)";
-
-
-
-    QString normalString = "select count(id) as records %1 ";
-    queryString = "  from fanfics f where f.alive <> 0 " ;
-    QString where;
-    {
-        where+= ProcessWordcount(filter);
-        where+= ProcessSlashMode(filter, false);
-        where+= ProcessGenreIncluson(filter);
-        where+= ProcessOtherFandomsMode(filter, false);
-        where+= ProcessWordInclusion(filter);
-        where+= ProcessBias(filter);
-        where+= ProcessWhereSortMode(filter);
-        where+= ProcessActiveRecommendationsPart(filter);
-
-        if(filter.minFavourites > 0)
-            where += " and favourites > :favourites ";
-
-        where+= ProcessStatusFilters(filter);
-        where+= ProcessNormalOrCrossover(filter, false);
-        where+= tagFilterBuilder->GetString(filter);
-
-    }
-    queryString+= where;
-    if(!queryString.contains("as fid"))
-        queryString.replace("= fid", "= f.id");
-    ProcessBindings(filter, query);
-
-
-    if(filter.sortMode == StoryFilter::sm_reccount)
-    {
-        if(!thinClientMode)
-            queryString = wrappignString.arg("select id as fid" + queryString);
-        else
-            queryString = "select count(id) from  (" + queryString + ")";
-    }
-    else
-        queryString = normalString.arg(queryString);
-    queryString+= " COLLATE NOCASE ";
-
-    query->str = queryString;
-    qDebug().noquote() << query->str;
-    return query;
+    auto q = DefaultQueryBuilder::Build(filter, createLimits);
+    //q->str = "select count(id) from ("+ q->str +")";
+    QLOG_INFO_PURE() << "COUNT QUERY:" << q->str;
+    return q;
 }
 
 QString CountQueryBuilder::ProcessWhereSortMode(StoryFilter filter)

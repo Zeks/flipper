@@ -2119,15 +2119,3 @@ void MainWindow::OnTagReloadRequested()
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
 }
 
-//void MainWindow::on_pbOneMoreCycle_clicked()
-//{
-//    env.lastI = env.lastI + 1;
-//    QSqlDatabase db = QSqlDatabase::database();
-//    database::Transaction transaction(db);
-//    auto authors = env.interfaces.authors->GetAllAuthors("ffn", true);
-//    CreateListOfSlashCandidates(env.lastI, authors);
-//    env.interfaces.fanfics->AssignIterationOfSlash("pass_" + QString::number(env.lastI));
-//    ReprocessAllAuthorsJustSlash("pass_" + QString::number(env.lastI));
-//    transaction.finalize();
-//}
-

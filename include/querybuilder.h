@@ -70,7 +70,7 @@ class DefaultQueryBuilder : public IQueryBuilder
 public:
     DefaultQueryBuilder(bool client = false, QString userToken = QString());
     virtual ~DefaultQueryBuilder() override {}
-    virtual QSharedPointer<Query> Build(StoryFilter) override;
+    virtual QSharedPointer<Query> Build(StoryFilter,  bool createLimits = true) override;
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
     virtual void ProcessBindings(StoryFilter, QSharedPointer<Query>);
     void InitTagFilterBuilder(bool client = false, QString userToken = QString());
@@ -133,7 +133,7 @@ class CountQueryBuilder : public DefaultQueryBuilder
 {
 public:
     CountQueryBuilder(bool client = false, QString userToken = QString());
-    QSharedPointer<Query> Build(StoryFilter) override;
+    QSharedPointer<Query> Build(StoryFilter,  bool createLimits = false) override;
 private:
     QString CreateWhere(StoryFilter,
                         bool usePageLimiter = false);
