@@ -208,8 +208,10 @@ public:
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
         dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
-        QSharedPointer<FicSource> ficSource;
+        static QSharedPointer<FicSource> ficSource;
         ficSource.reset(new FicSourceDirect(dbInterface));
+        FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+        convertedFicSource->InitQueryType(true, userToken);
         QVector<core::Fic> data;
 
         ProcessUserToken(task->user_data(), userToken);
@@ -361,6 +363,8 @@ int main(int argc, char *argv[])
     QLOG_INFO() << "Feeder app started server";
 
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+    dbInterface->ReadDbFile("dbcode/dbinit.sql");
 
     QSettings settings("settings.ini", QSettings::IniFormat);
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();

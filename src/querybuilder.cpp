@@ -286,28 +286,28 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
     {
         if(!filter.slashFilter.excludeSlash && !filter.slashFilter.includeSlash)
             return queryString;
-        QString start = "and  %1  ( select 1 from slash_data_ffn sdf where sdf.ffn_id = f.ffn_id ";
+        QString start = " and "  ;
         if(filter.slashFilter.includeSlash)
-            start = start.arg(" exists ");
+            start = start.arg("  ");
         else
-            start = start.arg(" not exists ");
+            start = start.arg(" not  ");
         if(filter.slashFilter.slashFilterLevel == 0)
             slashField = "keywords_result";
         else if(filter.slashFilter.slashFilterLevel == 1)
-            slashField = "filter_pass_1";
+            slashField = "f.filter_pass_1";
         else
-            slashField = "filter_pass_2";
+            slashField = "f.filter_pass_2";
 
         if(filter.slashFilter.excludeSlash)
-            queryString += "  and  (%1 <> 1 or %1 is null) ";
+            queryString += "  (%1 <> 1 or %1 is null) ";
         if(filter.slashFilter.includeSlash)
-            queryString += " and  %1 = 1  ";
+            queryString += " %1 = 1  ";
 
         if(filter.slashFilter.enableFandomExceptions && filter.slashFilter.excludeSlash)
         {
             queryString += " and not exists (select fandom_id from ignored_fandoms_slash_filter where fandom_id in (select fandom_id from ficfandoms ffd where ffd.fic_id = f.id )) ";
         }
-        queryString+= ")";
+        //queryString+= ")";
         queryString = start + queryString;
     }
 

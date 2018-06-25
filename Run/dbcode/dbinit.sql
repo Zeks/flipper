@@ -34,10 +34,27 @@ for_fill integer default 0,
 ID INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL  UNIQUE);	
 alter table fanfics add column hidden integer default 0;
 alter table fanfics add column lastupdate datetime;
+alter table fanfics add column fandom1 integer default -1;
+alter table fanfics add column fandom2 integer default -1;
+alter table fanfics add column keywords_yes integer default 0;
+alter table fanfics add column keywords_no integer default 0;
+alter table fanfics add column keywords_result integer default 0;
+alter table fanfics add column filter_pass_1 integer default 0;
+alter table fanfics add column filter_pass_2 integer default 0;
+CREATE INDEX if not exists  I_FANFICS_FANDOM_1 ON fanfics (fandom1 ASC);
+CREATE INDEX if not exists  I_FANFICS_FANDOM_2 ON fanfics (fandom2 ASC);
+CREATE INDEX if not exists  I_FANFICS_KW_YES ON fanfics (keywords_yes ASC);
+CREATE INDEX if not exists  I_FANFICS_KW_YES ON fanfics (keywords_yes ASC);
+CREATE INDEX if not exists  I_FANFICS_KW_NO ON fanfics (keywords_no ASC);
+CREATE INDEX if not exists  I_FANFICS_KW_RESULT ON fanfics (keywords_result ASC);
+CREATE INDEX if not exists  I_FANFICS_FIRST ON fanfics (filter_pass_1 ASC);
+CREATE INDEX if not exists  I_FANFICS_SECOND  ON fanfics (filter_pass_2 ASC);
+
 
  CREATE VIEW if not exists vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
-wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows, hidden
+wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows, hidden, keywords_yes, keywords_no, keywords_result,
+filter_pass_1,filter_pass_2
  from fanfics;
 
 
@@ -49,6 +66,7 @@ CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC);
 CREATE INDEX if not exists  I_WCR ON fanfics (wcr ASC);
 CREATE INDEX if not exists  I_DAYSRUNNING ON fanfics (daysrunning ASC);
 CREATE INDEX if not exists  I_age ON fanfics (age ASC);
+CREATE INDEX if not exists  I_complete ON fanfics (complete ASC);
 CREATE INDEX if not exists  I_reviewstofavourites ON fanfics (reviewstofavourites ASC);
 CREATE INDEX if not exists  I_FANFIC_UPDATED ON fanfics (UPDATED ASC);
 CREATE INDEX if not exists  I_FANFIC_PUBLISHED ON fanfics (PUBLISHED ASC);
