@@ -35,7 +35,7 @@ class IQueryBuilder
 {
 public:
     virtual ~IQueryBuilder(){}
-    virtual QSharedPointer<Query> Build(StoryFilter) = 0;
+    virtual QSharedPointer<Query> Build(StoryFilter,  bool createLimits = true) = 0;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
 };
 

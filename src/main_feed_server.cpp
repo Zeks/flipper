@@ -210,6 +210,8 @@ public:
 
         QSharedPointer<FicSource> ficSource;
         ficSource.reset(new FicSourceDirect(dbInterface));
+        FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+        convertedFicSource->InitQueryType(true, userToken);
         QVector<core::Fic> data;
 
         ProcessUserToken(task->user_data(), userToken);
