@@ -51,7 +51,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
         queryString = " f.ID as id ";
         if(useRecommendationOrdering)
         {
-            queryString += " , cfRecommendationsMatches(f.id, '%1') as sumrecs ";
+            queryString += " , cfRecommendationsMatches(f.id) as sumrecs ";
             //            queryString += ", ( select group_concat(id, ' & ')   from fandomindex "
             //                           "where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandomIDs ";
             queryString = queryString.arg(userToken);
@@ -238,7 +238,7 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter, bool appendComma
     }
     else
     {
-        result = QString(" cfRecommendationsMatches(f.id, '%1') as sumrecs, ").arg(userToken);
+        result = QString(" cfRecommendationsMatches(f.id) as sumrecs, ").arg(userToken);
     }
 
     return result;
@@ -561,7 +561,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
         return result;
     QStringList idList;
     QString part = "  and ID IN ( %1 ) ";
-    wherePart = " cfRecommendationsMatches(f.id, '%1') as sumrecs, 1 as junk from fanfics f where 1 = 1 " + wherePart;
+    wherePart = " cfRecommendationsMatches(f.id) as sumrecs, 1 as junk from fanfics f where 1 = 1 " + wherePart;
     wherePart = wherePart.arg(userToken);
     wherePart.replace("COLLATE NOCASE", "");
     wherePart+=" COLLATE NOCASE";
@@ -780,13 +780,13 @@ QString TagFilteringClient::GetString(StoryFilter filter)
 {
     QString queryString;
     if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
-        queryString += QString(" and cfInActiveTags(f.id, '%1') = 1 ").arg(userToken);
+        queryString += QString(" and cfInActiveTags(f.id) = 1 ").arg(userToken);
     else
     {
         if(filter.ignoreAlreadyTagged)
             queryString += QString("");
         else
-            queryString += QString(" and cfInTags(f.id, '%1') = 0 ").arg(userToken);
+            queryString += QString(" and cfInTags(f.id) = 0 ").arg(userToken);
 
     }
     return queryString;
@@ -831,7 +831,7 @@ QString FandomIgnoreClient::GetString(StoryFilter filter)
     QString queryString;
     {
         if(filter.ignoreFandoms)
-            queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2, '%1') < 1").arg(userToken);
+            queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) < 1").arg(userToken);
         else
             queryString += QString("");
     }

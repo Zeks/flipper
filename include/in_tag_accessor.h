@@ -39,6 +39,11 @@ public:
     }
 
 };
+
+struct ThreadData{
+    static RecommendationsData* GetRecommendationData();
+    static UserData *GetUserData();
+};
 using RecommendationsInfoAccessor = InfoAccessor<RecommendationsData>;
 using UserInfoAccessor = InfoAccessor<UserData>;
 BIND_TO_SELF_SINGLE(RecommendationsInfoAccessor);

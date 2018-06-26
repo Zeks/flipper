@@ -111,8 +111,11 @@ bool ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken
     for(int i = 0; i < ignoredFandoms.fandom_ids_size(); i++)
         userTags->ignoredFandoms[ignoredFandoms.fandom_ids(i)] = ignoredFandoms.ignore_crossovers(i);
 
-    An<UserInfoAccessor> accessor;
-    accessor->SetData(userToken, userTags);
+//    An<UserInfoAccessor> accessor;
+//    accessor->SetData(userToken, userTags);
+    auto* userData = ThreadData::GetUserData();
+    *userData = *userTags;
+
     return true;
 }
 
@@ -257,9 +260,7 @@ public:
         FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
         convertedFicSource->InitQueryType(true, userToken);
 
-        auto recs = QSharedPointer<RecommendationsData>(new RecommendationsData());
-        An<RecommendationsInfoAccessor> accessor;
-        accessor->SetData(userToken, recs);
+        auto* recs = ThreadData::GetRecommendationData();
 
         recs->recommendationList = filter.recsHash;
 
@@ -321,9 +322,7 @@ public:
         convertedFicSource->InitQueryType(true, userToken);
         QVector<core::Fic> data;
 
-        auto recs = QSharedPointer<RecommendationsData>(new RecommendationsData());
-        An<RecommendationsInfoAccessor> accessor;
-        accessor->SetData(userToken, recs);
+        auto* recs = ThreadData::GetRecommendationData();
         recs->recommendationList = filter.recsHash;
 
         int count = 0;
@@ -423,9 +422,7 @@ public:
         recsInterface->portableDBInterface = dbContext.dbInterface;
         QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
 
-        auto recs = QSharedPointer<RecommendationsData>(new RecommendationsData());
-        An<RecommendationsInfoAccessor> accessor;
-        accessor->SetData(userToken, recs);
+        auto* recs = ThreadData::GetRecommendationData();
 
         static RecommendationsCreator creator;
         if(firstRun)

@@ -71,15 +71,9 @@ void cfRegexp(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString userToken((const char*)sqlite3_value_text(argv[1]));
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
     thread_local An<UserInfoAccessor> accessor;
-    QSharedPointer<UserData> data = accessor->GetData(userToken);
-    if(!data)
-    {
-        sqlite3_result_int(ctx, 0);
-        return;
-    }
+    auto* data = ThreadData::GetUserData();
 
     if(data->allTags.contains(ficId))
         sqlite3_result_int(ctx, 1);
@@ -90,15 +84,8 @@ void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString userToken((const char*)sqlite3_value_text(argv[1]));
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    thread_local An<RecommendationsInfoAccessor> accessor;
-    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
-    if(!data)
-    {
-        sqlite3_result_int(ctx, 0);
-        return;
-    }
+    auto* data= ThreadData::GetRecommendationData();
 
     if(data->sourceFics.contains(ficId))
     {
@@ -112,14 +99,7 @@ void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInActualRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString userToken((const char*)sqlite3_value_text(argv[1]));
-    thread_local An<RecommendationsInfoAccessor> accessor;
-    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
-    if(!data)
-    {
-        sqlite3_result_int(ctx, 0);
-        return;
-    }
+    auto* data= ThreadData::GetRecommendationData();
     if(data->recommendationList.contains(ficId))
     {
         //qDebug() << "fic in data: " << ficId;
@@ -133,10 +113,8 @@ void cfInActualRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfRecommendationsMatches(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString userToken((const char*)sqlite3_value_text(argv[1]));
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    thread_local An<RecommendationsInfoAccessor> accessor;
-    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
+    auto* data= ThreadData::GetRecommendationData();
     if(!data)
     {
         sqlite3_result_int(ctx, 0);
@@ -154,9 +132,7 @@ void cfRecommendationsMatches(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int authorId = sqlite3_value_int(argv[0]);
-    QString userToken((const char*)sqlite3_value_text(argv[1]));
-    thread_local An<RecommendationsInfoAccessor> accessor;
-    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
+    auto* data= ThreadData::GetRecommendationData();
     if(!data)
     {
         sqlite3_result_int(ctx, 0);
@@ -173,14 +149,7 @@ void cfInAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
 
 void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
-    QString userToken((const char*)sqlite3_value_text(argv[1]));
-    thread_local An<UserInfoAccessor> accessor;
-    QSharedPointer<UserData> data = accessor->GetData(userToken);
-    if(!data)
-    {
-        sqlite3_result_int(ctx, 0);
-        return;
-    }
+    auto* data = ThreadData::GetUserData();
     int fandom1 = sqlite3_value_int(argv[0]);
     int fandom2 = sqlite3_value_int(argv[0]);
     QList<int> fandoms = {fandom1, fandom2};
@@ -223,14 +192,8 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString userToken((const char*)sqlite3_value_text(argv[1]));
     thread_local An<UserInfoAccessor> accessor;
-    QSharedPointer<UserData> data = accessor->GetData(userToken);
-    if(!data)
-    {
-        sqlite3_result_int(ctx, 0);
-        return;
-    }
+    auto* data = ThreadData::GetUserData();
 
     if(data->activeTags.contains(ficId))
         sqlite3_result_int(ctx, 1);
@@ -284,13 +247,13 @@ bool InstallCustomFunctions(QSqlDatabase db)
         if (db_handle != 0) {
             sqlite3_initialize();
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInTags, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInRecommendations", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInActualRecommendations", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActualRecommendations, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfRecommendationsMatches", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatches, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInAuthors", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInAuthors, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInActiveTags", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActiveTags, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInTags", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInTags, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInRecommendations", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInActualRecommendations", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActualRecommendations, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfRecommendationsMatches", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatches, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInAuthors, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInActiveTags", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActiveTags, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfReturnCapture", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfReturnCapture, NULL, NULL);

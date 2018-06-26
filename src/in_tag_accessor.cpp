@@ -1,13 +1,25 @@
 #include"in_tag_accessor.h"
 
-void RecommendationsInfoAccessor::SetData(QString userToken, QSharedPointer<RecommendationsData> data)
+//void RecommendationsInfoAccessor::SetData(QString userToken, QSharedPointer<RecommendationsData> data)
+//{
+//    QWriteLocker locker(&lock);
+//    recommendatonsData[userToken] = data;
+//}
+
+//QSharedPointer<RecommendationsData> RecommendationsInfoAccessor::GetData(QString userToken)
+//{
+//    QReadLocker locker(&lock);
+//    return recommendatonsData[userToken];
+//}
+
+RecommendationsData* ThreadData::GetRecommendationData()
 {
-    QWriteLocker locker(&lock);
-    recommendatonsData[userToken] = data;
+    thread_local RecommendationsData data;
+    return &data;
 }
 
-QSharedPointer<RecommendationsData> RecommendationsInfoAccessor::GetData(QString userToken)
+UserData *ThreadData::GetUserData()
 {
-    QReadLocker locker(&lock);
-    return recommendatonsData[userToken];
+    thread_local UserData data;
+    return &data;
 }
