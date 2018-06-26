@@ -1561,10 +1561,12 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
 {
     QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInRecommendations(fic_id, 'TEST') > 0 group by fic_id");
     QHash<int, QString> tags;
+    An<RecommendationsInfoAccessor> accessor;
+    accessor->SetData("TEST", QSharedPointer<RecommendationsData>(new RecommendationsData()));
+    QSharedPointer<RecommendationsData> data = accessor->GetData("TEST");
 
-    auto& sources = RecommendationsInfoAccessor::recommendatonsData["TEST"].sourceFics;
     for(const auto& fic : *fics)
-        sources.insert(fic.id);
+        data->sourceFics.insert(fic.id);
 
     SqlContext<bool> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){

@@ -2,26 +2,44 @@
 
 #include <QHash>
 #include <QSet>
-
+#include <QReadWriteLock>
+#include <QSharedPointer>
+#include "GlobalHeaders/SingletonHolder.h"
 struct UserData{
-  QSet<int> allTags;
-  QSet<int> activeTags;
-  QHash<int, bool> ignoredFandoms;
+    QSet<int> allTags;
+    QSet<int> activeTags;
+    QHash<int, bool> ignoredFandoms;
+    QString token;
 };
-
-class UserInfoAccessor{
-public:
-    static QHash<QString, UserData> userData;
-};
-
-
 struct RecommendationsData{
-  QSet<int> sourceFics;
-  QSet<int> matchedAuthors;
-  QHash<int, int> listData;
-  QHash<int,int> recommendationList;
+    QSet<int> sourceFics;
+    QSet<int> matchedAuthors;
+    QHash<int, int> listData;
+    QHash<int,int> recommendationList;
+    QString token;
 };
-class RecommendationsInfoAccessor{
+
+template<typename T>
+struct InfoAccessor{
 public:
-    static QHash<QString, RecommendationsData> recommendatonsData;
+    QHash<QString, QSharedPointer<T>> recommendatonsData;
+    mutable QReadWriteLock lock;
+
+    void SetData(QString userToken, QSharedPointer<T> data)
+    {
+        QWriteLocker locker(&lock);
+        recommendatonsData[userToken] = data;
+    }
+    QSharedPointer<T> GetData(QString userToken)
+    {
+        QReadLocker locker(&lock);
+        if(!recommendatonsData.contains(userToken))
+            return QSharedPointer<T>();
+        return recommendatonsData[userToken];
+    }
+
 };
+using RecommendationsInfoAccessor = InfoAccessor<RecommendationsData>;
+using UserInfoAccessor = InfoAccessor<UserData>;
+BIND_TO_SELF_SINGLE(RecommendationsInfoAccessor);
+BIND_TO_SELF_SINGLE(UserInfoAccessor);

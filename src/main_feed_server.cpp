@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
+#include "include/tokenkeeper.h"
 //#include "include/tasks/recommendations_reload_precessor.h"
 #include "grpc/grpc_source.h"
 #include "proto/feeder_service.grpc.pb.h"
@@ -99,17 +100,19 @@ bool ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken
     const auto& taskTags = user_data.user_tags();
 
 
-    UserData userTags;
+    //UserData userTags;
+    QSharedPointer<UserData> userTags = QSharedPointer<UserData>(new UserData);
     for(int i = 0; i < taskTags.searched_tags_size(); i++)
-        userTags.activeTags.insert(taskTags.searched_tags(i));
+        userTags->activeTags.insert(taskTags.searched_tags(i));
     for(int i = 0; i < taskTags.all_tags_size(); i++)
-        userTags.allTags.insert(taskTags.all_tags(i));
+        userTags->allTags.insert(taskTags.all_tags(i));
 
     const auto& ignoredFandoms = user_data.ignored_fandoms();
     for(int i = 0; i < ignoredFandoms.fandom_ids_size(); i++)
-        userTags.ignoredFandoms[ignoredFandoms.fandom_ids(i)] = ignoredFandoms.ignore_crossovers(i);
+        userTags->ignoredFandoms[ignoredFandoms.fandom_ids(i)] = ignoredFandoms.ignore_crossovers(i);
 
-    UserInfoAccessor::userData[userToken] = userTags;
+    An<UserInfoAccessor> accessor;
+    accessor->SetData(userToken, userTags);
     return true;
 }
 
@@ -141,22 +144,24 @@ public:
 void RecommendationsCreator::Run(QString userToken,
                                  QSet<int> sourceFics,
                                  QSharedPointer<core::RecommendationList> params){
-    RecommendationsData& data = RecommendationsInfoAccessor::recommendatonsData[userToken];
-    data.sourceFics = sourceFics;
+    An<RecommendationsInfoAccessor> accessor;
+    auto data = accessor->GetData(userToken);
+
+    data->sourceFics = sourceFics;
     QLOG_INFO() << "Source fics count" << sourceFics.size();
-    data.matchedAuthors = authors->GetAllMatchesWithRecsUID(params, userToken);
-    QLOG_INFO() << "Matched authors count: " << data.matchedAuthors.size();
-    QLOG_INFO() << "Matched authors: " << data.matchedAuthors;
+    data->matchedAuthors = authors->GetAllMatchesWithRecsUID(params, userToken);
+    QLOG_INFO() << "Matched authors count: " << data->matchedAuthors.size();
+    QLOG_INFO() << "Matched authors: " << data->matchedAuthors;
     QVector<int> ts;
-    for(auto val : data.sourceFics)
+    for(auto val : data->sourceFics)
     {
         ts.push_back(val);
     }
     std::sort(ts.begin(), ts.end());
     QLOG_INFO() << ts;
 
-    data.listData = recs->GetMatchesForUID(userToken);
-    QLOG_INFO() << "Matched fics count: " << data.listData.size();
+    data->listData = recs->GetMatchesForUID(userToken);
+    QLOG_INFO() << "Matched fics count: " << data->listData.size();
 }
 
 
@@ -176,6 +181,11 @@ void SetFicIDSyncDataError(ProtoSpace::ResponseInfo* info){
     info->set_is_valid(false);
     info->set_data_size_limit_reached(true);
 }
+void SetTokenMatchError(ProtoSpace::ResponseInfo* info){
+    info->set_is_valid(false);
+    info->set_token_in_use(true);
+}
+
 bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack)
 {
     if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 )
@@ -226,6 +236,14 @@ public:
             SetFilterDataError(response->mutable_response_info());
             return Status::OK;
         }
+        An<UserTokenizer> keeper;
+        auto safetyToken = keeper->GetToken(userToken);
+        if(!safetyToken)
+        {
+            SetTokenMatchError(response->mutable_response_info());
+            return Status::OK;
+        }
+
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
             filter = proto_converters::ProtoFilterIntoStoryFilter(task->filter());
@@ -239,11 +257,11 @@ public:
         FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
         convertedFicSource->InitQueryType(true, userToken);
 
+        auto recs = QSharedPointer<RecommendationsData>(new RecommendationsData());
+        An<RecommendationsInfoAccessor> accessor;
+        accessor->SetData(userToken, recs);
 
-
-
-        auto & token = RecommendationsInfoAccessor::recommendatonsData[userToken];
-        token.recommendationList = filter.recsHash;
+        recs->recommendationList = filter.recsHash;
 
         QVector<core::Fic> data;
         TimedAction action("Fetching data",[&](){
@@ -281,7 +299,13 @@ public:
             SetFilterDataError(response->mutable_response_info());
             return Status::OK;
         }
-
+        An<UserTokenizer> keeper;
+        auto safetyToken = keeper->GetToken(userToken);
+        if(!safetyToken)
+        {
+            SetTokenMatchError(response->mutable_response_info());
+            return Status::OK;
+        }
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
             filter = proto_converters::ProtoFilterIntoStoryFilter(task->filter());
@@ -297,8 +321,10 @@ public:
         convertedFicSource->InitQueryType(true, userToken);
         QVector<core::Fic> data;
 
-
-        RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
+        auto recs = QSharedPointer<RecommendationsData>(new RecommendationsData());
+        An<RecommendationsInfoAccessor> accessor;
+        accessor->SetData(userToken, recs);
+        recs->recommendationList = filter.recsHash;
 
         int count = 0;
         TimedAction ("Getting fic count",[&](){
@@ -376,7 +402,13 @@ public:
             QLOG_INFO() << "data size error, exiting";
             return Status::OK;
         }
-
+        An<UserTokenizer> keeper;
+        auto safetyToken = keeper->GetToken(userToken);
+        if(!safetyToken)
+        {
+            SetTokenMatchError(response->mutable_response_info());
+            return Status::OK;
+        }
         DatabaseContext dbContext;
 
         QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
@@ -391,6 +423,10 @@ public:
         recsInterface->portableDBInterface = dbContext.dbInterface;
         QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
 
+        auto recs = QSharedPointer<RecommendationsData>(new RecommendationsData());
+        An<RecommendationsInfoAccessor> accessor;
+        accessor->SetData(userToken, recs);
+
         static RecommendationsCreator creator;
         if(firstRun)
         {
@@ -399,7 +435,7 @@ public:
                 sourceFics.insert(task->id_packs().ffn_ids(i));
             if(sourceFics.size() == 0)
                 return Status::OK;
-            RecommendationsInfoAccessor::recommendatonsData[userToken].sourceFics = sourceFics;
+            recs->sourceFics = sourceFics;
             sourceFics = fanficsInterface->ConvertFFNSourceFicsToDB(userToken);
 
 
@@ -408,7 +444,7 @@ public:
             creator.Run(userToken, sourceFics, params);
             firstRun = false;
         }
-        auto& list = RecommendationsInfoAccessor::recommendatonsData[userToken].listData;
+        auto& list = recs->listData;
         auto* targetList = response->mutable_list();
         targetList->set_list_name(proto_converters::TS(params->name));
         targetList->set_list_ready(true);
@@ -438,7 +474,13 @@ public:
             SetFicIDSyncDataError(response->mutable_response_info());
             return Status::OK;
         }
-
+        An<UserTokenizer> keeper;
+        auto safetyToken = keeper->GetToken(userToken);
+        if(!safetyToken)
+        {
+            SetTokenMatchError(response->mutable_response_info());
+            return Status::OK;
+        }
         DatabaseContext dbContext;
 
         QHash<int, int> idsToFill;

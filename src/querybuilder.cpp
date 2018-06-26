@@ -380,6 +380,7 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
             auto counter2 = ++counter;
             queryString += QString(" AND (summary like '%'||:incword%1||'%' "
                                    "or title like '%'||:incword%2||'%') ")
+
                     .arg(QString::number(counter1)).arg(QString::number(counter2));
         }
     }
