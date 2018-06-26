@@ -164,6 +164,47 @@ void SetTokenError(ProtoSpace::ResponseInfo* info){
     info->set_is_valid(false);
     info->set_has_usertoken_error(true);
 }
+void SetFilterDataError(ProtoSpace::ResponseInfo* info){
+    info->set_is_valid(false);
+    info->set_data_size_limit_reached(true);
+}
+void SetRecommedationDataError(ProtoSpace::ResponseInfo* info){
+    info->set_is_valid(false);
+    info->set_data_size_limit_reached(true);
+}
+void SetFicIDSyncDataError(ProtoSpace::ResponseInfo* info){
+    info->set_is_valid(false);
+    info->set_data_size_limit_reached(true);
+}
+bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack)
+{
+    if(idPack.ffn_ids().size() == 0 || idPack.ffn_ids().size() > 10000)
+        return false;
+    if(idPack.ao3_ids().size() == 0 || idPack.ao3_ids().size() > 10000)
+        return false;
+    if(idPack.sb_ids().size() == 0 || idPack.sb_ids().size() > 10000)
+        return false;
+    if(idPack.sv_ids().size() == 0 || idPack.sv_ids().size() > 10000)
+        return false;
+    return true;
+}
+
+
+bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request)
+{
+    if(request->list_name().size() > 100)
+        return false;
+    if(request->min_fics_to_match() <= 0 || request->min_fics_to_match() > 10000)
+        return false;
+    if(request->max_unmatched_to_one_matched() <= 0)
+        return false;
+    if(request->always_pick_at() < 1)
+        return false;
+    if(!VerifyIDPack(request->id_packs()))
+        return false;
+    return true;
+}
+
 
 class FeederService final : public ProtoSpace::Feeder::Service {
 public:
@@ -173,7 +214,16 @@ public:
         Q_UNUSED(context);
         QString userToken = QString::fromStdString(task->controls().user_token());
         QLOG_INFO() << "////////////Received search task from: " << userToken;
-
+        if(!ProcessUserToken(task->user_data(), userToken))
+        {
+            SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
+        if(!VerifyFilterData(task->filter()))
+        {
+            SetFilterDataError(response->mutable_response_info());
+            return Status::OK;
+        }
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
             filter = proto_converters::ProtoFilterIntoStoryFilter(task->filter());
@@ -187,11 +237,8 @@ public:
         FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
         convertedFicSource->InitQueryType(true, userToken);
 
-        if(!ProcessUserToken(task->user_data(), userToken))
-        {
-            SetTokenError(response->mutable_response_info());
-            return Status::OK;
-        }
+
+
 
         RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
 
@@ -221,6 +268,17 @@ public:
         Q_UNUSED(context);
         QString userToken = QString::fromStdString(task->controls().user_token());
         QLOG_INFO() << "////////////Received fic count task from: " << userToken;
+        if(!ProcessUserToken(task->user_data(), userToken))
+        {
+            SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
+        if(!VerifyFilterData(task->filter()))
+        {
+            SetFilterDataError(response->mutable_response_info());
+            return Status::OK;
+        }
+
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
             filter = proto_converters::ProtoFilterIntoStoryFilter(task->filter());
@@ -236,11 +294,7 @@ public:
         convertedFicSource->InitQueryType(true, userToken);
         QVector<core::Fic> data;
 
-        if(!ProcessUserToken(task->user_data(), userToken))
-        {
-            SetTokenError(response->mutable_response_info());
-            return Status::OK;
-        }
+
         RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
 
         int count = 0;
@@ -267,6 +321,7 @@ public:
             SetTokenError(response->mutable_response_info());
             return Status::OK;
         }
+
         QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
         auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
         dbInterface->ReadDbFile("dbcode/dbinit.sql");
@@ -309,6 +364,11 @@ public:
         if(!VerifyUserToken(userToken))
         {
             SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
+        if(!VerifyRecommendationsRequest(task))
+        {
+            SetRecommedationDataError(response->mutable_response_info());
             return Status::OK;
         }
 
@@ -366,6 +426,11 @@ public:
         if(!VerifyUserToken(userToken))
         {
             SetTokenError(response->mutable_response_info());
+            return Status::OK;
+        }
+        if(!VerifyIDPack(task->ids()))
+        {
+            SetFicIDSyncDataError(response->mutable_response_info());
             return Status::OK;
         }
 

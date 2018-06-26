@@ -39,7 +39,7 @@ public:
     QString userToken;
 };
 
-
+bool VerifyFilterData(const ProtoSpace::Filter& filter);
 namespace proto_converters
 {
 

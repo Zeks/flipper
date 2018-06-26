@@ -157,6 +157,8 @@ void ProtoFandomToLocalFandom(const ProtoSpace::Fandom& protoFandom, core::Fando
 }
 
 
+
+
 core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
 {
     // ignore fandoms intentionally not passed because likely use case can be done locally
@@ -195,6 +197,7 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
     result.crossoversOnly = filter.content_filter().crossovers_only();
     result.otherFandomsMode = filter.content_filter().other_fandoms_mode();
     result.ignoreFandoms = filter.content_filter().use_ignored_fandoms();
+
 
     for(int i = 0; i < filter.content_filter().genre_exclusion_size(); i++)
         result.genreExclusion.push_back(FS(filter.content_filter().genre_exclusion(i)));
@@ -589,4 +592,49 @@ bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::IdPack> * ficList)
     if(!impl)
         return false;
     return impl->GetInternalIDsForFics(ficList);
+}
+
+bool VerifyString(const std::string& s, int maxSize = 200){
+    if(s.length() > maxSize)
+        return false;
+    return true;
+}
+
+bool VerifyInt(const int& val, int maxValue = 100000){
+    if(val > maxValue)
+        return false;
+    return true;
+}
+template<typename T>
+bool VerifyVectorSize(const T& vector, int maxSize = 10000){
+    if(vector.size() > maxSize)
+        return false;
+    return true;
+}
+
+bool VerifyFilterData(const ProtoSpace::Filter& filter)
+{
+    if(!VerifyString(filter.basic_filters().website(), 10))
+        return false;
+    if(!VerifyInt(filter.size_limits().record_page()))
+        return false;
+    if(!VerifyInt(filter.content_filter().genre_exclusion_size(), 20))
+        return false;
+    if(!VerifyInt(filter.content_filter().genre_inclusion_size(), 20))
+        return false;
+    if(!VerifyInt(filter.content_filter().word_exclusion_size(), 50))
+        return false;
+    if(!VerifyInt(filter.content_filter().word_inclusion_size(), 50))
+        return false;
+    if(!VerifyInt(filter.tag_filter().all_tagged_size(), 50000))
+        return false;
+    if(!VerifyInt(filter.tag_filter().active_tags_size(), 50000))
+        return false;
+    if(!VerifyInt(filter.recommendations().list_of_fics_size(), 10000))
+        return false;
+    if(!VerifyInt(filter.recommendations().list_of_matches_size(), 10000))
+        return false;
+    if(!VerifyInt(filter.slash_filter().fandom_exceptions_size(), 20000))
+        return false;
+    return true;
 }
