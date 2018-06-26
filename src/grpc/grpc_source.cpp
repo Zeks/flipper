@@ -630,9 +630,9 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter)
         return false;
     if(!VerifyInt(filter.tag_filter().active_tags_size(), 50000))
         return false;
-    if(!VerifyInt(filter.recommendations().list_of_fics_size(), 10000))
+    if(!VerifyInt(filter.recommendations().list_of_fics_size(), 1000000))
         return false;
-    if(!VerifyInt(filter.recommendations().list_of_matches_size(), 10000))
+    if(!VerifyInt(filter.recommendations().list_of_matches_size(), 1000000))
         return false;
     if(!VerifyInt(filter.slash_filter().fandom_exceptions_size(), 20000))
         return false;

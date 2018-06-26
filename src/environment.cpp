@@ -273,7 +273,7 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
     QFile data(list);
     QSqlDatabase db = QSqlDatabase::database();
     QStringList usedList;
-    QList<int> usedIdList;
+    QVector<int> usedIdList;
     if (data.open(QFile::ReadOnly))
     {
         QTextStream in(&data);
@@ -311,7 +311,7 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
             interfaces.tags->SetTagForFic(id, "generictag");
         }while(!str.isEmpty());
         params->tagToUse ="generictag";
-        BuildRecommendations(params);
+        BuildRecommendations(params, usedIdList);
         interfaces.tags->DeleteTag("generictag");
         interfaces.recs->SetFicsAsListOrigin(usedIdList, params->id);
         transaction.finalize();
@@ -319,9 +319,10 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
     }
 }
 
-int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params)
+QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
 {
-    QFile data("lists/source.txt");
+    //QFile data("lists/source.txt");
+    QFile data(filename);
     QVector<int> sourceList;
     if (data.open(QFile::ReadOnly))
     {
@@ -347,12 +348,19 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
             sourceList.push_back(webId);
         }while(!str.isEmpty());
     }
+    return sourceList;
+}
 
-
+int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics)
+{
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     RecommendationListGRPC list;
     list.listParams = *params;
-    list.fics = sourceList;
+    list.fics = sourceFics;
+
+
+    database::Transaction transaction(interfaces.recs->db);
+    auto listId = interfaces.recs->GetListIdForName(params->name);
     bool result = grpcSource->GetRecommendationListFromServer(list);
     if(!result)
     {
@@ -360,12 +368,10 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         return -1;
     }
 
-    database::Transaction transaction(interfaces.recs->db);
-    auto listId = interfaces.recs->GetListIdForName(params->name);
     interfaces.recs->DeleteList(listId);
     interfaces.recs->LoadListIntoDatabase(params);
     qDebug() << list.fics;
-    interfaces.recs->LoadListFromServerIntoDatabase(listId, list.fics, list.matchCounts);
+    interfaces.recs->LoadListFromServerIntoDatabase(params->id, list.fics, list.matchCounts);
 
     interfaces.recs->UpdateFicCountInDatabase(params->id);
     interfaces.recs->SetCurrentRecommendationList(params->id);
@@ -429,12 +435,14 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
 }
 
 
-int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics, bool clearAuthors)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     int result = -1;
     if(settings.value("Settings/thinClient").toBool())
-        result =  BuildRecommendationsServerFetch(params);
+    {
+        result =  BuildRecommendationsServerFetch(params,sourceFics);
+    }
     else
         result = BuildRecommendationsLocalVersion(params, clearAuthors);
     return result;
@@ -497,7 +505,7 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     params->tagToUse = "generictag";
     params->pickRatio = 9999999999;
     interfaces.tags->SetTagForFic(id, "generictag");
-    BuildRecommendations(params, !authorsLoaded);
+    BuildRecommendations(params, {id} ,!authorsLoaded);
     interfaces.tags->DeleteTag("generictag");
     interfaces.recs->SetFicsAsListOrigin({id}, params->id);
     transaction.finalize();
@@ -538,6 +546,23 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
     }
     transaction.finalize();
     return author;
+}
+
+QList<QSharedPointer<core::Fic>> CoreEnvironment::LoadAuthorFics(QString url)
+{
+    QStringList result;
+    WebPage page;
+    TimedAction fetchAction("Author page fetch", [&](){
+        page = env::RequestPage(url.trimmed(),  ECacheMode::dont_use_cache);
+    });
+    fetchAction.run(false);
+    emit resetEditorText();
+    FavouriteStoryParser parser(interfaces.fanfics);
+    QString name = ParseAuthorNameFromFavouritePage(page.content);
+    parser.authorName = name;
+    parser.ProcessPage(page.url, page.content);
+    emit updateInfo(parser.diagnostics.join(""));
+    return parser.processedStuff;
 }
 
 PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate,

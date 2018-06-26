@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-
+    int threads =  sqlite3_threadsafe();
     QSettings settings("settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/doBackups", true).toBool())
         dbInterface->BackupDatabase("CrawlerDB");

@@ -1575,7 +1575,7 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> SetFicsAsListOrigin(QList<int> ficIds, int list_id, QSqlDatabase db)
+DiagnosticSQLResult<bool> SetFicsAsListOrigin(QVector<int> ficIds, int list_id, QSqlDatabase db)
 {
     QString qs = QString("update RecommendationListData set is_origin = 1 where fic_id = :fic_id and list_id = :list_id");
     SqlContext<bool> ctx(db, qs, BP1(list_id));

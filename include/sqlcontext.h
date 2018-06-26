@@ -153,6 +153,16 @@ struct SqlContext
                 break;
         }
     }
+    template <typename KeyType>
+    void ExecuteWithValueList(QString keyName, QVector<KeyType> valueList, bool ignoreUniqueness = false){
+        BindValues();
+        for(auto value : valueList)
+        {
+            q.bindValue(":" + keyName, value);
+            if(!ExecAndCheck(ignoreUniqueness))
+                break;
+        }
+    }
 
 
     bool ExecAndCheck(bool ignoreUniqueness = false){

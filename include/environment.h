@@ -85,9 +85,10 @@ public:
     // used to create recommendation list from lists/source.txt
     void ProcessListIntoRecommendations(QString list);
 
-    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params);
+    QVector<int> GetSourceFicsFromFile(QString filename);
+    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics);
     int  BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
-    int  BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
+    int  BuildRecommendations(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics, bool clearAuthors = true);
 
     void ResumeUnfinishedTasks();
 
@@ -96,6 +97,7 @@ public:
     void Log(QString);
 
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
+    QList<QSharedPointer<core::Fic>>  LoadAuthorFics(QString url);
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
     void FillDBIDsForTags();
@@ -106,7 +108,6 @@ public:
     int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
     int pageOfCurrentQuery = 0; // current page that the used search query is at
     int currentLastFanficId = -1;
-
 
     QVector<core::Fic> fanfics; // filtered fanfic data
 

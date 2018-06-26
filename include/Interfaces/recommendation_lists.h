@@ -69,7 +69,7 @@ public:
     bool DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId);
     bool UpdateFicCountInDatabase(int listId);
     bool AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData = false);
-    bool SetFicsAsListOrigin(QList<int> ficIds, int listId);
+    bool SetFicsAsListOrigin(QVector<int> ficIds, int listId);
     bool IsAuthorInCurrentRecommendationSet(QString author);
 
     bool CreateRecommendationList(QString name, QHash<int, int> fics);

@@ -292,6 +292,7 @@ void MainWindow::InitConnections()
     connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
+    connect(ui->edtRecsContents, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
     connect(ui->pbWipeCache, &QPushButton::clicked, this, &MainWindow::OnWipeCache);
     connect(ui->pbAssignGenres, &QPushButton::clicked, this, &MainWindow::OnPerformGenreAssignment);
 
@@ -808,6 +809,63 @@ void MainWindow::on_pbLoadDatabase_clicked()
     env.pageOfCurrentQuery = 0;
     LoadData();
     PlaceResults();
+}
+
+void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
+{
+    if(size == 0)
+        return;
+    if(size == 1)
+    {
+        ui->leRecsMinimumMatches->setText("1");
+        ui->leRecsPickRatio->setText("99999");
+        ui->leRecsAlwaysPickAt->setText("1");
+        return;
+    }
+    if(size > 1 && size <= 7)
+    {
+        ui->leRecsMinimumMatches->setText("4");
+        ui->leRecsPickRatio->setText("70");
+        ui->leRecsAlwaysPickAt->setText(QString::number(size));
+        return;
+    }
+    if(size > 7 && size <= 20)
+    {
+        ui->leRecsMinimumMatches->setText("6");
+        ui->leRecsPickRatio->setText("70");
+        ui->leRecsAlwaysPickAt->setText(QString::number(size));
+        return;
+    }
+    if(size > 20 && size <= 300)
+    {
+        ui->leRecsMinimumMatches->setText("6");
+        ui->leRecsPickRatio->setText("50");
+        ui->leRecsAlwaysPickAt->setText(QString::number(size));
+        return;
+    }
+    if(size > 300)
+    {
+        ui->leRecsMinimumMatches->setText("6");
+        ui->leRecsPickRatio->setText("40");
+        ui->leRecsAlwaysPickAt->setText(QString::number(size));
+        return;
+    }
+}
+
+QList<QSharedPointer<core::Fic>> MainWindow::LoadFavourteLinksFromFFNProfile(QString url)
+{
+    QList<QSharedPointer<core::Fic>> result;
+    //need to make sure it *is* FFN url
+    //https://www.fanfiction.net/u/3697775/Rumour-of-an-Alchemist
+    QRegularExpression rx("https://www.fanfiction.net/u/(\\d)+");
+    auto match = rx.match(url);
+    if(!match.hasMatch())
+    {
+        QMessageBox::warning(nullptr, "Warning!", "URL is not an FFN author url\nNeeeds to be a https://www.fanfiction.net/u/NUMERIC_ID");
+        return result;
+    }
+    result = env.LoadAuthorFics(url);
+    return result;
 }
 
 
@@ -1574,7 +1632,7 @@ void MainWindow::on_pbFirstWave_clicked()
 int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
     TaskProgressGuard guard(this);
-    auto result = env.BuildRecommendations(params, clearAuthors);
+    auto result = env.BuildRecommendations(params, env.GetSourceFicsFromFile("lists/source.txt"), clearAuthors);
 
     FillRecTagCombobox();
     FillRecommenderListView();
@@ -2124,4 +2182,72 @@ void MainWindow::OnTagReloadRequested()
     tagList = env.interfaces.tags->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
 }
+
+
+void MainWindow::on_chkRecsAutomaticSettings_toggled(bool checked)
+{
+    if(checked)
+    {
+        ui->leRecsAlwaysPickAt->setEnabled(false);
+        ui->leRecsPickRatio->setEnabled(false);
+        ui->leRecsMinimumMatches->setEnabled(false);
+        LoadAutomaticSettingsForRecListSources(ui->edtRecsContents->toPlainText().split("\n").size());
+    }
+    else
+    {
+        ui->leRecsAlwaysPickAt->setEnabled(true);
+        ui->leRecsPickRatio->setEnabled(true);
+        ui->leRecsMinimumMatches->setEnabled(true);
+    }
+}
+
+void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
+{
+    auto fics = LoadFavourteLinksFromFFNProfile(ui->leRecsFFNUrl->text());
+    if(fics.size() == 0)
+        return;
+
+    LoadAutomaticSettingsForRecListSources(fics.size());
+    ui->edtRecsContents->setOpenExternalLinks(false);
+    ui->edtRecsContents->setOpenLinks(false);
+    ui->edtRecsContents->setReadOnly(false);
+
+    for(auto fic: fics)
+    {
+        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
+        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
+        ui->edtRecsContents->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+    }
+}
+
+void MainWindow::on_pbRecsCreateListFromSources_clicked()
+{
+    QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+    params->name = ui->leRecsListName->text();
+    if(params->name.trimmed().isEmpty())
+    {
+        QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
+        return;
+    }
+    params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
+    params->pickRatio = ui->leRecsPickRatio->text().toInt();
+    params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
+    TaskProgressGuard guard(this);
+    QVector<int> sourceFics;
+    QStringList lines = ui->edtRecsContents->toPlainText().split("\n");
+    QRegularExpression rx("https://www.fanfiction.net/s/(\\d+)");
+    for(auto line : lines)
+    {
+        if(!line.startsWith("http"))
+            continue;
+        auto match = rx.match(line);
+        if(!match.hasMatch())
+            continue;
+        QString val = match.captured(1);
+        sourceFics.push_back(val.toInt());
+    }
+    auto result = env.BuildRecommendations(params, sourceFics, false);
+    Q_UNUSED(result);
+}
+
 

@@ -338,6 +338,8 @@ public slots:
 
     // invoked on "Search" click
     void on_pbLoadDatabase_clicked();
+    void LoadAutomaticSettingsForRecListSources(int size);
+    QList<QSharedPointer<core::Fic> > LoadFavourteLinksFromFFNProfile(QString);
 private slots:
     // called to trudge through a fandom
     void on_pbCrawl_clicked();
@@ -481,6 +483,13 @@ private slots:
     void OnWarningRequested(QString value);
     void OnFillDBIdsForTags();
     void OnTagReloadRequested();
+
+    void on_chkRecsAutomaticSettings_toggled(bool checked);
+
+    void on_pbRecsLoadFFNProfileIntoSource_clicked();
+
+    void on_pbRecsCreateListFromSources_clicked();
+
 
 signals:
 

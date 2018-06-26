@@ -178,13 +178,15 @@ void SetFicIDSyncDataError(ProtoSpace::ResponseInfo* info){
 }
 bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack)
 {
-    if(idPack.ffn_ids().size() == 0 || idPack.ffn_ids().size() > 10000)
+    if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 )
         return false;
-    if(idPack.ao3_ids().size() == 0 || idPack.ao3_ids().size() > 10000)
+    if(idPack.ffn_ids().size() > 10000)
         return false;
-    if(idPack.sb_ids().size() == 0 || idPack.sb_ids().size() > 10000)
+    if(idPack.ao3_ids().size() > 10000)
         return false;
-    if(idPack.sv_ids().size() == 0 || idPack.sv_ids().size() > 10000)
+    if(idPack.sb_ids().size() > 10000)
+        return false;
+    if(idPack.sv_ids().size() > 10000)
         return false;
     return true;
 }
@@ -240,7 +242,8 @@ public:
 
 
 
-        RecommendationsInfoAccessor::recommendatonsData[userToken].recommendationList = filter.recsHash;
+        auto & token = RecommendationsInfoAccessor::recommendatonsData[userToken];
+        token.recommendationList = filter.recsHash;
 
         QVector<core::Fic> data;
         TimedAction action("Fetching data",[&](){
@@ -359,16 +362,18 @@ public:
         bool firstRun = true;
 
         QString userToken = QString::fromStdString(task->controls().user_token());
-        QLOG_INFO() << "////////////Received sync fandoms task from: " << userToken;
+        QLOG_INFO() << "////////////Received reclist s task from: " << userToken;
 
         if(!VerifyUserToken(userToken))
         {
             SetTokenError(response->mutable_response_info());
+            QLOG_INFO() << "token error, exiting";
             return Status::OK;
         }
         if(!VerifyRecommendationsRequest(task))
         {
             SetRecommedationDataError(response->mutable_response_info());
+            QLOG_INFO() << "data size error, exiting";
             return Status::OK;
         }
 
