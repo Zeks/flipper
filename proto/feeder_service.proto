@@ -12,6 +12,7 @@ message ResponseInfo{
     bool is_valid                = 1;
     bool has_usertoken_error     = 2;
     bool data_size_limit_reached = 3;
+    bool token_in_use            = 4;
 }
 
 message Tags{

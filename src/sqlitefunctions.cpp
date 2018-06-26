@@ -73,11 +73,15 @@ void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
     int ficId = sqlite3_value_int(argv[0]);
     QString userToken((const char*)sqlite3_value_text(argv[1]));
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    auto& userTags = UserInfoAccessor::userData;
-    if(!userTags.contains(userToken))
+    thread_local An<UserInfoAccessor> accessor;
+    QSharedPointer<UserData> data = accessor->GetData(userToken);
+    if(!data)
+    {
         sqlite3_result_int(ctx, 0);
+        return;
+    }
 
-    if(userTags[userToken].allTags.contains(ficId))
+    if(data->allTags.contains(ficId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);
@@ -86,13 +90,17 @@ void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString uidToken((const char*)sqlite3_value_text(argv[1]));
+    QString userToken((const char*)sqlite3_value_text(argv[1]));
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    auto& recommendationsSource = RecommendationsInfoAccessor::recommendatonsData;
-    if(!recommendationsSource.contains(uidToken))
+    thread_local An<RecommendationsInfoAccessor> accessor;
+    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
+    if(!data)
+    {
         sqlite3_result_int(ctx, 0);
+        return;
+    }
 
-    if(recommendationsSource[uidToken].sourceFics.contains(ficId))
+    if(data->sourceFics.contains(ficId))
     {
         //qDebug() << "fic in data: " << ficId;
         sqlite3_result_int(ctx, 1);
@@ -104,13 +112,15 @@ void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInActualRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString uidToken((const char*)sqlite3_value_text(argv[1]));
-    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    auto& recommendationsSource = RecommendationsInfoAccessor::recommendatonsData;
-    if(!recommendationsSource.contains(uidToken))
+    QString userToken((const char*)sqlite3_value_text(argv[1]));
+    thread_local An<RecommendationsInfoAccessor> accessor;
+    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
+    if(!data)
+    {
         sqlite3_result_int(ctx, 0);
-
-    if(recommendationsSource[uidToken].recommendationList.contains(ficId))
+        return;
+    }
+    if(data->recommendationList.contains(ficId))
     {
         //qDebug() << "fic in data: " << ficId;
         sqlite3_result_int(ctx, 1);
@@ -123,12 +133,16 @@ void cfInActualRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfRecommendationsMatches(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    QString uidToken((const char*)sqlite3_value_text(argv[1]));
+    QString userToken((const char*)sqlite3_value_text(argv[1]));
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    auto& recommendationsSource = RecommendationsInfoAccessor::recommendatonsData;
-    if(!recommendationsSource.contains(uidToken))
+    thread_local An<RecommendationsInfoAccessor> accessor;
+    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
+    if(!data)
+    {
         sqlite3_result_int(ctx, 0);
-    auto& hash = recommendationsSource[uidToken].recommendationList;
+        return;
+    }
+    auto& hash = data->recommendationList;
     QHash<int, int>::iterator it = hash.find(ficId);
     if(it == hash.end())
         sqlite3_result_int(ctx, 0);
@@ -140,13 +154,15 @@ void cfRecommendationsMatches(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int authorId = sqlite3_value_int(argv[0]);
-    QString uidToken((const char*)sqlite3_value_text(argv[1]));
-    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    auto& recommendationsSource = RecommendationsInfoAccessor::recommendatonsData;
-    if(!recommendationsSource.contains(uidToken))
+    QString userToken((const char*)sqlite3_value_text(argv[1]));
+    thread_local An<RecommendationsInfoAccessor> accessor;
+    QSharedPointer<RecommendationsData> data = accessor->GetData(userToken);
+    if(!data)
+    {
         sqlite3_result_int(ctx, 0);
-
-    if(recommendationsSource[uidToken].matchedAuthors.contains(authorId))
+        return;
+    }
+    if(data->matchedAuthors.contains(authorId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);
@@ -158,11 +174,13 @@ void cfInAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QString userToken((const char*)sqlite3_value_text(argv[1]));
-
-    auto& userData = UserInfoAccessor::userData;
-    if(!userData.contains(userToken))
+    thread_local An<UserInfoAccessor> accessor;
+    QSharedPointer<UserData> data = accessor->GetData(userToken);
+    if(!data)
+    {
         sqlite3_result_int(ctx, 0);
-
+        return;
+    }
     int fandom1 = sqlite3_value_int(argv[0]);
     int fandom2 = sqlite3_value_int(argv[0]);
     QList<int> fandoms = {fandom1, fandom2};
@@ -171,7 +189,7 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 
     if(fandoms.size() == 1)
     {
-        if(userData[userToken].ignoredFandoms.contains(fandoms.at(0)))
+        if(data->ignoredFandoms.contains(fandoms.at(0)))
             sqlite3_result_int(ctx, 1);
         else
             sqlite3_result_int(ctx, 0);
@@ -181,8 +199,8 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
         bool hasUnignored = false;
         for(auto fandom: fandoms)
         {
-            auto it = userData[userToken].ignoredFandoms.find(fandom);
-            if(it == userData[userToken].ignoredFandoms.end())
+            auto it = data->ignoredFandoms.find(fandom);
+            if(it == data->ignoredFandoms.end())
             {
                 hasUnignored = true;
                 continue;
@@ -206,11 +224,15 @@ void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
     QString userToken((const char*)sqlite3_value_text(argv[1]));
-
-    if(!UserInfoAccessor::userData.contains(userToken))
+    thread_local An<UserInfoAccessor> accessor;
+    QSharedPointer<UserData> data = accessor->GetData(userToken);
+    if(!data)
+    {
         sqlite3_result_int(ctx, 0);
+        return;
+    }
 
-    if(UserInfoAccessor::userData[userToken].activeTags.contains(ficId))
+    if(data->activeTags.contains(ficId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);
