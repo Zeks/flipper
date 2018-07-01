@@ -153,7 +153,7 @@ void TagWidget::OnTagClicked(const QUrl& url)
 
 
     emit tagToggled(currentId, tag, doEnable);
-    emit refilter();
+    //emit refilter();
 }
 
 void TagWidget::OnNewTag(QString tag, bool enabled)

@@ -378,10 +378,6 @@ public:
         params->pickRatio = task->max_unmatched_to_one_matched();
         params->alwaysPickAt = task->always_pick_at();
 
-        //        QSharedPointer<interfaces::RecommendationLists> recsInterface (new interfaces::RecommendationLists());
-        //        recsInterface->portableDBInterface = dbContext.dbInterface;
-        //        QSharedPointer<interfaces::Authors> authorsInterface (new interfaces::FFNAuthors());
-        //        recsInterface->portableDBInterface = dbContext.dbInterface;
         QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
 
         auto* recs = ThreadData::GetRecommendationData();

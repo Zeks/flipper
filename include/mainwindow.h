@@ -257,6 +257,8 @@ private:
     void DoFullCycle();
     void UseAuthorTask(PageTaskPtr);
     ForcedFandomUpdateDate CreateForcedUpdateDateFromGUI();
+    void SetClientMode();
+    void ResetFilterUItoDefaults();
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
@@ -490,6 +492,12 @@ private slots:
 
     void on_pbRecsCreateListFromSources_clicked();
 
+
+    void on_pbReapplyFilteringMode_clicked();
+
+    void on_cbCurrentFilteringMode_currentTextChanged(const QString &arg1);
+
+    void on_cbRecGroup_currentTextChanged(const QString &arg1);
 
 signals:
 

@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "ui_mainwindow.h"
 #include "GlobalHeaders/SingletonHolder.h"
 #include "GlobalHeaders/simplesettings.h"
+#include "GlobalHeaders/SignalBlockerWrapper.h"
 #include "Interfaces/recommendation_lists.h"
 #include "Interfaces/authors.h"
 #include "Interfaces/fandoms.h"
@@ -155,9 +156,7 @@ void MainWindow::Init()
     recommendersModel= new QStringListModel;
 
 
-    auto storedRecList = settings.value("Settings/currentList").toString();
-    qDebug() << QDir::currentPath();
-    ui->cbRecGroup->setCurrentText(storedRecList);
+
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
 
     auto fandomList = env.interfaces.fandoms->GetFandomList(true);
@@ -192,6 +191,8 @@ void MainWindow::Init()
 
     ProcessTagsIntoGui();
     FillRecTagCombobox();
+
+
     ReadSettings();
     SetupFanficTable();
     FillRecommenderListView();
@@ -219,7 +220,10 @@ void MainWindow::Init()
     //ui->edtResults->setOpenExternalLinks(true);
     ui->cbWordCutoff->setVisible(false);
 
-
+    bool thinClient = settings.value("Settings/thinClient").toBool();
+    if(thinClient)
+        SetClientMode();
+    ResetFilterUItoDefaults();
 }
 
 void MainWindow::InitConnections()
@@ -692,7 +696,7 @@ void MainWindow::OnCopyAllUrls()
     {
         if(ui->chkInfoForLinks->isChecked())
         {
-            //result += typetableModel->index(i, 2).data().toString() + "\n";
+            result += typetableModel->index(i, 2).data().toString() + "\n";
         }
         result += "http://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
     }
@@ -1311,7 +1315,12 @@ void MainWindow::AddToProgressLog(QString value)
 void MainWindow::FillRecTagCombobox()
 {
     auto lists = env.interfaces.recs->GetAllRecommendationListNames();
-    ui->cbRecGroup->setModel(new QStringListModel(lists));
+    SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    auto storedRecList = settings.value("Settings/currentList").toString();
+    qDebug() << QDir::currentPath();
+    ui->cbRecGroup->setCurrentText(storedRecList);
 }
 
 void MainWindow::FillRecommenderListView(bool forceRefresh)
@@ -1500,6 +1509,24 @@ ForcedFandomUpdateDate MainWindow::CreateForcedUpdateDateFromGUI()
     return forcedDate;
 }
 
+void MainWindow::SetClientMode()
+{
+    ui->pbReinitFandoms->hide();
+    ui->pbWipeFandom->hide();
+    ui->widget_4->hide();
+    ui->chkTrackedFandom->hide();
+    ui->wdgAdminActions->hide();
+    ui->chkCustomFilter->hide();
+    ui->cbCustomFilters->hide();
+    ui->chkHeartProfile->setChecked(false);
+    ui->chkHeartProfile->setVisible(false);
+    ui->tabWidget->removeTab(2);
+    ui->tabWidget->removeTab(1);
+    ui->chkLimitPageSize->setChecked(true);
+    ui->chkLimitPageSize->setEnabled(false);
+
+}
+
 void MainWindow::on_pbLoadTrackedFandoms_clicked()
 {
     if(!WarnCutoffLimit() || !WarnFullParse())
@@ -1648,7 +1675,9 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
         return decltype(value)();
     };
     core::StoryFilter filter;
-    filter.activeTags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    if(ui->chkEnableTagsFilter->isChecked())
+        filter.activeTags = tags;
     qDebug() << "Active tags: " << filter.activeTags;
     filter.allowNoGenre = ui->chkNoGenre->isChecked();
     filter.allowUnfinished = ui->chkShowUnfinished->isChecked();
@@ -2211,12 +2240,16 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
     ui->edtRecsContents->setOpenExternalLinks(false);
     ui->edtRecsContents->setOpenLinks(false);
     ui->edtRecsContents->setReadOnly(false);
+    auto font = ui->edtRecsContents->font();
+    font.setPixelSize(14);
+    ui->edtRecsContents->setFont(font);
 
     for(auto fic: fics)
     {
         QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
         QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
         ui->edtRecsContents->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+        ui->edtRecsContents->insertHtml("<br>");
     }
 }
 
@@ -2248,6 +2281,85 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     }
     auto result = env.BuildRecommendations(params, sourceFics, false);
     Q_UNUSED(result);
+
 }
 
 
+
+
+
+void MainWindow::on_pbReapplyFilteringMode_clicked()
+{
+    on_cbCurrentFilteringMode_currentTextChanged(ui->cbCurrentFilteringMode->currentText());
+}
+
+void MainWindow::ResetFilterUItoDefaults()
+{
+    ui->chkRandomizeSelection->setChecked(false);
+    ui->chkEnableSlashFilter->setChecked(true);
+    ui->chkEnableTagsFilter->setChecked(false);
+    ui->chkIgnoreFandoms->setChecked(true);
+    ui->chkComplete->setChecked(false);
+    ui->chkShowUnfinished->setChecked(true);
+    ui->chkActive->setChecked(false);
+    ui->chkNoGenre->setChecked(true);
+    ui->chkIgnoreTags->setChecked(false);
+    ui->chkOtherFandoms->setChecked(false);
+    ui->chkGenrePlus->setChecked(false);
+    ui->chkGenreMinus->setChecked(false);
+    ui->chkWordsPlus->setChecked(false);
+    ui->chkWordsMinus->setChecked(false);
+    ui->chkFaveLimitActivated->setChecked(false);
+    ui->chkLimitPageSize->setChecked(true);
+    ui->chkHeartProfile->setChecked(false);
+    ui->chkInvertedSlashFilter->setChecked(true);
+    ui->chkInvertedSlashFilterLocal->setChecked(true);
+    ui->chkOnlySlash->setChecked(false);
+    ui->chkOnlySlashLocal->setChecked(false);
+    ui->chkApplyLocalSlashFilter->setChecked(true);
+    ui->chkCrossovers->setChecked(false);
+    ui->chkNonCrossovers->setChecked(false);
+
+    ui->cbMinWordCount->setCurrentText("0");
+    ui->cbMaxWordCount->setCurrentText("");
+    ui->cbBiasFavor->setCurrentText("None");
+    ui->cbBiasOperator->setCurrentText(">");
+    ui->cbSlashFilterAggressiveness->setCurrentText("Light");
+    ui->cbSortMode->setCurrentIndex(0);
+
+    ui->leBiasValue->setText("11.");
+    QDateTime dt = QDateTime::currentDateTimeUtc().addYears(-1);
+    ui->dteFavRateCut->setDateTime(dt);
+    ui->sbFavrateValue->setValue(4);
+    ui->sbPageSize->setValue(100);
+    ui->sbMaxRandomFicCount->setValue(6);
+}
+
+void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
+{
+    if(ui->cbCurrentFilteringMode->currentText() == "Default")
+    {
+        ResetFilterUItoDefaults();
+    }
+
+    if(ui->cbCurrentFilteringMode->currentText() == "Random Recs")
+    {
+        ResetFilterUItoDefaults();
+        ui->chkRandomizeSelection->setChecked(true);
+        ui->sbMaxRandomFicCount->setValue(6);
+        ui->cbSortMode->setCurrentText("Rec Count");
+    }
+    if(ui->cbCurrentFilteringMode->currentText() == "Tag Search")
+    {
+        ResetFilterUItoDefaults();
+        ui->chkEnableTagsFilter->setChecked(true);
+    }
+}
+
+void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
+    settings.sync();
+}
