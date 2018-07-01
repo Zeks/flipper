@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/timeutils.h"
+#include "include/favholder.h"
 #include "include/in_tag_accessor.h"
 #include "include/tokenkeeper.h"
 //#include "include/tasks/recommendations_reload_precessor.h"
@@ -111,8 +112,8 @@ bool ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken
     for(int i = 0; i < ignoredFandoms.fandom_ids_size(); i++)
         userTags->ignoredFandoms[ignoredFandoms.fandom_ids(i)] = ignoredFandoms.ignore_crossovers(i);
 
-//    An<UserInfoAccessor> accessor;
-//    accessor->SetData(userToken, userTags);
+    //    An<UserInfoAccessor> accessor;
+    //    accessor->SetData(userToken, userTags);
     auto* userData = ThreadData::GetUserData();
     *userData = *userTags;
 
@@ -130,43 +131,6 @@ public:
 
     QSharedPointer<database::IDBWrapper> dbInterface;
 };
-
-class RecommendationsCreator{
-public:
-    RecommendationsCreator(){}
-    void Run(QString userToken,
-    QSet<int> sourceFics,
-    QSharedPointer<core::RecommendationList> params);
-
-    QSharedPointer<interfaces::Authors> authors;
-    QSharedPointer<interfaces::RecommendationLists> recs;
-};
-
-
-
-void RecommendationsCreator::Run(QString userToken,
-                                 QSet<int> sourceFics,
-                                 QSharedPointer<core::RecommendationList> params){
-    An<RecommendationsInfoAccessor> accessor;
-    auto data = accessor->GetData(userToken);
-
-    data->sourceFics = sourceFics;
-    QLOG_INFO() << "Source fics count" << sourceFics.size();
-    data->matchedAuthors = authors->GetAllMatchesWithRecsUID(params, userToken);
-    QLOG_INFO() << "Matched authors count: " << data->matchedAuthors.size();
-    QLOG_INFO() << "Matched authors: " << data->matchedAuthors;
-    QVector<int> ts;
-    for(auto val : data->sourceFics)
-    {
-        ts.push_back(val);
-    }
-    std::sort(ts.begin(), ts.end());
-    QLOG_INFO() << ts;
-
-    data->listData = recs->GetMatchesForUID(userToken);
-    QLOG_INFO() << "Matched fics count: " << data->listData.size();
-}
-
 
 void SetTokenError(ProtoSpace::ResponseInfo* info){
     info->set_is_valid(false);
@@ -384,8 +348,6 @@ public:
     {
 
         Q_UNUSED(context);
-        bool firstRun = true;
-
         QString userToken = QString::fromStdString(task->controls().user_token());
         QLOG_INFO() << "////////////Received reclist s task from: " << userToken;
 
@@ -416,32 +378,28 @@ public:
         params->pickRatio = task->max_unmatched_to_one_matched();
         params->alwaysPickAt = task->always_pick_at();
 
-        QSharedPointer<interfaces::RecommendationLists> recsInterface (new interfaces::RecommendationLists());
-        recsInterface->portableDBInterface = dbContext.dbInterface;
-        QSharedPointer<interfaces::Authors> authorsInterface (new interfaces::FFNAuthors());
-        recsInterface->portableDBInterface = dbContext.dbInterface;
+        //        QSharedPointer<interfaces::RecommendationLists> recsInterface (new interfaces::RecommendationLists());
+        //        recsInterface->portableDBInterface = dbContext.dbInterface;
+        //        QSharedPointer<interfaces::Authors> authorsInterface (new interfaces::FFNAuthors());
+        //        recsInterface->portableDBInterface = dbContext.dbInterface;
         QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
 
         auto* recs = ThreadData::GetRecommendationData();
 
-        static RecommendationsCreator creator;
-        if(firstRun)
-        {
-            QSet<int> sourceFics;
-            for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
-                sourceFics.insert(task->id_packs().ffn_ids(i));
-            if(sourceFics.size() == 0)
-                return Status::OK;
-            recs->sourceFics = sourceFics;
+        QSet<int> sourceFics;
+        for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
+            sourceFics.insert(task->id_packs().ffn_ids(i));
+        if(sourceFics.size() == 0)
+            return Status::OK;
+        recs->sourceFics = sourceFics;
+        TimedAction action("Fic ids conversion",[&](){
             sourceFics = fanficsInterface->ConvertFFNSourceFicsToDB(userToken);
+        });
+        action.run();
 
+        An<core::FavHolder> holder;
+        auto list = holder->GetMatchedFicsForFavList(sourceFics, params);
 
-            creator.recs = recsInterface;
-            creator.authors = authorsInterface;
-            creator.Run(userToken, sourceFics, params);
-            firstRun = false;
-        }
-        auto& list = recs->listData;
         auto* targetList = response->mutable_list();
         targetList->set_list_name(proto_converters::TS(params->name));
         targetList->set_list_ready(true);
@@ -455,7 +413,7 @@ public:
     }
 
     Status GetDBFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
-                                      ProtoSpace::FicIdResponse* response) override
+                       ProtoSpace::FicIdResponse* response) override
     {
         Q_UNUSED(context);
         QString userToken = QString::fromStdString(task->controls().user_token());
@@ -519,6 +477,12 @@ int main(int argc, char *argv[])
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
+
+
+    An<core::FavHolder> holder;
+    auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    authors->db = mainDb;
+    holder->LoadFavourites(authors);
 
     QSettings settings("settings.ini", QSettings::IniFormat);
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();

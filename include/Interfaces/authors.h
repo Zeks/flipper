@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "QReadWriteLock"
 
 
+
 namespace interfaces {
 class IDBWrapper;
 class Fandoms;
@@ -53,6 +54,7 @@ public:
     bool UpdateAuthorRecord(core::AuthorPtr author);
 
     bool LoadAuthors(QString website, bool forced = false);
+    QHash<int, QSet<int>> LoadFullFavouritesHashset();
 
     //for the future, not strictly necessary atm
 //    bool LoadAdditionalInfo(core::AuthorPtr) = 0;

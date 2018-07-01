@@ -660,6 +660,17 @@ DiagnosticSQLResult<bool> LoadAuthorStatistics(core::AuthorPtr author, QSqlDatab
     return ctx.result;
 }
 
+DiagnosticSQLResult<QHash<int, QSet<int>>> LoadFullFavouritesHashset(QSqlDatabase db)
+{
+    QString qs = QString("select * from recommendations");
+
+    SqlContext<QHash<int, QSet<int>>> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data[q.value("recommender_id").toInt()].insert(q.value("fic_id").toInt());
+    });
+    return ctx.result;
+}
+
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByUrl(QString url, QSqlDatabase db)
 {
     QString qs = QString("select r.id,name, r.url, r.ffn_id, r.ao3_id, r.sb_id, r.sv_id, "
@@ -1142,7 +1153,7 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
     SqlContext<QSet<int>> ctx(db);
     ctx.bindValue("uid", uid);
     ctx.FetchLargeSelectIntoList<int>("id",
-                                      "select id from fanfics where cfInRecommendations(ffn_id, :uid)");
+                                      "select id from fanfics where cfInRecommendations(ffn_id)");
 
     return ctx.result;
 }

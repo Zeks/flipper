@@ -316,6 +316,12 @@ bool Authors::LoadAuthors(QString website, bool )
     return true;
 }
 
+QHash<int, QSet<int> > Authors::LoadFullFavouritesHashset()
+{
+    auto result = database::puresql::LoadFullFavouritesHashset(db).data;
+    return result;
+}
+
 void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
 {
     for(QString website : author->GetWebsites())
