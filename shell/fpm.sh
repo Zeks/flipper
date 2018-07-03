@@ -21,17 +21,7 @@ fi
  
 echo "success, git index is OK, going further"
 
-timeDiff=$(( `date +%s`))
-if [ "$1" == "arm" ]
-then
-	timeDiff=$(( `date +%s` - `stat -c %Y release/ARMPDI`))
-elif [ "$1" == "parser" ]
-then
-	timeDiff=$(( `date +%s` - `stat -c %Y release/parser`))
-elif [ "$1" == "grpc" ]
-then
-	timeDiff=$(( `date +%s` - `stat -c %Y release/grpcParser`))
-fi
+timeDiff=$(( `date +%s` - `stat -c %Y release/feed_server`))
 
 if [ $timeDiff -gt 600 ]
 then
@@ -90,9 +80,6 @@ mkdir $dirname/fpmtmp
 echo 'creating rpm'
 echo $unpackpath
 packageName="feeder"
-fpm -s dir -t rpm -n $packageName -v $ident --workdir /tmp/m_feeder --verbose --debug --rpm-compression gzip --rpm-auto-add-directories -C $unpackpath .
-
-dash="-"
-fpm -t deb -s rpm $packageName$separator$ident.x86_64.rpm
+fpm -s dir -t deb -n $packageName -v $ident --workdir ~/m_feeder --verbose --debug --deb-compression gz -C $unpackpath 
 
 
