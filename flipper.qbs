@@ -156,7 +156,7 @@ App{
         "src/rng.cpp",
         "include/rng.h",
     ]
-
+    //cpp.dynamicLibraries: ["zlib"]
     cpp.staticLibraries: {
         var libs = ["UniversalModels", "logger", "quazip"]
         libs = libs.concat(conditionals.zlib)

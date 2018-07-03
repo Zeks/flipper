@@ -11,7 +11,7 @@ Module {
     property string grpcPlugin: qbs.toolchain.contains("msvc") ?"E:/Programming/protobuf/grpc_cpp_plugin.exe": "/home/zeks/grpc/bins/opt/grpc_cpp_plugin"
 
     property string protobufName: "libprotobufd"
-    property stringList zlib : qbs.toolchain.contains("msvc") ? ["zlibd", "cares", "crypto"] : []
+    property stringList zlib : qbs.toolchain.contains("msvc") ? ["zlib", "cares", "crypto"] : []
     property stringList ssl : qbs.toolchain.contains("msvc") ? ["ssl"] : []
 
 }
