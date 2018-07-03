@@ -337,6 +337,7 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
 bool BackupSqliteDatabase(QString dbName)
 {
     bool success = true;
+#ifdef CLIENT_APP
     QDir dir("backups");
     QStringList filters;
     filters << "*.zip";
@@ -360,6 +361,7 @@ bool BackupSqliteDatabase(QString dbName)
             continue;
         success = success && QFile::remove("backups/" + entry);
     };
+#endif
     return success;
 }
 

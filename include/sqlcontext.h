@@ -228,7 +228,7 @@ struct SqlContext
 
         do{
             if(!func)
-                result.data += q.value(fieldName).template value<ResultType::value_type>();
+                result.data += q.value(fieldName).template value<typename ResultType::value_type>();
             else
                 result.data += func(q);
         } while(q.next());
@@ -247,7 +247,7 @@ struct SqlContext
         if(!CheckDataAvailability())
             return;
         do{
-            result.data[q.value(idFieldName).template value<ResultType::key_type>()] =  q.value(valueFieldName).template value<ResultType::mapped_type>();
+            result.data[q.value(idFieldName).template value<typename ResultType::key_type>()] =  q.value(valueFieldName).template value<typename ResultType::mapped_type>();
         } while(q.next());
     }
 

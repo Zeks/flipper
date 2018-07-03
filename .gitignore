@@ -6,3 +6,10 @@ Makefile
 Makefile.*
 ui_*
 modules/*
+third_party/sqlite3/*
+fpmtmp/*
+deployment/*
+proto/*.pb.cc
+proto/*.pb.h
+Run/*.log
+Run/*.sqlite
