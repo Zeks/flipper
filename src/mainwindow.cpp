@@ -2282,7 +2282,8 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     }
     auto result = env.BuildRecommendations(params, sourceFics, false);
     Q_UNUSED(result);
-
+    auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
+    SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
 }
 
 

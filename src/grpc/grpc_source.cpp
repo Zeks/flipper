@@ -450,6 +450,7 @@ public:
         std::chrono::system_clock::time_point deadline =
                 std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
         context.set_deadline(deadline);
+        task.mutable_controls()->set_user_token(proto_converters::TS(userToken));
 
         grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
 
