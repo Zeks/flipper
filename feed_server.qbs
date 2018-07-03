@@ -97,14 +97,22 @@ App{
     ]
 
     cpp.staticLibraries: {
-        var libs = ["UniversalModels", "logger", "quazip"]
+        //var libs = ["UniversalModels", "logger", "quazip"]
+        var libs = []
+        if(qbs.toolchain.contains("msvc"))
+            libs = ["logger"]
+        else{
+            libs = ["logger", "dl", "protobuf"]
+        }
         libs = libs.concat(conditionals.zlib)
         libs = libs.concat(conditionals.ssl)
 
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
-        if(conditionals.grpc)
+        if(qbs.toolchain.contains("msvc"))
             libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
+        else
+            libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }
 

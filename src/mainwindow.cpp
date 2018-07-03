@@ -219,6 +219,7 @@ void MainWindow::Init()
     ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->edtResults->setOpenExternalLinks(true);
     ui->cbWordCutoff->setVisible(false);
+    ui->edtRecsContents->setReadOnly(false);
 
     bool thinClient = settings.value("Settings/thinClient").toBool();
     if(thinClient)
