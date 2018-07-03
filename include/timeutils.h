@@ -61,5 +61,5 @@ struct TimeKeeper{
                      << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - times[startPoint]).count();
     }
     void Track(QString value){times[value] = std::chrono::high_resolution_clock::now();}
-    QHash<QString, std::chrono::steady_clock::time_point> times;
+    QHash<QString, std::chrono::high_resolution_clock::time_point> times;
 };
