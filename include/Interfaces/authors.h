@@ -25,8 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "QReadWriteLock"
 
 
+
 namespace interfaces {
 class IDBWrapper;
+class Fandoms;
 class Authors {
 public:
     virtual ~Authors();
@@ -52,6 +54,7 @@ public:
     bool UpdateAuthorRecord(core::AuthorPtr author);
 
     bool LoadAuthors(QString website, bool forced = false);
+    QHash<int, QSet<int>> LoadFullFavouritesHashset();
 
     //for the future, not strictly necessary atm
 //    bool LoadAdditionalInfo(core::AuthorPtr) = 0;
@@ -59,6 +62,7 @@ public:
 
     core::AuthorPtr GetAuthorByNameAndWebsite(QString name, QString website);
     QList<core::AuthorPtr> GetAllByName(QString name);
+    QSet<int> GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid);
     //core::AuthorPtr GetByUrl(QString url);
     core::AuthorPtr GetByWebID(QString website, int id);
     core::AuthorPtr GetById(int id);
@@ -67,13 +71,20 @@ public:
     QStringList GetAllAuthorsFavourites(int id);
     QList<int> GetAllAuthorIds();
     int GetFicCount(int authorId);
+    QList<int> GetFicList(core::AuthorPtr author) const;
     int GetCountOfRecsForTag(int authorId, QString tag);
     QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list);
     //bool UploadLinkedAuthorsForAuthor(int authorId, QStringList);
     bool UploadLinkedAuthorsForAuthor(int authorId, QString , QList<int>);
     bool DeleteLinkedAuthorsForAuthor(int authorId);
 
+    bool WipeAuthorStatisticsRecords();
+    bool CreateStatisticsRecordsForAuthors();
+    bool CalculateSlashStatisticsPercentages(QString fieldUsed);
+
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
+
+    QHash<int, std::array<double, 21>> GetListGenreData();
 
     //! todo those are required for managing recommendation lists and somewhat outdated
     // moved them to dump temporarily

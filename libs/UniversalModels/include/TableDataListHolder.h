@@ -16,7 +16,7 @@
 
 
 
-template<class T>
+template<template<class T> class ContainerType, typename T>
 class  TableDataListHolder : public TableDataInterface  
 {
   public:
@@ -28,11 +28,11 @@ class  TableDataListHolder : public TableDataInterface
 
     void SetColumns(QStringList _columns);
 
-    void SetData(const QList<T> & data);
+    void SetData(const ContainerType<T> & data);
 
-    QList<T> GetData() const;
+    ContainerType<T> GetData() const;
 
-    QList<T>& GetData();
+    ContainerType<T>& GetData();
 
     virtual int columnCount() const;
 
@@ -78,7 +78,7 @@ class  TableDataListHolder : public TableDataInterface
 
 
   private:
-     QList<T> m_data;
+     ContainerType<T> m_data;
      QHash<QPair<int,int>, std::function<void(T*, QVariant)> > setters;
      QHash<QPair<int, int>, std::function<QVariant(const T*)> > getters;
     QSharedPointer<ItemController<T> > controller;
@@ -88,8 +88,8 @@ class  TableDataListHolder : public TableDataInterface
      QVector<std::function<Qt::ItemFlags(const QModelIndex&)> > flagsFunctors;
      std::function<bool(void*, void*)> sortFunction;
 };
-template<class T>
-QVariant TableDataListHolder<T>::GetValue(int row, int column, int role) const 
+template<template<typename T> class ContainerType, class T>
+QVariant TableDataListHolder<ContainerType, T>::GetValue(int row, int column, int role) const
 {
     // Bouml preserved body begin 0021352A
     if(!getters.contains(QPair<int,int>(column, role)))
@@ -99,8 +99,8 @@ QVariant TableDataListHolder<T>::GetValue(int row, int column, int role) const
     // Bouml preserved body end 0021352A
 }
 
-template<class T>
-void TableDataListHolder<T>::SetValue(int row, int column, int role, const QVariant & value) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::SetValue(int row, int column, int role, const QVariant & value)
 {
     // Bouml preserved body begin 002135AA
     if(!setters.contains(QPair<int,int>(column, role)))
@@ -109,24 +109,24 @@ void TableDataListHolder<T>::SetValue(int row, int column, int role, const QVari
     // Bouml preserved body end 002135AA
 }
 
-template<class T>
-QStringList TableDataListHolder<T>::GetColumns() 
+template<template<typename T> class ContainerType, class T>
+QStringList TableDataListHolder<ContainerType, T>::GetColumns()
 {
     // Bouml preserved body begin 0021362A
     return m_columns;
     // Bouml preserved body end 0021362A
 }
 
-template<class T>
-void TableDataListHolder<T>::SetColumns(QStringList _columns) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::SetColumns(QStringList _columns)
 {
     // Bouml preserved body begin 00213C2A
     m_columns = _columns;
     // Bouml preserved body end 00213C2A
 }
 
-template<class T>
-void TableDataListHolder<T>::SetData(const QList<T> & data) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::SetData(const ContainerType<T> & data)
 {
     // Bouml preserved body begin 002136AA
     previousRowCount = m_data.size();
@@ -135,64 +135,64 @@ void TableDataListHolder<T>::SetData(const QList<T> & data)
     // Bouml preserved body end 002136AA
 }
 
-template<class T>
-QList<T> TableDataListHolder<T>::GetData() const 
+template<template<typename T> class ContainerType, class T>
+ContainerType<T> TableDataListHolder<ContainerType, T>::GetData() const
 {
     // Bouml preserved body begin 00218C2A
     return m_data;
     // Bouml preserved body end 00218C2A
 }
 
-template<class T>
-QList<T>& TableDataListHolder<T>::GetData() 
+template<template<typename T> class ContainerType, class T>
+ContainerType<T>& TableDataListHolder<ContainerType, T>::GetData()
 {
     // Bouml preserved body begin 0021E7AA
     return m_data;
     // Bouml preserved body end 0021E7AA
 }
 
-template<class T>
-int TableDataListHolder<T>::columnCount() const 
+template<template<typename T> class ContainerType, class T>
+int TableDataListHolder<ContainerType, T>::columnCount() const
 {
     // Bouml preserved body begin 002138AA
     return m_columns.size();
     // Bouml preserved body end 002138AA
 }
 
-template<class T>
-int TableDataListHolder<T>::rowCount() const 
+template<template<typename T> class ContainerType, class T>
+int TableDataListHolder<ContainerType, T>::rowCount() const
 {
     // Bouml preserved body begin 002137AA
     return m_data.size();
     // Bouml preserved body end 002137AA
 }
 
-template<class T>
-void TableDataListHolder<T>::AddGetter(const QPair<int,int> & index, std::function<QVariant(const T*)> function) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::AddGetter(const QPair<int,int> & index, std::function<QVariant(const T*)> function)
 {
     // Bouml preserved body begin 00213A2A
     getters.insert(index, function);
     // Bouml preserved body end 00213A2A
 }
 
-template<class T>
-void TableDataListHolder<T>::AddSetter(const QPair<int,int> & index, std::function<void(T*, QVariant)> function) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::AddSetter(const QPair<int,int> & index, std::function<void(T*, QVariant)> function)
 {
     // Bouml preserved body begin 00213AAA
     setters.insert(index, function);
     // Bouml preserved body end 00213AAA
 }
 
-template<class T>
-int TableDataListHolder<T>::PreviousRowCount() 
+template<template<typename T> class ContainerType, class T>
+int TableDataListHolder<ContainerType, T>::PreviousRowCount()
 {
     // Bouml preserved body begin 0022372A
     return previousRowCount;
     // Bouml preserved body end 0022372A
 }
 
-template<class T>
-bool TableDataListHolder<T>::insertRow(int row) 
+template<template<typename T> class ContainerType, class T>
+bool TableDataListHolder<ContainerType, T>::insertRow(int row)
 {
     // Bouml preserved body begin 00020E2B
     if(row > rowCount())
@@ -202,8 +202,8 @@ bool TableDataListHolder<T>::insertRow(int row)
     // Bouml preserved body end 00020E2B
 }
 
-template<class T>
-void TableDataListHolder<T>::SetDataForRow(int row, const T & data) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::SetDataForRow(int row, const T & data)
 {
     // Bouml preserved body begin 0002112B
     if(m_data.size() >= row+1)
@@ -212,16 +212,16 @@ void TableDataListHolder<T>::SetDataForRow(int row, const T & data)
     // Bouml preserved body end 0002112B
 }
 
-template<class T>
-void TableDataListHolder<T>::DropData() 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::DropData()
 {
     // Bouml preserved body begin 000215AB
     m_data.clear();
     // Bouml preserved body end 000215AB
 }
 
-template<class T>
-const void* TableDataListHolder<T>::InternalPointer() const
+template<template<typename T> class ContainerType, class T>
+const void* TableDataListHolder<ContainerType, T>::InternalPointer() const
 {
     // Bouml preserved body begin 0002AE2B
     if(m_data.size() == 0)
@@ -230,8 +230,8 @@ const void* TableDataListHolder<T>::InternalPointer() const
     // Bouml preserved body end 0002AE2B
 }
 
-template<class T>
-const void* TableDataListHolder<T>::InternalPointer(int row) const
+template<template<typename T> class ContainerType, class T>
+const void* TableDataListHolder<ContainerType, T>::InternalPointer(int row) const
 {
     // Bouml preserved body begin 0002ADAB
     if(m_data.size() < row)
@@ -240,8 +240,8 @@ const void* TableDataListHolder<T>::InternalPointer(int row) const
     // Bouml preserved body end 0002ADAB
 }
 
-template<class T>
-void* TableDataListHolder<T>::InternalPointer() 
+template<template<typename T> class ContainerType, class T>
+void* TableDataListHolder<ContainerType, T>::InternalPointer()
 {
     // Bouml preserved body begin 0002AFAB
     if(m_data.size() == 0)
@@ -250,8 +250,8 @@ void* TableDataListHolder<T>::InternalPointer()
     // Bouml preserved body end 0002AFAB
 }
 
-template<class T>
-void* TableDataListHolder<T>::InternalPointer(int row) 
+template<template<typename T> class ContainerType, class T>
+void* TableDataListHolder<ContainerType, T>::InternalPointer(int row)
 {
     // Bouml preserved body begin 0002B02B
     if(m_data.size() < row)
@@ -260,16 +260,16 @@ void* TableDataListHolder<T>::InternalPointer(int row)
     // Bouml preserved body end 0002B02B
 }
 
-template<class T>
-bool TableDataListHolder<T>::Equal(int , void* )
+template<template<typename T> class ContainerType, class T>
+bool TableDataListHolder<ContainerType, T>::Equal(int , void* )
 {
     // Bouml preserved body begin 0002AD2B
     return false;
     // Bouml preserved body end 0002AD2B
 }
 
-template<class T>
-Qt::ItemFlags TableDataListHolder<T>::flags(const QModelIndex & index) const 
+template<template<typename T> class ContainerType, class T>
+Qt::ItemFlags TableDataListHolder<ContainerType, T>::flags(const QModelIndex & index) const
 {
     // Bouml preserved body begin 0002ACAB
     Qt::ItemFlags result;
@@ -281,50 +281,50 @@ Qt::ItemFlags TableDataListHolder<T>::flags(const QModelIndex & index) const
     // Bouml preserved body end 0002ACAB
 }
 
-template<class T>
-void TableDataListHolder<T>::sort() 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::sort()
 {
     // Bouml preserved body begin 0002AC2B
     //qSort(m_data.begin(), m_data.end(), sortFunction);
     // Bouml preserved body end 0002AC2B
 }
 
-template<class T>
-void TableDataListHolder<T>::AddFlagsFunctor(std::function<Qt::ItemFlags(const QModelIndex&)> functor) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::AddFlagsFunctor(std::function<Qt::ItemFlags(const QModelIndex&)> functor)
 {
     // Bouml preserved body begin 0002CAAB
 	flagsFunctors.append(functor);
     // Bouml preserved body end 0002CAAB
 }
 
-template<class T>
-void TableDataListHolder<T>::RemoveRow(int index) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::RemoveRow(int index)
 {
     // Bouml preserved body begin 0002ABAB
     m_data.erase(m_data.begin()+index);
     // Bouml preserved body end 0002ABAB
 }
 
-template<class T>
-void TableDataListHolder<T>::SetFlagsFunctors(QVector<std::function<Qt::ItemFlags(const QModelIndex&)> > value) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::SetFlagsFunctors(QVector<std::function<Qt::ItemFlags(const QModelIndex&)> > value)
 {
     flagsFunctors = value;
 }
 
-template<class T>
-inline QVector<std::function<Qt::ItemFlags(const QModelIndex&)> > TableDataListHolder<T>::GetFlagsFunctors() 
+template<template<typename T> class ContainerType, class T>
+inline QVector<std::function<Qt::ItemFlags(const QModelIndex&)> > TableDataListHolder<ContainerType, T>::GetFlagsFunctors()
 {
     return flagsFunctors;
 }
 
-template<class T>
-inline std::function<bool(void*, void*)> TableDataListHolder<T>::GetSortFunction() const 
+template<template<typename T> class ContainerType, class T>
+inline std::function<bool(void*, void*)> TableDataListHolder<ContainerType, T>::GetSortFunction() const
 {
     return sortFunction;
 }
 
-template<class T>
-void TableDataListHolder<T>::SetSortFunction(std::function<bool(void*, void*)> value) 
+template<template<typename T> class ContainerType, class T>
+void TableDataListHolder<ContainerType, T>::SetSortFunction(std::function<bool(void*, void*)> value)
 {
     sortFunction = value;
 }

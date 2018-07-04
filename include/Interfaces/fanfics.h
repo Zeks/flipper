@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "Interfaces/base.h"
 #include "core/section.h"
+#include "regex_utils.h"
 #include "QScopedPointer"
 #include <QSet>
 #include "QSharedPointer"
@@ -57,7 +58,7 @@ class Fanfics : public IDBWebIDIndex {
     virtual int GetIdForUrl(QString url) = 0;
 //    QList<core::Fic>  GetCurrentFicSetForQML();
 
-    bool ReprocessFics(QString where, QString website, std::function<void(int)> f);
+    bool ReprocessFics(QString where, QString website,  bool useDirectIds = false, std::function<void(int)> f = std::function<void(int)>());
 
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
 
@@ -71,8 +72,24 @@ class Fanfics : public IDBWebIDIndex {
     void ClearProcessedHash();
 
     QStringList GetFandomsForFicAsNames(int ficId);
+    QSet<int> GetAllKnownSlashFics();
+    QSet<int> GetAllKnownNotSlashFics();
+    QSet<int> GetSingularFicsInLargeButSlashyLists();
+    QSet<int> GetAllKnownFicIDs(QString where);
+    bool ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func);
 
     bool AssignChapter(int, int);
+    bool AssignSlashForFic(int, int source);
+    bool AssignIterationOfSlash(QString iteration);
+    bool PerformGenreAssignment();
+    QHash<int, double> GetFicGenreData(QString genre, QString cutoff);
+    QHash<int, std::array<double, 21>> GetFullFicGenreData();
+    QHash<int, double> GetDoubleValueHashForFics(QString fieldName);
+
+    // this uses preloaded fics from static data
+    // to return an ID list for recommendations creator
+    QSet<int> ConvertFFNSourceFicsToDB(QString userToken);
+    bool ConvertFFNTaggedFicsToDB(QHash<int, int>& hash);
 
     // update interface
     QReadWriteLock mutex;
@@ -119,3 +136,4 @@ private:
 
 };
 }
+

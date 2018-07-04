@@ -51,12 +51,14 @@ public:
     //! Adds a log message destination. Don't add null destinations.
     void addDestination(DestinationPtr destination);
     void replaceDestination(DestinationPtr destination);
+    void clearDestinationList();
     //! Logging at a level < 'newLevel' will be ignored
     void setLoggingLevel(Level newLevel);
     //! The default level is INFO
     Level loggingLevel() const;
     void clearDestinationQueues();
     DestinationList GetDestinations();
+    void ResetDestinations();
     //! The helper forwards the streaming to QDebug and builds the final
     //! log message.
     Logger();
@@ -89,7 +91,9 @@ protected:
     LoggerImpl* d;
 };
 } // end namespace
-BIND_TO_SELF_SINGLE(QsLogging::Logger);
+BIND_TO_SELF_SINGLE(QsLogging::Logger)
+
+
 
 //(std::ostringstream() << std::this_thread::get_id()).str();
 
@@ -107,9 +111,15 @@ inline QString idToStr(std::thread::id id)
 #define QLOG_TRACE() QsLogging::Logger::Helper(QsLogging::TraceLevel, An<QsLogging::Logger>().getData()).stream() << idToStr(std::this_thread::get_id())  << " "
 #define QLOG_DEBUG() QsLogging::Logger::Helper(QsLogging::DebugLevel, An<QsLogging::Logger>().getData()).stream() << idToStr(std::this_thread::get_id())  << " "
 #define QLOG_INFO() QsLogging::Logger::Helper(QsLogging::InfoLevel, An<QsLogging::Logger>().getData()).stream() << idToStr(std::this_thread::get_id())  << " "
-#define QLOG_WARN()  QsLogging::Logger::Helper(QsLogging::WarnLevel,  An<QsLogging::Logger>().getData()).stream() << idToStr(std::this_thread::get_id())  << " "
+#define QLOG_WARN() QsLogging::Logger::Helper(QsLogging::WarnLevel, An<QsLogging::Logger>().getData()).stream() << idToStr(std::this_thread::get_id())  << " "
 #define QLOG_ERROR() QsLogging::Logger::Helper(QsLogging::ErrorLevel, An<QsLogging::Logger>().getData()).stream() << idToStr(std::this_thread::get_id())  << " "
 #define QLOG_FATAL() QsLogging::Logger::Helper(QsLogging::FatalLevel, An<QsLogging::Logger>().getData()).stream() << idToStr(std::this_thread::get_id())  << " "
+#define QLOG_TRACE_PURE() QsLogging::Logger::Helper(QsLogging::TraceLevel, An<QsLogging::Logger>().getData()).stream().noquote() << idToStr(std::this_thread::get_id())  << " "
+#define QLOG_DEBUG_PURE() QsLogging::Logger::Helper(QsLogging::DebugLevel, An<QsLogging::Logger>().getData()).stream().noquote() << idToStr(std::this_thread::get_id())  << " "
+#define QLOG_INFO_PURE() QsLogging::Logger::Helper(QsLogging::InfoLevel, An<QsLogging::Logger>().getData()).stream().noquote() << idToStr(std::this_thread::get_id())  << " "
+#define QLOG_WARN_PURE() QsLogging::Logger::Helper(QsLogging::WarnLevel, An<QsLogging::Logger>().getData()).stream().noquote() << idToStr(std::this_thread::get_id())  << " "
+#define QLOG_ERROR_PURE() QsLogging::Logger::Helper(QsLogging::ErrorLevel, An<QsLogging::Logger>().getData()).stream().noquote() << idToStr(std::this_thread::get_id())  << " "
+#define QLOG_FATAL_PURE() QsLogging::Logger::Helper(QsLogging::FatalLevel, An<QsLogging::Logger>().getData()).stream().noquote() << idToStr(std::this_thread::get_id())  << " "
 #else
 #define QLOG_TRACE() \
     if (QsLogging::Logger::instance().loggingLevel() > QsLogging::TraceLevel) {} \

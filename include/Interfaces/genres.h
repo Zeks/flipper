@@ -26,16 +26,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 
 namespace interfaces {
+
+QHash<QString, QString> CreateCodeToDBGenreConverter();
+QHash<QString, QString> CreateDBToCodeGenreConverter();
+
+struct GenreConverter{
+    QHash<QString, QString> codeToDB = CreateCodeToDBGenreConverter();
+    QHash<QString, QString> dBToCode = CreateDBToCodeGenreConverter();
+    QStringList GetDBGenres() { return dBToCode.keys();}
+    QStringList GetCodeGenres() { return codeToDB.keys();}
+    QString ToDB(QString value){
+        QString result;
+        if(codeToDB.contains(value))
+            result = codeToDB[value];
+        return result;
+    }
+    QString ToCode(QString value){
+        QString result;
+        if(dBToCode.contains(value))
+            result = dBToCode[value];
+        return result;
+    }
+    static GenreConverter Instance();
+};
+
 class Genres{
 public:
     
     bool IsGenreList(QStringList list);
     bool LoadGenres();
     QSqlDatabase db;
+
 private:
 
     QSet<QString> genres;
 };
+
+
 
 
 }

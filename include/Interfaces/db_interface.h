@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QString>
 #include <QDateTime>
 #include <QSharedPointer>
-//#include "queryinterfaces.h"
+#include "pure_sql.h"
 namespace core { struct Query;}
 namespace database{
 
@@ -36,9 +36,12 @@ public:
     virtual bool BackupDatabase(QString dbname) = 0;
     virtual bool ReadDbFile(QString file, QString connectionName = "") = 0;
     virtual QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false) = 0;
+    virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false) = 0;
+    virtual bool EnsureUUIDForUserDatabase() = 0;
+    virtual QString GetUserToken() = 0;
     QSqlDatabase GetDatabase() {return db;}
+    QString userToken;
 protected:
-
     QSqlDatabase db;
 };
 }

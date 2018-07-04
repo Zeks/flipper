@@ -3,7 +3,7 @@
 #include <QSqlDatabase>
 #include "include/core/section.h"
 #include "include/queryinterfaces.h"
-#include "third_party/sqlite/sqlite3.h"
+#include "third_party/sqlite3/sqlite3.h"
 
 
 namespace database{
@@ -23,6 +23,7 @@ QStringList FetchRecentFandoms(QSqlDatabase db);
 bool RebaseFandomsToZero(QSqlDatabase db);
 QDateTime GetCurrentDateTime(QSqlDatabase db);
 QSqlDatabase InitDatabase(QString name, bool setDefault = false);
+QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault = false);
 int CreateNewTask(QSqlDatabase db);
 int CreateNewSubTask(int taskId, int subTaskId, QSqlDatabase db);
 }

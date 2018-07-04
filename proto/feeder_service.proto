@@ -1,0 +1,144 @@
+syntax = "proto3";
+import "fanfic.proto";
+import "fandom.proto";
+import "filter.proto";
+
+package ProtoSpace;
+
+message ControlInfo{
+    string user_token = 1;
+}
+message ResponseInfo{
+    bool is_valid                = 1;
+    bool has_usertoken_error     = 2;
+    bool data_size_limit_reached = 3;
+    bool token_in_use            = 4;
+}
+
+message Tags{
+    repeated int32 all_tags       = 1;
+    repeated int32 searched_tags  = 2;
+}
+
+
+message IgnoredFandoms{
+    repeated int32 fandom_ids           = 1;
+    repeated bool  ignore_crossovers    = 2;
+}
+
+message UserData{
+    Tags user_tags                      = 1;
+    IgnoredFandoms ignored_fandoms      = 2;
+
+}
+
+message SearchTask
+{
+    ControlInfo controls    = 1;
+    Filter filter           = 2;
+    UserData user_data      = 3;
+}
+
+message SearchResponse{
+    repeated Fanfic fanfics = 1;
+    ResponseInfo response_info            = 2;
+}
+
+message SyncFandomListTask{
+    ControlInfo controls    = 1;
+    int32 last_fandom_id    = 2;
+}
+
+message SyncFandomListResponse{
+    bool needs_update       = 1;
+    repeated Fandom fandoms = 2;
+    ResponseInfo response_info            = 3;
+}
+
+message FicCountTask{
+    ControlInfo controls    = 1;
+    Filter filter           = 2;
+    UserData user_data      = 3;
+}
+
+message FicCountResponse{
+    int32 fic_count = 1;
+    ResponseInfo response_info    = 2;
+}
+
+
+message SiteIDPack{
+    repeated int32 db_ids =  1;
+    repeated int32 ffn_ids = 2;
+    repeated int32 ao3_ids = 3;
+    repeated int32 sb_ids  = 4;
+    repeated int32 sv_ids  = 5;
+}
+
+message RecommendationListData{
+    bool list_ready             = 1;
+    string list_name            = 2;
+    repeated int32 fic_ids      = 3;
+    repeated int32 fic_matches  = 4;
+    
+    // ethically complicated
+    // probably best to disable this for release
+    // don't want personal data seeping through
+    // repeated int32 author_ids   = 4;
+}
+
+message RecommendationListCreationRequest{
+    ControlInfo controls                = 1;
+    string list_name                    = 2;
+    int32 min_fics_to_match             = 3;
+    int32 max_unmatched_to_one_matched  = 4;
+    int32 always_pick_at                = 5;
+    SiteIDPack id_packs                 = 6;
+}
+
+message RecommendationListCreationResponse{
+    string list_token           = 1;
+    RecommendationListData list = 2;
+    ResponseInfo response_info                = 3;
+}
+
+message RecommendationListFetchRequest{
+    ControlInfo controls                = 1;
+    string list_token                   = 2;
+}
+
+message RecommendationListFetchResponse{
+    bool list_available              = 1;
+    bool position_in_queue           = 2;
+    RecommendationListData list_data = 3;
+    ResponseInfo response_info       = 4;
+}
+
+message FicIdRequest{
+    ControlInfo controls             = 1;
+    SiteIDPack  ids                  = 2;
+}
+
+message FicIdResponse{
+    bool success        = 1;
+    SiteIDPack ids      = 2;
+    ResponseInfo response_info        = 3;
+}
+
+// will need to synchronize fandoms on app start somehow
+// can't leave fandom information on user side
+// because I dont want users to parse anything
+
+// same thing for genres, prbbaly better to receive the on launch
+
+
+// RecommendationListsFandoms needs to be returned with recommendation list data
+// I want to be able to display this to users ideally
+
+service Feeder {
+    rpc Search(SearchTask) returns (SearchResponse) {}
+    rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
+    rpc SyncFandomList(SyncFandomListTask) returns (SyncFandomListResponse) {}
+    rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
+    rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
+}

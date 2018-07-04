@@ -39,7 +39,7 @@ class L_LOGGERSHARED_EXPORT Destination
 {
 public:
     virtual ~Destination(){}
-    virtual void write(const QString& message, Level level) = 0;
+    virtual void write(const QString& message, Level level, Level currentLoggingLevel) = 0;
     virtual bool isValid() = 0; // returns whether the destination was created correctly
     virtual void clearQueue();
 };

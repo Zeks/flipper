@@ -84,18 +84,33 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
     return uniqueFandoms;
 }
 
+bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms)
+{
+    bool result = true;
+    database::Transaction transaction(db);
+    for(auto fandom: fandoms)
+    {
+        core::FandomPtr fandomPtr(&fandom, [](core::Fandom*){});
+        result = result && CreateFandom(fandomPtr, true, true);
+    }
+    transaction.finalize();
+    return result;
+}
+
 bool Fandoms::RecalculateFandomStats(QStringList fandoms)
 {
     bool success = true;
-    for(auto fandom : fandoms)
-    {
-        fandom = core::Fandom::ConvertName(fandom.trimmed());
-        success = success && database::puresql::UpdateFandomStats(GetIDForName(fandom), db);
-    }
+//    for(auto fandom : fandoms)
+//    {
+//        fandom = core::Fandom::ConvertName(fandom.trimmed());
+//        success = success && database::puresql::UpdateFandomStats(GetIDForName(fandom), db);
+//    }
     return success;
 }
 
-bool Fandoms::CreateFandom(core::FandomPtr fandom)
+bool Fandoms::CreateFandom(core::FandomPtr fandom,
+                           bool writeUrls,
+                           bool useSuppliedIds )
 {
     if(!fandom)
         return false;
@@ -106,9 +121,9 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom)
     if(current && current->id != -1)
         return true;
     database::Transaction transaction(db);
-    auto result = database::puresql::CreateFandomInDatabase(fandom, db);
+    auto result = database::puresql::CreateFandomInDatabase(fandom, db, writeUrls, useSuppliedIds);
 
-    if(!result)
+    if(!result.success)
         return false;
 
     //fandom->id = portableDBInterface->GetLastIdForTable("fandoms");
@@ -175,7 +190,7 @@ void Fandoms::FillFandomList(bool forced)
 {
     if(forced || fandomsList.isEmpty())
     {
-        fandomsList  = database::puresql::GetFandomListFromDB(db);
+        fandomsList  = database::puresql::GetFandomListFromDB(db).data;
     }
 }
 
@@ -294,8 +309,9 @@ bool Fandoms::Load()
         if(fandomPresent)
             this->recentFandoms.push_back(nameIndex[bit]);
     }
-    fandomCount = database::puresql::GetFandomCountInDatabase(db);
-    return hadErrors;
+    auto result = database::puresql::GetFandomCountInDatabase(db);
+    fandomCount = result.data;
+    return hadErrors || !result.success;
 }
 
 void Fandoms::ReloadRecentFandoms()
@@ -321,8 +337,9 @@ bool Fandoms::LoadTrackedFandoms(bool forced)
     if(!needsLoading)
         return true;
 
-    auto trackedList = database::puresql::GetTrackedFandomList(db);
-    if(trackedList.empty())
+    auto opResult = database::puresql::GetTrackedFandomList(db);
+    auto trackedList = opResult.data;
+    if(trackedList.empty() || !opResult.success)
         return false;
 
     trackedFandoms.clear();
@@ -343,10 +360,17 @@ bool Fandoms::LoadAllFandoms(bool forced)
     if(!needsLoading)
         return true;
 
-    fandoms = database::puresql::GetAllFandoms(db);
+    fandoms = database::puresql::GetAllFandoms(db).data;
+    for(auto fandom: fandoms)
+        indexFandomsById[fandom->id] = fandom->GetName();
     if(fandoms.empty())
         return false;
     return true;
+}
+
+QList<core::FandomPtr> Fandoms::LoadAllFandomsAfter(int id)
+{
+    return database::puresql::GetAllFandomsAfter(id, db).data;
 }
 
 bool Fandoms::IsTracked(QString fandom)
@@ -355,6 +379,104 @@ bool Fandoms::IsTracked(QString fandom)
     if(!EnsureFandom(fandom))
         return false;
     return nameIndex[fandom]->tracked;
+}
+
+bool Fandoms::IgnoreFandom(QString name, bool includeCrossovers)
+{
+    auto id = GetIDForName(name);
+    auto result = IgnoreFandom(id, includeCrossovers);
+    return result;
+}
+
+bool Fandoms::IgnoreFandom(int id, bool includeCrossovers)
+{
+    auto result = database::puresql::IgnoreFandom(id,includeCrossovers,  db);
+    return result.data;
+}
+
+QStringList Fandoms::GetIgnoredFandoms() const
+{
+    auto result = database::puresql::GetIgnoredFandoms(db);
+    return result.data;
+}
+
+QHash<int, bool> Fandoms::GetIgnoredFandomsIDs() const
+{
+    auto result = database::puresql::GetIgnoredFandomIDs(db);
+    return result.data;
+}
+
+QList<core::FandomPtr> Fandoms::GetAllLoadedFandoms()
+{
+    return fandoms;
+}
+
+QHash<int, QString> Fandoms::GetFandomNamesForIDs(QList<int> fandoms)
+{
+    return database::puresql::GetFandomNamesForIDs(fandoms, db).data;
+}
+
+bool Fandoms::FetchFandomsForFics(QVector<core::Fic> *fics)
+{
+    static bool loadFandoms = true;
+    LoadAllFandoms(loadFandoms);
+    loadFandoms = false;
+    for(auto& fic: *fics)
+    {
+        for(int i = 0; i < fic.fandomIds.size(); i++)
+        {
+            auto index = fic.fandomIds[i];
+            if(index != -1)
+                fic.fandoms.push_back(indexFandomsById[fic.fandomIds[i]]);
+        }
+        fic.fandom = fic.fandoms.join(" & ");
+    }
+    return true;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredList(QString name)
+{
+    auto id = GetIDForName(name);
+    auto result = RemoveFandomFromIgnoredList(id);
+    return result;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredList(int id)
+{
+    auto result = database::puresql::RemoveFandomFromIgnoredList(id, db);
+    return result.data;
+}
+
+bool Fandoms::IgnoreFandomSlashFilter(QString name)
+{
+    auto id = GetIDForName(name);
+    auto result = IgnoreFandomSlashFilter(id);
+    return result;
+}
+
+bool Fandoms::IgnoreFandomSlashFilter(int id)
+{
+    auto result = database::puresql::IgnoreFandomSlashFilter(id, db);
+    return result.data;
+}
+
+QStringList Fandoms::GetIgnoredFandomsSlashFilter() const
+{
+    auto result = database::puresql::GetIgnoredFandomsSlashFilter(db);
+    return result.data;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredListSlashFilter(QString name)
+{
+    auto id = GetIDForName(name);
+    auto result = RemoveFandomFromIgnoredListSlashFilter(id);
+    return result;
+}
+
+bool Fandoms::RemoveFandomFromIgnoredListSlashFilter(int id)
+{
+    auto result = database::puresql::RemoveFandomFromIgnoredListSlashFilter(id, db);
+    return result.data;
 }
 
 void Fandoms::Reindex()
@@ -384,12 +506,17 @@ bool Fandoms::WipeFandom(QString name)
     name = core::Fandom::ConvertName(name.trimmed());
     if(!EnsureFandom(name))
         return false;
-    return database::puresql::CleanupFandom(nameIndex[name]->id, db);
+    return database::puresql::CleanupFandom(nameIndex[name]->id, db).success;
 }
 
 int Fandoms::GetFandomCount()
 {
     return fandomCount;
+}
+
+int Fandoms::GetLastFandomID()
+{
+    return database::puresql::GetLastFandomID(db).data;
 }
 
 Fandoms::~Fandoms()
@@ -458,7 +585,7 @@ QList<core::FandomPtr > Fandoms::ListOfTrackedFandoms()
 bool Fandoms::LoadFandom(QString name)
 {
     name = core::Fandom::ConvertName(name);
-    auto fandom = database::puresql::GetFandom(name, db);
+    auto fandom = database::puresql::GetFandom(name, db).data;
     if(!fandom)
         return false;
 

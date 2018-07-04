@@ -74,7 +74,7 @@ bool RecommendationLists::EnsureList(int listId)
     if(idIndex.contains(listId))
         return true;
 
-    auto list = database::puresql::GetRecommendationList(listId, db);
+    auto list = database::puresql::GetRecommendationList(listId, db).data;
 
     if(!list)
         return false;
@@ -93,7 +93,7 @@ bool RecommendationLists::EnsureList(QString name)
         return false;
     if(nameIndex.contains(name))
         return true;
-    auto list = database::puresql::GetRecommendationList(name, db);
+    auto list = database::puresql::GetRecommendationList(name, db).data;
 
     if(!list)
         return false;
@@ -145,7 +145,7 @@ QList<core::AuhtorStatsPtr > RecommendationLists::GetAuthorStatsForList(int id, 
     if(forced || !cachedAuthorStats.contains(id))
     {
         //otherwise, need to load it
-        auto stats = database::puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db);
+        auto stats = database::puresql::GetRecommenderStatsForList(id, "(1/match_ratio)*match_count", "desc", db).data;
         cachedAuthorStats[id] = stats;
         result = stats;
     }
@@ -186,7 +186,7 @@ QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 
     if(!ficsCacheForLists.contains(listId))
     {
-        result = database::puresql::GetAllFicIDsFromRecommendationList(listId, db);
+        result = database::puresql::GetAllFicIDsFromRecommendationList(listId,db).data;
         ficsCacheForLists[listId] = result;
     }
     else
@@ -194,6 +194,23 @@ QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 
     return result;
 
+}
+
+QHash<int, int> RecommendationLists::GetAllFicsHash(int listId)
+{
+    QHash<int, int> result;
+    if(!EnsureList(listId))
+        return result;
+
+    if(!grpcCacheForLists.contains(listId))
+    {
+        result = database::puresql::GetAllFicsHashFromRecommendationList(listId,db).data;
+        grpcCacheForLists[listId] = result;
+    }
+    else
+        result = grpcCacheForLists[listId];
+
+    return result;
 }
 
 QStringList RecommendationLists::GetNamesForListId(int listId)
@@ -204,7 +221,7 @@ QStringList RecommendationLists::GetNamesForListId(int listId)
 
     if(!authorsCacheForLists.contains(listId))
     {
-        result = database::puresql::GetAllAuthorNamesForRecommendationList(listId, db);
+        result = database::puresql::GetAllAuthorNamesForRecommendationList(listId, db).data;
         authorsCacheForLists[listId] = result;
     }
     else
@@ -219,10 +236,20 @@ bool RecommendationLists::DeleteList(int listId)
     if(listId == -1 || !EnsureList(listId))
         return true;
 
-    bool result = database::puresql::DeleteRecommendationList(listId, db);
+    bool result = database::puresql::DeleteRecommendationList(listId, db).success;
     DeleteLocalList(listId);
     return result;
 
+}
+
+bool RecommendationLists::DeleteListData(int listId)
+{
+    if(listId == -1 || !EnsureList(listId))
+        return true;
+
+    bool result = database::puresql::DeleteRecommendationListData(listId, db).success;
+    DeleteLocalList(listId);
+    return result;
 }
 
 void RecommendationLists::DeleteLocalList(int listId)
@@ -234,6 +261,8 @@ void RecommendationLists::DeleteLocalList(int listId)
     idIndex.remove(list->id);
     nameIndex.remove(list->name);
     ficsCacheForLists.remove(list->id);
+    grpcCacheForLists.remove(list->id);
+
     authorsCacheForLists.remove(list->id);
     cachedAuthorStats.remove(list->id);
     if(currentRecommendationList == list->id)
@@ -274,8 +303,11 @@ core::AuhtorStatsPtr RecommendationLists::CreateAuthorRecommendationStatsForList
 
     result->authorId = author->id;
     result->totalRecommendations= author->recCount;
+    auto opResult = database::puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
+    if(!opResult.success)
+        return result;
 
-    result->matchesWithReference = database::puresql::GetMatchesWithListIdInAuthorRecommendations(author->id, listId, db);
+    result->matchesWithReference = opResult.data;
     if(result->matchesWithReference == 0)
         result->matchRatio = 999999;
     else
@@ -287,46 +319,57 @@ core::AuhtorStatsPtr RecommendationLists::CreateAuthorRecommendationStatsForList
 
 bool RecommendationLists::LoadAuthorRecommendationsIntoList(int authorId, int listId)
 {
-    return database::puresql::CopyAllAuthorRecommendationsToList(authorId, listId, db);
+    return database::puresql::CopyAllAuthorRecommendationsToList(authorId, listId, db).success;
 }
 
 bool RecommendationLists::IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId)
 {
-    return database::puresql::IncrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db);
+    return database::puresql::IncrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db).success;
 }
 
 bool RecommendationLists::DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId)
 {
-    return database::puresql::DecrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db);
+    return database::puresql::DecrementAllValuesInListMatchingAuthorFavourites(authorId,listId, db).success;
 }
 
 bool RecommendationLists::LoadAuthorRecommendationStatsIntoDatabase(int listId, core::AuhtorStatsPtr stats)
 {
-    return database::puresql::WriteAuthorRecommendationStatsForList(listId, stats, db);
+    return database::puresql::WriteAuthorRecommendationStatsForList(listId, stats, db).success;
 }
 
 bool RecommendationLists::RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId)
 {
-    return database::puresql::RemoveAuthorRecommendationStatsFromDatabase(listId, authorId, db);
+    return database::puresql::RemoveAuthorRecommendationStatsFromDatabase(listId, authorId, db).success;
 }
 
 bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
 {
     auto timeStamp = portableDBInterface->GetCurrentDateTime();
     auto result = database::puresql::CreateOrUpdateRecommendationList(list, timeStamp, db);
+    if(!result.success)
+        return false;
     AddToIndex(list);
+    return result.success;
+}
+
+bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
+                                                         const QVector<int> &fics,
+                                                         const QVector<int> &matches)
+{
+    bool result = true;
+    result = result && database::puresql::FillFicDataForList(listId, fics, matches, db).success;
     return result;
 }
 
 bool RecommendationLists::UpdateFicCountInDatabase(int listId)
 {
-    return database::puresql::UpdateFicCountForRecommendationList(listId, db);
+    return database::puresql::UpdateFicCountForRecommendationList(listId, db).success;
 }
 
 // currently unused
 bool RecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData)
 {
-    auto result = database::puresql::AddAuthorFavouritesToList(authorId, listId, db);
+    auto result = database::puresql::AddAuthorFavouritesToList(authorId, listId, db).success;
     if(result)
         return false;
     if(reloadLocalData)
@@ -334,17 +377,37 @@ bool RecommendationLists::AddAuthorFavouritesToList(int authorId, int listId, bo
     return result;
 }
 
-bool RecommendationLists::SetFicsAsListOrigin(QList<int> ficIds, int listId)
+bool RecommendationLists::SetFicsAsListOrigin(QVector<int> ficIds, int listId)
 {
     if(listId == -1)
         return false;
-    return database::puresql::SetFicsAsListOrigin(ficIds,listId, db);
+    return database::puresql::SetFicsAsListOrigin(ficIds,listId, db).success;
+}
+
+bool RecommendationLists::CreateRecommendationList(QString name, QHash<int, int> fics)
+{
+    QSharedPointer<core::RecommendationList> dummyParams(new core::RecommendationList);
+    dummyParams->name = name;
+    dummyParams->ficCount = fics.keys().size();
+    dummyParams->created = QDateTime::currentDateTime();
+    auto listId = GetListIdForName(name);
+    dummyParams->id = listId;
+    dummyParams->Log();
+    DeleteListData(listId);
+    LoadListIntoDatabase(dummyParams);
+    listId = GetListIdForName(name);
+    qDebug()  << "list Id: " << listId;
+    if(listId < 0)
+        return false;
+    qDebug() << "filling fics";
+    database::puresql::FillRecommendationListWithData(listId, fics, db);
+    return true;
 }
 
 
 void RecommendationLists::LoadAvailableRecommendationLists()
 {
-    lists = database::puresql::GetAvailableRecommendationLists(db);
+    lists = database::puresql::GetAvailableRecommendationLists(db).data;
     Reindex();
 }
 
@@ -352,7 +415,10 @@ bool RecommendationLists::LoadAuthorsForRecommendationList(int listId)
 {
     currentRecommendationList = listId;
     currentRecommenderSet.clear();
-    auto authors = database::puresql::GetAuthorsForRecommendationList(listId, db);
+    auto opResult = database::puresql::GetAuthorsForRecommendationList(listId, db);
+    if(!opResult.success)
+        return false;
+    auto authors = opResult.data;
 
     for(auto author: authors)
     {
@@ -374,7 +440,7 @@ QList<core::AuthorPtr> RecommendationLists::GetAuthorsForRecommendationList(int 
 QList<int> RecommendationLists::GetRecommendersForFicId(int ficId)
 {
     QList<int> result;
-    result = database::puresql::GetRecommendersForFicIdAndListId(ficId, db);
+    result = database::puresql::GetRecommendersForFicIdAndListId(ficId, db).data;
     return result;
 }
 
@@ -383,8 +449,13 @@ QStringList RecommendationLists::GetLinkedPagesForList(int listId, QString websi
     QStringList result;
     if(!EnsureList(listId))
         return result;
-    result = database::puresql::GetLinkedPagesForList(listId, website,  db);
+    result = database::puresql::GetLinkedPagesForList(listId, website,  db).data;
     return result;
+}
+
+QHash<int, int> RecommendationLists::GetMatchesForUID(QString uid)
+{
+    return  database::puresql::GetMatchesForUID(uid,  db).data;
 }
 
 void RecommendationLists::SetCurrentRecommendationList(int value)
@@ -401,7 +472,8 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
 {
     if(forced || lists.empty())
         LoadAvailableRecommendationLists();
-    return nameIndex.keys();
-
+    auto list = nameIndex.keys();
+    qSort(list.begin(), list.end());
+    return list;
 }
 }

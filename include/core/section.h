@@ -45,9 +45,127 @@ enum class AuthorIdStatus
 };
 class Author;
 typedef QSharedPointer<Author> AuthorPtr;
-class Author : public DBEntity{
+
+enum class EntitySizeType{
+    small = 0,
+    medium = 2,
+    big = 3,
+    huge = 4
+};
+
+class FicSectionStatsTemporaryToken
+{
     public:
+    QHash<int, int> ficSizeKeeper;
+    QHash<int, int> crossKeeper;
+    QHash<int, int> favouritesSizeKeeper;
+    QHash<int, int> popularUnpopularKeeper;
+    QHash<QString, int> fandomKeeper;
+    QHash<int, int> unfinishedKeeper;
+    QHash<int, int> esrbKeeper;
+    QHash<int, int> wordsKeeper;
+    QHash<QString, int> genreKeeper;
+    QHash<int, int> moodKeeper;
+    int chapterKeeper = 0;
+    QList<int> sizes;
+    QDate firstPublished;
+    QDate lastPublished;
+    int ficCount = 0;
+    int wordCount = 0;
+    int authorId = -1;
+    QDate bioLastUpdated;
+    QDate pageCreated;
+};
+
+struct IdPack{
+  int db;
+  int ffn;
+  int ao3;
+  int sb;
+  int sv;
+};
+
+class FicSectionStats{
+public:
+    enum class FavouritesType{
+        tiny = 0 ,
+        medium = 1,
+        large = 2,
+        bs = 3
+    };
+    enum class MoodType{
+        sad = 0,
+        neutral = 1,
+        positive = 2,
+    };
+    enum class ESRBType{
+        agnostic = 0,
+        kiddy = 1,
+        mature = 2,
+    };
+
+    int favourites = -1;
+    int ficWordCount = 0;
+    double wordsPerChapter = 0;
+
+    ESRBType esrbType;
+    MoodType prevalentMood = MoodType::neutral;
+    EntitySizeType mostFavouritedSize;
+    EntitySizeType sectionRelativeSize;
+
+
+    double averageLength = 0.0;
+    double fandomsDiversity = 0.0;
+    double explorerFactor = 0.0;
+    double megaExplorerFactor = 0.0;
+    double crossoverFactor = 0.0;
+    double unfinishedFactor = 0.0;
+    double esrbUniformityFactor = 0.0;
+    double esrbKiddy = 0.0;
+    double esrbMature= 0.0;
+    double genreDiversityFactor = 0.0;
+    double moodUniformity = 0.0;
+    double moodNeutral = 0.0;
+    double moodSad = 0.0;
+    double moodHappy = 0.0;
+
+
+    double crackRatio = 0.0;
+    double slashRatio = 0.0;
+    double notSlashRatio = 0.0;
+    double smutRatio = 0.0;
+    //double moodDiversityFactor = 0.0;
+
+    QString prevalentGenre;
+    QHash<int, double> sizeFactors;
+
+    QHash<QString, int> fandoms;
+    QHash<QString, double> fandomFactors;
+
+    QHash<int, int> fandomsConverted;
+    QHash<int, double> fandomFactorsConverted;
+
+    QHash<QString, double> genreFactors;
+
+    QDate firstPublished;
+    QDate lastPublished;
+};
+
+class AuthorStats
+{
+public:
+    QDate pageCreated;
+    QDate bioLastUpdated;
+    int bioWordCount = -1;
+
+    FicSectionStats favouriteStats;
+    FicSectionStats ownFicStats;
+};
+
+class Author : public DBEntity{
+public:
     static AuthorPtr NewAuthor() { return AuthorPtr(new Author);}
+    //FicSectionStats MergeStats(QList<AuthorPtr>);
     ~Author(){}
     void Log();
     void LogWebIds();
@@ -90,11 +208,12 @@ class Author : public DBEntity{
     }
     QStringList GetWebsites() const;
     UpdateMode updateMode = UpdateMode::none;
+    AuthorStats stats;
 };
 
 class FavouritesPage
 {
-    public:
+public:
     QSharedPointer<Author> author;
     QString pageData;
     //type of website, ffn or ao3
@@ -105,7 +224,7 @@ class Fic;
 typedef QSharedPointer<Fic> FicPtr;
 
 class Fic : public DBEntity{
-    public:
+public:
     class FicCalcStats
     {
     public:
@@ -133,12 +252,12 @@ class Fic : public DBEntity{
     int webId = -1;
     int id = -1;
 
-    QString wordCount = 0;
-    QString chapters = 0;
-    QString reviews = 0;
-    QString favourites= 0;
-    QString follows= 0;
-    QString rated= 0;
+    QString wordCount;
+    QString chapters;
+    QString reviews;
+    QString favourites;
+    QString follows;
+    QString rated;
 
     QString fandom;
     QStringList fandoms;
@@ -159,8 +278,11 @@ class Fic : public DBEntity{
     QString charactersFull;
     QStringList characters;
     bool isValid =false;
+
     int authorId = -1;
+    QString authorName;
     QSharedPointer<Author> author;
+
 
     QHash<QString, QString> urls;
 
@@ -168,15 +290,23 @@ class Fic : public DBEntity{
 
         this->genreString = genreString;
         QStringList genresList;
+        bool hasHurt = false;
+        QString fixedGenreString = genreString;
         if(website == "ffn" && genreString.contains("Hurt/Comfort"))
         {
-            genreString.replace("Hurt/Comfort", "").split("/");
+            hasHurt = true;
+            fixedGenreString = fixedGenreString.replace("Hurt/Comfort", "");
         }
+
         if(website == "ffn")
-            genresList = genreString.split("/");
+            genresList = fixedGenreString.split("/", QString::SkipEmptyParts);
+        if(hasHurt)
+            genresList.push_back("Hurt/Comfort");
         for(auto& genre: genresList)
             genre = genre.trimmed();
         genres = genresList;
+
+
     };
     QString url(QString type)
     {
@@ -195,11 +325,12 @@ class Fic : public DBEntity{
     QString webSite = "ffn";
     UpdateMode updateMode = UpdateMode::none;
     FicCalcStats calcStats;
+    QList<int> fandomIds;
 };
 
 class Section : public DBEntity
 {
-    public:
+public:
     Section();
     struct Tag
     {
@@ -264,7 +395,7 @@ public:
     QString GetSource(){return source;}
     QString GetType(){return type;}
     void SetType(QString value) {type = value;}
-    private:
+private:
     QString url;
     QString source;
     QString type;
@@ -272,14 +403,14 @@ public:
 
 class Fandom : public DBEntity
 {
-    public:
+public:
     Fandom(){}
     Fandom(QString name){this->name = ConvertName(name);}
-//    Fandom(QString name,QString section,QString source = "ffn"){
-//        this->name = ConvertName(name);
-//        this->section = section.trimmed();
-//        this->source = source.trimmed();
-//    }
+    //    Fandom(QString name,QString section,QString source = "ffn"){
+    //        this->name = ConvertName(name);
+    //        this->section = section.trimmed();
+    //        this->source = source.trimmed();
+    //    }
     static FandomPtr NewFandom() { return QSharedPointer<Fandom>(new Fandom);}
     QList<Url> GetUrls(){
         return urls;
@@ -304,7 +435,7 @@ class Fandom : public DBEntity
     bool tracked = false;
     static QString ConvertName(QString name)
     {
-        static QHash<QString, QString> cache;
+        thread_local QHash<QString, QString> cache;
         name=name.trimmed();
         QString result;
         if(cache.contains(name))
@@ -333,7 +464,7 @@ typedef QSharedPointer<AuthorRecommendationStats> AuhtorStatsPtr;
 
 class AuthorRecommendationStats : public DBEntity
 {
-    public:
+public:
     static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}
     int authorId= -1;
     int totalRecommendations = -1;
@@ -362,8 +493,9 @@ typedef QSharedPointer<RecommendationList> RecPtr;
 
 
 class RecommendationList : public DBEntity{
-    public:
+public:
     static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
+    void Log();
     int id = -1;
     int ficCount =-1;
     QString name;
@@ -375,4 +507,4 @@ class RecommendationList : public DBEntity{
 };
 
 }
-
+Q_DECLARE_METATYPE(core::AuthorPtr);

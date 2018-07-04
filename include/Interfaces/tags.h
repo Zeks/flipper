@@ -36,6 +36,11 @@ public:
     bool RemoveTagFromFic(int ficId, QString tag);
     bool ExportToFile(QString);
     bool ImportFromFile(QString);
+    QSet<int> GetAllTaggedFics(QStringList = QStringList());
+    QVector<core::IdPack> GetAllFicsThatDontHaveDBID();
+    bool FillDBIDsForFics(QVector<core::IdPack>);
+    bool FetchTagsForFics(QVector<core::Fic>*);
+
 
 QSqlDatabase db;
 QSharedPointer<Fandoms> fandomInterface;

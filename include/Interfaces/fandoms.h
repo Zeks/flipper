@@ -42,9 +42,11 @@ public:
     virtual bool Load() ;
     bool LoadTrackedFandoms(bool forced = false);
     bool LoadAllFandoms(bool forced = false);
+    QList<core::FandomPtr> LoadAllFandomsAfter(int id);
     virtual bool LoadFandom(QString name);
     virtual bool EnsureFandom(QString name);
     QSet<QString> EnsureFandoms(QList<core::FicPtr>);
+    bool UploadFandomsIntoDatabase(QVector<core::Fandom>);
     bool RecalculateFandomStats(QStringList fandoms);
     void Reindex();
     void AddToIndex(core::FandomPtr);
@@ -52,6 +54,7 @@ public:
 
     bool WipeFandom(QString name);
     int GetFandomCount();
+    int GetLastFandomID();
 
     virtual int GetIDForName(QString) ;
     virtual core::FandomPtr GetFandom(QString);
@@ -59,10 +62,31 @@ public:
     virtual void SetLastUpdateDate(QString, QDate);
     virtual void SetTracked(QString, bool value, bool immediate = true);
     virtual bool IsTracked(QString);
+
+    bool IgnoreFandom(QString name, bool includeCrossovers);
+    bool IgnoreFandom(int id, bool includeCrossovers);
+    QStringList GetIgnoredFandoms() const;
+    QHash<int, bool> GetIgnoredFandomsIDs() const;
+    QList<core::FandomPtr> GetAllLoadedFandoms();
+    QHash<int, QString> GetFandomNamesForIDs(QList<int>);
+    bool FetchFandomsForFics(QVector<core::Fic>*);
+
+    bool RemoveFandomFromIgnoredList(QString name);
+    bool RemoveFandomFromIgnoredList(int id);
+
+    bool IgnoreFandomSlashFilter(QString name);
+    bool IgnoreFandomSlashFilter(int id);
+    QStringList GetIgnoredFandomsSlashFilter() const;
+    bool RemoveFandomFromIgnoredListSlashFilter(QString name);
+    bool RemoveFandomFromIgnoredListSlashFilter(int id);
+
+
     virtual QStringList ListOfTrackedNames();
     virtual QList<core::FandomPtr> ListOfTrackedFandoms();
 
-    virtual bool CreateFandom(core::FandomPtr);
+    virtual bool CreateFandom(core::FandomPtr,
+                              bool writeUrls = true,
+                              bool useSuppliedIds = false);
     virtual bool CreateFandom(QString);
     virtual bool AddFandomLink(QString fandom, core::Url);
     virtual bool AssignTagToFandom(QString, QString tag, bool includeCrosses = false);
@@ -87,6 +111,7 @@ private:
 
     QList<core::FandomPtr> fandoms;
     QHash<QString, int> indexFandomsByName;
+    QHash<int, QString> indexFandomsById;
     QHash<QString, core::FandomPtr> nameIndex;
     QHash<int, core::FandomPtr> idIndex;
     QList<core::FandomPtr> updateQueue;

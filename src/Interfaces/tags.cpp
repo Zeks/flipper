@@ -31,17 +31,17 @@ void Tags::LoadAlltags()
 
 bool Tags::DeleteTag(QString tag)
 {
-    return database::puresql::DeleteTagFromDatabase(tag, db);
+    return database::puresql::DeleteTagFromDatabase(tag, db).success;
 }
 
 bool Tags::CreateTag(QString tag)
 {
-    return database::puresql::CreateTagInDatabase(tag, db);
+    return database::puresql::CreateTagInDatabase(tag, db).success;
 }
 
 QStringList Tags::ReadUserTags()
 {
-    QStringList tags = database::puresql::ReadUserTags(db);
+    QStringList tags = database::puresql::ReadUserTags(db).data;
     if(tags.empty())
     {
         tags = CreateDefaultTagList();
@@ -62,21 +62,21 @@ bool Tags::SetTagForFic(int ficId, QString tag)
 
 bool Tags::RemoveTagFromFic(int ficId, QString tag)
 {
-    return database::puresql::RemoveTagFromFanfic(tag, ficId, db);
+    return database::puresql::RemoveTagFromFanfic(tag, ficId, db).success;
 }
 
 QStringList Tags::CreateDefaultTagList()
 {
     QStringList temp;
-    temp += "Meh" ;
-    temp += "Unknown_fandom" ;
-    temp += "Limbo" ;
-    temp += "Read_queue";
+    temp += "Dead" ;
+    temp += "Moar_pls" ;
+    temp += "Hide" ;
+    temp += "Meh";
+    temp += "Liked" ;
+    temp += "Disgusting";
     temp += "Reading" ;
-    temp += "Smut";
-    temp += "Finished" ;
-    temp += "Accumulating" ;
-    temp += "Deleted";
+    temp += "Read_Queue" ;
+    temp += "Finished";
     temp +=  "WTF" ;
     return temp;
 }
@@ -109,8 +109,37 @@ bool Tags::ImportFromFile(QString filename)
     QSharedPointer<database::IDBWrapper> tagImportInterface (new database::SqliteInterface());
     auto tagImportDb = tagImportInterface->InitDatabase("TagExport", false);
     tagImportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagImport");
+    database::Transaction transaction(db);
     database::puresql::ImportTagsFromDatabase(db, tagImportInterface->GetDatabase());
+    transaction.finalize();
     return true;
+}
+
+QSet<int> Tags::GetAllTaggedFics(QStringList tags)
+{
+    return database::puresql::GetAllTaggedFics(tags, db).data;
+}
+
+QVector<core::IdPack> Tags::GetAllFicsThatDontHaveDBID()
+{
+    auto result =  database::puresql::GetAllFicsThatDontHaveDBID(db).data;
+    QVector<core::IdPack> pack;
+    pack.reserve(result.size());
+    for(auto id: result)
+    {
+        pack.push_back({-1, id, -1,-1, -1});
+    }
+    return pack;
+}
+
+bool Tags::FillDBIDsForFics(QVector<core::IdPack> pack)
+{
+    return database::puresql::FillDBIDsForFics(pack, db).success;
+}
+
+bool Tags::FetchTagsForFics(QVector<core::Fic> * fics)
+{
+    return database::puresql::FetchTagsForFics(fics, db).success;
 }
 
 }

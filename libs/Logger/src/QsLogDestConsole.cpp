@@ -65,9 +65,9 @@ void QsDebugOutput::output( const QString& message )
 }
 #endif
 
-void QsLogging::DebugOutputDestination::write(const QString& message, Level level)
+void QsLogging::DebugOutputDestination::write(const QString& message, Level level, Level currentLoggingLevel)
 {
-    if(level >= An<QsLogging::Logger>()->loggingLevel())
+    if(level >= currentLoggingLevel)
     {
         QsDebugOutput::output(message);
     }

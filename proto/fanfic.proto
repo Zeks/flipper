@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package ProtoSpace;
+
+message SiteData{
+    bool is_valid    = 1;
+    string url      = 2;
+    int32 id        = 3;
+}
+
+message SitePack{
+    SiteData ffn    = 1;
+    SiteData ao3    = 2;
+    // ...
+}
+
+// tags will be stored locally for the time being
+message Fanfic{
+
+    bool is_valid                    = 1;
+    int32 id                        = 2;
+    int32 complete                  = 3;
+    int32 recommendations           = 4;
+
+    string word_count                = 5;
+    string chapters                 = 6;
+    string reviews                  = 7;
+    string favourites               = 8;
+    string follows                  = 9;
+    string rated                    = 10;
+    string fandom                   = 11;
+    string author                   = 12;
+    string title                    = 13;
+    string summary                  = 14;
+    string language                 = 15;
+    string published                = 16; // yyyyMMdd
+    string updated                  = 17;   // yyyyMMdd
+    string characters               = 18;
+    
+    repeated string fandoms         = 19;
+    repeated int32  fandom_ids      = 20;
+    string genres                   = 21;    
+    SitePack site_pack              = 22;
+}

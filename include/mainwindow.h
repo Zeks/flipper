@@ -44,8 +44,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "qml_ficmodel.h"
 #include "include/core/section.h"
 #include "include/pagetask.h"
+#include "include/tasks/fandom_task_processor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
+#include "include/environment.h"
+#include <vector>
+
 #include <QMovie>
 
 class QSortFilterProxyModel;
@@ -54,16 +58,7 @@ class QQuickView;
 class QStringListModel;
 class ActionProgress;
 class FFNFandomIndexParserBase;
-namespace interfaces{
-class Fandoms;
-class Fanfics;
-class Authors;
-class Tags;
-class Genres;
-class PageTask;
 
-class RecommendationLists;
-}
 namespace database {
 class IDBWrapper;
 }
@@ -93,7 +88,7 @@ public:
         lfbp_search = 0,
         lfbp_recs = 1
     };
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
 
     //initalizes widgets
     void Init();
@@ -119,18 +114,8 @@ public:
     // used to indicate failure of the performed action to the user
     void SetFailureStatus();
 
-    // the interface classes used to avoid direct database access in the application
-    QSharedPointer<interfaces::Fandoms> fandomsInterface;
-    QSharedPointer<interfaces::Fanfics> fanficsInterface;
-    QSharedPointer<interfaces::Authors> authorsInterface;
-    QSharedPointer<interfaces::Tags> tagsInterface;
-    QSharedPointer<interfaces::Genres> genresInterface;
-    QSharedPointer<interfaces::PageTask> pageTaskInterface;
-    QSharedPointer<interfaces::RecommendationLists> recsInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
-    QSharedPointer<database::IDBWrapper> pageCacheInterface;
-    QSharedPointer<database::IDBWrapper> tasksInterface;
 
+    CoreEnvironment env;
 
 private:
 
@@ -148,6 +133,8 @@ private:
     // a unified function to get the name of the current fandom
     // (without mentioning GUI element each time)
     QString GetCurrentFandomName();
+
+    int GetCurrentFandomID();
 
     // a wrapper over pagegetter to request pages for fandom parsing
     //bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
@@ -175,8 +162,7 @@ private:
     // to separate stuff into pages
     int GetResultCount();
 
-    // used to build the actual query to be used in the database from filters
-    QSqlQuery BuildQuery(bool countOnly = false);
+
 
     // used to fill fandom database with new data from web
     void UpdateFandomList(UpdateFandomTask);
@@ -193,8 +179,6 @@ private:
     // used to call a widget that llows editing of lineedit contents in a larger box
     void CallExpandedWidget();
 
-    // creates page worker that gets pages from ffn in a thread
-    void CreatePageThreadWorker();
     // starts page worker thread execution
     void StartPageWorker();
     // stops page worker thread execution
@@ -222,21 +206,11 @@ private:
     // fill a recommendation list token to be passed into recommendation builder from ui
     QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
 
-    // creates the task and subtasks to load more authors from urls found in the database
-    PageTaskPtr CreatePageTaskFromUrls(QStringList urls, QString taskComment, int subTaskSize = 100,
-                                       int subTaskRetries = 3, ECacheMode cacheMode = ECacheMode::use_cache,
-                                       bool allowCacheRefresh = true);
 
-    PageTaskPtr CreatePageTaskFromFandoms(QList<core::FandomPtr> fandom,
-                                                     QString taskComment,
-                                                     bool allowCacheRefresh);
-    void UseFandomTask(PageTaskPtr);
 
-    // the actual task that procecces he next wave of authors into database
-    void UseAuthorsPageTask(PageTaskPtr,
-                            std::function<void(int)>callProgress,
-                            std::function<void(QString)>callProgressText,
-                            std::function<void(void)> cleanupFunctor);
+    PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandom,
+                              QString taskComment,
+                              bool allowCacheRefresh);
 
     // used to download the next wave of author favourites
     void LoadMoreAuthors();
@@ -244,20 +218,18 @@ private:
     // a utility to pass a functor to all the authors
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
 
-    // used to fix author names when one of the parsers gets a bunch wrong
-    void ReprocessAuthorNamesFromTheirPages();
 
-    // used to create recommendation list from lists/source.txt
-    void ProcessListIntoRecommendations(QString list);
+
+
 
     // creates a recommendation list from passed params
-    int BuildRecommendations(QSharedPointer<core::RecommendationList> params);
+    int BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
 
     // collects information from the ui into a token to be passed to a query generator
-    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false);
+    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false, QString listToUse = QString());
 
-    //fixes the crossover url and selects between 60 and 100k words to add to search params
-    QString AppendCurrentSearchParameters(QString url);
+
+
 
     // pushes fandom to top of recent and reinits the recent fandom listview
     void ReinitRecent(QString name);
@@ -273,52 +245,48 @@ private:
 
     ECacheMode GetCurrentCacheMode() const;
 
+    void CreateSimilarListForGivenFic(int);
+
+    void ReprocessAllAuthorsV2();
+    void ReprocessAllAuthorsJustSlash(QString fieldUsed);
+    void DetectSlashForEverythingV2();
+
+    void CreateListOfHumorCandidates(QList<core::AuthorPtr> authors);
+    void CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors);
+
+    void DoFullCycle();
+    void UseAuthorTask(PageTaskPtr);
+    ForcedFandomUpdateDate CreateForcedUpdateDateFromGUI();
+    void SetClientMode();
+    void ResetFilterUItoDefaults();
+
+//    QHash<int, int> CreateListOfNotSlashFics();
+//    QHash<int, int> MatchSlashToNotSlash();
+
     Ui::MainWindow *ui;
 
     ELastFilterButtonPressed currentSearchButton = ELastFilterButtonPressed::lfbp_search;
 
     bool cancelCurrentTaskPressed = false;
 
-    int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
-    int pageOfCurrentQuery = 0; // current page that the used search query is at
-
-    int processedFics = 0; // amount of fics processed by the last operation
-    int currentLastFanficId = -1;
-
-    QString nextUrl;
-    QString currentFilterUrl;
-
     QStringList tagList; // user tags used in the system
 
-    QList<core::Fic> fanfics; // filtered fanfic data
-
-    QDateTime lastUpdated; // candidate for deletion
-
     QTimer taskTimer; // used to initiate the warnign about unfinished tasks after the app window is shown
-    QTimer fandomInfoTimer; // used to hide the information about the amount of loaded fics
-
-    QThread pageThread; // thread for pagegetter worker to live in
-
-    PageThreadWorker* worker = nullptr;
-    PageQueue pageQueue; // collects data sent from PageThreadWorker
-    core::DefaultQueryBuilder queryBuilder; // builds search queries
-    core::CountQueryBuilder countQueryBuilder; // builds specialized query to get the last page for the interface;
-    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
 
     std::function<void(int)> callProgress; // temporary shit while I decouple page getter from ui
     std::function<void(void)> cleanupEditor; // temporary shit while I decouple page getter from ui
     std::function<void(QString)> callProgressText; // temporary shit while I decouple page getter from ui
 
-    QSharedPointer<TableDataInterface> typetableInterface;
-
-    QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
     QMovie refreshSpin; // an indicator that some work is in progress
-                        // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
+    // using the Movie because it can animate while stuff is happening otherwise without much hassle from my side
 
+    QSharedPointer<TableDataInterface> typetableInterface;
     FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
-    TableDataListHolder<core::Fic>* holder = nullptr; // an interface class that model uses to access the data
+    TableDataListHolder<QVector, core::Fic>* holder = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
+    QStringListModel* ignoredFandomsModel= nullptr;
+    QStringListModel* ignoredFandomsSlashFilterModel= nullptr;
     QStringListModel* recommendersModel = nullptr; // this keeps names of te authors in current recommendation list
 
     QLineEdit* currentExpandedEdit = nullptr; // expanded editor for line edits
@@ -333,6 +301,9 @@ private:
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
     ActionProgress* actionProgress = nullptr;
     QMenu fandomMenu;
+    QMenu ignoreFandomMenu;
+    QMenu ignoreFandomSlashFilterMenu;
+
 
 public slots:
     //broken and needs refactoring anyway
@@ -351,8 +322,6 @@ public slots:
     // triggered when user removes tag from a fic in qml
     void OnTagRemove(QVariant tag, QVariant row);
 
-    // when new page arrives from page worker
-    void OnNewPage(PageResult result);
     // places into the clipboard, the url of the fic clicked in qml
     void OnCopyFicUrl(QString);
     // used to open author pages on heart click that contain the current fic in their favourites
@@ -371,6 +340,8 @@ public slots:
 
     // invoked on "Search" click
     void on_pbLoadDatabase_clicked();
+    void LoadAutomaticSettingsForRecListSources(int size);
+    QList<QSharedPointer<core::Fic> > LoadFavourteLinksFromFFNProfile(QString);
 private slots:
     // called to trudge through a fandom
     void on_pbCrawl_clicked();
@@ -412,6 +383,7 @@ private slots:
     void on_pbLoadAllRecommenders_clicked();
     // used to open favourites of all teh authors in the current list
     void on_pbOpenWholeList_clicked();
+    void OpenRecommendationList(QString);
     // used to load the next wave of authors from LinkedAuthors
     void on_pbFirstWave_clicked();
 
@@ -456,26 +428,82 @@ private slots:
     // used to get all favourites links for the current author on favourites page
     void OnGetAuthorFavouritesLinks();
 
-    //used to hide fandom results on timer
-    void OnHideFandomResults();
-
     // used to toggle enabled status of date cutoff mechanism for fandom parses
     void on_chkCutoffLimit_toggled(bool checked);
 
     void on_chkIgnoreUpdateDate_toggled(bool checked);
 
     void OnRemoveFandomFromRecentList();
+    void OnRemoveFandomFromIgnoredList();
+    void OnRemoveFandomFromSlashFilterIgnoredList();
+
 
     void OnFandomsContextMenu(const QPoint &pos);
+    void OnIgnoredFandomsContextMenu(const QPoint &pos);
+    void OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos);
 
-    void UpdateCategory(QString cat,
-                        FFNFandomIndexParserBase* parser,
-                        QSharedPointer<interfaces::Fandoms> fandomInterface);
+//    void UpdateCategory(QString cat,
+//                        FFNFandomIndexParserBase* parser,
+//                        QSharedPointer<interfaces::Fandoms> fandomInterface);
     void OnOpenLogUrl(const QUrl&);
 
     void OnWipeCache();
 
     void on_pbFormattedList_clicked();
+    void OnFindSimilarClicked(QVariant);
+
+    void on_pbIgnoreFandom_clicked();
+
+    void on_pbReloadAllAuthors_clicked();
+    void OnOpenAuthorListByID();
+
+    void on_pbCreateSlashList_clicked();
+
+    void on_pbProcessSlash_clicked();
+
+    void on_pbDoSlashFullCycle_clicked();
+
+    //void on_pbOneMoreCycle_clicked();
+
+    void on_pbExcludeFandomFromSlashFiltering_clicked();
+
+    void on_pbDisplayHumor_clicked();
+
+    void on_pbReloadAuthors_clicked();
+
+    void OnPerformGenreAssignment();
+    void on_leOpenFicID_returnPressed();
+
+    //void OnExportStatistics();
+
+    void on_pbComedy_clicked();
+
+    void OnUpdatedProgressValue(int);
+    void OnNewProgressString(QString);
+    void OnResetTextEditor();
+    void OnProgressBarRequested(int);
+    void OnWarningRequested(QString value);
+    void OnFillDBIdsForTags();
+    void OnTagReloadRequested();
+
+    void on_chkRecsAutomaticSettings_toggled(bool checked);
+
+    void on_pbRecsLoadFFNProfileIntoSource_clicked();
+
+    void on_pbRecsCreateListFromSources_clicked();
+
+
+    void on_pbReapplyFilteringMode_clicked();
+
+    void on_cbCurrentFilteringMode_currentTextChanged(const QString &arg1);
+
+    void on_cbRecGroup_currentTextChanged(const QString &arg1);
+
+    void on_pbUseProfile_clicked();
+
+    void on_pbMore_clicked();
+
+    void on_pbCreateHTML_clicked();
 
 signals:
 

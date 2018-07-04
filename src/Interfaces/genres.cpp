@@ -20,6 +20,64 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 namespace interfaces {
 
+
+QHash<QString, QString> CreateCodeToDBGenreConverter()
+{
+    QHash<QString, QString> result;
+    result["General"] = "General_";
+    result["Humor"] = "Humor";
+    result["Poetry"] = "Poetry";
+    result["Adventure"] = "Adventure";
+    result["Mystery"] = "Mystery";
+    result["Horror"] = "Horror";
+    result["Parody"] = "Parody";
+    result["Angst"] = "Angst";
+    result["Supernatural"] = "Supernatural";
+    result["Suspense"] = "Suspense";
+    result["Romance"] = "Romance";
+    result["not found"] = "NoGenre";
+    result["Sci-Fi"] = "SciFi";
+    result["Fantasy"] = "Fantasy";
+    result["Spiritual"] = "Spiritual";
+    result["Tragedy"] = "Tragedy";
+    result["Drama"] = "Drama";
+    result["Western"] = "Western";
+    result["Crime"] = "Crime";
+    result["Family"] = "Family";
+    result["Hurt/Comfort"] = "HurtComfort";
+    result["Friendship"] = "Friendship";
+    return result;
+}
+
+QHash<QString, QString> CreateDBToCodeGenreConverter()
+{
+    QHash<QString, QString> result;
+    result["HurtComfort"] = "Hurt/Comfort";
+    result["General_"] = "General";
+    result["NoGenre"] = "not found";
+    result["SciFi"] = "Sci-Fi";
+    result["Humor"] = "Humor";
+    result["Poetry"] = "Poetry";
+    result["Adventure"] = "Adventure";
+    result["Mystery"] = "Mystery";
+    result["Horror"] = "Horror";
+    result["Parody"] = "Parody";
+    result["Angst"] = "Angst";
+    result["Supernatural"] = "Supernatural";
+    result["Suspense"] = "Suspense";
+    result["Romance"] = "Romance";
+    result["Fantasy"] = "Fantasy";
+    result["Spiritual"] = "Spiritual";
+    result["Tragedy"] = "Tragedy";
+    result["Drama"] = "Drama";
+    result["Western"] = "Western";
+    result["Crime"] = "Crime";
+    result["Family"] = "Family";
+    result["Friendship"] = "Friendship";
+    return result;
+}
+
+
 bool interfaces::Genres::IsGenreList(QStringList list)
 {
     bool success = false;
@@ -34,10 +92,16 @@ bool interfaces::Genres::IsGenreList(QStringList list)
 
 bool Genres::LoadGenres()
 {
-    genres = database::puresql::GetAllGenres(db);
+    genres = database::puresql::GetAllGenres(db).data;
     if(genres.empty())
         return false;
     return true;
+}
+
+GenreConverter GenreConverter::Instance()
+{
+    thread_local GenreConverter instance;
+    return instance;
 }
 
 

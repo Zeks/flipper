@@ -31,7 +31,7 @@
 #include <iostream>
 
 const int QsLogging::SizeRotationStrategy::MaxBackupCount = 10;
-
+//comment
 QsLogging::RotationStrategy::~RotationStrategy()
 {
 }
@@ -67,7 +67,7 @@ void QsLogging::SizeRotationStrategy::rotate()
 {
     if (!mBackupsCount) {
         if (!QFile::remove(mFileName))
-            std::cerr << "QsLog: backup delete failed " << qPrintable(mFileName);
+            std::cerr << "QsLog: backup delete failed " << qPrintable(mFileName) << std::endl;
         return;
     }
 
@@ -90,7 +90,7 @@ void QsLogging::SizeRotationStrategy::rotate()
         const bool renamed = QFile::rename(oldName, newName);
         if (!renamed) {
             std::cerr << "QsLog: could not rename backup " << qPrintable(oldName)
-                      << " to " << qPrintable(newName);
+                      << " to " << qPrintable(newName) << std::endl;
         }
     }
 
@@ -100,7 +100,7 @@ void QsLogging::SizeRotationStrategy::rotate()
         QFile::remove(newName);
     if (!QFile::rename(mFileName, newName)) {
         std::cerr << "QsLog: could not rename log " << qPrintable(mFileName)
-                  << " to " << qPrintable(newName);
+                  << " to " << qPrintable(newName) << std::endl;
     }
     rotateOnInit = false;
 }
@@ -128,15 +128,18 @@ QsLogging::FileDestination::FileDestination(const QString& filePath, RotationStr
 {
     mFile.setFileName(filePath);
     if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag()))
-        std::cerr << "QsLog: could not open log file " << qPrintable(filePath);
+        std::cerr << "QsLog: could not open log file " << qPrintable(filePath) << std::endl;
 
     mOutputStream.setDevice(&mFile);
     mOutputStream.setCodec(QTextCodec::codecForName("UTF-8"));
     mRotationStrategy->setInitialInfo(mFile);
 }
 
-void QsLogging::FileDestination::write(const QString& message, Level)
+void QsLogging::FileDestination::write(const QString& message, Level level, Level currentLoggingLevel)
 {
+    if(level < currentLoggingLevel)
+        return;
+
     mRotationStrategy->includeMessageInCalculation(message);
     if (mRotationStrategy->shouldRotate())
     {
@@ -144,7 +147,7 @@ void QsLogging::FileDestination::write(const QString& message, Level)
         mFile.close();
         mRotationStrategy->rotate();
         if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag()))
-            std::cerr << "QsLog: could not reopen log file " << qPrintable(mFile.fileName());
+            std::cerr << "QsLog: could not reopen log file " << qPrintable(mFile.fileName()) << std::endl;
         mRotationStrategy->setInitialInfo(mFile);
         mOutputStream.setDevice(&mFile);
     }
@@ -184,7 +187,7 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
                 mFile.close();
                 mRotationStrategy->rotate();
                 if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag()))
-                    std::cerr << "QsLog: could not reopen log file " << qPrintable(mFile.fileName());
+                    std::cerr << "QsLog: could not reopen log file " << qPrintable(mFile.fileName()) << std::endl;
                 mRotationStrategy->setInitialInfo(mFile);
                 mOutputStream.setDevice(&mFile);
             }
@@ -203,7 +206,7 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
             mFile.close();
             mRotationStrategy->rotate();
             if (!mFile.open(QFile::WriteOnly | QFile::Text | mRotationStrategy->recommendedOpenModeFlag()))
-                std::cerr << "QsLog: could not reopen log file " << qPrintable(mFile.fileName());
+                std::cerr << "QsLog: could not reopen log file " << qPrintable(mFile.fileName()) << std::endl;
             mRotationStrategy->setInitialInfo(mFile);
             mOutputStream.setDevice(&mFile);
         }
@@ -226,4 +229,10 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
 void QsLogging::ErrDumpDestination::clearQueue()
 {
     queue.clear();
+}
+
+void QsLogging::FileDestination::Rotate()
+{
+    if(mRotationStrategy)
+        mRotationStrategy->rotate();
 }

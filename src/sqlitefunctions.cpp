@@ -22,12 +22,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDriver>
 #include <QFile>
 #include <QDebug>
+#include <QSettings>
 #include <QTextStream>
 #include <third_party/quazip/quazip.h>
 #include <third_party/quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
 #include "include/transaction.h"
+#include "include/in_tag_accessor.h"
 #include "pure_sql.h"
+#include "logger/QsLog.h"
 
 namespace database{
 
@@ -64,6 +67,140 @@ void cfRegexp(sqlite3_context* ctx, int , sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
     }
 }
+
+void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    thread_local An<UserInfoAccessor> accessor;
+    auto* data = ThreadData::GetUserData();
+
+    if(data->allTags.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
+void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto* data= ThreadData::GetRecommendationData();
+
+    if(data->sourceFics.contains(ficId))
+    {
+        //qDebug() << "fic in data: " << ficId;
+        sqlite3_result_int(ctx, 1);
+    }
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
+void cfInActualRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    auto* data= ThreadData::GetRecommendationData();
+    if(data->recommendationList.contains(ficId))
+    {
+        //qDebug() << "fic in data: " << ficId;
+        sqlite3_result_int(ctx, 1);
+    }
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
+
+void cfRecommendationsMatches(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto* data= ThreadData::GetRecommendationData();
+    if(!data)
+    {
+        sqlite3_result_int(ctx, 0);
+        return;
+    }
+    auto& hash = data->recommendationList;
+    QHash<int, int>::iterator it = hash.find(ficId);
+    if(it == hash.end())
+        sqlite3_result_int(ctx, 0);
+    else
+        sqlite3_result_int(ctx, it.value());
+}
+
+
+void cfInAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int authorId = sqlite3_value_int(argv[0]);
+    auto* data= ThreadData::GetRecommendationData();
+    if(!data)
+    {
+        sqlite3_result_int(ctx, 0);
+        return;
+    }
+    if(data->matchedAuthors.contains(authorId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
+
+
+
+void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    auto* data = ThreadData::GetUserData();
+    int fandom1 = sqlite3_value_int(argv[0]);
+    int fandom2 = sqlite3_value_int(argv[0]);
+    QList<int> fandoms = {fandom1, fandom2};
+    if(!fandoms.size())
+        sqlite3_result_int(ctx, 0);
+
+    if(fandoms.size() == 1)
+    {
+        if(data->ignoredFandoms.contains(fandoms.at(0)))
+            sqlite3_result_int(ctx, 1);
+        else
+            sqlite3_result_int(ctx, 0);
+    }
+    else
+    {
+        bool hasUnignored = false;
+        for(auto fandom: fandoms)
+        {
+            auto it = data->ignoredFandoms.find(fandom);
+            if(it == data->ignoredFandoms.end())
+            {
+                hasUnignored = true;
+                continue;
+            }
+            if(it.value() == true)
+            {
+                sqlite3_result_int(ctx, 1);
+                break;
+            }
+        }
+        if(hasUnignored)
+            sqlite3_result_int(ctx, 0);
+        else
+            sqlite3_result_int(ctx, 1);
+
+    }
+
+}
+
+void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    thread_local An<UserInfoAccessor> accessor;
+    auto* data = ThreadData::GetUserData();
+
+    if(data->activeTags.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
 void cfReturnCapture(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     QString pattern((const char*)sqlite3_value_text(argv[0]));
@@ -102,6 +239,7 @@ void cfGetSecondFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
 
 bool InstallCustomFunctions(QSqlDatabase db)
 {
+    QLOG_INFO() << "Installing custom sqlite functions";
     QVariant v = db.driver()->handle();
     if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
     {
@@ -109,18 +247,31 @@ bool InstallCustomFunctions(QSqlDatabase db)
         if (db_handle != 0) {
             sqlite3_initialize();
             sqlite3_create_function(db_handle, "cfRegexp", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRegexp, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInTags", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInTags, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInRecommendations", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInActualRecommendations", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActualRecommendations, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfRecommendationsMatches", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatches, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInAuthors, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInActiveTags", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInActiveTags, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetFirstFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfGetSecondFandom", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfGetSecondFandom, NULL, NULL);
             sqlite3_create_function(db_handle, "cfReturnCapture", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfReturnCapture, NULL, NULL);
+            QLOG_INFO() << "Installed funcs succesfully";
             return true;
         }
     }
+    QLOG_INFO() << "Func install failed";
     return false;
 }
 
 bool ReadDbFile(QString file, QString connectionName)
 {
     QFile data(file);
+
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    auto reportSchemaErrors = settings.value("Settings/reportSchemaErrors", false).toBool();
 
     qDebug() << "Reading init file: " << file;
     if (data.open(QFile::ReadOnly))
@@ -144,7 +295,7 @@ bool ReadDbFile(QString file, QString connectionName)
             //bool isOpen = db.isOpen();
             QSqlQuery q(db);
             q.prepare(statement.trimmed());
-            database::puresql::ExecAndCheck(q);
+            database::puresql::ExecAndCheck(q, reportSchemaErrors);
         }
     }
     else
@@ -158,19 +309,21 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
     QStringList result;
     QString qs = QString("select group_concat(id, ',') as merged, " + where);
     //qs= qs.arg(where);
-    qDebug().noquote() << "RANDOM: " << qs;
+
     QSqlQuery q(db);
     q.prepare(qs);
     auto it = query->bindings.begin();
     auto end = query->bindings.end();
     while(it != end)
     {
-        qDebug() << it.key() << " " << it.value();
-        q.bindValue(it.key(), it.value());
+        qDebug() << it->key << " " << it->value;
+        q.bindValue(it->key, it->value);
         ++it;
     }
+    QLOG_INFO_PURE() << "RANDOM: " << qs;
     if(!database::puresql::ExecAndCheck(q))
         return result;
+    QLOG_INFO_PURE() << "RANDOM FINISHED";
 
     q.next();
     auto temp = q.value("merged").toString();
@@ -184,6 +337,7 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
 bool BackupSqliteDatabase(QString dbName)
 {
     bool success = true;
+#ifdef CLIENT_APP
     QDir dir("backups");
     QStringList filters;
     filters << "*.zip";
@@ -207,6 +361,7 @@ bool BackupSqliteDatabase(QString dbName)
             continue;
         success = success && QFile::remove("backups/" + entry);
     };
+#endif
     return success;
 }
 
@@ -305,6 +460,21 @@ int CreateNewSubTask(int taskId, QSqlDatabase db)
     auto id = GetLastIdForTable("PageTaskParts", db);
     tr.finalize();
     return id;
+}
+
+QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault)
+{
+    QSqlDatabase db;
+    if(setDefault)
+        db = QSqlDatabase::addDatabase("QSQLITE");
+    else
+        db = QSqlDatabase::addDatabase("QSQLITE", dbName);
+    db.setDatabaseName(filename + ".sqlite");
+    bool isOpen = db.open();
+    qDebug() << "Database status: " << dbName << ", open : " << isOpen;
+    InstallCustomFunctions(db);
+
+    return db;
 }
 
 

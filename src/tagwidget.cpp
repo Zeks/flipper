@@ -153,7 +153,7 @@ void TagWidget::OnTagClicked(const QUrl& url)
 
 
     emit tagToggled(currentId, tag, doEnable);
-    emit refilter();
+    //emit refilter();
 }
 
 void TagWidget::OnNewTag(QString tag, bool enabled)
@@ -215,6 +215,8 @@ void TagWidget::OnTagImport()
     if(m.clickedButton() == dropTask)
         return;
     tagsInterface->ImportFromFile("TagExport.sqlite");
+    emit dbIDRequest();
+    emit tagReloadRequested();
 }
 
 

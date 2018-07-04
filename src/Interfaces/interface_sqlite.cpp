@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include "Interfaces/interface_sqlite.h"
 #include "include/sqlitefunctions.h"
+#include <QUuid>
 namespace database{
 
 SqliteInterface::SqliteInterface()
@@ -71,7 +72,25 @@ bool SqliteInterface::ReadDbFile(QString file, QString connectionName)
 QSqlDatabase SqliteInterface::InitDatabase(QString connectionName, bool setDefault)
 {
     db = sqlite::InitDatabase(connectionName, setDefault);
+    EnsureUUIDForUserDatabase();
     return db;
+}
+
+QSqlDatabase SqliteInterface::InitNamedDatabase(QString dbName, QString fileName, bool setDefault)
+{
+    db = sqlite::InitNamedDatabase(dbName, fileName, setDefault);
+    EnsureUUIDForUserDatabase();
+    return db;
+}
+
+bool SqliteInterface::EnsureUUIDForUserDatabase()
+{
+    return database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
+}
+
+QString SqliteInterface::GetUserToken()
+{
+    return database::puresql::GetUserToken(db).data;
 }
 
 }

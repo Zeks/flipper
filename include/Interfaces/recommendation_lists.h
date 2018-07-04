@@ -46,6 +46,7 @@ public:
     QString GetListNameForId(int id);
 
     bool DeleteList(int listId);
+    bool DeleteListData(int listId);
 
 
     bool ReloadList(int listId);
@@ -57,24 +58,33 @@ public:
     bool LoadAuthorRecommendationStatsIntoDatabase(int listId, core::AuhtorStatsPtr stats);
     bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId);
     bool LoadListIntoDatabase(core::RecPtr);
+    bool LoadListFromServerIntoDatabase(int listId,
+                                        const QVector<int>& fics,
+                                        const QVector<int>& matches);
+
+
 
     core::AuhtorStatsPtr CreateAuthorRecommendationStatsForList(int authorId, int listId);
     bool IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId);
     bool DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId);
     bool UpdateFicCountInDatabase(int listId);
     bool AddAuthorFavouritesToList(int authorId, int listId, bool reloadLocalData = false);
-    bool SetFicsAsListOrigin(QList<int> ficIds, int listId);
+    bool SetFicsAsListOrigin(QVector<int> ficIds, int listId);
     bool IsAuthorInCurrentRecommendationSet(QString author);
+
+    bool CreateRecommendationList(QString name, QHash<int, int> fics);
 
     QStringList GetAllRecommendationListNames(bool forced = false);
     QList<core::AuhtorStatsPtr> GetAuthorStatsForList(int id, bool forced = false);
     core::AuhtorStatsPtr GetIndividualAuthorStatsForList(int id, int authorId);
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId);
+    QHash<int, int> GetAllFicsHash(int listId);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QList<int> GetRecommendersForFicId(int ficId);
     QStringList GetLinkedPagesForList(int listId, QString website);
+    QHash<int, int> GetMatchesForUID(QString uid);
 
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);
@@ -89,6 +99,7 @@ public:
 
     QHash<int, QList<core::AuhtorStatsPtr>> cachedAuthorStats;
     QHash<int, QVector<int>> ficsCacheForLists;
+    QHash<int, QHash<int, int>> grpcCacheForLists;
     QHash<int, QStringList> authorsCacheForLists;
 
     QSqlDatabase db;

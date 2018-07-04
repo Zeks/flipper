@@ -18,6 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/core/section.h"
 #include <QDebug>
 
+//core::FicSectionStats core::Author::MergeStats(QList<core::AuthorPtr> authors)
+//{
+
+//    for(auto author : authors)
+//    {
+
+//    }
+//}
+
 void core::Author::Log()
 {
 
@@ -137,4 +146,17 @@ void core::Fic::FicCalcStats::Log()
     qDebug() << "ReviewsTofavourites:" << reviewsTofavourites;
     qDebug() << "Age:" << age;
     qDebug() << "DaysRunning:" << daysRunning;
+}
+
+void core::RecommendationList::Log()
+{
+
+    qDebug() << "List id: " << id ;
+    qDebug() << "name: " << name ;
+    qDebug() << "ficCount: " << ficCount ;
+    qDebug() << "tagToUse: " << tagToUse ;
+    qDebug() << "minimumMatch: " << minimumMatch ;
+    qDebug() << "alwaysPickAt: " << alwaysPickAt ;
+    qDebug() << "pickRatio: " << pickRatio ;
+    qDebug() << "created: " << created ;
 }

@@ -112,7 +112,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[RatedRole] = "rated";
     roles[AtChapterRole] = "atChapter";
     roles[RownumRole] = "rownum";
-    //roles[FicIdRole] = "ficid";
+    roles[FicIdRole] = "ID";
     roles[RecommendationsRole] = "recommendations";
     return roles;
 }

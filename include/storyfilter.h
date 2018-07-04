@@ -18,9 +18,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include <QStringList>
 #include <QDateTime>
-
+#include <QHash>
+#include <QVector>
+#include <QSet>
+struct SlashFilterState
+{
+    void Log();
+    bool slashFilterEnabled;
+    bool applyLocalEnabled;
+    bool excludeSlash;
+    bool includeSlash;
+    bool excludeSlashLocal;
+    bool includeSlashLocal;
+    bool enableFandomExceptions;
+    QList<int> fandomExceptions;
+    int slashFilterLevel;
+};
 namespace core{
 struct StoryFilter{
+    void Log();
+
     static QStringList ProcessDelimited(QString str, QString delimiter){
         if(str.contains(delimiter))
             return str.split(delimiter);
@@ -28,13 +45,17 @@ struct StoryFilter{
     }
     enum ESortMode
     {
-        wordcount =  0,
-        favourites = 1,
-        favrate =    2,
-        updatedate = 3,
-        publisdate = 4,
-        reccount=    5,
-        wcrcr =      6
+        sm_undefined    = 0,
+        sm_wordcount    = 1,
+        sm_favourites   = 2,
+        sm_favrate      = 3,
+        sm_updatedate   = 4,
+        sm_publisdate   = 5,
+        sm_reccount     = 6,
+        sm_wcrcr        = 7,
+        sm_revtofav     = 8,
+        sm_genrevalues  = 9,
+
     };
     enum EReviewBiasMode{
         bias_none    = 0,
@@ -46,26 +67,33 @@ struct StoryFilter{
         bias_less = 1
     };
     enum EFilterMode{
-        filtering_in_fics = 0,
-        filtering_in_recommendations = 1
+        filtering_undefined = 0,
+        filtering_in_fics = 1,
+        filtering_in_recommendations = 2,
+        filtering_whole_list = 3
     };
     //do I even need that?
     //QString ficCategory;
 
     bool includeCrossovers = false;
     bool ignoreAlreadyTagged = false;
+    bool crossoversOnly = false;
+    bool ignoreFandoms = false;
     bool randomizeResults = false;
     bool ensureCompleted = false;
     bool ensureActive = false;
     bool allowUnfinished = true;
     bool allowNoGenre = true;
     bool showOriginsInLists = false;
+    bool otherFandomsMode = false;
+    bool listOpenMode= false;
+    SlashFilterState slashFilter;
 
     int useThisRecommenderOnly = -1;
     int recordLimit = -1;
     int recordPage = -1;
-    int physicalRecordLimit = -1;
-    int lastFetchedRecordID = -1;
+//    int physicalRecordLimit = -1;
+//    int lastFetchedRecordID = -1;
     int minWords = 0;
     int maxWords = 0;
     int maxFics = 0;
@@ -79,19 +107,22 @@ struct StoryFilter{
     EBiasOperator biasOperator;
     EFilterMode mode;
 
-    QString fandom;
+    int fandom = -1;
     QString website;
 
     QStringList genreExclusion;
     QStringList genreInclusion;
     QStringList wordExclusion;
     QStringList wordInclusion;
-    QStringList titleInclusion;
     QStringList activeTags;
     QDateTime recentCutoff;
+    QString genreSortField;
 
     double reviewBiasRatio = 0;
 
+    QList<int> taggedIDs;
+    QVector<int> recFics;
+    QHash<int, int> recsHash; // for use on the server
 };
 }
 

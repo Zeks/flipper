@@ -137,6 +137,21 @@ Rectangle {
                     }
                 }
             }
+            Image {
+                id: imgFindSimilar
+                width: 24
+                height: 24
+                verticalAlignment: Text.AlignVCenter
+                source: "qrc:/icons/icons/scan_small.png"
+                visible: lvFics.showScanIcon
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        lvFics.findSimilarClicked(url);
+                    }
+                }
+            }
             Text {
                 id: lblTitle
                 width: 517

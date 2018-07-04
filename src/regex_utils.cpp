@@ -18,6 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/regex_utils.h"
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
+#include <QString>
+#include <QDebug>
+#include "core/section.h"
 NarrowResult GetNextInstanceOf(QString text, QString regex1, QString regex2, bool forward)
 {
     QRegExp rx1(regex1);
@@ -80,3 +83,306 @@ QString GetDoubleNarrow(QString text,
     result = temp.mid(secondNarrow.second + lengthOfLastTag, firstNarrow.second);
     return result;
 }
+RegularExpressionToken operator"" _s ( const char* data, size_t )
+{
+    return RegularExpressionToken(data, 0);
+}
+RegularExpressionToken operator"" _c ( const char* data, size_t )
+{
+    return RegularExpressionToken(data, 1);
+}
+
+QString BouncingSearch(QString str, FieldSearcher finder)
+{
+    auto tokens = finder.tokens;
+    QString reversed = str;
+    std::reverse(reversed.begin(), reversed.end());
+    QStringRef directRef(&str);
+    QStringRef reversedRef(&reversed);
+    QStringRef currentString;
+    int lastPosition = 0;
+    int skip = 0;
+    bool found = true;
+    int originalSize;
+    for(auto token: tokens)
+    {
+
+        QRegularExpression rx;
+        if(token.forwardDirection)
+        {
+            currentString = directRef;
+            rx.setPattern(token.regex);
+            lastPosition = reversedRef.size() - skip;
+        }
+        else{
+            currentString = reversedRef;
+            rx.setPattern(token.reversedRegex);
+            lastPosition = skip;
+        }
+        auto match = rx.match(currentString);
+        if(match.isValid())
+        {
+            skip = match.capturedStart() + token.moveAmount;
+            originalSize = reversedRef.size();
+            if(token.forwardDirection)
+            {
+                if(token.snapLeftBound)
+                {
+                    directRef = directRef.mid(skip);
+                    reversedRef = reversedRef.mid(0, (originalSize - skip));
+                }
+                else
+                {
+                    directRef = directRef.mid(0, skip);
+                    reversedRef = reversedRef.mid(originalSize - skip);
+                }
+
+            }
+            else
+            {
+
+                if(token.snapLeftBound)
+                {
+                    reversedRef = reversedRef.mid(skip);
+                    directRef = directRef.mid(0, (originalSize - skip));
+                }
+                else
+                {
+                    reversedRef = reversedRef.mid(0, skip);
+                    directRef = directRef.mid(originalSize - skip);
+
+                }
+            }
+        }
+        else
+        {
+            found = false;
+            break;
+        }
+    }
+    QString result;
+    if(found)
+    {
+        result = directRef.toString();
+    }
+    return result;
+}
+
+void CommonRegex::Init()
+{
+    universalSlashRegex = "(slash([^a-z]|$))|(\\smm(\\s|[,]))|(yaoi)|(lgbt)|((\\s|^|[.,])m[-/*x]m(\\s|$|[,.]))|(sho[u]{0,1}nen[\\s-]ai)|(\\sgay(\\s|[.]))|"
+                          "(queer)|(mpreg)|(boy\\slove)|((boy|guy)\\s{0,1}x\\s{0,1}(boy|guy))|(homosexual)|(00q)|((\\s|[.])(k|s|^)[-/*x&]{1}(k|s)(\\s|[.]|$))|"
+                          "(\\stop[!][a-z])|(\\sbottom[!][a-z])";
+
+    QString characterSeparator = "((\\s{0,1}[-/\\*x]{1}\\s{0,1})|([-/\\*x]{0,1}))";
+    QString names = "((harry)|(hp)|(cedric)|(lv)|(lucius)|(lm)|(ss)|(snape)|(sev(erus){0,1})"
+                    "|(draco)|(dm)|(sirius)|(sb)|(remus)|(rl)|(ron)|(rw)|(t[m]{0,1}r)|(voldemort)"
+                    "|(voldie)|(fenrir))";
+    QString fixedNamesOnly = names + characterSeparator + names;
+    QString fixedHpTerms = "(snarry)|(harrymort)|(drarry)";
+    QString fixedHpFull = fixedHpTerms + "|(" + fixedNamesOnly + ")";
+    slashRegexPerFandom["Harry Potter"] = fixedHpFull;
+
+
+
+    names = "((kaka(shi){0,1})|(harry)|(sas(u){0,1}(ke){0,1})|(nar(u){0,1}(to){0,1})|(iru(ka){0,1})|(lee)|(gaa(ra){0,1})|(kiba)|(shika(maru){0,1})|(mina(to){0,1}))";
+    fixedNamesOnly = names + characterSeparator + names;
+    slashRegexPerFandom["Naruto"] = fixedNamesOnly;
+
+    names = "((ichi(go){0,1})|(ren(ji){0,1})|(zara(ki){0,1})|(hi(tsugaya){0,1})|(ikka(ku){0,1})|(byaku(ya){0,1})|(chad))";
+    fixedNamesOnly = names + characterSeparator + names;
+    slashRegexPerFandom["Bleach"] = fixedNamesOnly;
+    slashRegexPerFandom["Death Note"] = "(L/Light)|(Light/L)";
+
+    characterSlashPerFandom["Naruto"] = "([\\[]Naruto\\sU[.][,]\\sSasuke\\sU[.][\\]])";
+    characterSlashPerFandom["Naruto"] += "|([\\[]Kakashi\\sH[.][,]\\sIruka\\sU[.][\\]])";
+    characterSlashPerFandom["Thor"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
+    characterSlashPerFandom["Avengers"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
+    characterSlashPerFandom["Hobbit"] ="([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])";
+
+    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a(\\s{0,1})){0,1}(slash|yaoi))|((\\s)jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\sfem-)|(fem(m){0,1}(e){0,1}slash)|(\\smentor\\s)"
+               "|(f/f)";
+
+    QString notSlashCharacterSpecialCase;
+    notSlashCharacterSpecialCase+="|(naru(to){0,1}\\s{0,1}" + characterSeparator + "\\s{0,1}naru(to){0,1})";
+    notSlashCharacterSpecialCase+="|(harry\\s{0,1}" + characterSeparator + "\\s{0,1}harry)";
+    notSlashCharacterSpecialCase+="|(ichigo\\s{0,1}" + characterSeparator + "\\s{0,1}ichigo)";
+    notSlashCharacterSpecialCase+="|femnaru|femharry|femichi";
+    notSlashCharacterSpecialCase+="|kagsess|inukag|sesskag|kaginu|hieikag|kaghiei";
+    notSlashCharacterSpecialCase+="|femshep";
+    notSlash+=notSlashCharacterSpecialCase;
+
+    smut = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)|"
+           "(futanari)|(lemon)|(yuri)|(incest)|(succubus)|(incub)|(\\sanal\\s)|(vagina)";
+
+    characterSlashPerFandom["D.Gray-Man"] ="([\\[]Allen\\sWalker[,]\\sKanda\\sYuu[\\]])";
+
+    characterNotSlashPerFandom["Harry Potter"] = "(Hermione)|(Bella)|(lily)|(winky)";
+    characterNotSlashPerFandom["Inuyasha"] = "(Kagome)";
+    characterNotSlashPerFandom["Naruto"] = "(Sakura)";
+    characterNotSlashPerFandom["Mass Effect"] = "Shepard\\s[\\()]F";
+
+
+    rxUniversal.setPattern(universalSlashRegex);
+    rxUniversal.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+
+    rxNotSlash.setPattern(notSlash);
+    rxNotSlash.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+
+    rxSmut.setPattern(smut);
+    rxSmut.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+
+
+    for(auto fandom : slashRegexPerFandom.keys())
+    {
+        rxHashSlashFandom[fandom].setPattern(slashRegexPerFandom[fandom]);
+        rxHashSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+    }
+    for(auto fandom : characterSlashPerFandom.keys())
+    {
+        rxHashCharacterSlashFandom[fandom].setPattern(characterSlashPerFandom[fandom]);
+        rxHashCharacterSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+    }
+    for(auto fandom : characterNotSlashPerFandom.keys())
+    {
+        rxHashCharacterNotSlashFandom[fandom].setPattern(characterNotSlashPerFandom[fandom]);
+        rxHashCharacterNotSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+    }
+    initComplete = true;
+}
+
+void CommonRegex::Log()
+{
+//    QHash<QString, QString> slashRegexPerFandom;
+//    QHash<QString, QString> characterSlashPerFandom;
+
+//    QString universalSlashRegex;
+//    QString notSlash; // universal not slash
+//    QString smut; // universal smut
+    qDebug().noquote() << "Logging regex token";
+    qDebug().noquote() << "Smut: " << smut;
+    qDebug().noquote() << "Not slash: " << notSlash;
+    qDebug().noquote() << "US: " << universalSlashRegex;
+    for(auto fandom: slashRegexPerFandom.keys())
+        qDebug().noquote() << "FS: " << fandom << " " << slashRegexPerFandom[fandom];
+    for(auto fandom: characterSlashPerFandom.keys())
+        qDebug().noquote() << "FCS: " << fandom << " " << characterSlashPerFandom[fandom];
+
+}
+
+// apply per fandom summary token
+//    for(auto fandom : fandoms)
+//    {
+//        if(slashRegexPerFandom.contains(fandom))
+//            containsSlash = containsSlash  || summary.contains(QRegularExpression(slashRegexPerFandom[fandom], QRegularExpression::CaseInsensitiveOption));
+
+//        if(characterSlashPerFandom.contains(fandom))
+//            containsSlash = containsSlash  || characters.contains(QRegularExpression(characterSlashPerFandom[fandom], QRegularExpression::CaseInsensitiveOption));
+//    }
+
+SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QString fandoms) const
+{
+    SlashPresence result;
+    bool containsSlash = false;
+    // apply universal regex
+    bool doLogging = false;
+    bool doNotSlashCharacterLogging = false;
+    QRegularExpressionMatch match;
+    match = rxUniversal.match(summary);
+    containsSlash = match.hasMatch();
+
+    if(doLogging && containsSlash)
+    {
+        qDebug().noquote() << summary;
+        qDebug().noquote() << match.capturedTexts();
+        qDebug().noquote() << "end match";
+    }
+
+
+    for(auto fandom : slashRegexPerFandom.keys())
+    {
+        QRegularExpressionMatch match;
+        if(fandoms.contains(fandom))
+        {
+            match = rxHashSlashFandom[fandom].match(summary);
+        }
+        containsSlash = containsSlash || match.hasMatch();
+        if(doLogging && match.hasMatch())
+        {
+            qDebug().noquote() << slashRegexPerFandom[fandom];
+            qDebug().noquote() << summary;
+            qDebug() << match.capturedTexts();
+            qDebug() << "end match";
+        }
+    }
+    for(auto fandom : characterSlashPerFandom.keys())
+    {
+        QRegularExpressionMatch match;
+        if(fandoms.contains(fandom))
+        {
+            match = rxHashCharacterSlashFandom[fandom].match(characters);
+        }
+        if(doLogging && match.hasMatch())
+        {
+            qDebug().noquote() << summary;
+            qDebug() << match.capturedTexts();\
+            qDebug() << "end match";
+        }
+        containsSlash = containsSlash || match.hasMatch();
+    }
+    result.containsSlash = containsSlash;
+
+    bool containsNotSlash = false;
+
+    match = rxNotSlash.match(summary);
+    containsNotSlash = match.hasMatch() || characters.contains("Minerva");
+    if(doLogging && match.hasMatch())
+    {
+        qDebug().noquote() << summary;
+        qDebug() << match.capturedTexts();\
+        qDebug() << "end match";
+    }
+    for(auto fandom : characterNotSlashPerFandom.keys())
+    {
+        QRegularExpressionMatch match;
+        if(fandoms.contains(fandom))
+        {
+            match = rxHashCharacterNotSlashFandom[fandom].match(characters);
+        }
+        if(doNotSlashCharacterLogging && match.hasMatch())
+        {
+            qDebug().noquote() << summary;
+            qDebug() << match.capturedTexts();\
+            qDebug() << "end match";
+        }
+        containsNotSlash = containsNotSlash || match.hasMatch();
+    }
+    result.containsNotSlash = containsNotSlash;
+
+    return result;
+}
+
+QString GetSlashRegex()
+{
+    static QString slashRx = "(slash)|(\\smm\\s)|(yaoi)|(lgbt)|(m[-/*x]m)|(harry[-/*x]{0,1}cedric)|(lv[-/*x]{0,1}hp)|(hp[-/*x]{0,1}lv)|"
+                             "(hp[-/*x]{0,1}ss)|(ss[-/*x]{0,1}hp)|(harrymort)|(homosexual)|(harry[-/*x]draco)|(draco[-/*x]harry)|"
+                             "(ulquiorra[-/*x]ichigo)|(ichigo[-/*x]ulquiorra)|"
+                             "(ichi(go){0,1}[-/*x]ren(ji){0,1})|(ren(ji){0,1}[-/*x]ichi(go){0,1})|"
+                             "(ichi(go){0,1}[-/*x]byak)|(byak(uya){0,1}[-/*x]ichi(go){0,1})|"
+                             "(hp[-/*x]{0,1}dm)|(dm[-/*x]{0,1}hp)|(mpreg)|(sasu[-/*x]{0,1}naru)|(snarry)|"
+                             "(naru[-/*x]{0,1}sasu)|(sho[u]{0,1}nen\\sai)|(ita[-/*x]{0,1}naru)|(snape[-/*x]{0,1}harry)|"
+                             "(naru[-/*x]{0,1}ita)|(kaka[-/*x]{0,1}iru)|(iru[-/*x]{0,1}kaka)|(kaka[-/*x]{0,1}naru)|"
+                             "(naru[-/*x]{0,1}kaka)|(kaka[-/*x]{0,1}sasu)|(sasu[-/*x]{0,1}kaka)(kiba[-/*x]{0,1}naru)|"
+                             "(naru[-/*x]{0,1}kiba)|(naru[-/*x]{0,1}iru)|(iru[-/*x]{0,1}naru)(gaara[-/*x]{0,1}naru)|"
+                             "(naru[-/*x]{0,1}gaara)|(\\sgay(\\s|[.]))|(queer)|(boy\\slove)|"
+                             "(voldemort\\s{0,2}/\\s{0,2}harry)|(harry/voldemort)|(drarry)|(hp[/]{0,1}t[m]{0,1}r)|(t[m]{0,1}r[/]{0,1}hp)|"
+                             "(rw[-/*x]{0,1}hp)|(hp[-/*x]{0,1}rw)|(hp[-/*x]{0,1}lm)|(lm[-/*x]{0,1}hp)|"
+                             "(sb[-/*x]{0,1}hp)|(hp[-/*x]{0,1}sb)|(rl[-/*x]{0,1}hp)|(hp[-/*x]{0,1}rl)|(k[-/*x]s|s[-/*x]k)"
+                             "([\\[]Naruto\\sU[.][,]\\sSasuke\\sU[.][\\]])|"
+                             "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(00q)|"
+                             "(Thor[,]\\sLoki[\\]])"
+                             "([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])|((boy|guy)\\s{0,1}x\\s{0,1}(boy|guy))";
+
+    return slashRx;
+}
+

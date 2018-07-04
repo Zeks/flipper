@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/core/section.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/parsers/ffn/ffnparserbase.h"
+#include "regex_utils.h"
 #include <QString>
 #include <QSqlDatabase>
 #include <QDateTime>
@@ -26,7 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 class FavouriteStoryParser : public FFNParserBase
 {
 public:
-    FavouriteStoryParser(){}
+    FavouriteStoryParser(){
+        if(!commonRegex.initComplete)
+            commonRegex.Init();
+    }
     FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics);
     QList<QSharedPointer<core::Fic>> ProcessPage(QString url,QString&);
     QString ExtractRecommenderNameFromUrl(QString url);
@@ -42,14 +46,24 @@ public:
     void ClearDoneCache();
     void SetCurrentTag(QString);
     void SetAuthor(core::AuthorPtr);
+    void UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
+                                      const CommonRegex& regexToken,
+                                      QHash<int, int>& wordsKeeper);
 
     QStringList diagnostics;
+    //QSharedPointer<interfaces::Fandoms> fandomInterface;
     QList<QSharedPointer<core::Fic>> processedStuff;
-
+    static void MergeStats(core::AuthorPtr,  QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers);
+    static void MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<core::FicSectionStatsTemporaryToken> tokens);
+    core::FicSectionStatsTemporaryToken statToken;
     core::FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;
     QSet<QString> fandoms;
+    core::AuthorPtr authorStats;
+    CommonRegex commonRegex;
+    QSet<int> knownSlashFics;
 };
 
+QString ParseAuthorNameFromFavouritePage(QString data);
