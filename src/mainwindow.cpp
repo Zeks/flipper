@@ -119,6 +119,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->cbNormals->lineEdit()->setClearButtonEnabled(true);
+    ui->leContainsWords->setClearButtonEnabled(true);
+    ui->leContainsGenre->setClearButtonEnabled(true);
+    ui->leNotContainsWords->setClearButtonEnabled(true);
+    ui->leNotContainsGenre->setClearButtonEnabled(true);
 
 }
 
@@ -220,11 +224,22 @@ void MainWindow::Init()
     //ui->edtResults->setOpenExternalLinks(true);
     ui->cbWordCutoff->setVisible(false);
     ui->edtRecsContents->setReadOnly(false);
-
+    ui->wdgDetailedRecControl->hide();
     bool thinClient = settings.value("Settings/thinClient").toBool();
     if(thinClient)
         SetClientMode();
     ResetFilterUItoDefaults();
+//    ui->spRecsFan->setStretchFactor(0, 0);
+//    ui->spRecsFan->setStretchFactor(1, 1);
+    ui->spFanIgnFan->setCollapsible(0,0);
+    ui->spFanIgnFan->setCollapsible(1,0);
+    ui->spFanIgnFan->setSizes({1000,0});
+    ui->spRecsFan->setCollapsible(0,0);
+    ui->spRecsFan->setCollapsible(1,0);
+    ui->wdgDetailedRecControl->hide();
+    ui->spRecsFan->setSizes({0,1000});
+    ui->wdgSlashFandomExceptions->hide();
+    ui->chkEnableSlashExceptions->hide();
 }
 
 void MainWindow::InitConnections()
@@ -555,10 +570,8 @@ WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool auto
 void MainWindow::LoadData()
 {
     if(ui->cbMinWordCount->currentText().trimmed().isEmpty())
-    {
-        QMessageBox::warning(nullptr, "warning!", "Please set minimum word count");
-        return;
-    }
+        ui->cbMinWordCount->setCurrentText("0");
+
     if(env.filter.recordPage == 0)
     {
         env.sizeOfCurrentQuery = GetResultCount();
@@ -2254,6 +2267,8 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
     }
 }
 
+
+
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
@@ -2284,6 +2299,9 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     Q_UNUSED(result);
     auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+
+    ui->cbSortMode->setCurrentText("Rec Count");
+    on_pbLoadDatabase_clicked();
 }
 
 
@@ -2335,6 +2353,7 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->sbFavrateValue->setValue(4);
     ui->sbPageSize->setValue(100);
     ui->sbMaxRandomFicCount->setValue(6);
+
 }
 
 void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
@@ -2364,4 +2383,31 @@ void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.sync();
+}
+
+void MainWindow::on_pbUseProfile_clicked()
+{
+    on_pbRecsLoadFFNProfileIntoSource_clicked();
+    ResetFilterUItoDefaults();
+    on_pbRecsCreateListFromSources_clicked();
+}
+
+void MainWindow::on_pbMore_clicked()
+{
+    if(!ui->wdgDetailedRecControl->isVisible())
+    {
+        ui->spRecsFan->setCollapsible(0,0);
+        ui->spRecsFan->setCollapsible(1,0);
+        ui->wdgDetailedRecControl->show();
+        ui->spRecsFan->setSizes({1000,0});
+        ui->pbMore->setText("Less");
+    }
+    else
+    {
+        ui->spRecsFan->setCollapsible(0,0);
+        ui->spRecsFan->setCollapsible(1,0);
+        ui->wdgDetailedRecControl->hide();
+        ui->spRecsFan->setSizes({0,1000});
+        ui->pbMore->setText("More");
+    }
 }

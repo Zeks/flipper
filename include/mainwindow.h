@@ -499,6 +499,10 @@ private slots:
 
     void on_cbRecGroup_currentTextChanged(const QString &arg1);
 
+    void on_pbUseProfile_clicked();
+
+    void on_pbMore_clicked();
+
 signals:
 
 
