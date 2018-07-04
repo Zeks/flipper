@@ -503,6 +503,8 @@ private slots:
 
     void on_pbMore_clicked();
 
+    void on_pbCreateHTML_clicked();
+
 signals:
 
 

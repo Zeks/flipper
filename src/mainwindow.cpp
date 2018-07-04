@@ -62,6 +62,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QClipboard>
 #include <QMovie>
 #include <QVector>
+#include <QFileDialog>
 #include <chrono>
 #include <algorithm>
 #include <math.h>
@@ -772,7 +773,7 @@ void MainWindow::OnDoFormattedListByFandoms()
             if(validGenre)
             {
                 result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
-                result+=ficPtr->genres.join("/")+ "<br><br>";
+                result+=ficPtr->genreString + "<br><br>";
                 QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
                 if(ficPtr->complete)
@@ -806,7 +807,7 @@ void MainWindow::OnDoFormattedList()
         if(validGenre)
         {
             result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
-            result+=ficPtr->genres.join("/")+ "<br><br>";
+            result+=ficPtr->genreString + "<br><br>";
             QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
             if(ficPtr->complete)
@@ -903,7 +904,9 @@ void MainWindow::ReadSettings()
 
 
     ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
-    ui->pbFormattedList->setVisible(settings.value("Settings/showListCreation", false).toBool());
+    bool thinClient = settings.value("Settings/thinClient").toBool();
+    if(thinClient)
+        ui->pbFormattedList->setVisible(settings.value("Settings/showHTLProto", false).toBool());
     ui->chkInfoForLinks->setVisible(settings.value("Settings/showListCreation", false).toBool());
     ui->pbFirstWave->setVisible(settings.value("Settings/showExperimentaWaveparser", false).toBool());
     ui->pbWipeFandom->setVisible(settings.value("Settings/pbWipeFandom", false).toBool());
@@ -2047,6 +2050,35 @@ void MainWindow::on_pbFormattedList_clicked()
         OnDoFormattedList();
 }
 
+void MainWindow::on_pbCreateHTML_clicked()
+{
+    on_pbFormattedList_clicked();
+    QString partialfileName = ui->cbRecGroup->currentText() + "_page_" + QString::number(env.pageOfCurrentQuery) + ".html";
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                "FicLists/" + partialfileName,
+                                tr("*.html"));
+    if(fileName.isEmpty())
+        return;
+
+    QFile f(fileName);
+    f.open( QIODevice::WriteOnly );
+    QTextStream ts(&f);
+    QClipboard *clipboard = QApplication::clipboard();
+    QString header = "<!DOCTYPE html>"
+            "<html>"
+            "<head>"
+            "<title>Page Title</title>"
+            "</head>"
+            "<body>";
+    QString footer = "</body>"
+            "</html>";
+    ts << header;
+    ts << clipboard->text();
+    ts << footer;
+    f.close();
+}
+
+
 void MainWindow::OnFindSimilarClicked(QVariant url)
 {
     //auto id = url_utils::GetWebId(url.toString(), "ffn");
@@ -2411,3 +2443,4 @@ void MainWindow::on_pbMore_clicked()
         ui->pbMore->setText("More");
     }
 }
+
