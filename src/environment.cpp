@@ -49,11 +49,8 @@ void CoreEnvironment::LoadData()
     }
 
     QVector<int> recFics;
-    if(filter.sortMode == core::StoryFilter::sm_reccount)
-    {
-        // need to pass the list to the server
-        filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList());
-    }
+    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList());
+
     QVector<core::Fic> newFanfics;
     ficSource->FetchData(filter,
                          &newFanfics);

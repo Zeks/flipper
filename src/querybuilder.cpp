@@ -90,7 +90,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
             else
             {
 
-                QString temp = " and sumrecs >= :match_count ";
+                QString temp = " and cfInRecommendations(f.id) > 0 and sumrecs >= :match_count ";
                 temp= temp.arg(userToken);
                 where = temp + where;
             }

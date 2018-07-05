@@ -171,7 +171,6 @@ Rectangle {
             signal urlCopyClicked(string msg)
             signal findSimilarClicked(var id)
             signal recommenderCopyClicked(string msg)
-
         }
     }
 

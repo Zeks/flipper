@@ -83,6 +83,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
 
 }
 
+
 FicModel::FicModel(QObject *parent) : AdaptingTableModel(parent)
 {
 

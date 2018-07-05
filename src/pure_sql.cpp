@@ -1570,14 +1570,13 @@ DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack> pack, QSqlDatab
 
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInRecommendations(fic_id, 'TEST') > 0 group by fic_id");
+    QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInRecommendations(fic_id) > 0 group by fic_id");
     QHash<int, QString> tags;
-    An<RecommendationsInfoAccessor> accessor;
-    accessor->SetData("TEST", QSharedPointer<RecommendationsData>(new RecommendationsData()));
-    QSharedPointer<RecommendationsData> data = accessor->GetData("TEST");
+    auto* data= ThreadData::GetRecommendationData();
+    auto& hash = data->recommendationList;
 
     for(const auto& fic : *fics)
-        data->sourceFics.insert(fic.id);
+        hash.insert(fic.id, 0);
 
     SqlContext<bool> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){

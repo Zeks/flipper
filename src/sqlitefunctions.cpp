@@ -81,25 +81,13 @@ void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
 }
 
-void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
-{
-    int ficId = sqlite3_value_int(argv[0]);
-    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    auto* data= ThreadData::GetRecommendationData();
 
-    if(data->sourceFics.contains(ficId))
-    {
-        //qDebug() << "fic in data: " << ficId;
-        sqlite3_result_int(ctx, 1);
-    }
-    else
-        sqlite3_result_int(ctx, 0);
-}
 
 void cfInActualRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
     auto* data= ThreadData::GetRecommendationData();
+
     if(data->recommendationList.contains(ficId))
     {
         //qDebug() << "fic in data: " << ficId;
@@ -109,7 +97,22 @@ void cfInActualRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
 }
 
-
+void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto* data= ThreadData::GetRecommendationData();
+    if(!data)
+    {
+        sqlite3_result_int(ctx, 0);
+        return;
+    }
+    auto& hash = data->recommendationList;
+    if(hash.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
 void cfRecommendationsMatches(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);

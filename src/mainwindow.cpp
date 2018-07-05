@@ -1740,10 +1740,10 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
     filter.genreSortField = ui->leGenreSortField->text();
     filter.showOriginsInLists = ui->chkShowOrigins->isChecked();
-    filter.minRecommendations =  ui->sbMinRecommendations->value();
+    filter.minRecommendations =  ui->sbMinimumListMatches->value();
     filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : -1;
     filter.recordPage = ui->chkLimitPageSize->isChecked() ?  0 : -1;
-    filter.listOpenMode = ui->chkListMode->isChecked();
+    filter.listOpenMode = ui->chkSearchWithinList->isChecked();
     //if(ui->cbSortMode->currentText())
     if(listToUse.isEmpty())
         filter.listForRecommendations = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
@@ -2385,6 +2385,8 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->sbFavrateValue->setValue(4);
     ui->sbPageSize->setValue(100);
     ui->sbMaxRandomFicCount->setValue(6);
+    ui->chkSearchWithinList->setChecked(false);
+    ui->sbMinimumListMatches->setValue(1);
 
 }
 
@@ -2401,6 +2403,8 @@ void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
         ui->chkRandomizeSelection->setChecked(true);
         ui->sbMaxRandomFicCount->setValue(6);
         ui->cbSortMode->setCurrentText("Rec Count");
+        ui->chkSearchWithinList->setChecked(true);
+        ui->sbMinimumListMatches->setValue(1);
     }
     if(ui->cbCurrentFilteringMode->currentText() == "Tag Search")
     {

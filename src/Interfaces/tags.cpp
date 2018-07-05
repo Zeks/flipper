@@ -73,6 +73,7 @@ QStringList Tags::CreateDefaultTagList()
     temp += "Hide" ;
     temp += "Meh";
     temp += "Liked" ;
+    temp += "Disliked" ;
     temp += "Disgusting";
     temp += "Reading" ;
     temp += "Read_Queue" ;

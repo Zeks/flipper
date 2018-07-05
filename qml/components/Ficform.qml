@@ -257,19 +257,19 @@ Rectangle {
                 }
                 onModelChanged: {currentIndex = atChapter}
                 MouseArea {
-                       anchors.fill: parent
-                       onWheel: {
-                           // do nothing
-                       }
-                       onPressed: {
-                           // propogate to ComboBox
-                           mouse.accepted = false;
-                       }
-                       onReleased: {
-                           // propogate to ComboBox
-                           mouse.accepted = false;
-                       }
-                   }
+                    anchors.fill: parent
+                    onWheel: {
+                        // do nothing
+                    }
+                    onPressed: {
+                        // propogate to ComboBox
+                        mouse.accepted = false;
+                    }
+                    onReleased: {
+                        // propogate to ComboBox
+                        mouse.accepted = false;
+                    }
+                }
 
             }
 
@@ -313,6 +313,7 @@ Rectangle {
                     }
                 }
             }
+
             Text {
                 id: txtRecCount
                 width: recommendations > 0 ? 20 : 0
@@ -321,6 +322,53 @@ Rectangle {
                 visible: recommendations > 0
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 16
+            }
+            Image {
+                id: imgLike
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                visible: recommendations > 0
+                opacity: tags.indexOf("Disliked") === -1 ? 1 : 0.5
+                source: tags.indexOf("Liked") !== -1 ? "qrc:/icons/icons/like_green.png" :  "qrc:/icons/icons/like.png"
+
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Liked") === -1)
+                        {
+                            lvFics.tagAdded("Liked",indexOfThisDelegate)
+                            lvFics.tagDeleted("Disliked",indexOfThisDelegate)
+                        }
+                        else
+                            lvFics.tagDeleted("Liked",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgDislike
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                visible: recommendations > 0
+                opacity: tags.indexOf("Liked") === -1 ? 1 : 0.3
+                source: tags.indexOf("Disliked") !== -1 ? "qrc:/icons/icons/dislike_red.png" :  "qrc:/icons/icons/dislike.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Disliked") === -1)
+                        {
+                            lvFics.tagAdded("Disliked",indexOfThisDelegate)
+                            lvFics.tagDeleted("Liked",indexOfThisDelegate)
+                        }
+                        else
+                            lvFics.tagDeleted("Disliked",indexOfThisDelegate)
+                    }
+                }
             }
             Text {
                 id: txtWords

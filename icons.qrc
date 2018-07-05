@@ -22,6 +22,9 @@
         <file>icons/error2.png</file>
         <file>icons/scan.png</file>
         <file>icons/scan_small.png</file>
+        <file>icons/like.png</file>
+        <file>icons/dislike.png</file>
+        <file>icons/dislike_red.png</file>
+        <file>icons/like_green.png</file>
     </qresource>
-    <qresource prefix="/"/>
 </RCC>
