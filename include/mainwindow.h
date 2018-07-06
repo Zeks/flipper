@@ -342,6 +342,7 @@ public slots:
     void on_pbLoadDatabase_clicked();
     void LoadAutomaticSettingsForRecListSources(int size);
     QList<QSharedPointer<core::Fic> > LoadFavourteLinksFromFFNProfile(QString);
+    void OnQMLRefilter();
 private slots:
     // called to trudge through a fandom
     void on_pbCrawl_clicked();

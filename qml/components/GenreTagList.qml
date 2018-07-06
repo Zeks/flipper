@@ -44,15 +44,15 @@ Item {
     }
 
     Component.onCompleted: {
-            tsGenre.activated.connect(tsTags.deactivate)
-            tsGenre.activated.connect(tsTags.restore)
-            tsTags.activated.connect(tsGenre.deactivate)
-            tsTags.activated.connect(delegateItem.tagListActivated)
-            delegateItem.mouseClicked.connect(tagGenreList.makeSelection)
-            tsTags.tagToggled.connect(delegateItem.tagToggled)
-            tagColumn.y = tsTags.y + tsTags.height + 20
-            tagColumn.x = tagGenreList.x
-            //tagGenreList.makeSelection();
-        }
+        tsGenre.activated.connect(tsTags.deactivate)
+        tsGenre.activated.connect(tsTags.restore)
+        tsTags.activated.connect(tsGenre.deactivate)
+        tsTags.activated.connect(delegateItem.tagListActivated)
+        delegateItem.mouseClicked.connect(tagGenreList.makeSelection)
+        tsTags.tagToggled.connect(delegateItem.tagToggled)
+        tagColumn.y = tsTags.y + tsTags.height + 20
+        tagColumn.x = tagGenreList.x
+        //tagGenreList.makeSelection();
+    }
 }
 

@@ -65,17 +65,11 @@ Rectangle{
             anchors.fill: parent
             onClicked: {
                 print("Current index: " + delegateItem.indexOfThisDelegate)
-                //delegateItem.z = 10
                 lvFics.currentIndex = delegateItem.indexOfThisDelegate
                 active = true
                 activated(delegateItem.indexOfThisDelegate)
-//                if(tagName === "Genre")
-//                {
-                    root.parent.rotation =  0;
-                    rect.rotation = 0;
-                //}
-
-
+                root.parent.rotation =  0;
+                rect.rotation = 0;
             }
         }
         Image{

@@ -33,93 +33,93 @@ Rectangle {
         color: leadingColor
         height: info.height - 2
         width: parent.width
-    RowLayout{
-        id:row
-        Image {
-            id: imgBack
-            anchors.bottomMargin: 3
-            width: mainWindow.textSize
-            height: mainWindow.textSize
-            sourceSize.height: mainWindow.textSize
-            sourceSize.width: mainWindow.textSize
-            visible: true
-            source: mainWindow.havePagesBefore ? "qrc:/icons/icons/back_blue.png" :  "qrc:/icons/icons/back_grey.png"
-            MouseArea{
-                enabled: mainWindow.havePagesBefore
-                anchors.fill : parent
-                propagateComposedEvents : true
-                onClicked : {
-                    mainWindow.backClicked();
+        RowLayout{
+            id:row
+            Image {
+                id: imgBack
+                anchors.bottomMargin: 3
+                width: mainWindow.textSize
+                height: mainWindow.textSize
+                sourceSize.height: mainWindow.textSize
+                sourceSize.width: mainWindow.textSize
+                visible: true
+                source: mainWindow.havePagesBefore ? "qrc:/icons/icons/back_blue.png" :  "qrc:/icons/icons/back_grey.png"
+                MouseArea{
+                    enabled: mainWindow.havePagesBefore
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        mainWindow.backClicked();
+                    }
                 }
             }
-        }
-        Image {
-            id: imgForward
-            anchors.bottomMargin: 3
-            width: mainWindow.textSize
-            height: mainWindow.textSize
-            sourceSize.height: mainWindow.textSize
-            sourceSize.width: mainWindow.textSize
-            visible: true
-            source: mainWindow.havePagesAfter ? "qrc:/icons/icons/forward_blue.png" :  "qrc:/icons/icons/forward_grey.png"
-            MouseArea{
-                enabled: mainWindow.havePagesAfter
-                anchors.fill : parent
-                propagateComposedEvents : true
-                onClicked : {
-                    mainWindow.forwardClicked();
+            Image {
+                id: imgForward
+                anchors.bottomMargin: 3
+                width: mainWindow.textSize
+                height: mainWindow.textSize
+                sourceSize.height: mainWindow.textSize
+                sourceSize.width: mainWindow.textSize
+                visible: true
+                source: mainWindow.havePagesAfter ? "qrc:/icons/icons/forward_blue.png" :  "qrc:/icons/icons/forward_grey.png"
+                MouseArea{
+                    enabled: mainWindow.havePagesAfter
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        mainWindow.forwardClicked();
+                    }
                 }
             }
-        }
-        Label {
-            id:info
-            font.pixelSize: mainWindow.textSize
-            text: "At page:"
-            anchors.bottom: row.bottom
-            anchors.bottomMargin: 2
-        }
-        Rectangle{
-            color: "lightyellow"
-
-            anchors.top: row.top
-            anchors.topMargin: 2
-            anchors.bottom: row.bottom
-            anchors.bottomMargin: 3
-            width: 80
-            height:row.height - 5
-            TextInput{
+            Label {
+                id:info
                 font.pixelSize: mainWindow.textSize
-                anchors.fill: parent
-                text: mainWindow.currentPage
-                validator: IntValidator{}
-                horizontalAlignment: TextInput.AlignRight
-                onEditingFinished: {
-                    mainWindow.pageRequested(text)
+                text: "At page:"
+                anchors.bottom: row.bottom
+                anchors.bottomMargin: 2
+            }
+            Rectangle{
+                color: "lightyellow"
+
+                anchors.top: row.top
+                anchors.topMargin: 2
+                anchors.bottom: row.bottom
+                anchors.bottomMargin: 3
+                width: 80
+                height:row.height - 5
+                TextInput{
+                    font.pixelSize: mainWindow.textSize
+                    anchors.fill: parent
+                    text: mainWindow.currentPage
+                    validator: IntValidator{}
+                    horizontalAlignment: TextInput.AlignRight
+                    onEditingFinished: {
+                        mainWindow.pageRequested(text)
+                    }
                 }
             }
-        }
-        Label {
-            text: "of:"
-            font.pixelSize: mainWindow.textSize
-            anchors.bottom: row.bottom
-            anchors.bottomMargin: 2
-        }
-        Label {
-            id:total
-            font.pixelSize: mainWindow.textSize
-            text: mainWindow.totalPages
-            anchors.bottom: row.bottom
-            anchors.bottomMargin: 2
-        }
+            Label {
+                text: "of:"
+                font.pixelSize: mainWindow.textSize
+                anchors.bottom: row.bottom
+                anchors.bottomMargin: 2
+            }
+            Label {
+                id:total
+                font.pixelSize: mainWindow.textSize
+                text: mainWindow.totalPages
+                anchors.bottom: row.bottom
+                anchors.bottomMargin: 2
+            }
 
-        Item {
-            // spacer item
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            //Rectangle { anchors.fill: parent; color: "#ffaaaa" } // to visualize the spacer
+            Item {
+                // spacer item
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                //Rectangle { anchors.fill: parent; color: "#ffaaaa" } // to visualize the spacer
+            }
+            width: parent.width
         }
-        width: parent.width
-    }
     }
     Item {
         id:spacerBeforeSeparator
@@ -171,6 +171,21 @@ Rectangle {
             signal urlCopyClicked(string msg)
             signal findSimilarClicked(var id)
             signal recommenderCopyClicked(string msg)
+            signal refilter()
+            MouseArea {
+                id: ma
+                z: 1
+                hoverEnabled: false
+                anchors.fill: parent
+                onClicked:
+                {
+                    console.log(lvFics.currentIndex)
+
+                    if(!lvFics.itemAt(mouseX, mouseY))
+                        lvFics.refilter()
+                }
+
+            }
         }
     }
 

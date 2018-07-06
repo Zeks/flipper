@@ -487,6 +487,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(findSimilarClicked(QVariant)), this, SLOT(OnFindSimilarClicked(QVariant)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
+    connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
@@ -885,6 +886,11 @@ QList<QSharedPointer<core::Fic>> MainWindow::LoadFavourteLinksFromFFNProfile(QSt
     }
     result = env.LoadAuthorFics(url);
     return result;
+}
+
+void MainWindow::OnQMLRefilter()
+{
+    on_pbLoadDatabase_clicked();
 }
 
 
