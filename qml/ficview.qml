@@ -174,15 +174,17 @@ Rectangle {
             signal refilter()
             MouseArea {
                 id: ma
-                z: 1
-                hoverEnabled: false
+                z:0
                 anchors.fill: parent
+                propagateComposedEvents: true
                 onClicked:
                 {
-                    console.log(lvFics.currentIndex)
-
                     if(!lvFics.itemAt(mouseX, mouseY))
+                    {
                         lvFics.refilter()
+                        mouse.accepted = true
+                    }
+                    mouse.accepted = false
                 }
 
             }
