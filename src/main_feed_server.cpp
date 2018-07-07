@@ -384,7 +384,10 @@ public:
 
         QSet<int> sourceFics;
         for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
+        {
             sourceFics.insert(task->id_packs().ffn_ids(i));
+            //recs->recommendationList[task->id_packs().ffn_ids(i)]
+        }
         if(sourceFics.size() == 0)
             return Status::OK;
         recs->sourceFics = sourceFics;

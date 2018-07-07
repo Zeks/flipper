@@ -19,9 +19,10 @@ QHash<int, int> FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFics, QShare
 {
     QHash<int, AuthorResult> authorsResult;
     QHash<int, int> ficResult;
+    auto& favs = favourites;
     TimedAction action("Reclist Creation",[&](){
-        auto it = favourites.begin();
-        while (it != favourites.end())
+        auto it = favs.begin();
+        while (it != favs.end())
         {
             auto& author = authorsResult[it.key()];
             author.id = it.key();
@@ -33,8 +34,8 @@ QHash<int, int> FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFics, QShare
                 if(it.value().contains(source))
                     author.matches = author.matches + 1;
             }
-//            if(author.matches > 0)
-//                QLOG_INFO() << " Author: " << it.key() << " had: " << author.matches << " matches";
+            //if(author.matches > 0)
+                //QLOG_INFO() << " Author: " << it.key() << " had: " << author.matches << " matches";
             ++it;
         }
         for(auto author: authorsResult)

@@ -107,8 +107,8 @@ void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
         return;
     }
-    auto& hash = data->recommendationList;
-    if(hash.contains(ficId))
+    auto& sources = data->sourceFics;
+    if(sources.contains(ficId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);
