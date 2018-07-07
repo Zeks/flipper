@@ -38,7 +38,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
     query = NewQuery();
 
     queryString.clear();
-    bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.minRecommendations > 0;
+    bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.listOpenMode;
     bool useRecommendationOrdering = !filter.listOpenMode;
     if(createLimits)
     {

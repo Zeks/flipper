@@ -1573,10 +1573,10 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
     QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInRecommendations(fic_id) > 0 group by fic_id");
     QHash<int, QString> tags;
     auto* data= ThreadData::GetRecommendationData();
-    auto& hash = data->recommendationList;
+    auto& hash = data->sourceFics;
 
     for(const auto& fic : *fics)
-        hash.insert(fic.id, 0);
+        hash.insert(fic.id);
 
     SqlContext<bool> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){

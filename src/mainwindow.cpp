@@ -1044,20 +1044,27 @@ void MainWindow::OnChapterUpdated(QVariant id, QVariant chapter)
 void MainWindow::OnTagAdd(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
-    SetTag(rownum, tag.toString());
     QModelIndex index = typetableModel->index(rownum, 10);
     auto data = typetableModel->data(index, 0).toString();
     data += " " + tag.toString();
+
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    SetTag(id, tag.toString());
+
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
 }
 
 void MainWindow::OnTagRemove(QVariant tag, QVariant row)
 {
-    UnsetTag(row.toInt(), tag.toString());
+    int rownum = row.toInt();
     QModelIndex index = typetableModel->index(row.toInt(), 10);
     auto data = typetableModel->data(index, 0).toString();
     data = data.replace(tag.toString(), "");
+
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    UnsetTag(id, tag.toString());
+
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
 }

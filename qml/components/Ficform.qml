@@ -18,7 +18,6 @@ Rectangle {
 
         onClicked : {
             delegateItem.mouseClicked();
-            //console.log("clickoutside");
         }
     }
 
@@ -249,34 +248,30 @@ Rectangle {
             ComboBox {
                 id: cbChapters
                 height: 24
+                visible: true
                 model: chapters
 
                 onActivated:  {
-                    //print("Current text: " + index)
                     lvFics.chapterChanged(index, ID)
                 }
                 onModelChanged: {currentIndex = atChapter}
                 MouseArea {
                     anchors.fill: parent
+                    propagateComposedEvents: true
                     onWheel: {
                         // do nothing
                     }
                     onPressed: {
-                        // propogate to ComboBox
-                        mouse.accepted = false;
-                    }
-                    onReleased: {
-                        // propogate to ComboBox
-                        mouse.accepted = false;
+                        mouse.accepted = false
                     }
                 }
-
             }
 
             Text {
                 id: txtOf
                 height: 24
                 text: "Of: " + String(parseInt(chapters) - 1)
+                //text: "" + String(parseInt(chapters) - 1)
                 verticalAlignment: Text.AlignVCenter
 
                 font.pixelSize: 12
@@ -329,7 +324,6 @@ Rectangle {
                 height: 24
                 sourceSize.height: 20
                 sourceSize.width: 20
-                visible: recommendations > 0
                 opacity: tags.indexOf("Disliked") === -1 ? 1 : 0.5
                 source: tags.indexOf("Liked") !== -1 ? "qrc:/icons/icons/like_green.png" :  "qrc:/icons/icons/like.png"
 
@@ -353,7 +347,6 @@ Rectangle {
                 height: 24
                 sourceSize.height: 20
                 sourceSize.width: 20
-                visible: recommendations > 0
                 opacity: tags.indexOf("Liked") === -1 ? 1 : 0.3
                 source: tags.indexOf("Disliked") !== -1 ? "qrc:/icons/icons/dislike_red.png" :  "qrc:/icons/icons/dislike.png"
                 MouseArea{

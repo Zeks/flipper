@@ -14,6 +14,7 @@ Rectangle {
     signal backClicked()
     signal forwardClicked()
 
+
     Rectangle{
         id:leadingLine
         width: parent.width
@@ -172,11 +173,14 @@ Rectangle {
             signal findSimilarClicked(var id)
             signal recommenderCopyClicked(string msg)
             signal refilter()
+
             MouseArea {
                 id: ma
-                z:0
                 anchors.fill: parent
                 propagateComposedEvents: true
+                onPressed:{
+                    mouse.accepted = false
+                }
                 onClicked:
                 {
                     if(!lvFics.itemAt(mouseX, mouseY))
@@ -184,7 +188,8 @@ Rectangle {
                         lvFics.refilter()
                         mouse.accepted = true
                     }
-                    mouse.accepted = false
+                    else
+                        mouse.accepted = false
                 }
 
             }
