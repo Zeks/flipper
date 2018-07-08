@@ -53,7 +53,7 @@ std::string DTS(const QDateTime & date)
 
 
 
-ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
+ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter, ProtoSpace::UserData* userData)
 {
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
@@ -136,8 +136,8 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
     for(auto fic : filter.recsHash.keys())
     {
-        recommendations->add_list_of_fics(fic);
-        recommendations->add_list_of_matches(filter.recsHash[fic]);
+        userData->mutable_recommendation_list()->add_list_of_fics(fic);
+        userData->mutable_recommendation_list()->add_list_of_matches(filter.recsHash[fic]);
     }
     return result;
 }
@@ -159,7 +159,7 @@ void ProtoFandomToLocalFandom(const ProtoSpace::Fandom& protoFandom, core::Fando
 
 
 
-core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
+core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const ProtoSpace::UserData& userData)
 {
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
@@ -215,9 +215,6 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
 //    for(int i = 0; i < filter.tag_filter().all_tagged_size(); i++)
 //        result.taggedIDs.push_back(filter.tag_filter().all_tagged(i));
 
-    for(int i = 0; i < filter.recommendations().list_of_fics_size(); i++)
-        result.recsHash[filter.recommendations().list_of_fics(i)] = filter.recommendations().list_of_matches(i);
-
 
     result.slashFilter.slashFilterEnabled = filter.slash_filter().use_slash_filter();
     result.slashFilter.excludeSlash = filter.slash_filter().exclude_slash();
@@ -232,6 +229,12 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
     result.useThisRecommenderOnly = filter.recommendations().use_this_recommender_only();
     result.minRecommendations = filter.recommendations().min_recommendations();
     result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
+
+    result.ignoredFandomCount = userData.ignored_fandoms().fandom_ids_size();
+    result.recommendationsCount = userData.recommendation_list().list_of_fics_size();
+    for(int i = 0; i < userData.recommendation_list().list_of_fics_size(); i++)
+        result.recsHash[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
+
 
     return result;
 }
@@ -416,7 +419,9 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
 
     ProtoSpace::SearchTask task;
 
-    ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
+    ProtoSpace::Filter protoFilter;
+    auto* userData = task.mutable_user_data();
+    protoFilter = proto_converters::StoryFilterIntoProto(filter, userData);
     task.set_allocated_filter(&protoFilter);
 
     QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
@@ -426,7 +431,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
-    auto* userData = task.mutable_user_data();
+
     auto* tags = userData->mutable_user_tags();
 
     for(auto tag : this->userData.allTags)
@@ -463,7 +468,10 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
 
     ProtoSpace::FicCountTask task;
 
-    ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
+    ProtoSpace::Filter protoFilter;
+    auto* userData = task.mutable_user_data();
+    proto_converters::StoryFilterIntoProto(filter, userData);
+
     task.set_allocated_filter(&protoFilter);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
@@ -662,7 +670,7 @@ bool VerifyNotEmpty(const int& val){
     return true;
 }
 
-bool VerifyFilterData(const ProtoSpace::Filter& filter)
+bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserData& user)
 {
     if(!VerifyString(filter.basic_filters().website(), 10))
         return false;
@@ -680,9 +688,9 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter)
 //        return false;
 //    if(!VerifyInt(filter.tag_filter().active_tags_size(), 50000))
 //        return false;
-    if(!VerifyInt(filter.recommendations().list_of_fics_size(), 1000000))
+    if(!VerifyInt(user.recommendation_list().list_of_fics_size(), 1000000))
         return false;
-    if(!VerifyInt(filter.recommendations().list_of_matches_size(), 1000000))
+    if(!VerifyInt(user.recommendation_list().list_of_matches_size(), 1000000))
         return false;
     if(!VerifyInt(filter.slash_filter().fandom_exceptions_size(), 20000))
         return false;

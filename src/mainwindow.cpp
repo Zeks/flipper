@@ -231,8 +231,8 @@ bool MainWindow::Init()
     if(thinClient)
         SetClientMode();
     ResetFilterUItoDefaults();
-//    ui->spRecsFan->setStretchFactor(0, 0);
-//    ui->spRecsFan->setStretchFactor(1, 1);
+    //    ui->spRecsFan->setStretchFactor(0, 0);
+    //    ui->spRecsFan->setStretchFactor(1, 1);
     ui->spFanIgnFan->setCollapsible(0,0);
     ui->spFanIgnFan->setCollapsible(1,0);
     ui->spFanIgnFan->setSizes({1000,0});
@@ -274,7 +274,8 @@ void MainWindow::InitConnections()
         if(ui->gbTagFilters->isChecked() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0)
         {
             env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-            LoadData();
+            if(env.filter.isValid)
+                LoadData();
         }
         if(ui->gbTagFilters->isChecked()  && ui->wdgTagsPlaceholder->GetSelectedTags().size() == 0)
             on_pbLoadDatabase_clicked();
@@ -829,8 +830,11 @@ void MainWindow::on_pbLoadDatabase_clicked()
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     env.filter.recordPage = 0;
     env.pageOfCurrentQuery = 0;
-    LoadData();
-    PlaceResults();
+    if(env.filter.isValid)
+    {
+        LoadData();
+        PlaceResults();
+    }
 }
 
 void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
@@ -1414,11 +1418,11 @@ PageTaskPtr MainWindow::ProcessFandomsAsTask(QList<core::FandomPtr> fandoms, QSt
 {
     ForcedFandomUpdateDate forcedDate = CreateForcedUpdateDateFromGUI();
     auto result = env.ProcessFandomsAsTask(fandoms,
-                             taskComment,
-                             allowCacheRefresh,
-                             GetCurrentCacheMode(),
-                             ui->cbWordCutoff->currentText(),
-                             forcedDate);
+                                           taskComment,
+                                           allowCacheRefresh,
+                                           GetCurrentCacheMode(),
+                                           ui->cbWordCutoff->currentText(),
+                                           forcedDate);
     return result;
 }
 
@@ -1478,14 +1482,17 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 void MainWindow::ReprocessAllAuthorsV2()
 {
     TaskProgressGuard guard(this);
-    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
+    if(env.filter.isValid)
+    {
+        env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
 
-    QSqlDatabase db = QSqlDatabase::database();
-    AuthorStatsProcessor authorProcessor(db,
-                                         env.interfaces.fanfics,
-                                         env.interfaces.fandoms,
-                                         env.interfaces.authors);
-    authorProcessor.ReprocessAllAuthorsStats(ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+        QSqlDatabase db = QSqlDatabase::database();
+        AuthorStatsProcessor authorProcessor(db,
+                                             env.interfaces.fanfics,
+                                             env.interfaces.fandoms,
+                                             env.interfaces.authors);
+        authorProcessor.ReprocessAllAuthorsStats(ui->chkWaveOnlyCache->isChecked() ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+    }
 }
 
 void MainWindow::ReprocessAllAuthorsJustSlash(QString fieldUsed)
@@ -1573,8 +1580,8 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
 
     TaskProgressGuard guard(this);
     auto task = env.LoadTrackedFandoms(CreateForcedUpdateDateFromGUI(),
-                           GetCurrentCacheMode(),
-                           ui->cbWordCutoff->currentText());
+                                       GetCurrentCacheMode(),
+                                       ui->cbWordCutoff->currentText());
 
     QString status = "<font color=\"%2\"><b>%1:</b> </font>%3<br>";
     AddToProgressLog("Finished the job <br>");
@@ -1588,17 +1595,21 @@ void MainWindow::on_pbLoadTrackedFandoms_clicked()
 void MainWindow::on_pbLoadPage_clicked()
 {
     TaskProgressGuard guard(this);
-    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
-    //ui->leAuthorUrl->text()
 
-    TimedAction action("Full open",[&](){
-        env.LoadAuthor(ui->leAuthorUrl->text(), QSqlDatabase::database());
-    });
-    action.run();
-    LoadData();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(env.fanfics);
+    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
+    if(env.filter.isValid)
+    {
+        //ui->leAuthorUrl->text()
+
+        TimedAction action("Full open",[&](){
+            env.LoadAuthor(ui->leAuthorUrl->text(), QSqlDatabase::database());
+        });
+        action.run();
+        LoadData();
+        ui->edtResults->setUpdatesEnabled(true);
+        ui->edtResults->setReadOnly(true);
+        holder->SetData(env.fanfics);
+    }
 }
 
 
@@ -1606,47 +1617,52 @@ void MainWindow::on_pbOpenRecommendations_clicked()
 {
     TaskProgressGuard guard(this);
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
+    if(env.filter.isValid)
+    {
+        auto startRecLoad = std::chrono::high_resolution_clock::now();
+        LoadData();
+        auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
 
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    LoadData();
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-
-    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(env.fanfics);
+        qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        ui->edtResults->setUpdatesEnabled(true);
+        ui->edtResults->setReadOnly(true);
+        holder->SetData(env.fanfics);
+    }
 }
 
 void MainWindow::on_pbLoadAllRecommenders_clicked()
 {
     TaskProgressGuard guard(this);
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations);
-    QSqlDatabase db = QSqlDatabase::database();
-    database::Transaction transaction(db);
+    if(env.filter.isValid)
+    {
+        QSqlDatabase db = QSqlDatabase::database();
+        database::Transaction transaction(db);
 
-    pbMain->setValue(0);
-    pbMain->setTextVisible(true);
-    pbMain->setFormat("%v");
+        pbMain->setValue(0);
+        pbMain->setTextVisible(true);
+        pbMain->setFormat("%v");
 
-    RecommendationsProcessor reloader(db, env.interfaces.fanfics,
-                                            env.interfaces.fandoms,
-                                            env.interfaces.authors,
-                                            env.interfaces.recs);
+        RecommendationsProcessor reloader(db, env.interfaces.fanfics,
+                                          env.interfaces.fandoms,
+                                          env.interfaces.authors,
+                                          env.interfaces.recs);
 
-    connect(&reloader, &RecommendationsProcessor::resetEditorText, this, &MainWindow::OnResetTextEditor);
-    connect(&reloader, &RecommendationsProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
-    connect(&reloader, &RecommendationsProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
-    connect(&reloader, &RecommendationsProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
-    reloader.ReloadRecommendationsList(ui->leAuthorUrl->text(), GetCurrentCacheMode());
+        connect(&reloader, &RecommendationsProcessor::resetEditorText, this, &MainWindow::OnResetTextEditor);
+        connect(&reloader, &RecommendationsProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
+        connect(&reloader, &RecommendationsProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
+        connect(&reloader, &RecommendationsProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
+        reloader.ReloadRecommendationsList(ui->leAuthorUrl->text(), GetCurrentCacheMode());
 
-    ui->leAuthorUrl->setText("");
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    LoadData();
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(env.fanfics);
+        ui->leAuthorUrl->setText("");
+        auto startRecLoad = std::chrono::high_resolution_clock::now();
+        LoadData();
+        auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+        qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        ui->edtResults->setUpdatesEnabled(true);
+        ui->edtResults->setReadOnly(true);
+        holder->SetData(env.fanfics);
+    }
 }
 
 void MainWindow::on_pbOpenWholeList_clicked()
@@ -1654,14 +1670,17 @@ void MainWindow::on_pbOpenWholeList_clicked()
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
                                            false,
                                            ui->cbRecGroup->currentText());
-    ui->leAuthorUrl->setText("");
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    LoadData();
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(env.fanfics);
+    if(env.filter.isValid)
+    {
+        ui->leAuthorUrl->setText("");
+        auto startRecLoad = std::chrono::high_resolution_clock::now();
+        LoadData();
+        auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+        qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        ui->edtResults->setUpdatesEnabled(true);
+        ui->edtResults->setReadOnly(true);
+        holder->SetData(env.fanfics);
+    }
 }
 
 void MainWindow::OpenRecommendationList(QString listName)
@@ -1669,16 +1688,19 @@ void MainWindow::OpenRecommendationList(QString listName)
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
                                            false,
                                            listName);
-    env.filter.sortMode = core::StoryFilter::sm_reccount;
+    if(env.filter.isValid)
+    {
+        env.filter.sortMode = core::StoryFilter::sm_reccount;
 
-    ui->leAuthorUrl->setText("");
-    auto startRecLoad = std::chrono::high_resolution_clock::now();
-    LoadData();
-    auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-    qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-    ui->edtResults->setUpdatesEnabled(true);
-    ui->edtResults->setReadOnly(true);
-    holder->SetData(env.fanfics);
+        ui->leAuthorUrl->setText("");
+        auto startRecLoad = std::chrono::high_resolution_clock::now();
+        LoadData();
+        auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
+        qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+        ui->edtResults->setUpdatesEnabled(true);
+        ui->edtResults->setReadOnly(true);
+        holder->SetData(env.fanfics);
+    }
 }
 
 void MainWindow::on_pbFirstWave_clicked()
@@ -1692,6 +1714,11 @@ int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> pa
 {
     TaskProgressGuard guard(this);
     auto result = env.BuildRecommendations(params, env.GetSourceFicsFromFile("lists/source.txt"), clearAuthors);
+    if(result == -1)
+    {
+        QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
+                                                    "Try using more source fics, or loosen the restrictions");
+    }
 
     FillRecTagCombobox();
     FillRecommenderListView();
@@ -1699,14 +1726,57 @@ int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> pa
     return result;
 }
 
-core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode, bool useAuthorLink, QString listToUse)
+
+FilterErrors MainWindow::ValidateFilter()
 {
+    FilterErrors result;
+
+    bool wordSearch = ui->chkWordsPlus && !ui->leContainsWords->text().isEmpty();
+    wordSearch = wordSearch || (ui->chkWordsMinus&& !ui->leNotContainsWords->text().isEmpty());
+    if(wordSearch && (ui->cbNormals->currentText().trimmed().isEmpty() || ui->cbMinWordCount->currentText().toInt() < 60000))
+    {
+        result.AddError("Word search is currently only possible if:");
+        result.AddError("    1) A fandom is selected.");
+        result.AddError("    2) Fic size is >60k words.");
+        result.AddError("Generic word searches will only be possible after DB is upgraded");
+    }
+    bool listNotSelected = ui->cbRecGroup->currentText().trimmed().isEmpty();
+    if(listNotSelected && ui->cbSortMode->currentText() == "Rec Count")
+    {
+        result.AddError("Sorting on recommendation count only makes sense, ");
+        result.AddError("if a recommendation list is selected");
+        result.AddError("");
+        result.AddError("Please select a recommendation list to the right of Rec List: or create one");
+    }
+    auto currentListId = env.interfaces.recs->GetCurrentRecommendationList();
+    core::RecPtr list = env.interfaces.recs->GetList(currentListId);
+    bool emptyList = !list || list->ficCount == 0;
+    if(emptyList && (ui->cbSortMode->currentText() == "Rec Count" || ui->chkSearchWithinList->isChecked()))
+    {
+        result.AddError("Current filter doesn't make sense because selected recommendation list is empty");
+    }
+    return result;
+}
+
+core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode,
+                                                        bool useAuthorLink,
+                                                        QString listToUse,
+                                                        bool performFilterValidation)
+{
+
     auto valueIfChecked = [](QCheckBox* box, auto value){
         if(box->isChecked())
             return value;
         return decltype(value)();
     };
     core::StoryFilter filter;
+    auto filterState = ValidateFilter();
+    if(performFilterValidation && filterState.hasErrors)
+    {
+        filter.isValid = false;
+        QMessageBox::warning(nullptr, "Attention!",filterState.errors.join("\n"));
+        return filter;
+    }
     auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
     if(ui->chkEnableTagsFilter->isChecked())
         filter.activeTags = tags;
@@ -1726,11 +1796,11 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.crossoversOnly= ui->chkCrossovers->isChecked();
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
-//    filter.includeSlash = ui->chkOnlySlash->isChecked();
-//    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
+    //    filter.includeSlash = ui->chkOnlySlash->isChecked();
+    //    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
 
     SlashFilterState slashState{
-                ui->chkEnableSlashFilter->isChecked(),
+        ui->chkEnableSlashFilter->isChecked(),
                 ui->chkApplyLocalSlashFilter->isChecked(),
                 ui->chkInvertedSlashFilter->isChecked(),
                 ui->chkOnlySlash->isChecked(),
@@ -1738,7 +1808,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
                 ui->chkOnlySlashLocal->isChecked(),
                 ui->chkEnableSlashExceptions->isChecked(),
                 QList<int>{}, // temporary placeholder
-                ui->cbSlashFilterAggressiveness->currentIndex()
+        ui->cbSlashFilterAggressiveness->currentIndex()
     };
 
     filter.slashFilter = slashState;
@@ -1772,8 +1842,11 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     auto author = env.interfaces.authors->GetByWebID("ffn", url_utils::GetWebId(authorUrl, "ffn").toInt());
     if(author && useAuthorLink)
         filter.useThisRecommenderOnly = author->id;
+    //filter.Log();
     return filter;
 }
+
+
 
 QSharedPointer<core::RecommendationList> MainWindow::BuildRecommendationParamsFromGUI()
 {
@@ -1893,9 +1966,9 @@ void MainWindow::on_pbAddAuthorToList_clicked()
     }
 
     RecommendationsProcessor recProcessor(db, env.interfaces.fanfics,
-                                            env.interfaces.fandoms,
-                                            env.interfaces.authors,
-                                            env.interfaces.recs);
+                                          env.interfaces.fandoms,
+                                          env.interfaces.authors,
+                                          env.interfaces.recs);
 
     if(!recProcessor.AddAuthorToRecommendationList(ui->leCurrentListName->text().trimmed(), url))
         return; //todo add warning
@@ -1916,9 +1989,9 @@ void MainWindow::on_pbRemoveAuthorFromList_clicked()
         return;
 
     RecommendationsProcessor recProcessor(db, env.interfaces.fanfics,
-                                            env.interfaces.fandoms,
-                                            env.interfaces.authors,
-                                            env.interfaces.recs);
+                                          env.interfaces.fandoms,
+                                          env.interfaces.authors,
+                                          env.interfaces.recs);
 
     if(!recProcessor.RemoveAuthorFromRecommendationList(ui->leCurrentListName->text().trimmed(), url))
         return; //todo add warning
@@ -1991,7 +2064,7 @@ void MainWindow::OnWipeCache()
 }
 
 
-void MainWindow::UpdateFandomList(UpdateFandomTask task)
+void MainWindow::UpdateFandomList(UpdateFandomTask )
 {
     TaskProgressGuard guard(this);
 
@@ -2070,8 +2143,8 @@ void MainWindow::on_pbCreateHTML_clicked()
     on_pbFormattedList_clicked();
     QString partialfileName = ui->cbRecGroup->currentText() + "_page_" + QString::number(env.pageOfCurrentQuery) + ".html";
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
-                                "FicLists/" + partialfileName,
-                                tr("*.html"));
+                                                    "FicLists/" + partialfileName,
+                                                    tr("*.html"));
     if(fileName.isEmpty())
         return;
 
@@ -2080,13 +2153,13 @@ void MainWindow::on_pbCreateHTML_clicked()
     QTextStream ts(&f);
     QClipboard *clipboard = QApplication::clipboard();
     QString header = "<!DOCTYPE html>"
-            "<html>"
-            "<head>"
-            "<title>Page Title</title>"
-            "</head>"
-            "<body>";
+                     "<html>"
+                     "<head>"
+                     "<title>Page Title</title>"
+                     "</head>"
+                     "<body>";
     QString footer = "</body>"
-            "</html>";
+                     "</html>";
     ts << header;
     ts << clipboard->text();
     ts << footer;
@@ -2343,6 +2416,12 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         sourceFics.push_back(val.toInt());
     }
     auto result = env.BuildRecommendations(params, sourceFics, false);
+    if(result == -1)
+    {
+        QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
+                                                    "Try using more source fics, or loosen the restrictions");
+        return;
+    }
     Q_UNUSED(result);
     auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));

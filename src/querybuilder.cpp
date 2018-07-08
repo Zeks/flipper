@@ -39,7 +39,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
 
     queryString.clear();
     bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.listOpenMode;
-    bool useRecommendationOrdering = !filter.listOpenMode;
+    useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
+    bool useRecommendationOrdering = useRecommendationFiltering && !filter.listOpenMode;
     if(createLimits)
     {
         queryString = "ID, ";
@@ -830,7 +831,7 @@ QString FandomIgnoreClient::GetString(StoryFilter filter)
 {
     QString queryString;
     {
-        if(filter.ignoreFandoms)
+        if(filter.ignoreFandoms && filter.ignoredFandomCount > 0)
             queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) < 1").arg(userToken);
         else
             queryString += QString("");

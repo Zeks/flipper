@@ -13,6 +13,7 @@ namespace ProtoSpace {
 class Filter;
 class Fanfic;
 class Fandom;
+class UserData;
 }
 
 struct RecommendationListGRPC
@@ -56,12 +57,12 @@ public:
     QSharedPointer<FicSourceGRPCImpl> impl;
 };
 
-bool VerifyFilterData(const ProtoSpace::Filter& filter);
+bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserData &user);
 namespace proto_converters
 {
 
-ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter);
-core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter);
+ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter, ProtoSpace::UserData *userData);
+core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const ProtoSpace::UserData &userData);
 
 bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic);
 bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic *protoFic);

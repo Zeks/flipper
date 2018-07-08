@@ -212,7 +212,7 @@ public:
             SetTokenError(response->mutable_response_info());
             return Status::OK;
         }
-        if(!VerifyFilterData(task->filter()))
+        if(!VerifyFilterData(task->filter(), task->user_data()))
         {
             SetFilterDataError(response->mutable_response_info());
             return Status::OK;
@@ -227,7 +227,7 @@ public:
 
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
-            filter = proto_converters::ProtoFilterIntoStoryFilter(task->filter());
+            filter = proto_converters::ProtoIntoStoryFilter(task->filter(), task->user_data());
         }).run();
         //filter.Log();
 
@@ -273,7 +273,7 @@ public:
             SetTokenError(response->mutable_response_info());
             return Status::OK;
         }
-        if(!VerifyFilterData(task->filter()))
+        if(!VerifyFilterData(task->filter(), task->user_data()))
         {
             SetFilterDataError(response->mutable_response_info());
             return Status::OK;
@@ -287,7 +287,8 @@ public:
         }
         core::StoryFilter filter;
         TimedAction ("Converting filter",[&](){
-            filter = proto_converters::ProtoFilterIntoStoryFilter(task->filter());
+            filter = proto_converters::ProtoIntoStoryFilter(task->filter(), task->user_data());
+
         }).run();
         //filter.Log();
 
@@ -497,7 +498,7 @@ int main(int argc, char *argv[])
     authors->db = mainDb;
     holder->LoadFavourites(authors);
 
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings_server.ini", QSettings::IniFormat);
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Settings/serverPort", "3055").toString();
 

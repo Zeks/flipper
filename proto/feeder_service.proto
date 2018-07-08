@@ -15,21 +15,27 @@ message ResponseInfo{
     bool token_in_use            = 4;
 }
 
-message Tags{
+message TagsToken{
     repeated int32 all_tags       = 1;
     repeated int32 searched_tags  = 2;
 }
 
 
-message IgnoredFandoms{
+message IgnoredFandomsToken{
     repeated int32 fandom_ids           = 1;
     repeated bool  ignore_crossovers    = 2;
 }
 
-message UserData{
-    Tags user_tags                      = 1;
-    IgnoredFandoms ignored_fandoms      = 2;
+message RecommendationListDataToken
+{
+    repeated int32 list_of_fics                     = 1;
+    repeated int32 list_of_matches                  = 2;
+}
 
+message UserData{
+    TagsToken user_tags                              = 1;
+    IgnoredFandomsToken ignored_fandoms              = 2;
+    RecommendationListDataToken recommendation_list   = 3;
 }
 
 message SearchTask

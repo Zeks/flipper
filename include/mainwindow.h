@@ -74,7 +74,14 @@ struct BuildRecommendationParams{
     double threshholdRatio;
 };
 
-
+struct FilterErrors{
+    void AddError(QString error){
+        errors += error;
+        hasErrors = true;
+    }
+    bool hasErrors = false;
+    QStringList errors;
+};
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -226,7 +233,12 @@ private:
     int BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
 
     // collects information from the ui into a token to be passed to a query generator
-    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode, bool useAuthorLink = false, QString listToUse = QString());
+    core::StoryFilter ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode,
+                                                bool useAuthorLink = false,
+                                                QString listToUse = QString(),
+                                                bool performFilterValidation = true);
+
+    FilterErrors ValidateFilter();
 
 
 

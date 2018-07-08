@@ -380,6 +380,11 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         QLOG_ERROR() << "list creation failed";
         return -1;
     }
+    if(list.fics.size() == 0)
+    {
+        return -1;
+    }
+
 
     interfaces.recs->DeleteList(listId);
     interfaces.recs->LoadListIntoDatabase(params);

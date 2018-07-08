@@ -24,11 +24,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QApplication>
 #include <QDir>
 #include <QDebug>
+#include <QSettings>
+void SetupLogger()
+{
+    QSettings settings("settings_server.ini", QSettings::IniFormat);
+
+    An<QsLogging::Logger> logger;
+    logger->setLoggingLevel(static_cast<QsLogging::Level>(settings.value("Logging/loglevel").toInt()));
+    QString logFile = settings.value("Logging/filename").toString();
+    QsLogging::DestinationPtr fileDestination(
+
+                QsLogging::DestinationFactory::MakeFileDestination(logFile,
+                                                                   settings.value("Logging/rotate", true).toBool(),
+                                                                   settings.value("Logging/filesize", 512).toInt()*1000000,
+                                                                   settings.value("Logging/amountOfFilesToKeep", 50).toInt()));
+
+    QsLogging::DestinationPtr debugDestination(
+                QsLogging::DestinationFactory::MakeDebugOutputDestination() );
+    logger->addDestination(debugDestination);
+    logger->addDestination(fileDestination);
+
+}
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("ffnet sane search engine");
+    SetupLogger();
+
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());

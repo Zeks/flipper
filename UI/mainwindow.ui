@@ -1864,6 +1864,9 @@
                                   <property name="inputMask">
                                    <string>9999</string>
                                   </property>
+                                  <property name="text">
+                                   <string>6</string>
+                                  </property>
                                  </widget>
                                 </item>
                                 <item>
@@ -1887,6 +1890,9 @@
                                   <property name="inputMask">
                                    <string>9999</string>
                                   </property>
+                                  <property name="text">
+                                   <string>50</string>
+                                  </property>
                                  </widget>
                                 </item>
                                 <item>
@@ -1908,6 +1914,9 @@
                                    </size>
                                   </property>
                                   <property name="inputMask">
+                                   <string>9999</string>
+                                  </property>
+                                  <property name="text">
                                    <string>9999</string>
                                   </property>
                                  </widget>

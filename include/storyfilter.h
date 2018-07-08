@@ -74,7 +74,7 @@ struct StoryFilter{
     };
     //do I even need that?
     //QString ficCategory;
-
+    bool isValid = true;
     bool includeCrossovers = false;
     bool ignoreAlreadyTagged = false;
     bool crossoversOnly = false;
@@ -101,7 +101,8 @@ struct StoryFilter{
     int minRecommendations = 0;
     int listForRecommendations;
     int recentAndPopularFavRatio;
-
+    int ignoredFandomCount = 0;
+    int recommendationsCount = 0;
     ESortMode sortMode;
     EReviewBiasMode reviewBias;
     EBiasOperator biasOperator;
