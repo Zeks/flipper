@@ -188,7 +188,7 @@ bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRe
 class FeederService final : public ProtoSpace::Feeder::Service {
 public:
     Status GetStatus(ServerContext* context, const ProtoSpace::StatusRequest* task,
-                  ProtoSpace::StatusResponse* response) override
+                     ProtoSpace::StatusResponse* response) override
     {
         Q_UNUSED(context);
         QString userToken = QString::fromStdString(task->controls().user_token());
@@ -417,12 +417,15 @@ public:
         auto* targetList = response->mutable_list();
         targetList->set_list_name(proto_converters::TS(params->name));
         targetList->set_list_ready(true);
-        for(int key: list.keys())
+        for(int key: list.recommendations.keys())
         {
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             targetList->add_fic_ids(key);
-            targetList->add_fic_matches(list[key]);
+            targetList->add_fic_matches(list.recommendations[key]);
         }
+        for(int key: list.matchReport.keys())
+            (*targetList->mutable_match_report())[key] = list.matchReport[key];
+
         return Status::OK;
     }
 

@@ -22,6 +22,7 @@ struct RecommendationListGRPC
     QVector<int> fics;
     QVector<int> matchCounts;
     QVector<int> authorIds;
+    QHash<int, int> matchReport;
 };
 
 struct ServerStatus

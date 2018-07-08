@@ -7,13 +7,21 @@
 namespace interfaces{
 class Authors;
 }
+
+
 namespace core{
+
+struct RecommendationListResult{
+    QHash<int, int> recommendations;
+    QHash<int, int> matchReport;
+};
+
 class RecommendationList;
 class FavHolder
 {
 public:
     void LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface);
-    QHash<int, int> GetMatchedFicsForFavList(QSet<int> sourceFics,  QSharedPointer<core::RecommendationList> params);
+    RecommendationListResult GetMatchedFicsForFavList(QSet<int> sourceFics,  QSharedPointer<core::RecommendationList> params);
     QHash<int, QSet<int>> favourites;
 };
 }

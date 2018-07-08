@@ -588,9 +588,9 @@ void MainWindow::LoadData()
         windowObject->setProperty("havePagesAfter", env.filter.recordLimit > 0 && env.sizeOfCurrentQuery > env.filter.recordLimit);
 
     }
-    ui->edtResults->setOpenExternalLinks(true);
-    ui->edtResults->clear();
-    ui->edtResults->setUpdatesEnabled(false);
+    //ui->edtResults->setOpenExternalLinks(true);
+    //ui->edtResults->clear();
+    //ui->edtResults->setUpdatesEnabled(false);
 
     env.LoadData();
     holder->SetData(env.fanfics);
@@ -1733,7 +1733,8 @@ FilterErrors MainWindow::ValidateFilter()
 
     bool wordSearch = ui->chkWordsPlus->isChecked() && !ui->leContainsWords->text().isEmpty();
     wordSearch = wordSearch || (ui->chkWordsMinus->isChecked() && !ui->leNotContainsWords->text().isEmpty());
-    if(wordSearch && (ui->cbNormals->currentText().trimmed().isEmpty() || ui->cbMinWordCount->currentText().toInt() < 60000))
+    QString minWordCount= ui->cbMinWordCount->currentText();
+    if(wordSearch && (ui->cbNormals->currentText().trimmed().isEmpty() && minWordCount.toInt() < 60000))
     {
         result.AddError("Word search is currently only possible if:");
         result.AddError("    1) A fandom is selected.");

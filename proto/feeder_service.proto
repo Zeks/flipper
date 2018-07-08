@@ -82,10 +82,11 @@ message SiteIDPack{
 }
 
 message RecommendationListData{
-    bool list_ready             = 1;
-    string list_name            = 2;
-    repeated int32 fic_ids      = 3;
-    repeated int32 fic_matches  = 4;
+    bool list_ready                 = 1;
+    string list_name                = 2;
+    repeated int32 fic_ids          = 3;
+    repeated int32 fic_matches      = 4;
+    map<int32, int32> match_report  = 5;
     
     // ethically complicated
     // probably best to disable this for release

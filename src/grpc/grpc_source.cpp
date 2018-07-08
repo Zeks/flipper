@@ -551,6 +551,12 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& 
         recList.fics.push_back(response->list().fic_ids(i));
         recList.matchCounts.push_back(response->list().fic_matches(i));
     }
+    auto it = response->list().match_report().begin();
+    while(it != response->list().match_report().end())
+    {
+        recList.matchReport[it->first] = it->second;
+        ++it;
+    }
     return true;
 }
 void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)

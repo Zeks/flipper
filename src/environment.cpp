@@ -385,7 +385,6 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         return -1;
     }
 
-
     interfaces.recs->DeleteList(listId);
     interfaces.recs->LoadListIntoDatabase(params);
     qDebug() << list.fics;
@@ -393,6 +392,14 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
     interfaces.recs->UpdateFicCountInDatabase(params->id);
     interfaces.recs->SetCurrentRecommendationList(params->id);
+    emit resetEditorText();
+    auto keys = list.matchReport.keys();
+    std::sort(keys.begin(), keys.end());
+    emit updateInfo( QString("Matches: ") + QString("Times Found:") + "<br>");
+    for(auto key: keys)
+    {
+        emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;") + " " + QString::number(list.matchReport[key]) + "<br>");
+    }
     transaction.finalize();
     return params->id;
 }

@@ -12,13 +12,17 @@ void FavHolder::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterfa
 struct AuthorResult{
     int id;
     int matches;
-    int ratio;
+    double ratio;
     int size;
 };
-QHash<int, int> FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFics, QSharedPointer<RecommendationList> params)
+
+
+
+RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFics, QSharedPointer<RecommendationList> params)
 {
     QHash<int, AuthorResult> authorsResult;
-    QHash<int, int> ficResult;
+    RecommendationListResult ficResult;
+    //QHash<int, int> ficResult;
     auto& favs = favourites;
     TimedAction action("Reclist Creation",[&](){
         auto it = favs.begin();
@@ -38,19 +42,27 @@ QHash<int, int> FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFics, QShare
                 //QLOG_INFO() << " Author: " << it.key() << " had: " << author.matches << " matches";
             ++it;
         }
-        for(auto author: authorsResult)
+        for(auto& author: authorsResult)
         {
             if(author.matches > 0)
-                author.ratio = author.size/author.matches;
+                author.ratio = static_cast<double>(author.size)/static_cast<double>(author.matches);
             if((author.matches >= params->minimumMatch && author.ratio <= params->pickRatio)
                     || author.matches >= params->alwaysPickAt)
             {
                 for(auto fic: favourites[author.id])
-                    ficResult[fic]++;
+                    ficResult.recommendations[fic]++;
             }
         }
     });
     action.run();
+    for(auto author: authorsResult)
+    {
+        if((author.matches >= params->minimumMatch && author.ratio <= params->pickRatio)
+                || author.matches >= params->alwaysPickAt)
+        {
+            ficResult.matchReport[author.matches]++;
+        }
+    }
     return ficResult;
 }
 
