@@ -1153,7 +1153,7 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
     SqlContext<QSet<int>> ctx(db);
     ctx.bindValue("uid", uid);
     ctx.FetchLargeSelectIntoList<int>("id",
-                                      "select id from fanfics where cfInRecommendations(ffn_id)");
+                                      "select id from fanfics where cfInSourceFics(ffn_id)");
 
     return ctx.result;
 }
@@ -1570,7 +1570,7 @@ DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack> pack, QSqlDatab
 
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInRecommendations(fic_id) > 0 group by fic_id");
+    QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInSourceFics(fic_id) > 0 group by fic_id");
     QHash<int, QString> tags;
     auto* data= ThreadData::GetRecommendationData();
     auto& hash = data->sourceFics;

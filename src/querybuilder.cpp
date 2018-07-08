@@ -51,7 +51,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
         queryString = " f.ID as id ";
         if(useRecommendationOrdering)
         {
-            queryString += " , cfRecommendationsMatches(f.id) as sumrecs ";
+            queryString += " , cfRecommendationsMatchCount(f.id) as sumrecs ";
             //            queryString += ", ( select group_concat(id, ' & ')   from fandomindex "
             //                           "where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandomIDs ";
             queryString = queryString.arg(userToken);
@@ -90,7 +90,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
             else
             {
 
-                QString temp = " and cfInActualRecommendations(f.id) > 0 and sumrecs >= :match_count ";
+                QString temp = " and cfInRecommendations(f.id) > 0 and sumrecs >= :match_count ";
                 temp= temp.arg(userToken);
                 where = temp + where;
             }
@@ -238,7 +238,7 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter, bool appendComma
     }
     else
     {
-        result = QString(" cfRecommendationsMatches(f.id) as sumrecs, ").arg(userToken);
+        result = QString(" cfRecommendationsMatchCount(f.id) as sumrecs, ").arg(userToken);
     }
 
     return result;
@@ -561,7 +561,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
         return result;
     QStringList idList;
     QString part = "  and ID IN ( %1 ) ";
-    wherePart = " cfRecommendationsMatches(f.id) as sumrecs, 1 as junk from fanfics f where 1 = 1 " + wherePart;
+    wherePart = " cfRecommendationsMatchCount(f.id) as sumrecs, 1 as junk from fanfics f where 1 = 1 " + wherePart;
     wherePart = wherePart.arg(userToken);
     wherePart.replace("COLLATE NOCASE", "");
     wherePart+=" COLLATE NOCASE";

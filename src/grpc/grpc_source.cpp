@@ -111,13 +111,13 @@ ProtoSpace::Filter StoryFilterIntoProtoFilter(const core::StoryFilter& filter)
 
     auto* tagFilter = result.mutable_tag_filter();
     tagFilter->set_ignore_already_tagged(filter.ignoreAlreadyTagged);
-    for(auto tag : filter.activeTags)
-        tagFilter->add_active_tags(tag.toStdString());
+//    for(auto tag : filter.activeTags)
+//        tagFilter->add_active_tags(tag.toStdString());
 
     auto allTagged = GetTaggedIDs();
 
-    for(auto id : allTagged)
-        tagFilter->add_all_tagged(id);
+//    for(auto id : allTagged)
+//        tagFilter->add_all_tagged(id);
 
     auto* slashFilter = result.mutable_slash_filter();
     slashFilter->set_use_slash_filter(filter.slashFilter.slashFilterEnabled);
@@ -209,11 +209,11 @@ core::StoryFilter ProtoFilterIntoStoryFilter(const ProtoSpace::Filter& filter)
         result.wordInclusion.push_back(FS(filter.content_filter().word_inclusion(i)));
 
     result.ignoreAlreadyTagged = filter.tag_filter().ignore_already_tagged();
-    for(int i = 0; i < filter.tag_filter().active_tags_size(); i++)
-        result.activeTags.push_back(FS(filter.tag_filter().active_tags(i)));
+//    for(int i = 0; i < filter.tag_filter().active_tags_size(); i++)
+//        result.activeTags.push_back(FS(filter.tag_filter().active_tags(i)));
 
-    for(int i = 0; i < filter.tag_filter().all_tagged_size(); i++)
-        result.taggedIDs.push_back(filter.tag_filter().all_tagged(i));
+//    for(int i = 0; i < filter.tag_filter().all_tagged_size(); i++)
+//        result.taggedIDs.push_back(filter.tag_filter().all_tagged(i));
 
     for(int i = 0; i < filter.recommendations().list_of_fics_size(); i++)
         result.recsHash[filter.recommendations().list_of_fics(i)] = filter.recommendations().list_of_matches(i);
@@ -656,6 +656,12 @@ bool VerifyVectorSize(const T& vector, int maxSize = 10000){
     return true;
 }
 
+bool VerifyNotEmpty(const int& val){
+    if(val == 0)
+        return false;
+    return true;
+}
+
 bool VerifyFilterData(const ProtoSpace::Filter& filter)
 {
     if(!VerifyString(filter.basic_filters().website(), 10))
@@ -670,15 +676,18 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter)
         return false;
     if(!VerifyInt(filter.content_filter().word_inclusion_size(), 50))
         return false;
-    if(!VerifyInt(filter.tag_filter().all_tagged_size(), 50000))
-        return false;
-    if(!VerifyInt(filter.tag_filter().active_tags_size(), 50000))
-        return false;
+//    if(!VerifyInt(filter.tag_filter().all_tagged_size(), 50000))
+//        return false;
+//    if(!VerifyInt(filter.tag_filter().active_tags_size(), 50000))
+//        return false;
     if(!VerifyInt(filter.recommendations().list_of_fics_size(), 1000000))
         return false;
     if(!VerifyInt(filter.recommendations().list_of_matches_size(), 1000000))
         return false;
     if(!VerifyInt(filter.slash_filter().fandom_exceptions_size(), 20000))
         return false;
+
+    //if(filter.tag_filter())
+
     return true;
 }
