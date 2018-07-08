@@ -51,7 +51,7 @@ void CoreEnvironment::LoadData()
     }
 
     QVector<int> recFics;
-    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList());
+    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
 
     QVector<core::Fic> newFanfics;
     ficSource->FetchData(filter,
@@ -204,7 +204,7 @@ int CoreEnvironment::GetResultCount()
     if(filter.sortMode == core::StoryFilter::sm_reccount)
     {
         // need to pass the list to the server
-        filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList());
+        filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
     }
 
     return ficSource->GetFicCount(filter);
@@ -394,7 +394,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     interfaces.recs->UpdateFicCountInDatabase(params->id);
     interfaces.recs->SetCurrentRecommendationList(params->id);
     transaction.finalize();
-    return -1;
+    return params->id;
 }
 
 int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors)

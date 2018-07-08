@@ -470,7 +470,7 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
 
     ProtoSpace::Filter protoFilter;
     auto* userData = task.mutable_user_data();
-    proto_converters::StoryFilterIntoProto(filter, userData);
+    protoFilter = proto_converters::StoryFilterIntoProto(filter, userData);
 
     task.set_allocated_filter(&protoFilter);
     auto* controls = task.mutable_controls();

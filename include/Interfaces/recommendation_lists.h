@@ -79,7 +79,7 @@ public:
     core::AuhtorStatsPtr GetIndividualAuthorStatsForList(int id, int authorId);
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId);
-    QHash<int, int> GetAllFicsHash(int listId);
+    QHash<int, int> GetAllFicsHash(int listId, int minMatchCount = 0);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QList<int> GetRecommendersForFicId(int ficId);
@@ -99,7 +99,7 @@ public:
 
     QHash<int, QList<core::AuhtorStatsPtr>> cachedAuthorStats;
     QHash<int, QVector<int>> ficsCacheForLists;
-    QHash<int, QHash<int, int>> grpcCacheForLists;
+    QHash<QPair<int, int>, QHash<int, int>> grpcCacheForLists;
     QHash<int, QStringList> authorsCacheForLists;
 
     QSqlDatabase db;

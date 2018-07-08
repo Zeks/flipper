@@ -1731,8 +1731,8 @@ FilterErrors MainWindow::ValidateFilter()
 {
     FilterErrors result;
 
-    bool wordSearch = ui->chkWordsPlus && !ui->leContainsWords->text().isEmpty();
-    wordSearch = wordSearch || (ui->chkWordsMinus&& !ui->leNotContainsWords->text().isEmpty());
+    bool wordSearch = ui->chkWordsPlus->isChecked() && !ui->leContainsWords->text().isEmpty();
+    wordSearch = wordSearch || (ui->chkWordsMinus->isChecked() && !ui->leNotContainsWords->text().isEmpty());
     if(wordSearch && (ui->cbNormals->currentText().trimmed().isEmpty() || ui->cbMinWordCount->currentText().toInt() < 60000))
     {
         result.AddError("Word search is currently only possible if:");
@@ -1751,7 +1751,9 @@ FilterErrors MainWindow::ValidateFilter()
     auto currentListId = env.interfaces.recs->GetCurrentRecommendationList();
     core::RecPtr list = env.interfaces.recs->GetList(currentListId);
     bool emptyList = !list || list->ficCount == 0;
-    if(emptyList && (ui->cbSortMode->currentText() == "Rec Count" || ui->chkSearchWithinList->isChecked()))
+    if(emptyList && (ui->cbSortMode->currentText() == "Rec Count"
+                     || ui->chkSearchWithinList->isChecked()
+                     || ui->sbMinimumListMatches->value() > 0))
     {
         result.AddError("Current filter doesn't make sense because selected recommendation list is empty");
     }
@@ -2480,7 +2482,7 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->sbPageSize->setValue(100);
     ui->sbMaxRandomFicCount->setValue(6);
     ui->chkSearchWithinList->setChecked(false);
-    ui->sbMinimumListMatches->setValue(1);
+    ui->sbMinimumListMatches->setValue(0);
 
 }
 

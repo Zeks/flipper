@@ -90,9 +90,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
             }
             else
             {
-
-                QString temp = " and cfInRecommendations(f.id) > 0 and sumrecs >= :match_count ";
-                temp= temp.arg(userToken);
+                QString temp = " and cfInRecommendations(f.id) > 0 ";
                 where = temp + where;
             }
         }
@@ -600,10 +598,10 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         q->bindings.push_back({":list_id",filter.listForRecommendations});
         q->bindings.push_back({":list_id2",filter.listForRecommendations});
     }
-    if(filter.minRecommendations > -1 && filter.listOpenMode)
-        q->bindings.push_back({":match_count",filter.minRecommendations});
-    else if (filter.minRecommendations > -1)
-        q->bindings.push_back({":match_count",filter.minRecommendations + 1});
+//    if(filter.minRecommendations > -1 && filter.listOpenMode)
+//        q->bindings.push_back({":match_count",filter.minRecommendations});
+//    else if (filter.minRecommendations > -1)
+//        q->bindings.push_back({":match_count",filter.minRecommendations + 1});
 
     if(!filter.genreInclusion.isEmpty())
     {

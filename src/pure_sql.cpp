@@ -792,11 +792,15 @@ DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId,
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db)
+DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db, int minMatchCount)
 {
     QString qs = QString("select fic_id, match_count from RecommendationListData where list_id = :list_id");
+    if(minMatchCount != 0)
+        qs += " and match_count > :match_count";
     SqlContext<QHash<int,int>> ctx(db, qs);
     ctx.bindValue("list_id",listId);
+    if(minMatchCount != 0)
+        ctx.bindValue("match_count",minMatchCount);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data[q.value("fic_id").toInt()] = q.value("match_count").toInt();
     });
