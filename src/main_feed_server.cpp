@@ -187,6 +187,20 @@ bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRe
 
 class FeederService final : public ProtoSpace::Feeder::Service {
 public:
+    Status GetStatus(ServerContext* context, const ProtoSpace::StatusRequest* task,
+                  ProtoSpace::StatusResponse* response) override
+    {
+        Q_UNUSED(context);
+        QString userToken = QString::fromStdString(task->controls().user_token());
+        QLOG_INFO() << "Received status request from: " << userToken;
+        QSettings settings("settings_server.ini", QSettings::IniFormat);
+        auto motd = settings.value("Settings/motd", "Have fun searching.").toString();
+        bool attached = settings.value("Settings/DBAttached", true).toBool();
+        response->set_message_of_the_day(motd.toStdString());
+        response->set_database_attached(attached);
+        response->set_need_to_show_motd(settings.value("Settings/motdRequired", false).toBool());
+        return Status::OK;
+    }
     Status Search(ServerContext* context, const ProtoSpace::SearchTask* task,
                   ProtoSpace::SearchResponse* response) override
     {

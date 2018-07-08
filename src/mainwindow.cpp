@@ -127,11 +127,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 }
 
-void MainWindow::Init()
+bool MainWindow::Init()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
 
-    env.Init();
+    if(!env.Init())
+        return false;
 
     this->setWindowTitle("Flipper");
     this->setAttribute(Qt::WA_QuitOnClose);
@@ -241,6 +242,7 @@ void MainWindow::Init()
     ui->spRecsFan->setSizes({0,1000});
     ui->wdgSlashFandomExceptions->hide();
     ui->chkEnableSlashExceptions->hide();
+    return true;
 }
 
 void MainWindow::InitConnections()

@@ -23,6 +23,21 @@ struct RecommendationListGRPC
     QVector<int> authorIds;
 };
 
+struct ServerStatus
+{
+    ServerStatus(){}
+    ServerStatus(bool isValid,
+                 bool dbAttached,
+                 bool messageRequired,
+                 QDateTime lastDBUpdate,
+                 QString motd):isValid(isValid), dbAttached(dbAttached), messageRequired(messageRequired), lastDBUpdate(lastDBUpdate),motd(motd) {}
+    bool isValid = false;
+    bool dbAttached = false;
+    bool messageRequired = false;
+    QDateTime lastDBUpdate;
+    QString motd;
+    QString error;
+};
 
 class FicSourceGRPC : public FicSource
 {
@@ -30,13 +45,15 @@ public:
     FicSourceGRPC(QString connectionString, QString userToken, int deadline);
     virtual ~FicSourceGRPC() override;
 
-    QSharedPointer<FicSourceGRPCImpl> impl;
     virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*) override;
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
+    ServerStatus GetStatus();
+
     QString userToken;
+    QSharedPointer<FicSourceGRPCImpl> impl;
 };
 
 bool VerifyFilterData(const ProtoSpace::Filter& filter);

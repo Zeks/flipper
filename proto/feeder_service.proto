@@ -125,6 +125,17 @@ message FicIdResponse{
     ResponseInfo response_info        = 3;
 }
 
+message StatusRequest{
+    ControlInfo controls        = 1;
+}
+
+message StatusResponse{
+    bool   database_attached    = 1; // for when I need to switch symlinks
+    string last_database_update = 2; // yyyyMMdd hhmm, currently not implemented
+    string message_of_the_day   = 3;
+    bool need_to_show_motd     = 4;
+}
+
 // will need to synchronize fandoms on app start somehow
 // can't leave fandom information on user side
 // because I dont want users to parse anything
@@ -136,6 +147,7 @@ message FicIdResponse{
 // I want to be able to display this to users ideally
 
 service Feeder {
+    rpc GetStatus(StatusRequest) returns (StatusResponse) {}
     rpc Search(SearchTask) returns (SearchResponse) {}
     rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
     rpc SyncFandomList(SyncFandomListTask) returns (SyncFandomListResponse) {}

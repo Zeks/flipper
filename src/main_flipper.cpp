@@ -69,7 +69,8 @@ int main(int argc, char *argv[])
     w.env.interfaces.pageCache= pageCacheInterface;
     w.env.interfaces.tasks = tasksInterface;
     w.InitInterfaces();
-    w.Init();
+    if(!w.Init())
+        return 0;
     w.InitConnections();
     w.show();
     w.StartTaskTimer();

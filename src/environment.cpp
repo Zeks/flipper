@@ -23,6 +23,8 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QTextCodec>
+#include <QSettings>
+#include <QMessageBox>
 
 
 void CoreEnvironment::InitMetatypes()
@@ -85,7 +87,7 @@ static inline QString CreateConnectString(QString ip,QString port)
     return server_address;
 }
 
-void CoreEnvironment::Init()
+bool CoreEnvironment::Init()
 {
     InitMetatypes();
 
@@ -101,6 +103,19 @@ void CoreEnvironment::Init()
         interfaces.userDb->userToken = interfaces.userDb->GetUserToken();
         ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), interfaces.userDb->userToken,  160));
         auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+        ServerStatus status = grpcSource->GetStatus();
+        if(!status.isValid)
+        {
+            QString statusString = QString("The server is not responding%1");
+            if(!status.error.isEmpty())
+                statusString=statusString.arg("\nReason: " + status.error);
+            statusString+= "\nYou could try accessing it later or ping the maintainer at ficflipper@gmail.com";
+            QMessageBox::critical(nullptr, "Warning!", statusString);
+            return false;
+        }
+        if(status.messageRequired)
+            QMessageBox::information(nullptr, "Attention!", status.motd);
+
         QVector<core::Fandom> fandoms;
         grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);
         if(fandoms.size() > 0)
@@ -127,6 +142,7 @@ void CoreEnvironment::Init()
     interfaces.fandoms->Load();
     interfaces.recs->LoadAvailableRecommendationLists();
     interfaces.fandoms->FillFandomList(true);
+    return true;
 }
 
 void CoreEnvironment::InitInterfaces()

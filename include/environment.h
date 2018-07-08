@@ -59,7 +59,7 @@ public:
     // writes settings into a files
     void WriteSettings();
 
-    void Init();
+    bool Init();
     static void InitMetatypes();
     // used to set up connections between database and interfaces
     // and between differnt interfaces themselves

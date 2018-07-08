@@ -91,7 +91,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
     //initalizes widgets
-    void Init();
+    bool Init();
 
 
     ~MainWindow();

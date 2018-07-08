@@ -34,7 +34,7 @@ message Fanfic{
     string summary                  = 14;
     string language                 = 15;
     string published                = 16; // yyyyMMdd
-    string updated                  = 17;   // yyyyMMdd
+    string updated                  = 17; // yyyyMMdd
     string characters               = 18;
     
     repeated string fandoms         = 19;

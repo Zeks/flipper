@@ -326,196 +326,232 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 class FicSourceGRPCImpl{
     //    friend class GrpcServiceBase;
 public:
-
     FicSourceGRPCImpl(QString connectionString, int deadline)
         :stub_(ProtoSpace::Feeder::NewStub(grpc::CreateChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials()))),
           deadline(deadline)
     {
     }
-    UserData userData;
-    bool GetInternalIDsForFics(QVector<core::IdPack> * ficList){
-        grpc::ClientContext context;
-
-        ProtoSpace::FicIdRequest task;
-
-        if(!ficList->size())
-            return true;
-
-
-        QScopedPointer<ProtoSpace::FicIdResponse> response (new ProtoSpace::FicIdResponse);
-        std::chrono::system_clock::time_point deadline =
-                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
-        context.set_deadline(deadline);
-        auto* controls = task.mutable_controls();
-        controls->set_user_token(proto_converters::TS(userToken));
-
-        for(core::IdPack& fic : *ficList)
-        {
-            task.mutable_ids()->add_db_ids(fic.db);
-            task.mutable_ids()->add_ffn_ids(fic.ffn);
-        }
-
-        grpc::Status status = stub_->GetDBFicIDS(&context, task, response.data());
-
-        ProcessStandardError(status);
-
-        for(int i = 0; i < response->ids().db_ids_size(); i++)
-        {
-            (*ficList)[i].db = response->ids().db_ids(i);
-            (*ficList)[i].ffn = response->ids().ffn_ids(i);
-        }
-        return true;
-    }
-
+    ServerStatus GetStatus();
+    bool GetInternalIDsForFics(QVector<core::IdPack> * ficList);
+    void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
+    int GetFicCount(core::StoryFilter filter);
+    bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
+    bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
     void ProcessStandardError(grpc::Status status);
-    void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
-    {
-        grpc::ClientContext context;
 
-        ProtoSpace::SearchTask task;
-
-        ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
-        task.set_allocated_filter(&protoFilter);
-
-        QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
-        std::chrono::system_clock::time_point deadline =
-                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
-        context.set_deadline(deadline);
-        auto* controls = task.mutable_controls();
-        controls->set_user_token(proto_converters::TS(userToken));
-
-        auto* userData = task.mutable_user_data();
-        auto* tags = userData->mutable_user_tags();
-
-        for(auto tag : this->userData.allTags)
-            tags->add_all_tags(tag);
-        for(auto tag : this->userData.activeTags)
-            tags->add_searched_tags(tag);
-
-        auto* ignoredFandoms = userData->mutable_ignored_fandoms();
-        for(auto key: this->userData.ignoredFandoms.keys())
-        {
-            ignoredFandoms->add_fandom_ids(key);
-            ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
-        }
-
-
-
-
-        grpc::Status status = stub_->Search(&context, task, response.data());
-
-        ProcessStandardError(status);
-
-        fics->resize(static_cast<size_t>(response->fanfics_size()));
-        for(int i = 0; i < response->fanfics_size(); i++)
-        {
-            proto_converters::ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
-        }
-
-        task.release_filter();
-    }
-
-    int GetFicCount(core::StoryFilter filter)
-    {
-        grpc::ClientContext context;
-
-        ProtoSpace::FicCountTask task;
-
-        ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
-        task.set_allocated_filter(&protoFilter);
-        auto* controls = task.mutable_controls();
-        controls->set_user_token(proto_converters::TS(userToken));
-
-        QScopedPointer<ProtoSpace::FicCountResponse> response (new ProtoSpace::FicCountResponse);
-        std::chrono::system_clock::time_point deadline =
-                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
-        context.set_deadline(deadline);
-
-        grpc::Status status = stub_->GetFicCount(&context, task, response.data());
-
-        ProcessStandardError(status);
-        task.release_filter();
-        int result = response->fic_count();
-        return result;
-    }
-
-    bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms)
-    {
-        grpc::ClientContext context;
-
-        ProtoSpace::SyncFandomListTask task;
-        task.set_last_fandom_id(lastFandomID);
-
-        QScopedPointer<ProtoSpace::SyncFandomListResponse> response (new ProtoSpace::SyncFandomListResponse);
-        std::chrono::system_clock::time_point deadline =
-                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
-        context.set_deadline(deadline);
-        task.mutable_controls()->set_user_token(proto_converters::TS(userToken));
-
-        grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
-
-        ProcessStandardError(status);
-        if(!response->needs_update())
-            return false;
-
-        fandoms->resize(response->fandoms_size());
-        for(int i = 0; i < response->fandoms_size(); i++)
-        {
-            proto_converters::ProtoFandomToLocalFandom(response->fandoms(i), (*fandoms)[static_cast<size_t>(i)]);
-        }
-        return true;
-    }
-
-    bool GetRecommendationListFromServer(RecommendationListGRPC& recList)
-    {
-        grpc::ClientContext context;
-
-        ProtoSpace::RecommendationListCreationRequest task;
-
-
-        QScopedPointer<ProtoSpace::RecommendationListCreationResponse> response (new ProtoSpace::RecommendationListCreationResponse);
-        std::chrono::system_clock::time_point deadline =
-                std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
-        context.set_deadline(deadline);
-        auto* ffn = task.mutable_id_packs();
-        for(auto fic: recList.fics)
-            ffn->add_ffn_ids(fic);
-        task.set_list_name(proto_converters::TS(recList.listParams.name));
-        task.set_always_pick_at(recList.listParams.alwaysPickAt);
-        task.set_min_fics_to_match(recList.listParams.minimumMatch);
-        task.set_max_unmatched_to_one_matched(recList.listParams.pickRatio);
-        auto* controls = task.mutable_controls();
-        controls->set_user_token(proto_converters::TS(userToken));
-
-        grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
-
-        ProcessStandardError(status);
-        if(!response->list().list_ready())
-            return false;
-
-        recList.fics.clear();
-        recList.fics.reserve(response->list().fic_ids_size());
-        recList.matchCounts.reserve(response->list().fic_ids_size());
-        for(int i = 0; i < response->list().fic_ids_size(); i++)
-        {
-            recList.fics.push_back(response->list().fic_ids(i));
-            recList.matchCounts.push_back(response->list().fic_matches(i));
-        }
-        return true;
-    }
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
     bool hasErrors = false;
     int deadline = 60;
     QString userToken;
+    UserData userData;
 };
+ServerStatus FicSourceGRPCImpl::GetStatus()
+{
+    ServerStatus serverStatus;
+    grpc::ClientContext context;
+    ProtoSpace::StatusRequest task;
 
+    QScopedPointer<ProtoSpace::StatusResponse> response (new ProtoSpace::StatusResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    grpc::Status status = stub_->GetStatus(&context, task, response.data());
+
+    ProcessStandardError(status);
+    if(hasErrors)
+    {
+        serverStatus.error = error;
+        return serverStatus;
+    }
+    serverStatus.isValid = true;
+    serverStatus.dbAttached = response->database_attached();
+    QString dbUpdate = proto_converters::FS(response->last_database_update());
+    serverStatus.lastDBUpdate = QDateTime::fromString("yyyyMMdd hhmm");
+    serverStatus.motd = proto_converters::FS(response->message_of_the_day());
+    serverStatus.messageRequired = response->need_to_show_motd();
+    return serverStatus;
+}
+
+bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
+    grpc::ClientContext context;
+
+    ProtoSpace::FicIdRequest task;
+
+    if(!ficList->size())
+        return true;
+
+
+    QScopedPointer<ProtoSpace::FicIdResponse> response (new ProtoSpace::FicIdResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    for(core::IdPack& fic : *ficList)
+    {
+        task.mutable_ids()->add_db_ids(fic.db);
+        task.mutable_ids()->add_ffn_ids(fic.ffn);
+    }
+
+    grpc::Status status = stub_->GetDBFicIDS(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    for(int i = 0; i < response->ids().db_ids_size(); i++)
+    {
+        (*ficList)[i].db = response->ids().db_ids(i);
+        (*ficList)[i].ffn = response->ids().ffn_ids(i);
+    }
+    return true;
+}
+
+void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
+{
+    grpc::ClientContext context;
+
+    ProtoSpace::SearchTask task;
+
+    ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
+    task.set_allocated_filter(&protoFilter);
+
+    QScopedPointer<ProtoSpace::SearchResponse> response (new ProtoSpace::SearchResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    auto* userData = task.mutable_user_data();
+    auto* tags = userData->mutable_user_tags();
+
+    for(auto tag : this->userData.allTags)
+        tags->add_all_tags(tag);
+    for(auto tag : this->userData.activeTags)
+        tags->add_searched_tags(tag);
+
+    auto* ignoredFandoms = userData->mutable_ignored_fandoms();
+    for(auto key: this->userData.ignoredFandoms.keys())
+    {
+        ignoredFandoms->add_fandom_ids(key);
+        ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+    }
+
+
+
+
+    grpc::Status status = stub_->Search(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    fics->resize(static_cast<size_t>(response->fanfics_size()));
+    for(int i = 0; i < response->fanfics_size(); i++)
+    {
+        proto_converters::ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
+    }
+
+    task.release_filter();
+}
+
+int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
+{
+    grpc::ClientContext context;
+
+    ProtoSpace::FicCountTask task;
+
+    ProtoSpace::Filter protoFilter = proto_converters::StoryFilterIntoProtoFilter(filter);
+    task.set_allocated_filter(&protoFilter);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    QScopedPointer<ProtoSpace::FicCountResponse> response (new ProtoSpace::FicCountResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+
+    grpc::Status status = stub_->GetFicCount(&context, task, response.data());
+
+    ProcessStandardError(status);
+    task.release_filter();
+    int result = response->fic_count();
+    return result;
+}
+
+bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms)
+{
+    grpc::ClientContext context;
+
+    ProtoSpace::SyncFandomListTask task;
+    task.set_last_fandom_id(lastFandomID);
+
+    QScopedPointer<ProtoSpace::SyncFandomListResponse> response (new ProtoSpace::SyncFandomListResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    task.mutable_controls()->set_user_token(proto_converters::TS(userToken));
+
+    grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
+
+    ProcessStandardError(status);
+    if(!response->needs_update())
+        return false;
+
+    fandoms->resize(response->fandoms_size());
+    for(int i = 0; i < response->fandoms_size(); i++)
+    {
+        proto_converters::ProtoFandomToLocalFandom(response->fandoms(i), (*fandoms)[static_cast<size_t>(i)]);
+    }
+    return true;
+}
+
+bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& recList)
+{
+    grpc::ClientContext context;
+
+    ProtoSpace::RecommendationListCreationRequest task;
+
+
+    QScopedPointer<ProtoSpace::RecommendationListCreationResponse> response (new ProtoSpace::RecommendationListCreationResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* ffn = task.mutable_id_packs();
+    for(auto fic: recList.fics)
+        ffn->add_ffn_ids(fic);
+    task.set_list_name(proto_converters::TS(recList.listParams.name));
+    task.set_always_pick_at(recList.listParams.alwaysPickAt);
+    task.set_min_fics_to_match(recList.listParams.minimumMatch);
+    task.set_max_unmatched_to_one_matched(recList.listParams.pickRatio);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
+
+    ProcessStandardError(status);
+    if(!response->list().list_ready())
+        return false;
+
+    recList.fics.clear();
+    recList.fics.reserve(response->list().fic_ids_size());
+    recList.matchCounts.reserve(response->list().fic_ids_size());
+    for(int i = 0; i < response->list().fic_ids_size(); i++)
+    {
+        recList.fics.push_back(response->list().fic_ids(i));
+        recList.matchCounts.push_back(response->list().fic_matches(i));
+    }
+    return true;
+}
 void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
 {
     error.clear();
     if(status.ok())
     {
         hasErrors = false;
+        return;
     }
     hasErrors = true;
     switch(status.error_code())
@@ -593,6 +629,13 @@ bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::IdPack> * ficList)
     if(!impl)
         return false;
     return impl->GetInternalIDsForFics(ficList);
+}
+
+ServerStatus FicSourceGRPC::GetStatus()
+{
+    if(!impl)
+        return ServerStatus();
+    return impl->GetStatus();
 }
 
 bool VerifyString(const std::string& s, int maxSize = 200){
