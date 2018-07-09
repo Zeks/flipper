@@ -29,4 +29,5 @@ Product{
         path += qbs.buildVariant == "release" ? "/release" : "/debug"
         return path
     }
+    cpp.defines: ["PROTOCOL_VERSION=1"]
 }

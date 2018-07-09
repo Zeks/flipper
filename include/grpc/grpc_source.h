@@ -36,6 +36,7 @@ struct ServerStatus
     bool isValid = false;
     bool dbAttached = false;
     bool messageRequired = false;
+    bool protocolVersionMismatch = false;
     QDateTime lastDBUpdate;
     QString motd;
     QString error;

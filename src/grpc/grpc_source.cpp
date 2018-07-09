@@ -360,6 +360,8 @@ public:
     QString userToken;
     UserData userData;
 };
+#define TO_STR2(x) #x
+#define STRINGIFY(x) TO_STR2(x)
 ServerStatus FicSourceGRPCImpl::GetStatus()
 {
     ServerStatus serverStatus;
@@ -387,6 +389,8 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     serverStatus.lastDBUpdate = QDateTime::fromString("yyyyMMdd hhmm");
     serverStatus.motd = proto_converters::FS(response->message_of_the_day());
     serverStatus.messageRequired = response->need_to_show_motd();
+    int ownProtocolVersion = QString(STRINGIFY(PROTOCOL_VERSION)).toInt();
+    serverStatus.protocolVersionMismatch = ownProtocolVersion != response->protocol_version();
     return serverStatus;
 }
 

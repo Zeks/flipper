@@ -27,8 +27,7 @@ App{
 
     Precompiled{condition:conditionals.usePrecompiledHeader}
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601"
-                             ])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",

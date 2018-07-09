@@ -59,6 +59,9 @@ using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
 using grpc::Status;
+#define TO_STR2(x) #x
+#define STRINGIFY(x) TO_STR2(x)
+
 
 void SetupLogger()
 {
@@ -199,6 +202,9 @@ public:
         response->set_message_of_the_day(motd.toStdString());
         response->set_database_attached(attached);
         response->set_need_to_show_motd(settings.value("Settings/motdRequired", false).toBool());
+        auto protocolVersion = QString(STRINGIFY(PROTOCOL_VERSION)).toInt();
+        QLOG_INFO() << "Passing protocol version: " << protocolVersion;
+        response->set_protocol_version(protocolVersion);
         return Status::OK;
     }
     Status Search(ServerContext* context, const ProtoSpace::SearchTask* task,
