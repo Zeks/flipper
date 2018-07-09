@@ -152,7 +152,7 @@ void TagWidget::OnTagClicked(const QUrl& url)
     ui->edtTags->setHtml(text);
 
 
-    emit tagToggled(currentId, tag, doEnable);
+    emit tagToggled(tag, doEnable);
     //emit refilter();
 }
 

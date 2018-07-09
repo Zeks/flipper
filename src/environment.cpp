@@ -43,9 +43,9 @@ void CoreEnvironment::LoadData()
     if(thinClient)
     {
         UserData userData;
-        userData.allTags = interfaces.tags->GetAllTaggedFics();
+        userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
         if(filter.activeTags.size() > 0)
-            userData.activeTags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+            userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
     }
@@ -111,7 +111,7 @@ bool CoreEnvironment::Init()
                 statusString=statusString.arg("\nReason: " + status.error);
             statusString+= "\nYou could try accessing it later or ping the maintainer at ficflipper@gmail.com";
             QMessageBox::critical(nullptr, "Warning!", statusString);
-            return false;
+            return true;
         }
         if(status.messageRequired)
             QMessageBox::information(nullptr, "Attention!", status.motd);
@@ -194,9 +194,9 @@ int CoreEnvironment::GetResultCount()
     if(thinClient)
     {
         UserData userData;
-        userData.allTags = interfaces.tags->GetAllTaggedFics();
+        userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
         if(filter.activeTags.size() > 0)
-            userData.activeTags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+            userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
     }

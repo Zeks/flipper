@@ -103,6 +103,8 @@ struct StoryFilter{
     int recentAndPopularFavRatio;
     int ignoredFandomCount = 0;
     int recommendationsCount = 0;
+    int activeTagsCount = 0;
+    int allTagsCount = 0;
     ESortMode sortMode;
     EReviewBiasMode reviewBias;
     EBiasOperator biasOperator;
@@ -121,7 +123,8 @@ struct StoryFilter{
 
     double reviewBiasRatio = 0;
 
-    QList<int> taggedIDs;
+//    QSet<int> allTaggedIDs;
+//    QSet<int> idsForActiveTags;
     QVector<int> recFics;
     QHash<int, int> recsHash; // for use on the server
 };

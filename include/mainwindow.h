@@ -305,7 +305,7 @@ private:
     QDialog* expanderWidget = nullptr; // a dialog to display data from currentExpandedEdit for editing
     QTextEdit* edtExpander = new QTextEdit; //text edit taht contains the data of currentExpandedEdit while tis displayed by expanderWidget
 
-    TagWidget* tagWidgetDynamic = new TagWidget; // tag filtering widget on Tags panel
+    //TagWidget* tagWidgetDynamic = new TagWidget; // tag filtering widget on Tags panel
 
 
     QQuickWidget* qwFics = nullptr; // a widget that holds qml fic search results
@@ -360,7 +360,7 @@ private slots:
     void on_pbCrawl_clicked();
 
     // used to receive tag events from tag widget on Tags tab
-    void OnTagToggled(int, QString, bool);
+    void OnTagToggled(QString, bool);
 
     // used to make sure that the amount of random fics requested later will be correct
     void on_chkRandomizeSelection_clicked(bool checked);

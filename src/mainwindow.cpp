@@ -153,8 +153,8 @@ bool MainWindow::Init()
 
     ui->wdgTagsPlaceholder->fandomsInterface = env.interfaces.fandoms;
     ui->wdgTagsPlaceholder->tagsInterface = env.interfaces.tags;
-    tagWidgetDynamic->fandomsInterface = env.interfaces.fandoms;
-    tagWidgetDynamic->tagsInterface = env.interfaces.tags;
+//    tagWidgetDynamic->fandomsInterface = env.interfaces.fandoms;
+//    tagWidgetDynamic->tagsInterface = env.interfaces.tags;
 
     recentFandomsModel = new QStringListModel;
     ignoredFandomsModel = new QStringListModel;
@@ -266,7 +266,7 @@ void MainWindow::InitConnections()
     });
 
 
-    connect(tagWidgetDynamic, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
+    connect(ui->wdgTagsPlaceholder, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
     connect(ui->pbCopyFavUrls, &QPushButton::clicked, this, &MainWindow::OnCopyFavUrls);
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
@@ -1206,12 +1206,12 @@ void MainWindow::on_pbCrawl_clicked()
 }
 
 
-void MainWindow::OnTagToggled(int id, QString tag, bool checked)
+void MainWindow::OnTagToggled(QString , bool )
 {
-    if(checked)
-        SetTag(id, tag);
+    if(ui->wdgTagsPlaceholder->GetSelectedTags().size() == 0)
+        ui->chkEnableTagsFilter->setChecked(false);
     else
-        UnsetTag(id, tag);
+        ui->chkEnableTagsFilter->setChecked(true);
 }
 
 // needed to bind values to reasonable limits

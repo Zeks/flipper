@@ -72,10 +72,9 @@ void cfInTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
     //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
-    thread_local An<UserInfoAccessor> accessor;
     auto* data = ThreadData::GetUserData();
 
-    if(data->allTags.contains(ficId))
+    if(data->allTaggedFics.contains(ficId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);
@@ -195,10 +194,10 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
-    thread_local An<UserInfoAccessor> accessor;
+    //thread_local An<UserInfoAccessor> accessor;
     auto* data = ThreadData::GetUserData();
 
-    if(data->activeTags.contains(ficId))
+    if(data->ficIDsForActivetags.contains(ficId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);

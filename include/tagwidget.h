@@ -50,7 +50,7 @@ private:
 
 
 signals:
-    void tagToggled(int, QString, bool);
+    void tagToggled(QString, bool);
     void tagAdded(QString);
     void tagDeleted(QString);
     void refilter();

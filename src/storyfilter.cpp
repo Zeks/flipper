@@ -57,7 +57,7 @@ void StoryFilter::Log()
 
     QLOG_INFO() << " Active tags : " << activeTags;
     QLOG_INFO() << " Ignore already tagged: " <<ignoreAlreadyTagged;
-    QLOG_INFO() << " Tagged ids : " << taggedIDs;
+    //QLOG_INFO() << " Tagged ids : " << taggedIDs;
 
     slashFilter.Log();
     QLOG_INFO() << "////////////////////STORY FILTER DATA END/////////////////////";

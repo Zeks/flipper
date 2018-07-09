@@ -778,11 +778,11 @@ TagFilteringClient::~TagFilteringClient()
 QString TagFilteringClient::GetString(StoryFilter filter)
 {
     QString queryString;
-    if(filter.mode == core::StoryFilter::filtering_in_fics && !filter.activeTags.isEmpty())
+    if(filter.mode == core::StoryFilter::filtering_in_fics && filter.activeTagsCount > 0)
         queryString += QString(" and cfInActiveTags(f.id) = 1 ").arg(userToken);
     else
     {
-        if(filter.ignoreAlreadyTagged)
+        if(filter.ignoreAlreadyTagged || filter.allTagsCount == 0)
             queryString += QString("");
         else
             queryString += QString(" and cfInTags(f.id) = 0 ").arg(userToken);

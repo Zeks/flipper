@@ -53,7 +53,8 @@ std::string DTS(const QDateTime & date)
 
 
 
-ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter, ProtoSpace::UserData* userData)
+ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
+                                        ProtoSpace::UserData* userData)
 {
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
@@ -111,10 +112,12 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter, ProtoSp
 
     auto* tagFilter = result.mutable_tag_filter();
     tagFilter->set_ignore_already_tagged(filter.ignoreAlreadyTagged);
-//    for(auto tag : filter.activeTags)
-//        tagFilter->add_active_tags(tag.toStdString());
 
-    auto allTagged = GetTaggedIDs();
+//    auto* usertags = userData->mutable_user_tags();
+//    for(auto tag : filter.activeTags)
+//        usertags->add_searched_tags(tag);
+
+//    auto allTagged = GetTaggedIDs();
 
 //    for(auto id : allTagged)
 //        tagFilter->add_all_tagged(id);
@@ -209,11 +212,19 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         result.wordInclusion.push_back(FS(filter.content_filter().word_inclusion(i)));
 
     result.ignoreAlreadyTagged = filter.tag_filter().ignore_already_tagged();
-//    for(int i = 0; i < filter.tag_filter().active_tags_size(); i++)
-//        result.activeTags.push_back(FS(filter.tag_filter().active_tags(i)));
 
-//    for(int i = 0; i < filter.tag_filter().all_tagged_size(); i++)
-//        result.taggedIDs.push_back(filter.tag_filter().all_tagged(i));
+    auto* userThreadData = ThreadData::GetUserData();
+
+
+    userThreadData->allTaggedFics.reserve(userData.user_tags().all_tags_size());
+    for(int i = 0; i < userData.user_tags().all_tags_size(); i++)
+        userThreadData->allTaggedFics.insert(userData.user_tags().all_tags(i));
+
+    userThreadData->ficIDsForActivetags.reserve(userData.user_tags().searched_tags_size());
+    for(int i = 0; i < userData.user_tags().searched_tags_size(); i++)
+        userThreadData->ficIDsForActivetags.insert(userData.user_tags().searched_tags(i));
+    result.activeTagsCount = userThreadData->ficIDsForActivetags.size();
+    result.allTagsCount = userThreadData->allTaggedFics.size();
 
 
     result.slashFilter.slashFilterEnabled = filter.slash_filter().use_slash_filter();
@@ -434,9 +445,9 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
 
     auto* tags = userData->mutable_user_tags();
 
-    for(auto tag : this->userData.allTags)
+    for(auto tag : this->userData.allTaggedFics)
         tags->add_all_tags(tag);
-    for(auto tag : this->userData.activeTags)
+    for(auto tag : this->userData.ficIDsForActivetags)
         tags->add_searched_tags(tag);
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();

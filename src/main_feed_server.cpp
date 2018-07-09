@@ -104,9 +104,9 @@ bool ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken
     //UserData userTags;
     QSharedPointer<UserData> userTags = QSharedPointer<UserData>(new UserData);
     for(int i = 0; i < taskTags.searched_tags_size(); i++)
-        userTags->activeTags.insert(taskTags.searched_tags(i));
+        userTags->ficIDsForActivetags.insert(taskTags.searched_tags(i));
     for(int i = 0; i < taskTags.all_tags_size(); i++)
-        userTags->allTags.insert(taskTags.all_tags(i));
+        userTags->allTaggedFics.insert(taskTags.all_tags(i));
 
     const auto& ignoredFandoms = user_data.ignored_fandoms();
     for(int i = 0; i < ignoredFandoms.fandom_ids_size(); i++)
@@ -241,6 +241,8 @@ public:
         auto* recs = ThreadData::GetRecommendationData();
 
         recs->recommendationList = filter.recsHash;
+
+
 
         QVector<core::Fic> data;
         TimedAction action("Fetching data",[&](){

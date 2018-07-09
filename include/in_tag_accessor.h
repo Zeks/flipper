@@ -6,8 +6,8 @@
 #include <QSharedPointer>
 #include "GlobalHeaders/SingletonHolder.h"
 struct UserData{
-    QSet<int> allTags;
-    QSet<int> activeTags;
+    QSet<int> allTaggedFics;
+    QSet<int> ficIDsForActivetags;
     QHash<int, bool> ignoredFandoms;
     QString token;
 };
