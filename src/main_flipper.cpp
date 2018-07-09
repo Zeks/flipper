@@ -79,7 +79,16 @@ int main(int argc, char *argv[])
     dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
     userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
     pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
-
+    if(mainDBIsCrawler)
+    {
+        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+        userDb = userDbInterface->InitDatabase("UserDB", false);
+    }
+    else
+    {
+       mainDb = dbInterface->InitDatabase("CrawlerDB", false);
+       userDb = userDbInterface->InitDatabase("UserDB", true);
+    }
     QSqlDatabase tasksDb;
 
     tasksDb = tasksInterface->InitDatabase("Tasks");
