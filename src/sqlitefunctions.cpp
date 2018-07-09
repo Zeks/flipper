@@ -151,16 +151,15 @@ void cfInAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
 
 void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
-    auto* data = ThreadData::GetUserData();
     int fandom1 = sqlite3_value_int(argv[0]);
-    int fandom2 = sqlite3_value_int(argv[0]);
-    QList<int> fandoms = {fandom1, fandom2};
-    if(!fandoms.size())
-        sqlite3_result_int(ctx, 0);
-
-    if(fandoms.size() == 1)
+    int fandom2 = sqlite3_value_int(argv[1]);
+    //QList<int> fandoms = {fandom1, fandom2};
+//    if(!fandoms.size())
+//        sqlite3_result_int(ctx, 0);
+    auto* data = ThreadData::GetUserData();
+    if(fandom2 == 0)
     {
-        if(data->ignoredFandoms.contains(fandoms.at(0)))
+        if(data->ignoredFandoms.contains(fandom2))
             sqlite3_result_int(ctx, 1);
         else
             sqlite3_result_int(ctx, 0);
@@ -168,7 +167,7 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
     else
     {
         bool hasUnignored = false;
-        for(auto fandom: fandoms)
+        for(auto fandom: {fandom1, fandom2})
         {
             auto it = data->ignoredFandoms.find(fandom);
             if(it == data->ignoredFandoms.end())
@@ -188,7 +187,6 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
             sqlite3_result_int(ctx, 1);
 
     }
-
 }
 
 void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)

@@ -242,8 +242,6 @@ public:
 
         recs->recommendationList = filter.recsHash;
 
-
-
         QVector<core::Fic> data;
         TimedAction action("Fetching data",[&](){
             ficSource->FetchData(filter, &data);

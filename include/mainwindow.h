@@ -355,6 +355,7 @@ public slots:
     void LoadAutomaticSettingsForRecListSources(int size);
     QList<QSharedPointer<core::Fic> > LoadFavourteLinksFromFFNProfile(QString);
     void OnQMLRefilter();
+    void OnQMLFandomToggled(QVariant);
 private slots:
     // called to trudge through a fandom
     void on_pbCrawl_clicked();
@@ -518,6 +519,12 @@ private slots:
 
     void on_pbCreateHTML_clicked();
 
+
+    void on_sbMinimumListMatches_valueChanged(int arg1);
+
+    void on_chkOtherFandoms_toggled(bool checked);
+
+    void on_chkIgnoreFandoms_toggled(bool checked);
 
 signals:
 

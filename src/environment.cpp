@@ -201,11 +201,7 @@ int CoreEnvironment::GetResultCount()
         ficSource->userData = userData;
     }
     QVector<int> recFics;
-    if(filter.sortMode == core::StoryFilter::sm_reccount)
-    {
-        // need to pass the list to the server
-        filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
-    }
+    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
 
     return ficSource->GetFicCount(filter);
 }

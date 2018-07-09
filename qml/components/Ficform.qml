@@ -233,6 +233,13 @@ Rectangle {
                     font.family: "Courier"
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 13
+                    MouseArea{
+                        anchors.fill : parent
+                        propagateComposedEvents : true
+                        onClicked : {
+                            lvFics.fandomToggled(index);
+                        }
+                    }
                 }
             }
 

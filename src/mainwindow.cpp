@@ -491,6 +491,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(findSimilarClicked(QVariant)), this, SLOT(OnFindSimilarClicked(QVariant)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
+    connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
@@ -897,6 +898,24 @@ QList<QSharedPointer<core::Fic>> MainWindow::LoadFavourteLinksFromFFNProfile(QSt
 void MainWindow::OnQMLRefilter()
 {
     on_pbLoadDatabase_clicked();
+}
+
+void MainWindow::OnQMLFandomToggled(QVariant var)
+{
+    auto fanficsInterface = env.interfaces.fanfics;
+
+    int rownum = var.toInt();
+
+    QModelIndex index = typetableModel->index(rownum, 0);
+    auto data = index.data(static_cast<int>(FicModel::FandomRole)).toString();
+
+    QStringList list = data.split("&", QString::SkipEmptyParts);
+    if(!list.size())
+        return;
+    if(ui->cbIgnoreFandomSelector->currentText() != list.at(0))
+       ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
+    else if(list.size() > 1)
+        ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
 }
 
 
@@ -2545,3 +2564,21 @@ void MainWindow::on_pbMore_clicked()
     }
 }
 
+
+void MainWindow::on_sbMinimumListMatches_valueChanged(int value)
+{
+    if(value > 0)
+        ui->chkSearchWithinList->setChecked(true);
+}
+
+void MainWindow::on_chkOtherFandoms_toggled(bool checked)
+{
+    if(checked)
+        ui->chkIgnoreFandoms->setChecked(false);
+}
+
+void MainWindow::on_chkIgnoreFandoms_toggled(bool checked)
+{
+    if(checked)
+        ui->chkOtherFandoms->setChecked(false);
+}

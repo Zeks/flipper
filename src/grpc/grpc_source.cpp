@@ -457,9 +457,6 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
         ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
     }
 
-
-
-
     grpc::Status status = stub_->Search(&context, task, response.data());
 
     ProcessStandardError(status);
@@ -482,8 +479,8 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
     ProtoSpace::Filter protoFilter;
     auto* userData = task.mutable_user_data();
     protoFilter = proto_converters::StoryFilterIntoProto(filter, userData);
-
     task.set_allocated_filter(&protoFilter);
+
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
@@ -491,6 +488,18 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
+    auto* tags = userData->mutable_user_tags();
+    for(auto tag : this->userData.allTaggedFics)
+        tags->add_all_tags(tag);
+    for(auto tag : this->userData.ficIDsForActivetags)
+        tags->add_searched_tags(tag);
+
+    auto* ignoredFandoms = userData->mutable_ignored_fandoms();
+    for(auto key: this->userData.ignoredFandoms.keys())
+    {
+        ignoredFandoms->add_fandom_ids(key);
+        ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+    }
 
     grpc::Status status = stub_->GetFicCount(&context, task, response.data());
 
@@ -632,6 +641,7 @@ int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
 {
     if(!impl)
         return 0;
+    impl->userData = userData;
     return impl->GetFicCount(filter);
 }
 

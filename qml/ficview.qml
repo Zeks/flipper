@@ -173,6 +173,7 @@ Rectangle {
             signal findSimilarClicked(var id)
             signal recommenderCopyClicked(string msg)
             signal refilter()
+            signal fandomToggled(var id)
 
             MouseArea {
                 id: ma

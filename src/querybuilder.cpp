@@ -203,10 +203,13 @@ QString DefaultQueryBuilder::ProcessOtherFandomsMode(StoryFilter filter, bool re
 {
     QString queryString;
     if(filter.otherFandomsMode)
-        queryString += " and not exists ("
-                       "select fandom_id from ficfandoms where fic_id = f.id and fandom_id in "
-                       "(select id from fandomindex where name in (select distinct fandom from recent_fandoms)"
-                       "))" ;
+    {
+        queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) > 0").arg(userToken);
+    }
+//        queryString += " and not exists ("
+//                       "select fandom_id from ficfandoms where fic_id = f.id and fandom_id in "
+//                       "(select id from fandomindex where name in (select distinct fandom from recent_fandoms)"
+//                       "))" ;
 
     if(!renameToFID)
         queryString.replace(" fid ", " ff.id ");
@@ -286,6 +289,8 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
     QString slashField;
     if(!thinClientMode)
     {
+        if(!filter.slashFilter.slashFilterEnabled)
+            return queryString;
         if(filter.slashFilter.slashFilterLevel == 0)
             slashField = "keywords_result";
         else if(filter.slashFilter.slashFilterLevel == 1)
@@ -305,6 +310,8 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
     }
     else
     {
+        if(!filter.slashFilter.slashFilterEnabled)
+            return queryString;
         if(!filter.slashFilter.excludeSlash && !filter.slashFilter.includeSlash)
             return queryString;
         QString start = " and "  ;
