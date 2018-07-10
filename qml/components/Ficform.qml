@@ -94,9 +94,9 @@ Rectangle {
 
     function tagToggled(tag, state) {
         if(state)
-            lvFics.tagAdded(tag,rownum)
+            lvFics.tagAdded(tag,indexOfThisDelegate)
         else
-            lvFics.tagDeleted(tag,rownum)
+            lvFics.tagDeleted(tag,indexOfThisDelegate)
     }
     function tagListActivated(activatedIndex) {
         //        print("activation")
@@ -140,9 +140,11 @@ Rectangle {
                 id: imgFindSimilar
                 width: 24
                 height: 24
+
                 verticalAlignment: Text.AlignVCenter
                 source: "qrc:/icons/icons/scan_small.png"
-                visible: lvFics.showScanIcon
+                visible: false
+                //visible: lvFics.showScanIcon
                 MouseArea{
                     anchors.fill : parent
                     propagateComposedEvents : true
@@ -250,12 +252,12 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
 
                 font.pixelSize: 12
+                visible: false
             }
 
             ComboBox {
                 id: cbChapters
                 height: 24
-                visible: true
                 model: chapters
 
                 onActivated:  {
@@ -272,6 +274,7 @@ Rectangle {
                         mouse.accepted = false
                     }
                 }
+                visible: false
             }
 
             Text {
@@ -282,6 +285,7 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
 
                 font.pixelSize: 12
+                visible: false
             }
         }
 
@@ -331,7 +335,7 @@ Rectangle {
                 height: 24
                 sourceSize.height: 20
                 sourceSize.width: 20
-                opacity: tags.indexOf("Disliked") === -1 ? 1 : 0.5
+                opacity: ((tags.indexOf("Disliked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Liked")  !== -1) ?  1 : 0.3
                 source: tags.indexOf("Liked") !== -1 ? "qrc:/icons/icons/like_green.png" :  "qrc:/icons/icons/like.png"
 
                 MouseArea{
@@ -354,7 +358,7 @@ Rectangle {
                 height: 24
                 sourceSize.height: 20
                 sourceSize.width: 20
-                opacity: tags.indexOf("Liked") === -1 ? 1 : 0.3
+                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Disliked")  !== -1) ?  1 : 0.3
                 source: tags.indexOf("Disliked") !== -1 ? "qrc:/icons/icons/dislike_red.png" :  "qrc:/icons/icons/dislike.png"
                 MouseArea{
                     anchors.fill : parent
@@ -367,6 +371,25 @@ Rectangle {
                         }
                         else
                             lvFics.tagDeleted("Disliked",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgDiscard
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
+                source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Hide") === -1)
+                            lvFics.tagAdded("Hide",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Hide",indexOfThisDelegate)
                     }
                 }
             }

@@ -199,7 +199,7 @@ bool MainWindow::Init()
     FillRecTagCombobox();
 
 
-    ReadSettings();
+
     SetupFanficTable();
     FillRecommenderListView();
     //CreatePageThreadWorker();
@@ -231,6 +231,7 @@ bool MainWindow::Init()
     if(thinClient)
         SetClientMode();
     ResetFilterUItoDefaults();
+    ReadSettings();
     //    ui->spRecsFan->setStretchFactor(0, 0);
     //    ui->spRecsFan->setStretchFactor(1, 1);
     ui->spFanIgnFan->setCollapsible(0,0);
@@ -718,7 +719,7 @@ void MainWindow::OnCopyAllUrls()
         {
             result += typetableModel->index(i, 2).data().toString() + "\n";
         }
-        result += "http://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
+        result += "https://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
     }
     clipboard->setText(result);
 }
@@ -741,7 +742,7 @@ void MainWindow::OnDoFormattedListByFandoms()
         if(fandoms.size() == 0)
         {
             auto fandom = ficPtr->fandom.trimmed();
-            qDebug() << "no fandoms written for: " << "http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">";
+            qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">";
         }
         for(auto fandom: fandoms)
         {
@@ -777,7 +778,7 @@ void MainWindow::OnDoFormattedListByFandoms()
             bool validGenre = true;
             if(validGenre)
             {
-                result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+                result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
                 result+=ficPtr->genreString + "<br><br>";
                 QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
@@ -811,7 +812,7 @@ void MainWindow::OnDoFormattedList()
         bool validGenre = true;
         if(validGenre)
         {
-            result+="<a href=http://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+            result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
             result+=ficPtr->genreString + "<br><br>";
             QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
@@ -912,7 +913,7 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
     QStringList list = data.split("&", QString::SkipEmptyParts);
     if(!list.size())
         return;
-    if(ui->cbIgnoreFandomSelector->currentText() != list.at(0))
+    if(ui->cbIgnoreFandomSelector->currentText().trimmed() != list.at(0).trimmed())
        ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
     else if(list.size() > 1)
         ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());

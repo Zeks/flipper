@@ -27,5 +27,7 @@
         <file>icons/dislike_red.png</file>
         <file>icons/like_green.png</file>
         <file>icons/cog.png</file>
+        <file>icons/trash.png</file>
+        <file>icons/trash_darker.png</file>
     </qresource>
 </RCC>

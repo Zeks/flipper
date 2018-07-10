@@ -222,9 +222,9 @@ DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabas
     QString qs = "INSERT INTO FicTags(fic_id, tag) values(:fic_id, :tag)";
     SqlContext<bool> ctx(db, qs, {{"tag", tag},{"fic_id", fic_id}});
     ctx.ExecAndCheck(true);
-    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id");
-    ctx.bindValue("fic_id", fic_id);
-    ctx.ExecAndCheck(true);
+//    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id");
+//    ctx.bindValue("fic_id", fic_id);
+//    ctx.ExecAndCheck(true);
     return ctx.result;
 }
 

@@ -180,7 +180,13 @@ Rectangle {
                 anchors.fill: parent
                 propagateComposedEvents: true
                 onPressed:{
-                    mouse.accepted = false
+                    if(!lvFics.itemAt(mouseX, mouseY))
+                    {
+                        lvFics.refilter()
+                        mouse.accepted = true
+                    }
+                    else
+                        mouse.accepted = false
                 }
                 onClicked:
                 {
