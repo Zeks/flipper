@@ -334,6 +334,11 @@ public slots:
     // triggered when user removes tag from a fic in qml
     void OnTagRemove(QVariant tag, QVariant row);
 
+    // triggered when user adds tag in qml
+    void OnTagAddInTagWidget(QVariant tag, QVariant row);
+    // triggered when user removes tag from a fic in qml
+    void OnTagRemoveInTagWidget(QVariant tag, QVariant row);
+
     // places into the clipboard, the url of the fic clicked in qml
     void OnCopyFicUrl(QString);
     // used to open author pages on heart click that contain the current fic in their favourites

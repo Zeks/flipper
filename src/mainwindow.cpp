@@ -487,7 +487,9 @@ void MainWindow::SetupFanficTable()
 
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
+    connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
+    connect(childObject, SIGNAL(tagDeletedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagRemoveInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(findSimilarClicked(QVariant)), this, SLOT(OnFindSimilarClicked(QVariant)));
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
@@ -1093,6 +1095,18 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
 
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
+}
+
+void MainWindow::OnTagAddInTagWidget(QVariant tag, QVariant row)
+{
+    int rownum = row.toInt();
+    SetTag(rownum, tag.toString());
+}
+
+void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)
+{
+    int rownum = row.toInt();
+    UnsetTag(rownum, tag.toString());
 }
 
 

@@ -167,6 +167,8 @@ Rectangle {
             signal chapterChanged(var chapter, var ficId)
             signal tagDeleted(var tag, var row)
             signal tagAdded(var tag, var row)
+            signal tagDeletedInTagWidget(var tag, var row)
+            signal tagAddedInTagWidget(var tag, var row)
             signal tagClicked(var tag, var currentMode, var title, var author)
             signal callTagWindow()
             signal urlCopyClicked(string msg)

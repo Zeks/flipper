@@ -94,9 +94,9 @@ Rectangle {
 
     function tagToggled(tag, state) {
         if(state)
-            lvFics.tagAdded(tag,indexOfThisDelegate)
+            lvFics.tagAddedInTagWidget(tag,rownum)
         else
-            lvFics.tagDeleted(tag,indexOfThisDelegate)
+            lvFics.tagDeletedInTagWidget(tag,rownum)
     }
     function tagListActivated(activatedIndex) {
         //        print("activation")
