@@ -151,6 +151,7 @@ Rectangle {
             displayMarginBeginning: 50
             displayMarginEnd:  50
             id:lvFics
+            z:1
             objectName: "lvFics"
             //snapMode: ListView.NoSnap
             property int previousIndex: -1
@@ -177,31 +178,33 @@ Rectangle {
             signal refilter()
             signal fandomToggled(var id)
 
-            MouseArea {
-                id: ma
-                anchors.fill: parent
-                propagateComposedEvents: true
-                onPressed:{
-                    if(!lvFics.itemAt(mouseX, mouseY))
-                    {
-                        lvFics.refilter()
-                        mouse.accepted = true
-                    }
-                    else
-                        mouse.accepted = false
-                }
-                onClicked:
-                {
-                    if(!lvFics.itemAt(mouseX, mouseY))
-                    {
-                        lvFics.refilter()
-                        mouse.accepted = true
-                    }
-                    else
-                        mouse.accepted = false
-                }
+//            MouseArea {
+//                id: ma
+//                anchors.fill: parent
 
-            }
+//                propagateComposedEvents: true
+//                onPressed:{
+//                    if(lvFics.indexAt(mouseX, mouseY) === -1)
+//                    {
+//                        lvFics.refilter()
+//                        mouse.accepted = true
+//                    }
+//                    else
+//                        mouse.accepted = false
+//                }
+//                onClicked:
+//                {
+//                    console.log("Clicked at: ", mouseX, mouseY)
+//                    if(lvFics.view.indexAt(mouseX, mouseY) === -1)
+//                    {
+//                        lvFics.refilter()
+//                        mouse.accepted = true
+//                    }
+//                    else
+//                        mouse.accepted = false
+//                }
+
+//            }
         }
     }
 

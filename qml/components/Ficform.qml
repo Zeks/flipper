@@ -11,7 +11,6 @@ Rectangle {
     property int delRow : rownum
     property int indexOfThisDelegate: index
     signal mouseClicked
-
     MouseArea{
         anchors.fill : parent
         propagateComposedEvents : true
