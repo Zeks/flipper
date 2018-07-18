@@ -157,9 +157,9 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 //    if(!fandoms.size())
 //        sqlite3_result_int(ctx, 0);
     auto* data = ThreadData::GetUserData();
-    if(fandom2 == 0)
+    if(fandom2 == -1)
     {
-        if(data->ignoredFandoms.contains(fandom2))
+        if(data->ignoredFandoms.contains(fandom1))
             sqlite3_result_int(ctx, 1);
         else
             sqlite3_result_int(ctx, 0);
@@ -178,7 +178,7 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
             if(it.value() == true)
             {
                 sqlite3_result_int(ctx, 1);
-                break;
+                return;
             }
         }
         if(hasUnignored)

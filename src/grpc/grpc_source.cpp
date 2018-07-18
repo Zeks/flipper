@@ -245,6 +245,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.recommendationsCount = userData.recommendation_list().list_of_fics_size();
     for(int i = 0; i < userData.recommendation_list().list_of_fics_size(); i++)
         result.recsHash[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
+    for(int i = 0; i < userData.ignored_fandoms().fandom_ids_size(); i++)
+        userThreadData->ignoredFandoms[userData.ignored_fandoms().fandom_ids(i)] = userData.ignored_fandoms().ignore_crossovers(i);
 
 
     return result;
