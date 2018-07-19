@@ -426,11 +426,17 @@ public:
         for(int key: list.recommendations.keys())
         {
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
+            if(sourceFics.contains(key))
+                continue;
             targetList->add_fic_ids(key);
             targetList->add_fic_matches(list.recommendations[key]);
         }
         for(int key: list.matchReport.keys())
+        {
+            if(sourceFics.contains(key))
+                continue;
             (*targetList->mutable_match_report())[key] = list.matchReport[key];
+        }
 
         return Status::OK;
     }
