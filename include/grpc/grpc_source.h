@@ -14,6 +14,8 @@ class Filter;
 class Fanfic;
 class Fandom;
 class UserData;
+class SiteIDPack;
+class RecommendationListCreationRequest;
 }
 
 struct RecommendationListGRPC
@@ -60,6 +62,9 @@ public:
 };
 
 bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserData &user);
+bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack);
+bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request);
+
 namespace proto_converters
 {
 
