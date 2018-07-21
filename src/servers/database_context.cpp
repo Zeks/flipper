@@ -3,7 +3,6 @@
 #include "Interfaces/interface_sqlite.h"
 
 DatabaseContext::DatabaseContext(){
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-    //dbInterface->ReadDbFile("dbcode/dbinit.sql");
+    dbInterface.reset(new database::SqliteInterface());
+    dbInterface->InitDatabase("CrawlerDB", true);
 }

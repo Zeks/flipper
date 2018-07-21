@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/interface_sqlite.h"
 #include <QCoreApplication>
 #include <QSettings>
+#include <QtConcurrent>
 
 
 
@@ -80,20 +81,23 @@ int main(int argc, char *argv[])
     SetupLogger();
     SetupStatLogger();
     QLOG_INFO() << "Feeder app started server";
-
-    QSettings settings("settings_server.ini", QSettings::IniFormat);
-    auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
-    auto port = settings.value("Settings/serverPort", "3055").toString();
-
-    std::string server_address = CreateConnectString(ip, port);
-    QLOG_INFO() << "Connection string is: " << QString::fromStdString(server_address);
     FeederService service;
-    ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    builder.RegisterService(&service);
-    std::unique_ptr<Server> server(builder.BuildAndStart());
-    QLOG_INFO() << "Starting server";
-    server->Wait();
+    auto serverSetup = [&](){
+        QSettings settings("settings_server.ini", QSettings::IniFormat);
+        auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
+        auto port = settings.value("Settings/serverPort", "3055").toString();
+
+        std::string server_address = CreateConnectString(ip, port);
+        QLOG_INFO() << "Connection string is: " << QString::fromStdString(server_address);
+
+        ServerBuilder builder;
+        builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+        builder.RegisterService(&service);
+        std::unique_ptr<Server> server(builder.BuildAndStart());
+        QLOG_INFO() << "Starting server";
+        server->Wait();
+    };
+    QtConcurrent::run(serverSetup);
     return a.exec();
 }
 

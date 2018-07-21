@@ -7,7 +7,7 @@
 #include "timeutils.h"
 #include "core/section.h"
 #include "in_tag_accessor.h"
-#include "Logger/QsLog.h"
+#include "logger/QsLog.h"
 #include "loggers/usage_statistics.h"
 #include "grpc/grpc_source.h"
 
@@ -28,8 +28,12 @@
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
 
-FeederService::FeederService(){
+FeederService::FeederService(QObject* parent): QObject(parent){
     startedAt = QDateTime::currentDateTimeUtc();
+    allSearches = 0;
+    genericSearches = 0;
+    recommendationsSearches = 0;
+    randomSearches = 0;
 
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
@@ -39,7 +43,14 @@ FeederService::FeederService(){
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authors->db = mainDb;
     holder->LoadFavourites(authors);
+    logTimer.reset(new QTimer());
+    logTimer->start(3600000);
+    connect(logTimer.data(), SIGNAL(timeout()), this, SLOT(OnPrintStatistics()), Qt::QueuedConnection);
+}
 
+FeederService::~FeederService()
+{
+    qDebug() << "Destroying server";
 }
 
 Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::StatusRequest* task,
@@ -65,46 +76,24 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     Q_UNUSED(context);
     QString userToken = QString::fromStdString(task->controls().user_token());
     QLOG_INFO() << "////////////Received search task from: " << userToken;
-    if(!ProcessUserToken(task->user_data(), userToken))
-    {
-        SetTokenError(response->mutable_response_info());
+
+    if(!VerifySearchInput(userToken,
+                          task->filter(),
+                          task->user_data(),
+                          response->mutable_response_info()))
         return Status::OK;
-    }
-    if(!VerifyFilterData(task->filter(), task->user_data()))
-    {
-        SetFilterDataError(response->mutable_response_info());
-        return Status::OK;
-    }
-    An<UserTokenizer> keeper;
-    auto safetyToken = keeper->GetToken(userToken);
-    if(!safetyToken)
-    {
-        SetTokenMatchError(response->mutable_response_info());
-        return Status::OK;
-    }
 
-    core::StoryFilter filter;
-    TimedAction ("Converting filter",[&](){
-        filter = proto_converters::ProtoIntoStoryFilter(task->filter(), task->user_data());
-    }).run();
-    //filter.Log();
-
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-
-    static QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface));
-    FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
-    convertedFicSource->InitQueryType(true, userToken);
-
-    auto* recs = ThreadData::GetRecommendationData();
-
-    recs->recommendationList = filter.recsHash;
+    core::StoryFilter filter = FilterFromTask(task->filter(), task->user_data());
+    auto ficSource = InitFicSource(userToken);
 
     QVector<core::Fic> data;
     TimedAction action("Fetching data",[&](){
         ficSource->FetchData(filter, &data);
     });
     action.run();
+
+    AddToStatistics(userToken, filter);
+
     QLOG_INFO() << "Fetch performed in: " << action.ms;
     TimedAction convertAction("Converting data",[&](){
         for(const auto& fic: data)
@@ -115,8 +104,6 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
 
     QLOG_INFO() << "Fetched fics: " << data.size();
     QLOG_INFO() << " ";
-    QLOG_INFO() << " ";
-    QLOG_INFO() << " ";
     return Status::OK;
 }
 
@@ -126,50 +113,22 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
     Q_UNUSED(context);
     QString userToken = QString::fromStdString(task->controls().user_token());
     QLOG_INFO() << "////////////Received fic count task from: " << userToken;
-    if(!ProcessUserToken(task->user_data(), userToken))
-    {
-        SetTokenError(response->mutable_response_info());
+    if(!VerifySearchInput(userToken,
+                          task->filter(),
+                          task->user_data(),
+                          response->mutable_response_info()))
         return Status::OK;
-    }
-    if(!VerifyFilterData(task->filter(), task->user_data()))
-    {
-        SetFilterDataError(response->mutable_response_info());
-        return Status::OK;
-    }
-    An<UserTokenizer> keeper;
-    auto safetyToken = keeper->GetToken(userToken);
-    if(!safetyToken)
-    {
-        SetTokenMatchError(response->mutable_response_info());
-        return Status::OK;
-    }
-    core::StoryFilter filter;
-    TimedAction ("Converting filter",[&](){
-        filter = proto_converters::ProtoIntoStoryFilter(task->filter(), task->user_data());
 
-    }).run();
-    //filter.Log();
+    core::StoryFilter filter = FilterFromTask(task->filter(), task->user_data());
+    auto ficSource = InitFicSource(userToken);
 
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-
-    static QSharedPointer<FicSource> ficSource;
-    ficSource.reset(new FicSourceDirect(dbInterface));
-    FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
-    convertedFicSource->InitQueryType(true, userToken);
     QVector<core::Fic> data;
-
-    auto* recs = ThreadData::GetRecommendationData();
-    recs->recommendationList = filter.recsHash;
-
     int count = 0;
     TimedAction ("Getting fic count",[&](){
         count = ficSource->GetFicCount(filter);
     }).run();
 
     response->set_fic_count(count);
-    QLOG_INFO() << " ";
-    QLOG_INFO() << " ";
     QLOG_INFO() << " ";
     return Status::OK;
 }
@@ -186,7 +145,7 @@ Status FeederService::SyncFandomList(ServerContext* context, const ProtoSpace::S
         SetTokenError(response->mutable_response_info());
         return Status::OK;
     }
-
+    AddToStatistics(userToken);
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
     dbInterface->ReadDbFile("dbcode/dbinit.sql");
@@ -243,6 +202,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         SetTokenMatchError(response->mutable_response_info());
         return Status::OK;
     }
+    AddToRecStatistics(userToken);
     DatabaseContext dbContext;
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
@@ -346,6 +306,9 @@ void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filte
     {
         QWriteLocker locker(&lock);
         StatisticsToken token = tokenData[uuid];
+        searchedTokens.insert(uuid);
+        allTokens.insert(uuid);
+        allSearches++;
     }
     if(filter.sortMode == core::StoryFilter::sm_reccount ||
             filter.minRecommendations > 0)
@@ -365,20 +328,93 @@ void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filte
     }
     token.lastUsed = QDateTime::currentDateTimeUtc();
     token.usedAt.push_back(token.lastUsed);
+    {
+        QWriteLocker locker(&lock);
+        tokenData[uuid] = token;
+    }
+}
+
+void FeederService::AddToStatistics(QString uuid)
+{
+    QWriteLocker locker(&lock);
+    allTokens.insert(uuid);
+    allSearches++;
+}
+
+void FeederService::AddToRecStatistics(QString uuid)
+{
+    QWriteLocker locker(&lock);
+    allTokens.insert(uuid);
+    recommendationTokens.insert(uuid);
+
 }
 void FeederService::CleaupOldTokens()
 {
     QList<QString> toErase;
 }
-void FeederService::PrintStatitics(){
+void FeederService::PrintStatistics(){
     // creating statistics message
     STAT_INFO() << "//////////////////////////////////////////////////////////////////////";
     STAT_INFO() << "Current time is: " << QDateTime::currentDateTimeUtc();
     STAT_INFO() << "Server started at: " << startedAt;
     STAT_INFO() << "Unique tokens in use: " << allTokens.size();
     STAT_INFO() << "Tokens that searched: " << searchedTokens.size();
-    STAT_INFO() << "Searches: " << serverUses.size();
+    STAT_INFO() << "Tokens that created lists: " << recommendationTokens.size();
+    STAT_INFO() << "Searches: " << allSearches;
     STAT_INFO() << "Generic: " << genericSearches;
     STAT_INFO() << "Recommendations: " << recommendationsSearches;
     STAT_INFO() << "Random: " << randomSearches;
+}
+
+bool FeederService::VerifySearchInput(QString userToken,
+                                      const ProtoSpace::Filter & filter,
+                                      const ProtoSpace::UserData & userData,
+                                      ProtoSpace::ResponseInfo * responseInfo)
+{
+    if(!ProcessUserToken(userData, userToken))
+    {
+        SetTokenError(responseInfo);
+        return false;
+    }
+    if(!VerifyFilterData(filter, userData))
+    {
+        SetFilterDataError(responseInfo);
+        return false;
+    }
+    An<UserTokenizer> keeper;
+    auto safetyToken = keeper->GetToken(userToken);
+    if(!safetyToken)
+    {
+        SetTokenMatchError(responseInfo);
+        return false;
+    }
+    return true;
+}
+
+core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcfilter, const ProtoSpace::UserData & grpcUserData)
+{
+    core::StoryFilter filter;
+    TimedAction ("Converting filter",[&](){
+        filter = proto_converters::ProtoIntoStoryFilter(grpcfilter, grpcUserData);
+
+    }).run();
+
+    auto* recs = ThreadData::GetRecommendationData();
+    recs->recommendationList = filter.recsHash;
+
+    return filter;
+}
+
+QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken)
+{
+    DatabaseContext dbContext;
+    QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbContext.dbInterface));
+    FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+    convertedFicSource->InitQueryType(true, userToken);
+    return ficSource;
+}
+
+void FeederService::OnPrintStatistics()
+{
+    PrintStatistics();
 }
