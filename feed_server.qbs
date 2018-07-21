@@ -60,6 +60,7 @@ App{
         "include/container_utils.h",
         "include/generic_utils.h",
         "include/timeutils.h",
+        "include/servers/feed.h",
         "src/generic_utils.cpp",
         "include/querybuilder.h",
         "include/queryinterfaces.h",
@@ -90,10 +91,13 @@ App{
         "include/tokenkeeper.h",
         "include/in_tag_accessor.h",
         "src/in_tag_accessor.cpp",
+        "src/servers/feed.cpp",
         "src/Interfaces/fanfics.cpp",
         "src/Interfaces/ffn/ffn_fanfics.cpp",
-//        "src/tasks/recommendations_reload_precessor.cpp",
-//        "include/tasks/recommendations_reload_precessor.h",
+        "src/servers/token_processing.cpp",
+        "include/servers/token_processing.h",
+        "src/servers/database_context.cpp",
+        "include/servers/database_context.h",
     ]
 
     cpp.staticLibraries: {

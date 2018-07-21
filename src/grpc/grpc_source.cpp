@@ -703,6 +703,37 @@ bool VerifyNotEmpty(const int& val){
     return true;
 }
 
+bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack)
+{
+    if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 )
+        return false;
+    if(idPack.ffn_ids().size() > 10000)
+        return false;
+    if(idPack.ao3_ids().size() > 10000)
+        return false;
+    if(idPack.sb_ids().size() > 10000)
+        return false;
+    if(idPack.sv_ids().size() > 10000)
+        return false;
+    return true;
+}
+
+
+bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request)
+{
+    if(request->list_name().size() > 100)
+        return false;
+    if(request->min_fics_to_match() <= 0 || request->min_fics_to_match() > 10000)
+        return false;
+    if(request->max_unmatched_to_one_matched() <= 0)
+        return false;
+    if(request->always_pick_at() < 1)
+        return false;
+    if(!VerifyIDPack(request->id_packs()))
+        return false;
+    return true;
+}
+
 bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserData& user)
 {
     if(!VerifyString(filter.basic_filters().website(), 10))
