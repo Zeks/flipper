@@ -39,7 +39,7 @@ template <typename T>
 struct UserToken{
     QString token;
     UserToken(QString token):token(token){}
-    ~UserToken(){ReleaseToken();}
+    virtual ~UserToken(){ReleaseToken();}
     virtual void ReleaseToken(){
         An<TokenKeeper<T>> accessor;
         accessor->ReleaseToken(token);

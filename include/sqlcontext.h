@@ -58,7 +58,7 @@ struct SqlContext
 {
     SqlContext(QSqlDatabase db) : q(db), transaction(db){
     }
-    SqlContext(QSqlDatabase db, QString qs) : q(db), transaction(db), qs(qs){
+    SqlContext(QSqlDatabase db, QString qs) :qs(qs), q(db), transaction(db) {
         Prepare(qs);
     }
 
@@ -72,12 +72,12 @@ struct SqlContext
         }
     }
 
-    SqlContext(QSqlDatabase db, QString qs,  std::function<void(SqlContext<ResultType>*)> func) : q(db), transaction(db), qs(qs), func(func){
+    SqlContext(QSqlDatabase db, QString qs,  std::function<void(SqlContext<ResultType>*)> func) : qs(qs), q(db), transaction(db),  func(func){
         Prepare(qs);
         func(this);
     }
 
-    SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) : q(db), transaction(db), qs(qs), func(func){
+    SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) :  qs(qs), q(db),  transaction(db){
         Prepare(qs);
         for(auto valName: hash.keys())
             bindValue(valName, hash[valName]);
