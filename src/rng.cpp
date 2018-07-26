@@ -7,8 +7,11 @@ namespace core{
 QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase )
 {
     QString where = userToken + query->str;
+    for(auto bind: query->bindings)
+        where += bind.key + bind.value.toString().left(30);
 
     //QLOG_INFO() << "RANDOM USING WHERE:" <<
+    //QLOG_INFO() << "random token: " << where;
     if(!randomIdLists.contains(where))
     {
         auto idList = portableDBInterface->GetIdListForQuery(query);
