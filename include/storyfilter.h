@@ -127,6 +127,7 @@ struct StoryFilter{
 //    QSet<int> idsForActiveTags;
     QVector<int> recFics;
     QHash<int, int> recsHash; // for use on the server
+    QString userToken;
 };
 }
 

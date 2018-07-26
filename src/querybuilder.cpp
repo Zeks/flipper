@@ -579,7 +579,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
             q->bindings = query->bindings;
             q->str = wherePart;
 
-            auto value = rng->Get(q, db);
+            auto value = rng->Get(q, userToken, db);
             if(value == "-1")
                 return "";
             idList+=value;

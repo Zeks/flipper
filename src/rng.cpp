@@ -4,9 +4,9 @@
 #include <random>
 
 namespace core{
-QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QSqlDatabase )
+QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase )
 {
-    QString where = query->str;
+    QString where = userToken + query->str;
 
     //QLOG_INFO() << "RANDOM USING WHERE:" <<
     if(!randomIdLists.contains(where))

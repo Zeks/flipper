@@ -10,11 +10,11 @@ namespace core{
 
 struct IRNGGenerator{
     virtual ~IRNGGenerator(){}
-    virtual QString Get(QSharedPointer<Query>, QSqlDatabase db)  = 0;
+    virtual QString Get(QSharedPointer<Query>, QString userToken, QSqlDatabase db)  = 0;
 };
 
 struct DefaultRNGgenerator : public IRNGGenerator{
-    virtual QString Get(QSharedPointer<Query> where, QSqlDatabase db);
+    virtual QString Get(QSharedPointer<Query> where, QString userToken, QSqlDatabase db);
     QHash<QString, QStringList> randomIdLists;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
 };
