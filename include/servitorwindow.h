@@ -24,6 +24,10 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_pbGetGenresForFic_clicked();
+
+    void on_pbGetGenresForEverything_clicked();
+
 private:
     Ui::servitorWindow *ui;
 };

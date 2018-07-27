@@ -8,6 +8,7 @@
 #include <QSqlError>
 #include <QSharedPointer>
 #include "core/section.h"
+#include "core/fic_genre_data.h"
 #include "regex_utils.h"
 #include "transaction.h"
 #include "sqlcontext.h"
@@ -168,6 +169,9 @@ DiagnosticSQLResult<QHash<int, double>>  GetFicGenreData(QString genre, QString 
 DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetFullFicGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db);
 
+DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QSqlDatabase db);
+DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFics(QSqlDatabase db);
+DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, QSqlDatabase db);
 
 
 

@@ -1,9 +1,13 @@
 #include "include/servitorwindow.h"
+#include "include/Interfaces/genres.h"
+#include "include/Interfaces/fanfics.h"
 #include "include/url_utils.h"
-#include "ui_servitorwindow.h"
-#include "ficparser.h"
-#include "pagegetter.h"
 #include <QTextCodec>
+#include <QSettings>
+#include "ui_servitorwindow.h"
+#include "include/parsers/ffn/ficparser.h"
+#include "pagegetter.h"
+
 
 ServitorWindow::ServitorWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -40,44 +44,72 @@ void ServitorWindow::WriteSettings()
 
 void ServitorWindow::on_pbLoadFic_clicked()
 {
-    PageManager pager;
-    FicParser parser;
-    QHash<QString, int> fandoms;
-    auto result = database::GetAllFandoms(fandoms);
-    if(!result)
-        return;
-    QString url = ui->leFicUrl->text();
-    auto page = pager.GetPage(url, ECacheMode::use_cache);
-    parser.SetRewriteAuthorNames(false);
-    parser.ProcessPage(url, page.content);
-    parser.WriteProcessed(fandoms);
+//    PageManager pager;
+//    FicParser parser;
+//    QHash<QString, int> fandoms;
+//    auto result = database::GetAllFandoms(fandoms);
+//    if(!result)
+//        return;
+//    QString url = ui->leFicUrl->text();
+//    auto page = pager.GetPage(url, ECacheMode::use_cache);
+//    parser.SetRewriteAuthorNames(false);
+//    parser.ProcessPage(url, page.content);
+//    parser.WriteProcessed(fandoms);
 }
 
 void ServitorWindow::on_pbReprocessFics_clicked()
 {
-    PageManager pager;
-    FicParser parser;
-    QHash<QString, int> fandoms;
-    auto result = database::GetAllFandoms(fandoms);
-    if(!result)
-        return;
-    QSqlDatabase db = QSqlDatabase::database();
-    //db.transaction();
-    database::ReprocessFics(" where fandom1 like '% CROSSOVER' and alive = 1 order by id asc", "ffn", [this,&pager, &parser, &fandoms](int ficId){
-        //todo, get web_id from fic_id
-        QString url = url_utils::GetUrlFromWebId(webId, "ffn");
-        auto page = pager.GetPage(url, ECacheMode::use_only_cache);
-        parser.SetRewriteAuthorNames(false);
-        auto fic = parser.ProcessPage(url, page.content);
-        if(fic.isValid)
-            parser.WriteProcessed(fandoms);
-    });
-    //db.commit();
-
-
+//    PageManager pager;
+//    FicParser parser;
+//    QHash<QString, int> fandoms;
+//    auto result = database::GetAllFandoms(fandoms);
+//    if(!result)
+//        return;
+//    QSqlDatabase db = QSqlDatabase::database();
+//    //db.transaction();
+//    database::ReprocessFics(" where fandom1 like '% CROSSOVER' and alive = 1 order by id asc", "ffn", [this,&pager, &parser, &fandoms](int ficId){
+//        //todo, get web_id from fic_id
+//        QString url = url_utils::GetUrlFromWebId(webId, "ffn");
+//        auto page = pager.GetPage(url, ECacheMode::use_only_cache);
+//        parser.SetRewriteAuthorNames(false);
+//        auto fic = parser.ProcessPage(url, page.content);
+//        if(fic.isValid)
+//            parser.WriteProcessed(fandoms);
+//    });
 }
 
 void ServitorWindow::on_pushButton_clicked()
 {
-    database::EnsureFandomsNormalized();
+    //database::EnsureFandomsNormalized();
+}
+
+void ServitorWindow::on_pbGetGenresForFic_clicked()
+{
+
+}
+
+void ServitorWindow::on_pbGetGenresForEverything_clicked()
+{
+    interfaces::GenreConverter converter;
+
+    QVector<int> ficIds;
+    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    genres->db = QSqlDatabase::database();
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::Genres());
+    fanfics->db = QSqlDatabase::database();
+
+    QSettings settings("servitor.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    bool alreadyQueued = settings.value("Settings/genrequeued", false).toBool();
+    if(!alreadyQueued)
+    {
+        genres->QueueFicsForGenreDetection(25, 15);
+        settings.setValue("Settings/genrequeued", true);
+        settings.sync();
+    }
+
+    for(auto fic : genres->GetGenreDataForQueuedFics())
+    {
+        converter.ProcessGenreResult(fic);
+    }
 }

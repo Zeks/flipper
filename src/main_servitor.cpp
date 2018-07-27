@@ -8,6 +8,7 @@
 #include <QPluginLoader>
 
 #include "include/servitorwindow.h"
+#include "include/Interfaces/interface_sqlite.h"
 
 
 int main(int argc, char *argv[])
@@ -27,9 +28,10 @@ int main(int argc, char *argv[])
     pcDb.open();
 
 
-    database::ReadDbFile("dbcode/dbinit.sql");
-    database::ReadDbFile("dbcode/pagecacheinit.sql", "pagecache");
-    database::InstallCustomFunctions();
+    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+
 
     ServitorWindow w;
     w.show();
