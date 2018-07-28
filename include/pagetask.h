@@ -73,6 +73,7 @@ typedef QSharedPointer<SubTaskContentBase> SubTaskContentBasePtr;
 typedef QSharedPointer<BasePageTask> BasePageTaskPtr;
 class BasePageTask{
 public:
+    virtual ~BasePageTask(){}
     bool isValid = false;
     bool isNew = true;
     // if the task had errors or not (need to implement a separate table for error codes)
