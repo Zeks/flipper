@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "Interfaces/base.h"
 #include "core/section.h"
+#include "core/fic_genre_data.h"
 #include <QScopedPointer>
 #include <QSharedPointer>
 #include <QSqlDatabase>
@@ -47,6 +48,28 @@ struct GenreConverter{
             result = dBToCode[value];
         return result;
     }
+    QStringList GetFFNGenreList(QString genreString){
+
+        QStringList genresList;
+        bool hasHurt = false;
+        QString fixedGenreString = genreString;
+        if(genreString.contains("Hurt/Comfort"))
+        {
+            hasHurt = true;
+            fixedGenreString = fixedGenreString.replace("Hurt/Comfort", "");
+        }
+
+        genresList = fixedGenreString.split("/", QString::SkipEmptyParts);
+        if(hasHurt)
+            genresList.push_back("Hurt/Comfort");
+        for(auto& genre: genresList)
+            genre = genre.trimmed();
+        return genresList;
+    }
+
+    void ProcessGenreResult(genre_stats::FicGenreData&);
+    void DetectRealGenres(genre_stats::FicGenreData&);
+
     static GenreConverter Instance();
 };
 
@@ -55,6 +78,11 @@ public:
     
     bool IsGenreList(QStringList list);
     bool LoadGenres();
+    genre_stats::FicGenreData GetGenreDataForFic(int id);
+    QVector<genre_stats::FicGenreData> GetGenreDataForQueuedFics();
+    void QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves);
+    bool WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics);
+
     QSqlDatabase db;
 
 private:

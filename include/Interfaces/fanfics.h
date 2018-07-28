@@ -90,6 +90,7 @@ class Fanfics : public IDBWebIDIndex {
     // to return an ID list for recommendations creator
     QSet<int> ConvertFFNSourceFicsToDB(QString userToken);
     bool ConvertFFNTaggedFicsToDB(QHash<int, int>& hash);
+    void ResetActionQueue();
 
     // update interface
     QReadWriteLock mutex;

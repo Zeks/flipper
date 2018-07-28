@@ -29,5 +29,11 @@
         <file>icons/cog.png</file>
         <file>icons/trash.png</file>
         <file>icons/trash_darker.png</file>
+        <file>icons/bit.png</file>
+        <file>icons/full.png</file>
+        <file>icons/partial.png</file>
+        <file>icons/bit2.png</file>
+        <file>icons/search_gray.png</file>
+        <file>icons/search.png</file>
     </qresource>
 </RCC>

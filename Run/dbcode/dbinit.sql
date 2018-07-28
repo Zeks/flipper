@@ -41,6 +41,16 @@ alter table fanfics add column keywords_no integer default 0;
 alter table fanfics add column keywords_result integer default 0;
 alter table fanfics add column filter_pass_1 integer default 0;
 alter table fanfics add column filter_pass_2 integer default 0;
+
+alter table fanfics add column kept_genres VARCHAR;
+alter table fanfics add column true_genre1 VARCHAR;
+alter table fanfics add column true_genre2 VARCHAR;
+alter table fanfics add column true_genre3 VARCHAR;
+alter table fanfics add column true_genre1_percent real;
+alter table fanfics add column true_genre2_percent real;
+alter table fanfics add column true_genre3_percent real;
+alter table fanfics add column queued_for_action integer default 0;
+
 CREATE INDEX if not exists  I_FANFICS_FANDOM_1 ON fanfics (fandom1 ASC);
 CREATE INDEX if not exists  I_FANFICS_FANDOM_2 ON fanfics (fandom2 ASC);
 CREATE INDEX if not exists  I_FANFICS_KW_YES ON fanfics (keywords_yes ASC);
@@ -49,12 +59,15 @@ CREATE INDEX if not exists  I_FANFICS_KW_NO ON fanfics (keywords_no ASC);
 CREATE INDEX if not exists  I_FANFICS_KW_RESULT ON fanfics (keywords_result ASC);
 CREATE INDEX if not exists  I_FANFICS_FIRST ON fanfics (filter_pass_1 ASC);
 CREATE INDEX if not exists  I_FANFICS_SECOND  ON fanfics (filter_pass_2 ASC);
+CREATE INDEX if not exists  I_FANFICS_QFA  ON fanfics (queued_for_action ASC);
 
 
  CREATE VIEW if not exists vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
 wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows, hidden, keywords_yes, keywords_no, keywords_result,
-filter_pass_1,filter_pass_2, fandom1, fandom2
+filter_pass_1,filter_pass_2, fandom1, fandom2,
+true_genre1,true_genre2,true_genre3,
+true_genre1_percent,true_genre2_percent,true_genre3_percent, kept_genres
  from fanfics;
 
 
@@ -409,3 +422,40 @@ CREATE INDEX if not exists  I_LISTDATA_MATCHCOUNT ON RecommendationListData (mat
 
 CREATE TABLE if not exists user_settings(name varchar unique, value integer);
 INSERT INTO tags(name, name) values('Last Fandom Id', 0);
+
+
+CREATE VIEW if not exists AuthorMoodStatistics AS
+select 
+author_id as author_id,
+NoGenre as None,
+Adventure+Scifi+Spiritual+Supernatural+Suspense+Mystery+Crime+Fantasy+Western as Neutral,
+Romance+ Family + Friendship + Humor + Parody + Drama+Tragedy+Angst +Horror+ HurtComfort+General_ as NonNeutral,
+Romance as Flirty, 
+Scifi+Spiritual+Supernatural+Suspense+Mystery+Crime+Fantasy+Western+Drama+
+Family + Friendship + Humor + Parody + Tragedy+Angst +Horror+ HurtComfort+General_ as NonFlirty,
+Family + Friendship as Bondy,
+Scifi+Spiritual+Supernatural+Suspense+Mystery+Crime+Fantasy+Western+
+Romance+ Humor + Parody + Drama+Tragedy+Angst +Horror+ HurtComfort+General_
+as NonBondy,
+Humor + Parody as Funny,
+Scifi+Spiritual+Supernatural+Suspense+Mystery+Crime+Fantasy+Western+
+Romance + Family + Friendship + Drama+Tragedy+Angst +Horror+ HurtComfort+General_
+as NonFunny,
+Drama+Tragedy+Angst as Dramatic,
+Scifi+Spiritual+Supernatural+Suspense+Mystery+Crime+Fantasy+Western+
+Humor + Parody + Romance + Family + Friendship  +Horror+ HurtComfort+General_
+as NonDramatic,
+Horror as Shocky,
+Scifi+Spiritual+Supernatural+Suspense+Mystery+Crime+Fantasy+Western+
+Romance + Family + Friendship + Drama+Tragedy+Angst + HurtComfort+General_ + Humor + Parody
+as NonShocky,
+HurtComfort as Hurty, 
+Scifi+Spiritual+Supernatural+Suspense+Mystery+Crime+Fantasy+Western+
+Romance + Family + Friendship + Drama+Tragedy+Angst + Horror +General_ + Humor + Parody
+as NonHurty,
+General_ + Poetry as Other
+from AuthorFavouritesGenreStatistics;
+
+
+
+

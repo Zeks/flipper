@@ -8,6 +8,7 @@
 #include <QSqlError>
 #include <QSharedPointer>
 #include "core/section.h"
+#include "core/fic_genre_data.h"
 #include "regex_utils.h"
 #include "transaction.h"
 #include "sqlcontext.h"
@@ -135,6 +136,8 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString, QSqlDatabase db);
 DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int> &, QSqlDatabase db);
+DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>, QSqlDatabase db);
 
 
 
@@ -168,6 +171,9 @@ DiagnosticSQLResult<QHash<int, double>>  GetFicGenreData(QString genre, QString 
 DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetFullFicGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db);
 
+DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QSqlDatabase db);
+DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFics(QSqlDatabase db);
+DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves, QSqlDatabase db);
 
 
 

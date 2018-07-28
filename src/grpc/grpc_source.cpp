@@ -252,7 +252,44 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     return result;
 }
 
+QString RelevanceToString(float value)
+{
+    if(value > 0.8f)
+        return "#c#";
+    if(value > 0.5f)
+        return "#p#";
+    if(value > 0.2f)
+        return "#b#";
+    return "#b#";
+}
 
+QString GenreDataToString(QList<genre_stats::GenreBit> data)
+{
+    QStringList resultList;
+    float maxValue = 0;
+    for(auto genre : data)
+    {
+        if(genre.relevance > maxValue)
+            maxValue = genre.relevance;
+    }
+
+    for(auto genre : data)
+    {
+        for(auto genreBit : genre.genres)
+        {
+            for(auto stringBit : genreBit.split(","))
+            {
+                if(std::abs(maxValue - genre.relevance) < 0.1f)
+                    resultList+="#c#" + stringBit;
+                else
+                    resultList+=RelevanceToString(genre.relevance/maxValue) + stringBit;
+            }
+        }
+    }
+
+    QString result =  resultList.join(",");
+    return result;
+}
 
 
 bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
@@ -297,6 +334,21 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.webSite = "ffn"; // temporary
 
     coreFic.urls["ffn"] = QString::number(coreFic.webId); // temporary
+    for(auto i =0; i < protoFic.real_genres_size(); i++)
+        coreFic.realGenreData.push_back({{FS(protoFic.real_genres(i).genre())}, protoFic.real_genres(i).relevance()});
+
+    std::sort(coreFic.realGenreData.begin(),coreFic.realGenreData.end(),[](const genre_stats::GenreBit& g1,const genre_stats::GenreBit& g2){
+        if(g1.genres.size() != 0 && g2.genres.size() == 0)
+            return true;
+        if(g2.genres.size() != 0 && g1.genres.size() == 0)
+            return false;
+        if(std::abs(g1.relevance - g2.relevance) < 0.1f)
+            return g1.genres < g2.genres;
+        return g1.relevance > g2.relevance;
+    });
+
+    coreFic.realGenreString = GenreDataToString(coreFic.realGenreData);
+
     coreFic.urlFFN = coreFic.urls["ffn"];
     return true;
 }
@@ -331,6 +383,13 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
         protoFic->add_fandoms(TS(fandom));
     for(auto fandom : coreFic.fandomIds)
         protoFic->add_fandom_ids(fandom);
+
+    for(auto realGenre : coreFic.realGenreData)
+    {
+        auto* genreData =  protoFic->add_real_genres();
+        genreData->set_genre(TS(realGenre.genres.join(",")));
+        genreData->set_relevance(realGenre.relevance);
+    }
 
 
     protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.ffn_id);

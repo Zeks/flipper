@@ -82,6 +82,16 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.complete= q.value("COMPLETE").toInt();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     result.recommendations= q.value("SUMRECS").toInt();
+    QString tg1 = q.value("true_genre1").toString();
+    QString tg2 = q.value("true_genre2").toString();
+    QString tg3 = q.value("true_genre3").toString();
+    if(!tg1.isEmpty())
+        result.realGenreData.push_back({{tg1}, q.value("true_genre1_percent").toFloat()});
+    if(!tg2.isEmpty())
+        result.realGenreData.push_back({{tg2}, q.value("true_genre2_percent").toFloat()});
+    if(!tg3.isEmpty())
+        result.realGenreData.push_back({{tg3}, q.value("true_genre3_percent").toFloat()});
+
     //QLOG_INFO() << "recs value: " << q.value("sumrecs").toInt();
     return result;
 }
