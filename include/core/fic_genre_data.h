@@ -1,5 +1,6 @@
 #pragma once
 #include <QList>
+#include <QVector>
 #include <QStringList>
 
 namespace genre_stats
@@ -27,6 +28,7 @@ struct FicGenreData
     float pureDramaAdvantage = 0.0;
     QStringList originalGenres;
     QList<GenreBit> realGenres;
+    QVector<GenreBit> processedGenres;
     QStringList genresToKeep;
 };
 }

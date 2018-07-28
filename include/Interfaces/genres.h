@@ -80,7 +80,8 @@ public:
     bool LoadGenres();
     genre_stats::FicGenreData GetGenreDataForFic(int id);
     QVector<genre_stats::FicGenreData> GetGenreDataForQueuedFics();
-    void QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists);
+    void QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves);
+    bool WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics);
 
     QSqlDatabase db;
 

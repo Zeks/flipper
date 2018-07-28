@@ -1,6 +1,7 @@
 #include "include/servitorwindow.h"
 #include "include/Interfaces/genres.h"
 #include "include/Interfaces/fanfics.h"
+#include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/url_utils.h"
 #include <QTextCodec>
 #include <QSettings>
@@ -93,23 +94,42 @@ void ServitorWindow::on_pbGetGenresForEverything_clicked()
     interfaces::GenreConverter converter;
 
     QVector<int> ficIds;
+    auto db = QSqlDatabase::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
-    genres->db = QSqlDatabase::database();
-    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::Genres());
-    fanfics->db = QSqlDatabase::database();
+    genres->db = db;
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    fanfics->db = db;
 
-    QSettings settings("servitor.ini", QSettings::IniFormat);
+    QSettings settings("settings_servitor.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     bool alreadyQueued = settings.value("Settings/genrequeued", false).toBool();
     if(!alreadyQueued)
     {
-        genres->QueueFicsForGenreDetection(25, 15);
+        database::Transaction transaction(db);
+        genres->QueueFicsForGenreDetection(25, 15, 0);
         settings.setValue("Settings/genrequeued", true);
         settings.sync();
+        transaction.finalize();
     }
-
-    for(auto fic : genres->GetGenreDataForQueuedFics())
+    database::Transaction transaction(db);
+    auto genreData = genres->GetGenreDataForQueuedFics();
+    for(auto& fic : genreData)
     {
         converter.ProcessGenreResult(fic);
     }
+    if(!genres->WriteDetectedGenres(genreData))
+        transaction.cancel();
+
+    transaction.finalize();
+}
+
+void ServitorWindow::on_pushButton_2_clicked()
+{
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    fanfics->db = QSqlDatabase::database();
+    fanfics->ResetActionQueue();
+    QSettings settings("settings_servitor.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    settings.setValue("Settings/genrequeued", false);
+    settings.sync();
 }

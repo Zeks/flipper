@@ -1185,6 +1185,56 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
     return ctx1.result;
 }
 
+DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set queued_for_action = 0");
+    SqlContext<bool> ctx(db, qs);
+    ctx();
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics, QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set "
+                         " true_genre1 = :true_genre1, "
+                         " true_genre1_percent = :true_genre1_percent,"
+                         " true_genre2 = :true_genre2, "
+                         " true_genre2_percent = :true_genre2_percent,"
+                         " true_genre3 = :true_genre3, "
+                         " true_genre3_percent = :true_genre3_percent,"
+                         " kept_genres =:kept_genres where id = :fic_id" );
+    SqlContext<bool> ctx(db, qs);
+    for(auto fic : fics)
+    {
+        QStringList keptList;
+        for(auto genre: fic.processedGenres)
+        {
+            if(genre.relevance < 0.1f)
+                keptList += genre.genres;
+        }
+        QString keptToken = keptList.join(",");
+
+        for(int i = 0; i < 3; i++)
+        {
+            genre_stats::GenreBit genre;
+            if(fic.processedGenres.size() > i)
+                genre = fic.processedGenres.at(i);
+            else
+                genre.relevance = 0;
+
+            ctx.bindValue("true_genre" + QString::number(i+1), genre.genres.join(","));
+            ctx.bindValue("true_genre" + QString::number(i+1) + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
+
+        }
+        ctx.bindValue("kept_genres", keptToken);
+        ctx.bindValue("fic_id", fic.ficId);
+        if(!ctx.ExecAndCheck())
+            return ctx.result;
+    }
+    return ctx.result;
+}
+
+
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db)
 {
     QString qs = QString("select fic_id, count(fic_id) as cnt from recommendations where cfInAuthors(recommender_id, :uid) = 1 group by fic_id");
@@ -2794,7 +2844,7 @@ DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFic
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, QSqlDatabase db)
+DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves, QSqlDatabase db)
 {
     QString qs = QString(" with "
                          " min_recs(val) as (select :minAuthorRecs), "
@@ -2808,7 +2858,8 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
                          "  select fic_id, count(fic_id) as count_rec from recommendations where recommender_id in filtered_recommenders group by fic_id "
                          "  ) fin where count_rec >= (select val from min_filtered_lists) "
                          " ) "
-                         " update fanfics set queued_for_action = 1 where id in to_update ");
+                         " update fanfics set queued_for_action = 1 where id in to_update and favourites > %1 ");
+    qs=qs.arg(minFaves);
 
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
