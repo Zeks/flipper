@@ -213,7 +213,7 @@ Rectangle{
                     anchors.bottom: rrr.bottom
                     id:genreRelevance
                     visible: {
-                        if(!mainWindow.detailedGenreMode)
+                        if(!mainWindow.detailedGenreMode || !delegateItem.hasRealGenres)
                             return false;
                         return tagName === "Genre";
                     }
@@ -243,7 +243,7 @@ Rectangle{
                         var realText;
                         if(tagName === "Genre")
                         {
-                            if(mainWindow.detailedGenreMode)
+                            if(mainWindow.detailedGenreMode && delegateItem.hasRealGenres)
                                 realText = modelData.substring(3)
                             else
                                 realText = modelData

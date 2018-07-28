@@ -9,6 +9,7 @@ Rectangle {
     property string delAuthor : author
     //property string delFicId: ficId
     property int delRow : rownum
+    property bool hasRealGenres : false
     property int indexOfThisDelegate: index
     signal mouseClicked
     MouseArea{
