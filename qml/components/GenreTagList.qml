@@ -9,7 +9,12 @@ Item {
         anchors.top: tsTags.rotation === 0 ? parent.top : tsTags.bottom;
         id:tsGenre
         tagName: "Genre"
-        currentChoices: genre
+        currentChoices: {
+            if(mainWindow.detailedGenreMode)
+                return realGenre
+            else
+                return genre
+        }
         active: true
         rotation:tagGenreList.rotation
 

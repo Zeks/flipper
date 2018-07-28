@@ -433,6 +433,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
     ADD_INTEGER_GETSET(holder, 17, 0, id);
     ADD_INTEGER_GETSET(holder, 18, 0, recommendations);
+    ADD_STRING_GETSET(holder, 19, 0, realGenreString);
 
 
     holder->AddFlagsFunctor(
@@ -456,8 +457,11 @@ void MainWindow::SetupFanficTable()
     SetupTableAccess();
 
 
-    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated" << "published"
-                       << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "ID" << "recommendations");
+    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary"
+                       << "genre" << "characters" << "rated" << "published"
+                       << "updated" << "url" << "tags" << "wordCount" << "favourites"
+                       << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
+                       << "recommendations" << "realGenres");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 

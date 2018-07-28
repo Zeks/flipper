@@ -222,9 +222,9 @@ DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabas
     QString qs = "INSERT INTO FicTags(fic_id, tag) values(:fic_id, :tag)";
     SqlContext<bool> ctx(db, qs, {{"tag", tag},{"fic_id", fic_id}});
     ctx.ExecAndCheck(true);
-//    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id");
-//    ctx.bindValue("fic_id", fic_id);
-//    ctx.ExecAndCheck(true);
+    //    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id");
+    //    ctx.bindValue("fic_id", fic_id);
+    //    ctx.ExecAndCheck(true);
     return ctx.result;
 }
 
@@ -1132,20 +1132,20 @@ DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::Re
     ctx.bindValue("always_pick_at", params->alwaysPickAt);
     //qDebug() << "feature avail: " << db.driver()->hasFeature(QSqlDriver::NamedPlaceholders);
     ctx.FetchLargeSelectIntoList<int>("id",
-                                       "select id,  "
-                                       " (select count(recommender_id) from recommendations rs where "
-                                       " cfInRecommendations(rs.fic_id, :uid1) = 1 and rs.recommender_id = id ) as matches, "
+                                      "select id,  "
+                                      " (select count(recommender_id) from recommendations rs where "
+                                      " cfInRecommendations(rs.fic_id, :uid1) = 1 and rs.recommender_id = id ) as matches, "
 
-                                       " ("
-                                       " (cast((select count(recommender_id) from recommendations rs1 where rs1.recommender_id = id)  as float) "
-                                       " / "
-                                       " (cast((select count(recommender_id) from recommendations rs2 where"
-                                       " cfInRecommendations(rs2.fic_id, :uid2) = 1"
-                                       " and rs2.recommender_id = id) as float)))"
-                                       " )  as ratio"
+                                      " ("
+                                      " (cast((select count(recommender_id) from recommendations rs1 where rs1.recommender_id = id)  as float) "
+                                      " / "
+                                      " (cast((select count(recommender_id) from recommendations rs2 where"
+                                      " cfInRecommendations(rs2.fic_id, :uid2) = 1"
+                                      " and rs2.recommender_id = id) as float)))"
+                                      " )  as ratio"
 
-                                       " from recommenders  "
-                                       " where (ratio <= :ratio and  matches >= :min ) or matches >= :always_pick_at "
+                                      " from recommenders  "
+                                      " where (ratio <= :ratio and  matches >= :min ) or matches >= :always_pick_at "
                                       );
 
     return ctx.result;
@@ -1184,6 +1184,56 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
     ctx1.result.oracleError = ctx.result.oracleError;
     return ctx1.result;
 }
+
+DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set queued_for_action = 0");
+    SqlContext<bool> ctx(db, qs);
+    ctx();
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics, QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set "
+                         " true_genre1 = :true_genre1, "
+                         " true_genre1_percent = :true_genre1_percent,"
+                         " true_genre2 = :true_genre2, "
+                         " true_genre2_percent = :true_genre2_percent,"
+                         " true_genre3 = :true_genre3, "
+                         " true_genre3_percent = :true_genre3_percent,"
+                         " kept_genres =:kept_genres where id = :fic_id" );
+    SqlContext<bool> ctx(db, qs);
+    for(auto fic : fics)
+    {
+        QStringList keptList;
+        for(auto genre: fic.processedGenres)
+        {
+            if(genre.relevance < 0.1f)
+                keptList += genre.genres;
+        }
+        QString keptToken = keptList.join(",");
+
+        for(int i = 0; i < 3; i++)
+        {
+            genre_stats::GenreBit genre;
+            if(fic.processedGenres.size() > i)
+                genre = fic.processedGenres.at(i);
+            else
+                genre.relevance = 0;
+
+            ctx.bindValue("true_genre" + QString::number(i+1), genre.genres.join(","));
+            ctx.bindValue("true_genre" + QString::number(i+1) + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
+
+        }
+        ctx.bindValue("kept_genres", keptToken);
+        ctx.bindValue("fic_id", fic.ficId);
+        if(!ctx.ExecAndCheck())
+            return ctx.result;
+    }
+    return ctx.result;
+}
+
 
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db)
 {
@@ -2096,11 +2146,11 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
     if(!ctxTarget.result.success)
         return ctxTarget.result;
 
-//    SqlContext<bool> ctxTest(currentDB, QStringList{"insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag)"
-//                                                    " values(-1, -1, -1, -1, -1, -1)"});
-//    ctxTest();
-//    if(!ctxTest.result.success)
-//        return ctxTest.result;
+    //    SqlContext<bool> ctxTest(currentDB, QStringList{"insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag)"
+    //                                                    " values(-1, -1, -1, -1, -1, -1)"});
+    //    ctxTest();
+    //    if(!ctxTest.result.success)
+    //        return ctxTest.result;
 
     QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag"};
     QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag) values(:fic_id, :ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
@@ -2624,6 +2674,194 @@ DiagnosticSQLResult<QString> GetUserToken(QSqlDatabase db)
     SqlContext<QString> ctx(db, qs);
     ctx.FetchSingleValue<QString>("value", "");
     return ctx.result;
+}
+
+DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QSqlDatabase db)
+{
+    QString query = " with count_per_fic(fic_id, ffn_id, title, genres, total, HumorComposite, Flirty, Pure_drama, Pure_Romance,"
+                    " Hurty, Bondy, NeutralComposite,DramaComposite, NeutralSingle) as ("
+                    " with"
+                    " fic_ids as (select %1 as fid),"
+
+                    " total as ("
+                    " select fic_id, count(distinct recommender_id) as total from recommendations, fic_ids "
+                    " on fic_ids.fid = recommendations.fic_id "
+                    " and recommender_id in (select author_id from AuthorFavouritesStatistics where favourites > 30)"
+                    " group by fic_id"
+                    " )"
+                    " select fanfics.id as id, fanfics.ffn_id as ffn_id,  fanfics.title as title, fanfics.genres as genres, total.total, "
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Funny > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as HumorComposite,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Flirty > 0.5 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Flirty,"
+
+                    " (select count(distinct author_id) from  AuthorFavouritesGenreStatistics where (drama-romance) > 0.05 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Pure_Drama,"
+
+                    " (select count(distinct author_id) from  AuthorFavouritesGenreStatistics where (romance-drama) > 0.8 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Pure_Romance, "
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Hurty > 0.15 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Hurty,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Bondy > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Bondy,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Neutral > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as NeutralComposite,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Dramatic > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as DramaComposite,"
+
+
+                    " (select count(distinct author_id) from  AuthorFavouritesGenreStatistics where Adventure > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as NeutralSingle"
+
+                    " from fanfics, total on total.fic_id = fanfics.id "
+                    " )"
+                    " select  fic_id, total, title, genres,"
+
+                    " cast(HumorComposite as float)/cast(total as float) as Div_HumorComposite,"
+                    " cast(Flirty as float)/cast(total as float) as Div_Flirty,"
+                    " cast(DramaComposite as float)/cast(total as float) as Div_Dramatic,"
+                    " cast(Pure_drama as float)/cast(total as float) as Div_PureDrama,"
+                    " cast(Pure_Romance as float)/cast(total as float) as Div_PureRomance,"
+                    " cast(Bondy as float)/cast(total as float) as Div_Bondy,"
+                    " cast(Hurty as float)/cast(total as float) as Div_Hurty,"
+                    " cast(NeutralComposite as float)/cast(total as float) as Div_NeutralComposite,"
+                    " cast(NeutralSingle as float)/cast(total as float) as Div_NeutralSingle,"
+
+                    " ffn_id "
+
+                    " from count_per_fic";
+    query= query.arg(QString::number(ficId));
+    SqlContext<genre_stats::FicGenreData> ctx(db, query);
+    auto genreConverter = interfaces::GenreConverter::Instance();
+
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data.originalGenreString = q.value("genres").toString();
+        ctx.result.data.originalGenres = genreConverter.GetFFNGenreList(q.value("genres").toString());
+
+        ctx.result.data.ficId = ficId;
+        ctx.result.data.ffnId = q.value("ffn_id").toInt();
+        ctx.result.data.totalLists = q.value("total").toInt();
+
+        ctx.result.data.strengthHumor = q.value("Div_HumorComposite").toFloat();
+        ctx.result.data.strengthRomance = q.value("Div_Flirty").toFloat();
+        ctx.result.data.strengthDrama= q.value("Div_Dramatic").toFloat();
+        ctx.result.data.strengthBonds= q.value("Div_Bondy").toFloat();
+        ctx.result.data.strengthHurtComfort= q.value("Div_Hurty").toFloat();
+        ctx.result.data.strengthNeutralComposite= q.value("Div_NeutralComposite").toFloat();
+        ctx.result.data.strengthNeutralAdventure= q.value("Div_NeutralSingle").toFloat();
+    });
+    return ctx.result;
+}
+
+
+DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFics(QSqlDatabase db)
+{
+    QString query = " with count_per_fic(fic_id, ffn_id, title, genres, total, HumorComposite, Flirty, Pure_drama, Pure_Romance,"
+                    " Hurty, Bondy, NeutralComposite,DramaComposite, NeutralSingle) as ("
+                    " with"
+                    " fic_ids as (select id as fid from fanfics where queued_for_action = 1),"
+
+                    " total as ("
+                    " select fic_id, count(distinct recommender_id) as total from recommendations, fic_ids "
+                    " on fic_ids.fid = recommendations.fic_id "
+                    " and recommender_id in (select author_id from AuthorFavouritesStatistics where favourites > 30)"
+                    " group by fic_id"
+                    " )"
+                    " select fanfics.id as id, fanfics.ffn_id as ffn_id,  fanfics.title as title, fanfics.genres as genres, total.total, "
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Funny > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as HumorComposite,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Flirty > 0.5 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Flirty,"
+
+                    " (select count(distinct author_id) from  AuthorFavouritesGenreStatistics where (drama-romance) > 0.05 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Pure_Drama,"
+
+                    " (select count(distinct author_id) from  AuthorFavouritesGenreStatistics where (romance-drama) > 0.8 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Pure_Romance, "
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Hurty > 0.15 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Hurty,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Bondy > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as Bondy,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Neutral > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as NeutralComposite,"
+
+                    " (select count(distinct author_id) from  AuthorMoodStatistics where Dramatic > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as DramaComposite,"
+
+
+                    " (select count(distinct author_id) from  AuthorFavouritesGenreStatistics where Adventure > 0.3 and author_id in "
+                    " (select distinct recommender_id from recommendations where fanfics.id = fic_id)) as NeutralSingle"
+
+                    " from fanfics, total on total.fic_id = fanfics.id "
+                    " )"
+                    " select  fic_id, total, title, genres,"
+
+                    " cast(HumorComposite as float)/cast(total as float) as Div_HumorComposite,"
+                    " cast(Flirty as float)/cast(total as float) as Div_Flirty,"
+                    " cast(DramaComposite as float)/cast(total as float) as Div_Dramatic,"
+                    " cast(Pure_drama as float)/cast(total as float) as Div_PureDrama,"
+                    " cast(Pure_Romance as float)/cast(total as float) as Div_PureRomance,"
+                    " cast(Bondy as float)/cast(total as float) as Div_Bondy,"
+                    " cast(Hurty as float)/cast(total as float) as Div_Hurty,"
+                    " cast(NeutralComposite as float)/cast(total as float) as Div_NeutralComposite,"
+                    " cast(NeutralSingle as float)/cast(total as float) as Div_NeutralSingle,"
+
+                    " ffn_id "
+
+                    " from count_per_fic";
+
+    SqlContext<QVector<genre_stats::FicGenreData>> ctx(db, query);
+    auto genreConverter = interfaces::GenreConverter::Instance();
+    genre_stats::FicGenreData tmp;
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        tmp.originalGenreString = q.value("genres").toString();
+        tmp.originalGenres = genreConverter.GetFFNGenreList(q.value("genres").toString());
+
+        tmp.ficId = q.value("fic_id").toInt();
+        tmp.ffnId = q.value("ffn_id").toInt();
+        tmp.totalLists = q.value("total").toInt();
+
+        tmp.strengthHumor = q.value("Div_HumorComposite").toFloat();
+        tmp.strengthRomance = q.value("Div_Flirty").toFloat();
+        tmp.strengthDrama= q.value("Div_Dramatic").toFloat();
+        tmp.strengthBonds= q.value("Div_Bondy").toFloat();
+        tmp.strengthHurtComfort= q.value("Div_Hurty").toFloat();
+        tmp.strengthNeutralComposite= q.value("Div_NeutralComposite").toFloat();
+        tmp.strengthNeutralAdventure= q.value("Div_NeutralSingle").toFloat();
+        ctx.result.data.push_back(tmp);
+    });
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves, QSqlDatabase db)
+{
+    QString qs = QString(" with "
+                         " min_recs(val) as (select :minAuthorRecs), "
+                         " min_filtered_lists(val) as (select :minFoundLists), "
+                         " filtered_recommenders(filtered_rec) as( "
+                         " select author_id from AuthorFavouritesStatistics where favourites >= (select val from min_recs)  "
+                         " ), "
+                         " to_update(fic_id) as "
+                         " ( "
+                         "  select fic_id from ( "
+                         "  select fic_id, count(fic_id) as count_rec from recommendations where recommender_id in filtered_recommenders group by fic_id "
+                         "  ) fin where count_rec >= (select val from min_filtered_lists) "
+                         " ) "
+                         " update fanfics set queued_for_action = 1 where id in to_update and favourites > %1 ");
+    qs=qs.arg(minFaves);
+
+    return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
 
 

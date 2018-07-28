@@ -14,6 +14,12 @@ message SitePack{
     // ...
 }
 
+message GenreData{
+    string genre       = 1;
+    float relevance    = 2;
+}
+
+
 // tags will be stored locally for the time being
 message Fanfic{
 
@@ -41,4 +47,5 @@ message Fanfic{
     repeated int32  fandom_ids      = 20;
     string genres                   = 21;    
     SitePack site_pack              = 22;
+    repeated GenreData real_genres  = 23;
 }

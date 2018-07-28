@@ -63,6 +63,9 @@ Rectangle{
         }
         MouseArea{
             anchors.fill: parent
+            onDoubleClicked: {
+                mainWindow.detailedGenreMode = !mainWindow.detailedGenreMode
+            }
             onClicked: {
                 print("Current index: " + delegateItem.indexOfThisDelegate)
                 lvFics.currentIndex = delegateItem.indexOfThisDelegate
@@ -75,51 +78,64 @@ Rectangle{
         Image{
             id:plus
             height:rect.height
-            source: "qrc:/icons/icons/add.png"
+            source: {
+                //                if(tagName === "Genre")
+                //                {
+                //                    if(mainWindow.detailedGenreMode)
+                //                        return "qrc:/icons/icons/search.png"
+                //                    else
+                //                        return "qrc:/icons/icons/search_gray.png"
+                //                }
+
+                return "qrc:/icons/icons/add.png"
+            }
             anchors.left: txtGenre.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.topMargin: 3
-            visible: canAdd//root.active && root.appendVisible
+            visible: canAdd
             width: appendVisible ? 24 : 0
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    console.log(" height  is" );
-                    console.log(mainWindow.height);
-                    //console.log(plus.mapToItem(mainWindow,0,0));
-
-                    lvFics.currentIndex = delegateItem.indexOfThisDelegate
-                    root.selectionMode = !root.selectionMode
-
-                    if(root.selectionMode)
-                        list.model = allChoices
-                    else
-                        list.model = currentChoices
-
-                    active = true
-                    activated(delegateItem.indexOfThisDelegate)
-
-                    if(plus.mapToItem(mainWindow,0,0).y > mainWindow.height/2 )
+                    if(canAdd)
                     {
-                        //list.verticalLayoutDirection = ListView.BottomToTop;
-                        //list.anchors.top = undefined;
-                        //list.y = y - list.height;
-                        console.log("list y: ", list.y);
-                        console.log("list height: ", list.height);
-                        root.parent.rotation =  180;
-                        rect.rotation = 180;
-                    }
-                    else
-                    {
-                        root.parent.rotation =  0;
-                        rect.rotation = 0;
-                        //list.verticalLayoutDirection = ListView.TopToBottom;
-                        //list.anchors.top =  rect.bottom
-                    }
-                    if(list.model === currentChoices)
-                    {
-                        root.parent.rotation =  0;
+                        console.log(" height  is" );
+                        console.log(mainWindow.height);
+                        //console.log(plus.mapToItem(mainWindow,0,0));
+
+                        lvFics.currentIndex = delegateItem.indexOfThisDelegate
+                        root.selectionMode = !root.selectionMode
+
+                        if(root.selectionMode)
+                            list.model = allChoices
+                        else
+                            list.model = currentChoices
+
+                        active = true
+                        activated(delegateItem.indexOfThisDelegate)
+
+                        if(plus.mapToItem(mainWindow,0,0).y > mainWindow.height/2 )
+                        {
+                            //list.verticalLayoutDirection = ListView.BottomToTop;
+                            //list.anchors.top = undefined;
+                            //list.y = y - list.height;
+                            console.log("list y: ", list.y);
+                            console.log("list height: ", list.height);
+                            root.parent.rotation =  180;
+                            rect.rotation = 180;
+                        }
+                        else
+                        {
+                            root.parent.rotation =  0;
+                            rect.rotation = 0;
+                            //list.verticalLayoutDirection = ListView.TopToBottom;
+                            //list.anchors.top =  rect.bottom
+                        }
+                        if(list.model === currentChoices)
+                        {
+                            root.parent.rotation =  0;
+                        }
                     }
                 }
             }
@@ -158,8 +174,6 @@ Rectangle{
                 }
                 //print("Color is: " + color)
                 return color
-
-
             }
             z:2
             border.width: 1
@@ -170,14 +184,79 @@ Rectangle{
             height: tagText.height
             width: root.width - 8
             x: 3
-            Text{
-                id:tagText
-                text: modelData
-                font.pixelSize: list.pixelSize
-                width: root.width - 4
-                verticalAlignment: Text.AlignVCenter
-                z:1
-                //horizontalAlignment: Text.AlignHCenter
+            Row{
+                id: rrr
+                spacing: 4
+                width: root.width - 4 - 24
+                //anchors.leftMargin: 2
+                Rectangle{
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width:1
+                    color: {
+                        var color
+                        if(!selectionMode)
+                            color = tagText.text == "" ? "white" : "#F5F5DC10"
+                        else
+                        {
+                            if(currentChoices.indexOf(modelData) !== -1)
+                                color = "#F5F5DC10"
+                            else
+                                color = "lightGray"
+                        }
+                        return color
+                    }
+
+                }
+                Image{
+                    anchors.bottomMargin: 4
+                    anchors.bottom: rrr.bottom
+                    id:genreRelevance
+                    visible: {
+                        if(!mainWindow.detailedGenreMode)
+                            return false;
+                        return tagName === "Genre";
+                    }
+                    height: 12
+                    width: 12
+                    source: {
+                        var img = "qrc:/icons/icons/bit2.png";
+                        var cut = modelData.substring(0,3);
+                        if(cut === "#c#")
+                            img = "qrc:/icons/icons/full.png"
+                        if(cut === "#p#")
+                            img = "qrc:/icons/icons/partial.png"
+                        if(cut === "#b#")
+                            img = "qrc:/icons/icons/bit2.png"
+                        return img;
+                    }
+                }
+                //                Rectangle{
+                //                    width: 40
+                //                    height: 15
+                //                    visible: true
+                //                }
+
+                Text{
+                    id:tagText
+                    text: {
+                        var realText;
+                        if(tagName === "Genre")
+                        {
+                            if(mainWindow.detailedGenreMode)
+                                realText = modelData.substring(3)
+                            else
+                                realText = modelData
+                        }
+                        else
+                            realText = modelData
+
+                        return realText;
+                    }
+                    font.pixelSize: list.pixelSize
+                    //z:1
+                    //horizontalAlignment: Text.AlignHCenter
+                }
             }
             MouseArea{
                 anchors.fill: parent

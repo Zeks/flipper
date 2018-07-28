@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "qml_ficmodel.h"
+#include "core/fic_genre_data.h"
 #include <QDebug>
 #include <QDateTime>
 
@@ -33,6 +34,8 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 2), Qt::DisplayRole);
         if(role == SummaryRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 3), Qt::DisplayRole);
+//        if(role == GenreRole)
+//            return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole).toString().split("/");
         if(role == GenreRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 4), Qt::DisplayRole).toString().split("/");
         if(role == CharactersRole)
@@ -70,6 +73,8 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 18), Qt::DisplayRole).toInt();
         if(role == LanguageRole)
             return QString("");
+        if(role == RealGenreRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toString().split(",");
 //        if(role == FicIdRole)
 //            return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toInt();
         if(role == CurrentChapterRole)
@@ -78,6 +83,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             qDebug() << index.row() << "  " << static_cast<int>(Qt::UserRole) << " " << index.column() << " " << "returning empty: " << role;
             return QString("");
         }
+
     }
     return AdaptingTableModel::data(index, role);
 
@@ -115,6 +121,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[RownumRole] = "rownum";
     roles[FicIdRole] = "ID";
     roles[RecommendationsRole] = "recommendations";
+    roles[RealGenreRole] = "realGenre";
     return roles;
 }
 
