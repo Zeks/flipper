@@ -250,8 +250,8 @@ bool Genres::WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics)
 static QStringList GetSignificantNeutralTypes(QStringList list, bool addAdventure = false)
 {
     QStringList result;
-    if(list.contains("Scifi"))
-        result.push_back("Scifi");
+    if(list.contains("Sci-Fi"))
+        result.push_back("Sci-Fi");
     if(list.contains("Spiritual"))
         result.push_back("Spiritual");
     if(list.contains("Supernatural"))
@@ -378,6 +378,8 @@ QVector<genre_stats::GenreBit>  FinalGenreProcessing(genre_stats::FicGenreData& 
             return true;
         if(g2.genres.size() != 0 && g1.genres.size() == 0)
             return false;
+//        if(std::abs(g1.relevance - g2.relevance) < 0.1f)
+//            return g1.genres < g2.genres;
         return g1.relevance > g2.relevance;
     });
 

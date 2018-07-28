@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSharedPointer>
 #include <QRegExp>
 #include <QHash>
+#include "core/fic_genre_data.h"
 namespace core {
 
 class DBEntity{
@@ -325,6 +326,8 @@ public:
     QString webSite = "ffn";
     UpdateMode updateMode = UpdateMode::none;
     FicCalcStats calcStats;
+    QList<genre_stats::GenreBit> realGenreData;
+    QString realGenreString;
     QList<int> fandomIds;
 };
 

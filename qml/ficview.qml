@@ -10,6 +10,7 @@ Rectangle {
     property color leadingColor:  "#fceaef"
     property bool havePagesBefore: false
     property bool havePagesAfter: false
+    property bool detailedGenreMode: false
     signal pageRequested(int page)
     signal backClicked()
     signal forwardClicked()
