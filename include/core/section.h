@@ -157,6 +157,7 @@ class AuthorStats
 public:
     QDate pageCreated;
     QDate bioLastUpdated;
+    QDate favouritesLastUpdated;
     int bioWordCount = -1;
 
     FicSectionStats favouriteStats;

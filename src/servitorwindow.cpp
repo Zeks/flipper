@@ -1,12 +1,17 @@
 #include "include/servitorwindow.h"
 #include "include/Interfaces/genres.h"
 #include "include/Interfaces/fanfics.h"
+#include "include/Interfaces/fandoms.h"
+#include "include/Interfaces/authors.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"
+#include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/url_utils.h"
 #include <QTextCodec>
 #include <QSettings>
 #include "ui_servitorwindow.h"
 #include "include/parsers/ffn/ficparser.h"
+#include "include/parsers/ffn/favparser.h"
+#include "include/timeutils.h"
 #include "pagegetter.h"
 
 
@@ -132,4 +137,60 @@ void ServitorWindow::on_pushButton_2_clicked()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/genrequeued", false);
     settings.sync();
+}
+
+void ServitorWindow::on_pbGetData_clicked()
+{
+    An<PageManager> pager;
+    auto data = pager->GetPage(ui->leGetCachedData->text(), ECacheMode::use_only_cache);
+    ui->edtLog->clear();
+    ui->edtLog->insertPlainText(data.content);
+
+    // need to get:
+    // last date of published favourite fic
+    // amount of favourite fics at the moment of last parse
+    // (need to keep this to check if list is updated even if last published is teh same)
+}
+
+void ServitorWindow::on_pushButton_3_clicked()
+{
+    auto db = QSqlDatabase::database();
+    auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    authorInterface->db = db;
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    fanfics->db = db;
+    auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
+    authorInterface->db = db;
+    auto authors = authorInterface->GetAllAuthorsLimited("ffn", 0);
+
+    An<PageManager> pager;
+
+
+    database::Transaction transaction(db);
+    WebPage data;
+    for(auto author : authors)
+    {
+        FavouriteStoryParser parser(fanfics);
+        parser.authorName = author->name;
+
+        TimedAction pageAction("Page loaded in: ",[&](){
+            data = pager->GetPage(author->url("ffn"), ECacheMode::use_only_cache);
+        });
+        pageAction.run();
+        TimedAction pageProcessAction("Page processed in: ",[&](){
+            parser.ProcessPage(author->url("ffn"), data.content);
+        });
+        pageProcessAction.run();
+
+        QSet<QString> fandoms;
+        FavouriteStoryParser::MergeStats(author, fandomInterface, {parser});
+        TimedAction action("Author updated in: ",[&](){
+            authorInterface->UpdateAuthorFavouritesUpdateDate(author);
+        });
+        action.run();
+        QLOG_INFO() <<  "Author: " << author->url("ffn") << " Update date: " << author->stats.favouritesLastUpdated;
+
+    }
+    transaction.finalize();
+
 }

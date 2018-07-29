@@ -547,11 +547,15 @@ core::AuthorPtr AuthorFromQuery(QSqlQuery& q)
 }
 
 
-DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSqlDatabase db)
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSqlDatabase db, int limit)
 {
     QString qs = QString("select distinct id,name, url, ffn_id, ao3_id,sb_id, sv_id,  "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
-                         " from recommenders where website_type = :site order by id");
+                         " from recommenders where website_type = :site order by id %1");
+    if(limit > 0)
+        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+    else
+        qs = qs.arg("");
 
     //!!! bindvalue incorrect for first query?
     SqlContext<QList<core::AuthorPtr>> ctx(db, qs, {{"site",website}});
@@ -1055,6 +1059,22 @@ DiagnosticSQLResult<bool>  UpdateAuthorRecord(core::AuthorPtr author, QDateTime 
 
     return ctx.result;
 }
+
+DiagnosticSQLResult<bool> UpdateAuthorFavouritesUpdateDate(int authorId, QDateTime date, QSqlDatabase db)
+{
+    QString qs = " update recommenders set"
+                 " last_favourites_update = :last_favourites_update, "
+                 " last_favourites_checked = :last_favourites_checked "
+                 "where id = :id ";
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("id", authorId);
+    ctx.bindValue("last_favourites_update", date);
+    ctx.bindValue("last_favourites_checked", QDateTime::currentDateTime());
+    ctx.ExecAndCheck();
+
+    return ctx.result;
+}
+
 
 DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
 {
@@ -2863,6 +2883,7 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
 
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
+
 
 
 

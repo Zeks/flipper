@@ -4,33 +4,33 @@ import "BaseDefines.qbs" as App
 
 
 App{
-name: "servitor"
-consoleApplication:false
-type:"application"
-qbsSearchPaths: sourceDirectory + "/modules"
-Depends { name: "Qt.core"}
-Depends { name: "Qt.sql" }
-Depends { name: "Qt.core" }
-Depends { name: "Qt.widgets" }
-Depends { name: "Qt.network" }
-Depends { name: "Qt.gui" }
-Depends { name: "Qt.quick" }
-Depends { name: "Qt.concurrent" }
-Depends { name: "Qt.quickwidgets" }
-Depends { name: "cpp" }
-Depends { name: "logger" }
+    name: "servitor"
+    consoleApplication:false
+    type:"application"
+    qbsSearchPaths: sourceDirectory + "/modules"
+    Depends { name: "Qt.core"}
+    Depends { name: "Qt.sql" }
+    Depends { name: "Qt.core" }
+    Depends { name: "Qt.widgets" }
+    Depends { name: "Qt.network" }
+    Depends { name: "Qt.gui" }
+    Depends { name: "Qt.quick" }
+    Depends { name: "Qt.concurrent" }
+    Depends { name: "Qt.quickwidgets" }
+    Depends { name: "cpp" }
+    Depends { name: "logger" }
 
-cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
-cpp.includePaths: [
-    sourceDirectory,
-    sourceDirectory + "/../",
-    sourceDirectory + "/include",
-    sourceDirectory + "/libs",
-    sourceDirectory + "/third_party/zlib",
-    sourceDirectory + "/libs/Logger/include",
-]
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
+    cpp.includePaths: [
+        sourceDirectory,
+        sourceDirectory + "/../",
+        sourceDirectory + "/include",
+        sourceDirectory + "/libs",
+        sourceDirectory + "/third_party/zlib",
+        sourceDirectory + "/libs/Logger/include",
+    ]
     cpp.minimumWindowsVersion: "6.0"
-files: [
+    files: [
         "UI/servitorwindow.ui",
         "include/core/fic_genre_data.h",
         "include/servitorwindow.h",
@@ -91,25 +91,31 @@ files: [
         "src/Interfaces/ffn/ffn_fanfics.cpp",
         "src/servers/database_context.cpp",
         "include/servers/database_context.h",
+        "include/pagegetter.h",
+        "src/pagegetter.cpp",
+        "include/parsers/ffn/favparser.h",
+        "src/parsers/ffn/favparser.cpp",
+        "src/parsers/ffn/ffnparserbase.cpp",
+        "include/parsers/ffn/ffnparserbase.h",
     ]
 
-cpp.staticLibraries: {
-    //var libs = ["UniversalModels", "logger", "quazip"]
-    var libs = []
-    if(qbs.toolchain.contains("msvc"))
-        libs = ["logger"]
-    else{
-        libs = ["logger", "dl", "protobuf"]
-    }
-    libs = libs.concat(conditionals.zlib)
-    libs = libs.concat(conditionals.ssl)
+    cpp.staticLibraries: {
+        //var libs = ["UniversalModels", "logger", "quazip"]
+        var libs = []
+        if(qbs.toolchain.contains("msvc"))
+            libs = ["logger"]
+        else{
+            libs = ["logger", "dl", "protobuf"]
+        }
+        libs = libs.concat(conditionals.zlib)
+        libs = libs.concat(conditionals.ssl)
 
-    if(qbs.toolchain.contains("msvc"))
-        libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
-    if(qbs.toolchain.contains("msvc"))
-        libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
-    else
-        libs = libs.concat(["grpc", "grpc++", "gpr"])
-    return libs
-}
+        if(qbs.toolchain.contains("msvc"))
+            libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
+        if(qbs.toolchain.contains("msvc"))
+            libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
+        else
+            libs = libs.concat(["grpc", "grpc++", "gpr"])
+        return libs
+    }
 }

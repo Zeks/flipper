@@ -136,6 +136,15 @@ bool Authors::UpdateAuthorRecord(core::AuthorPtr author)
     return result.success && f1Result.success && f2Result.success && f3Result.success;
 }
 
+bool Authors::UpdateAuthorFavouritesUpdateDate(core::AuthorPtr author)
+{
+    if(!author)
+        return false;
+
+    auto result = database::puresql::UpdateAuthorFavouritesUpdateDate(author->id, QDateTime(author->stats.favouritesLastUpdated), db).success;
+    return result;
+}
+
 bool Authors::LoadAuthor(QString name, QString website)
 {
     auto result = database::puresql::GetAuthorByNameAndWebsite(name, website,db);
@@ -243,6 +252,15 @@ QList<core::AuthorPtr > Authors::GetAllAuthors(QString website, bool forced)
     if(authorsNamesByWebsite.contains(website))
         result = authorsNamesByWebsite[website].values();
 
+    return result;
+}
+
+QList<core::AuthorPtr> Authors::GetAllAuthorsLimited(QString website, int limit)
+{
+    QList<core::AuthorPtr> result;
+    result = database::puresql::GetAllAuthors(website, db, limit).data;
+    for(auto author: result)
+        database::puresql::LoadAuthorStatistics(author, db);
     return result;
 }
 

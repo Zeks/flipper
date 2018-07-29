@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlError>
 #include <QEventLoop>
 #include <QThread>
+#include <QCoreApplication>
+#include <QSettings>
 
 
 

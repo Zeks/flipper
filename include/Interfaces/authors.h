@@ -52,6 +52,7 @@ public:
 
     bool CreateAuthorRecord(core::AuthorPtr author);
     bool UpdateAuthorRecord(core::AuthorPtr author);
+    bool UpdateAuthorFavouritesUpdateDate(core::AuthorPtr author);
 
     bool LoadAuthors(QString website, bool forced = false);
     QHash<int, QSet<int>> LoadFullFavouritesHashset();
@@ -67,6 +68,7 @@ public:
     core::AuthorPtr GetByWebID(QString website, int id);
     core::AuthorPtr GetById(int id);
     QList<core::AuthorPtr> GetAllAuthors(QString website, bool forced = false);
+    QList<core::AuthorPtr> GetAllAuthorsLimited(QString website, int limit);
     QStringList GetAllAuthorsUrls(QString website, bool forced = false);
     QStringList GetAllAuthorsFavourites(int id);
     QList<int> GetAllAuthorIds();

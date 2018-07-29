@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 
 
     path = "PageCache.sqlite";
-    QSqlDatabase pcDb = QSqlDatabase::addDatabase("QSQLITE", "pagecache");
+    QSqlDatabase pcDb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
     pcDb.setDatabaseName(path);
     pcDb.open();
 

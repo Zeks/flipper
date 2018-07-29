@@ -197,6 +197,8 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  alter table Recommenders add column info_wordcount integer default -1;
  alter table Recommenders add column last_published_fic_date datetime;
  alter table Recommenders add column first_published_fic_date datetime;
+ alter table Recommenders add column last_favourites_update datetime;
+ alter table Recommenders add column last_favourites_checked datetime;
  alter table Recommenders add column own_wordcount integer default -1;              -- author's own wordcount;
  alter table Recommenders add column own_favourites integer default -1;             -- author's own favourites on fics (pretty much useless);
  alter table Recommenders add column own_finished_ratio real;                       -- ratio of finished fics;
