@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
 
 
     ServitorWindow w;
+    w.dbInterface = dbInterface;
     w.show();
 
 

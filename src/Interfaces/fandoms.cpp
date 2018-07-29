@@ -81,6 +81,17 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
         if(!EnsureFandom(fandom))
             CreateFandom(fandom);
     }
+    for(auto fic: fics)
+    {
+        if(!fic)
+            continue;
+        for(auto fandom : fic->fandoms)
+        {
+            fandom = core::Fandom::ConvertName(fandom.trimmed());
+            if(nameIndex.contains(fandom))
+                fic->fandomIds.push_back(nameIndex[fandom]->id);
+        }
+    }
     return uniqueFandoms;
 }
 
@@ -100,6 +111,7 @@ bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms)
 bool Fandoms::RecalculateFandomStats(QStringList fandoms)
 {
     bool success = true;
+    //todo
 //    for(auto fandom : fandoms)
 //    {
 //        fandom = core::Fandom::ConvertName(fandom.trimmed());

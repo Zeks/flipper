@@ -79,8 +79,11 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         return parser;
     };
     int counter = 0;
+    QLOG_INFO() << " Scheduled authors size: " << authors.size();
     for(auto author: authors)
     {
+        if(counter%50 == 0)
+            QLOG_INFO() << counter;
         QList<QSharedPointer<core::Fic>> sections;
         QList<QFuture<FavouriteStoryParser>> futures;
         QSet<int> uniqueAuthors;

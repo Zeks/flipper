@@ -586,6 +586,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
         else if(author->stats.favouriteStats.favourites < resultingToken.ficCount)
             author->stats.favouritesLastUpdated = QDateTime::currentDateTime().date();
     }
+    author->stats.favouritesLastChecked = QDateTime::currentDateTime().date();
 
     author->stats.favouriteStats.fandoms = resultingToken.fandomKeeper;
 
