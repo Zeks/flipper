@@ -7,6 +7,7 @@ Project {
     references: [
         "servitor.qbs",
         "gui_condition.qbs",
+        "libs/UniversalModels/UniversalModels.qbs",
         "libs/Logger/logger.qbs",
     ]
 }

@@ -19,7 +19,7 @@
 
 namespace database {
 namespace puresql{
-bool ExecAndCheck(QSqlQuery& q, bool reportErrors = true);
+bool ExecAndCheck(QSqlQuery& q, bool reportErrors = true,  bool ignoreUniqueness = false);
 
 template <typename T>
 struct DiagnosticSQLResult
@@ -28,7 +28,7 @@ struct DiagnosticSQLResult
     QString oracleError;
     T data;
     bool ExecAndCheck(QSqlQuery& q, bool ignoreUniqueness = false) {
-        bool success = database::puresql::ExecAndCheck(q, true);
+        bool success = database::puresql::ExecAndCheck(q, true, ignoreUniqueness);
         bool uniqueTriggered = ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed");
         if(uniqueTriggered)
             return true;
@@ -205,7 +205,6 @@ struct SqlContext
         else
             qs = countQuery;
         Prepare(qs);
-
         if(!ExecAndCheck())
             return;
 

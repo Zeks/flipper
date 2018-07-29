@@ -47,12 +47,15 @@ public:
                                    QSharedPointer<interfaces::RecommendationLists> recsInterface,
                                    QObject* obj = nullptr);
     virtual ~RecommendationsProcessor();
-    void ReloadRecommendationsList(QString listName, ECacheMode cacheMode);
+    void ReloadRecommendationsList(ECacheMode cacheMode);
     bool AddAuthorToRecommendationList(QString listName, QString authorUrl);
     bool RemoveAuthorFromRecommendationList(QString listName, QString authorUrl);
+    void StageAuthorsForList(QString listName);
+    void SetStagedAuthors(QList<core::AuthorPtr> list);
 
 private:
     QSqlDatabase db;
+    QList<core::AuthorPtr> stagedAuthors;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;

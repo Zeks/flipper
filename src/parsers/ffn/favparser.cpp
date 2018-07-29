@@ -530,7 +530,9 @@ void ConvertFandomsToIds(core::AuthorPtr author, QSharedPointer<interfaces::Fand
 }
 
 
-void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<core::FicSectionStatsTemporaryToken> tokens)
+void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
+                                      QSharedPointer<interfaces::Fandoms> fandomsInterface,
+                                      QList<core::FicSectionStatsTemporaryToken> tokens)
 {
     core::FicSectionStatsTemporaryToken resultingToken;
     for(auto statToken : tokens)
@@ -543,7 +545,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<int
         resultingToken.firstPublished = std::min(statToken.firstPublished, resultingToken.firstPublished);
         if(!resultingToken.lastPublished.isValid())
             resultingToken.lastPublished = statToken.lastPublished;
-        resultingToken.lastPublished = std::min(statToken.lastPublished, resultingToken.lastPublished);
+        resultingToken.lastPublished = std::max(statToken.lastPublished, resultingToken.lastPublished);
 
         resultingToken.sizes += statToken.sizes;
 
@@ -574,11 +576,24 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<int
     ProcessUnfinished(author, resultingToken.ficCount, resultingToken.unfinishedKeeper);
     ProcessESRB(author, resultingToken.ficCount, resultingToken.esrbKeeper);
     ProcessKeyWords(author, resultingToken.ficCount, resultingToken.wordsKeeper);
+
+    if(!author->stats.favouritesLastUpdated.isValid())
+        author->stats.favouritesLastUpdated = resultingToken.lastPublished;
+    else
+    {
+        if(author->stats.favouritesLastUpdated != resultingToken.lastPublished)
+            author->stats.favouritesLastUpdated = resultingToken.lastPublished;
+        else if(author->stats.favouriteStats.favourites < resultingToken.ficCount)
+            author->stats.favouritesLastUpdated = QDateTime::currentDateTime().date();
+    }
+    author->stats.favouritesLastChecked = QDateTime::currentDateTime().date();
+
     author->stats.favouriteStats.fandoms = resultingToken.fandomKeeper;
 
     author->stats.favouriteStats.ficWordCount = resultingToken.wordCount;
     author->stats.favouriteStats.wordsPerChapter =
             static_cast<double>(author->stats.favouriteStats.ficWordCount)/static_cast<double>(resultingToken.chapterKeeper);
+
     author->stats.favouriteStats.favourites = resultingToken.ficCount;
     author->stats.favouriteStats.fandoms = resultingToken.fandomKeeper;
 

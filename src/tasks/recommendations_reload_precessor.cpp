@@ -61,14 +61,11 @@ RecommendationsProcessor::~RecommendationsProcessor()
 }
 
 
-void RecommendationsProcessor::ReloadRecommendationsList(QString listName, ECacheMode cacheMode)
+void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
 {
     database::Transaction transaction(db);
 
-    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(listName));
-    auto recList = recsInterface->GetCurrentRecommendationList();
-    auto authors = recsInterface->GetAuthorsForRecommendationList(recList);
-
+    auto& authors = stagedAuthors;
     emit requestProgressbar(authors.size());
     QSet<QString> fandoms;
     QList<core::FicRecommendation> recommendations;
@@ -82,8 +79,11 @@ void RecommendationsProcessor::ReloadRecommendationsList(QString listName, ECach
         return parser;
     };
     int counter = 0;
+    QLOG_INFO() << " Scheduled authors size: " << authors.size();
     for(auto author: authors)
     {
+        if(counter%50 == 0)
+            QLOG_INFO() << counter;
         QList<QSharedPointer<core::Fic>> sections;
         QList<QFuture<FavouriteStoryParser>> futures;
         QSet<int> uniqueAuthors;
@@ -180,5 +180,17 @@ bool RecommendationsProcessor::RemoveAuthorFromRecommendationList(QString listNa
     recsInterface->DecrementAllValuesInListMatchingAuthorFavourites(author->id,listId);
     transaction.finalize();
     return true;
+}
+
+void RecommendationsProcessor::StageAuthorsForList(QString listName)
+{
+    recsInterface->SetCurrentRecommendationList(recsInterface->GetListIdForName(listName));
+    auto recList = recsInterface->GetCurrentRecommendationList();
+    stagedAuthors = recsInterface->GetAuthorsForRecommendationList(recList);
+}
+
+void RecommendationsProcessor::SetStagedAuthors(QList<core::AuthorPtr> list)
+{
+    stagedAuthors = list;
 }
 

@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/timeutils.h"
 
 #include <QThread>
+#include <QCoreApplication>
 
 FandomLoadProcessor::FandomLoadProcessor(QSqlDatabase db,
                                          QSharedPointer<interfaces::Fanfics> fanficInterface,

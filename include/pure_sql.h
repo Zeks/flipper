@@ -145,8 +145,11 @@ DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase
 
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
 
-DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website,  QSqlDatabase db);
+DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website, QSqlDatabase db,  int limit = 0);
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QString website, QDateTime date, QSqlDatabase db,  int limit = 0);
+
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
+
 
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase db);
@@ -249,6 +252,8 @@ DiagnosticSQLResult<QVector<int> > GetWebIdList(QString where, QString website, 
 DiagnosticSQLResult<bool> DeactivateStory(int id, QString website, QSqlDatabase db);
 
 DiagnosticSQLResult<bool> UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
+DiagnosticSQLResult<bool> UpdateAuthorFavouritesUpdateDate(int authorId, QDateTime date, QSqlDatabase db);
+
 DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
 DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db);
 DiagnosticSQLResult<bool> PushTaglistIntoDatabase(QStringList, QSqlDatabase);
