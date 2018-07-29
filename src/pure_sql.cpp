@@ -542,6 +542,8 @@ core::AuthorPtr AuthorFromQuery(QSqlQuery& q)
     result->AssignId(q.value("id").toInt());
     result->name = q.value("name").toString();
     result->recCount = q.value("rec_count").toInt();
+    result->stats.favouritesLastUpdated = q.value("last_favourites_update").toDateTime().date();
+    result->stats.favouritesLastChecked = q.value("last_favourites_checked").toDateTime().date();
     ProcessIdsFromQuery(result, q);
     return result;
 }
@@ -564,6 +566,39 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSql
     });
     return ctx.result;
 }
+
+
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QString website,
+                                                                            QDateTime date,
+                                                                            QSqlDatabase db,
+                                                                            int limit)
+{
+    //todo fix reccount, needs to be precalculated in recommenders table
+
+    QString qs = QString("select distinct id,name, url, "
+                         "ffn_id, ao3_id,sb_id, sv_id, "
+                         " last_favourites_update, last_favourites_checked, "
+                         "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
+                         " from recommenders where website_type = :site "
+                         " and last_favourites_update > :date "
+                         "order by id %1");
+    if(limit > 0)
+        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+    else
+        qs = qs.arg("");
+
+
+    SqlContext<QList<core::AuthorPtr>> ctx(db, qs);
+    ctx.bindValue("site",website);
+    ctx.bindValue("date",date);
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
+                                                  "select count(id) from recommenders where website_type = :site",
+                                                  [](QSqlQuery& q){
+        return AuthorFromQuery(q);
+    });
+    return ctx.result;
+}
+
 
 
 

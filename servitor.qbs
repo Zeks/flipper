@@ -82,6 +82,8 @@ App{
         "include/transaction.h",
         "src/pagetask.cpp",
         "include/pagetask.h",
+        "include/Interfaces/pagetask_interface.h",
+        "src/Interfaces/pagetask_interface.cpp",
         "include/favholder.h",
         "src/favholder.cpp",
         "include/tokenkeeper.h",
@@ -97,6 +99,8 @@ App{
         "src/parsers/ffn/favparser.cpp",
         "src/parsers/ffn/ffnparserbase.cpp",
         "include/parsers/ffn/ffnparserbase.h",
+        "include/page_utils.h",
+        "src/page_utils.cpp",
     ]
 
     cpp.staticLibraries: {

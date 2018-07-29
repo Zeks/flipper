@@ -545,7 +545,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
         resultingToken.firstPublished = std::min(statToken.firstPublished, resultingToken.firstPublished);
         if(!resultingToken.lastPublished.isValid())
             resultingToken.lastPublished = statToken.lastPublished;
-        resultingToken.lastPublished = std::min(statToken.lastPublished, resultingToken.lastPublished);
+        resultingToken.lastPublished = std::max(statToken.lastPublished, resultingToken.lastPublished);
 
         resultingToken.sizes += statToken.sizes;
 

@@ -213,6 +213,8 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  CREATE  INDEX if not exists I_RECOMMENDER_AO3_ID ON Recommenders (ao3_id ASC);
  CREATE  INDEX if not exists I_RECOMMENDER_SB_ID ON Recommenders (sb_id ASC);
  CREATE  INDEX if not exists I_RECOMMENDER_SV_ID ON Recommenders (sv_id ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_LAST_FAV_UPDATE ON Recommenders (last_favourites_update ASC);
+ CREATE  INDEX if not exists I_RECOMMENDER_LAST_FAV_CHECK ON Recommenders (last_favourites_checked ASC);
   
  -- holds various stats for the author's page;
  -- to be used for fics clustering;

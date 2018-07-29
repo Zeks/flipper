@@ -158,6 +158,7 @@ public:
     QDate pageCreated;
     QDate bioLastUpdated;
     QDate favouritesLastUpdated;
+    QDate favouritesLastChecked;
     int bioWordCount = -1;
 
     FicSectionStats favouriteStats;

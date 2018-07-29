@@ -69,6 +69,7 @@ public:
     core::AuthorPtr GetById(int id);
     QList<core::AuthorPtr> GetAllAuthors(QString website, bool forced = false);
     QList<core::AuthorPtr> GetAllAuthorsLimited(QString website, int limit);
+    QList<core::AuthorPtr> GetAllAuthorsWithFavUpdateSince(QString website, QDateTime date, int limit = 0);
     QStringList GetAllAuthorsUrls(QString website, bool forced = false);
     QStringList GetAllAuthorsFavourites(int id);
     QList<int> GetAllAuthorIds();

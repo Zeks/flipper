@@ -264,6 +264,17 @@ QList<core::AuthorPtr> Authors::GetAllAuthorsLimited(QString website, int limit)
     return result;
 }
 
+QList<core::AuthorPtr> Authors::GetAllAuthorsWithFavUpdateSince(QString website,
+                                                                QDateTime date,
+                                                                int limit)
+{
+    QList<core::AuthorPtr> result;
+    result = database::puresql::GetAllAuthorsWithFavUpdateSince(website,date, db, limit).data;
+    for(auto author: result)
+        database::puresql::LoadAuthorStatistics(author, db);
+    return result;
+}
+
 QStringList Authors::GetAllAuthorsUrls(QString website, bool forced)
 {
     QStringList result;
