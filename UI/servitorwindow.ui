@@ -172,6 +172,13 @@
         <widget class="QLineEdit" name="leGetCachedData"/>
        </item>
        <item>
+        <widget class="QPushButton" name="pbUpdateFreshAuthors">
+         <property name="text">
+          <string>Update Fresh</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

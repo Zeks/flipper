@@ -25,6 +25,8 @@
 #include <QTextCodec>
 #include <QSettings>
 #include <QMessageBox>
+#include <QFile>
+#include <QCoreApplication>
 
 
 void CoreEnvironment::InitMetatypes()

@@ -1690,7 +1690,8 @@ void MainWindow::on_pbLoadAllRecommenders_clicked()
         connect(&reloader, &RecommendationsProcessor::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
         connect(&reloader, &RecommendationsProcessor::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
         connect(&reloader, &RecommendationsProcessor::updateInfo, this, &MainWindow::OnNewProgressString);
-        reloader.ReloadRecommendationsList(ui->leAuthorUrl->text(), GetCurrentCacheMode());
+        reloader.StageAuthorsForList(ui->leAuthorUrl->text());
+        reloader.ReloadRecommendationsList(GetCurrentCacheMode());
 
         ui->leAuthorUrl->setText("");
         auto startRecLoad = std::chrono::high_resolution_clock::now();

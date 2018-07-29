@@ -17,6 +17,7 @@
 #include "include/timeutils.h"
 #include "include/page_utils.h"
 #include "pagegetter.h"
+#include "tasks/recommendations_reload_precessor.h"
 
 
 ServitorWindow::ServitorWindow(QWidget *parent) :
@@ -226,5 +227,10 @@ void ServitorWindow::on_pushButton_3_clicked()
 
     }
     transaction.finalize();
+
+}
+
+void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
+{
 
 }

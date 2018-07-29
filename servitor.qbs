@@ -7,7 +7,7 @@ App{
     name: "servitor"
     consoleApplication:false
     type:"application"
-    qbsSearchPaths: sourceDirectory + "/modules"
+    qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]
     Depends { name: "Qt.core"}
     Depends { name: "Qt.sql" }
     Depends { name: "Qt.core" }
@@ -19,6 +19,9 @@ App{
     Depends { name: "Qt.quickwidgets" }
     Depends { name: "cpp" }
     Depends { name: "logger" }
+    Depends { name: "UniversalModels" }
+    Depends { name: "proto_generation" }
+    Depends { name: "grpc_generation" }
 
     cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
     cpp.includePaths: [
@@ -36,11 +39,12 @@ App{
         "include/servitorwindow.h",
         "src/main_servitor.cpp",
         "src/servitorwindow.cpp",
-        "include/Interfaces/data_source.h",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",
         "include/Interfaces/genres.h",
         "include/Interfaces/fandoms.h",
+        "include/Interfaces/tags.h",
+        "src/Interfaces/tags.cpp",
         "include/Interfaces/fanfics.h",
         "include/Interfaces/ffn/ffn_fanfics.h",
         "include/Interfaces/ffn/ffn_authors.h",
@@ -97,10 +101,25 @@ App{
         "src/pagegetter.cpp",
         "include/parsers/ffn/favparser.h",
         "src/parsers/ffn/favparser.cpp",
+        "src/parsers/ffn/fandomparser.cpp",
+        "include/parsers/ffn/fandomparser.h",
         "src/parsers/ffn/ffnparserbase.cpp",
         "include/parsers/ffn/ffnparserbase.h",
         "include/page_utils.h",
+        "include/pageconsumer.h",
+        "src/pageconsumer.cpp",
         "src/page_utils.cpp",
+        "src/tasks/recommendations_reload_precessor.cpp",
+        "include/tasks/recommendations_reload_precessor.h",
+        "src/tasks/author_task_processor.cpp",
+        "include/tasks/author_task_processor.h",
+        "src/tasks/fandom_task_processor.cpp",
+        "include/tasks/fandom_task_processor.h",
+        "src/environment.cpp",
+        "include/environment.h",
+        "include/grpc/grpc_source.h",
+        "include/Interfaces/data_source.h",
+        "src/grpc/grpc_source.cpp",
     ]
 
     cpp.staticLibraries: {
@@ -121,5 +140,32 @@ App{
         else
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
+    }
+
+
+    Group{
+        name:"grpc files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        grpc_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        grpc_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        grpc_generation.toolchain : qbs.toolchain
+        files: [
+            "proto/feeder_service.proto",
+        ]
+        fileTags: ["grpc", "proto"]
+    }
+    Group{
+        name:"proto files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        files: [
+            "proto/filter.proto",
+            "proto/fanfic.proto",
+            "proto/fandom.proto",
+        ]
+        fileTags: ["proto"]
     }
 }

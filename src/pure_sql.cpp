@@ -1043,21 +1043,23 @@ DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime t
 {
 
     QString qs = " insert into recommenders(name, url, favourites, fics, page_updated, ffn_id, ao3_id,sb_id, sv_id, "
-                 "page_creation_date, info_updated) "
+                 "page_creation_date, info_updated, last_favourites_update,last_favourites_checked) "
                  "values(:name, :url, :favourites, :fics,  :time, :ffn_id, :ao3_id,:sb_id, :sv_id, "
-                 ":page_creation_date, :info_updated) ";
+                 ":page_creation_date, :info_updated,:last_favourites_update,:last_favourites_checked) ";
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("name", author->name);
-    ctx.bindValue("time", timestamp);
     ctx.bindValue("url", author->url("ffn"));
     ctx.bindValue("favourites", author->favCount);
     ctx.bindValue("fics", author->ficCount);
+    ctx.bindValue("time", timestamp);
     ctx.bindValue("ffn_id", author->GetWebID("ffn"));
     ctx.bindValue("ao3_id", author->GetWebID("ao3"));
     ctx.bindValue("sb_id", author->GetWebID("sb"));
     ctx.bindValue("sv_id", author->GetWebID("sv"));
     ctx.bindValue("page_creation_date", author->stats.pageCreated);
     ctx.bindValue("info_updated", author->stats.bioLastUpdated);
+    ctx.bindValue("last_favourites_update", author->stats.favouritesLastUpdated);
+    ctx.bindValue("last_favourites_checked", author->stats.favouritesLastChecked);
     ctx.ExecAndCheck();
     return ctx.result;
 }
@@ -1065,22 +1067,27 @@ DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime t
 DiagnosticSQLResult<bool>  UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
 
-    QString qs = " update recommenders set name = :name, url = :url, favourites = :favourites, fics = :fics, page_updated = :time, "
+    QString qs = " update recommenders set name = :name, url = :url, favourites = :favourites, fics = :fics, page_updated = :page_updated, "
                  "page_creation_date= :page_creation_date, info_updated= :info_updated, "
-                 " ffn_id = :ffn_id, ao3_id = :ao3_id, sb_id  =:sb_id, sv_id = :sv_id where id = :id ";
+                 " ffn_id = :ffn_id, ao3_id = :ao3_id, sb_id  =:sb_id, sv_id = :sv_id,"
+                 " last_favourites_update = :last_favourites_update, "
+                 " last_favourites_checked = :last_favourites_checked "
+                 " where id = :id ";
     SqlContext<bool> ctx(db, qs);
-    ctx.bindValue("id", author->id);
     ctx.bindValue("name", author->name);
-    ctx.bindValue("time", timestamp);
     ctx.bindValue("url", author->url("ffn"));
     ctx.bindValue("favourites", author->favCount);
     ctx.bindValue("fics", author->ficCount);
+    ctx.bindValue("page_updated", timestamp);
+    ctx.bindValue("page_creation_date", author->stats.pageCreated);
+    ctx.bindValue("info_updated", author->stats.bioLastUpdated);
     ctx.bindValue("ffn_id", author->GetWebID("ffn"));
     ctx.bindValue("ao3_id", author->GetWebID("ao3"));
     ctx.bindValue("sb_id", author->GetWebID("sb"));
     ctx.bindValue("sv_id", author->GetWebID("sv"));
-    ctx.bindValue("page_creation_date", author->stats.pageCreated);
-    ctx.bindValue("info_updated", author->stats.bioLastUpdated);
+    ctx.bindValue("last_favourites_update", author->stats.favouritesLastUpdated);
+    ctx.bindValue("last_favourites_checked", author->stats.favouritesLastChecked);
+    ctx.bindValue("id", author->id);
     ctx.ExecAndCheck();
 
     //not reading those yet
