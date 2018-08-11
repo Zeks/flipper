@@ -53,6 +53,7 @@ public:
     QSqlQuery BuildQuery(core::StoryFilter filter, bool countOnly = false) ;
     inline core::Fic LoadFanfic(QSqlQuery& q);
     int GetFicCount(core::StoryFilter filter);
+    QSet<int> GetAuthorsForFics(QSet<int> ficIDsForActivetags);
     void InitQueryType(bool client = false, QString userToken = QString());
     QSharedPointer<core::Query> currentQuery;
     core::DefaultQueryBuilder queryBuilder; // builds search queries

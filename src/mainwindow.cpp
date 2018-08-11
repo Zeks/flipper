@@ -897,6 +897,8 @@ void MainWindow::ReadSettings()
     ui->sbMinimumFavourites->setValue(uiSettings.value("Settings/sbMinimumFavourites", "0").toInt());
 
     this->resize(uiSettings.value("Settings/appsize").toSize());
+    if(!uiSettings.value("Settings/position").toPoint().isNull())
+        this->move(uiSettings.value("Settings/position").toPoint());
 }
 
 void MainWindow::WriteSettings()
@@ -939,6 +941,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkSearchWithinList", ui->chkShowSources->isChecked());
 
     settings.setValue("Settings/appsize", this->size());
+    settings.setValue("Settings/position", this->pos());
     settings.sync();
 }
 
@@ -1405,6 +1408,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.crossoversOnly= ui->chkCrossovers->isChecked();
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
+    filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors();
     //    filter.includeSlash = ui->chkOnlySlash->isChecked();
     //    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
 

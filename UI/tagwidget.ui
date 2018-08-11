@@ -155,6 +155,13 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QCheckBox" name="chkUseTagsForAuthors">
+       <property name="text">
+        <string>Show fics from the authors with selected tags instead</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item row="1" column="0">
@@ -183,7 +190,6 @@
    </item>
   </layout>
   <zorder>edtTags</zorder>
-  <zorder></zorder>
   <zorder>wdgMassTag</zorder>
  </widget>
  <resources/>
