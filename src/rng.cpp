@@ -7,14 +7,15 @@ namespace core{
 QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase )
 {
     QString where = userToken + query->str;
+
+    bool containsWhere = false;
     for(auto bind: query->bindings)
         where += bind.key + bind.value.toString().left(30);
-{
+    {
         // locking to make sure it's not modified when we search
         QReadLocker locker(&lock);
         containsWhere = randomIdLists.contains(where);
-
-}
+    }
 
     //QLOG_INFO() << "RANDOM USING WHERE:" <<
     if(!containsWhere)
