@@ -86,9 +86,12 @@ public:
     void ProcessListIntoRecommendations(QString list);
 
     QVector<int> GetSourceFicsFromFile(QString filename);
-    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics);
+    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics, bool automaticLike = false);
     int  BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
-    int  BuildRecommendations(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics, bool clearAuthors = true);
+    int  BuildRecommendations(QSharedPointer<core::RecommendationList> params,
+                              QVector<int> sourceFics,
+                              bool automaticLike = false,
+                              bool clearAuthors = true);
 
     void ResumeUnfinishedTasks();
 

@@ -386,7 +386,9 @@ QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
     return sourceList;
 }
 
-int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics)
+int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,
+                                                     QVector<int> sourceFics,
+                                                     bool automaticLike)
 {
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     RecommendationListGRPC list;
@@ -440,6 +442,12 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     {
         emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;") + " " + QString::number(list.matchReport[key]) + "<br>");
     }
+    if(automaticLike)
+    {
+        for(auto fic: list.fics)
+            interfaces.tags->SetTagForFic(fic, "Liked");
+    }
+
     transaction.finalize();
     return params->id;
 }
@@ -500,13 +508,16 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
 }
 
 
-int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics, bool clearAuthors)
+int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params,
+                                          QVector<int> sourceFics,
+                                          bool automaticLike,
+                                          bool clearAuthors)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     int result = -1;
     if(settings.value("Settings/thinClient").toBool())
     {
-        result =  BuildRecommendationsServerFetch(params,sourceFics);
+        result =  BuildRecommendationsServerFetch(params,sourceFics, automaticLike);
     }
     else
         result = BuildRecommendationsLocalVersion(params, clearAuthors);
@@ -570,7 +581,7 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     params->tagToUse = "generictag";
     params->pickRatio = 9999999999;
     interfaces.tags->SetTagForFic(id, "generictag");
-    BuildRecommendations(params, {id} ,!authorsLoaded);
+    BuildRecommendations(params, {id}, false, !authorsLoaded);
     interfaces.tags->DeleteTag("generictag");
     interfaces.recs->SetFicsAsListOrigin({id}, params->id);
     transaction.finalize();

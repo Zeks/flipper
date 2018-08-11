@@ -884,6 +884,7 @@ void MainWindow::ReadSettings()
     ui->chkComplete->setChecked(uiSettings.value("Settings/completed", false).toBool());
     ui->chkShowSources->setChecked(uiSettings.value("Settings/chkShowSources", false).toBool());
     ui->chkSearchWithinList->setChecked(uiSettings.value("Settings/chkSearchWithinList", false).toBool());
+    ui->chkAutomaticLike->setChecked(uiSettings.value("Settings/chkAutomaticLike", false).toBool());
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
@@ -908,6 +909,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/sbMinimumListMatches", ui->sbMinimumListMatches->value());
     settings.setValue("Settings/sbMinimumFavourites", ui->sbMinimumFavourites->value());
     settings.setValue("Settings/chkFaveLimitActivated", ui->chkFaveLimitActivated->isChecked());
+    settings.setValue("Settings/chkAutomaticLike", ui->chkAutomaticLike->isChecked());
 
     settings.setValue("Settings/normals", GetCurrentFandomName());
     settings.setValue("Settings/plusGenre", ui->leContainsGenre->text());
@@ -1664,6 +1666,7 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
     ui->edtRecsContents->setReadOnly(false);
     auto font = ui->edtRecsContents->font();
     font.setPixelSize(14);
+
     ui->edtRecsContents->setFont(font);
 
     for(auto fic: fics)
@@ -1679,6 +1682,22 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
+    if(ui->chkAutomaticLike->isChecked())
+    {
+        QMessageBox m;
+        m.setIcon(QMessageBox::Warning);
+        m.setText("\"Automatic Like\" option is enabled!\n"
+                  "Only enable this while you are loading your own favourite list.\n"
+                  "Otherwise you will not see fics from that URL in your searches.\n"
+                  "Are you sure you want to continue?");
+        auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
+        auto noButton =  m.addButton("No", QMessageBox::AcceptRole);
+        Q_UNUSED(noButton);
+        m.exec();
+        if(m.clickedButton() != yesButton)
+            return;
+    }
+
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->name = ui->leRecsListName->text();
     if(params->name.trimmed().isEmpty())
@@ -1703,7 +1722,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         QString val = match.captured(1);
         sourceFics.push_back(val.toInt());
     }
-    auto result = env.BuildRecommendations(params, sourceFics, false);
+    auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike, false);
     if(result == -1)
     {
         QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
@@ -1806,7 +1825,10 @@ void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
 
 void MainWindow::on_pbUseProfile_clicked()
 {
+    ui->edtRecsContents->clear();
     on_pbRecsLoadFFNProfileIntoSource_clicked();
+    if(ui->edtRecsContents->toPlainText().trimmed().size() == 0)
+        return;
     ResetFilterUItoDefaults();
     on_pbRecsCreateListFromSources_clicked();
 }

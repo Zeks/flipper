@@ -482,6 +482,16 @@
                                   </property>
                                  </widget>
                                 </item>
+                                <item>
+                                 <widget class="QCheckBox" name="chkAutomaticLike">
+                                  <property name="text">
+                                   <string>Assign &quot;Liked&quot; to fics</string>
+                                  </property>
+                                  <property name="checked">
+                                   <bool>true</bool>
+                                  </property>
+                                 </widget>
+                                </item>
                                </layout>
                               </item>
                               <item>
