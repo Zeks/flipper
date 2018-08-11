@@ -85,6 +85,14 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
 
     core::StoryFilter filter = FilterFromTask(task->filter(), task->user_data());
     auto ficSource = InitFicSource(userToken);
+    if(filter.tagsAreUsedForAuthors)
+    {
+        FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+        auto* userThreadData = ThreadData::GetUserData();
+        auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+        authors->db = convertedFicSource->db->GetDatabase();
+        userThreadData->usedAuthors = authors->GetAuthorsForFics(userThreadData->ficIDsForActivetags);
+    }
 
     QVector<core::Fic> data;
     TimedAction action("Fetching data",[&](){
@@ -121,6 +129,14 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
 
     core::StoryFilter filter = FilterFromTask(task->filter(), task->user_data());
     auto ficSource = InitFicSource(userToken);
+    if(filter.tagsAreUsedForAuthors)
+    {
+        FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+        auto* userThreadData = ThreadData::GetUserData();
+        auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+        authors->db = convertedFicSource->db->GetDatabase();
+        userThreadData->usedAuthors = authors->GetAuthorsForFics(userThreadData->ficIDsForActivetags);
+    }
 
     QVector<core::Fic> data;
     int count = 0;

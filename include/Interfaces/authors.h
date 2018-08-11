@@ -86,6 +86,7 @@ public:
     bool CalculateSlashStatisticsPercentages(QString fieldUsed);
 
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
+    QSet<int> GetAuthorsForFics(QSet<int>);
 
     QHash<int, std::array<double, 21>> GetListGenreData();
 

@@ -427,6 +427,11 @@ bool Authors::AssignNewNameForAuthor(core::AuthorPtr author, QString name)
     return database::puresql::AssignNewNameForAuthor(author, name, db).success;
 }
 
+QSet<int> Authors::GetAuthorsForFics(QSet<int> fics)
+{
+    return database::puresql::GetAuthorsForFics(fics, db).data;
+}
+
 QHash<int, std::array<double, 21> > Authors::GetListGenreData()
 {
     return database::puresql::GetListGenreData(db).data;

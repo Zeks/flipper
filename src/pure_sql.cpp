@@ -535,6 +535,22 @@ DiagnosticSQLResult<int>  GetAuthorIdFromWebID(int id, QString website, QSqlData
     return ctx.result;
 }
 
+
+DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase db)
+{
+    auto* userThreadData = ThreadData::GetUserData();
+    userThreadData->ficsForAuthorSearch = fics;
+    QString qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
+    SqlContext<QSet<int>> ctx(db, qs);
+    ctx.FetchLargeSelectIntoList<int>("author_d", qs, "",[](QSqlQuery& q){
+        return q.value("author_id").toInt();
+    });
+    ctx.result.data.remove(0);
+    return ctx.result;
+
+}
+
+
 DiagnosticSQLResult<bool> AssignNewNameToAuthorWithId(core::AuthorPtr author, QSqlDatabase db)
 {
     QString qs = " UPDATE recommenders SET name = :name where id = :id";

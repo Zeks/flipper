@@ -59,6 +59,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
     ProtoSpace::Filter result;
+    result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
     result.set_randomize_results(filter.randomizeResults);
     auto* basicFilters = result.mutable_basic_filters();
     basicFilters->set_website(filter.website.toStdString());
@@ -240,6 +241,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.useThisRecommenderOnly = filter.recommendations().use_this_recommender_only();
     result.minRecommendations = filter.recommendations().min_recommendations();
     result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
+    result.tagsAreUsedForAuthors = filter.tags_are_for_authors();
 
     result.ignoredFandomCount = userData.ignored_fandoms().fandom_ids_size();
     result.recommendationsCount = userData.recommendation_list().list_of_fics_size();

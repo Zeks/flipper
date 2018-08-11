@@ -149,7 +149,7 @@ message StatusResponse{
 // can't leave fandom information on user side
 // because I dont want users to parse anything
 
-// same thing for genres, prbbaly better to receive the on launch
+// same thing for genres, probbaly better to receive the on launch
 
 
 // RecommendationListsFandoms needs to be returned with recommendation list data

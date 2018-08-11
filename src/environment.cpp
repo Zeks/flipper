@@ -450,7 +450,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     }
     if(automaticLike)
     {
-        for(auto fic: list.fics)
+        for(auto fic: sourceSet)
             interfaces.tags->SetTagForFic(fic, "Liked");
     }
 

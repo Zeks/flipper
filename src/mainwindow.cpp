@@ -897,6 +897,8 @@ void MainWindow::ReadSettings()
     ui->sbMinimumFavourites->setValue(uiSettings.value("Settings/sbMinimumFavourites", "0").toInt());
 
     this->resize(uiSettings.value("Settings/appsize").toSize());
+    if(!uiSettings.value("Settings/position").toPoint().isNull())
+        this->move(uiSettings.value("Settings/position").toPoint());
 }
 
 void MainWindow::WriteSettings()
@@ -939,6 +941,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkSearchWithinList", ui->chkShowSources->isChecked());
 
     settings.setValue("Settings/appsize", this->size());
+    settings.setValue("Settings/position", this->pos());
     settings.sync();
 }
 
@@ -1354,7 +1357,7 @@ FilterErrors MainWindow::ValidateFilter()
         result.AddError("");
         result.AddError("Please select a recommendation list to the right of Rec List: or create one");
     }
-    auto currentListId = env.interfaces.recs->GetCurrentRecommendationList();
+    auto currentListId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     core::RecPtr list = env.interfaces.recs->GetList(currentListId);
     bool emptyList = !list || list->ficCount == 0;
     if(emptyList && (ui->cbSortMode->currentText() == "Rec Count"
@@ -1405,6 +1408,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.crossoversOnly= ui->chkCrossovers->isChecked();
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
+    filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
     //    filter.includeSlash = ui->chkOnlySlash->isChecked();
     //    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
 
@@ -1744,7 +1748,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         QString val = match.captured(1);
         sourceFics.push_back(val.toInt());
     }
-    auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike, false);
+    auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike->isChecked(), false);
     if(result == -1)
     {
         QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"

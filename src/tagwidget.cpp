@@ -85,6 +85,11 @@ void TagWidget::SetAddDialogVisibility(bool value)
     //ui->wdgControls->setVisible(value);
 }
 
+bool TagWidget::UseTagsForAuthors()
+{
+    return ui->chkUseTagsForAuthors->isChecked();
+}
+
 void TagWidget::on_pbAddTag_clicked()
 {
     QString tag = ui->leTag->text().trimmed();
