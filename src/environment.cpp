@@ -388,6 +388,21 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     database::Transaction transaction(interfaces.recs->db);
     auto listId = interfaces.recs->GetListIdForName(params->name);
     bool result = grpcSource->GetRecommendationListFromServer(list);
+
+    QVector<core::IdPack> pack;
+    pack.resize(sourceFics.size());
+    int i = 0;
+    for(auto source: sourceFics)
+    {
+        pack[i].ffn = source;
+        i++;
+    }
+    grpcSource->GetInternalIDsForFics(&pack);
+    QSet<int> sourceSet;
+    sourceSet.reserve(sourceFics.size());
+    for(auto id: pack)
+        sourceSet.insert(id.db);
+
     if(!result)
     {
         QLOG_ERROR() << "list creation failed";
@@ -401,7 +416,10 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     interfaces.recs->DeleteList(listId);
     interfaces.recs->LoadListIntoDatabase(params);
     qDebug() << list.fics;
-    interfaces.recs->LoadListFromServerIntoDatabase(params->id, list.fics, list.matchCounts);
+    interfaces.recs->LoadListFromServerIntoDatabase(params->id,
+                                                    list.fics,
+                                                    list.matchCounts,
+                                                    sourceSet);
 
     interfaces.recs->UpdateFicCountInDatabase(params->id);
     interfaces.recs->SetCurrentRecommendationList(params->id);

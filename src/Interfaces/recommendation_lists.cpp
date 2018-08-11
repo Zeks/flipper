@@ -362,10 +362,11 @@ bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
 
 bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
                                                          const QVector<int> &fics,
-                                                         const QVector<int> &matches)
+                                                         const QVector<int> &matches,
+                                                         const QSet<int> &origins)
 {
     bool result = true;
-    result = result && database::puresql::FillFicDataForList(listId, fics, matches, db).success;
+    result = result && database::puresql::FillFicDataForList(listId, fics, matches, origins, db).success;
     return result;
 }
 

@@ -60,7 +60,7 @@ public:
     bool LoadListIntoDatabase(core::RecPtr);
     bool LoadListFromServerIntoDatabase(int listId,
                                         const QVector<int>& fics,
-                                        const QVector<int>& matches);
+                                        const QVector<int>& matches, const QSet<int> &origins);
 
 
 

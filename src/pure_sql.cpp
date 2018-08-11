@@ -2745,15 +2745,21 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
     return SqlContext<bool>(db, qs)();
 }
 
-DiagnosticSQLResult<bool> FillFicDataForList(int listId, const QVector<int> & fics, const QVector<int> & matchCounts, QSqlDatabase db)
+DiagnosticSQLResult<bool> FillFicDataForList(int listId,
+                                             const QVector<int> & fics,
+                                             const QVector<int> & matchCounts,
+                                             const QSet<int> &origins,
+                                             QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count) values(:listId, :ficId, :matchCount)");
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin) values(:listId, :ficId, :matchCount, :is_origin)");
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("listId", listId);
     for(int i = 0; i < fics.size(); i++)
     {
         ctx.bindValue("ficId", fics.at(i));
         ctx.bindValue("matchCount", matchCounts.at(i));
+        bool isOrigin = origins.contains(fics.at(i));
+        ctx.bindValue("is_origin", isOrigin);
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;

@@ -264,7 +264,11 @@ DiagnosticSQLResult<QSet<QString> > GetAllGenres(QSqlDatabase db);
 // moved them to dump temporarily
 //void RemoveAuthor(const core::Author &recommender);
 //void RemoveAuthor(int id);
-DiagnosticSQLResult<bool> FillFicDataForList(int listId, const QVector<int>&, const QVector<int>&, QSqlDatabase db);
+DiagnosticSQLResult<bool> FillFicDataForList(int listId,
+                                             const QVector<int>&,
+                                             const QVector<int>&,
+                                             const QSet<int> &origins,
+                                             QSqlDatabase db);
 
 // potentially ethically problematic. better not do this
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int>&, QSqlDatabase db);

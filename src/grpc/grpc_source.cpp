@@ -617,6 +617,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& 
         ffn->add_ffn_ids(fic);
     task.set_list_name(proto_converters::TS(recList.listParams.name));
     task.set_always_pick_at(recList.listParams.alwaysPickAt);
+    task.set_return_sources(true);
     task.set_min_fics_to_match(recList.listParams.minimumMatch);
     task.set_max_unmatched_to_one_matched(recList.listParams.pickRatio);
     auto* controls = task.mutable_controls();

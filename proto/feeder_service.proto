@@ -101,6 +101,7 @@ message RecommendationListCreationRequest{
     int32 max_unmatched_to_one_matched  = 4;
     int32 always_pick_at                = 5;
     SiteIDPack id_packs                 = 6;
+    bool return_sources                 = 7;
 }
 
 message RecommendationListCreationResponse{
