@@ -144,7 +144,7 @@ Rectangle {
 
                 verticalAlignment: Text.AlignVCenter
                 source: "qrc:/icons/icons/scan_small.png"
-                visible: false
+                visible: true
                 //visible: lvFics.showScanIcon
                 MouseArea{
                     anchors.fill : parent

@@ -1239,9 +1239,31 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 {
     TaskProgressGuard guard(this);
     QSqlDatabase db = QSqlDatabase::database();
-    env.CreateSimilarListForGivenFic(id, db);
-    ui->cbNormals->setCurrentText("");
-    OpenRecommendationList("similar");
+
+    QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+    params->minimumMatch = 1;
+    params->pickRatio = 9999;
+    params->alwaysPickAt = 1;
+    params->name = "#similarfics";
+    QString storedList = ui->cbRecGroup->currentText();
+    auto storedLists = env.interfaces.recs->GetAllRecommendationListNames(true);
+    QVector<int> sourceFics;
+    sourceFics.push_back(id);
+
+    auto result = env.BuildRecommendations(params, sourceFics, false, false);
+    Q_UNUSED(result);
+
+    auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
+    SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+    ui->cbRecGroup->setCurrentText(params->name);
+    ui->cbSortMode->setCurrentText("Rec Count");
+    on_pbLoadDatabase_clicked();
+    //env.interfaces.recs->DeleteList(result);
+    //SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(storedLists));
+    //ui->cbRecGroup->setCurrentText(storedList);
+
+
+
 }
 
 
@@ -1586,10 +1608,10 @@ void MainWindow::on_pbCreateHTML_clicked()
 void MainWindow::OnFindSimilarClicked(QVariant url)
 {
     //auto id = url_utils::GetWebId(url.toString(), "ffn");
-    auto id = env.interfaces.fanfics->GetIDFromWebID(url.toInt(),"ffn");
-    if(id == -1)
+    //auto id = env.interfaces.fanfics->GetIDFromWebID(url.toInt(),"ffn");
+    if(url == "-1")
         return;
-    CreateSimilarListForGivenFic(id);
+    CreateSimilarListForGivenFic(url.toInt());
 }
 
 void MainWindow::on_pbIgnoreFandom_clicked()

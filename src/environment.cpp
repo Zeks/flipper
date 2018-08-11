@@ -64,6 +64,12 @@ void CoreEnvironment::LoadData()
                 for(auto fic : sources)
                     userData.allTaggedFics.remove(fic);
             }
+            else
+            {
+                auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
+                for(auto fic : sources)
+                    userData.allTaggedFics.insert(fic);
+            }
         }
 
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
