@@ -152,13 +152,6 @@ private:
     // todo probably could be dropped, will need to check
     WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 
-
-    // disable the interface (to perform a lengthy task)
-    void DisableAllLoadButtons();
-
-    // enables the interface (after some task has finished)
-    void EnableAllLoadButtons();
-
     // use to actually query the search results from the database into fanfic list
     // placing results into the inetrface happens in PlaceResults
     void LoadData();
@@ -210,18 +203,6 @@ private:
     // used in recommendations page
     core::AuthorPtr LoadAuthor(QString url);
 
-    // fill a recommendation list token to be passed into recommendation builder from ui
-    QSharedPointer<core::RecommendationList> BuildRecommendationParamsFromGUI();
-
-
-
-    PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandom,
-                              QString taskComment,
-                              bool allowCacheRefresh);
-
-    // used to download the next wave of author favourites
-    void LoadMoreAuthors();
-
     // a utility to pass a functor to all the authors
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
 
@@ -246,29 +227,13 @@ private:
     // pushes fandom to top of recent and reinits the recent fandom listview
     void ReinitRecent(QString name);
 
-    // used to check for unfinished tasks on application start
-    void CheckUnfinishedTasks();
 
     bool AskYesNoQuestion(QString);
-    bool WarnCutoffLimit();
-    bool WarnFullParse();
-
-    void CrawlFandom(QString fandom);
 
     ECacheMode GetCurrentCacheMode() const;
 
     void CreateSimilarListForGivenFic(int);
 
-    void ReprocessAllAuthorsV2();
-    void ReprocessAllAuthorsJustSlash(QString fieldUsed);
-    void DetectSlashForEverythingV2();
-
-    void CreateListOfHumorCandidates(QList<core::AuthorPtr> authors);
-    void CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors);
-
-    void DoFullCycle();
-    void UseAuthorTask(PageTaskPtr);
-    ForcedFandomUpdateDate CreateForcedUpdateDateFromGUI();
     void SetClientMode();
     void ResetFilterUItoDefaults();
 
@@ -341,8 +306,6 @@ public slots:
 
     // places into the clipboard, the url of the fic clicked in qml
     void OnCopyFicUrl(QString);
-    // used to open author pages on heart click that contain the current fic in their favourites
-    void OnOpenRecommenderLinks(QString);
     // copies urls of all currently visible fics into the cliboard
     void OnCopyAllUrls();
     // used to create targeted HTML lists to put on the web
@@ -362,8 +325,6 @@ public slots:
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
 private slots:
-    // called to trudge through a fandom
-    void on_pbCrawl_clicked();
 
     // used to receive tag events from tag widget on Tags tab
     void OnTagToggled(QString, bool);
@@ -385,38 +346,13 @@ private slots:
     // and set the tracked tick for the fandom to the value from the database
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
 
-    // used to put the clicked author name into the author combobox
-    // and his url into the url lineedit
-    void OnNewSelectionInRecommenderList(const QModelIndex &current, const QModelIndex &previous);
 
     // used to toggle the tracked status for fandom on the checkbox state change
     void on_chkTrackedFandom_toggled(bool checked);
-    // used to downlaod the updates to all the tracked fandoms
-    void on_pbLoadTrackedFandoms_clicked();
-    // used to load author favourites for the url in the favourites lineedit
-    void on_pbLoadPage_clicked();
     // used to open the recommendation for the author that is already in the databse
     // (and is selected in the author list)
     void on_pbOpenRecommendations_clicked();
-    // used to full reload all authors in the current list
-    void on_pbLoadAllRecommenders_clicked();
-    // used to open favourites of all teh authors in the current list
-    void on_pbOpenWholeList_clicked();
     void OpenRecommendationList(QString);
-    // used to load the next wave of authors from LinkedAuthors
-    void on_pbFirstWave_clicked();
-
-
-
-
-    // used to create a recommendation list from GUI parameters (obscure, currently better use sources.txt)
-    void on_pbBuildRecs_clicked();
-
-    // used to open the url of the author currently selected in the favourites tab in the browser
-    void on_pbOpenAuthorUrl_clicked();
-    // probbaly legacy. Used to change the params in GUI rec list builder
-    // since tags are no longer used should be phased out
-    void on_cbRecTagBuildGroup_currentTextChanged(const QString &arg1);
 
     // misnamed. currently used to build recommedation lists from sources.txt
     void on_pbReprocessAuthors_clicked();
@@ -424,33 +360,16 @@ private slots:
     // used to put urls for all authors in the current list into the clipboard
     void OnCopyFavUrls();
 
-    // used to repopulate the interface elements dealing with recommendation lists
-    // when the current selectionc hanges in the reclist combobox
-    void on_cbRecGroup_currentIndexChanged(const QString &arg1);
 
-    // used to manually create a new list to be populated
-    void on_pbCreateNewList_clicked();
-    // used to remove recommendation list from DB
-    void on_pbRemoveList_clicked();
-    // used to add the current author from the url in favourites tab to the current reclist
-    void on_pbAddAuthorToList_clicked();
-    // used to remove the current author in favourites tab from the current reclist
-    void on_pbRemoveAuthorFromList_clicked();
-    // triggered on timer to check if there is still an unfinished task
-    void OnCheckUnfinishedTasks();
     // used to toggle the UI elements dealing with fic randomization
     void on_chkRandomizeSelection_toggled(bool checked);
 
     // used to trigger the reinit of fandoms on ffn
     void on_pbReinitFandoms_clicked();
 
-    // used to get all favourites links for the current author on favourites page
-    void OnGetAuthorFavouritesLinks();
 
-    // used to toggle enabled status of date cutoff mechanism for fandom parses
-    void on_chkCutoffLimit_toggled(bool checked);
 
-    void on_chkIgnoreUpdateDate_toggled(bool checked);
+
 
     void OnRemoveFandomFromRecentList();
     void OnRemoveFandomFromIgnoredList();
@@ -473,29 +392,7 @@ private slots:
 
     void on_pbIgnoreFandom_clicked();
 
-    void on_pbReloadAllAuthors_clicked();
-    void OnOpenAuthorListByID();
 
-    void on_pbCreateSlashList_clicked();
-
-    void on_pbProcessSlash_clicked();
-
-    void on_pbDoSlashFullCycle_clicked();
-
-    //void on_pbOneMoreCycle_clicked();
-
-    void on_pbExcludeFandomFromSlashFiltering_clicked();
-
-    void on_pbDisplayHumor_clicked();
-
-    void on_pbReloadAuthors_clicked();
-
-    void OnPerformGenreAssignment();
-    void on_leOpenFicID_returnPressed();
-
-    //void OnExportStatistics();
-
-    void on_pbComedy_clicked();
 
     void OnUpdatedProgressValue(int);
     void OnNewProgressString(QString);
@@ -530,6 +427,11 @@ private slots:
     void on_chkOtherFandoms_toggled(bool checked);
 
     void on_chkIgnoreFandoms_toggled(bool checked);
+
+    void on_pbDeleteRecList_clicked();
+
+    void on_pbGetSourceLinks_clicked();
+
 
 signals:
 

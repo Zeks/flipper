@@ -196,6 +196,12 @@ QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 
 }
 
+QVector<int> RecommendationLists::GetAllSourceFicIDs(int listId)
+{
+    auto result = database::puresql::GetAllSourceFicIDsFromRecommendationList(listId,db).data;
+    return result;
+}
+
 QHash<int, int> RecommendationLists::GetAllFicsHash(int listId, int minMatchCount)
 {
     QHash<int, int> result;
@@ -362,10 +368,11 @@ bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
 
 bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
                                                          const QVector<int> &fics,
-                                                         const QVector<int> &matches)
+                                                         const QVector<int> &matches,
+                                                         const QSet<int> &origins)
 {
     bool result = true;
-    result = result && database::puresql::FillFicDataForList(listId, fics, matches, db).success;
+    result = result && database::puresql::FillFicDataForList(listId, fics, matches, origins, db).success;
     return result;
 }
 

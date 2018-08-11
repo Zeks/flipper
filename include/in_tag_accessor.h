@@ -7,7 +7,9 @@
 #include "GlobalHeaders/SingletonHolder.h"
 struct UserData{
     QSet<int> allTaggedFics;
+    QSet<int> usedAuthors;
     QSet<int> ficIDsForActivetags;
+    QSet<int> ficsForAuthorSearch;
     QHash<int, bool> ignoredFandoms;
     QString token;
 };

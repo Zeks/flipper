@@ -66,6 +66,9 @@ public:
     Status GetDBFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
                        ProtoSpace::FicIdResponse* response) override;
 
+    Status GetFFNFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
+                       ProtoSpace::FicIdResponse* response) override;
+
 
 
     QHash<QString, StatisticsToken> tokenData;

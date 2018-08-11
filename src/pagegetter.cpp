@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlError>
 #include <QEventLoop>
 #include <QThread>
+#include <QCoreApplication>
+#include <QSettings>
 
 
 
@@ -82,7 +84,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
     {
         result = GetPageFromDB(url);
-        if(result.isValid)
+        if(result.isValid && result.generated > QDateTime::currentDateTime().addDays(-7))
         {
             result.isFromCache = true;
         }

@@ -389,10 +389,14 @@ DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
-    QString getKeyQuery = QString("Select ( select count(id) from FANFICS where  %1_id = :site_id) as COUNT_NAMED,"
-                                  " ( select count(id) from FANFICS where  %1_id = :site_id and (updated <> :updated or updated is null)) as count_updated").arg(fic->webSite);
+    QString getKeyQuery = QString("Select ( select count(id) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
+                                  " ( select count(id) from FANFICS where  %1_id = :site_id2 "
+                                  "and (updated <> :updated or updated is null)) as count_updated").arg(fic->webSite);
 
-    SqlContext<bool> ctx(db, getKeyQuery, {{"updated", fic->updated}, {"site_id", fic->webId}});
+    SqlContext<bool> ctx(db, getKeyQuery);
+    ctx.bindValue("site_id1", fic->webId);
+    ctx.bindValue("site_id2", fic->webId);
+    ctx.bindValue("updated", fic->updated);
     if(!fic)
         return ctx.result;
 
@@ -407,7 +411,8 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
 
     bool requiresInsert = countNamed == 0;
     bool requiresUpdate = countUpdated > 0;
-
+    if(fic->fandom.contains("Greatest Showman"))
+        qDebug() << fic->fandom;
     if(alwaysUpdateIfNotInsert || (!requiresInsert && requiresUpdate))
         fic->updateMode = core::UpdateMode::update;
     if(requiresInsert)
@@ -420,10 +425,10 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
 {
     QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
-                    " wcr, reviewstofavourites, age, daysrunning, at_chapter, lastupdate ) "
+                    " wcr, reviewstofavourites, age, daysrunning, at_chapter, lastupdate, fandom1, fandom2 ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
                     " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,"
-                    " :wcr, :reviewstofavourites, :age, :daysrunning, 0, date('now'))";
+                    " :wcr, :reviewstofavourites, :age, :daysrunning, 0, date('now'), :fandom1, :fandom2)";
     query=query.arg(section->webSite);
 
     SqlContext<bool> ctx(db, query);
@@ -447,6 +452,15 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
     ctx.bindValue("reviewstofavourites",section->calcStats.reviewsTofavourites);
     ctx.bindValue("age",section->calcStats.age);
     ctx.bindValue("daysrunning",section->calcStats.daysRunning);
+    if(section->fandomIds.size() > 0)
+        ctx.bindValue("fandom1",section->fandomIds.at(0));
+    else
+        ctx.bindValue("fandom1",-1);
+    if(section->fandomIds.size() > 1)
+        ctx.bindValue("fandom2",section->fandomIds.at(1));
+    else
+        ctx.bindValue("fandom2",-1);
+
     return ctx();
 }
 DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
@@ -454,7 +468,9 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
     QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
                     "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
                     "summary = :summary, genres= :genres, published = :published, updated = :updated, author_id = :author_id,"
-                    "wcr= :wcr,  author= :author, title= :title, reviewstofavourites = :reviewstofavourites, age = :age, daysrunning = :daysrunning, lastupdate = date('now')"
+                    "wcr= :wcr,  author= :author, title= :title, reviewstofavourites = :reviewstofavourites, "
+                    "age = :age, daysrunning = :daysrunning, lastupdate = date('now'),"
+                    " fandom1 = :fandom1, fandom2 = :fandom2 "
                     " where %1_id = :site_id";
     query=query.arg(section->webSite);
     SqlContext<bool> ctx(db, query);
@@ -478,6 +494,14 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
     ctx.bindValue("reviewstofavourites",section->calcStats.reviewsTofavourites);
     ctx.bindValue("age",section->calcStats.age);
     ctx.bindValue("daysrunning",section->calcStats.daysRunning);
+    if(section->fandomIds.size() > 0)
+        ctx.bindValue("fandom1",section->fandomIds.at(0));
+    else
+        ctx.bindValue("fandom1",-1);
+    if(section->fandomIds.size() > 1)
+        ctx.bindValue("fandom2",section->fandomIds.at(1));
+    else
+        ctx.bindValue("fandom2",-1);
     ctx.ExecAndCheck();
     return ctx.result;
 }
@@ -511,6 +535,22 @@ DiagnosticSQLResult<int>  GetAuthorIdFromWebID(int id, QString website, QSqlData
     return ctx.result;
 }
 
+
+DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase db)
+{
+    auto* userThreadData = ThreadData::GetUserData();
+    userThreadData->ficsForAuthorSearch = fics;
+    QString qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
+    SqlContext<QSet<int>> ctx(db, qs);
+    ctx.FetchLargeSelectIntoList<int>("author_d", qs, "",[](QSqlQuery& q){
+        return q.value("author_id").toInt();
+    });
+    ctx.result.data.remove(0);
+    return ctx.result;
+
+}
+
+
 DiagnosticSQLResult<bool> AssignNewNameToAuthorWithId(core::AuthorPtr author, QSqlDatabase db)
 {
     QString qs = " UPDATE recommenders SET name = :name where id = :id";
@@ -542,16 +582,23 @@ core::AuthorPtr AuthorFromQuery(QSqlQuery& q)
     result->AssignId(q.value("id").toInt());
     result->name = q.value("name").toString();
     result->recCount = q.value("rec_count").toInt();
+    result->stats.favouritesLastUpdated = q.value("last_favourites_update").toDateTime().date();
+    result->stats.favouritesLastChecked = q.value("last_favourites_checked").toDateTime().date();
     ProcessIdsFromQuery(result, q);
     return result;
 }
 
 
-DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSqlDatabase db)
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSqlDatabase db, int limit)
 {
     QString qs = QString("select distinct id,name, url, ffn_id, ao3_id,sb_id, sv_id,  "
-                         "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
-                         " from recommenders where website_type = :site order by id");
+                         "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count,"
+                         " last_favourites_update, last_favourites_checked "
+                         " from recommenders where website_type = :site order by id %1");
+    if(limit > 0)
+        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+    else
+        qs = qs.arg("");
 
     //!!! bindvalue incorrect for first query?
     SqlContext<QList<core::AuthorPtr>> ctx(db, qs, {{"site",website}});
@@ -562,11 +609,47 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSql
 }
 
 
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QString website,
+                                                                            QDateTime date,
+                                                                            QSqlDatabase db,
+                                                                            int limit)
+{
+    //todo fix reccount, needs to be precalculated in recommenders table
+
+    QString qs = QString("select distinct id,name, url, "
+                         "ffn_id, ao3_id,sb_id, sv_id, "
+                         " last_favourites_update, last_favourites_checked, "
+                         "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
+                         " from recommenders where website_type = :site "
+                         " and last_favourites_update > :date "
+                         "order by id %1");
+    if(limit > 0)
+        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+    else
+        qs = qs.arg("");
+
+
+    SqlContext<QList<core::AuthorPtr>> ctx(db, qs);
+    ctx.bindValue("site",website);
+    ctx.bindValue("date",date);
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
+                                                  "select count(id) from recommenders where website_type = :site",
+                                                  [](QSqlQuery& q){
+        return AuthorFromQuery(q);
+    });
+
+
+    return ctx.result;
+}
+
+
+
 
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db)
 {
     QString qs = QString("select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
-                         "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
+                         "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count, "
+                         " last_favourites_update, last_favourites_checked "
                          " from recommenders "
                          "where id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id )");
 
@@ -582,7 +665,10 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int 
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QString website, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,name, url, website_type, ffn_id, ao3_id,sb_id, sv_id from recommenders where %1_id is not null and name = :name");
+    QString qs = QString("select id,"
+                         "name, url, website_type, ffn_id, ao3_id,sb_id, sv_id,"
+                         " last_favourites_update, last_favourites_checked "
+                         " from recommenders where %1_id is not null and name = :name");
     qs=qs.arg(website);
 
     SqlContext<core::AuthorPtr> ctx(db, qs, {{"site",website},{"name",name}});
@@ -594,7 +680,8 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QSt
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString website, QSqlDatabase db)
 {
     QString qs = QString("select r.id,r.name, r.url, r.website_type, r.ffn_id, r.ao3_id,r.sb_id, r.sv_id, "
-                         " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count "
+                         " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count,"
+                         " last_favourites_update, last_favourites_checked "
                          "from recommenders r where %1_id is not null and %1_id = :id");
     qs=qs.arg(website);
     SqlContext<core::AuthorPtr> ctx(db, qs, {{"site",website},{"id",id}});
@@ -674,7 +761,8 @@ DiagnosticSQLResult<QHash<int, QSet<int>>> LoadFullFavouritesHashset(QSqlDatabas
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByUrl(QString url, QSqlDatabase db)
 {
     QString qs = QString("select r.id,name, r.url, r.ffn_id, r.ao3_id, r.sb_id, r.sv_id, "
-                         " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count "
+                         " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count,"
+                         " last_favourites_update, last_favourites_checked "
                          " from recommenders r where url = :url");
 
     SqlContext<core::AuthorPtr> ctx(db, qs, {{"url",url}});
@@ -687,7 +775,8 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByUrl(QString url, QSqlDatabase db
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorById(int id, QSqlDatabase db)
 {
     QString qs = QString("select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
-                         "(select count(fic_id) from recommendations where recommender_id = :id) as rec_count "
+                         "(select count(fic_id) from recommendations where recommender_id = :id) as rec_count, "
+                         " last_favourites_update, last_favourites_checked "
                          "from recommenders where id = :id");
 
     SqlContext<core::AuthorPtr> ctx(db, qs, {{"id",id}});
@@ -791,6 +880,18 @@ DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId,
     ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
     return ctx.result;
 }
+
+DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId, QSqlDatabase db)
+{
+    QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id and is_origin = 1");
+    SqlContext<QVector<int>> ctx(db);
+    ctx.bindValue("list_id",listId);
+    ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+    return ctx.result;
+}
+
+
+
 
 DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db, int minMatchCount)
 {
@@ -1004,21 +1105,23 @@ DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime t
 {
 
     QString qs = " insert into recommenders(name, url, favourites, fics, page_updated, ffn_id, ao3_id,sb_id, sv_id, "
-                 "page_creation_date, info_updated) "
+                 "page_creation_date, info_updated, last_favourites_update,last_favourites_checked) "
                  "values(:name, :url, :favourites, :fics,  :time, :ffn_id, :ao3_id,:sb_id, :sv_id, "
-                 ":page_creation_date, :info_updated) ";
+                 ":page_creation_date, :info_updated,:last_favourites_update,:last_favourites_checked) ";
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("name", author->name);
-    ctx.bindValue("time", timestamp);
     ctx.bindValue("url", author->url("ffn"));
     ctx.bindValue("favourites", author->favCount);
     ctx.bindValue("fics", author->ficCount);
+    ctx.bindValue("time", timestamp);
     ctx.bindValue("ffn_id", author->GetWebID("ffn"));
     ctx.bindValue("ao3_id", author->GetWebID("ao3"));
     ctx.bindValue("sb_id", author->GetWebID("sb"));
     ctx.bindValue("sv_id", author->GetWebID("sv"));
     ctx.bindValue("page_creation_date", author->stats.pageCreated);
     ctx.bindValue("info_updated", author->stats.bioLastUpdated);
+    ctx.bindValue("last_favourites_update", author->stats.favouritesLastUpdated);
+    ctx.bindValue("last_favourites_checked", author->stats.favouritesLastChecked);
     ctx.ExecAndCheck();
     return ctx.result;
 }
@@ -1026,22 +1129,27 @@ DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime t
 DiagnosticSQLResult<bool>  UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
 
-    QString qs = " update recommenders set name = :name, url = :url, favourites = :favourites, fics = :fics, page_updated = :time, "
+    QString qs = " update recommenders set name = :name, url = :url, favourites = :favourites, fics = :fics, page_updated = :page_updated, "
                  "page_creation_date= :page_creation_date, info_updated= :info_updated, "
-                 " ffn_id = :ffn_id, ao3_id = :ao3_id, sb_id  =:sb_id, sv_id = :sv_id where id = :id ";
+                 " ffn_id = :ffn_id, ao3_id = :ao3_id, sb_id  =:sb_id, sv_id = :sv_id,"
+                 " last_favourites_update = :last_favourites_update, "
+                 " last_favourites_checked = :last_favourites_checked "
+                 " where id = :id ";
     SqlContext<bool> ctx(db, qs);
-    ctx.bindValue("id", author->id);
     ctx.bindValue("name", author->name);
-    ctx.bindValue("time", timestamp);
     ctx.bindValue("url", author->url("ffn"));
-    ctx.bindValue("favourites", author->favCount);
+    ctx.bindValue("favourites", author->stats.favouriteStats.favourites);
     ctx.bindValue("fics", author->ficCount);
+    ctx.bindValue("page_updated", timestamp);
+    ctx.bindValue("page_creation_date", author->stats.pageCreated);
+    ctx.bindValue("info_updated", author->stats.bioLastUpdated);
     ctx.bindValue("ffn_id", author->GetWebID("ffn"));
     ctx.bindValue("ao3_id", author->GetWebID("ao3"));
     ctx.bindValue("sb_id", author->GetWebID("sb"));
     ctx.bindValue("sv_id", author->GetWebID("sv"));
-    ctx.bindValue("page_creation_date", author->stats.pageCreated);
-    ctx.bindValue("info_updated", author->stats.bioLastUpdated);
+    ctx.bindValue("last_favourites_update", author->stats.favouritesLastUpdated);
+    ctx.bindValue("last_favourites_checked", author->stats.favouritesLastChecked);
+    ctx.bindValue("id", author->id);
     ctx.ExecAndCheck();
 
     //not reading those yet
@@ -1055,6 +1163,22 @@ DiagnosticSQLResult<bool>  UpdateAuthorRecord(core::AuthorPtr author, QDateTime 
 
     return ctx.result;
 }
+
+DiagnosticSQLResult<bool> UpdateAuthorFavouritesUpdateDate(int authorId, QDateTime date, QSqlDatabase db)
+{
+    QString qs = " update recommenders set"
+                 " last_favourites_update = :last_favourites_update, "
+                 " last_favourites_checked = :last_favourites_checked "
+                 "where id = :id ";
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("id", authorId);
+    ctx.bindValue("last_favourites_update", date);
+    ctx.bindValue("last_favourites_checked", QDateTime::currentDateTime());
+    ctx.ExecAndCheck();
+
+    return ctx.result;
+}
+
 
 DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
 {
@@ -1184,6 +1308,31 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
     ctx1.result.oracleError = ctx.result.oracleError;
     return ctx1.result;
 }
+
+DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, QSqlDatabase db)
+{
+    SqlContext<int> ctx(db);
+
+    for(int id: hash.keys())
+    {
+        ctx.bindValue("id", id);
+        ctx.FetchSingleValue<int>("ffn_id", -1,"select ffn_id from fanfics where id = :id");
+        QString error = ctx.result.oracleError;
+        if(!error.isEmpty() && error != "no data to read")
+        {
+            ctx.result.success = false;
+            break;
+        }
+        hash[id] = ctx.result.data;
+    }
+
+    SqlContext<bool> ctx1(db);
+    ctx1.result.success = ctx.result.success;
+    ctx1.result.oracleError = ctx.result.oracleError;
+    return ctx1.result;
+}
+
+
 
 DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
 {
@@ -2649,15 +2798,21 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
     return SqlContext<bool>(db, qs)();
 }
 
-DiagnosticSQLResult<bool> FillFicDataForList(int listId, const QVector<int> & fics, const QVector<int> & matchCounts, QSqlDatabase db)
+DiagnosticSQLResult<bool> FillFicDataForList(int listId,
+                                             const QVector<int> & fics,
+                                             const QVector<int> & matchCounts,
+                                             const QSet<int> &origins,
+                                             QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count) values(:listId, :ficId, :matchCount)");
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin) values(:listId, :ficId, :matchCount, :is_origin)");
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("listId", listId);
     for(int i = 0; i < fics.size(); i++)
     {
         ctx.bindValue("ficId", fics.at(i));
         ctx.bindValue("matchCount", matchCounts.at(i));
+        bool isOrigin = origins.contains(fics.at(i));
+        ctx.bindValue("is_origin", isOrigin);
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;
@@ -2863,6 +3018,7 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
 
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
+
 
 
 

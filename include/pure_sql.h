@@ -130,12 +130,15 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
 DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<int> GetAuthorIdFromUrl(QString url, QSqlDatabase db);
 DiagnosticSQLResult<int> GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>> GetAuthorsForFics(QSet<int>, QSqlDatabase db);
 DiagnosticSQLResult<bool>  AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
 
 DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString, QSqlDatabase db);
 DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int> &, QSqlDatabase db);
+DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int> &, QSqlDatabase db);
+
 DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>, QSqlDatabase db);
 
@@ -145,8 +148,11 @@ DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase
 
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
 
-DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website,  QSqlDatabase db);
+DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website, QSqlDatabase db,  int limit = 0);
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QString website, QDateTime date, QSqlDatabase db,  int limit = 0);
+
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
+
 
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString website,  QSqlDatabase db);
@@ -194,6 +200,8 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
 DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
 
 DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db);
+DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId, QSqlDatabase db);
+
 DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db, int minMatchCount = 0);
 DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db);
 
@@ -249,6 +257,8 @@ DiagnosticSQLResult<QVector<int> > GetWebIdList(QString where, QString website, 
 DiagnosticSQLResult<bool> DeactivateStory(int id, QString website, QSqlDatabase db);
 
 DiagnosticSQLResult<bool> UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
+DiagnosticSQLResult<bool> UpdateAuthorFavouritesUpdateDate(int authorId, QDateTime date, QSqlDatabase db);
+
 DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db);
 DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db);
 DiagnosticSQLResult<bool> PushTaglistIntoDatabase(QStringList, QSqlDatabase);
@@ -259,7 +269,11 @@ DiagnosticSQLResult<QSet<QString> > GetAllGenres(QSqlDatabase db);
 // moved them to dump temporarily
 //void RemoveAuthor(const core::Author &recommender);
 //void RemoveAuthor(int id);
-DiagnosticSQLResult<bool> FillFicDataForList(int listId, const QVector<int>&, const QVector<int>&, QSqlDatabase db);
+DiagnosticSQLResult<bool> FillFicDataForList(int listId,
+                                             const QVector<int>&,
+                                             const QVector<int>&,
+                                             const QSet<int> &origins,
+                                             QSqlDatabase db);
 
 // potentially ethically problematic. better not do this
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int>&, QSqlDatabase db);

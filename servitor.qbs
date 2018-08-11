@@ -4,43 +4,47 @@ import "BaseDefines.qbs" as App
 
 
 App{
-name: "servitor"
-consoleApplication:false
-type:"application"
-qbsSearchPaths: sourceDirectory + "/modules"
-Depends { name: "Qt.core"}
-Depends { name: "Qt.sql" }
-Depends { name: "Qt.core" }
-Depends { name: "Qt.widgets" }
-Depends { name: "Qt.network" }
-Depends { name: "Qt.gui" }
-Depends { name: "Qt.quick" }
-Depends { name: "Qt.concurrent" }
-Depends { name: "Qt.quickwidgets" }
-Depends { name: "cpp" }
-Depends { name: "logger" }
+    name: "servitor"
+    consoleApplication:false
+    type:"application"
+    qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]
+    Depends { name: "Qt.core"}
+    Depends { name: "Qt.sql" }
+    Depends { name: "Qt.core" }
+    Depends { name: "Qt.widgets" }
+    Depends { name: "Qt.network" }
+    Depends { name: "Qt.gui" }
+    Depends { name: "Qt.quick" }
+    Depends { name: "Qt.concurrent" }
+    Depends { name: "Qt.quickwidgets" }
+    Depends { name: "cpp" }
+    Depends { name: "logger" }
+    Depends { name: "UniversalModels" }
+    Depends { name: "proto_generation" }
+    Depends { name: "grpc_generation" }
 
-cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
-cpp.includePaths: [
-    sourceDirectory,
-    sourceDirectory + "/../",
-    sourceDirectory + "/include",
-    sourceDirectory + "/libs",
-    sourceDirectory + "/third_party/zlib",
-    sourceDirectory + "/libs/Logger/include",
-]
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
+    cpp.includePaths: [
+        sourceDirectory,
+        sourceDirectory + "/../",
+        sourceDirectory + "/include",
+        sourceDirectory + "/libs",
+        sourceDirectory + "/third_party/zlib",
+        sourceDirectory + "/libs/Logger/include",
+    ]
     cpp.minimumWindowsVersion: "6.0"
-files: [
+    files: [
         "UI/servitorwindow.ui",
         "include/core/fic_genre_data.h",
         "include/servitorwindow.h",
         "src/main_servitor.cpp",
         "src/servitorwindow.cpp",
-        "include/Interfaces/data_source.h",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",
         "include/Interfaces/genres.h",
         "include/Interfaces/fandoms.h",
+        "include/Interfaces/tags.h",
+        "src/Interfaces/tags.cpp",
         "include/Interfaces/fanfics.h",
         "include/Interfaces/ffn/ffn_fanfics.h",
         "include/Interfaces/ffn/ffn_authors.h",
@@ -82,6 +86,8 @@ files: [
         "include/transaction.h",
         "src/pagetask.cpp",
         "include/pagetask.h",
+        "include/Interfaces/pagetask_interface.h",
+        "src/Interfaces/pagetask_interface.cpp",
         "include/favholder.h",
         "src/favholder.cpp",
         "include/tokenkeeper.h",
@@ -91,25 +97,75 @@ files: [
         "src/Interfaces/ffn/ffn_fanfics.cpp",
         "src/servers/database_context.cpp",
         "include/servers/database_context.h",
+        "include/pagegetter.h",
+        "src/pagegetter.cpp",
+        "include/parsers/ffn/favparser.h",
+        "src/parsers/ffn/favparser.cpp",
+        "src/parsers/ffn/fandomparser.cpp",
+        "include/parsers/ffn/fandomparser.h",
+        "src/parsers/ffn/ffnparserbase.cpp",
+        "include/parsers/ffn/ffnparserbase.h",
+        "include/page_utils.h",
+        "include/pageconsumer.h",
+        "src/pageconsumer.cpp",
+        "src/page_utils.cpp",
+        "src/tasks/recommendations_reload_precessor.cpp",
+        "include/tasks/recommendations_reload_precessor.h",
+        "src/tasks/author_task_processor.cpp",
+        "include/tasks/author_task_processor.h",
+        "src/tasks/fandom_task_processor.cpp",
+        "include/tasks/fandom_task_processor.h",
+        "src/environment.cpp",
+        "include/environment.h",
+        "include/grpc/grpc_source.h",
+        "include/Interfaces/data_source.h",
+        "src/grpc/grpc_source.cpp",
     ]
 
-cpp.staticLibraries: {
-    //var libs = ["UniversalModels", "logger", "quazip"]
-    var libs = []
-    if(qbs.toolchain.contains("msvc"))
-        libs = ["logger"]
-    else{
-        libs = ["logger", "dl", "protobuf"]
-    }
-    libs = libs.concat(conditionals.zlib)
-    libs = libs.concat(conditionals.ssl)
+    cpp.staticLibraries: {
+        //var libs = ["UniversalModels", "logger", "quazip"]
+        var libs = []
+        if(qbs.toolchain.contains("msvc"))
+            libs = ["logger"]
+        else{
+            libs = ["logger", "dl", "protobuf"]
+        }
+        libs = libs.concat(conditionals.zlib)
+        libs = libs.concat(conditionals.ssl)
 
-    if(qbs.toolchain.contains("msvc"))
-        libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
-    if(qbs.toolchain.contains("msvc"))
-        libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
-    else
-        libs = libs.concat(["grpc", "grpc++", "gpr"])
-    return libs
-}
+        if(qbs.toolchain.contains("msvc"))
+            libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
+        if(qbs.toolchain.contains("msvc"))
+            libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
+        else
+            libs = libs.concat(["grpc", "grpc++", "gpr"])
+        return libs
+    }
+
+
+    Group{
+        name:"grpc files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        grpc_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        grpc_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        grpc_generation.toolchain : qbs.toolchain
+        files: [
+            "proto/feeder_service.proto",
+        ]
+        fileTags: ["grpc", "proto"]
+    }
+    Group{
+        name:"proto files"
+        proto_generation.rootDir: conditionals.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.toolchain : qbs.toolchain
+        files: [
+            "proto/filter.proto",
+            "proto/fanfic.proto",
+            "proto/fandom.proto",
+        ]
+        fileTags: ["proto"]
+    }
 }

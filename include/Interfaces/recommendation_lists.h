@@ -60,7 +60,7 @@ public:
     bool LoadListIntoDatabase(core::RecPtr);
     bool LoadListFromServerIntoDatabase(int listId,
                                         const QVector<int>& fics,
-                                        const QVector<int>& matches);
+                                        const QVector<int>& matches, const QSet<int> &origins);
 
 
 
@@ -79,6 +79,7 @@ public:
     core::AuhtorStatsPtr GetIndividualAuthorStatsForList(int id, int authorId);
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId);
+    QVector<int> GetAllSourceFicIDs(int listId);
     QHash<int, int> GetAllFicsHash(int listId, int minMatchCount = 0);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);

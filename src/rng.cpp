@@ -9,10 +9,15 @@ QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken,
     QString where = userToken + query->str;
     for(auto bind: query->bindings)
         where += bind.key + bind.value.toString().left(30);
+{
+        // locking to make sure it's not modified when we search
+        QReadLocker locker(&lock);
+        containsWhere = randomIdLists.contains(where);
+
+}
 
     //QLOG_INFO() << "RANDOM USING WHERE:" <<
-    //QLOG_INFO() << "random token: " << where;
-    if(!randomIdLists.contains(where))
+    if(!containsWhere)
     {
         auto idList = portableDBInterface->GetIdListForQuery(query);
         if(idList.size() == 0)

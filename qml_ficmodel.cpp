@@ -74,7 +74,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
         if(role == LanguageRole)
             return QString("");
         if(role == RealGenreRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toString().split(",");
+            return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toString().split(",", QString::SkipEmptyParts);
 //        if(role == FicIdRole)
 //            return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toInt();
         if(role == CurrentChapterRole)

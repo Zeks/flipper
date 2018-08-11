@@ -9,6 +9,7 @@ Rectangle {
     property string delAuthor : author
     //property string delFicId: ficId
     property int delRow : rownum
+    property bool hasRealGenres : false
     property int indexOfThisDelegate: index
     signal mouseClicked
     MouseArea{
@@ -26,7 +27,7 @@ Rectangle {
         //print("changing z for: " + index + " to: " + newZ)
         return lvFics.currentIndex === index ? 10 : 1
     }
-    height:mainLayout.height > (tagColumn.height + genreTagList1.height) ? mainLayout.height + 30 : (tagColumn.height + genreTagList1.height) + 10
+    height: mainLayout.height > (tagColumn.height + genreTagList1.height) ? mainLayout.height + 30 : (tagColumn.height + genreTagList1.height) + 10
     clip: false
     id: delegateItem
     color: "#B0E0E6FF"
@@ -114,8 +115,9 @@ Rectangle {
         anchors.topMargin: 10
         anchors.left: parent.left
         anchors.leftMargin: 30
-        anchors.right: genreTagList1.left
-        anchors.rightMargin: 69
+        width: 600
+        //        anchors.right: genreTagList1.left
+        //        anchors.rightMargin: 69
         RowLayout {
             id: rowTitle
 
@@ -142,7 +144,7 @@ Rectangle {
 
                 verticalAlignment: Text.AlignVCenter
                 source: "qrc:/icons/icons/scan_small.png"
-                visible: false
+                visible: true
                 //visible: lvFics.showScanIcon
                 MouseArea{
                     anchors.fill : parent
@@ -287,16 +289,19 @@ Rectangle {
                 visible: false
             }
         }
-
-        Text {
-            id: txtSummary
-            width: 604
-            height: 33
-            text: summary
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            wrapMode: Text.WordWrap
-            font.pixelSize: 16
+        Item{
+            height: txtSummary.height
+            width: parent.width
+            Text {
+                id: txtSummary
+                text: summary
+                width: parent.width
+                horizontalAlignment: Text.AlignJustify
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: 16
+            }
         }
 
         RowLayout {
@@ -401,13 +406,21 @@ Rectangle {
                 font.pixelSize: 16
             }
 
-            Text {
-                id: txtCharacters
-                height: 24
-                text: characters
-                verticalAlignment: Text.AlignVCenter
-                font.pixelSize: 16
+            Item{
+                height: txtCharacters.height
+                width: parent.width
+                Text {
+                    id: txtCharacters
+                    text: characters
+                    width: 350
+                    horizontalAlignment: Text.AlignJustify
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    elide: Text.ElideRight
+                    font.pixelSize: 16
+                }
             }
+
         }
     }
 

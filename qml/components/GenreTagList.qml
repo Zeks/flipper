@@ -10,7 +10,12 @@ Item {
         id:tsGenre
         tagName: "Genre"
         currentChoices: {
-            if(mainWindow.detailedGenreMode)
+            if(realGenre.length > 0)
+                delegateItem.hasRealGenres = true
+            else
+                delegateItem.hasRealGenres = false
+            //console.log(realGenre, " Length: ", realGenre.length , " Has real genres: ", delegateItem.hasRealGenres)
+            if(mainWindow.detailedGenreMode && delegateItem.hasRealGenres)
                 return realGenre
             else
                 return genre

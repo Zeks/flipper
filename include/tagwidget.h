@@ -39,6 +39,7 @@ public:
     QStringList GetSelectedTags();
     QStringList GetAllTags();
     void SetAddDialogVisibility(bool);
+    bool UseTagsForAuthors();
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
 private:

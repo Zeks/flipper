@@ -19,7 +19,7 @@ App{
     Depends { name: "logger" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
-    Depends { name: "grpc_generation" }
+
     Depends { name: "projecttype" }
 
     Precompiled{condition:conditionals.usePrecompiledHeader}

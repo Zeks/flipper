@@ -55,6 +55,8 @@ public:
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
+    bool GetFFNIDsForFics(QVector<core::IdPack>*);
+
     ServerStatus GetStatus();
 
     QString userToken;

@@ -785,16 +785,26 @@ TagFilteringClient::~TagFilteringClient()
 QString TagFilteringClient::GetString(StoryFilter filter)
 {
     QString queryString;
-    if(filter.mode == core::StoryFilter::filtering_in_fics && filter.activeTagsCount > 0)
-        queryString += QString(" and cfInActiveTags(f.id) = 1 ").arg(userToken);
+    if(filter.tagsAreUsedForAuthors)
+    {
+        queryString += QString(" and cfInLikedAuthors(f.author_id) > 0 ");
+        if(!filter.ignoreAlreadyTagged)
+            queryString += QString(" and cfInTags(f.id) = 0 ");
+    }
     else
     {
-        if(filter.ignoreAlreadyTagged || filter.allTagsCount == 0)
-            queryString += QString("");
+        if(filter.mode == core::StoryFilter::filtering_in_fics && filter.activeTagsCount > 0)
+            queryString += QString(" and cfInActiveTags(f.id) = 1 ").arg(userToken);
         else
-            queryString += QString(" and cfInTags(f.id) = 0 ").arg(userToken);
-
+        {
+            if(filter.ignoreAlreadyTagged || filter.allTagsCount == 0)
+                queryString += QString("");
+            else
+                queryString += QString(" and cfInTags(f.id) = 0 ").arg(userToken);
+        }
     }
+
+
     return queryString;
 }
 

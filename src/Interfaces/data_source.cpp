@@ -107,6 +107,11 @@ int FicSourceDirect::GetFicCount(core::StoryFilter filter)
     return result;
 }
 
+//QSet<int> FicSourceDirect::GetAuthorsForFics(QSet<int> ficIDsForActivetags)
+//{
+
+//}
+
 void FicSourceDirect::InitQueryType(bool client, QString userToken)
 {
     queryBuilder.InitTagFilterBuilder(client, userToken);
@@ -117,11 +122,12 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
 {
     if(!data)
         return;
-
+    QLOG_INFO() << "Starting to build query";
     auto q = BuildQuery(searchfilter);
+    QLOG_INFO() << "Build query: success";
     q.setForwardOnly(true);
     q.exec();
-    //qDebug().noquote() << q.lastQuery();
+    QLOG_INFO() << "Exec query: success";
     if(q.lastError().isValid())
     {
         qDebug() << " ";
@@ -142,12 +148,12 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
         if(filterOk)
             data->push_back(fic);
         if(counter%10000 == 0)
-            qDebug() << "tick " << counter/1000;
+            QLOG_INFO_PURE() << "tick " << counter/1000;
     }
     QLOG_INFO_PURE() << "EXECUTED QUERY:" << q.lastQuery();
     if(data->size() > 0)
         lastFicId = (*data)[data->size() - 1].id;
-    qDebug() << "loaded fics:" << counter;
+    QLOG_INFO_PURE() << "loaded fics:" << counter;
 }
 
 FicFilterSlash::FicFilterSlash()

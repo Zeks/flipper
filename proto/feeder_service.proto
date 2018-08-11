@@ -101,6 +101,7 @@ message RecommendationListCreationRequest{
     int32 max_unmatched_to_one_matched  = 4;
     int32 always_pick_at                = 5;
     SiteIDPack id_packs                 = 6;
+    bool return_sources                 = 7;
 }
 
 message RecommendationListCreationResponse{
@@ -148,7 +149,7 @@ message StatusResponse{
 // can't leave fandom information on user side
 // because I dont want users to parse anything
 
-// same thing for genres, prbbaly better to receive the on launch
+// same thing for genres, probbaly better to receive the on launch
 
 
 // RecommendationListsFandoms needs to be returned with recommendation list data
@@ -161,4 +162,5 @@ service Feeder {
     rpc SyncFandomList(SyncFandomListTask) returns (SyncFandomListResponse) {}
     rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
     rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
+    rpc GetFFNFicIDS(FicIdRequest) returns (FicIdResponse) {}
 }

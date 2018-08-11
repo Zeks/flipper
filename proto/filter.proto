@@ -110,4 +110,5 @@ message Filter{
     TagFilter tag_filter                        = 9;
     SlashFilter slash_filter                    = 10;
     Recommendations recommendations             = 11;
+    bool tags_are_for_authors                   = 12;
 }

@@ -25,6 +25,8 @@
 #include <QTextCodec>
 #include <QSettings>
 #include <QMessageBox>
+#include <QFile>
+#include <QCoreApplication>
 
 
 void CoreEnvironment::InitMetatypes()
@@ -45,7 +47,31 @@ void CoreEnvironment::LoadData()
         UserData userData;
         userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
         if(filter.activeTags.size() > 0)
+        {
             userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+            if(userData.ficIDsForActivetags.size() == 0)
+            {
+                QMessageBox::warning(nullptr, "Warning!", "There are no fics tagged with selected tag(s)\nAborting search.");
+                return;
+            }
+
+        }
+        else
+        {
+            if(filter.showRecSources)
+            {
+                auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
+                for(auto fic : sources)
+                    userData.allTaggedFics.remove(fic);
+            }
+            else
+            {
+                auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
+                for(auto fic : sources)
+                    userData.allTaggedFics.insert(fic);
+            }
+        }
+
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
     }
@@ -366,7 +392,9 @@ QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
     return sourceList;
 }
 
-int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics)
+int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,
+                                                     QVector<int> sourceFics,
+                                                     bool automaticLike)
 {
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     RecommendationListGRPC list;
@@ -377,6 +405,21 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     database::Transaction transaction(interfaces.recs->db);
     auto listId = interfaces.recs->GetListIdForName(params->name);
     bool result = grpcSource->GetRecommendationListFromServer(list);
+
+    QVector<core::IdPack> pack;
+    pack.resize(sourceFics.size());
+    int i = 0;
+    for(auto source: sourceFics)
+    {
+        pack[i].ffn = source;
+        i++;
+    }
+    grpcSource->GetInternalIDsForFics(&pack);
+    QSet<int> sourceSet;
+    sourceSet.reserve(sourceFics.size());
+    for(auto id: pack)
+        sourceSet.insert(id.db);
+
     if(!result)
     {
         QLOG_ERROR() << "list creation failed";
@@ -390,7 +433,10 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     interfaces.recs->DeleteList(listId);
     interfaces.recs->LoadListIntoDatabase(params);
     qDebug() << list.fics;
-    interfaces.recs->LoadListFromServerIntoDatabase(params->id, list.fics, list.matchCounts);
+    interfaces.recs->LoadListFromServerIntoDatabase(params->id,
+                                                    list.fics,
+                                                    list.matchCounts,
+                                                    sourceSet);
 
     interfaces.recs->UpdateFicCountInDatabase(params->id);
     interfaces.recs->SetCurrentRecommendationList(params->id);
@@ -402,6 +448,12 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     {
         emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;") + " " + QString::number(list.matchReport[key]) + "<br>");
     }
+    if(automaticLike)
+    {
+        for(auto fic: sourceSet)
+            interfaces.tags->SetTagForFic(fic, "Liked");
+    }
+
     transaction.finalize();
     return params->id;
 }
@@ -462,13 +514,16 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
 }
 
 
-int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics, bool clearAuthors)
+int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params,
+                                          QVector<int> sourceFics,
+                                          bool automaticLike,
+                                          bool clearAuthors)
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     int result = -1;
     if(settings.value("Settings/thinClient").toBool())
     {
-        result =  BuildRecommendationsServerFetch(params,sourceFics);
+        result =  BuildRecommendationsServerFetch(params,sourceFics, automaticLike);
     }
     else
         result = BuildRecommendationsLocalVersion(params, clearAuthors);
@@ -532,10 +587,32 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     params->tagToUse = "generictag";
     params->pickRatio = 9999999999;
     interfaces.tags->SetTagForFic(id, "generictag");
-    BuildRecommendations(params, {id} ,!authorsLoaded);
+    BuildRecommendations(params, {id}, false, !authorsLoaded);
     interfaces.tags->DeleteTag("generictag");
     interfaces.recs->SetFicsAsListOrigin({id}, params->id);
     transaction.finalize();
+}
+
+QVector<int> CoreEnvironment::GetListSourceFFNIds(int listId)
+{
+    QVector<int> result;
+    auto sources = interfaces.recs->GetAllSourceFicIDs(listId);
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    QVector<core::IdPack> pack;
+    pack.resize(sources.size());
+    result.reserve(sources.size());
+    int i = 0;
+    for(auto source: sources)
+    {
+        pack[i].db = source;
+        i++;
+    }
+    grpcSource->GetFFNIDsForFics(&pack);
+    for(auto id : pack)
+        result.push_back(id.ffn);
+
+
+    return result;
 }
 
 core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
@@ -625,7 +702,7 @@ void CoreEnvironment::FillDBIDsForTags()
     auto pack = interfaces.tags->GetAllFicsThatDontHaveDBID();
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     grpcSource->GetInternalIDsForFics(&pack);
-    auto result = interfaces.tags->FillDBIDsForFics(pack);
+    interfaces.tags->FillDBIDsForFics(pack);
     transaction.finalize();
 }
 

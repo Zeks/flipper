@@ -2,12 +2,12 @@
 #include "logger/QsLog.h"
 namespace database {
 namespace puresql{
-bool ExecAndCheck(QSqlQuery& q, bool reportErrors)
+bool ExecAndCheck(QSqlQuery& q, bool reportErrors ,  bool ignoreUniqueness )
 {
     bool success = q.exec();
     if(q.lastError().isValid())
     {
-        if(reportErrors)
+        if(reportErrors && !(ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed")))
         {
             if(q.lastError().text().contains("record"))
                 QLOG_ERROR() << "Error while performing a query: ";

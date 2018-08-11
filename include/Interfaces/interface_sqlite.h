@@ -31,7 +31,7 @@ public:
     bool RebaseFandomsToZero();
     QStringList FetchRecentFandoms();
     QDateTime GetCurrentDateTime();
-    QStringList GetIdListForQuery(QSharedPointer<core::Query> query);
+    QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db = QSqlDatabase());
     bool BackupDatabase(QString dbname);
     bool ReadDbFile(QString file, QString connectionName);
     QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false);

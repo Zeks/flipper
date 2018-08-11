@@ -6,6 +6,9 @@
 namespace Ui {
 class servitorWindow;
 }
+namespace database {
+class IDBWrapper;
+}
 
 class ServitorWindow : public QMainWindow
 {
@@ -16,6 +19,7 @@ public:
     ~ServitorWindow();
     void ReadSettings();
     void WriteSettings();
+    QSharedPointer<database::IDBWrapper> dbInterface;
 
 private slots:
     void on_pbLoadFic_clicked();
@@ -29,6 +33,17 @@ private slots:
     void on_pbGetGenresForEverything_clicked();
 
     void on_pushButton_2_clicked();
+
+    void on_pbGetData_clicked();
+
+    void on_pushButton_3_clicked();
+
+    void on_pbUpdateFreshAuthors_clicked();
+
+    void OnResetTextEditor();
+    void OnProgressBarRequested();
+    void OnUpdatedProgressValue(int value);
+    void OnNewProgressString(QString value);
 
 private:
     Ui::servitorWindow *ui;

@@ -85,6 +85,14 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
 
     core::StoryFilter filter = FilterFromTask(task->filter(), task->user_data());
     auto ficSource = InitFicSource(userToken);
+    if(filter.tagsAreUsedForAuthors)
+    {
+        FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+        auto* userThreadData = ThreadData::GetUserData();
+        auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+        authors->db = convertedFicSource->db->GetDatabase();
+        userThreadData->usedAuthors = authors->GetAuthorsForFics(userThreadData->ficIDsForActivetags);
+    }
 
     QVector<core::Fic> data;
     TimedAction action("Fetching data",[&](){
@@ -121,6 +129,14 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
 
     core::StoryFilter filter = FilterFromTask(task->filter(), task->user_data());
     auto ficSource = InitFicSource(userToken);
+    if(filter.tagsAreUsedForAuthors)
+    {
+        FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+        auto* userThreadData = ThreadData::GetUserData();
+        auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+        authors->db = convertedFicSource->db->GetDatabase();
+        userThreadData->usedAuthors = authors->GetAuthorsForFics(userThreadData->ficIDsForActivetags);
+    }
 
     QVector<core::Fic> data;
     int count = 0;
@@ -181,14 +197,15 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     Q_UNUSED(context);
     QString userToken = QString::fromStdString(task->controls().user_token());
-    QLOG_INFO() << "////////////Received reclist s task from: " << userToken;
-
+    QLOG_INFO() << "////////////Received reclists task from: " << userToken;
+    QLOG_INFO() << "Verifying user token";
     if(!VerifyUserToken(userToken))
     {
         SetTokenError(response->mutable_response_info());
         QLOG_INFO() << "token error, exiting";
         return Status::OK;
     }
+    QLOG_INFO() << "Verifying request params";
     if(!VerifyRecommendationsRequest(task))
     {
         SetRecommedationDataError(response->mutable_response_info());
@@ -196,6 +213,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
     }
     An<UserTokenizer> keeper;
+
     auto safetyToken = keeper->GetToken(userToken);
     if(!safetyToken)
     {
@@ -238,14 +256,14 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     for(int key: list.recommendations.keys())
     {
         //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
-        if(sourceFics.contains(key))
+        if(sourceFics.contains(key) && !task->return_sources())
             continue;
         targetList->add_fic_ids(key);
         targetList->add_fic_matches(list.recommendations[key]);
     }
     for(int key: list.matchReport.keys())
     {
-        if(sourceFics.contains(key))
+        if(sourceFics.contains(key) && !task->return_sources())
             continue;
         (*targetList->mutable_match_report())[key] = list.matchReport[key];
     }
@@ -299,6 +317,51 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     return Status::OK;
 }
 
+Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
+                   ProtoSpace::FicIdResponse* response)
+{
+    Q_UNUSED(context);
+    QString userToken = QString::fromStdString(task->controls().user_token());
+    QLOG_INFO() << "////////////Received sync fandoms task from: " << userToken;
+
+    if(!VerifyUserToken(userToken))
+    {
+        SetTokenError(response->mutable_response_info());
+        return Status::OK;
+    }
+    if(!VerifyIDPack(task->ids()))
+    {
+        SetFicIDSyncDataError(response->mutable_response_info());
+        return Status::OK;
+    }
+    An<UserTokenizer> keeper;
+    auto safetyToken = keeper->GetToken(userToken);
+    if(!safetyToken)
+    {
+        SetTokenMatchError(response->mutable_response_info());
+        return Status::OK;
+    }
+    DatabaseContext dbContext;
+
+    QHash<int, int> idsToFill;
+    for(int i = 0; i < task->ids().db_ids_size(); i++)
+        idsToFill[task->ids().db_ids(i)] = -1;
+    QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+    bool result = fanficsInterface->ConvertDBFicsToFFN(idsToFill);
+    if(!result)
+    {
+        response->set_success(false);
+        return Status::OK;
+    }
+    response->set_success(true);
+    for(int fic: idsToFill.keys())
+    {
+        QLOG_INFO() << "Returning fic ids: " << "FFN: " << idsToFill[fic] << " DB: " << fic;
+        response->mutable_ids()->add_ffn_ids(idsToFill[fic]);
+        response->mutable_ids()->add_db_ids(fic);
+    }
+    return Status::OK;
+}
 
 
 void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filter){
@@ -410,6 +473,7 @@ QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken)
     DatabaseContext dbContext;
     QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbContext.dbInterface));
     FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+    QLOG_INFO() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);
     return ficSource;
 }

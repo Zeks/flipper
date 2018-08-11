@@ -4,6 +4,7 @@
 #include "include/rng.h"
 
 #include <QSqlDatabase>
+#include <QReadWriteLock>
 
 
 namespace core{
@@ -19,5 +20,6 @@ struct DefaultRNGgenerator : public IRNGGenerator{
                         QSqlDatabase db);
     QHash<QString, QStringList> randomIdLists;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
+    QReadWriteLock lock;
 };
 }
