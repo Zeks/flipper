@@ -1208,6 +1208,8 @@ void MainWindow::FillRecTagCombobox()
     auto storedRecList = settings.value("Settings/currentList").toString();
     qDebug() << QDir::currentPath();
     ui->cbRecGroup->setCurrentText(storedRecList);
+    auto listId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
+    env.interfaces.recs->SetCurrentRecommendationList(listId);
 }
 
 void MainWindow::FillRecommenderListView(bool forceRefresh)
@@ -1261,6 +1263,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
     ui->cbRecGroup->setCurrentText(params->name);
     ui->cbSortMode->setCurrentText("Rec Count");
+    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
     on_pbLoadDatabase_clicked();
 }
 
@@ -1755,6 +1758,9 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
     ui->cbRecGroup->setCurrentText(params->name);
     ui->cbSortMode->setCurrentText("Rec Count");
+    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
+    ui->pbGetSourceLinks->setEnabled(true);
+    ui->pbDeleteRecList->setEnabled(true);
     on_pbLoadDatabase_clicked();
 }
 
