@@ -107,10 +107,10 @@ int FicSourceDirect::GetFicCount(core::StoryFilter filter)
     return result;
 }
 
-QSet<int> FicSourceDirect::GetAuthorsForFics(QSet<int> ficIDsForActivetags)
-{
+//QSet<int> FicSourceDirect::GetAuthorsForFics(QSet<int> ficIDsForActivetags)
+//{
 
-}
+//}
 
 void FicSourceDirect::InitQueryType(bool client, QString userToken)
 {

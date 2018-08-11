@@ -540,11 +540,12 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase d
 {
     auto* userThreadData = ThreadData::GetUserData();
     userThreadData->ficsForAuthorSearch = fics;
-
-    SqlContext<QSet<int>> ctx(db, "select distinct author_id from ");
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs, "select count(id) from recommenders where website_type = :site",[](QSqlQuery& q){
-        return AuthorFromQuery(q);
+    QString qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
+    SqlContext<QSet<int>> ctx(db, qs);
+    ctx.FetchLargeSelectIntoList<int>("author_d", qs, "",[](QSqlQuery& q){
+        return q.value("author_id").toInt();
     });
+    ctx.result.data.remove(0);
     return ctx.result;
 
 }
