@@ -83,7 +83,11 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     for(auto author: authors)
     {
         if(counter%50 == 0)
-            QLOG_INFO() << counter;
+        {
+            QLOG_INFO() << "=========================================================================";
+            QLOG_INFO() << "At this moment processed:  "<< counter << " authors of: " << authors.size();
+            QLOG_INFO() << "=========================================================================";
+        }
         QList<QSharedPointer<core::Fic>> sections;
         QList<QFuture<FavouriteStoryParser>> futures;
         QSet<int> uniqueAuthors;

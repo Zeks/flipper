@@ -54,9 +54,12 @@ QDateTime SqliteInterface::GetCurrentDateTime()
     return sqlite::GetCurrentDateTime(db);
 }
 
-QStringList SqliteInterface::GetIdListForQuery(QSharedPointer<core::Query> query)
+QStringList SqliteInterface::GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db)
 {
-    return sqlite::GetIdListForQuery(query, db);
+    if(db.isOpen())
+        return sqlite::GetIdListForQuery(query, db);
+    else
+        return sqlite::GetIdListForQuery(query, this->db);
 }
 
 bool SqliteInterface::BackupDatabase(QString dbname)

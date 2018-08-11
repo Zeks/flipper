@@ -181,14 +181,15 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     Q_UNUSED(context);
     QString userToken = QString::fromStdString(task->controls().user_token());
-    QLOG_INFO() << "////////////Received reclist s task from: " << userToken;
-
+    QLOG_INFO() << "////////////Received reclists task from: " << userToken;
+    QLOG_INFO() << "Verifying user token";
     if(!VerifyUserToken(userToken))
     {
         SetTokenError(response->mutable_response_info());
         QLOG_INFO() << "token error, exiting";
         return Status::OK;
     }
+    QLOG_INFO() << "Verifying request params";
     if(!VerifyRecommendationsRequest(task))
     {
         SetRecommedationDataError(response->mutable_response_info());
@@ -196,6 +197,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
     }
     An<UserTokenizer> keeper;
+
     auto safetyToken = keeper->GetToken(userToken);
     if(!safetyToken)
     {
@@ -410,6 +412,7 @@ QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken)
     DatabaseContext dbContext;
     QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbContext.dbInterface));
     FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+    QLOG_INFO() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);
     return ficSource;
 }

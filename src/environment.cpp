@@ -47,7 +47,16 @@ void CoreEnvironment::LoadData()
         UserData userData;
         userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
         if(filter.activeTags.size() > 0)
+        {
             userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+            if(userData.ficIDsForActivetags.size() == 0)
+            {
+                QMessageBox::warning(nullptr, "Warning!", "There are no fics tagged with selected tag(s)\nAborting search.");
+                return;
+            }
+
+        }
+
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
     }
@@ -627,7 +636,7 @@ void CoreEnvironment::FillDBIDsForTags()
     auto pack = interfaces.tags->GetAllFicsThatDontHaveDBID();
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     grpcSource->GetInternalIDsForFics(&pack);
-    auto result = interfaces.tags->FillDBIDsForFics(pack);
+    interfaces.tags->FillDBIDsForFics(pack);
     transaction.finalize();
 }
 

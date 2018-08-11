@@ -35,5 +35,6 @@
         <file>icons/bit2.png</file>
         <file>icons/search_gray.png</file>
         <file>icons/search.png</file>
+        <file>icons/cross_red.png</file>
     </qresource>
 </RCC>

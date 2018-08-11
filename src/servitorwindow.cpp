@@ -239,7 +239,7 @@ void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
 
-    auto authors = authorInterface->GetAllAuthorsWithFavUpdateSince("ffn", QDateTime::currentDateTime().addMonths(-2));
+    auto authors = authorInterface->GetAllAuthorsWithFavUpdateSince("ffn", QDateTime::currentDateTime().addMonths(-8));
 
 
 
