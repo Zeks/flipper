@@ -896,7 +896,8 @@ void MainWindow::ReadSettings()
     ui->sbMinimumListMatches->setValue(uiSettings.value("Settings/sbMinimumListMatches", "0").toInt());
     ui->sbMinimumFavourites->setValue(uiSettings.value("Settings/sbMinimumFavourites", "0").toInt());
 
-    this->resize(uiSettings.value("Settings/appsize").toSize());
+    if(!uiSettings.value("Settings/appsize").toSize().isNull())
+        this->resize(uiSettings.value("Settings/appsize").toSize());
     if(!uiSettings.value("Settings/position").toPoint().isNull())
         this->move(uiSettings.value("Settings/position").toPoint());
 }
@@ -1261,12 +1262,6 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     ui->cbRecGroup->setCurrentText(params->name);
     ui->cbSortMode->setCurrentText("Rec Count");
     on_pbLoadDatabase_clicked();
-    //env.interfaces.recs->DeleteList(result);
-    //SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(storedLists));
-    //ui->cbRecGroup->setCurrentText(storedList);
-
-
-
 }
 
 
@@ -1847,6 +1842,7 @@ void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.sync();
+    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
 }
 
 void MainWindow::on_pbUseProfile_clicked()
