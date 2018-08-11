@@ -628,23 +628,6 @@ void MainWindow::OnCopyFicUrl(QString text)
 
 }
 
-void MainWindow::OnOpenRecommenderLinks(QString url)
-{
-    if(!ui->chkHeartProfile->isChecked())
-        return;
-    auto webId = url_utils::GetWebId(url, "ffn");
-    auto id = env.interfaces.fanfics->GetIDFromWebID(webId.toInt(), "ffn");
-    auto recommenders = env.interfaces.recs->GetRecommendersForFicId(id);
-
-    for(auto recommender : recommenders)
-    {
-        auto author = env.interfaces.authors->GetById(recommender);
-        if(!author || !env.interfaces.recs->GetMatchCountForRecommenderOnList(author->id, env.interfaces.recs->GetCurrentRecommendationList()))
-            continue;
-        QDesktopServices::openUrl(author->url("ffn"));
-    }
-}
-
 void MainWindow::OnCopyAllUrls()
 {
     TaskProgressGuard guard(this);
@@ -868,8 +851,8 @@ void MainWindow::ReadSettings()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     ui->wdgCustomActions->setVisible(settings.value("Settings/showCustomActions", false).toBool());
-    ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
-    ui->chkInfoForLinks->setVisible(settings.value("Settings/showListCreation", false).toBool());
+    //ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
+    //ui->chkInfoForLinks->setVisible(settings.value("Settings/showListCreation", false).toBool());
 
 
     ui->cbRecGroup->setVisible(settings.value("Settings/showRecListSelector", false).toBool());
@@ -889,7 +872,7 @@ void MainWindow::ReadSettings()
     ui->leNotContainsWords->setText(uiSettings.value("Settings/minusWords", "").toString());
     ui->leContainsWords->setText(uiSettings.value("Settings/plusWords", "").toString());
 
-    ui->chkHeartProfile->setChecked(uiSettings.value("Settings/chkHeartProfile", false).toBool());
+    //ui->chkHeartProfile->setChecked(uiSettings.value("Settings/chkHeartProfile", false).toBool());
     ui->chkGenrePlus->setChecked(uiSettings.value("Settings/chkGenrePlus", false).toBool());
     ui->chkGenreMinus->setChecked(uiSettings.value("Settings/chkGenreMinus", false).toBool());
     ui->chkWordsPlus->setChecked(uiSettings.value("Settings/chkWordsPlus", false).toBool());
@@ -899,12 +882,19 @@ void MainWindow::ReadSettings()
     ui->chkShowUnfinished->setChecked(uiSettings.value("Settings/showUnfinished", false).toBool());
     ui->chkNoGenre->setChecked(uiSettings.value("Settings/chkNoGenre", false).toBool());
     ui->chkComplete->setChecked(uiSettings.value("Settings/completed", false).toBool());
+    ui->chkShowSources->setChecked(uiSettings.value("Settings/chkShowSources", false).toBool());
+    ui->chkSearchWithinList->setChecked(uiSettings.value("Settings/chkSearchWithinList", false).toBool());
+    ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
     ui->cbSortMode->setCurrentText(uiSettings.value("Settings/currentSortFilter", "Update Date").toString());
     ui->cbBiasFavor->setCurrentText(uiSettings.value("Settings/biasMode", "None").toString());
     ui->cbBiasOperator->setCurrentText(uiSettings.value("Settings/biasOperator", "<").toString());
     ui->leBiasValue->setText(uiSettings.value("Settings/biasValue", "2.5").toString());
+
+    ui->sbMinimumListMatches->setValue(uiSettings.value("Settings/sbMinimumListMatches", "0").toInt());
+    ui->sbMinimumFavourites->setValue(uiSettings.value("Settings/sbMinimumFavourites", "0").toInt());
+
     this->resize(uiSettings.value("Settings/appsize").toSize());
 }
 
@@ -914,6 +904,11 @@ void MainWindow::WriteSettings()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/minWordCount", ui->cbMinWordCount->currentText());
     settings.setValue("Settings/maxWordCount", ui->cbMaxWordCount->currentText());
+
+    settings.setValue("Settings/sbMinimumListMatches", ui->sbMinimumListMatches->value());
+    settings.setValue("Settings/sbMinimumFavourites", ui->sbMinimumFavourites->value());
+    settings.setValue("Settings/chkFaveLimitActivated", ui->chkFaveLimitActivated->isChecked());
+
     settings.setValue("Settings/normals", GetCurrentFandomName());
     settings.setValue("Settings/plusGenre", ui->leContainsGenre->text());
     settings.setValue("Settings/minusGenre", ui->leNotContainsGenre->text());
@@ -921,7 +916,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/minusWords", ui->leNotContainsWords->text());
 
 
-    settings.setValue("Settings/chkHeartProfile", ui->chkHeartProfile->isChecked());
+    //settings.setValue("Settings/chkHeartProfile", ui->chkHeartProfile->isChecked());
     settings.setValue("Settings/chkGenrePlus", ui->chkGenrePlus->isChecked());
     settings.setValue("Settings/chkGenreMinus", ui->chkGenreMinus->isChecked());
     settings.setValue("Settings/chkWordsPlus", ui->chkWordsPlus->isChecked());
@@ -938,6 +933,9 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/biasOperator", ui->cbBiasOperator->currentText());
     settings.setValue("Settings/biasValue", ui->leBiasValue->text());
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
+    settings.setValue("Settings/chkShowSources", ui->chkShowSources->isChecked());
+    settings.setValue("Settings/chkSearchWithinList", ui->chkShowSources->isChecked());
+
     settings.setValue("Settings/appsize", this->size());
     settings.sync();
 }
@@ -1190,9 +1188,15 @@ void MainWindow::FillRecTagCombobox()
     auto lists = env.interfaces.recs->GetAllRecommendationListNames();
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
     if(lists.size() > 0)
+    {
         ui->pbDeleteRecList->setEnabled(true);
+        ui->pbGetSourceLinks->setEnabled(true);
+    }
     else
+    {
         ui->pbDeleteRecList->setEnabled(false);
+        ui->pbGetSourceLinks->setEnabled(false);
+    }
 
     QSettings settings("settings.ini", QSettings::IniFormat);
     auto storedRecList = settings.value("Settings/currentList").toString();
@@ -1242,13 +1246,13 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 void MainWindow::SetClientMode()
 {
     ui->widget_4->hide();
-    ui->wdgAdminActions->hide();
-    ui->chkHeartProfile->setChecked(false);
-    ui->chkHeartProfile->setVisible(false);
+    //ui->wdgAdminActions->hide();
+//    ui->chkHeartProfile->setChecked(false);
+//    ui->chkHeartProfile->setVisible(false);
     ui->tabWidget->removeTab(2);
     ui->tabWidget->removeTab(1);
     ui->chkLimitPageSize->setChecked(true);
-    ui->chkLimitPageSize->setEnabled(false);
+    //ui->chkLimitPageSize->setEnabled(false);
 
 }
 
@@ -1360,6 +1364,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
     if(ui->chkEnableTagsFilter->isChecked())
         filter.activeTags = tags;
+    filter.showRecSources = ui->chkShowSources->isChecked();
     qDebug() << "Active tags: " << filter.activeTags;
     filter.allowNoGenre = ui->chkNoGenre->isChecked();
     filter.allowUnfinished = ui->chkShowUnfinished->isChecked();
@@ -1404,7 +1409,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
     filter.minRecommendations =  ui->sbMinimumListMatches->value();
-    filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : -1;
+    filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : 5000;
     filter.recordPage = ui->chkLimitPageSize->isChecked() ?  0 : -1;
     filter.listOpenMode = ui->chkSearchWithinList->isChecked();
     //if(ui->cbSortMode->currentText())
@@ -1740,7 +1745,7 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->chkWordsMinus->setChecked(false);
     ui->chkFaveLimitActivated->setChecked(false);
     ui->chkLimitPageSize->setChecked(true);
-    ui->chkHeartProfile->setChecked(false);
+    //ui->chkHeartProfile->setChecked(false);
     ui->chkInvertedSlashFilter->setChecked(true);
     ui->chkInvertedSlashFilterLocal->setChecked(true);
     ui->chkOnlySlash->setChecked(false);
@@ -1763,6 +1768,7 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->sbPageSize->setValue(100);
     ui->sbMaxRandomFicCount->setValue(6);
     ui->chkSearchWithinList->setChecked(false);
+    ui->chkShowSources->setChecked(false);
     ui->sbMinimumListMatches->setValue(0);
 
 }
@@ -1868,4 +1874,15 @@ void MainWindow::on_pbDeleteRecList_clicked()
         //do nothing
     }
 
+}
+
+void MainWindow::on_pbGetSourceLinks_clicked()
+{
+    auto listId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
+    auto sources = env.GetListSourceFFNIds(listId);
+    QString result;
+    for(auto source: sources)
+        result+="https://www.fanfiction.net/s/" + QString::number(source)  + "\n";
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(result);
 }

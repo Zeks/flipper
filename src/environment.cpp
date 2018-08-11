@@ -56,6 +56,15 @@ void CoreEnvironment::LoadData()
             }
 
         }
+        else
+        {
+            if(filter.showRecSources)
+            {
+                auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
+                for(auto fic : sources)
+                    userData.allTaggedFics.remove(fic);
+            }
+        }
 
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
@@ -565,6 +574,28 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     interfaces.tags->DeleteTag("generictag");
     interfaces.recs->SetFicsAsListOrigin({id}, params->id);
     transaction.finalize();
+}
+
+QVector<int> CoreEnvironment::GetListSourceFFNIds(int listId)
+{
+    QVector<int> result;
+    auto sources = interfaces.recs->GetAllSourceFicIDs(listId);
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    QVector<core::IdPack> pack;
+    pack.resize(sources.size());
+    result.reserve(sources.size());
+    int i = 0;
+    for(auto source: sources)
+    {
+        pack[i].db = source;
+        i++;
+    }
+    grpcSource->GetFFNIDsForFics(&pack);
+    for(auto id : pack)
+        result.push_back(id.ffn);
+
+
+    return result;
 }
 
 core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)

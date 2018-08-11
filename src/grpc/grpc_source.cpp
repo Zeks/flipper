@@ -408,6 +408,7 @@ public:
     }
     ServerStatus GetStatus();
     bool GetInternalIDsForFics(QVector<core::IdPack> * ficList);
+    bool GetFFNIDsForFics(QVector<core::IdPack> * ficList);
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
     int GetFicCount(core::StoryFilter filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
@@ -478,6 +479,41 @@ bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
     }
 
     grpc::Status status = stub_->GetDBFicIDS(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    for(int i = 0; i < response->ids().db_ids_size(); i++)
+    {
+        (*ficList)[i].db = response->ids().db_ids(i);
+        (*ficList)[i].ffn = response->ids().ffn_ids(i);
+    }
+    return true;
+}
+
+bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
+{
+    grpc::ClientContext context;
+
+    ProtoSpace::FicIdRequest task;
+
+    if(!ficList->size())
+        return true;
+
+
+    QScopedPointer<ProtoSpace::FicIdResponse> response (new ProtoSpace::FicIdResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    for(core::IdPack& fic : *ficList)
+    {
+        task.mutable_ids()->add_db_ids(fic.db);
+        task.mutable_ids()->add_ffn_ids(fic.ffn);
+    }
+
+    grpc::Status status = stub_->GetFFNFicIDS(&context, task, response.data());
 
     ProcessStandardError(status);
 
@@ -619,7 +655,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& 
     task.set_always_pick_at(recList.listParams.alwaysPickAt);
     task.set_return_sources(true);
     task.set_min_fics_to_match(recList.listParams.minimumMatch);
-    task.set_max_unmatched_to_one_matched(recList.listParams.pickRatio);
+    task.set_max_unmatched_to_one_matched(static_cast<int>(recList.listParams.pickRatio));
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
@@ -730,6 +766,13 @@ bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::IdPack> * ficList)
     if(!impl)
         return false;
     return impl->GetInternalIDsForFics(ficList);
+}
+
+bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::IdPack> * ficList)
+{
+    if(!impl)
+        return false;
+    return impl->GetFFNIDsForFics(ficList);
 }
 
 ServerStatus FicSourceGRPC::GetStatus()

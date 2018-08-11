@@ -87,6 +87,7 @@ struct StoryFilter{
     bool showOriginsInLists = false;
     bool otherFandomsMode = false;
     bool listOpenMode= false;
+    bool showRecSources = false;
     SlashFilterState slashFilter;
 
     int useThisRecommenderOnly = -1;

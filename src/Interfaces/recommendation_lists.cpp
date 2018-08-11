@@ -196,6 +196,12 @@ QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 
 }
 
+QVector<int> RecommendationLists::GetAllSourceFicIDs(int listId)
+{
+    auto result = database::puresql::GetAllSourceFicIDsFromRecommendationList(listId,db).data;
+    return result;
+}
+
 QHash<int, int> RecommendationLists::GetAllFicsHash(int listId, int minMatchCount)
 {
     QHash<int, int> result;

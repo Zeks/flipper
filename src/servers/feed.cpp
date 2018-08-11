@@ -301,6 +301,51 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     return Status::OK;
 }
 
+Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
+                   ProtoSpace::FicIdResponse* response)
+{
+    Q_UNUSED(context);
+    QString userToken = QString::fromStdString(task->controls().user_token());
+    QLOG_INFO() << "////////////Received sync fandoms task from: " << userToken;
+
+    if(!VerifyUserToken(userToken))
+    {
+        SetTokenError(response->mutable_response_info());
+        return Status::OK;
+    }
+    if(!VerifyIDPack(task->ids()))
+    {
+        SetFicIDSyncDataError(response->mutable_response_info());
+        return Status::OK;
+    }
+    An<UserTokenizer> keeper;
+    auto safetyToken = keeper->GetToken(userToken);
+    if(!safetyToken)
+    {
+        SetTokenMatchError(response->mutable_response_info());
+        return Status::OK;
+    }
+    DatabaseContext dbContext;
+
+    QHash<int, int> idsToFill;
+    for(int i = 0; i < task->ids().db_ids_size(); i++)
+        idsToFill[task->ids().db_ids(i)] = -1;
+    QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+    bool result = fanficsInterface->ConvertDBFicsToFFN(idsToFill);
+    if(!result)
+    {
+        response->set_success(false);
+        return Status::OK;
+    }
+    response->set_success(true);
+    for(int fic: idsToFill.keys())
+    {
+        QLOG_INFO() << "Returning fic ids: " << "FFN: " << idsToFill[fic] << " DB: " << fic;
+        response->mutable_ids()->add_ffn_ids(idsToFill[fic]);
+        response->mutable_ids()->add_db_ids(fic);
+    }
+    return Status::OK;
+}
 
 
 void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filter){

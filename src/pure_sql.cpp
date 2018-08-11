@@ -865,6 +865,18 @@ DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId,
     return ctx.result;
 }
 
+DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId, QSqlDatabase db)
+{
+    QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id and is_origin = 1");
+    SqlContext<QVector<int>> ctx(db);
+    ctx.bindValue("list_id",listId);
+    ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+    return ctx.result;
+}
+
+
+
+
 DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db, int minMatchCount)
 {
     QString qs = QString("select fic_id, match_count from RecommendationListData where list_id = :list_id");
@@ -1280,6 +1292,31 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
     ctx1.result.oracleError = ctx.result.oracleError;
     return ctx1.result;
 }
+
+DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, QSqlDatabase db)
+{
+    SqlContext<int> ctx(db);
+
+    for(int id: hash.keys())
+    {
+        ctx.bindValue("id", id);
+        ctx.FetchSingleValue<int>("ffn_id", -1,"select ffn_id from fanfics where id = :id");
+        QString error = ctx.result.oracleError;
+        if(!error.isEmpty() && error != "no data to read")
+        {
+            ctx.result.success = false;
+            break;
+        }
+        hash[id] = ctx.result.data;
+    }
+
+    SqlContext<bool> ctx1(db);
+    ctx1.result.success = ctx.result.success;
+    ctx1.result.oracleError = ctx.result.oracleError;
+    return ctx1.result;
+}
+
+
 
 DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
 {

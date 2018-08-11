@@ -136,6 +136,8 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString, QSqlDatabase db);
 DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int> &, QSqlDatabase db);
+DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int> &, QSqlDatabase db);
+
 DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>, QSqlDatabase db);
 
@@ -197,6 +199,8 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
 DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
 
 DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db);
+DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId, QSqlDatabase db);
+
 DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db, int minMatchCount = 0);
 DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db);
 

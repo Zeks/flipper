@@ -306,8 +306,6 @@ public slots:
 
     // places into the clipboard, the url of the fic clicked in qml
     void OnCopyFicUrl(QString);
-    // used to open author pages on heart click that contain the current fic in their favourites
-    void OnOpenRecommenderLinks(QString);
     // copies urls of all currently visible fics into the cliboard
     void OnCopyAllUrls();
     // used to create targeted HTML lists to put on the web
@@ -431,6 +429,9 @@ private slots:
     void on_chkIgnoreFandoms_toggled(bool checked);
 
     void on_pbDeleteRecList_clicked();
+
+    void on_pbGetSourceLinks_clicked();
+
 
 signals:
 

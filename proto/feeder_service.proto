@@ -162,4 +162,5 @@ service Feeder {
     rpc SyncFandomList(SyncFandomListTask) returns (SyncFandomListResponse) {}
     rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
     rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
+    rpc GetFFNFicIDS(FicIdRequest) returns (FicIdResponse) {}
 }

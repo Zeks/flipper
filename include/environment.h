@@ -93,6 +93,7 @@ public:
     void ResumeUnfinishedTasks();
 
     void CreateSimilarListForGivenFic(int id,  QSqlDatabase db);
+    QVector<int> GetListSourceFFNIds(int listId);
 
     void Log(QString);
 

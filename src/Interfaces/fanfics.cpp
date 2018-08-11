@@ -271,6 +271,11 @@ bool Fanfics::ConvertFFNTaggedFicsToDB(QHash<int, int>& hash)
     return database::puresql::ConvertFFNTaggedFicsToDB(hash, db).success;
 }
 
+bool Fanfics::ConvertDBFicsToFFN(QHash<int, int> &hash)
+{
+    return database::puresql::ConvertDBFicsToFFN(hash, db).success;
+}
+
 void Fanfics::ResetActionQueue()
 {
     database::puresql::ResetActionQueue(db);
