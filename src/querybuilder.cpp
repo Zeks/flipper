@@ -60,7 +60,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
     }
 
 
-    queryString+=" from vFanfics f where f.alive <> 0 " ;
+    queryString+=" from vFanfics f where f.alive = 1 " ;
     QString where = CreateWhere(filter);
     //qDebug().noquote() << "WHERE IS: " << where;
     ProcessBindings(filter, query);
