@@ -77,6 +77,9 @@ void WriteProcessedFavourites(FavouriteStoryParser& parser,
     uniqueAuthors.reserve(parser.processedStuff.size());
     for(auto& section : parser.processedStuff)
     {
+        if(section->ficSource == core::Fic::efs_own_works)
+            continue;
+
         tempRecommendations.push_back({section, author});
         if(!uniqueAuthors.contains(section->author->GetWebID("ffn")))
             uniqueAuthors.insert(section->author->GetWebID("ffn"));

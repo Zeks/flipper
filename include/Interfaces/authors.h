@@ -92,6 +92,8 @@ public:
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
     QSet<int> GetAuthorsForFics(QSet<int>);
 
+    bool AssignAuthorNamesForWebIDsInFanficTable();
+
     QHash<int, std::array<double, 21>> GetListGenreData();
 
     //! todo those are required for managing recommendation lists and somewhat outdated

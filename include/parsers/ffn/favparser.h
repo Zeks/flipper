@@ -50,9 +50,7 @@ public:
                                       const CommonRegex& regexToken,
                                       QHash<int, int>& wordsKeeper);
 
-    QStringList diagnostics;
     //QSharedPointer<interfaces::Fandoms> fandomInterface;
-    QList<QSharedPointer<core::Fic>> processedStuff;
     static void MergeStats(core::AuthorPtr,  QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers);
     static void MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<core::FicSectionStatsTemporaryToken> tokens);
     core::FicSectionStatsTemporaryToken statToken;

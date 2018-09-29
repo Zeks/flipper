@@ -345,3 +345,45 @@ void ServitorWindow::on_pbUnpdateInterval_clicked()
     reloader.SetStagedAuthors(authors);
     reloader.ReloadRecommendationsList(ECacheMode::use_cache);
 }
+
+void ServitorWindow::on_pbReprocessAllFavPages_clicked()
+{
+    auto db = QSqlDatabase::database();
+    auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    authorInterface->db = db;
+    authorInterface->portableDBInterface = dbInterface;
+
+    auto authors = authorInterface->GetAllAuthors("ffn");
+
+
+    auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
+    fandomInterface->db = db;
+    fandomInterface->portableDBInterface = dbInterface;
+
+    auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    fanficsInterface->db = db;
+    fanficsInterface->authorInterface = authorInterface;
+    fanficsInterface->fandomInterface = fandomInterface;
+
+    auto recsInterface = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
+    recsInterface->db = db;
+    recsInterface->portableDBInterface = dbInterface;
+    recsInterface->authorInterface = authorInterface;
+
+
+
+    RecommendationsProcessor reloader(db, fanficsInterface,
+                                      fandomInterface,
+                                      authorInterface,
+                                      recsInterface);
+
+    connect(&reloader, &RecommendationsProcessor::resetEditorText, this,    &ServitorWindow::OnResetTextEditor);
+    connect(&reloader, &RecommendationsProcessor::requestProgressbar, this, &ServitorWindow::OnProgressBarRequested);
+    connect(&reloader, &RecommendationsProcessor::updateCounter, this,      &ServitorWindow::OnUpdatedProgressValue);
+    connect(&reloader, &RecommendationsProcessor::updateInfo, this,         &ServitorWindow::OnNewProgressString);
+
+
+    reloader.SetStagedAuthors(authors);
+    reloader.ReloadRecommendationsList(ECacheMode::use_only_cache);
+    authorInterface->AssignAuthorNamesForWebIDsInFanficTable();
+}

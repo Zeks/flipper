@@ -50,6 +50,7 @@ alter table fanfics add column true_genre1_percent real;
 alter table fanfics add column true_genre2_percent real;
 alter table fanfics add column true_genre3_percent real;
 alter table fanfics add column queued_for_action integer default 0;
+alter table fanfics add column is_english integer default 1;
 
 CREATE INDEX if not exists  I_FANFICS_FANDOM_1 ON fanfics (fandom1 ASC);
 CREATE INDEX if not exists  I_FANFICS_FANDOM_2 ON fanfics (fandom2 ASC);
@@ -60,6 +61,8 @@ CREATE INDEX if not exists  I_FANFICS_KW_RESULT ON fanfics (keywords_result ASC)
 CREATE INDEX if not exists  I_FANFICS_FIRST ON fanfics (filter_pass_1 ASC);
 CREATE INDEX if not exists  I_FANFICS_SECOND  ON fanfics (filter_pass_2 ASC);
 CREATE INDEX if not exists  I_FANFICS_QFA  ON fanfics (queued_for_action ASC);
+CREATE INDEX if not exists  I_FANFICS_AUTHOR_ID  ON fanfics (author_id ASC);
+CREATE INDEX if not exists  I_FANFICS_IS_ENGLISH  ON fanfics (is_english ASC);
 
 
  CREATE VIEW if not exists vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,

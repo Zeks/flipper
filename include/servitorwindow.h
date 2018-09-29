@@ -48,6 +48,8 @@ private slots:
 
     void on_pbUnpdateInterval_clicked();
 
+    void on_pbReprocessAllFavPages_clicked();
+
 private:
     Ui::servitorWindow *ui;
 };

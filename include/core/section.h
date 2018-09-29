@@ -222,12 +222,17 @@ public:
     //type of website, ffn or ao3
 
 };
-
 class Fic;
 typedef QSharedPointer<Fic> FicPtr;
 
 class Fic : public DBEntity{
 public:
+    enum EFicSource{
+        efs_search = 0,
+        efs_favourites = 1,
+        efs_own_works = 2
+    };
+
     class FicCalcStats
     {
     public:
@@ -254,6 +259,7 @@ public:
     int atChapter=0;
     int webId = -1;
     int id = -1;
+    bool isEnglish = true;
 
     QString wordCount;
     QString chapters;
@@ -281,8 +287,7 @@ public:
     QString charactersFull;
     QStringList characters;
     bool isValid =false;
-
-    int authorId = -1;
+    EFicSource ficSource = efs_search;
     QString authorName;
     QSharedPointer<Author> author;
 

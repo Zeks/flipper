@@ -51,6 +51,9 @@ void FFNParserBase::ProcessStatSection(core::Section &section)
 
     section.result->statSection = section.statSection.text;
     auto statText = section.statSection.text;
+    if(!statText.contains("English"))
+        section.result->isEnglish = false;
+
     statText = statText.replace(",", "");
 
     //qDebug() << statText;
@@ -62,12 +65,14 @@ void FFNParserBase::ProcessStatSection(core::Section &section)
     GetTaggedSection(statText, rxPublished, [&section](QString val){
         if(val != "not found")
             section.result->published.setTime_t(val.toInt()); ;
+        //qDebug() << "Published: " <<  section.result->published;
     });
     GetTaggedSection(statText, rxUpdated,  [&section](QString val){
         if(val != "not found")
             section.result->updated.setTime_t(val.toInt());
         else
             section.result->updated.setTime_t(0);
+        //qDebug() << "Updated: " <<  section.result->updated;
     });
     GetTaggedSection(statText, rxRated, [&section](QString val){ section.result->rated = val;});
     GetTaggedSection(statText, rxGenres, [&section](QString val){ section.result->SetGenres(val, "ffn");});
@@ -135,6 +140,7 @@ void FFNParserBase::GetCrossoverFandomList(core::Section & section,  QString tex
     tmp.replace("\\'", "'");
     section.result->fandom = tmp + QString(" CROSSOVER");
     section.result->fandoms = tmp.split(" & ", QString::SkipEmptyParts);
+    section.result->isCrossover = true;
 }
 
 void FFNParserBase::GetUrl(core::Section & section, int& startfrom, QString text)
@@ -213,8 +219,10 @@ core::Section FFNParserBase::GetSection(QString text, QString sectionSeparator, 
 
 void FFNParserBase::ProcessSection(core::Section &section, int &currentPosition, QString str)
 {
+    section.result->isValid = true;
     GetTitleAndUrl(section, currentPosition, str);
-    GetAuthor(section, currentPosition, str);
+    if(section.result->ficSource != core::Fic::efs_own_works)
+        GetAuthor(section, currentPosition, str);
     GetSummary(section, currentPosition, str);
 
     GetStatSection(section, currentPosition, str);

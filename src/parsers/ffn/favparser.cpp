@@ -392,8 +392,6 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     int counter = 0;
 
     thread_local QSharedPointer<interfaces::Fandoms> fandomInterface(new interfaces::Fandoms());
-    //fandomsInterface->portableDBInterface = fanfics;
-
 
     core::AuthorPtr author(new core::Author);
     section.result->author = author;
@@ -401,66 +399,51 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
     recommender.author->name = authorName;
     recommender.author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
-    auto point = std::chrono::high_resolution_clock::now();
-    //qDebug() << "part started at: " << point.time_since_epoch()/std::chrono::seconds(1);;
 
     auto profileUpdateDate = BouncingSearch(str, profilePageUpdatedFinder);
     auto profileCreateDate = BouncingSearch(str, profilePageCreatedFinder);
 
     this->statToken.pageCreated    = DateFromXUtime(profileCreateDate);
     this->statToken.bioLastUpdated = DateFromXUtime(profileUpdateDate);
-
+    bool ownStory = true;
     while(true)
     {
         counter++;
-        section = GetSection(str, "<div\\sclass=\'z-list\\sfavstories\'", currentPosition);
+        section = GetSection(str, "<div\\sclass=\'z-list\\smystories\'", currentPosition);
+        if(!section.isValid)
+        {
+            section = GetSection(str, "<div\\sclass=\'z-list\\sfavstories\'", currentPosition);
+            ownStory = false;
+        }
         if(!section.isValid)
             break;
+
+        if(ownStory)
+        {
+            section.result->ficSource = core::Fic::efs_own_works;
+            section.result->author = author;
+        }
+        else
+            section.result->ficSource = core::Fic::efs_favourites;
 
         if(sections.size() == 0)
             ReserveSpaceForSections(sections, section, str);
 
         currentPosition = section.start;
 
-
-
         ProcessSection(section, currentPosition, str);
-
-        // joined = 1st data-xutime
-        // updated = 2nd data-xutime
-
 
         // can be set invalid during the parse
         if(section.isValid)
             sections.append(section.result);
     }
 
-    //qDebug() << "parser iterations: " << counter;
-    auto elapsed = std::chrono::high_resolution_clock::now() - point;
-    //qDebug() << "Part of size: " << str.length() << "Processed in: " << MicrosecondsToString(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
-
-    //qDebug() << "part finished at: " << std::chrono::high_resolution_clock::now().time_since_epoch()/ std::chrono::seconds(1);;
     if(sections.size() == 0)
     {
         diagnostics.push_back("<span> No data found on the page.<br></span>");
         diagnostics.push_back("<span> \nFinished loading data <br></span>");
     }
-//    QHash<int, int> ficSizeKeeper;
-//    QHash<int, int> crossKeeper;
-//    QHash<int, int> favouritesSizeKeeper;
-//    QHash<int, int> popularUnpopularKeeper;
-//    QHash<QString, int> fandomKeeper;
-//    QHash<int, int> unfinishedKeeper;
-//    QHash<int, int> esrbKeeper;
-//    QHash<int, int> wordsKeeper;
-//    QHash<QString, int> genreKeeper;
-//    QHash<int, int> moodKeeper;
-//    int chapterKeeper = 0;
 
-//    QList<int> sizes;
-//    sizes.reserve(sections.size());
-//    QDate firstPublished;
-//    QDate lastPublished;
     for(auto fic: sections)
     {
         statToken.wordCount+=fic->wordCount.toInt();
@@ -475,7 +458,6 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
         UpdateESRB(fic, statToken.esrbKeeper);
         UpdateGenreResults(fic, statToken.genreKeeper, statToken.moodKeeper);
         UpdateWordsCounterNew(fic, commonRegex, statToken.wordsKeeper);
-        //UpdateWordsCounter(fic, statToken.wordsKeeper);
     }
     statToken.ficCount = sections.size();
 
