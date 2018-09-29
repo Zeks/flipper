@@ -19,6 +19,7 @@ public:
     ~ServitorWindow();
     void ReadSettings();
     void WriteSettings();
+    void UpdateInterval(int, int);
     QSharedPointer<database::IDBWrapper> dbInterface;
 
 private slots:
@@ -44,6 +45,8 @@ private slots:
     void OnProgressBarRequested();
     void OnUpdatedProgressValue(int value);
     void OnNewProgressString(QString value);
+
+    void on_pbUnpdateInterval_clicked();
 
 private:
     Ui::servitorWindow *ui;

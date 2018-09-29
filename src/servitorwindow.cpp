@@ -55,6 +55,11 @@ void ServitorWindow::WriteSettings()
     settings.sync();
 }
 
+void ServitorWindow::UpdateInterval(int, int)
+{
+
+}
+
 void ServitorWindow::on_pbLoadFic_clicked()
 {
     //    PageManager pager;
@@ -239,7 +244,7 @@ void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
 
-    auto authors = authorInterface->GetAllAuthorsWithFavUpdateSince("ffn", QDateTime::currentDateTime().addMonths(-8));
+    auto authors = authorInterface->GetAllAuthorsWithFavUpdateSince("ffn", QDateTime::currentDateTime().addMonths(-24));
 
 
 
@@ -293,4 +298,50 @@ void ServitorWindow::OnUpdatedProgressValue(int )
 void ServitorWindow::OnNewProgressString(QString )
 {
 
+}
+
+void ServitorWindow::on_pbUnpdateInterval_clicked()
+{
+    auto db = QSqlDatabase::database();
+    auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    authorInterface->db = db;
+    authorInterface->portableDBInterface = dbInterface;
+
+    auto authors = authorInterface->GetAllAuthorsWithFavUpdateBetween("ffn",
+                                                                      QDateTime::currentDateTime().addMonths(-1*ui->sbUpdateIntervalStart->value()),
+                                                                      QDateTime::currentDateTime().addMonths(-1*ui->sbUpdateIntervalEnd->value())
+
+                                                                      );
+
+
+
+    auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
+    fandomInterface->db = db;
+    fandomInterface->portableDBInterface = dbInterface;
+
+    auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    fanficsInterface->db = db;
+    fanficsInterface->authorInterface = authorInterface;
+    fanficsInterface->fandomInterface = fandomInterface;
+
+    auto recsInterface = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
+    recsInterface->db = db;
+    recsInterface->portableDBInterface = dbInterface;
+    recsInterface->authorInterface = authorInterface;
+
+
+
+    RecommendationsProcessor reloader(db, fanficsInterface,
+                                      fandomInterface,
+                                      authorInterface,
+                                      recsInterface);
+
+    connect(&reloader, &RecommendationsProcessor::resetEditorText, this,    &ServitorWindow::OnResetTextEditor);
+    connect(&reloader, &RecommendationsProcessor::requestProgressbar, this, &ServitorWindow::OnProgressBarRequested);
+    connect(&reloader, &RecommendationsProcessor::updateCounter, this,      &ServitorWindow::OnUpdatedProgressValue);
+    connect(&reloader, &RecommendationsProcessor::updateInfo, this,         &ServitorWindow::OnNewProgressString);
+
+
+    reloader.SetStagedAuthors(authors);
+    reloader.ReloadRecommendationsList(ECacheMode::use_cache);
 }

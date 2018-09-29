@@ -642,6 +642,40 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QStr
     return ctx.result;
 }
 
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QString website,
+                                                                             QDateTime dateStart,
+                                                                             QDateTime dateEnd,
+                                                                             QSqlDatabase db,
+                                                                             int limit)
+{
+    //todo fix reccount, needs to be precalculated in recommenders table
+
+    QString qs = QString("select distinct id,name, url, "
+                         "ffn_id, ao3_id,sb_id, sv_id, "
+                         " last_favourites_update, last_favourites_checked, "
+                         "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
+                         " from recommenders where website_type = :site "
+                         " and last_favourites_update <= :date_start and  last_favourites_update >= :date_end "
+                         "order by id %1");
+    if(limit > 0)
+        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+    else
+        qs = qs.arg("");
+
+    qDebug() << "fething authors between " << dateEnd << " and " << dateStart;
+    SqlContext<QList<core::AuthorPtr>> ctx(db, qs);
+    ctx.bindValue("site",website);
+    ctx.bindValue("date_start",dateStart);
+    ctx.bindValue("date_end",dateEnd);
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
+                                                  "select count(id) from recommenders where website_type = :site",
+                                                  [](QSqlQuery& q){
+        return AuthorFromQuery(q);
+    });
+
+
+    return ctx.result;
+}
 
 
 

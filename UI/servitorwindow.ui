@@ -179,6 +179,19 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="pbUnpdateInterval">
+         <property name="text">
+          <string>Update interval</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="sbUpdateIntervalStart"/>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="sbUpdateIntervalEnd"/>
+       </item>
+       <item>
         <spacer name="horizontalSpacer_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

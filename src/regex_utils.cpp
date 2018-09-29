@@ -106,7 +106,6 @@ QString BouncingSearch(QString str, FieldSearcher finder)
     int originalSize;
     for(auto token: tokens)
     {
-
         QRegularExpression rx;
         if(token.forwardDirection)
         {
@@ -136,11 +135,9 @@ QString BouncingSearch(QString str, FieldSearcher finder)
                     directRef = directRef.mid(0, skip);
                     reversedRef = reversedRef.mid(originalSize - skip);
                 }
-
             }
             else
             {
-
                 if(token.snapLeftBound)
                 {
                     reversedRef = reversedRef.mid(skip);
@@ -150,7 +147,6 @@ QString BouncingSearch(QString str, FieldSearcher finder)
                 {
                     reversedRef = reversedRef.mid(0, skip);
                     directRef = directRef.mid(originalSize - skip);
-
                 }
             }
         }

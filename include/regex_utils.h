@@ -60,7 +60,11 @@ enum ELookupType
 
 struct SearchToken
 {
-    SearchToken(QString rx, QString bitmask, int move, SearchTokenNamespace::ELookupType lookupType, SearchTokenNamespace::EBoundaryType boundaryType)
+    SearchToken(QString rx,
+                QString bitmask,
+                int move,
+                SearchTokenNamespace::ELookupType lookupType,
+                SearchTokenNamespace::EBoundaryType boundaryType)
     {
         this->moveAmount = move;
         this->forwardDirection = lookupType == SearchTokenNamespace::find_first_instance;

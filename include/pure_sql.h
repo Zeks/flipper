@@ -150,6 +150,9 @@ DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db)
 
 DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website, QSqlDatabase db,  int limit = 0);
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QString website, QDateTime date, QSqlDatabase db,  int limit = 0);
+DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QString website,
+                                                                 QDateTime dateStart,
+                                                                 QDateTime dateEnd, QSqlDatabase db, int limit = 0);
 
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
 

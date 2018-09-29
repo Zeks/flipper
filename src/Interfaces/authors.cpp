@@ -275,6 +275,17 @@ QList<core::AuthorPtr> Authors::GetAllAuthorsWithFavUpdateSince(QString website,
     return result;
 }
 
+QList<core::AuthorPtr> Authors::GetAllAuthorsWithFavUpdateBetween(QString website,
+                                                                 QDateTime dateStart,
+                                                                 QDateTime dateEnd, int limit)
+{
+    QList<core::AuthorPtr> result;
+    result = database::puresql::GetAllAuthorsWithFavUpdateBetween(website,dateStart, dateEnd, db, limit).data;
+    for(auto author: result)
+        database::puresql::LoadAuthorStatistics(author, db);
+    return result;
+}
+
 QStringList Authors::GetAllAuthorsUrls(QString website, bool forced)
 {
     QStringList result;
