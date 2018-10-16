@@ -204,6 +204,7 @@ core::Section FFNParserBase::GetSection(QString text, QString sectionSeparator, 
 {
     core::Section section ;
     thread_local QRegExp rxStart(sectionSeparator);
+    rxStart.setPattern(sectionSeparator);
     int index = rxStart.indexIn(text, start);
     if(index != -1)
     {

@@ -95,7 +95,8 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         auto startPageRequest = std::chrono::high_resolution_clock::now();
         auto page = env::RequestPage(author->url("ffn"), cacheMode);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
-        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        qDebug() <<  "Loading author: " << author->GetWebID("ffn");
+        //qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         FavouriteStoryParser parser(fanficsInterface);
         //parser.ProcessPage(page.url, page.content);
@@ -136,7 +137,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         QCoreApplication::processEvents();
 
         elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
-        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        //qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     }
     fandomsInterface->RecalculateFandomStats(fandoms.values());
     transaction.finalize();

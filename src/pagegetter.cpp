@@ -75,9 +75,12 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     // first, we get the page from cache anyway
     // not much point doing otherwise if the page is super fresh
     auto temp = GetPageFromDB(url);
+    if(temp.isValid)
+        qDebug() << "Version from cache was generated: " << temp.generated;
     if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
     {
         result = temp;
+        qDebug() << "pickign cache version";
         result.isFromCache = true;
         return result;
     }
@@ -91,12 +94,14 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
         else if(useCache == ECacheMode::use_cache)
         {
             result = GetPageFromNetwork(url);
+            qDebug() << "From network";
             SavePageToDB(result);
         }
     }
     else
     {
         result = GetPageFromNetwork(url);
+        qDebug() << "From network";
         if(result.isValid)
             SavePageToDB(result);
     }
@@ -148,11 +153,11 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     currentRequest = QNetworkRequest(QUrl(url));
     auto reply = manager.get(currentRequest);
     int retries = 40;
-    qDebug() << "entering wait phase";
+    //qDebug() << "entering wait phase";
     while(!reply->isFinished() && retries > 0)
     {
-        if(retries%10 == 0)
-            qDebug() << "retries left: " << retries;
+//        if(retries%10 == 0)
+//            qDebug() << "retries left: " << retries;
         if(reply->isFinished())
             break;
         retries--;

@@ -12,7 +12,7 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
         threadCount = QThread::idealThreadCount();
     else
         threadCount = 50;
-    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
+    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\s(favstories)\'");
     int index = rxStart.indexIn(data);
 
     int captured = data.count(" favstories");
@@ -22,6 +22,8 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
     index = rxAuthorStories.indexIn(data);
     int capturedAuthorStories = data.count(rxAuthorStories);
     result.authorStoryCountInWhole = capturedAuthorStories;
+
+    thread_local QRegExp rxAll("<div\\sclass=\'z-list\\s(favstories|smystories)\'");
 
     int partSize = captured/(threadCount-1);
     //qDebug() << "In packs of "  << partSize;
@@ -33,7 +35,7 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
     QList<int> splitPositions;
     int counter = 0;
     do{
-        index = rxStart.indexIn(data, index+1);
+        index = rxAll.indexIn(data, index+1);
         if(counter%partSize == 0 && index != -1)
         {
             splitPositions.push_back(index);

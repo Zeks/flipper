@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/regex_utils.h"
 #include "include/Interfaces/fandoms.h"
 #include <QDebug>
+#include <QFile>
 #include <QRegularExpression>
 #include <QSqlDatabase>
 #include <chrono>
@@ -393,6 +394,14 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
     thread_local QSharedPointer<interfaces::Fandoms> fandomInterface(new interfaces::Fandoms());
 
+//    QFile data("currentPage.html");
+//      if (data.open(QFile::WriteOnly | QFile::Truncate)) {
+//          QTextStream out(&data);
+//          out << str;
+//          data.flush();
+//          data.close();
+//      }
+
     core::AuthorPtr author(new core::Author);
     section.result->author = author;
     recommender.author = author;
@@ -406,13 +415,23 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     this->statToken.pageCreated    = DateFromXUtime(profileCreateDate);
     this->statToken.bioLastUpdated = DateFromXUtime(profileUpdateDate);
     bool ownStory = true;
+    int favCounter = 0;
+    int ownCounter= 0;
+
+
+
     while(true)
     {
         counter++;
+        ownCounter++;
         section = GetSection(str, "<div\\sclass=\'z-list\\smystories\'", currentPosition);
         if(!section.isValid)
         {
+            ownCounter--;
+            favCounter++;
             section = GetSection(str, "<div\\sclass=\'z-list\\sfavstories\'", currentPosition);
+            if(!section.isValid)
+                favCounter--;
             ownStory = false;
         }
         if(!section.isValid)
@@ -461,7 +480,9 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     }
     statToken.ficCount = sections.size();
 
-
+//    qDebug() << "All fics: " << counter;
+//    qDebug() << "Own fics: " << ownCounter;
+//    qDebug() << "Fav fics: " << favCounter;
     processedStuff+=sections;
     authorStats = author;
     currentPosition = 999;
@@ -559,15 +580,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
     ProcessESRB(author, resultingToken.ficCount, resultingToken.esrbKeeper);
     ProcessKeyWords(author, resultingToken.ficCount, resultingToken.wordsKeeper);
 
-    if(!author->stats.favouritesLastUpdated.isValid())
-        author->stats.favouritesLastUpdated = resultingToken.lastPublished;
-    else
-    {
-        if(author->stats.favouritesLastUpdated != resultingToken.lastPublished)
-            author->stats.favouritesLastUpdated = resultingToken.lastPublished;
-        else if(author->stats.favouriteStats.favourites < resultingToken.ficCount)
-            author->stats.favouritesLastUpdated = QDateTime::currentDateTime().date();
-    }
+    author->stats.favouritesLastUpdated = resultingToken.lastPublished;
     author->stats.favouritesLastChecked = QDateTime::currentDateTime().date();
 
     author->stats.favouriteStats.fandoms = resultingToken.fandomKeeper;

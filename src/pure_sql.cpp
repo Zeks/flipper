@@ -391,7 +391,7 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
 {
     QString getKeyQuery = QString("Select ( select count(id) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
                                   " ( select count(id) from FANFICS where  %1_id = :site_id2 "
-                                  "and (updated <> :updated or updated is null)) as count_updated").arg(fic->webSite);
+                                  "and (updated < :updated or updated is null)) as count_updated").arg(fic->webSite);
 
     SqlContext<bool> ctx(db, getKeyQuery);
     ctx.bindValue("site_id1", fic->webId);
@@ -411,8 +411,8 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
 
     bool requiresInsert = countNamed == 0;
     bool requiresUpdate = countUpdated > 0;
-    if(fic->fandom.contains("Greatest Showman"))
-        qDebug() << fic->fandom;
+//    if(fic->fandom.contains("Greatest Showman"))
+//        qDebug() << fic->fandom;
     if(alwaysUpdateIfNotInsert || (!requiresInsert && requiresUpdate))
         fic->updateMode = core::UpdateMode::update;
     if(requiresInsert)
