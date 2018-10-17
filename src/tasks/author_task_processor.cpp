@@ -75,6 +75,7 @@ void WriteProcessedFavourites(FavouriteStoryParser& parser,
     QList<core::FicRecommendation> tempRecommendations;
     tempRecommendations.reserve(parser.processedStuff.size());
     uniqueAuthors.reserve(parser.processedStuff.size());
+
     for(auto& section : parser.processedStuff)
     {
         if(section->ficSource == core::Fic::efs_own_works)
@@ -92,6 +93,10 @@ void WriteProcessedFavourites(FavouriteStoryParser& parser,
 
 void AuthorLoadProcessor::Run(PageTaskPtr task)
 {
+    qDebug() << "///////////////////////////////////////////";
+    qDebug() << "/////////////   NEW TASK   ////////////////";
+    qDebug() << "///////////////////////////////////////////";
+
     int currentCounter = 0;
     auto fanfics= this->fanfics;
     auto authors= this->authors;
@@ -140,7 +145,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
 
         auto cast = static_cast<SubTaskAuthorContent*>(subtask->content.data());
         database::Transaction transaction(db);
-        database::Transaction pcTransaction(pageInterface->db);
+        //database::Transaction pcTransaction(pageInterface->db);
 
         pageQueue.data.clear();
         pageQueue.data.reserve(cast->authors.size());
@@ -156,6 +161,14 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
             currentCounter++;
             if(currentCounter%300 == 0)
                 emit resetEditorText();
+
+            if(currentCounter%50 == 0)
+            {
+                QLOG_INFO() << "=========================================================================";
+                QLOG_INFO() << "At this moment processed:  "<< currentCounter << " authors of: " << subtask->size;
+                QLOG_INFO() << "=========================================================================";
+            }
+
             futures.clear();
             parsers.clear();
             int waitCounter = 10;
@@ -194,22 +207,17 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
                 auto splittings = page_utils::SplitJob(webPage.content);
 
-                //QString  authorName = splittings.authorName;
-                if(splittings.favouriteStoryCountInWhole <= 2000)
+                for(auto part: splittings.parts)
                 {
-                    for(auto part: splittings.parts)
-                    {
-                        futures.push_back(QtConcurrent::run(job, webPage.url, part.data));
-                    }
-                    for(auto future: futures)
-                    {
-                        future.waitForFinished();
-                        parsers+=future.result();
-                    }
+                    futures.push_back(QtConcurrent::run(job, webPage.url, part.data));
                 }
+                for(auto future: futures)
+                {
+                    future.waitForFinished();
+                    parsers+=future.result();
+                }
+
                 auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-                qDebug() << "Processed in: " << MicrosecondsToString(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
-                //qDebug() << "Count of parts:" << parsers.size();
 
                 FavouriteStoryParser sumParser;
                 QString name = ParseAuthorNameFromFavouritePage(webPage.content);
@@ -237,22 +245,13 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
                 else
                     result+= "WEB     ";
                 result += webPage.url + " " + name + ": All Faves:  " + QString::number(sumParser.processedStuff.size()) + " " ;
-                if(sumParser.processedStuff.size() != splittings.favouriteStoryCountInWhole && splittings.favouriteStoryCountInWhole < 2000)
-                    qDebug() << "something is wrong";
-                if(splittings.favouriteStoryCountInWhole == 0)
-                    result+= " no faves, skipping";
-                if(splittings.favouriteStoryCountInWhole >= 2000)
+                if(sumParser.processedStuff.size() != (splittings.favouriteStoryCountInWhole + splittings.authorStoryCountInWhole))
                 {
-                    result+= " TOO MUCH faves, skipping";
-                    qDebug() << "Too much faves on: " << webPage.url;
+                    qDebug() << "something is wrong: proc: " << sumParser.processedStuff.size() << " sum:" << splittings.favouriteStoryCountInWhole + splittings.authorStoryCountInWhole;
                 }
+
                 result+="<br>";
                 emit updateInfo(result);
-                if(splittings.favouriteStoryCountInWhole == 0 || splittings.favouriteStoryCountInWhole >= 2000)
-                {
-                    //qDebug() << "skipping author with no favourites";
-                    continue;
-                }
 
                 WriteProcessedFavourites(sumParser, author, fanfics, authors, fandoms);
                 subtask->updatedFics = fanfics->updatedCounter;
@@ -263,7 +262,6 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
                     qDebug() << "skipped: " << fanfics->skippedCounter;
 
                 elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-                //qDebug() << "Completed author in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
             }
 
         }while(pageQueue.pending || pageQueue.data.size() > 0);
@@ -280,7 +278,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
         fanfics->ClearProcessedHash();
 
         transaction.finalize();
-        pcTransaction.finalize();
+        //pcTransaction.finalize();
         auto elapsed = std::chrono::high_resolution_clock::now() - startSubtask;
         //qDebug() << "Page Processing done in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
         QString info  = "subtask finished in: " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(elapsed).count()) + "<br>";

@@ -25,12 +25,14 @@ database::Transaction::Transaction(QSqlDatabase db)
 {
     this->db = db;
     QWriteLocker locker(&lock);
-    if(!transactionSet.contains(db.connectionName()))
+    QString connetionName = db.connectionName();
+    if(!transactionSet.contains(connetionName))
     {
         //qDebug() << "opening transaction";
         start();
+        transactionSet.insert(db.connectionName());
     }
-    transactionSet.insert(db.connectionName());
+
 }
 
 database::Transaction::~Transaction()

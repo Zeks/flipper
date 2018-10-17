@@ -40,8 +40,6 @@ void CoreEnvironment::InitMetatypes()
 
 void CoreEnvironment::LoadData()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    bool thinClient = settings.value("Settings/thinClient").toBool();
     if(thinClient)
     {
         UserData userData;
@@ -122,7 +120,6 @@ bool CoreEnvironment::Init()
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Settings/serverPort", "3055").toString();
 
-    bool thinClient = settings.value("Settings/thinClient").toBool();
     if(thinClient)
     {
         //interfaces.db->userToken
@@ -181,7 +178,6 @@ void CoreEnvironment::InitInterfaces()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     QSharedPointer<database::IDBWrapper> userDBInterface;
-    bool thinClient = settings.value("Settings/thinClient").toBool();
     if(thinClient)
         userDBInterface = interfaces.userDb;
     else
@@ -222,7 +218,6 @@ void CoreEnvironment::InitInterfaces()
 int CoreEnvironment::GetResultCount()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
-    bool thinClient = settings.value("Settings/thinClient").toBool();
     if(thinClient)
     {
         UserData userData;
@@ -251,6 +246,7 @@ void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
     connect(&authorLoader, &AuthorLoadProcessor::updateCounter, this, &CoreEnvironment::updateCounter);
     connect(&authorLoader, &AuthorLoadProcessor::updateInfo, this, &CoreEnvironment::updateInfo);
     connect(&authorLoader, &AuthorLoadProcessor::resetEditorText, this, &CoreEnvironment::resetEditorText);
+    authorLoader.dbInterface = interfaces.db;
     authorLoader.Run(task);
 }
 
@@ -272,8 +268,40 @@ void CoreEnvironment::LoadMoreAuthors(QString listName, ECacheMode cacheMode)
                                                        true);
 
     UseAuthorTask(pageTask);
-
 }
+
+void CoreEnvironment::LoadAllLinkedAuthors(ECacheMode cacheMode)
+{
+    filter.mode = core::StoryFilter::filtering_in_recommendations;
+    QStringList authorUrls;
+
+    auto db = QSqlDatabase::database();
+    auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    authorInterface->db = db;
+    authorInterface->portableDBInterface = interfaces.db;
+
+    auto authors = authorInterface->GetAllUnprocessedLinkedAuthors();
+    for(auto author : authors)
+    {
+        authorUrls.push_back("https://www.fanfiction.net/u/" + QString::number(author));
+    }
+
+    emit requestProgressbar(authorUrls.size());
+    emit updateInfo("Authors: " + QString::number(authorUrls.size()));
+    QString comment = "Loading all unprocessed authors";
+    auto pageTask = page_utils::CreatePageTaskFromUrls(interfaces.pageTask,
+                                                       interfaces.db->GetCurrentDateTime(),
+                                                       authorUrls,
+                                                       comment,
+                                                       500,
+                                                       3,
+                                                       cacheMode,
+                                                       true);
+
+    UseAuthorTask(pageTask);
+}
+
+
 
 
 void CoreEnvironment::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater)
@@ -530,11 +558,11 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
     return result;
 }
 
-void CoreEnvironment::ResumeUnfinishedTasks()
+bool CoreEnvironment::ResumeUnfinishedTasks()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/skipUnfinishedTasksCheck",true).toBool())
-        return;
+        return false;
     auto tasks = interfaces.pageTask->GetUnfinishedTasks();
     TaskList tasksToResume;
     for(auto task : tasks)
@@ -546,6 +574,8 @@ void CoreEnvironment::ResumeUnfinishedTasks()
         Log(diagnostics);
         tasksToResume.push_back(task);
     }
+    if(!tasksToResume.size())
+        return false;
 
     // later this needs to be preceded by code that routes tasks based on their type.
     // hard coding for now to make sure base functionality works
@@ -558,7 +588,7 @@ void CoreEnvironment::ResumeUnfinishedTasks()
             else
             {
                 if(!task)
-                    return;
+                    return false;
 
                 QSqlDatabase db = QSqlDatabase::database();
                 FandomLoadProcessor proc(db, interfaces.fanfics, interfaces.fandoms, interfaces.pageTask, interfaces.db);
@@ -574,6 +604,7 @@ void CoreEnvironment::ResumeUnfinishedTasks()
             }
         }
     }
+    return true;
 }
 
 void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)

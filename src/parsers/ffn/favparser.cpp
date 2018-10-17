@@ -414,7 +414,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
     this->statToken.pageCreated    = DateFromXUtime(profileCreateDate);
     this->statToken.bioLastUpdated = DateFromXUtime(profileUpdateDate);
-    bool ownStory = true;
+    bool ownStory = false;
     int favCounter = 0;
     int ownCounter= 0;
 
@@ -423,16 +423,16 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     while(true)
     {
         counter++;
-        ownCounter++;
-        section = GetSection(str, "<div\\sclass=\'z-list\\smystories\'", currentPosition);
+        favCounter++;
+        section = GetSection(str, "<div\\sclass=\'z-list\\sfavstories\'", currentPosition);
         if(!section.isValid)
         {
-            ownCounter--;
-            favCounter++;
-            section = GetSection(str, "<div\\sclass=\'z-list\\sfavstories\'", currentPosition);
+            favCounter--;
+            ownCounter++;
+            section = GetSection(str, "<div\\sclass=\'z-list\\smystories\'", currentPosition);
             if(!section.isValid)
-                favCounter--;
-            ownStory = false;
+                ownCounter--;
+            ownStory = true;
         }
         if(!section.isValid)
             break;

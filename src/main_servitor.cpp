@@ -50,13 +50,39 @@ int main(int argc, char *argv[])
     pcDb.open();
 
 
+//    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
+//    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+//    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+
+
+
+    ////////////////////////////////////
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+    QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
+    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
+
+    QSqlDatabase mainDb;
+    mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+
+    auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+
+    dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
+
+    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+    QSqlDatabase tasksDb;
+    tasksDb = tasksInterface->InitDatabase("Tasks");
+    tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
+    ////////////////////////////////////
+
 
 
     ServitorWindow w;
     w.dbInterface = dbInterface;
+    w.env.interfaces.db = dbInterface;
+    w.env.interfaces.pageCache= pageCacheInterface;
+    w.env.interfaces.tasks = tasksInterface;
+    w.env.thinClient = false;
+    w.env.InitInterfaces();
     w.show();
 
 

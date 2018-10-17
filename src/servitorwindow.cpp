@@ -27,6 +27,11 @@ ServitorWindow::ServitorWindow(QWidget *parent) :
     ui(new Ui::servitorWindow)
 {
     ui->setupUi(this);
+    qRegisterMetaType<WebPage>("WebPage");
+    qRegisterMetaType<PageResult>("PageResult");
+    qRegisterMetaType<ECacheMode>("ECacheMode");
+//    qRegisterMetaType<FandomParseTask>("FandomParseTask");
+//    qRegisterMetaType<FandomParseTaskResult>("FandomParseTaskResult");
     ReadSettings();
 }
 
@@ -386,4 +391,10 @@ void ServitorWindow::on_pbReprocessAllFavPages_clicked()
     reloader.SetStagedAuthors(authors);
     reloader.ReloadRecommendationsList(ECacheMode::use_only_cache);
     authorInterface->AssignAuthorNamesForWebIDsInFanficTable();
+}
+
+void ServitorWindow::on_pbGetNewFavourites_clicked()
+{
+    if(!env.ResumeUnfinishedTasks())
+        env.LoadAllLinkedAuthors(ECacheMode::use_cache);
 }

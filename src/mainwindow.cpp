@@ -529,6 +529,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::InitInterfaces()
 {
+    env.thinClient = true;
     env.InitInterfaces();
 }
 

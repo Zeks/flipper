@@ -68,6 +68,7 @@ public:
     int GetResultCount();
 
     void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
+    void LoadAllLinkedAuthors(ECacheMode cacheMode);
     void UseAuthorTask(PageTaskPtr task);
     void UseFandomTask(PageTaskPtr task);
     PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
@@ -93,7 +94,7 @@ public:
                               bool automaticLike = false,
                               bool clearAuthors = true);
 
-    void ResumeUnfinishedTasks();
+    bool ResumeUnfinishedTasks();
 
     void CreateSimilarListForGivenFic(int id,  QSqlDatabase db);
     QVector<int> GetListSourceFFNIds(int listId);
@@ -120,6 +121,7 @@ public:
     QSharedPointer<FicSource> ficSource;
     QSharedPointer<core::IRNGGenerator> rngGenerator;
     QString userToken;
+    bool thinClient = true;
 
 
     // in case of non-gui applications these will just fire without an effect and its correct

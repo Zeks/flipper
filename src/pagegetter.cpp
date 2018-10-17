@@ -319,7 +319,7 @@ PageThreadWorker::~PageThreadWorker()
 
 void PageThreadWorker::timerEvent(QTimerEvent *)
 {
-    qDebug() << "worker is alive";
+    //qDebug() << "worker is alive";
 }
 
 void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate)

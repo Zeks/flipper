@@ -84,6 +84,7 @@ public:
     //bool UploadLinkedAuthorsForAuthor(int authorId, QStringList);
     bool UploadLinkedAuthorsForAuthor(int authorId, QString , QList<int>);
     bool DeleteLinkedAuthorsForAuthor(int authorId);
+    QVector<int> GetAllUnprocessedLinkedAuthors();
 
     bool WipeAuthorStatisticsRecords();
     bool CreateStatisticsRecordsForAuthors();

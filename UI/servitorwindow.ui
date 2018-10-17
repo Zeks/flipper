@@ -248,6 +248,13 @@
          </property>
         </spacer>
        </item>
+       <item>
+        <widget class="QPushButton" name="pbGetNewFavourites">
+         <property name="text">
+          <string>Get New Favourite Pages</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>

@@ -2,6 +2,7 @@
 #define SERVITORWINDOW_H
 
 #include <QMainWindow>
+#include "environment.h"
 
 namespace Ui {
 class servitorWindow;
@@ -21,6 +22,7 @@ public:
     void WriteSettings();
     void UpdateInterval(int, int);
     QSharedPointer<database::IDBWrapper> dbInterface;
+    CoreEnvironment env;
 
 private slots:
     void on_pbLoadFic_clicked();
@@ -49,6 +51,8 @@ private slots:
     void on_pbUnpdateInterval_clicked();
 
     void on_pbReprocessAllFavPages_clicked();
+
+    void on_pbGetNewFavourites_clicked();
 
 private:
     Ui::servitorWindow *ui;

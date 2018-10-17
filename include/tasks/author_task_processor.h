@@ -45,7 +45,7 @@ public:
                         QSharedPointer<interfaces::PageTask> pageTaskInterface,
                         QObject* obj = nullptr);
     void Run(PageTaskPtr task);
-    
+    QSharedPointer<database::IDBWrapper> dbInterface;
 private:
     QSqlDatabase db;
     QSqlDatabase taskDB;
@@ -53,7 +53,7 @@ private:
     QSharedPointer<interfaces::Fandoms> fandoms;
     QSharedPointer<interfaces::Authors> authors;
     QSharedPointer<interfaces::PageTask> pageInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
+
     bool cancelCurrentTaskPressed = false;
 public slots:
     void OnCancelCurrentTask();

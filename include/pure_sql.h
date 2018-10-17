@@ -222,6 +222,9 @@ DiagnosticSQLResult<bool> RemoveAuthorRecommendationStatsFromDatabase(int listId
 //bool UploadLinkedAuthorsForAuthor(int authorId, QStringList list, QSqlDatabase db);
 DiagnosticSQLResult<bool> UploadLinkedAuthorsForAuthor(int authorId, QString website, QList<int> ids, QSqlDatabase db);
 DiagnosticSQLResult<bool> DeleteLinkedAuthorsForAuthor(int authorId,  QSqlDatabase db);
+DiagnosticSQLResult<QVector<int>> GetAllUnprocessedLinkedAuthors(QSqlDatabase db);
+
+
 DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 DiagnosticSQLResult<QList<int> > GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);

@@ -505,6 +505,11 @@ bool Authors::DeleteLinkedAuthorsForAuthor(int authorId)
     return database::puresql::DeleteLinkedAuthorsForAuthor(authorId, db).success;
 }
 
+QVector<int> Authors::GetAllUnprocessedLinkedAuthors()
+{
+    return database::puresql::GetAllUnprocessedLinkedAuthors(db).data;
+}
+
 bool Authors::WipeAuthorStatisticsRecords()
 {
     return true;

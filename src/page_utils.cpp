@@ -12,20 +12,21 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
         threadCount = QThread::idealThreadCount();
     else
         threadCount = 50;
-    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\s(favstories)\'");
+    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
     int index = rxStart.indexIn(data);
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
+    //qDebug() << "RX fav fics:" << captured;
 
     thread_local QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
     index = rxAuthorStories.indexIn(data);
     int capturedAuthorStories = data.count(rxAuthorStories);
     result.authorStoryCountInWhole = capturedAuthorStories;
+    //qDebug() << "RX own fics:" << capturedAuthorStories;
+    thread_local QRegExp rxAll("<div\\sclass=\'z-list\\s(favstories|mystories)\'");
 
-    thread_local QRegExp rxAll("<div\\sclass=\'z-list\\s(favstories|smystories)\'");
-
-    int partSize = captured/(threadCount-1);
+    int partSize = (captured+capturedAuthorStories)/(threadCount-1);
     //qDebug() << "In packs of "  << partSize;
     index = 0;
 
@@ -91,6 +92,7 @@ PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>pageTask,
     do{
         auto last = i + subTaskSize <= urls.size() ? urls.begin() + i + subTaskSize : urls.end();
         subtask = PageSubTask::CreateNewSubTask();
+        subtask->type = 0;
         subtask->parent = task;
         auto content = SubTaskAuthorContent::NewContent();
         auto cast = static_cast<SubTaskAuthorContent*>(content.data());

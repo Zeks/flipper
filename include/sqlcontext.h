@@ -19,6 +19,14 @@
 
 namespace database {
 namespace puresql{
+
+
+struct QueryBinding{
+    QString key;
+    QVariant value;
+};
+
+
 bool ExecAndCheck(QSqlQuery& q, bool reportErrors = true,  bool ignoreUniqueness = false);
 
 template <typename T>
@@ -119,11 +127,11 @@ struct SqlContext
         BindValues();
         for(auto key : args.keys())
         {
-//            for(QString nameKey: nameKeys)
-//            {
-                //qDebug() << "cycling";
-                q.bindValue(":" + nameKeys[0], key);
-                q.bindValue(":" + nameKeys[1], args[key]);
+            //            for(QString nameKey: nameKeys)
+            //            {
+            //qDebug() << "cycling";
+            q.bindValue(":" + nameKeys[0], key);
+            q.bindValue(":" + nameKeys[1], args[key]);
             //}
             if(!ExecAndCheck(ignoreUniqueness))
             {
@@ -253,7 +261,9 @@ struct SqlContext
     template <typename T>
     void FetchSingleValue(QString valueName,
                           ResultType defaultValue,
-                          QString select = ""){
+                          bool requireExisting = true,
+                          QString select = ""
+            ){
         result.data = defaultValue;
         if(!select.isEmpty())
         {
@@ -264,7 +274,11 @@ struct SqlContext
         if(!ExecAndCheck())
             return;
         if(!CheckDataAvailability())
+        {
+            if(!requireExisting)
+                result.success = true;
             return;
+        }
         result.data = q.value(valueName).template value<T>();
     }
 
@@ -284,10 +298,9 @@ struct SqlContext
     }
 
     void BindValues(){
-        for(auto bind : bindValues.keys())
+        for(auto bind : bindValues)
         {
-            //qDebug() << "binding: " << bind << " as: " << bindValues[bind];
-            q.bindValue(QString(":") + bind, bindValues[bind]);
+            q.bindValue(QString(":") + bind.key, bind.value);
         }
     }
 
@@ -322,7 +335,13 @@ struct SqlContext
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
     void bindValue(QString key, QVariant value){
-        bindValues[key] = value;
+        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+            return b.key == key;
+        });
+        if(it!=bindValues.end())
+            it->value = value;
+        else
+            bindValues.push_back({key, value});
     }
     void SetDefaultValue(ResultType value) {result.data = value;}
     bool Success() const {return result.success;}
@@ -331,7 +350,7 @@ struct SqlContext
     QString qs;
     QSqlQuery q;
     Transaction transaction;
-    QVariantHash bindValues;
+    QList<QueryBinding> bindValues;
     std::function<void(SqlContext<ResultType>*)> func;
 };
 
