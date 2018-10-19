@@ -63,6 +63,20 @@ RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFic
             ficResult.matchReport[author.matches]++;
         }
     }
+    QList<AuthorResult> authors = authorsResult.values();
+    std::sort(authors.begin(), authors.end(), [](const AuthorResult& a1, const AuthorResult& a2){
+        return a1.matches > a2.matches;
+    });
+    qDebug() << "/////////////////// AUTHOR IDs: ////////////////";
+    int counter = 0;
+    for(int i = 0; counter < 15 && i < authors.size(); i++)
+    {
+        if(authors[i].size < 800)
+        {
+            qDebug() << authors[i].id;
+            counter++;
+        }
+    }
     return ficResult;
 }
 

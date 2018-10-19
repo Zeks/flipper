@@ -785,7 +785,7 @@ DiagnosticSQLResult<bool> LoadAuthorStatistics(core::AuthorPtr author, QSqlDatab
 
 DiagnosticSQLResult<QHash<int, QSet<int>>> LoadFullFavouritesHashset(QSqlDatabase db)
 {
-    QString qs = QString("select * from recommendations");
+    QString qs = QString("select * from recommendations order by recommender_id");
 
     SqlContext<QHash<int, QSet<int>>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -1336,7 +1336,7 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
     for(int ffn_id: hash.keys())
     {
         ctx.bindValue("ffn_id", ffn_id);
-        ctx.FetchSingleValue<int>("id", -1,"select id from fanfics where ffn_id = :ffn_id");
+        ctx.FetchSingleValue<int>("id", -1,true, "select id from fanfics where ffn_id = :ffn_id");
         QString error = ctx.result.oracleError;
         if(!error.isEmpty() && error != "no data to read")
         {
@@ -1359,7 +1359,7 @@ DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, QSqlDatabase
     for(int id: hash.keys())
     {
         ctx.bindValue("id", id);
-        ctx.FetchSingleValue<int>("ffn_id", -1,"select ffn_id from fanfics where id = :id");
+        ctx.FetchSingleValue<int>("ffn_id", -1, true, "select ffn_id from fanfics where id = :id");
         QString error = ctx.result.oracleError;
         if(!error.isEmpty() && error != "no data to read")
         {

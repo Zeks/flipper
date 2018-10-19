@@ -584,7 +584,9 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
         {
             auto fullTask = interfaces.pageTask->GetTaskById(task->id);
             if(fullTask->type == 0)
+            {
                 UseAuthorTask(fullTask);
+            }
             else
             {
                 if(!task)
