@@ -433,6 +433,8 @@ private slots:
     void on_pbGetSourceLinks_clicked();
 
 
+    void on_pbProfileCompare_clicked();
+
 signals:
 
 

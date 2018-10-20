@@ -819,6 +819,13 @@ QList<QSharedPointer<core::Fic>> MainWindow::LoadFavourteLinksFromFFNProfile(QSt
         return result;
     }
     result = env.LoadAuthorFics(url);
+    auto end = result.end();
+    auto it = std::remove_if(result.begin(), result.end(), [](QSharedPointer<core::Fic> f){
+            return f->ficSource == core::Fic::efs_own_works;
+    });
+    if(it != end)
+        result.erase(it, end);
+
     return result;
 }
 
@@ -1693,6 +1700,9 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
     font.setPixelSize(14);
 
     ui->edtRecsContents->setFont(font);
+    std::sort(fics.begin(), fics.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+        return f1->author->name < f2->author->name;
+    });
 
     for(auto fic: fics)
     {
@@ -1936,4 +1946,58 @@ void MainWindow::on_pbGetSourceLinks_clicked()
         result+="https://www.fanfiction.net/s/" + QString::number(source)  + "\n";
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(result);
+}
+
+void MainWindow::on_pbProfileCompare_clicked()
+{
+    ui->edtRecsContents->clear();
+    ui->edtRecsContents->setOpenExternalLinks(false);
+    ui->edtRecsContents->setOpenLinks(false);
+    ui->edtRecsContents->setReadOnly(false);
+    auto font = ui->edtRecsContents->font();
+    font.setPixelSize(14);
+
+    ui->edtRecsContents->setFont(font);
+
+    QList<QSharedPointer<core::Fic> > result;
+
+    auto ficsLeft = LoadFavourteLinksFromFFNProfile(ui->leFFNProfileLeft->text());
+    auto ficsRight = LoadFavourteLinksFromFFNProfile(ui->leFFNProfileRight->text());
+    if(ficsLeft.size() == 0 || ficsRight.size() == 0)
+    {
+        QMessageBox::warning(nullptr, "Warning!", "One of the lists is empty or ould not be acquired");
+        return;
+    }
+
+    std::sort(ficsLeft.begin(), ficsLeft.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+        return f1->ffn_id < f2->ffn_id;
+    });
+
+    std::sort(ficsRight.begin(), ficsRight.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+        return f1->ffn_id < f2->ffn_id;
+    });
+
+    std::set_intersection(ficsLeft.begin(), ficsLeft.end(),
+                             ficsRight.begin(), ficsRight.end(),
+                          std::back_inserter(result), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+        return f1->ffn_id < f2->ffn_id;
+    });
+
+    std::sort(result.begin(), result.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+        return f1->author->name < f2->author->name;
+    });
+
+    ui->edtRecsContents->insertHtml(QString("First user has %1 favourites.").arg(QString::number(ficsLeft.size())));
+    ui->edtRecsContents->insertHtml("<br>");
+    ui->edtRecsContents->insertHtml(QString("Second user has %1 favourites.").arg(QString::number(ficsRight.size())));
+    ui->edtRecsContents->insertHtml("<br>");
+    ui->edtRecsContents->insertHtml(QString("They have %1 favourites in common.").arg(QString::number(result.size())));
+    ui->edtRecsContents->insertHtml("<br>");
+    for(auto fic: result)
+    {
+        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
+        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
+        ui->edtRecsContents->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+        ui->edtRecsContents->insertHtml("<br>");
+    }
 }
