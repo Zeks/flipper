@@ -24,6 +24,8 @@ CREATE TABLE if not exists PageTasks (
  inserted_authors integer default 0,
  updated_authors integer default 0
  );
+ 
+ alter table PageTasks add column force_stop integer default 0;
   
 CREATE INDEX if not exists I_PT_ID ON PageTasks (id asc);
 CREATE INDEX if not exists I_PT_TYPE ON PageTasks (type asc);

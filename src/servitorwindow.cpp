@@ -10,6 +10,7 @@
 #include "include/url_utils.h"
 #include <QTextCodec>
 #include <QSettings>
+#include <QSqlRecord>
 #include <QFuture>
 #include <QtConcurrent>
 #include <QFutureWatcher>
@@ -403,4 +404,85 @@ void ServitorWindow::on_pbGetNewFavourites_clicked()
 void ServitorWindow::on_pbReprocessCacheLinked_clicked()
 {
     env.LoadAllLinkedAuthorsMultiFromCache();
+}
+
+void ServitorWindow::on_pbPCRescue_clicked()
+{
+    QString path = "PageCache.sqlite";
+    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
+    pcdb.setDatabaseName(path);
+    pcdb.open();
+
+
+    path = "PageCache_export.sqlite";
+    QSqlDatabase pcExDb = QSqlDatabase::addDatabase("QSQLITE", "PageCache_Export");
+    pcExDb.setDatabaseName(path);
+    pcExDb.open();
+
+
+    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
+    QSharedPointer<database::IDBWrapper> pageCacheExportInterface (new database::SqliteInterface());
+
+    pcdb = pageCacheInterface->InitDatabase("PageCache");
+    qDebug() << "Db open: " << pcdb.isOpen();
+    QSqlQuery testQuery("select * from pagecache where url = 'https://www.fanfiction.net/u/1000039'", pcdb);
+    bool readable = testQuery.next();
+    qDebug() << "Readable: " << readable;
+    qDebug() << "Data: " << testQuery.record();
+
+    pcExDb = pageCacheExportInterface->InitDatabase("PageCache_Export");
+
+    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+    pageCacheExportInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache_Export");
+
+
+    int counter = 0;
+
+    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
+                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
+    database::Transaction transactionMain(env.interfaces.db->GetDatabase());
+    //database::Transaction transactionRead(pcdb);
+    QSqlQuery exportQ(pcExDb);
+    exportQ.prepare(insert);
+    auto authors = env.interfaces.authors->GetAllAuthorsUrls("ffn");
+    std::sort(authors.begin(), authors.end());
+    qDebug() << "finished reading author urls";
+    QSqlQuery readQuery(pcdb);
+    readQuery.prepare("select * from pagecache where url = :url");
+
+    database::Transaction transaction(pcExDb);
+
+    for(auto author : authors)
+    {
+        //qDebug() << "Attempting to read url: " << author;
+        readQuery.bindValue(":url", author);
+        readQuery.exec();
+        bool result = readQuery.next();
+        if(!result || readQuery.value("url").toString().isEmpty())
+        {
+            qDebug() << "Attempting to read url: " << author;
+            qDebug() << readQuery.lastError().text();
+            continue;
+        }
+        if(counter%1000 == 0)
+        {
+            qDebug() << "committing: " << counter;
+            transaction.finalize();
+            transaction.start();
+        }
+
+        //qDebug() << "writing record: " << readQuery.value("url").toString();
+
+        counter++;
+        exportQ.bindValue(":URL", readQuery.value("url").toString());
+        exportQ.bindValue(":GENERATION_DATE", readQuery.value("GENERATION_DATE").toDateTime());
+        exportQ.bindValue(":CONTENT", readQuery.value("CONTENT").toByteArray());
+        exportQ.bindValue(":COMPRESSED", readQuery.value("COMPRESSED").toInt());
+        exportQ.bindValue(":PAGE_TYPE", readQuery.value("PAGE_TYPE").toString());
+        exportQ.exec();
+        if(exportQ.lastError().isValid())
+            qDebug() << "Error writing record: " << exportQ.lastError().text();
+    }
+
+
 }

@@ -32,6 +32,7 @@ public:
     bool DropLastTask();
     bool DropTaskId(int id);
     bool IsLastTaskSuccessful();
+    bool IsForceStopActivated(int);
     PageTaskPtr GetLastTask();
     int GetLastTaskId();
     TaskList GetUnfinishedTasks();

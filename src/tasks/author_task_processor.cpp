@@ -117,6 +117,9 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
     StartPageWorker();
     for(auto subtask : task->subTasks)
     {
+        if(pageInterface->IsForceStopActivated(task->id))
+            break;
+
         auto startSubtask = std::chrono::high_resolution_clock::now();
         emit updateInfo(QString("<br>Starting new subtask: %1 <br>").arg(subtask->id));
 

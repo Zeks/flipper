@@ -1942,6 +1942,13 @@ DiagnosticSQLResult<bool> GetTaskSuccessByID(int id, QSqlDatabase db)
     ctx.FetchSingleValue<bool>("success", false);
     return ctx.result;
 }
+DiagnosticSQLResult<bool>  IsForceStopActivated(int id, QSqlDatabase db)
+{
+    QString qs = QString("select force_stop from pagetasks where id = :id");
+    SqlContext<bool>ctx(db, qs, BP1(id));
+    ctx.FetchSingleValue<bool>("force_stop", false);
+    return ctx.result;
+}
 
 
 void FillPageTaskBaseFromQuery(BaseTaskPtr task, QSqlQuery& q){

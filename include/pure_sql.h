@@ -288,6 +288,7 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
 // page tasks
 DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db);
 DiagnosticSQLResult<bool> GetTaskSuccessByID(int id, QSqlDatabase db);
+DiagnosticSQLResult<bool>  IsForceStopActivated(int id, QSqlDatabase db);
 
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db);
 DiagnosticSQLResult<SubTaskList> GetSubTaskData(int id, QSqlDatabase db);

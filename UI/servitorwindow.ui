@@ -185,6 +185,16 @@
     </item>
     <item row="0" column="0">
      <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="leReprocessFics"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pbReprocessFics">
+        <property name="text">
+         <string>Reprocess Fics</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QPushButton" name="pbLoadFic">
         <property name="text">
@@ -195,15 +205,12 @@
       <item row="0" column="1">
        <widget class="QLineEdit" name="leFicUrl"/>
       </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="pbReprocessFics">
+      <item row="0" column="2">
+       <widget class="QPushButton" name="pbPCRescue">
         <property name="text">
-         <string>Reprocess Fics</string>
+         <string>Rescue PageCache</string>
         </property>
        </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="leReprocessFics"/>
       </item>
      </layout>
     </item>

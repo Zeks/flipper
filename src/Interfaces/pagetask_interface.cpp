@@ -81,8 +81,13 @@ bool PageTask::DropTaskId(int id)
 bool PageTask::IsLastTaskSuccessful()
 {
     auto id = database::puresql::GetLastExecutedTaskID(db);
-    bool success = database::puresql::GetTaskSuccessByID(id.data, db).success;
+    bool success = database::puresql::GetTaskSuccessByID(id.data, db).data;
     return success;
+}
+
+bool PageTask::IsForceStopActivated(int taskId)
+{
+    return database::puresql::IsForceStopActivated(taskId, db).data;
 }
 
 PageTaskPtr PageTask::GetLastTask()

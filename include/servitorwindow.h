@@ -56,6 +56,8 @@ private slots:
 
     void on_pbReprocessCacheLinked_clicked();
 
+    void on_pbPCRescue_clicked();
+
 private:
     Ui::servitorWindow *ui;
 };

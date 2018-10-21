@@ -125,6 +125,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
 
         if(q.lastError().isValid())
         {
+            qDebug() << "Reading url: " << url;
             qDebug() << "Error getting page from database: " << q.lastError();
             return result;
         }
@@ -202,7 +203,10 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     q.bindValue(":PAGE_TYPE", static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
+    {
+        qDebug() << "Writing url: " << page.url;
         qDebug() << "Error saving page to database: "  << q.lastError();
+    }
 }
 
 void PageGetterPrivate::SetDatabase(QSqlDatabase _db)
