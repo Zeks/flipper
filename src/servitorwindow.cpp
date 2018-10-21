@@ -22,6 +22,7 @@
 #include "tasks/recommendations_reload_precessor.h"
 
 
+
 ServitorWindow::ServitorWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::servitorWindow)
@@ -397,4 +398,9 @@ void ServitorWindow::on_pbGetNewFavourites_clicked()
 {
     if(!env.ResumeUnfinishedTasks())
         env.LoadAllLinkedAuthors(ECacheMode::use_cache);
+}
+
+void ServitorWindow::on_pbReprocessCacheLinked_clicked()
+{
+    env.LoadAllLinkedAuthorsMultiFromCache();
 }

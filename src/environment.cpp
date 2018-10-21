@@ -16,6 +16,7 @@
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/db_fixers.h"
 #include "include/parsers/ffn/favparser.h"
+#include "include/tasks/author_cache_reprocessor.h"
 #include "include/in_tag_accessor.h"
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
@@ -299,6 +300,16 @@ void CoreEnvironment::LoadAllLinkedAuthors(ECacheMode cacheMode)
                                                        true);
 
     UseAuthorTask(pageTask);
+}
+
+void CoreEnvironment::LoadAllLinkedAuthorsMultiFromCache()
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    AuthorCacheReprocessor reprocessor(db,
+                                       interfaces.fanfics,
+                                       interfaces.fandoms,
+                                       interfaces.authors);
+    reprocessor.ReprocessAllAuthorsStats();
 }
 
 

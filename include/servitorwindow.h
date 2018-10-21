@@ -54,6 +54,8 @@ private slots:
 
     void on_pbGetNewFavourites_clicked();
 
+    void on_pbReprocessCacheLinked_clicked();
+
 private:
     Ui::servitorWindow *ui;
 };

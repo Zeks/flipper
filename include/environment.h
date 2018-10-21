@@ -11,6 +11,7 @@
 #include "include/pagetask.h"
 #include "include/rng.h"
 #include "include/tasks/fandom_task_processor.h"
+#include "include/tasks/author_cache_reprocessor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
 
@@ -69,6 +70,7 @@ public:
 
     void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
     void LoadAllLinkedAuthors(ECacheMode cacheMode);
+    void LoadAllLinkedAuthorsMultiFromCache();
     void UseAuthorTask(PageTaskPtr task);
     void UseFandomTask(PageTaskPtr task);
     PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,

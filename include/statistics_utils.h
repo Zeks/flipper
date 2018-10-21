@@ -47,14 +47,18 @@ struct UserPageSource
     }
     mutable QReadWriteLock lock;
 };
-
+//core::FicSectionStatsTemporaryToken token
+template <typename T>
 struct UserPageSink
 {
-    QList<core::FicSectionStatsTemporaryToken>tokens;
+    QList<T> tokens;
     int currentSize = 0;
-    void Push(core::FicSectionStatsTemporaryToken token){
+    void Push(T token){
         QWriteLocker locker(&lock);
+        //token.Log();
         tokens.push_back(token);
+//        for(auto token: tokens)
+//            token.Log();
         currentSize++;
     }
     int GetSize() const {
