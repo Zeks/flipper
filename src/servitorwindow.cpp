@@ -110,8 +110,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     authors->db = db;
 
 
-    auto genreLists = authors->GetListGenreData();
-    qDebug() << "got genre lists, size: " << genreLists.size();
+
 
     An<core::FavHolder> holder;
     holder->LoadFavourites(authors);
@@ -122,25 +121,31 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     for(int key : holder->favourites.keys())
     {
         auto& set = holder->favourites[key];
-        qDebug() <<  key << " set size is: " << set.size();
+        //qDebug() <<  key << " set size is: " << set.size();
         if(set.size() < minAuthorRecs)
             continue;
-        qDebug() << "processing";
+        //qDebug() << "processing";
         for(auto fic : set)
             ficsToUse[fic].insert(key);
     }
     qDebug() << "Finished author processing, resulting set is of size:" << ficsToUse.size();
+
+
 
     QList<int> result;
     for(auto key : ficsToUse.keys())
     {
         if(ficsToUse[key].size() >= minFoundLists)
             result.push_back(key);
+
     }
     qDebug() << "Finished counts";
     database::Transaction transaction(db);
-    for(auto fic: result)
-        fanfics->AssignQueuedForFic(fic);
+    //    for(auto fic: result)
+    //        fanfics->AssignQueuedForFic(fic);
+
+    auto genreLists = authors->GetListGenreData();
+    qDebug() << "got genre lists, size: " << genreLists.size();
 
     auto genresForFics = fanfics->GetGenreForFics();
     qDebug() << "collected genres for fics, size: " << genresForFics.size();
@@ -153,7 +158,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     ficGenreDataList.reserve(ficsToUse.keys().size());
     interfaces::GenreConverter genreConverter;
     int counter = 0;
-    for(auto fic : ficsToUse.keys())
+    for(auto fic : result)
     {
         if(counter%10000 == 0)
             qDebug() << "processing fic: " << counter;
@@ -200,8 +205,8 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
         genreData.strengthHurtComfort = static_cast<float>(hurty)/static_cast<float>(total);
         genreData.strengthNeutralComposite = static_cast<float>(neutral)/static_cast<float>(total);
         genreData.strengthNeutralAdventure = static_cast<float>(neutralAdventure)/static_cast<float>(total);
-//        qDebug() << "Calculating adventure value: " << "Adventure lists: " <<  neutralAdventure << " total lists: " << total << " fic: " << fic;
-//        qDebug() << "Calculated value: " << genreData.strengthNeutralAdventure;
+        //        qDebug() << "Calculating adventure value: " << "Adventure lists: " <<  neutralAdventure << " total lists: " << total << " fic: " << fic;
+        //        qDebug() << "Calculated value: " << genreData.strengthNeutralAdventure;
         genreConverter.ProcessGenreResult(genreData);
         ficGenreDataList.push_back(genreData);
         counter++;
@@ -272,37 +277,37 @@ void ServitorWindow::on_pbGetGenresForEverything_clicked()
     DetectGenres(25,15);
     interfaces::GenreConverter converter;
 
-//    QVector<int> ficIds;
-//    auto db = QSqlDatabase::database();
-//    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
-//    genres->db = db;
-//    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
-//    fanfics->db = db;
+    //    QVector<int> ficIds;
+    //    auto db = QSqlDatabase::database();
+    //    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    //    genres->db = db;
+    //    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    //    fanfics->db = db;
 
-//    QSettings settings("settings_servitor.ini", QSettings::IniFormat);
-//    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-//    bool alreadyQueued = settings.value("Settings/genrequeued", false).toBool();
-//    if(!alreadyQueued)
-//    {
-//        database::Transaction transaction(db);
-//        genres->QueueFicsForGenreDetection(25, 15, 0);
-//        settings.setValue("Settings/genrequeued", true);
-//        settings.sync();
-//        transaction.finalize();
-//    }
-//    database::Transaction transaction(db);
-//    qDebug() << "reading genre data for fics";
-//    auto genreData = genres->GetGenreDataForQueuedFics();
-//    qDebug() << "finished reading genre data for fics";
-//    for(auto& fic : genreData)
-//    {
-//        converter.ProcessGenreResult(fic);
-//    }
-//    qDebug() << "finished processing genre data for fics";
-//    if(!genres->WriteDetectedGenres(genreData))
-//        transaction.cancel();
-//    qDebug() << "finished writing genre data for fics";
-//    transaction.finalize();
+    //    QSettings settings("settings_servitor.ini", QSettings::IniFormat);
+    //    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    //    bool alreadyQueued = settings.value("Settings/genrequeued", false).toBool();
+    //    if(!alreadyQueued)
+    //    {
+    //        database::Transaction transaction(db);
+    //        genres->QueueFicsForGenreDetection(25, 15, 0);
+    //        settings.setValue("Settings/genrequeued", true);
+    //        settings.sync();
+    //        transaction.finalize();
+    //    }
+    //    database::Transaction transaction(db);
+    //    qDebug() << "reading genre data for fics";
+    //    auto genreData = genres->GetGenreDataForQueuedFics();
+    //    qDebug() << "finished reading genre data for fics";
+    //    for(auto& fic : genreData)
+    //    {
+    //        converter.ProcessGenreResult(fic);
+    //    }
+    //    qDebug() << "finished processing genre data for fics";
+    //    if(!genres->WriteDetectedGenres(genreData))
+    //        transaction.cancel();
+    //    qDebug() << "finished writing genre data for fics";
+    //    transaction.finalize();
 }
 
 void ServitorWindow::on_pushButton_2_clicked()
