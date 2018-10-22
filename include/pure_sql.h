@@ -76,6 +76,7 @@ DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabas
 DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
+DiagnosticSQLResult<bool> AssignQueuedToFanfic(int fic_id, QSqlDatabase db);
 
 DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db);
 
@@ -176,10 +177,12 @@ DiagnosticSQLResult<QSet<int>>  GetAllKnownSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownNotSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownFicIds(QString, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetSingularFicsInLargeButSlashyLists(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetListGenreData(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetListGenreData(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double>>  GetFicGenreData(QString genre, QString cutoff, QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetFullFicGenreData(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetFullFicGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, QString> >GetGenreForFics(QSqlDatabase db);
 
 DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFics(QSqlDatabase db);

@@ -35,6 +35,7 @@ App{
     cpp.minimumWindowsVersion: "6.0"
     files: [
         "UI/servitorwindow.ui",
+        "include/Interfaces/authors.h",
         "include/core/fic_genre_data.h",
         "include/servitorwindow.h",
         "include/tasks/author_cache_reprocessor.h",

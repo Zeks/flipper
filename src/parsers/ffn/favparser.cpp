@@ -195,7 +195,8 @@ inline void UpdateESRB(QSharedPointer<core::Fic> fic, QHash<int, int>& esrbKeepe
     else
         esrbKeeper[1]++; // mature
 }
-QHash<QString, int> CreateMoodRedirects(){
+
+static QHash<QString, int> CreateMoodRedirects(){
     QHash<QString, int> result;
     result["General"] = 0;
     result["Humor"] = 1;

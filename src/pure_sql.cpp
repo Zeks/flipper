@@ -44,7 +44,7 @@ bool NullPtrGuard(T item)
     }
     return true;
 }
-#define DATAQ [&](auto data, auto q)
+#define DATAQ [&](auto& data, auto q)
 #define COMMAND(NAME)  { #NAME, NAME}
 
 #define BP1(X) {COMMAND(X)}
@@ -247,7 +247,12 @@ DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDataba
 {
     QString qs = QString("update fanfics set slash_probability = 1, slash_source = :source where id = :fic_id");
     return SqlContext<bool> (db, qs, {{"source", source},{"fic_id", fic_id}})();
+}
 
+DiagnosticSQLResult<bool> AssignQueuedToFanfic(int fic_id, QSqlDatabase db)
+{
+    QString qs = QString("update fanfics set queued_for_action = 1 where id = :fic_id");
+    return SqlContext<bool> (db, qs, {{"fic_id", fic_id}})();
 }
 
 DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db)
@@ -2617,11 +2622,21 @@ DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString field
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetGenreData(QString keyName, QString query, QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, QString> >GetGenreForFics(QSqlDatabase db)
 {
-    SqlContext<QHash<int, std::array<double, 21>>> ctx(db);
+    SqlContext<QHash<int, QString>> ctx(db);
+    QString qs = QString("select id, %1 from fanfics order by id").arg("genres");
+    ctx.FetchSelectIntoHash(qs, "id", "genres");
+    return ctx.result;
+}
+
+DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetGenreData(QString keyName, QString query, QSqlDatabase db)
+{
+    SqlContext<QHash<int, std::array<double, 22>>> ctx(db);
     ctx.FetchSelectFunctor(query, DATAQ{
                                std::size_t counter = 0;
+//                               qDebug() << "Loading list for author: " << q.value(keyName).toInt();
+//                               qDebug() << "Adventure value is: " << q.value("Adventure").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("General_").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("Humor").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("Poetry").toDouble();
@@ -2631,6 +2646,7 @@ DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetGenreData(QString key
                                data[q.value(keyName).toInt()][counter++] =q.value("Parody").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("Angst").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("Supernatural").toDouble();
+                               data[q.value(keyName).toInt()][counter++] =q.value("Suspense").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("Romance").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("NoGenre").toDouble();
                                data[q.value(keyName).toInt()][counter++] =q.value("SciFi").toDouble();
@@ -2648,11 +2664,11 @@ DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetGenreData(QString key
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, std::array<double, 21>>> GetListGenreData(QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetListGenreData(QSqlDatabase db)
 {
-    return GetGenreData("author_id", "select * from AuthorFavouritesGenreStatistics order by author_id", db);
+    return GetGenreData("author_id", "select * from AuthorFavouritesGenreStatistics order by author_id asc", db);
 }
-DiagnosticSQLResult<QHash<int, std::array<double, 21> > > GetFullFicGenreData(QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, std::array<double, 22> > > GetFullFicGenreData(QSqlDatabase db)
 {
     return GetGenreData("fic_id", "select * from FicGenreStatistics order by fic_id", db);
 }
@@ -2975,6 +2991,38 @@ DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QS
     return ctx.result;
 }
 
+DiagnosticSQLResult<QHash<int, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db)
+{
+    QString query = " select * from AuthorMoodStatistics order by author_id asc ";
+
+    SqlContext<QHash<int, genre_stats::ListMoodData>> ctx(db, query);
+    auto genreConverter = interfaces::GenreConverter::Instance();
+    genre_stats::ListMoodData tmp;
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        tmp.listId = q.value("author_id").toInt();
+
+        tmp.strengthBondy = q.value("bondy").toFloat();
+        tmp.strengthDramatic= q.value("dramatic").toFloat();
+        tmp.strengthFlirty= q.value("flirty").toFloat();
+        tmp.strengthFunny= q.value("funny").toFloat();
+        tmp.strengthHurty= q.value("hurty").toFloat();
+        tmp.strengthNeutral= q.value("neutral").toFloat();
+
+        tmp.strengthNonBondy= q.value("nonbondy").toFloat();
+        tmp.strengthNonDramatic= q.value("NonDramatic").toFloat();
+        tmp.strengthNonFlirty= q.value("NonFlirty").toFloat();
+        tmp.strengthNonFunny= q.value("NonFunny").toFloat();
+        tmp.strengthNonHurty= q.value("NonHurty").toFloat();
+        tmp.strengthNonNeutral= q.value("NonNeutral").toFloat();
+        tmp.strengthNonShocky= q.value("NonShocky").toFloat();
+        tmp.strengthNone= q.value("None").toFloat();
+        tmp.strengthOther= q.value("Other").toFloat();
+
+
+        ctx.result.data.insert(tmp.listId, tmp);
+    });
+    return ctx.result;
+}
 
 DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFics(QSqlDatabase db)
 {

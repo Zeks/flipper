@@ -21,6 +21,8 @@ public:
     void ReadSettings();
     void WriteSettings();
     void UpdateInterval(int, int);
+
+    void DetectGenres(int minAuthorRecs, int minFoundLists);
     QSharedPointer<database::IDBWrapper> dbInterface;
     CoreEnvironment env;
 

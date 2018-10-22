@@ -115,10 +115,14 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
     int loadedPages = 0;
     bool breakerTriggered = false;
     StartPageWorker();
+    bool breakTriggered = false;
     for(auto subtask : task->subTasks)
     {
         if(pageInterface->IsForceStopActivated(task->id))
+        {
+            breakTriggered = true;
             break;
+        }
 
         auto startSubtask = std::chrono::high_resolution_clock::now();
         emit updateInfo(QString("<br>Starting new subtask: %1 <br>").arg(subtask->id));
@@ -288,7 +292,8 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
         emit updateInfo(info);
         emit resetEditorText();
     }
-    task->SetFinished(dbInterface->GetCurrentDateTime());
+    if(!breakTriggered)
+        task->SetFinished(dbInterface->GetCurrentDateTime());
     pageInterface->WriteTaskIntoDB(task);
     StopPageWorker();
 }

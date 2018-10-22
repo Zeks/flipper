@@ -236,6 +236,11 @@ bool Fanfics::AssignSlashForFic(int ficId, int source)
     return database::puresql::AssignSlashToFanfic(ficId, source, db).success;
 }
 
+bool Fanfics::AssignQueuedForFic(int ficId)
+{
+    return database::puresql::AssignQueuedToFanfic(ficId, db).success;
+}
+
 bool Fanfics::AssignIterationOfSlash(QString iteration)
 {
     return database::puresql::AssignIterationOfSlash(iteration, db).data;
@@ -251,7 +256,7 @@ QHash<int, double> Fanfics::GetFicGenreData(QString genre, QString cutoff)
     return database::puresql::GetFicGenreData(genre, cutoff, db).data;
 }
 
-QHash<int, std::array<double, 21> > Fanfics::GetFullFicGenreData()
+QHash<int, std::array<double, 22> > Fanfics::GetFullFicGenreData()
 {
     return database::puresql::GetFullFicGenreData(db).data;
 }
@@ -259,6 +264,11 @@ QHash<int, std::array<double, 21> > Fanfics::GetFullFicGenreData()
 QHash<int, double> Fanfics::GetDoubleValueHashForFics(QString fieldName)
 {
     return database::puresql::GetDoubleValueHashForFics(fieldName, db).data;
+}
+
+QHash<int, QString> Fanfics::GetGenreForFics()
+{
+    return database::puresql::GetGenreForFics(db).data;
 }
 
 QSet<int> Fanfics::ConvertFFNSourceFicsToDB(QString userToken)

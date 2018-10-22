@@ -80,12 +80,13 @@ class Fanfics : public IDBWebIDIndex {
 
     bool AssignChapter(int, int);
     bool AssignSlashForFic(int, int source);
+    bool AssignQueuedForFic(int ficId);
     bool AssignIterationOfSlash(QString iteration);
     bool PerformGenreAssignment();
     QHash<int, double> GetFicGenreData(QString genre, QString cutoff);
-    QHash<int, std::array<double, 21>> GetFullFicGenreData();
+    QHash<int, std::array<double, 22>> GetFullFicGenreData();
     QHash<int, double> GetDoubleValueHashForFics(QString fieldName);
-
+    QHash<int, QString> GetGenreForFics();
     // this uses preloaded fics from static data
     // to return an ID list for recommendations creator
     QSet<int> ConvertFFNSourceFicsToDB(QString userToken);

@@ -448,9 +448,14 @@ bool Authors::AssignAuthorNamesForWebIDsInFanficTable()
     return database::puresql::AssignAuthorNamesForWebIDsInFanficTable(db).data;
 }
 
-QHash<int, std::array<double, 21> > Authors::GetListGenreData()
+QHash<int, std::array<double, 22> > Authors::GetListGenreData()
 {
     return database::puresql::GetListGenreData(db).data;
+}
+
+QHash<int, genre_stats::ListMoodData> Authors::GetMoodDataForLists()
+{
+    return database::puresql::GetMoodDataForLists(db).data;
 }
 
 

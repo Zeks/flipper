@@ -95,7 +95,8 @@ public:
 
     bool AssignAuthorNamesForWebIDsInFanficTable();
 
-    QHash<int, std::array<double, 21>> GetListGenreData();
+    QHash<int, std::array<double, 22>> GetListGenreData();
+    QHash<int, genre_stats::ListMoodData> GetMoodDataForLists();
 
     //! todo those are required for managing recommendation lists and somewhat outdated
     // moved them to dump temporarily
