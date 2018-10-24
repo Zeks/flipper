@@ -185,7 +185,7 @@ void CommonRegex::Init()
     fixedNamesOnly = names + characterSeparator + names;
     slashRegexPerFandom["Naruto"] = fixedNamesOnly;
 
-    names = "((ichi(go){0,1})|(ren(ji){0,1})|(zara(ki){0,1})|(hi(tsugaya){0,1})|(ikka(ku){0,1})|(byaku(ya){0,1})|(chad))";
+    names = "((ichi(go){0,1})|(ren(ji){0,1})|(zara(ki){0,1})|(hitsugaya)|(ikka(ku){0,1})|(byaku(ya){0,1})|(chad))";
     fixedNamesOnly = names + characterSeparator + names;
     slashRegexPerFandom["Bleach"] = fixedNamesOnly;
     slashRegexPerFandom["Death Note"] = "(L/Light)|(Light/L)";

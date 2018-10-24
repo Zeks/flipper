@@ -185,7 +185,14 @@
     </item>
     <item row="0" column="0">
      <layout class="QGridLayout" name="gridLayout">
-      <item row="1" column="1">
+      <item row="0" column="3">
+       <widget class="QPushButton" name="pbPCRescue">
+        <property name="text">
+         <string>Rescue PageCache</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
        <widget class="QLineEdit" name="leReprocessFics"/>
       </item>
       <item row="1" column="0">
@@ -202,13 +209,20 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="1">
+       <widget class="QPushButton" name="pbSlashCalc">
+        <property name="text">
+         <string>Recalc Slash</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="2">
        <widget class="QLineEdit" name="leFicUrl"/>
       </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="pbPCRescue">
+      <item row="1" column="3">
+       <widget class="QPushButton" name="pbFindSlashSummary">
         <property name="text">
-         <string>Rescue PageCache</string>
+         <string>Check Summary</string>
         </property>
        </widget>
       </item>

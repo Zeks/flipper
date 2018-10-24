@@ -42,7 +42,6 @@ public:
     SlashProcessor(QSqlDatabase db,
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
-                        QSharedPointer<interfaces::PageTask> pageInterface,
                         QSharedPointer<interfaces::Authors> authorsInterface,
                         QSharedPointer<interfaces::RecommendationLists> recsInterface,
                         QSharedPointer<database::IDBWrapper> dbInterface,

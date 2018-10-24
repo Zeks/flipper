@@ -9,6 +9,7 @@
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/url_utils.h"
 #include "include/favholder.h"
+#include "include/tasks/slash_task_processor.h"
 #include <QTextCodec>
 #include <QSettings>
 #include <QSqlRecord>
@@ -649,4 +650,42 @@ void ServitorWindow::on_pbPCRescue_clicked()
     }
 
 
+}
+
+void ServitorWindow::on_pbSlashCalc_clicked()
+{
+    auto db = QSqlDatabase::database();
+    auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    authorInterface->db = db;
+    authorInterface->portableDBInterface = dbInterface;
+
+    auto authors = authorInterface->GetAllAuthors("ffn");
+
+
+    auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
+    fandomInterface->db = db;
+    fandomInterface->portableDBInterface = dbInterface;
+
+    auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    fanficsInterface->db = db;
+    fanficsInterface->authorInterface = authorInterface;
+    fanficsInterface->fandomInterface = fandomInterface;
+
+    auto recsInterface = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
+    recsInterface->db = db;
+    recsInterface->portableDBInterface = dbInterface;
+    recsInterface->authorInterface = authorInterface;
+
+    SlashProcessor slash(db,fanficsInterface, fandomInterface, authorInterface, recsInterface, dbInterface);
+    slash.DoFullCycle(db, 2);
+
+}
+
+void ServitorWindow::on_pbFindSlashSummary_clicked()
+{
+    CommonRegex rx;
+    rx.Init();
+    auto result = rx.ContainsSlash("A year after his mother's death, Ichigo finds himself in a world that he knows doesn't exist and met four spirits. Deciding to know what they truly are, he goes to his father who takes him to a shop. Take a different road IchiHime fans. Dual Wield Zanpakuto! Resurreccion! Quincy powers! OOC. New chapters every week or two. HIATUS",
+                                   "[Ichigo K., Yoruichi S.] Rukia K., T. Harribel",
+                                   "Bleach");
 }

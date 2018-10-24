@@ -86,8 +86,8 @@ void HumorProcessor::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors
     QSqlDatabase db = QSqlDatabase::database();
     database::Transaction transaction(db);
 
-    QHash<int, std::array<double, 21>> authorGenreHash;
-    QHash<int, std::array<double, 21>> ficGenreHash;
+    QHash<int, std::array<double, 22>> authorGenreHash;
+    QHash<int, std::array<double, 22>> ficGenreHash;
     QHash<int, double> reviewRatios;
     TimedAction getReviewRatios("get review ratios", [&](){
         reviewRatios = fanficsInterface->GetDoubleValueHashForFics("reviewstofavourites");
@@ -217,7 +217,7 @@ void HumorProcessor::CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors
 {
     database::Transaction transaction(db);
 
-    QHash<int, std::array<double, 21>> authorGenreHash;
+    QHash<int, std::array<double, 22>> authorGenreHash;
 
     TimedAction getGenres("getGenres", [&](){
         authorGenreHash = authorsInterface->GetListGenreData();

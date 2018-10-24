@@ -33,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 SlashProcessor::SlashProcessor(QSqlDatabase db,
                                QSharedPointer<interfaces::Fanfics> fanficInterface,
                                QSharedPointer<interfaces::Fandoms> fandomsInterface,
-                               QSharedPointer<interfaces::PageTask> pageInterface,
                                QSharedPointer<interfaces::Authors> authorsInterface,
                                QSharedPointer<interfaces::RecommendationLists> recsInterface,
                                QSharedPointer<database::IDBWrapper> dbInterface, QObject *obj) : QObject(obj)
@@ -41,7 +40,6 @@ SlashProcessor::SlashProcessor(QSqlDatabase db,
 {
     this->fanficsInterface = fanficInterface;
     this->fandomsInterface = fandomsInterface;
-    this->pageInterface = pageInterface;
     this->dbInterface = dbInterface;
     this->authorsInterface = authorsInterface;
     this->recsInterface = recsInterface;
@@ -131,8 +129,6 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
     processNotSlash.run();
     QList<int> intersection;
     intersection.reserve(50000);
-    //    CommonRegex rx;
-    //    rx.Init();
 
     // sufficient matches depends on if a fic is present in lists 0 and 1
     // 0 - 2 matches or more requires 7 non slash
@@ -151,7 +147,7 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
                 sufficientMatchesCount = 7;
             else if(slashFics[1][fic] >= 5)
                 sufficientMatchesCount = 5;
-            //auto ficPtr = env.interfaces.fanfics->GetFicById(fic);
+
             bool soleTMatch = (TRepo.contains(fic) && slashFics[2][fic]==1);
             bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
             bool sufficientMatches = notSlashFics[fic] >= static_cast<double>(sufficientMatchesCount)/neededNotslashMatchesCoeff;
@@ -211,18 +207,25 @@ void SlashProcessor::DoFullCycle(QSqlDatabase db, int passCount)
     auto authors = authorsInterface->GetAllAuthors("ffn", true);
     {
         database::Transaction transaction(db);
+        qDebug() << "Assigning metainformation for first pass";
         AssignSlashKeywordsMetaInfomation(db);
+        qDebug() << "Calculating statistics for first pass";
         authorsInterface->CalculateSlashStatisticsPercentages("keywords_pass_result");
+        qDebug() << "Calculated statistics for first pass";
         transaction.finalize();
     }
-
+    qDebug() << "Starting iterations";
     for(int i = 1; i < passCount+1; i++)
     {
+        qDebug() << "Iteration: " << i;
         {
             database::Transaction transaction(db);
             auto authors = authorsInterface->GetAllAuthors("ffn", true);
+            qDebug() << "Calculating statistics for pass";
             CreateListOfSlashCandidates(i, authors);
+            qDebug() << "Assigning iteration";
             fanficsInterface->AssignIterationOfSlash("pass_" + QString::number(i));
+            qDebug() << "Calculating in database";
             authorsInterface->CalculateSlashStatisticsPercentages("pass_" + QString::number(i));
             transaction.finalize();
             lastI = i;

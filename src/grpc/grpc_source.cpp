@@ -127,6 +127,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     slashFilter->set_use_slash_filter(filter.slashFilter.slashFilterEnabled);
     slashFilter->set_exclude_slash(filter.slashFilter.excludeSlash);
     slashFilter->set_include_slash(filter.slashFilter.includeSlash);
+    slashFilter->set_slash_filter_level(filter.slashFilter.slashFilterLevel);
     slashFilter->set_enable_exceptions(filter.slashFilter.enableFandomExceptions);
     for(auto exception : filter.slashFilter.fandomExceptions)
         slashFilter->add_fandom_exceptions(exception);
@@ -232,6 +233,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.slashFilter.excludeSlash = filter.slash_filter().exclude_slash();
     result.slashFilter.includeSlash = filter.slash_filter().include_slash();
     result.slashFilter.enableFandomExceptions = filter.slash_filter().enable_exceptions();
+    result.slashFilter.slashFilterLevel = filter.slash_filter().slash_filter_level();
 
     for(int i = 0; i < filter.slash_filter().fandom_exceptions_size(); i++)
         result.slashFilter.fandomExceptions.push_back(filter.slash_filter().fandom_exceptions(i));

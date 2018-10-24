@@ -54,7 +54,7 @@ void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
         auto authors = this->authorsInterface->GetAllAuthors("ffn", true);
 
         statistics_utils::UserPageSource source;
-        statistics_utils::UserPageSink sink;
+        statistics_utils::UserPageSink<core::FicSectionStatsTemporaryToken> sink;
 
         QHash<int, QList<WebPage>>pages;
         int counter = 0;

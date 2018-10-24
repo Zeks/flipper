@@ -48,7 +48,6 @@ App{
         "include/Interfaces/fanfics.h",
         "include/Interfaces/ffn/ffn_fanfics.h",
         "include/Interfaces/ffn/ffn_authors.h",
-
         "include/Interfaces/genres.h",
         "include/Interfaces/interface_sqlite.h",
         "include/Interfaces/pagetask_interface.h",
@@ -64,6 +63,7 @@ App{
         "include/parsers/ffn/ffnparserbase.h",
         "include/parsers/ffn/ficparser.h",
         "include/parsers/ffn/fandomindexparser.h",
+        "include/tasks/author_cache_reprocessor.h",
         "include/tasks/fandom_task_processor.h",
         "include/tasks/author_task_processor.h",
         "include/timeutils.h",
@@ -87,6 +87,7 @@ App{
         "include/url_utils.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
+        "src/tasks/author_cache_reprocessor.cpp",
         "src/tasks/fandom_task_processor.cpp",
         "src/tasks/author_task_processor.cpp",
         "src/pageconsumer.cpp",
@@ -99,7 +100,6 @@ App{
         "src/Interfaces/fanfics.cpp",
         "src/Interfaces/ffn/ffn_fanfics.cpp",
         "src/Interfaces/ffn/ffn_authors.cpp",
-
         "src/Interfaces/genres.cpp",
         "src/Interfaces/interface_sqlite.cpp",
         "src/Interfaces/pagetask_interface.cpp",

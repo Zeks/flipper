@@ -60,6 +60,10 @@ private slots:
 
     void on_pbPCRescue_clicked();
 
+    void on_pbSlashCalc_clicked();
+
+    void on_pbFindSlashSummary_clicked();
+
 private:
     Ui::servitorWindow *ui;
 };
