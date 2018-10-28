@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QRegExp>
 #include <QHash>
 #include <QTextStream>
+#include <QDataStream>
 #include <QSet>
 #include "core/fic_genre_data.h"
 namespace core {
@@ -253,7 +254,55 @@ struct FicForWeightCalc
 
 
     friend  QTextStream &operator<<(QTextStream &out, const FicForWeightCalc &p);
-    friend  QTextStream &operator>>(QTextStream &in, const FicForWeightCalc &p);
+    friend  QTextStream &operator>>(QTextStream &in, FicForWeightCalc &p);
+
+
+
+    void Serialize(QDataStream &out)
+    {
+        out << id;
+        out << adult;
+        out << authorId;
+        out << complete;
+        out << dead;
+        out << favCount;
+        out << genreString;
+        out << published;
+        out << updated;
+        out << reviewCount;
+        out << sameLanguage;
+        out << slash;
+        out << wordCount;
+        out << fandoms.size();
+
+        for(auto fandom: fandoms)
+            out << fandom;
+    }
+
+    void Deserialize(QDataStream &in)
+    {
+        in >> id;
+        in >> adult;
+        in >> authorId;
+        in >> complete;
+        in >> dead;
+        in >> favCount;
+        in >> genreString;
+        in >> published;
+        in >> updated;
+        in >> reviewCount;
+        in >> sameLanguage;
+        in >> slash;
+        in >> wordCount;
+        int size;
+        in >> size;
+        int fandom = -1;
+        for(int i = 0; i < size; i++)
+        {
+            in >> fandom;
+            fandoms.push_back(fandom);
+        }
+    }
 
 };
 inline QTextStream &operator>>(QTextStream &in, FicForWeightCalc &p)
@@ -303,13 +352,13 @@ inline QTextStream &operator>>(QTextStream &in, FicForWeightCalc &p)
 
     in >> temp;
     int fandomSize = temp.toInt();
-    if(fandomSize > 2)
-        fandomSize = fandomSize;
+
     for(int i = 0; i < fandomSize; i++)
     {
         in >> temp;
         p.fandoms.push_back(temp.toInt());
     }
+
     return in;
 }
 
@@ -347,6 +396,7 @@ inline QTextStream &operator<<(QTextStream &out, const FicForWeightCalc &p)
 
     return out;
 }
+
 
 
 struct FandomStatsForWeightCalc{

@@ -705,22 +705,22 @@ struct CalcDataHolder{
         int chunkSize = fics.size()/threadCount;
         int fileCounter = -1;
         QFile data;
-        QTextStream out;
+        QDataStream out;
         for(int i = 0; i < fics.size(); i ++)
         {
             if( i%chunkSize == 0)
             {
                 fileCounter++;
-                out.flush();
+                //out.commitTransaction();
                 data.close();
                 data.setFileName(QString("ficdata_%1.txt").arg(QString::number(fileCounter)));
                 if(data.open(QFile::WriteOnly | QFile::Truncate))
                 {
                     out.setDevice(&data);
                     if(fileCounter != threadCount)
-                        out << chunkSize << " ";
+                        out << chunkSize;
                     else
-                        out << fics.size()%threadCount << " ";
+                        out << fics.size()%threadCount;
                 }
                 else
                 {
@@ -728,9 +728,9 @@ struct CalcDataHolder{
                     break;
                 }
             }
-            out << *fics[i] << " ";
+            fics[i]->Serialize(out);
         }
-        out.flush();
+        //out.flush();
         data.close();
     }
 
@@ -738,30 +738,34 @@ struct CalcDataHolder{
         fics.clear();
         //QVector<QVector<core::FicWeightPtr>> vecs;
         //vecs.resize(10);
-        auto loader = [&](int file){
+        auto loader = [](int file){
             QVector<core::FicWeightPtr> vec;
             QFile data(QString("ficdata_%1.txt").arg(QString::number(file)));
             if (data.open(QFile::ReadOnly)) {
-                QTextStream in(&data);
 
-                QString size;
+                QDataStream in(&data);
+
+                int size;
                 in >> size;
-                vec.reserve(size.toInt());
-                for(int i = 0; i < size.toInt(); i++)
+                vec.reserve(size);
+                for(int i = 0; i < size; i++)
                     vec.push_back(core::FicWeightPtr{new core::FicForWeightCalc()});
-                for(int i = 0; i < size.toInt(); i++)
+                for(int i = 0; i < size; i++)
                 {
                     if(i%10000 == 0)
                         qDebug() << "processing fic: " << i;
-                    in >> *vec[i];
+                    vec[i]->Deserialize(in);
                 }
             }
+            else
+                qDebug() << "Could not open file: " << QString("ficdata_%1.txt").arg(QString::number(file));
             return vec;
         };
         QList<QFuture<QVector<core::FicWeightPtr>>> futures;
-        for(int i = 0; i < 12; i++)
+        for(int i = 0; i < 11; i++)
         {
-            futures.push_back(QtConcurrent::run([&](){
+            futures.push_back(QtConcurrent::run([i, loader](){
+                qDebug() << "loading file: " << i;
                 return loader(i);
             }));
         }
