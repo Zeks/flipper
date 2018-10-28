@@ -717,10 +717,10 @@ struct CalcDataHolder{
                 if(data.open(QFile::WriteOnly | QFile::Truncate))
                 {
                     out.setDevice(&data);
-                    if(i != threadCount -1)
+                    if(fileCounter != threadCount)
                         out << chunkSize << " ";
                     else
-                        out << chunkSize + fics.size()%threadCount << " ";
+                        out << fics.size()%threadCount << " ";
                 }
                 else
                 {
@@ -736,24 +736,41 @@ struct CalcDataHolder{
 
     void LoadFicsData(){
         fics.clear();
-        QFile data("ficsdata.txt");
-        if (data.open(QFile::ReadOnly)) {
-            QTextStream in(&data);
+        //QVector<QVector<core::FicWeightPtr>> vecs;
+        //vecs.resize(10);
+        auto loader = [&](int file){
+            QVector<core::FicWeightPtr> vec;
+            QFile data(QString("ficdata_%1.txt").arg(QString::number(file)));
+            if (data.open(QFile::ReadOnly)) {
+                QTextStream in(&data);
 
-            QString size;
-            in >> size;
-            fics.reserve(size.toInt());
-            for(int i = 0; i < size.toInt(); i++)
-                fics.push_back(core::FicWeightPtr{new core::FicForWeightCalc()});
-            for(int i = 0; i < size.toInt(); i++)
-            {
-                if(i%10000 == 0)
-                    qDebug() << "processing fic: " << i;
-                //core::FicWeightPtr fic(new core::FicForWeightCalc());
-                in >> *fics[i];
-                //fics.push_back(fic);
+                QString size;
+                in >> size;
+                vec.reserve(size.toInt());
+                for(int i = 0; i < size.toInt(); i++)
+                    vec.push_back(core::FicWeightPtr{new core::FicForWeightCalc()});
+                for(int i = 0; i < size.toInt(); i++)
+                {
+                    if(i%10000 == 0)
+                        qDebug() << "processing fic: " << i;
+                    in >> *vec[i];
+                }
             }
+            return vec;
+        };
+        QList<QFuture<QVector<core::FicWeightPtr>>> futures;
+        for(int i = 0; i < 12; i++)
+        {
+            futures.push_back(QtConcurrent::run([&](){
+                return loader(i);
+            }));
         }
+        for(auto future: futures)
+        {
+            future.waitForFinished();
+        }
+        for(auto future: futures)
+            fics += future.result();
     }
 };
 
@@ -769,7 +786,7 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     authorsInterface->db = db;
 
     QVector<core::FicWeightPtr> fics;
-    if(!QFile::exists("ficsdata.txt"))
+    if(!QFile::exists("ficdata_0.txt"))
     {
         TimedAction action("Loading data",[&](){
             fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(50);
