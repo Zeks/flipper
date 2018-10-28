@@ -1,6 +1,7 @@
 *.user
 qtc_*/*
 release/*
+Run/TempData/*
 debug/*
 Makefile
 Makefile.*

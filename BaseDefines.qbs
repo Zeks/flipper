@@ -4,7 +4,7 @@ import qbs.Process
 Product{
     Depends { name: "conditionals" }
     cpp.debugInformation: true
-    cpp.cxxLanguageVersion: "c++14"
+    cpp.cxxLanguageVersion: "c++17"
     conditionals.debugAppend : qbs.buildVariant == "debug" ? "d" : ""
 
     

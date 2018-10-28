@@ -9,12 +9,14 @@
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/url_utils.h"
 #include "include/favholder.h"
+#include "include/calc_data_holder.h"
 #include "include/tasks/slash_task_processor.h"
 #include <QTextCodec>
 #include <QSettings>
 #include <QSqlRecord>
 #include <QFuture>
 #include <QtConcurrent>
+
 #include <QFutureWatcher>
 #include "ui_servitorwindow.h"
 #include "include/parsers/ffn/ficparser.h"
@@ -23,7 +25,7 @@
 #include "include/page_utils.h"
 #include "pagegetter.h"
 #include "tasks/recommendations_reload_precessor.h"
-
+#include <type_traits>
 
 
 ServitorWindow::ServitorWindow(QWidget *parent) :
@@ -418,8 +420,6 @@ void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
 
     auto authors = authorInterface->GetAllAuthorsWithFavUpdateSince("ffn", QDateTime::currentDateTime().addMonths(-24));
 
-
-
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
     fandomInterface->db = db;
     fandomInterface->portableDBInterface = dbInterface;
@@ -690,95 +690,6 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
                                    "Bleach");
 }
 
-struct CalcDataHolder{
-    QVector<core::FicWeightPtr> fics;
-    QHash<int, QSet<int> > favourites;
-    QHash<int, std::array<double, 22> > genreData;
-    QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
-    QList<core::AuthorPtr>  authors;
-
-    void SaveToFile();
-    void LoadFromFile();
-
-    void SaveFicsData(){
-        int threadCount = 10;
-        int chunkSize = fics.size()/threadCount;
-        int fileCounter = -1;
-        QFile data;
-        QDataStream out;
-        for(int i = 0; i < fics.size(); i ++)
-        {
-            if( i%chunkSize == 0)
-            {
-                fileCounter++;
-                //out.commitTransaction();
-                data.close();
-                data.setFileName(QString("ficdata_%1.txt").arg(QString::number(fileCounter)));
-                if(data.open(QFile::WriteOnly | QFile::Truncate))
-                {
-                    out.setDevice(&data);
-                    if(fileCounter != threadCount)
-                        out << chunkSize;
-                    else
-                        out << fics.size()%threadCount;
-                }
-                else
-                {
-                    qDebug() << "breaking on error";
-                    break;
-                }
-            }
-            fics[i]->Serialize(out);
-        }
-        //out.flush();
-        data.close();
-    }
-
-    void LoadFicsData(){
-        fics.clear();
-        //QVector<QVector<core::FicWeightPtr>> vecs;
-        //vecs.resize(10);
-        auto loader = [](int file){
-            QVector<core::FicWeightPtr> vec;
-            QFile data(QString("ficdata_%1.txt").arg(QString::number(file)));
-            if (data.open(QFile::ReadOnly)) {
-
-                QDataStream in(&data);
-
-                int size;
-                in >> size;
-                vec.reserve(size);
-                for(int i = 0; i < size; i++)
-                    vec.push_back(core::FicWeightPtr{new core::FicForWeightCalc()});
-                for(int i = 0; i < size; i++)
-                {
-                    if(i%10000 == 0)
-                        qDebug() << "processing fic: " << i;
-                    vec[i]->Deserialize(in);
-                }
-            }
-            else
-                qDebug() << "Could not open file: " << QString("ficdata_%1.txt").arg(QString::number(file));
-            return vec;
-        };
-        QList<QFuture<QVector<core::FicWeightPtr>>> futures;
-        for(int i = 0; i < 11; i++)
-        {
-            futures.push_back(QtConcurrent::run([i, loader](){
-                qDebug() << "loading file: " << i;
-                return loader(i);
-            }));
-        }
-        for(auto future: futures)
-        {
-            future.waitForFinished();
-        }
-        for(auto future: futures)
-            fics += future.result();
-    }
-};
-
-
 void ServitorWindow::on_pbCalcWeights_clicked()
 {
     auto db = QSqlDatabase::database();
@@ -790,10 +701,22 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     authorsInterface->db = db;
 
     QVector<core::FicWeightPtr> fics;
+    QHash<int, QSet<int>> favourites;
+    QHash<int, std::array<double, 22>> genreLists;
+    QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
+    QList<core::AuthorPtr> authors;
+    database::Transaction transaction(db);
+
     if(!QFile::exists("ficdata_0.txt"))
     {
         TimedAction action("Loading data",[&](){
             fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(50);
+            favourites = authorsInterface->LoadFullFavouritesHashset();
+            genreLists = authorsInterface->GetListGenreData();
+            qDebug() << "got genre lists, size: " << genreLists.size();
+            fandomLists = authorsInterface->GetAuthorListFandomStatistics(favourites.keys());
+            qDebug() << "got fandom lists, size: " << fandomLists.size();
+            authors = authorsInterface->GetAllAuthors("ffn");
         });
         action.run();
 
@@ -801,6 +724,11 @@ void ServitorWindow::on_pbCalcWeights_clicked()
             fic->genreString = fic->genreString.replace(" ", "_");
         CalcDataHolder cdh;
         cdh.fics = fics;
+        cdh.favourites = favourites;
+        cdh.genreData = genreLists;
+        cdh.fandomLists = fandomLists;
+        cdh.authors = authors;
+
         TimedAction saveAction("Saving data",[&](){
             cdh.SaveFicsData();
         });
@@ -816,7 +744,7 @@ void ServitorWindow::on_pbCalcWeights_clicked()
         loadAction.run();
         fics = cdh.fics;
     }
-
+    transaction.finalize();
     return;
 
     //    QHash<int, core::FicWeightPtr> ficData;
@@ -829,7 +757,7 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     //            ficsForFandoms[fandom].insert(fic->id);
     //    }
 
-    //    auto favourites = authorsInterface->LoadFullFavouritesHashset();
+
     //    QHash<int, QSet<int>> ficsToFavLists;
     //    for(int key : favourites.keys())
     //    {
@@ -838,10 +766,7 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     //            ficsToFavLists[fic].insert(key);
     //    }
 
-    //    auto genreLists = authorsInterface->GetListGenreData();
-    //    qDebug() << "got genre lists, size: " << genreLists.size();
-    //    auto fandomLists = authorsInterface->GetAuthorListFandomStatistics(favourites.keys());
-    //    qDebug() << "got fandom lists, size: " << genreLists.size();
+
 
     //    auto authors = authorsInterface->GetAllAuthors("ffn");
     //    qDebug() << "got authors, size: " << genreLists.size();

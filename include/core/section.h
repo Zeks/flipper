@@ -110,14 +110,8 @@ public:
 
     int favourites = -1;
     int ficWordCount = 0;
+
     double wordsPerChapter = 0;
-
-    ESRBType esrbType;
-    MoodType prevalentMood = MoodType::neutral;
-    EntitySizeType mostFavouritedSize;
-    EntitySizeType sectionRelativeSize;
-
-
     double averageLength = 0.0;
     double fandomsDiversity = 0.0;
     double explorerFactor = 0.0;
@@ -138,7 +132,11 @@ public:
     double slashRatio = 0.0;
     double notSlashRatio = 0.0;
     double smutRatio = 0.0;
-    //double moodDiversityFactor = 0.0;
+
+    ESRBType esrbType;
+    MoodType prevalentMood = MoodType::neutral;
+    EntitySizeType mostFavouritedSize;
+    EntitySizeType sectionRelativeSize;
 
     QString prevalentGenre;
     QHash<int, double> sizeFactors;
@@ -153,6 +151,9 @@ public:
 
     QDate firstPublished;
     QDate lastPublished;
+
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
 };
 
 class AuthorStats
@@ -166,6 +167,8 @@ public:
 
     FicSectionStats favouriteStats;
     FicSectionStats ownFicStats;
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
 };
 
 class Author : public DBEntity{
@@ -175,8 +178,6 @@ public:
     ~Author(){}
     void Log();
     void LogWebIds();
-    int id= -1;
-    AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
     void AssignId(int id){
         if(id == -1)
         {
@@ -196,15 +197,6 @@ public:
             return webIds[website];
         return -1;
     }
-    QString name;
-    QDateTime firstPublishedFic;
-    QDateTime lastUpdated;
-    int ficCount = -1;
-    int recCount = -1;
-    int favCount = -1;
-    bool isValid = false;
-    //QString website = "";
-    QHash<QString, int> webIds;
     QString CreateAuthorUrl(QString urlType, int webId) const;
     QString url(QString type) const
     {
@@ -213,8 +205,24 @@ public:
         return "";
     }
     QStringList GetWebsites() const;
+
+    int id= -1;
+    AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
+    QString name;
+    QDateTime firstPublishedFic;
+    QDateTime lastUpdated;
+    int ficCount = -1;
+    int recCount = -1;
+    int favCount = -1;
+    bool isValid = false;
+    QHash<QString, int> webIds;
     UpdateMode updateMode = UpdateMode::none;
+
     AuthorStats stats;
+
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
+
 };
 
 class FavouritesPage
@@ -408,6 +416,28 @@ struct FandomStatsForWeightCalc{
 
   QHash<int, double> fandomPresence;
   QHash<int, int> fandomCounts;
+
+
+  void Serialize(QDataStream &out)
+  {
+        out << listId;
+        out << fandomCount;
+        out << ficCount;
+        out << fandomDiversity;
+        out << fandomPresence;
+        out << fandomCounts;
+  }
+
+  void Deserialize(QDataStream &in)
+  {
+      in >> listId;
+      in >> fandomCount;
+      in >> ficCount;
+      in >> fandomDiversity;
+      in >> fandomPresence;
+      in >> fandomCounts;
+  }
+
 };
 
 

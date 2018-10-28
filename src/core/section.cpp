@@ -63,6 +63,46 @@ QStringList core::Author::GetWebsites() const
     return webIds.keys();
 }
 
+void core::Author::Serialize(QDataStream &out)
+{
+    out << hasChanges;
+    out << id;
+    out << static_cast<int>(idStatus);
+    out << name;
+    out << firstPublishedFic;
+    out << lastUpdated;
+    out << ficCount;
+    out << recCount;
+    out << favCount;
+    out << isValid;
+    out << webIds;
+    out << static_cast<int>(updateMode);
+
+    stats.Serialize(out);
+}
+
+void core::Author::Deserialize(QDataStream &in)
+{
+    in >> hasChanges;
+    in >> id;
+    int temp;
+    in >> temp;
+    idStatus = static_cast<AuthorIdStatus>(temp);
+
+    in >> name;
+    in >> firstPublishedFic;
+    in >> lastUpdated;
+    in >> ficCount;
+    in >> recCount;
+    in >> favCount;
+    in >> isValid;
+    in >> webIds;
+    in >> temp;
+    updateMode = static_cast<UpdateMode>(temp);
+
+    stats.Deserialize(in);
+}
+
 
 
 core::Section::Section():result(new core::Fic())
@@ -159,4 +199,114 @@ void core::RecommendationList::Log()
     qDebug() << "alwaysPickAt: " << alwaysPickAt ;
     qDebug() << "pickRatio: " << pickRatio ;
     qDebug() << "created: " << created ;
+}
+
+void core::AuthorStats::Serialize(QDataStream &out)
+{
+    out << pageCreated;
+    out << bioLastUpdated;
+    out << favouritesLastUpdated;
+    out << favouritesLastChecked;
+    out << bioWordCount;
+
+    favouriteStats.Serialize(out);
+    ownFicStats.Serialize(out);
+}
+
+void core::AuthorStats::Deserialize(QDataStream &in)
+{
+    in >> pageCreated;
+    in >> bioLastUpdated;
+    in >> favouritesLastUpdated;
+    in >> favouritesLastChecked;
+    in >> bioWordCount;
+
+    favouriteStats.Deserialize(in);
+    ownFicStats.Deserialize(in);
+}
+
+void core::FicSectionStats::Serialize(QDataStream &out)
+{
+    out << favourites;
+    out << ficWordCount;
+    out << wordsPerChapter;
+    out << averageLength;
+    out << fandomsDiversity;
+    out << explorerFactor;
+    out << megaExplorerFactor;
+    out << crossoverFactor;
+    out << unfinishedFactor;
+    out << esrbUniformityFactor;
+    out << esrbKiddy;
+    out << esrbMature;
+    out << genreDiversityFactor;
+    out << moodUniformity;
+    out << moodNeutral;
+    out << moodSad;
+    out << moodHappy;
+    out << crackRatio;
+    out << slashRatio;
+    out << notSlashRatio;
+    out << smutRatio;
+    out << static_cast<int>(esrbType);
+    out << static_cast<int>(prevalentMood);
+    out << static_cast<int>(mostFavouritedSize);
+    out << static_cast<int>(sectionRelativeSize);
+
+    out << prevalentGenre;
+    out << sizeFactors;
+    out << fandoms;
+    out << fandomFactors;
+    out << fandomsConverted;
+    out << fandomFactorsConverted;
+    out << genreFactors;
+
+    out << firstPublished;
+    out << lastPublished;
+
+}
+
+void core::FicSectionStats::Deserialize(QDataStream &in)
+{
+    in >>  favourites;
+    in >>  ficWordCount;
+    in >>  wordsPerChapter;
+    in >>  averageLength;
+    in >>  fandomsDiversity;
+    in >>  explorerFactor;
+    in >>  megaExplorerFactor;
+    in >>  crossoverFactor;
+    in >>  unfinishedFactor;
+    in >>  esrbUniformityFactor;
+    in >>  esrbKiddy;
+    in >>  esrbMature;
+    in >>  genreDiversityFactor;
+    in >>  moodUniformity;
+    in >>  moodNeutral;
+    in >>  moodSad;
+    in >>  moodHappy;
+    in >>  crackRatio;
+    in >>  slashRatio;
+    in >>  notSlashRatio;
+    in >>  smutRatio;
+    int temp;
+    in >>  temp;
+    esrbType = static_cast<ESRBType>(temp);
+    in >>  temp;
+    prevalentMood = static_cast<MoodType>(temp);
+    in >>  temp;
+    mostFavouritedSize = static_cast<EntitySizeType>(temp);
+    in >>  temp;
+    sectionRelativeSize = static_cast<EntitySizeType>(temp);
+
+    in >>  prevalentGenre;
+    in >>  sizeFactors;
+    in >>  fandoms;
+    in >>  fandomFactors;
+    in >>  fandomsConverted;
+    in >>  fandomFactorsConverted;
+    in >>  genreFactors;
+
+    in >>  firstPublished;
+    in >>  lastPublished;
 }

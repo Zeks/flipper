@@ -2759,6 +2759,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
     for(auto author: authors)
     {
         ctx.bindValue("author_id", author);
+        //qDebug() << "loading author: " << author;
 
         core::AuthorFavFandomStatsPtr fs(new core::FandomStatsForWeightCalc);
 
@@ -2766,13 +2767,14 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
         ctx.FetchSelectFunctor(qs, DATAQ{
                                fs->fandomPresence[q.value("fandom_id").toInt()] = q.value("fandom_ratio").toDouble();
                                fs->fandomCounts[q.value("fandom_id").toInt()] = q.value("fic_count").toInt();
-                           });
+                           }, true);
         fs->fandomCount = fs->fandomPresence.size();
         ctx.result.data = fs;
 
         if(!ctx.result.success)
         {
             result.oracleError = ctx.result.oracleError;
+            //qDebug() << "GetAuthorListFandomStatistics: " << ctx.result.oracleError;
             result.success = false;
             result.data.clear();
             break;
