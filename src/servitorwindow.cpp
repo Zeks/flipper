@@ -692,24 +692,46 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
 
 struct CalcDataHolder{
     QVector<core::FicWeightPtr> fics;
-    //    QHash<int, QSet<int> > favourites;
-    //    QHash<int, std::array<double, 22> > genreData;
-    //    QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
-    //    QList<core::AuthorPtr>  authors;
+    QHash<int, QSet<int> > favourites;
+    QHash<int, std::array<double, 22> > genreData;
+    QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
+    QList<core::AuthorPtr>  authors;
 
     void SaveToFile();
     void LoadFromFile();
 
     void SaveFicsData(){
-        QFile data("ficsdata.txt");
-        if (data.open(QFile::WriteOnly | QFile::Truncate)) {
-            QTextStream out(&data);
-            out << fics.size() << " ";
-            for(auto fic: fics)
+        int threadCount = 10;
+        int chunkSize = fics.size()/threadCount;
+        int fileCounter = -1;
+        QFile data;
+        QTextStream out;
+        for(int i = 0; i < fics.size(); i ++)
+        {
+            if( i%chunkSize == 0)
             {
-                out << *fic << " ";
+                fileCounter++;
+                out.flush();
+                data.close();
+                data.setFileName(QString("ficdata_%1.txt").arg(QString::number(fileCounter)));
+                if(data.open(QFile::WriteOnly | QFile::Truncate))
+                {
+                    out.setDevice(&data);
+                    if(i != threadCount -1)
+                        out << chunkSize << " ";
+                    else
+                        out << chunkSize + fics.size()%threadCount << " ";
+                }
+                else
+                {
+                    qDebug() << "breaking on error";
+                    break;
+                }
             }
+            out << *fics[i] << " ";
         }
+        out.flush();
+        data.close();
     }
 
     void LoadFicsData(){
@@ -749,7 +771,11 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     QVector<core::FicWeightPtr> fics;
     if(!QFile::exists("ficsdata.txt"))
     {
-        fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(50);
+        TimedAction action("Loading data",[&](){
+            fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(50);
+        });
+        action.run();
+
         for(auto fic: fics)
             fic->genreString = fic->genreString.replace(" ", "_");
         CalcDataHolder cdh;
