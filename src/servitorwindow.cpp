@@ -689,3 +689,143 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
                                    "[Ichigo K., Yoruichi S.] Rukia K., T. Harribel",
                                    "Bleach");
 }
+
+struct CalcDataHolder{
+    QVector<core::FicWeightPtr> fics;
+    //    QHash<int, QSet<int> > favourites;
+    //    QHash<int, std::array<double, 22> > genreData;
+    //    QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
+    //    QList<core::AuthorPtr>  authors;
+
+    void SaveToFile();
+    void LoadFromFile();
+
+    void SaveFicsData(){
+        QFile data("ficsdata.txt");
+        if (data.open(QFile::WriteOnly | QFile::Truncate)) {
+            QTextStream out(&data);
+            out << fics.size() << " ";
+            for(auto fic: fics)
+            {
+                out << *fic << " ";
+            }
+        }
+    }
+
+    void LoadFicsData(){
+        fics.clear();
+        QFile data("ficsdata.txt");
+        if (data.open(QFile::ReadOnly)) {
+            QTextStream in(&data);
+
+            QString size;
+            in >> size;
+            fics.reserve(size.toInt());
+            for(int i = 0; i < size.toInt(); i++)
+                fics.push_back(core::FicWeightPtr{new core::FicForWeightCalc()});
+            for(int i = 0; i < size.toInt(); i++)
+            {
+                if(i%10000 == 0)
+                    qDebug() << "processing fic: " << i;
+                //core::FicWeightPtr fic(new core::FicForWeightCalc());
+                in >> *fics[i];
+                //fics.push_back(fic);
+            }
+        }
+    }
+};
+
+
+void ServitorWindow::on_pbCalcWeights_clicked()
+{
+    auto db = QSqlDatabase::database();
+    auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    auto authorsInterface= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    genresInterface->db = db;
+    fanficsInterface->db = db;
+    authorsInterface->db = db;
+
+    QVector<core::FicWeightPtr> fics;
+    if(!QFile::exists("ficsdata.txt"))
+    {
+        fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(50);
+        for(auto fic: fics)
+            fic->genreString = fic->genreString.replace(" ", "_");
+        CalcDataHolder cdh;
+        cdh.fics = fics;
+        TimedAction saveAction("Saving data",[&](){
+            cdh.SaveFicsData();
+        });
+        saveAction.run();
+    }
+    else
+    {
+        CalcDataHolder cdh;
+
+        TimedAction loadAction("Loading data",[&](){
+            cdh.LoadFicsData();
+        });
+        loadAction.run();
+        fics = cdh.fics;
+    }
+
+    return;
+
+    //    QHash<int, core::FicWeightPtr> ficData;
+    //    QHash<int, QSet<int>> ficsForFandoms;
+
+    //    for(auto fic : fics)
+    //    {
+    //        ficData[fic->id] = fic;
+    //        for(auto fandom : fic->fandoms)
+    //            ficsForFandoms[fandom].insert(fic->id);
+    //    }
+
+    //    auto favourites = authorsInterface->LoadFullFavouritesHashset();
+    //    QHash<int, QSet<int>> ficsToFavLists;
+    //    for(int key : favourites.keys())
+    //    {
+    //        auto& set = favourites[key];
+    //        for(auto fic : set)
+    //            ficsToFavLists[fic].insert(key);
+    //    }
+
+    //    auto genreLists = authorsInterface->GetListGenreData();
+    //    qDebug() << "got genre lists, size: " << genreLists.size();
+    //    auto fandomLists = authorsInterface->GetAuthorListFandomStatistics(favourites.keys());
+    //    qDebug() << "got fandom lists, size: " << genreLists.size();
+
+    //    auto authors = authorsInterface->GetAllAuthors("ffn");
+    //    qDebug() << "got authors, size: " << genreLists.size();
+
+
+    //    QHash<int, core::FicWeightResult> result;
+
+
+    //    QSet<int> alreadyProcessed;
+    //    QHash<QPair<int, int>, QSet<int>> ficsMeeting;
+
+    //    {
+    //        for(int key : holder->favourites.keys())
+    //        {
+    //            auto& set = holder->favourites[key];
+    //            for(int i = 1; i < set.size(); i++)
+    //            {
+    //                for(int j = 0; j < set.size(); j++)
+    //                {
+    //                    ficsMeeting[{i,j}].insert(key);
+    //                }
+    //            }
+    //        }
+    //    }
+    //    qDebug() << "final set is of size: " << ficsMeeting.size();
+
+    //fanficsInterface->WriteFicRelations(result);
+}
+
+
+void ServitorWindow::on_pbCleanPrecalc_clicked()
+{
+    QFile::remove("ficsdata.txt");
+}

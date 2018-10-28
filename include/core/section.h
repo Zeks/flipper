@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSharedPointer>
 #include <QRegExp>
 #include <QHash>
+#include <QTextStream>
+#include <QSet>
 #include "core/fic_genre_data.h"
 namespace core {
 
@@ -224,6 +226,155 @@ public:
 };
 class Fic;
 typedef QSharedPointer<Fic> FicPtr;
+
+
+struct FicForWeightCalc
+{
+    bool complete = false;
+    bool slash = false;
+    bool dead = false;
+    bool sameLanguage = true;
+    bool adult = false;
+
+    int id = -1;
+    int sumAuthorFaves = -1;
+    int favCount = -1;
+    int reviewCount = -1;
+    int wordCount = -1;
+    int authorId = -1;
+
+    QList<int> fandoms;
+    QList<int> genres;
+
+    QString genreString;
+
+    QDate published;
+    QDate updated;
+
+
+    friend  QTextStream &operator<<(QTextStream &out, const FicForWeightCalc &p);
+    friend  QTextStream &operator>>(QTextStream &in, const FicForWeightCalc &p);
+
+};
+inline QTextStream &operator>>(QTextStream &in, FicForWeightCalc &p)
+{
+    QString temp;
+
+    in >> temp;
+    p.id = temp.toInt();
+
+    in >> temp;
+    p.adult = temp.toInt();
+
+    in >> temp;
+    p.authorId = temp.toInt();
+
+    in >> temp;
+    p.complete = temp.toInt();
+
+    in >> temp;
+    p.dead = temp.toInt();
+
+    in >> temp;
+    p.favCount = temp.toInt();
+
+    in >> p.genreString;
+    if(p.genreString == "#")
+        p.genreString.clear();
+    p.genreString.replace("_", " ");
+
+    in >> temp;
+    p.published = QDate::fromString("yyyyMMdd");
+
+    in >> temp;
+    p.updated = QDate::fromString("yyyyMMdd");
+
+    in >> temp;
+    p.reviewCount = temp.toInt();
+
+    in >> temp;
+    p.sameLanguage = temp.toInt();
+
+    in >> temp;
+    p.slash = temp.toInt();
+
+    in >> temp;
+    p.wordCount = temp.toInt();
+
+    in >> temp;
+    int fandomSize = temp.toInt();
+    if(fandomSize > 2)
+        fandomSize = fandomSize;
+    for(int i = 0; i < fandomSize; i++)
+    {
+        in >> temp;
+        p.fandoms.push_back(temp.toInt());
+    }
+    return in;
+}
+
+inline QTextStream &operator<<(QTextStream &out, const FicForWeightCalc &p)
+{
+    out << QString::number(p.id) << " ";
+    out << QString::number(static_cast<int>(p.adult)) << " ";
+    out << QString::number(p.authorId) << " ";
+    out << QString::number(p.complete) << " ";
+    out << QString::number(p.dead) << " ";
+    out << QString::number(p.favCount) << " ";
+    if(p.genreString.trimmed().isEmpty())
+        out << "#" << " ";
+    else
+        out << p.genreString << " ";
+    if(p.published.isValid())
+        out << p.published.toString("yyyyMMdd") << " ";
+    else
+        out << "0" << " ";
+    if(p.updated.isValid())
+        out << p.updated.toString("yyyyMMdd") << " ";
+    else
+        out << "0" << " ";
+
+    out << QString::number(p.reviewCount) << " ";
+    out << QString::number(p.sameLanguage) << " ";
+    out << QString::number(p.slash) << " ";
+    out << QString::number(p.wordCount) << " ";
+
+    out << QString::number(p.fandoms.size()) << " ";
+
+    for(auto fandom: p.fandoms)
+        out << QString::number(fandom) << " ";
+    out << "\n";
+
+    return out;
+}
+
+
+struct FandomStatsForWeightCalc{
+  int listId = -1;
+  int fandomCount = -1;
+  int ficCount = -1;
+
+  double fandomDiversity = 0.0;
+
+  QHash<int, double> fandomPresence;
+  QHash<int, int> fandomCounts;
+};
+
+
+struct FicWeightResult{
+    int ficId1;
+    int ficId2;
+    int ficListCount1;
+    int ficListCount2;
+    int meetingCount;
+    bool sameFandom;
+    double attraction;
+    double repulsion;
+    double finalAttraction;
+};
+
+typedef QSharedPointer<FicForWeightCalc> FicWeightPtr;
+typedef QSharedPointer<FandomStatsForWeightCalc> AuthorFavFandomStatsPtr;
 
 class Fic : public DBEntity{
 public:

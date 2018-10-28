@@ -178,6 +178,20 @@
         </property>
        </spacer>
       </item>
+      <item>
+       <widget class="QPushButton" name="pbCleanPrecalc">
+        <property name="text">
+         <string>Clean Precalc</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbCalcWeights">
+        <property name="text">
+         <string>Calc Weights</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item row="5" column="0">

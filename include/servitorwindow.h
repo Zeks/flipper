@@ -64,6 +64,10 @@ private slots:
 
     void on_pbFindSlashSummary_clicked();
 
+    void on_pbCalcWeights_clicked();
+
+    void on_pbCleanPrecalc_clicked();
+
 private:
     Ui::servitorWindow *ui;
 };

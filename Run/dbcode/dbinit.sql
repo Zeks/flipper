@@ -427,6 +427,20 @@ CREATE INDEX if not exists  I_LISTDATA_FIC ON RecommendationListData (fic_id ASC
 CREATE INDEX if not exists  I_LISTDATA_MATCHCOUNT ON RecommendationListData (match_count ASC);
 
 
+-- data for fic relationships;
+CREATE TABLE if not exists FicRelations(fic_id INTEGER NOT NULL, 
+fic1 integer,
+fic1_list_count integer,
+fic2_list_count integer,
+meeting_lit_count integer,
+fic2 integer,
+same_fandom integer default 0, 
+attraction real default 0, 
+repullsion real default 0, 
+final_attraction real default 0, 
+ PRIMARY KEY (fic1 asc, fic2 asc));
+CREATE INDEX if not exists  I_FRS_PK ON RecommendationListData (fic1 asc, fic2 asc);
+
 CREATE TABLE if not exists user_settings(name varchar unique, value integer);
 INSERT INTO tags(name, name) values('Last Fandom Id', 0);
 

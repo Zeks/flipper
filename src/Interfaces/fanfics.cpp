@@ -220,6 +220,11 @@ QSet<int> Fanfics::GetAllKnownFicIDs(QString where)
     return data.data;
 }
 
+QVector<core::FicWeightPtr> Fanfics::GetAllFicsWithEnoughFavesForWeights(int faves)
+{
+    return database::puresql::GetAllFicsWithEnoughFavesForWeights(faves, db).data;
+}
+
 bool Fanfics::ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func)
 {
      auto result = database::puresql::ProcessSlashFicsBasedOnWords(func, db);
@@ -331,6 +336,11 @@ bool Fanfics::WriteRecommendations()
         return false;
     ficRecommendations.clear();
     return true;
+}
+
+bool Fanfics::WriteFicRelations(QList<core::FicWeightResult> result)
+{
+    return database::puresql::WriteFicRelations(result, db).success;
 }
 
 void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
