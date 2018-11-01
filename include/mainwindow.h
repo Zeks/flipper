@@ -237,6 +237,7 @@ private:
     void SetClientMode();
     void ResetFilterUItoDefaults();
     void DetectGenreSearchState();
+    void DetectSlashSearchState();
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
@@ -437,6 +438,8 @@ private slots:
     void on_pbProfileCompare_clicked();
 
     void on_chkGenreUseImplied_stateChanged(int arg1);
+
+    void on_cbSlashFilterAggressiveness_currentIndexChanged(int index);
 
 signals:
 

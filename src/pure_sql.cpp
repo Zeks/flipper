@@ -394,8 +394,8 @@ DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
-    QString getKeyQuery = QString("Select ( select count(id) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
-                                  " ( select count(id) from FANFICS where  %1_id = :site_id2 "
+    QString getKeyQuery = QString("Select ( select count(*) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
+                                  " ( select count(*) from FANFICS where  %1_id = :site_id2 "
                                   "and (updated < :updated or updated is null)) as count_updated").arg(fic->webSite);
 
     SqlContext<bool> ctx(db, getKeyQuery);
@@ -639,7 +639,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSql
 
     //!!! bindvalue incorrect for first query?
     SqlContext<QList<core::AuthorPtr>> ctx(db, qs, {{"site",website}});
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs, "select count(id) from recommenders where website_type = :site",[](QSqlQuery& q){
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs, "select count(*) from recommenders where website_type = :site",[](QSqlQuery& q){
         return AuthorFromQuery(q);
     });
     return ctx.result;
@@ -670,7 +670,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QStr
     ctx.bindValue("site",website);
     ctx.bindValue("date",date);
     ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
-                                                  "select count(id) from recommenders where website_type = :site",
+                                                  "select count(*) from recommenders where website_type = :site",
                                                   [](QSqlQuery& q){
         return AuthorFromQuery(q);
     });
@@ -705,7 +705,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
     ctx.bindValue("date_start",dateStart);
     ctx.bindValue("date_end",dateEnd);
     ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
-                                                  "select count(id) from recommenders where website_type = :site",
+                                                  "select count(*) from recommenders where website_type = :site",
                                                   [](QSqlQuery& q){
         return AuthorFromQuery(q);
     });
@@ -1138,7 +1138,7 @@ DiagnosticSQLResult<bool>  ShortenFFNurlsForAllFics(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> IsGenreList(QStringList list, QString website, QSqlDatabase db)
 {
-    QString qs = QString("select count(id) as idcount from genres where genre in(%1) and website = :website");
+    QString qs = QString("select count(*) as idcount from genres where genre in(%1) and website = :website");
     qs = qs.arg("'" + list.join("','") + "'");
 
     SqlContext<int> ctx(db, qs, {{"website", website}});
@@ -1608,7 +1608,7 @@ DiagnosticSQLResult<QList<core::FandomPtr>> GetAllFandoms(QSqlDatabase db)
 {
     int fandomsSize = 0;
     {
-        QString qs = QString(" select count(id) as cn from fandomindex");
+        QString qs = QString(" select count(*) as cn from fandomindex");
         SqlContext<int> ctx(db, qs);
         ctx.FetchSingleValue<int>("cn", 1000);
         fandomsSize = ctx.result.data;
@@ -1640,7 +1640,7 @@ DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandomsAfter(int id, QSqlData
 {
     int fandomsSize = 0;
     {
-        QString qs = QString(" select count(id) as cn from fandomindex where id > :id");
+        QString qs = QString(" select count(*) as cn from fandomindex where id > :id");
         SqlContext<int> ctx(db, qs, BP1(id));
         ctx.FetchSingleValue<int>("cn", 1000);
         fandomsSize = ctx.result.data;
@@ -2748,7 +2748,7 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db
     SqlContext<QSet<int>> ctx(db);
     ctx.FetchLargeSelectIntoList<int>("id",
                                       "select id from fanfics where " + where,
-                                      "select count(id) from fanfics where " + where);
+                                      "select count(*) from fanfics where " + where);
 
     return ctx.result;
 }

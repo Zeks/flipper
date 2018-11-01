@@ -64,6 +64,7 @@ CREATE INDEX if not exists  I_FANFICS_SECOND  ON fanfics (filter_pass_2 ASC);
 CREATE INDEX if not exists  I_FANFICS_QFA  ON fanfics (queued_for_action ASC);
 CREATE INDEX if not exists  I_FANFICS_AUTHOR_ID  ON fanfics (author_id ASC);
 CREATE INDEX if not exists  I_FANFICS_IS_ENGLISH  ON fanfics (is_english ASC);
+CREATE INDEX if not exists  I_FANFICS_RATED  ON fanfics (rated ASC);
 
 
  CREATE VIEW if not exists vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,

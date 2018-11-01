@@ -908,10 +908,15 @@ void MainWindow::ReadSettings()
     ui->sbMinimumFavourites->setValue(uiSettings.value("Settings/sbMinimumFavourites", "0").toInt());
 
     ui->chkGenreUseImplied->setChecked(uiSettings.value("Settings/chkGenreUseImplied", false).toBool());
-    ui->cbGenrePresenceTypeInclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeInclude", "<").toString());
-    ui->cbGenrePresenceTypeExclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeExclude", "<").toString());
+    ui->cbGenrePresenceTypeInclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeInclude", "").toString());
+    ui->cbGenrePresenceTypeExclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeExclude", "").toString());
     ui->cbFicRating->setCurrentText(uiSettings.value("Settings/cbFicRating", "<").toString());
+
+    ui->chkStrongMOnly->setChecked(uiSettings.value("Settings/chkStrongMOnly", false).toBool());
+    ui->cbSlashFilterAggressiveness->setCurrentText(uiSettings.value("Settings/cbSlashFilterAggressiveness", "").toString());
+
     DetectGenreSearchState();
+    DetectSlashSearchState();
 
     if(!uiSettings.value("Settings/appsize").toSize().isNull())
         this->resize(uiSettings.value("Settings/appsize").toSize());
@@ -962,7 +967,9 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/cbGenrePresenceTypeInclude", ui->cbGenrePresenceTypeInclude->currentText());
     settings.setValue("Settings/cbGenrePresenceTypeExclude", ui->cbGenrePresenceTypeExclude->currentText());
     settings.setValue("Settings/cbFicRating", ui->cbFicRating->currentText());
-    //cbFicRating
+
+    settings.setValue("Settings/chkStrongMOnly", ui->chkStrongMOnly->isChecked());
+    settings.setValue("Settings/cbSlashFilterAggressiveness", ui->cbSlashFilterAggressiveness->currentText());
 
 
     settings.setValue("Settings/appsize", this->size());
@@ -1883,6 +1890,19 @@ void MainWindow::DetectGenreSearchState()
     }
 }
 
+void MainWindow::DetectSlashSearchState()
+{
+    if(ui->cbSlashFilterAggressiveness->currentText() == "Strong")
+    {
+        ui->chkStrongMOnly->setEnabled(true);
+    }
+    else
+    {
+        ui->chkStrongMOnly->setEnabled(false);
+        ui->chkStrongMOnly->setChecked(false);
+    }
+}
+
 void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
 {
     if(ui->cbCurrentFilteringMode->currentText() == "Default")
@@ -2058,4 +2078,9 @@ void MainWindow::on_pbProfileCompare_clicked()
 void MainWindow::on_chkGenreUseImplied_stateChanged(int )
 {
     DetectGenreSearchState();
+}
+
+void MainWindow::on_cbSlashFilterAggressiveness_currentIndexChanged(int index)
+{
+    DetectSlashSearchState();
 }

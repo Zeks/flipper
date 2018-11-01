@@ -60,7 +60,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
     }
 
 
-    queryString+=" from vFanfics f where f.alive = 1 " ;
+    queryString+=" from vFanfics f where  wordcount > -1   " ;
     QString where = CreateWhere(filter);
     //qDebug().noquote() << "WHERE IS: " << where;
     ProcessBindings(filter, query);
@@ -351,19 +351,22 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
 
         if(filter.slashFilter.excludeSlash)
         {
-            if(filter.slashFilter.onlyMatureForSlash)
-                queryString += "  not (%1 == 1 and rated = 'M') ";
+            if(filter.slashFilter.slashFilterLevel == 2 && filter.slashFilter.onlyMatureForSlash)
+                queryString += "  not ( f.filter_pass_1 == 1 or ( %1 == 1 and f.rated = 'M')) ";
             else
                 queryString += "  (%1 <> 1 or %1 is null) ";
         }
         if(filter.slashFilter.includeSlash)
         {
             if(!filter.slashFilter.onlyExactLevel)
-                queryString += " %1 = 1 ";
+            {
+                if(filter.slashFilter.slashFilterLevel == 2 && filter.slashFilter.onlyMatureForSlash)
+                    queryString += "  ( f.filter_pass_1 == 1 or ( %1 == 1 and f.rated = 'M')) ";
+                else
+                    queryString += " %1 = 1 ";
+            }
             else
                 queryString += " %1 = 1 and %2 = 0 and %3 = 0 ";
-            if(filter.slashFilter.onlyMatureForSlash)
-                queryString += " and rated = 'M' ";
         }
 
         if(filter.slashFilter.enableFandomExceptions && filter.slashFilter.excludeSlash)
@@ -822,7 +825,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter, bool createLi
     QLOG_INFO() << "BUILDING COUNT QUERY";
     QLOG_INFO_PURE() << "//////////";
     auto q = DefaultQueryBuilder::Build(filter, createLimits);
-    q->str = "select count(id) as records from ("+ q->str +")";
+    q->str = "select count(*) as records from ("+ q->str +")";
     QLOG_INFO_PURE() << "//////////";
     QLOG_INFO_PURE() << "COUNT QUERY:" << q->str;
     QLOG_INFO_PURE() << "//////////";
