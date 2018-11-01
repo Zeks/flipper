@@ -364,7 +364,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
             if(filter.slashFilter.slashFilterLevel == 2 && filter.slashFilter.onlyMatureForSlash)
                 queryString += "  not ( f.filter_pass_1 == 1 or ( %1 == 1 and f.rated = 'M')) ";
             else
-                queryString += "  (%1 = 0) ";
+                queryString += "  (%1 != 1) ";
         }
         if(filter.slashFilter.includeSlash)
         {
