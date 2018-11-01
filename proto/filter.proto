@@ -108,6 +108,7 @@ message Filter{
         gp_considerable = 0;
         gp_medium = 1;
         gp_minimal = 2;
+        gp_none = 3;
     };
     
     bool randomize_results                      = 1;

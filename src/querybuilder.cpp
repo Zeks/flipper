@@ -445,6 +445,8 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
                 limiter = 0.5;
             else if(filter.genrePresenceForExclude == StoryFilter::gp_medium)
                 limiter = 0.8;
+            else if(filter.genrePresenceForExclude == StoryFilter::gp_none)
+                limiter = 0.05;
 
             int counter = 0;
             QStringList genreResult;

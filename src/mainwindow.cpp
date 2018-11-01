@@ -1437,8 +1437,10 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
 
     if(ui->cbGenrePresenceTypeExclude->currentText() == "Medium")
         filter.genrePresenceForExclude = core::StoryFilter::gp_medium;
-    else
+    else if(ui->cbGenrePresenceTypeExclude->currentText() == "Minimal")
         filter.genrePresenceForExclude = core::StoryFilter::gp_minimal;
+    else if(ui->cbGenrePresenceTypeExclude->currentText() == "None")
+        filter.genrePresenceForExclude = core::StoryFilter::gp_none;
 
 
     SlashFilterState slashState{

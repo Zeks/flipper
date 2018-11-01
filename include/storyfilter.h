@@ -82,7 +82,8 @@ struct StoryFilter{
     enum EGenrePresence{
         gp_considerable = 0,
         gp_medium = 1,
-        gp_minimal = 2
+        gp_minimal = 2,
+        gp_none = 3
     };
     //do I even need that?
     //QString ficCategory;
