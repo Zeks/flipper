@@ -80,7 +80,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
 
 
                 if(!filter.showOriginsInLists)
-                    temp+=" and rt.is_origin <> 1 ";
+                    temp+=" and rt.is_origin = 0 ";
                 temp += where + " %1 " + CreateLimitQueryPart(filter) + ")";
                 if(useRecommendationOrdering)
                     temp = temp.arg(" order by rt.match_count desc ");
@@ -237,7 +237,7 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter, bool appendComma
         if(filter.showOriginsInLists)
             currentRecTagValue=currentRecTagValue.arg("");
         else
-            currentRecTagValue=currentRecTagValue.arg("and is_origin <> 1");
+            currentRecTagValue=currentRecTagValue.arg("and is_origin = 0");
     }
     else
     {
@@ -354,7 +354,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
             if(filter.slashFilter.slashFilterLevel == 2 && filter.slashFilter.onlyMatureForSlash)
                 queryString += "  not ( f.filter_pass_1 == 1 or ( %1 == 1 and f.rated = 'M')) ";
             else
-                queryString += "  (%1 <> 1 or %1 is null) ";
+                queryString += "  (%1 = 0 or %1 is null) ";
         }
         if(filter.slashFilter.includeSlash)
         {
@@ -887,7 +887,7 @@ QString TagFilteringClient::GetString(StoryFilter filter)
     {
         queryString += QString(" and cfInLikedAuthors(f.author_id) > 0 ");
         if(!filter.ignoreAlreadyTagged)
-            queryString += QString(" and cfInTags(f.id) = 0 ");
+            queryString += QString(" and cfInTags(f.id) < 1 ");
     }
     else
     {
@@ -898,7 +898,7 @@ QString TagFilteringClient::GetString(StoryFilter filter)
             if(filter.ignoreAlreadyTagged || filter.allTagsCount == 0)
                 queryString += QString("");
             else
-                queryString += QString(" and cfInTags(f.id) = 0 ").arg(userToken);
+                queryString += QString(" and cfInTags(f.id) < 1 ").arg(userToken);
         }
     }
 
