@@ -655,6 +655,7 @@ void ServitorWindow::on_pbPCRescue_clicked()
 void ServitorWindow::on_pbSlashCalc_clicked()
 {
     auto db = QSqlDatabase::database();
+    database::Transaction transaction(db);
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
@@ -678,6 +679,7 @@ void ServitorWindow::on_pbSlashCalc_clicked()
 
     SlashProcessor slash(db,fanficsInterface, fandomInterface, authorInterface, recsInterface, dbInterface);
     slash.DoFullCycle(db, 2);
+    transaction.finalize();
 
 }
 

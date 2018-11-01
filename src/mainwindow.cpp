@@ -293,6 +293,9 @@ void MainWindow::InitConnections()
     connect(&env, &CoreEnvironment::requestProgressbar, this, &MainWindow::OnProgressBarRequested);
     connect(&env, &CoreEnvironment::updateCounter, this, &MainWindow::OnUpdatedProgressValue);
     connect(&env, &CoreEnvironment::updateInfo, this, &MainWindow::OnNewProgressString);
+    ui->chkApplyLocalSlashFilter->setVisible(false);
+    ui->chkOnlySlashLocal->setVisible(false);
+    ui->chkInvertedSlashFilterLocal->setVisible(false);
 
 }
 
@@ -1427,7 +1430,9 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
                 ui->chkOnlySlashLocal->isChecked(),
                 ui->chkEnableSlashExceptions->isChecked(),
                 QList<int>{}, // temporary placeholder
-        ui->cbSlashFilterAggressiveness->currentIndex()
+                ui->cbSlashFilterAggressiveness->currentIndex(),
+                ui->chkShowExactFilterLevel->isChecked(),
+                ui->chkStrongMOnly->isChecked()
     };
 
     filter.slashFilter = slashState;
@@ -1815,7 +1820,7 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->cbMaxWordCount->setCurrentText("");
     ui->cbBiasFavor->setCurrentText("None");
     ui->cbBiasOperator->setCurrentText(">");
-    ui->cbSlashFilterAggressiveness->setCurrentText("Light");
+    ui->cbSlashFilterAggressiveness->setCurrentText("Medium");
     ui->cbSortMode->setCurrentIndex(0);
 
     ui->leBiasValue->setText("11.");

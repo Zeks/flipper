@@ -33,6 +33,8 @@ struct SlashFilterState
     bool enableFandomExceptions;
     QList<int> fandomExceptions;
     int slashFilterLevel;
+    bool onlyExactLevel;
+    bool onlyMatureForSlash;
 };
 namespace core{
 struct StoryFilter{

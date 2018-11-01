@@ -9,6 +9,8 @@ message SlashFilter{
     bool  include_slash                              = 4;
     bool  enable_exceptions                          = 5;
     repeated int32 fandom_exceptions                 = 6; 
+    bool show_exact_level                            = 7; 
+    bool filter_only_mature                          = 8;
 }
 
 message Recommendations{

@@ -287,6 +287,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
 {
     QString queryString;
     QString slashField;
+    QStringList excludeFields;
     if(!thinClientMode)
     {
         if(!filter.slashFilter.slashFilterEnabled)
@@ -320,16 +321,37 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
         else
             start = start.arg(" not  ");
         if(filter.slashFilter.slashFilterLevel == 0)
-            slashField = "keywords_result";
+        {
+            excludeFields = QStringList{"f.filter_pass_1","f.filter_pass_2"};
+            slashField = "f.keywords_result";
+        }
         else if(filter.slashFilter.slashFilterLevel == 1)
+        {
+            excludeFields = QStringList{"f.keywords_result","f.filter_pass_2"};
             slashField = "f.filter_pass_1";
+        }
         else
+        {
+            excludeFields = QStringList{"f.keywords_result","f.filter_pass_1"};
             slashField = "f.filter_pass_2";
+        }
 
         if(filter.slashFilter.excludeSlash)
-            queryString += "  (%1 <> 1 or %1 is null) ";
+        {
+            if(filter.slashFilter.onlyMatureForSlash)
+                queryString += "  not (%1 == 1 and rated = 'M') ";
+            else
+                queryString += "  (%1 <> 1 or %1 is null) ";
+        }
         if(filter.slashFilter.includeSlash)
-            queryString += " %1 = 1  ";
+        {
+            if(!filter.slashFilter.onlyExactLevel)
+                queryString += " %1 = 1 ";
+            else
+                queryString += " %1 = 1 and %2 = 0 and %3 = 0 ";
+            if(filter.slashFilter.onlyMatureForSlash)
+                queryString += " and rated = 'M' ";
+        }
 
         if(filter.slashFilter.enableFandomExceptions && filter.slashFilter.excludeSlash)
         {
@@ -338,8 +360,10 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
         //queryString+= ")";
         queryString = start + queryString;
     }
-
-    queryString = queryString.arg(slashField);
+    if(!filter.slashFilter.onlyExactLevel)
+        queryString = queryString.arg(slashField);
+    else
+        queryString = queryString.arg(slashField).arg(excludeFields.first()).arg(excludeFields.last());
     if(!renameToFID)
     {
         queryString.replace(" fid ", " ff.id ");

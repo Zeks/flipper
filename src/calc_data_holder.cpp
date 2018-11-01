@@ -99,7 +99,7 @@ void CalcDataHolder::SaveFicsData(){
 void CalcDataHolder::LoadFicsData(){
     Clear();
 
-    auto hashLoader = [](QString nameBase,
+    auto loaderFunc = [](QString nameBase,
             auto resultCreator,
             int file,
             auto valueFetcher){
@@ -121,11 +121,9 @@ void CalcDataHolder::LoadFicsData(){
             qDebug() << "Could not open file: " << QString("ficdata_%1.txt").arg(QString::number(file));
         return resultHolder;
     };
+    //int destinatio;
 
-    auto loadMultiThreaded = [](auto loaderFunc,
-            auto resultUnifier,
-            QString nameBase,
-            auto& destination){
+    auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBase,auto& destination){
         QList<QFuture<typename std::remove_reference<decltype(destination)>::type>> futures;
         for(int i = 0; i < QThread::idealThreadCount()-1; i++)
         {
@@ -162,16 +160,16 @@ void CalcDataHolder::LoadFicsData(){
         in >> values;
         container[key] = values;
     };
-    auto ficLoader = std::bind(hashLoader, std::placeholders::_1,
+    auto ficLoader = std::bind(loaderFunc, std::placeholders::_1,
                                       std::placeholders::_2,
                                       std::placeholders::_3,
                                       ficFetchFunc);
-    auto authorLoader = std::bind(hashLoader, std::placeholders::_1,
+    auto authorLoader = std::bind(loaderFunc, std::placeholders::_1,
                                       std::placeholders::_2,
                                       std::placeholders::_3,
                                       ficFetchFunc);
 
-    auto favouritesLoader = std::bind(hashLoader, std::placeholders::_1,
+    auto favouritesLoader = std::bind(loaderFunc, std::placeholders::_1,
                                       std::placeholders::_2,
                                       std::placeholders::_3,
                                       favouritesFetchFunc);
@@ -183,7 +181,7 @@ void CalcDataHolder::LoadFicsData(){
             in >> values[i];
         container[key] = values;
     };
-    auto genreLoader = std::bind(hashLoader, std::placeholders::_1,
+    auto genreLoader = std::bind(loaderFunc, std::placeholders::_1,
                                       std::placeholders::_2,
                                       std::placeholders::_3,
                                       genresFetchFunc);
@@ -197,7 +195,7 @@ void CalcDataHolder::LoadFicsData(){
         value->Deserialize(in);
         container[key] = value;
     };
-    auto fandomListsLoader = std::bind(hashLoader, std::placeholders::_1,
+    auto fandomListsLoader = std::bind(loaderFunc, std::placeholders::_1,
                                       std::placeholders::_2,
                                       std::placeholders::_3,
                                       fandomListsFetchFunc);
