@@ -92,6 +92,7 @@ protected:
     QString ProcessUrl(StoryFilter);
     QString ProcessGenreValues(StoryFilter);
     QString ProcessWordcount(StoryFilter);
+    QString ProcessRating(StoryFilter);
     QString ProcessSlashMode(StoryFilter, bool renameToFID = true);
     QString ProcessGenreIncluson(StoryFilter);
     QString ProcessWordInclusion(StoryFilter);

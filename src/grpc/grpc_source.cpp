@@ -61,6 +61,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     ProtoSpace::Filter result;
     result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
     result.set_randomize_results(filter.randomizeResults);
+    result.set_use_implied_genre(filter.useRealGenres);
+
     auto* basicFilters = result.mutable_basic_filters();
     basicFilters->set_website(filter.website.toStdString());
     basicFilters->set_min_words(filter.minWords);
@@ -77,6 +79,10 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
     result.set_filtering_mode(static_cast<ProtoSpace::Filter::FilterMode>(filter.mode));
     result.set_sort_mode(static_cast<ProtoSpace::Filter::SortMode>(filter.sortMode));
+    result.set_rating(static_cast<ProtoSpace::Filter::RatingFilter>(filter.rating));
+    result.set_genre_presence_include(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForInclude));
+    result.set_genre_presence_exclude(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForExclude));
+
 
     auto* sizeLimits = result.mutable_size_limits();
     sizeLimits->set_record_limit(filter.recordLimit);
@@ -173,6 +179,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     core::StoryFilter result;
     result.randomizeResults = filter.randomize_results();
+    result.useRealGenres = filter.use_implied_genre();
     result.website = FS(filter.basic_filters().website());
     result.minWords = filter.basic_filters().min_words();
     result.maxWords = filter.basic_filters().max_words();
@@ -189,6 +196,9 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     result.mode = static_cast<core::StoryFilter::EFilterMode>(filter.filtering_mode());
     result.sortMode = static_cast<core::StoryFilter::ESortMode>(filter.sort_mode());
+    result.rating = static_cast<core::StoryFilter::ERatingFilter>(filter.rating());
+    result.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(filter.genre_presence_include());
+    result.genrePresenceForExclude = static_cast<core::StoryFilter::EGenrePresence>(filter.genre_presence_exclude());
 
     result.recordLimit = filter.size_limits().record_limit();
     result.recordPage = filter.size_limits().record_page();

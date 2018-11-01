@@ -2,6 +2,7 @@
 #include <QList>
 #include <QVector>
 #include <QStringList>
+#include "logger/QsLog.h"
 
 namespace genre_stats
 {
@@ -10,6 +11,9 @@ struct GenreBit
 {
     QStringList genres;
     float relevance;
+    void Log(){
+        qDebug() << "genres:" << genres << " relevance: " << relevance;
+    }
 };
 
 struct FicGenreData
@@ -31,6 +35,19 @@ struct FicGenreData
         realGenres.clear();
         processedGenres.clear();
         genresToKeep.clear();
+    }
+    void Log(){
+        qDebug() << "Weird genre token";
+        qDebug() << "fic: " << ficId;
+        qDebug() << "originals: " << originalGenres;
+        qDebug() << "kept: " << genresToKeep;
+        qDebug() << "dumping real genres:";
+        for(auto realGenre: realGenres)
+            realGenre.Log();
+        qDebug() << " ";
+        qDebug() << "dumping processed genres:";
+        for(auto genre: processedGenres)
+            genre.Log();
     }
     int totalLists = 0;
     int ficId = -1;

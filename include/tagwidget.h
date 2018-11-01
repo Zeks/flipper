@@ -36,10 +36,12 @@ public:
     explicit TagWidget(QWidget *parent = 0);
     ~TagWidget();
     void InitFromTags(int currentId, QList<QPair<QString, QString>>);
+    void InitEditFromTags(QStringList);
     QStringList GetSelectedTags();
     QStringList GetAllTags();
     void SetAddDialogVisibility(bool);
     bool UseTagsForAuthors();
+    void ClearSelection();
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
 private:

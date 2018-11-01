@@ -70,6 +70,18 @@ void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
     ui->cbFandom->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
 }
 
+void TagWidget::InitEditFromTags(QStringList tags)
+{
+    ui->edtTags->clear();
+    for(auto tag: tags)
+    {
+        auto toInsert = ("<a href=\"0 " + tag + " \">" + tag + "</a>    ");
+        ui->edtTags->insertHtml(toInsert);
+    }
+}
+
+
+
 QStringList TagWidget::GetSelectedTags()
 {
     return selectedTags;
@@ -88,6 +100,11 @@ void TagWidget::SetAddDialogVisibility(bool value)
 bool TagWidget::UseTagsForAuthors()
 {
     return ui->chkUseTagsForAuthors->isChecked();
+}
+
+void TagWidget::ClearSelection()
+{
+    InitEditFromTags(allTags);
 }
 
 void TagWidget::on_pbAddTag_clicked()

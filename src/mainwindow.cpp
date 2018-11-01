@@ -907,6 +907,12 @@ void MainWindow::ReadSettings()
     ui->sbMinimumListMatches->setValue(uiSettings.value("Settings/sbMinimumListMatches", "0").toInt());
     ui->sbMinimumFavourites->setValue(uiSettings.value("Settings/sbMinimumFavourites", "0").toInt());
 
+    ui->chkGenreUseImplied->setChecked(uiSettings.value("Settings/chkGenreUseImplied", false).toBool());
+    ui->cbGenrePresenceTypeInclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeInclude", "<").toString());
+    ui->cbGenrePresenceTypeExclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeExclude", "<").toString());
+    ui->cbFicRating->setCurrentText(uiSettings.value("Settings/cbFicRating", "<").toString());
+    DetectGenreSearchState();
+
     if(!uiSettings.value("Settings/appsize").toSize().isNull())
         this->resize(uiSettings.value("Settings/appsize").toSize());
     if(!uiSettings.value("Settings/position").toPoint().isNull())
@@ -951,6 +957,13 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.setValue("Settings/chkShowSources", ui->chkShowSources->isChecked());
     settings.setValue("Settings/chkSearchWithinList", ui->chkShowSources->isChecked());
+
+    settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
+    settings.setValue("Settings/cbGenrePresenceTypeInclude", ui->cbGenrePresenceTypeInclude->currentText());
+    settings.setValue("Settings/cbGenrePresenceTypeExclude", ui->cbGenrePresenceTypeExclude->currentText());
+    settings.setValue("Settings/cbFicRating", ui->cbFicRating->currentText());
+    //cbFicRating
+
 
     settings.setValue("Settings/appsize", this->size());
     settings.setValue("Settings/position", this->pos());
@@ -1418,8 +1431,15 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
-    //    filter.includeSlash = ui->chkOnlySlash->isChecked();
-    //    filter.excludeSlash = ui->chkInvertedSlashFilter->isChecked();
+    filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
+    filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
+    filter.rating = static_cast<core::StoryFilter::ERatingFilter>(ui->cbFicRating->currentIndex());
+
+    if(ui->cbGenrePresenceTypeExclude->currentText() == "Medium")
+        filter.genrePresenceForExclude = core::StoryFilter::gp_medium;
+    else
+        filter.genrePresenceForExclude = core::StoryFilter::gp_minimal;
+
 
     SlashFilterState slashState{
         ui->chkEnableSlashFilter->isChecked(),
@@ -1626,6 +1646,12 @@ void MainWindow::OnFindSimilarClicked(QVariant url)
     //auto id = env.interfaces.fanfics->GetIDFromWebID(url.toInt(),"ffn");
     if(url == "-1")
         return;
+    ResetFilterUItoDefaults();
+    ui->cbNormals->setCurrentText("");
+    ui->leContainsGenre->setText("");
+    ui->leNotContainsGenre->setText("");
+    ui->leContainsWords->setText("");
+    ui->leNotContainsWords->setText("");
     CreateSimilarListForGivenFic(url.toInt());
 }
 
@@ -1831,8 +1857,28 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->sbMaxRandomFicCount->setValue(6);
     ui->chkSearchWithinList->setChecked(false);
     ui->chkShowSources->setChecked(false);
+    ui->chkGenreUseImplied->setChecked(false);
     ui->sbMinimumListMatches->setValue(0);
+    ui->wdgTagsPlaceholder->ClearSelection();
 
+}
+
+void MainWindow::DetectGenreSearchState()
+{
+    if(ui->chkGenreUseImplied->isChecked())
+    {
+        ui->lblGenreInclude->setEnabled(true);
+        ui->lblGenreExclude->setEnabled(true);
+        ui->cbGenrePresenceTypeExclude->setEnabled(true);
+        ui->cbGenrePresenceTypeInclude->setEnabled(true);
+    }
+    else
+    {
+        ui->lblGenreInclude->setEnabled(false);
+        ui->lblGenreExclude->setEnabled(false);
+        ui->cbGenrePresenceTypeExclude->setEnabled(false);
+        ui->cbGenrePresenceTypeInclude->setEnabled(false);
+    }
 }
 
 void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
@@ -2005,4 +2051,9 @@ void MainWindow::on_pbProfileCompare_clicked()
         ui->edtRecsContents->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
         ui->edtRecsContents->insertHtml("<br>");
     }
+}
+
+void MainWindow::on_chkGenreUseImplied_stateChanged(int )
+{
+    DetectGenreSearchState();
 }

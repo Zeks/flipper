@@ -98,7 +98,17 @@ message Filter{
     sm_wcr_cr            = 7;
     sm_rev_to_fav        = 8;
     sm_genre_values      = 9;
-  }
+   }
+    enum RatingFilter{
+        rt_t_m        = 0;
+        rt_t          = 1;
+        rt_m          = 2;
+    };
+    enum GenrePresence{
+        gp_considerable = 0;
+        gp_medium = 1;
+        gp_minimal = 2;
+    };
     
     bool randomize_results                      = 1;
     BasicFilters basic_filters                  = 2;
@@ -113,4 +123,8 @@ message Filter{
     SlashFilter slash_filter                    = 10;
     Recommendations recommendations             = 11;
     bool tags_are_for_authors                   = 12;
+    RatingFilter rating                         = 13;
+    bool use_implied_genre                      = 14;
+    GenrePresence genre_presence_include        = 15;  
+    GenrePresence genre_presence_exclude        = 16;
 }

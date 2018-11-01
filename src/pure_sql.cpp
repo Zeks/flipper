@@ -1422,6 +1422,18 @@ DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics, QSqlDatabase db)
 {
+
+    QString qsClenaup = QString("update fanfics set "
+                                "true_genre1 = '', "
+                                "true_genre1_percent = 0,"
+                                "true_genre2 = '', "
+                                "true_genre2_percent = 0,"
+                                "true_genre3 = '',"
+                                "true_genre3_percent = 0,"
+                                "kept_genres = ''" );
+    SqlContext<bool> cleanup(db, qsClenaup);
+    cleanup();
+
     QString qs = QString("update fanfics set "
                          " true_genre1 = :true_genre1, "
                          " true_genre1_percent = :true_genre1_percent,"
@@ -1429,6 +1441,7 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
                          " true_genre2_percent = :true_genre2_percent,"
                          " true_genre3 = :true_genre3, "
                          " true_genre3_percent = :true_genre3_percent,"
+                         " max_genre_percent = :max_genre_percent,"
                          " kept_genres =:kept_genres where id = :fic_id" );
     SqlContext<bool> ctx(db, qs);
     for(auto fic : fics)
@@ -1439,20 +1452,38 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
             if(genre.relevance < 0.1f)
                 keptList += genre.genres;
         }
+        float maxValue = 0;
+        for(auto genre : fic.processedGenres)
+        {
+            QString writtenGenre = genre.genres.join(",");
+            if(genre.relevance > maxValue && !writtenGenre.isEmpty())
+                maxValue = genre.relevance;
+        }
+
         QString keptToken = keptList.join(",");
 
         for(int i = 0; i < 3; i++)
         {
             genre_stats::GenreBit genre;
-            if(fic.processedGenres.size() > i)
+            if(i < fic.processedGenres.size())
                 genre = fic.processedGenres.at(i);
             else
                 genre.relevance = 0;
 
-            ctx.bindValue("true_genre" + QString::number(i+1), genre.genres.join(","));
+
+
+            QString writtenGenre = genre.genres.join(",");
+            if(writtenGenre.isEmpty())
+                genre.relevance = 0;
+
+            ctx.bindValue("true_genre" + QString::number(i+1), writtenGenre);
             ctx.bindValue("true_genre" + QString::number(i+1) + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
 
+//            if(writtenGenre.isEmpty() && genre.relevance > 0.2)
+//                fic.Log();
+
         }
+        ctx.bindValue("max_genre_percent", maxValue);
         ctx.bindValue("kept_genres", keptToken);
         ctx.bindValue("fic_id", fic.ficId);
         if(!ctx.ExecAndCheck())
