@@ -33,7 +33,8 @@ DefaultQueryBuilder::DefaultQueryBuilder(bool client, QString userToken)
     InitTagFilterBuilder(client, userToken);
 }
 
-QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool createLimits)
+QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
+                                                 bool createLimits)
 {
     query = NewQuery();
 
@@ -41,28 +42,27 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
     bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.listOpenMode;
     useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
     bool useRecommendationOrdering = useRecommendationFiltering && !filter.listOpenMode;
-    if(createLimits)
-    {
-        queryString = "ID, ";
-        queryString+= CreateCustomFields(filter);
-        queryString+=  + " f.* ";
-    }
-    else
-    {
-        queryString = " f.ID as id ";
-        if(useRecommendationOrdering)
+
+        if(createLimits)
         {
-            queryString += " , cfRecommendationsMatchCount(f.id) as sumrecs ";
-            //            queryString += ", ( select group_concat(id, ' & ')   from fandomindex "
-            //                           "where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandomIDs ";
-            queryString = queryString.arg(userToken);
+            queryString = "ID, ";
+            queryString+= CreateCustomFields(filter);
+            queryString+=  + " f.* ";
         }
-    }
+        else
+        {
+            queryString = " f.ID as id ";
+            if(useRecommendationOrdering)
+            {
+                queryString += " , cfRecommendationsMatchCount(f.id) as sumrecs ";
+                queryString = queryString.arg(userToken);
+            }
+        }
 
+    queryString+=" from vFanfics f where   " ;
 
-    queryString+=" from vFanfics f where  wordcount > -1   " ;
     QString where = CreateWhere(filter);
-    //qDebug().noquote() << "WHERE IS: " << where;
+
     ProcessBindings(filter, query);
 
 
@@ -99,6 +99,16 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter, bool create
             //where += BuildSortMode(filter) + CreateLimitQueryPart(filter);
         }
         QString randomizer = ProcessRandomization(filter, where);
+
+        QRegularExpression rx("^\\s{0,10}(and|AND)");
+        //^\\s{0,10}(and|AND)
+        auto match = rx.match(where);
+        if(match.hasMatch())
+        {
+            qDebug() << "FOUND MATCH";
+            where = where.mid(match.captured().length());
+        }
+
         if(!filter.randomizeResults)
             queryString += where;
         else
