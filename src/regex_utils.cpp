@@ -197,7 +197,7 @@ void CommonRegex::Init()
     characterSlashPerFandom["Hobbit"] ="([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])";
 
     notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a(\\s{0,1})){0,1}(slash|yaoi))|((\\s)jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\sfem-)|(fem(m){0,1}(e){0,1}slash)|(\\smentor\\s)"
-               "|(f/f)";
+               "|(f/f)|Gen[.]";
 
     QString notSlashCharacterSpecialCase;
     notSlashCharacterSpecialCase+="|(naru(to){0,1}\\s{0,1}" + characterSeparator + "\\s{0,1}naru(to){0,1})";
@@ -213,10 +213,26 @@ void CommonRegex::Init()
 
     characterSlashPerFandom["D.Gray-Man"] ="([\\[]Allen\\sWalker[,]\\sKanda\\sYuu[\\]])";
 
-    characterNotSlashPerFandom["Harry Potter"] = "(Hermione)|(Bella)|(lily)|(winky)";
-    characterNotSlashPerFandom["Inuyasha"] = "(Kagome)";
-    characterNotSlashPerFandom["Naruto"] = "(Sakura)";
-    characterNotSlashPerFandom["Mass Effect"] = "Shepard\\s[\\()]F";
+    characterNotSlashPerFandom["Harry Potter"] = "(Hermione)|(Bella)|(lily)|(winky)|(Luna\\sL)|(Fem[-]Harry)";
+    characterNotSlashPerFandom["Inuyasha"] = "(Kagome)|(Rin)";
+    characterNotSlashPerFandom["Naruto"] = "(Destroyer\\sof\\sWorlds)|(Sakura)|(Kushina)|(Tsunade)|(Temari)|(Ino\\sY)|(Hanabi)|(Mikoto)|"
+                                           "(NaruHina)|(Eru\\sLee)|(Anko\\sM)|(Karin)|(Konan)(KakaRin)|(Hinata)|(Tenten)";
+    characterNotSlashPerFandom["Mass Effect"] = "(Shepard\\s[\\()]F)|(Liara)";
+    characterNotSlashPerFandom["Code Geass"] = "(Kallen/Zero)|(C[.]C[.])|(Nunnaly)|(Euphemia)|(Cornelia)";
+    characterNotSlashPerFandom["RWBY"] = "(Velvet)|(Ruby\\sR)";
+    characterNotSlashPerFandom["Worm"] = "(Skitter)";
+    characterNotSlashPerFandom["Star Wars"] = "(Leia)|(Amidala)";
+    characterNotSlashPerFandom["Twilight"] = "(Bella)";
+    characterNotSlashPerFandom["Sword Art Online"] = "(Asuna)";
+    characterNotSlashPerFandom["Evangelion"] = "(Yui\\sI)|(Asuka)";
+    characterNotSlashPerFandom["Death Note"] = "(Misa)";
+    characterNotSlashPerFandom["One Piece"] = "(Vivi)|(Nami)|(Boa Hancock)";
+    characterNotSlashPerFandom["Gundam Wing/AC"] = "(Relena)";
+    characterNotSlashPerFandom["Sailor Moon"] = "(Usagi)";
+    characterNotSlashPerFandom["Bleach"] = "(Nemu)|(Rukia)|(Yachiru)|(Matsumoto)|(Orihime)|(Karin)|(Yuzu\\sK)|(Hinamori)|(Tatsuki)";
+    characterNotSlashPerFandom["Fairy Tail"] = "(Lucy\\sH)|(Erza)";
+    characterNotSlashPerFandom["Fullmetal Alchemist"] = "Riza\\sH";
+    characterNotSlashPerFandom["Hellsing"] = "(Seras)|(Integra)";
 
 
     rxUniversal.setPattern(universalSlashRegex);

@@ -36,10 +36,12 @@ App{
     files: [
         "UI/servitorwindow.ui",
         "include/Interfaces/authors.h",
+        "include/calc_data_holder.h",
         "include/core/fic_genre_data.h",
         "include/servitorwindow.h",
         "include/tasks/author_cache_reprocessor.h",
         "include/tasks/slash_task_processor.h",
+        "src/calc_data_holder.cpp",
         "src/main_servitor.cpp",
         "src/servitorwindow.cpp",
         "src/Interfaces/data_source.cpp",

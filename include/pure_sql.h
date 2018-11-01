@@ -129,6 +129,7 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
 DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> result,  QSqlDatabase db);
 DiagnosticSQLResult<int> GetAuthorIdFromUrl(QString url, QSqlDatabase db);
 DiagnosticSQLResult<int> GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>> GetAuthorsForFics(QSet<int>, QSqlDatabase db);
@@ -176,6 +177,9 @@ DiagnosticSQLResult<QList<int>>  GetAllAuthorRecommendations(int id, QSqlDatabas
 DiagnosticSQLResult<QSet<int>>  GetAllKnownSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownNotSlashFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>>  GetAllKnownFicIds(QString, QSqlDatabase db);
+DiagnosticSQLResult<QVector<core::FicWeightPtr>>  GetAllFicsWithEnoughFavesForWeights(int faves, QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFandomStatistics(QList<int> authors, QSqlDatabase db);
+
 DiagnosticSQLResult<QSet<int>>  GetSingularFicsInLargeButSlashyLists(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetListGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db);

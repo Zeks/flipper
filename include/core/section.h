@@ -21,6 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSharedPointer>
 #include <QRegExp>
 #include <QHash>
+#include <QTextStream>
+#include <QDataStream>
+#include <QSet>
 #include "core/fic_genre_data.h"
 namespace core {
 
@@ -107,14 +110,8 @@ public:
 
     int favourites = -1;
     int ficWordCount = 0;
+
     double wordsPerChapter = 0;
-
-    ESRBType esrbType;
-    MoodType prevalentMood = MoodType::neutral;
-    EntitySizeType mostFavouritedSize;
-    EntitySizeType sectionRelativeSize;
-
-
     double averageLength = 0.0;
     double fandomsDiversity = 0.0;
     double explorerFactor = 0.0;
@@ -135,7 +132,11 @@ public:
     double slashRatio = 0.0;
     double notSlashRatio = 0.0;
     double smutRatio = 0.0;
-    //double moodDiversityFactor = 0.0;
+
+    ESRBType esrbType;
+    MoodType prevalentMood = MoodType::neutral;
+    EntitySizeType mostFavouritedSize;
+    EntitySizeType sectionRelativeSize;
 
     QString prevalentGenre;
     QHash<int, double> sizeFactors;
@@ -150,6 +151,9 @@ public:
 
     QDate firstPublished;
     QDate lastPublished;
+
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
 };
 
 class AuthorStats
@@ -163,6 +167,8 @@ public:
 
     FicSectionStats favouriteStats;
     FicSectionStats ownFicStats;
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
 };
 
 class Author : public DBEntity{
@@ -172,8 +178,6 @@ public:
     ~Author(){}
     void Log();
     void LogWebIds();
-    int id= -1;
-    AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
     void AssignId(int id){
         if(id == -1)
         {
@@ -193,15 +197,6 @@ public:
             return webIds[website];
         return -1;
     }
-    QString name;
-    QDateTime firstPublishedFic;
-    QDateTime lastUpdated;
-    int ficCount = -1;
-    int recCount = -1;
-    int favCount = -1;
-    bool isValid = false;
-    //QString website = "";
-    QHash<QString, int> webIds;
     QString CreateAuthorUrl(QString urlType, int webId) const;
     QString url(QString type) const
     {
@@ -210,8 +205,24 @@ public:
         return "";
     }
     QStringList GetWebsites() const;
+
+    int id= -1;
+    AuthorIdStatus idStatus = AuthorIdStatus::unassigned;
+    QString name;
+    QDateTime firstPublishedFic;
+    QDateTime lastUpdated;
+    int ficCount = -1;
+    int recCount = -1;
+    int favCount = -1;
+    bool isValid = false;
+    QHash<QString, int> webIds;
     UpdateMode updateMode = UpdateMode::none;
+
     AuthorStats stats;
+
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
+
 };
 
 class FavouritesPage
@@ -224,6 +235,226 @@ public:
 };
 class Fic;
 typedef QSharedPointer<Fic> FicPtr;
+
+
+struct FicForWeightCalc
+{
+    bool complete = false;
+    bool slash = false;
+    bool dead = false;
+    bool sameLanguage = true;
+    bool adult = false;
+
+    int id = -1;
+    int sumAuthorFaves = -1;
+    int favCount = -1;
+    int reviewCount = -1;
+    int wordCount = -1;
+    int authorId = -1;
+
+    QList<int> fandoms;
+    QList<int> genres;
+
+    QString genreString;
+
+    QDate published;
+    QDate updated;
+
+
+    friend  QTextStream &operator<<(QTextStream &out, const FicForWeightCalc &p);
+    friend  QTextStream &operator>>(QTextStream &in, FicForWeightCalc &p);
+
+
+
+    void Serialize(QDataStream &out)
+    {
+        out << id;
+        out << adult;
+        out << authorId;
+        out << complete;
+        out << dead;
+        out << favCount;
+        out << genreString;
+        out << published;
+        out << updated;
+        out << reviewCount;
+        out << sameLanguage;
+        out << slash;
+        out << wordCount;
+        out << fandoms.size();
+
+        for(auto fandom: fandoms)
+            out << fandom;
+    }
+
+    void Deserialize(QDataStream &in)
+    {
+        in >> id;
+        in >> adult;
+        in >> authorId;
+        in >> complete;
+        in >> dead;
+        in >> favCount;
+        in >> genreString;
+        in >> published;
+        in >> updated;
+        in >> reviewCount;
+        in >> sameLanguage;
+        in >> slash;
+        in >> wordCount;
+        int size;
+        in >> size;
+        int fandom = -1;
+        for(int i = 0; i < size; i++)
+        {
+            in >> fandom;
+            fandoms.push_back(fandom);
+        }
+    }
+
+};
+inline QTextStream &operator>>(QTextStream &in, FicForWeightCalc &p)
+{
+    QString temp;
+
+    in >> temp;
+    p.id = temp.toInt();
+
+    in >> temp;
+    p.adult = temp.toInt();
+
+    in >> temp;
+    p.authorId = temp.toInt();
+
+    in >> temp;
+    p.complete = temp.toInt();
+
+    in >> temp;
+    p.dead = temp.toInt();
+
+    in >> temp;
+    p.favCount = temp.toInt();
+
+    in >> p.genreString;
+    if(p.genreString == "#")
+        p.genreString.clear();
+    p.genreString.replace("_", " ");
+
+    in >> temp;
+    p.published = QDate::fromString("yyyyMMdd");
+
+    in >> temp;
+    p.updated = QDate::fromString("yyyyMMdd");
+
+    in >> temp;
+    p.reviewCount = temp.toInt();
+
+    in >> temp;
+    p.sameLanguage = temp.toInt();
+
+    in >> temp;
+    p.slash = temp.toInt();
+
+    in >> temp;
+    p.wordCount = temp.toInt();
+
+    in >> temp;
+    int fandomSize = temp.toInt();
+
+    for(int i = 0; i < fandomSize; i++)
+    {
+        in >> temp;
+        p.fandoms.push_back(temp.toInt());
+    }
+
+    return in;
+}
+
+inline QTextStream &operator<<(QTextStream &out, const FicForWeightCalc &p)
+{
+    out << QString::number(p.id) << " ";
+    out << QString::number(static_cast<int>(p.adult)) << " ";
+    out << QString::number(p.authorId) << " ";
+    out << QString::number(p.complete) << " ";
+    out << QString::number(p.dead) << " ";
+    out << QString::number(p.favCount) << " ";
+    if(p.genreString.trimmed().isEmpty())
+        out << "#" << " ";
+    else
+        out << p.genreString << " ";
+    if(p.published.isValid())
+        out << p.published.toString("yyyyMMdd") << " ";
+    else
+        out << "0" << " ";
+    if(p.updated.isValid())
+        out << p.updated.toString("yyyyMMdd") << " ";
+    else
+        out << "0" << " ";
+
+    out << QString::number(p.reviewCount) << " ";
+    out << QString::number(p.sameLanguage) << " ";
+    out << QString::number(p.slash) << " ";
+    out << QString::number(p.wordCount) << " ";
+
+    out << QString::number(p.fandoms.size()) << " ";
+
+    for(auto fandom: p.fandoms)
+        out << QString::number(fandom) << " ";
+    out << "\n";
+
+    return out;
+}
+
+
+
+struct FandomStatsForWeightCalc{
+  int listId = -1;
+  int fandomCount = -1;
+  int ficCount = -1;
+
+  double fandomDiversity = 0.0;
+
+  QHash<int, double> fandomPresence;
+  QHash<int, int> fandomCounts;
+
+
+  void Serialize(QDataStream &out)
+  {
+        out << listId;
+        out << fandomCount;
+        out << ficCount;
+        out << fandomDiversity;
+        out << fandomPresence;
+        out << fandomCounts;
+  }
+
+  void Deserialize(QDataStream &in)
+  {
+      in >> listId;
+      in >> fandomCount;
+      in >> ficCount;
+      in >> fandomDiversity;
+      in >> fandomPresence;
+      in >> fandomCounts;
+  }
+
+};
+
+
+struct FicWeightResult{
+    int ficId1;
+    int ficId2;
+    int ficListCount1;
+    int ficListCount2;
+    int meetingCount;
+    bool sameFandom;
+    double attraction;
+    double repulsion;
+    double finalAttraction;
+};
+
+typedef QSharedPointer<FicForWeightCalc> FicWeightPtr;
+typedef QSharedPointer<FandomStatsForWeightCalc> AuthorFavFandomStatsPtr;
 
 class Fic : public DBEntity{
 public:

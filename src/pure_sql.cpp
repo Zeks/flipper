@@ -522,6 +522,36 @@ DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id
 
     return ctx(true);
 }
+
+DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> ficRelations, QSqlDatabase db)
+{
+    QString qs = " insert into FicRelations (fic1, fic2, fic1_list_count, fic2_list_count, meeting_list_count, same_fandom, attraction, repullsion, final_attraction)"
+                 " values(:fic1, :fic2, :fic1_list_count, :fic2_list_count, :meeting_list_count, :same_fandom, :attraction, :repullsion, :final_attraction); ";
+    SqlContext<bool> ctx(db);
+    ctx.Prepare(qs);
+    DiagnosticSQLResult<bool> result;
+    for(auto token : ficRelations)
+    {
+        ctx.bindValue("fic1",token.ficId1);
+        ctx.bindValue("fic2",token.ficId2);
+        ctx.bindValue("fic1_list_count",token.ficListCount1);
+        ctx.bindValue("fic2_list_count",token.ficListCount2);
+        ctx.bindValue("meeting_list_count",token.meetingCount);
+        ctx.bindValue("same_fandom",token.sameFandom);
+        ctx.bindValue("attraction",token.attraction);
+        ctx.bindValue("repullsion",token.repulsion);
+        ctx.bindValue("final_attraction",token.finalAttraction);
+        ctx();
+        if(!ctx.result.success)
+        {
+            result.success = false;
+            result.oracleError = ctx.result.oracleError;
+            break;
+        }
+    }
+    return result;
+}
+
 DiagnosticSQLResult<int>  GetAuthorIdFromUrl(QString url, QSqlDatabase db)
 {
     QString qsl = " select id from recommenders where url like '%%1%' ";
@@ -1392,6 +1422,18 @@ DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics, QSqlDatabase db)
 {
+
+    QString qsClenaup = QString("update fanfics set "
+                                "true_genre1 = '', "
+                                "true_genre1_percent = 0,"
+                                "true_genre2 = '', "
+                                "true_genre2_percent = 0,"
+                                "true_genre3 = '',"
+                                "true_genre3_percent = 0,"
+                                "kept_genres = ''" );
+    SqlContext<bool> cleanup(db, qsClenaup);
+    cleanup();
+
     QString qs = QString("update fanfics set "
                          " true_genre1 = :true_genre1, "
                          " true_genre1_percent = :true_genre1_percent,"
@@ -1399,6 +1441,7 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
                          " true_genre2_percent = :true_genre2_percent,"
                          " true_genre3 = :true_genre3, "
                          " true_genre3_percent = :true_genre3_percent,"
+                         " max_genre_percent = :max_genre_percent,"
                          " kept_genres =:kept_genres where id = :fic_id" );
     SqlContext<bool> ctx(db, qs);
     for(auto fic : fics)
@@ -1409,20 +1452,38 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
             if(genre.relevance < 0.1f)
                 keptList += genre.genres;
         }
+        float maxValue = 0;
+        for(auto genre : fic.processedGenres)
+        {
+            QString writtenGenre = genre.genres.join(",");
+            if(genre.relevance > maxValue && !writtenGenre.isEmpty())
+                maxValue = genre.relevance;
+        }
+
         QString keptToken = keptList.join(",");
 
         for(int i = 0; i < 3; i++)
         {
             genre_stats::GenreBit genre;
-            if(fic.processedGenres.size() > i)
+            if(i < fic.processedGenres.size())
                 genre = fic.processedGenres.at(i);
             else
                 genre.relevance = 0;
 
-            ctx.bindValue("true_genre" + QString::number(i+1), genre.genres.join(","));
+
+
+            QString writtenGenre = genre.genres.join(",");
+            if(writtenGenre.isEmpty())
+                genre.relevance = 0;
+
+            ctx.bindValue("true_genre" + QString::number(i+1), writtenGenre);
             ctx.bindValue("true_genre" + QString::number(i+1) + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
 
+//            if(writtenGenre.isEmpty() && genre.relevance > 0.2)
+//                fic.Log();
+
         }
+        ctx.bindValue("max_genre_percent", maxValue);
         ctx.bindValue("kept_genres", keptToken);
         ctx.bindValue("fic_id", fic.ficId);
         if(!ctx.ExecAndCheck())
@@ -2692,6 +2753,68 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db
     return ctx.result;
 }
 
+DiagnosticSQLResult<QVector<core::FicWeightPtr> > GetAllFicsWithEnoughFavesForWeights(int faves, QSqlDatabase db)
+{
+    SqlContext<QVector<core::FicWeightPtr>> ctx(db);
+    QString qs = QString("select id,Rated, author_id, complete, updated, fandom1,fandom2,favourites, published, updated,  genres, reviews, filter_pass_1, wordcount"
+                         "  from fanfics where favourites > %1 order by id").arg(QString::number(faves));
+    ctx.FetchSelectFunctor(qs, DATAQ{
+                               core::FicWeightPtr fw(new core::FicForWeightCalc);
+                               fw->adult = q.value("Rated").toString() == "M";
+                               fw->authorId = q.value("author_id").toInt();
+                               fw->complete = q.value("complete").toBool();
+                               fw->dead = !fw->complete  && q.value("updated").toDateTime().daysTo(QDateTime::currentDateTime()) > 365;
+                               fw->fandoms.push_back(q.value("fandom1").toInt());
+                               fw->fandoms.push_back(q.value("fandom2").toInt());
+                               fw->favCount = q.value("favourites").toInt();
+                               fw->published = q.value("published").toDate();
+                               fw->updated = q.value("updated").toDate();
+                               fw->genreString = q.value("genres").toString();
+                               fw->id = q.value("id").toInt();
+                               fw->reviewCount = q.value("reviews").toInt();
+                               fw->slash = q.value("filter_pass_1").toBool();
+                               fw->wordCount = q.value("wordcount").toInt();
+                               data.push_back(fw);
+                           });
+    return ctx.result;
+}
+
+
+DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFandomStatistics(QList<int> authors, QSqlDatabase db)
+{
+    DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> result;
+    result.data.reserve(authors.size());
+    QString qs = QString(" select fandom_id, fandom_ratio, fic_count from AuthorFavouritesFandomRatioStatistics where author_id = :author_id");
+    SqlContext<core::AuthorFavFandomStatsPtr> ctx(db);
+    ctx.Prepare(qs);
+    for(auto author: authors)
+    {
+        ctx.bindValue("author_id", author);
+        //qDebug() << "loading author: " << author;
+
+        core::AuthorFavFandomStatsPtr fs(new core::FandomStatsForWeightCalc);
+
+        fs->listId = author;
+        ctx.FetchSelectFunctor(qs, DATAQ{
+                               fs->fandomPresence[q.value("fandom_id").toInt()] = q.value("fandom_ratio").toDouble();
+                               fs->fandomCounts[q.value("fandom_id").toInt()] = q.value("fic_count").toInt();
+                           }, true);
+        fs->fandomCount = fs->fandomPresence.size();
+        ctx.result.data = fs;
+
+        if(!ctx.result.success)
+        {
+            result.oracleError = ctx.result.oracleError;
+            //qDebug() << "GetAuthorListFandomStatistics: " << ctx.result.oracleError;
+            result.success = false;
+            result.data.clear();
+            break;
+        }
+        result.data[author] = ctx.result.data;
+    }
+    return result;
+}
+
 DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId,
                                                          QHash<int, int> fics,
                                                          QSqlDatabase db)
@@ -3127,6 +3250,10 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
 
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
+
+
+
+
 
 
 

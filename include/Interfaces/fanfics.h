@@ -56,7 +56,6 @@ class Fanfics : public IDBWebIDIndex {
 
     virtual bool IsEmptyQueues();
     virtual int GetIdForUrl(QString url) = 0;
-//    QList<core::Fic>  GetCurrentFicSetForQML();
 
     bool ReprocessFics(QString where, QString website,  bool useDirectIds = false, std::function<void(int)> f = std::function<void(int)>());
 
@@ -65,6 +64,7 @@ class Fanfics : public IDBWebIDIndex {
     void ProcessIntoDataQueues(QList<core::FicPtr> fics, bool alwaysUpdateIfNotInsert = false);
     void CalcStatsForFics(QList<QSharedPointer<core::Fic>>);
     bool WriteRecommendations();
+    bool WriteFicRelations(QList<core::FicWeightResult> result);
     bool FlushDataQueues();
 
     virtual bool DeactivateFic(int ficId, QString website);
@@ -76,6 +76,9 @@ class Fanfics : public IDBWebIDIndex {
     QSet<int> GetAllKnownNotSlashFics();
     QSet<int> GetSingularFicsInLargeButSlashyLists();
     QSet<int> GetAllKnownFicIDs(QString where);
+
+    QVector<core::FicWeightPtr> GetAllFicsWithEnoughFavesForWeights(int faves);
+
     bool ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func);
 
     bool AssignChapter(int, int);

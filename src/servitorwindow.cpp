@@ -9,12 +9,14 @@
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/url_utils.h"
 #include "include/favholder.h"
+#include "include/calc_data_holder.h"
 #include "include/tasks/slash_task_processor.h"
 #include <QTextCodec>
 #include <QSettings>
 #include <QSqlRecord>
 #include <QFuture>
 #include <QtConcurrent>
+
 #include <QFutureWatcher>
 #include "ui_servitorwindow.h"
 #include "include/parsers/ffn/ficparser.h"
@@ -23,7 +25,7 @@
 #include "include/page_utils.h"
 #include "pagegetter.h"
 #include "tasks/recommendations_reload_precessor.h"
-
+#include <type_traits>
 
 
 ServitorWindow::ServitorWindow(QWidget *parent) :
@@ -418,8 +420,6 @@ void ServitorWindow::on_pbUpdateFreshAuthors_clicked()
 
     auto authors = authorInterface->GetAllAuthorsWithFavUpdateSince("ffn", QDateTime::currentDateTime().addMonths(-24));
 
-
-
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
     fandomInterface->db = db;
     fandomInterface->portableDBInterface = dbInterface;
@@ -655,6 +655,7 @@ void ServitorWindow::on_pbPCRescue_clicked()
 void ServitorWindow::on_pbSlashCalc_clicked()
 {
     auto db = QSqlDatabase::database();
+    database::Transaction transaction(db);
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
@@ -678,6 +679,7 @@ void ServitorWindow::on_pbSlashCalc_clicked()
 
     SlashProcessor slash(db,fanficsInterface, fandomInterface, authorInterface, recsInterface, dbInterface);
     slash.DoFullCycle(db, 2);
+    transaction.finalize();
 
 }
 
@@ -688,4 +690,116 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
     auto result = rx.ContainsSlash("A year after his mother's death, Ichigo finds himself in a world that he knows doesn't exist and met four spirits. Deciding to know what they truly are, he goes to his father who takes him to a shop. Take a different road IchiHime fans. Dual Wield Zanpakuto! Resurreccion! Quincy powers! OOC. New chapters every week or two. HIATUS",
                                    "[Ichigo K., Yoruichi S.] Rukia K., T. Harribel",
                                    "Bleach");
+}
+
+void ServitorWindow::on_pbCalcWeights_clicked()
+{
+    auto db = QSqlDatabase::database();
+    auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    auto fanficsInterface = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    auto authorsInterface= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    genresInterface->db = db;
+    fanficsInterface->db = db;
+    authorsInterface->db = db;
+
+    QVector<core::FicWeightPtr> fics;
+    QHash<int, QSet<int>> favourites;
+    QHash<int, std::array<double, 22>> genreLists;
+    QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
+    QList<core::AuthorPtr> authors;
+    database::Transaction transaction(db);
+
+    if(!QFile::exists("ficdata_0.txt"))
+    {
+        TimedAction action("Loading data",[&](){
+            fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(50);
+            favourites = authorsInterface->LoadFullFavouritesHashset();
+            genreLists = authorsInterface->GetListGenreData();
+            qDebug() << "got genre lists, size: " << genreLists.size();
+            fandomLists = authorsInterface->GetAuthorListFandomStatistics(favourites.keys());
+            qDebug() << "got fandom lists, size: " << fandomLists.size();
+            authors = authorsInterface->GetAllAuthors("ffn");
+        });
+        action.run();
+
+        for(auto fic: fics)
+            fic->genreString = fic->genreString.replace(" ", "_");
+        CalcDataHolder cdh;
+        cdh.fics = fics;
+        cdh.favourites = favourites;
+        cdh.genreData = genreLists;
+        cdh.fandomLists = fandomLists;
+        cdh.authors = authors;
+
+        TimedAction saveAction("Saving data",[&](){
+            cdh.SaveFicsData();
+        });
+        saveAction.run();
+    }
+    else
+    {
+        CalcDataHolder cdh;
+
+        TimedAction loadAction("Loading data",[&](){
+            cdh.LoadFicsData();
+        });
+        loadAction.run();
+        fics = cdh.fics;
+    }
+    transaction.finalize();
+    return;
+
+    //    QHash<int, core::FicWeightPtr> ficData;
+    //    QHash<int, QSet<int>> ficsForFandoms;
+
+    //    for(auto fic : fics)
+    //    {
+    //        ficData[fic->id] = fic;
+    //        for(auto fandom : fic->fandoms)
+    //            ficsForFandoms[fandom].insert(fic->id);
+    //    }
+
+
+    //    QHash<int, QSet<int>> ficsToFavLists;
+    //    for(int key : favourites.keys())
+    //    {
+    //        auto& set = favourites[key];
+    //        for(auto fic : set)
+    //            ficsToFavLists[fic].insert(key);
+    //    }
+
+
+
+    //    auto authors = authorsInterface->GetAllAuthors("ffn");
+    //    qDebug() << "got authors, size: " << genreLists.size();
+
+
+    //    QHash<int, core::FicWeightResult> result;
+
+
+    //    QSet<int> alreadyProcessed;
+    //    QHash<QPair<int, int>, QSet<int>> ficsMeeting;
+
+    //    {
+    //        for(int key : holder->favourites.keys())
+    //        {
+    //            auto& set = holder->favourites[key];
+    //            for(int i = 1; i < set.size(); i++)
+    //            {
+    //                for(int j = 0; j < set.size(); j++)
+    //                {
+    //                    ficsMeeting[{i,j}].insert(key);
+    //                }
+    //            }
+    //        }
+    //    }
+    //    qDebug() << "final set is of size: " << ficsMeeting.size();
+
+    //fanficsInterface->WriteFicRelations(result);
+}
+
+
+void ServitorWindow::on_pbCleanPrecalc_clicked()
+{
+    QFile::remove("ficsdata.txt");
 }

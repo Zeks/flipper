@@ -453,6 +453,11 @@ QHash<int, std::array<double, 22> > Authors::GetListGenreData()
     return database::puresql::GetListGenreData(db).data;
 }
 
+QHash<int, core::AuthorFavFandomStatsPtr> Authors::GetAuthorListFandomStatistics(QList<int> authors)
+{
+    return database::puresql::GetAuthorListFandomStatistics(authors, db).data;
+}
+
 QHash<int, genre_stats::ListMoodData> Authors::GetMoodDataForLists()
 {
     return database::puresql::GetMoodDataForLists(db).data;
@@ -465,8 +470,6 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
 
     if(!EnsureAuthorLoaded(authorId))
         return result;
-
-
 
     auto author = authorsById[authorId];
 

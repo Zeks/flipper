@@ -49,11 +49,14 @@ struct DiagnosticSQLResult
         }
         return success;
     }
-    bool CheckDataAvailability(QSqlQuery& q){
+    bool CheckDataAvailability(QSqlQuery& q, bool allowEmptyRecords = false){
         if(!q.next())
         {
-            success = false;
-            oracleError = "no data to read";
+            if(!allowEmptyRecords)
+            {
+                success = false;
+                oracleError = "no data to read";
+            }
             return false;
         }
         return true;
@@ -177,8 +180,8 @@ struct SqlContext
         BindValues();
         return result.ExecAndCheck(q, ignoreUniqueness);
     }
-    bool CheckDataAvailability(){
-        return result.CheckDataAvailability(q);
+    bool CheckDataAvailability(bool allowEmptyRecords = false){
+        return result.CheckDataAvailability(q, allowEmptyRecords);
     }
     bool ExecAndCheckForData(){
         BindValues();
@@ -190,14 +193,15 @@ struct SqlContext
             return false;
         return true;
     }
-    void FetchSelectFunctor(QString select, std::function<void(ResultType& data, QSqlQuery& q)> f)
+    void FetchSelectFunctor(QString select, std::function<void(ResultType& data, QSqlQuery& q)> f, bool allowEmptyRecords = false)
     {
         Prepare(select);
         BindValues();
 
         if(!ExecAndCheck())
             return;
-        if(!CheckDataAvailability())
+
+        if(!CheckDataAvailability(allowEmptyRecords))
             return;
 
         do{

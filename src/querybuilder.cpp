@@ -143,6 +143,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     QString queryString;
 
     queryString+= ProcessWordcount(filter);
+    queryString+= ProcessRating(filter);
     queryString+= ProcessOtherFandomsMode(filter);
     queryString+= ProcessSlashMode(filter);
     queryString+= ProcessGenreIncluson(filter);
@@ -283,10 +284,23 @@ QString DefaultQueryBuilder::ProcessWordcount(StoryFilter filter)
     return queryString;
 }
 
+QString DefaultQueryBuilder::ProcessRating(StoryFilter filter)
+{
+    QString queryString;
+    if(filter.rating == StoryFilter::rt_t_m)
+        queryString += "";
+    if(filter.rating == StoryFilter::rt_t)
+        queryString += " and (rated <> 'M') ";
+    if(filter.rating == StoryFilter::rt_m)
+        queryString += " and (rated = 'M') ";
+    return queryString;
+}
+
 QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToFID)
 {
     QString queryString;
     QString slashField;
+    QStringList excludeFields;
     if(!thinClientMode)
     {
         if(!filter.slashFilter.slashFilterEnabled)
@@ -320,16 +334,37 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
         else
             start = start.arg(" not  ");
         if(filter.slashFilter.slashFilterLevel == 0)
-            slashField = "keywords_result";
+        {
+            excludeFields = QStringList{"f.filter_pass_1","f.filter_pass_2"};
+            slashField = "f.keywords_result";
+        }
         else if(filter.slashFilter.slashFilterLevel == 1)
+        {
+            excludeFields = QStringList{"f.keywords_result","f.filter_pass_2"};
             slashField = "f.filter_pass_1";
+        }
         else
+        {
+            excludeFields = QStringList{"f.keywords_result","f.filter_pass_1"};
             slashField = "f.filter_pass_2";
+        }
 
         if(filter.slashFilter.excludeSlash)
-            queryString += "  (%1 <> 1 or %1 is null) ";
+        {
+            if(filter.slashFilter.onlyMatureForSlash)
+                queryString += "  not (%1 == 1 and rated = 'M') ";
+            else
+                queryString += "  (%1 <> 1 or %1 is null) ";
+        }
         if(filter.slashFilter.includeSlash)
-            queryString += " %1 = 1  ";
+        {
+            if(!filter.slashFilter.onlyExactLevel)
+                queryString += " %1 = 1 ";
+            else
+                queryString += " %1 = 1 and %2 = 0 and %3 = 0 ";
+            if(filter.slashFilter.onlyMatureForSlash)
+                queryString += " and rated = 'M' ";
+        }
 
         if(filter.slashFilter.enableFandomExceptions && filter.slashFilter.excludeSlash)
         {
@@ -338,8 +373,10 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
         //queryString+= ")";
         queryString = start + queryString;
     }
-
-    queryString = queryString.arg(slashField);
+    if(!filter.slashFilter.onlyExactLevel)
+        queryString = queryString.arg(slashField);
+    else
+        queryString = queryString.arg(slashField).arg(excludeFields.first()).arg(excludeFields.last());
     if(!renameToFID)
     {
         queryString.replace(" fid ", " ff.id ");
@@ -350,23 +387,79 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
 QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
 {
     QString queryString;
-    if(filter.genreInclusion.size() > 0)
+    if(!filter.useRealGenres)
     {
-        int counter = 0;
-        for(auto genre : filter.genreInclusion)
+        if(filter.genreInclusion.size() > 0)
         {
-            auto counter1 = ++counter;
-            queryString += QString(" AND genres like '%'||:genreinc%1||'%'").arg(QString::number(counter1));
+            int counter = 0;
+            for(auto genre : filter.genreInclusion)
+            {
+                auto counter1 = ++counter;
+                queryString += QString(" AND f.genres like '%'||:genreinc%1||'%'").arg(QString::number(counter1));
+            }
+        }
+
+        if(filter.genreExclusion.size() > 0)
+        {
+            int counter = 0;
+            for(auto genre : filter.genreExclusion)
+            {
+                auto counter1 = ++counter;
+                queryString += QString(" AND f.genres not like '%'||:genreexc%1||'%'").arg(QString::number(counter1));
+            }
         }
     }
-
-    if(filter.genreExclusion.size() > 0)
+    else
     {
-        int counter = 0;
-        for(auto genre : filter.genreExclusion)
+
+
+        if(filter.genreInclusion.size() > 0)
         {
-            auto counter1 = ++counter;
-            queryString += QString(" AND genres not like '%'||:genreexc%1||'%'").arg(QString::number(counter1));
+            double limiter = 0;
+            if(filter.genrePresenceForInclude == StoryFilter::gp_minimal)
+                limiter = 0.2;
+            else if(filter.genrePresenceForInclude == StoryFilter::gp_medium)
+                limiter = 0.5;
+            else if(filter.genrePresenceForInclude == StoryFilter::gp_considerable)
+                limiter = 0.8;
+
+            int counter = 0;
+            QStringList genreResult;
+            for(auto genre : filter.genreInclusion)
+            {
+                auto counter1 = ++counter;
+                genreResult.push_back(QString(" "
+                                       "COALESCE(CASE WHEN true_genre1_percent/max_genre_percent > %1 then true_genre1 ELSE '' END , '') || "
+                                       "COALESCE(CASE WHEN true_genre2_percent/max_genre_percent > %1 then true_genre2 ELSE '' END , '') || "
+                                       "COALESCE(CASE WHEN true_genre3_percent/max_genre_percent > %1 then true_genre3 ELSE '' END , '') "
+                                       "like '%'||:genreinc%2||'%'").arg(QString::number(limiter)).arg(QString::number(counter1)));
+            }
+            if(genreResult.size() > 0)
+                queryString += QString(" AND ( ") + genreResult.join(" OR ") + QString(" ) ");
+        }
+
+        if(filter.genreExclusion.size() > 0)
+        {
+            double limiter = 0;
+            if(filter.genrePresenceForExclude == StoryFilter::gp_minimal)
+                limiter = 0.5;
+            else if(filter.genrePresenceForExclude == StoryFilter::gp_medium)
+                limiter = 0.8;
+
+            int counter = 0;
+            QStringList genreResult;
+            for(auto genre : filter.genreExclusion)
+            {
+                auto counter1 = ++counter;
+                genreResult.push_back(QString(" "
+                                       "COALESCE(CASE WHEN true_genre1_percent/max_genre_percent > %1 then true_genre1 ELSE '' END , '') || "
+                                       "COALESCE(CASE WHEN true_genre2_percent/max_genre_percent > %1 then true_genre2 ELSE '' END , '') || "
+                                       "COALESCE(CASE WHEN true_genre3_percent/max_genre_percent > %1 then true_genre3 ELSE '' END , '') "
+                                       " like '%'||:genreexc%2||'%'").arg(QString::number(limiter)).arg(QString::number(counter1)));
+            }
+            if(genreResult.size() > 0)
+                queryString += QString(" AND not ( ") + genreResult.join(" OR ") + QString(" ) ");
+
         }
     }
     return queryString;

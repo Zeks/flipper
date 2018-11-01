@@ -33,6 +33,8 @@ struct SlashFilterState
     bool enableFandomExceptions;
     QList<int> fandomExceptions;
     int slashFilterLevel;
+    bool onlyExactLevel;
+    bool onlyMatureForSlash;
 };
 namespace core{
 struct StoryFilter{
@@ -72,6 +74,16 @@ struct StoryFilter{
         filtering_in_recommendations = 2,
         filtering_whole_list = 3
     };
+    enum ERatingFilter{
+        rt_t_m = 0,
+        rt_t = 1,
+        rt_m = 2,
+    };
+    enum EGenrePresence{
+        gp_considerable = 0,
+        gp_medium = 1,
+        gp_minimal = 2
+    };
     //do I even need that?
     //QString ficCategory;
     bool isValid = true;
@@ -89,6 +101,10 @@ struct StoryFilter{
     bool listOpenMode= false;
     bool showRecSources = false;
     bool tagsAreUsedForAuthors = false;
+    bool useRealGenres = false;
+
+
+
     SlashFilterState slashFilter;
 
     int useThisRecommenderOnly = -1;
@@ -111,6 +127,9 @@ struct StoryFilter{
     EReviewBiasMode reviewBias;
     EBiasOperator biasOperator;
     EFilterMode mode;
+    ERatingFilter rating;
+    EGenrePresence genrePresenceForInclude;
+    EGenrePresence genrePresenceForExclude;
 
     int fandom = -1;
     QString website;

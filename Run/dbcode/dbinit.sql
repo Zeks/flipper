@@ -49,6 +49,7 @@ alter table fanfics add column true_genre3 VARCHAR;
 alter table fanfics add column true_genre1_percent real;
 alter table fanfics add column true_genre2_percent real;
 alter table fanfics add column true_genre3_percent real;
+alter table fanfics add column max_genre_percent real;
 alter table fanfics add column queued_for_action integer default 0;
 alter table fanfics add column is_english integer default 1;
 
@@ -70,7 +71,7 @@ wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
 wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows, hidden, keywords_yes, keywords_no, keywords_result,
 filter_pass_1,filter_pass_2, fandom1, fandom2,
 true_genre1,true_genre2,true_genre3,
-true_genre1_percent,true_genre2_percent,true_genre3_percent, kept_genres
+true_genre1_percent,true_genre2_percent,true_genre3_percent, kept_genres, max_genre_percent 
  from fanfics;
 
 
@@ -426,6 +427,20 @@ CREATE INDEX if not exists  I_IS_ORIGIN ON RecommendationListData (is_origin ASC
 CREATE INDEX if not exists  I_LISTDATA_FIC ON RecommendationListData (fic_id ASC);
 CREATE INDEX if not exists  I_LISTDATA_MATCHCOUNT ON RecommendationListData (match_count ASC);
 
+
+-- data for fic relationships;
+CREATE TABLE if not exists FicRelations(fic_id INTEGER NOT NULL, 
+fic1 integer,
+fic1_list_count integer,
+fic2_list_count integer,
+meeting_list_count integer,
+fic2 integer,
+same_fandom integer default 0, 
+attraction real default 0, 
+repullsion real default 0, 
+final_attraction real default 0, 
+ PRIMARY KEY (fic1 asc, fic2 asc));
+CREATE INDEX if not exists  I_FRS_PK ON RecommendationListData (fic1 asc, fic2 asc);
 
 CREATE TABLE if not exists user_settings(name varchar unique, value integer);
 INSERT INTO tags(name, name) values('Last Fandom Id', 0);

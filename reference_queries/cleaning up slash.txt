@@ -1,0 +1,16 @@
+update fanfics set 
+keywords_no  = ( select keywords_no  from algopasses ap where ap.fic_id = fanfics.id),
+keywords_yes = ( select keywords_yes  from algopasses ap where ap.fic_id = fanfics.id),
+keywords_result = ( select keywords_pass_result  from algopasses ap where ap.fic_id = fanfics.id),
+filter_pass_1= ( select pass_1 from algopasses ap where ap.fic_id = fanfics.id),
+filter_pass_2= ( select pass_2 from algopasses ap where ap.fic_id = fanfics.id)
+
+
+
+update fanfics set 
+keywords_no  = 0,
+keywords_yes = 0,
+keywords_result = 0,
+filter_pass_1= 0,
+filter_pass_2= 0
+
