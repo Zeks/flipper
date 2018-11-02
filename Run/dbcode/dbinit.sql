@@ -78,7 +78,7 @@ true_genre1_percent,true_genre2_percent,true_genre3_percent, kept_genres, max_ge
 
  
 CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC);
-CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC);
+--CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_ID ON FANFICS (ID ASC);
 CREATE  INDEX if  not exists main.I_FANFICS_GENRES ON FANFICS (GENRES ASC);
 CREATE INDEX if not exists  I_WCR ON fanfics (wcr ASC);
