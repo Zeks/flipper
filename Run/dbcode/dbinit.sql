@@ -76,7 +76,7 @@ wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,
 wcr, wcr_adjusted, reviewstofavourites,daysrunning,age,alive, date_deactivated, follows, hidden, keywords_yes, keywords_no, keywords_result,
 filter_pass_1,filter_pass_2, fandom1, fandom2,
 true_genre1,true_genre2,true_genre3,
-true_genre1_percent,true_genre2_percent,true_genre3_percent, kept_genres, max_genre_percent 
+true_genre1_percent,true_genre2_percent,true_genre3_percent, kept_genres, max_genre_percent
  from fanfics;
 
 

@@ -79,6 +79,13 @@ QSqlDatabase SqliteInterface::InitDatabase(QString connectionName, bool setDefau
     return db;
 }
 
+QSqlDatabase SqliteInterface::InitDatabase2(QString fileName, QString connectionName, bool setDefault)
+{
+    db = sqlite::InitDatabase2(fileName, connectionName, setDefault);
+    EnsureUUIDForUserDatabase();
+    return db;
+}
+
 QSqlDatabase SqliteInterface::InitNamedDatabase(QString dbName, QString fileName, bool setDefault)
 {
     db = sqlite::InitNamedDatabase(dbName, fileName, setDefault);

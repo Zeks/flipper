@@ -22,11 +22,20 @@
 
 
 #include <QSettings>
+#include <QThread>
 #include <QRegularExpression>
 
 
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
+
+
+static QString GetDbNameFromCurrentThread(){
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    std::string id = ss.str();
+    return QString("Crawler_") + QString::fromStdString(id);
+}
 
 FeederService::FeederService(QObject* parent): QObject(parent){
     startedAt = QDateTime::currentDateTimeUtc();
@@ -37,7 +46,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
 
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+    dbInterface->ReadDbFile("dbcode/dbinit.sql",GetDbNameFromCurrentThread());
 
     An<core::FavHolder> holder;
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -135,6 +144,7 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
         auto* userThreadData = ThreadData::GetUserData();
         auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
         authors->db = convertedFicSource->db->GetDatabase();
+        qDebug() << "getting authors";
         userThreadData->usedAuthors = authors->GetAuthorsForFics(userThreadData->ficIDsForActivetags);
     }
 
@@ -162,11 +172,10 @@ Status FeederService::SyncFandomList(ServerContext* context, const ProtoSpace::S
         return Status::OK;
     }
     AddToStatistics(userToken);
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-    dbInterface->ReadDbFile("dbcode/dbinit.sql");
+
+    DatabaseContext dbContext;
     QSharedPointer<interfaces::Fandoms> fandomInterface (new interfaces::Fandoms());
-    fandomInterface->portableDBInterface = dbInterface;
+    fandomInterface->db = dbContext.dbInterface->GetDatabase();
     auto lastServerFandomID = fandomInterface->GetLastFandomID();
     QLOG_INFO() << "Client last fandom ID: " << task->last_fandom_id();
     QLOG_INFO() << "Server last fandom ID: " << lastServerFandomID;
@@ -230,6 +239,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     params->alwaysPickAt = task->always_pick_at();
 
     QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+    fanficsInterface->db = dbContext.dbInterface->GetDatabase();
 
     auto* recs = ThreadData::GetRecommendationData();
 
@@ -301,6 +311,7 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     for(int i = 0; i < task->ids().ffn_ids_size(); i++)
         idsToFill[task->ids().ffn_ids(i)] = -1;
     QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+    fanficsInterface->db = dbContext.dbInterface->GetDatabase();
     bool result = fanficsInterface->ConvertFFNTaggedFicsToDB(idsToFill);
     if(!result)
     {
@@ -347,6 +358,7 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
     for(int i = 0; i < task->ids().db_ids_size(); i++)
         idsToFill[task->ids().db_ids(i)] = -1;
     QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+    fanficsInterface->db = dbContext.dbInterface->GetDatabase();
     bool result = fanficsInterface->ConvertDBFicsToFFN(idsToFill);
     if(!result)
     {
@@ -475,6 +487,7 @@ QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken)
     FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
     QLOG_INFO() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);
+    //QLOG_INFO() << "Initialized fic source mode";
     return ficSource;
 }
 

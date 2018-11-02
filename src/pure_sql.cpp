@@ -266,7 +266,8 @@ DiagnosticSQLResult<int> GetLastFandomID(QSqlDatabase db){
     QString qs = QString("Select max(id) as maxid from fandomindex");
 
     SqlContext<int> ctx(db, qs);
-    ctx.FetchSingleValue<int>("maxid", -1);
+    //qDebug() << "Db open: " << db.isOpen() << " " << db.connectionName();
+    ctx.FetchSingleValue<int>("maxid", -1, true, qs);
     return ctx.result;
 }
 

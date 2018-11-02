@@ -506,6 +506,22 @@ QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault
     return db;
 }
 
+QSqlDatabase InitDatabase2(QString file, QString name, bool setDefault)
+{
+    //QString path = name;
+    QSqlDatabase db;
+    if(setDefault)
+        db = QSqlDatabase::addDatabase("QSQLITE");
+    else
+        db = QSqlDatabase::addDatabase("QSQLITE", name);
+    db.setDatabaseName(file + ".sqlite");
+    bool isOpen = db.open();
+    qDebug() << "Database status: " << name << ", open : " << isOpen;
+    InstallCustomFunctions(db);
+
+    return db;
+}
+
 
 
 

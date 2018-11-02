@@ -1,6 +1,6 @@
 #include "Interfaces/data_source.h"
 #include "pure_sql.h"
-
+#include "Interfaces/db_interface.h"
 #include <QDebug>
 #include <QSqlError>
 
@@ -31,12 +31,11 @@ void FicSource::ClearFilters()
 
 QSqlQuery FicSourceDirect::BuildQuery(core::StoryFilter filter, bool countOnly)
 {
-    QSqlDatabase db = QSqlDatabase::database();
     if(countOnly)
         currentQuery = countQueryBuilder.Build(filter);
     else
         currentQuery = queryBuilder.Build(filter);
-    QSqlQuery q(db);
+    QSqlQuery q(db->GetDatabase());
     q.prepare(currentQuery->str);
     auto it = currentQuery->bindings.begin();
     auto end = currentQuery->bindings.end();
