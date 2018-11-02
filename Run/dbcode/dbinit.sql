@@ -66,6 +66,10 @@ CREATE INDEX if not exists  I_FANFICS_AUTHOR_ID  ON fanfics (author_id ASC);
 CREATE INDEX if not exists  I_FANFICS_IS_ENGLISH  ON fanfics (is_english ASC);
 CREATE INDEX if not exists  I_FANFICS_RATED  ON fanfics (rated ASC);
 
+CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT_TG1 ON FANFICS (true_genre1 asc);
+CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT_TG2 ON FANFICS (true_genre2 asc);
+CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT_TG3 ON FANFICS (true_genre3 asc);
+
 
  CREATE VIEW if not exists vFanfics AS select id, author, title, summary, characters, genres, characters, rated, published, updated, reviews,
 wordcount, favourites, chapters, complete, at_chapter, ffn_id, author_id,

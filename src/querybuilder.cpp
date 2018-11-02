@@ -112,7 +112,15 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
         if(!filter.randomizeResults)
             queryString += where;
         else
+        {
+            auto match = rx.match(randomizer);
+            if(match.hasMatch())
+            {
+                qDebug() << "FOUND MATCH";
+                randomizer = randomizer.mid(match.captured().length());
+            }
             queryString += randomizer;
+        }
         if(createLimits)
             queryString += BuildSortMode(filter);
 
@@ -364,7 +372,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
             if(filter.slashFilter.slashFilterLevel == 2 && filter.slashFilter.onlyMatureForSlash)
                 queryString += "  not ( f.filter_pass_1 == 1 or ( %1 == 1 and f.rated = 'M')) ";
             else
-                queryString += "  (%1 != 1) ";
+                queryString += "  (%1 = 0) ";
         }
         if(filter.slashFilter.includeSlash)
         {
@@ -441,11 +449,13 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             for(auto genre : filter.genreInclusion)
             {
                 auto counter1 = ++counter;
-                genreResult.push_back(QString(" "
-                                       "COALESCE(CASE WHEN true_genre1_percent/max_genre_percent > %1 then true_genre1 ELSE '' END , '') || "
-                                       "COALESCE(CASE WHEN true_genre2_percent/max_genre_percent > %1 then true_genre2 ELSE '' END , '') || "
-                                       "COALESCE(CASE WHEN true_genre3_percent/max_genre_percent > %1 then true_genre3 ELSE '' END , '') "
-                                       "like '%'||:genreinc%2||'%'").arg(QString::number(limiter)).arg(QString::number(counter1)));
+                genreResult.push_back(QString(" true_genre1  = :genreinc%1 and  true_genre1_percent/max_genre_percent > %2  ")
+                        .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                genreResult.push_back(QString(" true_genre2  = :genreinc%1 and  true_genre2_percent/max_genre_percent > %2  ")
+                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                genreResult.push_back(QString(" true_genre3  = :genreinc%1 and  true_genre3_percent/max_genre_percent > %2 ")
+                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+
             }
             if(genreResult.size() > 0)
                 queryString += QString(" AND ( ") + genreResult.join(" OR ") + QString(" ) ");
@@ -466,11 +476,12 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             for(auto genre : filter.genreExclusion)
             {
                 auto counter1 = ++counter;
-                genreResult.push_back(QString(" "
-                                       "COALESCE(CASE WHEN true_genre1_percent/max_genre_percent > %1 then true_genre1 ELSE '' END , '') || "
-                                       "COALESCE(CASE WHEN true_genre2_percent/max_genre_percent > %1 then true_genre2 ELSE '' END , '') || "
-                                       "COALESCE(CASE WHEN true_genre3_percent/max_genre_percent > %1 then true_genre3 ELSE '' END , '') "
-                                       " like '%'||:genreexc%2||'%'").arg(QString::number(limiter)).arg(QString::number(counter1)));
+                genreResult.push_back(QString(" true_genre1  = :genreexc%1 and  true_genre1_percent/max_genre_percent > %2  ")
+                        .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                genreResult.push_back(QString(" true_genre2  = :genreexc%1 and  true_genre2_percent/max_genre_percent > %2  ")
+                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                genreResult.push_back(QString(" true_genre3  = :genreexc%1 and  true_genre3_percent/max_genre_percent > %2 ")
+                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
             }
             if(genreResult.size() > 0)
                 queryString += QString(" AND not ( ") + genreResult.join(" OR ") + QString(" ) ");
@@ -717,18 +728,43 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
 //        q->bindings.push_back({":match_count",filter.minRecommendations});
 //    else if (filter.minRecommendations > -1)
 //        q->bindings.push_back({":match_count",filter.minRecommendations + 1});
-
-    if(!filter.genreInclusion.isEmpty())
+    if(!filter.useRealGenres)
     {
-        int counter = 1;
-        for(auto genre : filter.genreInclusion)
-            q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+        if(!filter.genreInclusion.isEmpty())
+        {
+            int counter = 1;
+            for(auto genre : filter.genreInclusion)
+                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+        }
+        if(!filter.genreExclusion.isEmpty())
+        {
+            int counter = 1;
+            for(auto genre : filter.genreExclusion)
+                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+        }
     }
-    if(!filter.genreExclusion.isEmpty())
+    else
     {
-        int counter = 1;
-        for(auto genre : filter.genreExclusion)
-            q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+        if(!filter.genreInclusion.isEmpty())
+        {
+            int counter = 1;
+            for(auto genre : filter.genreInclusion)
+            {
+                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+            }
+        }
+        if(!filter.genreExclusion.isEmpty())
+        {
+            int counter = 1;
+            for(auto genre : filter.genreExclusion)
+            {
+                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+            }
+        }
     }
     if(filter.fandom != -1)
     {
