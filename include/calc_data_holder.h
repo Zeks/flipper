@@ -12,6 +12,7 @@ struct CalcDataHolder{
     QList<core::AuthorPtr>  authors;
 
     QHash<int, QSet<int> > favourites;
+    QHash<int, QSet<int> > favouritesReduced;
     QHash<int, std::array<double, 22> > genreData;
     QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
 

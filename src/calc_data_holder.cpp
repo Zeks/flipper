@@ -33,9 +33,15 @@ static auto fileWrapperVector = [](CalcDataHolder* obj, int threadCount, int tas
             {
                 obj->out.setDevice(&obj->data);
                 if(obj->fileCounter != threadCount)
+                {
+                    qDebug() << "writing task size of: " << chunkSize;
                     obj->out << chunkSize;
+                }
                 else
+                {
+                    qDebug() << "writing task size of: " << taskSize%threadCount;
                     obj->out << taskSize%threadCount;
+                }
             }
             else
             {
@@ -43,7 +49,7 @@ static auto fileWrapperVector = [](CalcDataHolder* obj, int threadCount, int tas
                 break;
             }
         }
-        actualWork(i);
+        actualWork(obj->out, i);
     }
 };
 static auto fileWrapperHash = [](CalcDataHolder* obj,int threadCount, QString nameBase, auto container, auto actualWork){
@@ -64,9 +70,15 @@ static auto fileWrapperHash = [](CalcDataHolder* obj,int threadCount, QString na
             {
                 obj->out.setDevice(&obj->data);
                 if(obj->fileCounter != threadCount)
-                    obj->out << chunkSize;
+                {
+                    qDebug() << "writing task size of: " << chunkSize;
+                    obj->out << (quint32)chunkSize;
+                }
                 else
-                    obj->out << taskSize%threadCount;
+                {
+                    qDebug() << "writing task size of: " << taskSize%threadCount;
+                    obj->out << (quint32)taskSize%threadCount;
+                }
             }
         }
         actualWork(obj->out, it);
@@ -76,9 +88,12 @@ static auto fileWrapperHash = [](CalcDataHolder* obj,int threadCount, QString na
 
 void CalcDataHolder::SaveFicsData(){
     int threadCount = QThread::idealThreadCount()-1;
-    fileWrapperVector(this, threadCount, fics.size(),fics.size()/threadCount,"fics",[&](int i){
-        fics[i]->Serialize(out);});
-    fileWrapperVector(this, threadCount, authors.size(),authors.size()/threadCount,"authors",[&](int i){
+    fileWrapperVector(this, threadCount, fics.size(),fics.size()/threadCount,"fics",[&](auto& out,int i){
+        fics[i]->Serialize(out);
+    }
+
+    );
+    fileWrapperVector(this, threadCount, authors.size(),authors.size()/threadCount,"authors",[&](auto& out,int i){
         authors[i]->Serialize(out);});
     fileWrapperHash(this, threadCount, "fav", favourites, [&](auto& out, auto it){
         out << it.key();
@@ -104,21 +119,24 @@ void CalcDataHolder::LoadFicsData(){
             int file,
             auto valueFetcher){
         auto resultHolder = resultCreator();
-        QFile data(QString("%1_%2.txt").arg(nameBase).arg(QString::number(file)));
+        QString fileName = QString("TempData/%1_%2.txt").arg(nameBase).arg(QString::number(file));
+        QFile data(fileName);
         if (data.open(QFile::ReadOnly)) {
             QDataStream in(&data);
             int size;
             in >> size;
+            qDebug() << "Starting file: " << fileName << " of size: " << size;
             resultHolder.reserve(size);
             for(int i = 0; i < size; i++)
             {
                 if(i%10000 == 0)
-                    qDebug() << "processing fic: " << i;
+                    qDebug() << "processing entity: " << fileName << " " << i;
                 valueFetcher(resultHolder, in);
             }
         }
         else
-            qDebug() << "Could not open file: " << QString("ficdata_%1.txt").arg(QString::number(file));
+            qDebug() << "Could not open file: " << fileName;
+        qDebug() << "finished file: " << fileName;
         return resultHolder;
     };
     //int destinatio;
@@ -136,27 +154,29 @@ void CalcDataHolder::LoadFicsData(){
         {
             future.waitForFinished();
         }
+        qDebug() << "starting unification";
         for(auto future: futures)
+        {
             resultUnifier(destination, future.result());
+        }
+        qDebug() << "finished unification";
     };
     auto vectorUnifier = [](auto& dest, auto& source){dest+=source;};
     auto hashUnifier = [](auto& dest, auto& source){dest.unite(source);};
 
+    auto ficFetchFunc = [&](auto& container, QDataStream& in){
+        using PtrType = typename std::remove_reference<decltype(container)>::type::value_type;
+        using ValueType = typename std::remove_reference<decltype(container)>::type::value_type::value_type;
 
-    auto ficFetchFunc = [](auto container, QDataStream& in){
-        using PtrType = typename decltype(container)::value_type;
-        using ValueType = typename decltype(container)::value_type::value_type;
-
-        int key;
-        in >> key;
         PtrType tmp{new ValueType()};
         tmp->Deserialize(in);
         container.push_back(tmp);
     };
-    auto favouritesFetchFunc = [](auto container, QDataStream& in){
+
+    auto favouritesFetchFunc = [](auto& container, QDataStream& in){
         int key;
         in >> key;
-        typename decltype(container)::iterator::value_type values;
+        typename std::remove_reference<decltype(container)>::type::iterator::value_type values;
         in >> values;
         container[key] = values;
     };
@@ -173,10 +193,10 @@ void CalcDataHolder::LoadFicsData(){
                                       std::placeholders::_2,
                                       std::placeholders::_3,
                                       favouritesFetchFunc);
-    auto genresFetchFunc = [](auto container, QDataStream& in){
+    auto genresFetchFunc = [](auto& container, QDataStream& in){
         int key;
         in >> key;
-        typename decltype(container)::iterator::value_type values;
+        typename std::remove_reference<decltype(container)>::type::iterator::value_type values;
         for(int i = 0; i < 22; i++)
             in >> values[i];
         container[key] = values;
@@ -186,11 +206,11 @@ void CalcDataHolder::LoadFicsData(){
                                       std::placeholders::_3,
                                       genresFetchFunc);
 
-    auto fandomListsFetchFunc =  [](auto container, QDataStream& in){
+    auto fandomListsFetchFunc =  [](auto& container, QDataStream& in){
         int key;
         in >> key;
-        using PtrType = typename decltype(container)::iterator::value_type;
-        using ValueType = typename decltype(container)::iterator::value_type::value_type;
+        using PtrType = typename std::remove_reference<decltype(container)>::type::iterator::value_type;
+        using ValueType = typename std::remove_reference<decltype(container)>::type::iterator::value_type::value_type;
         PtrType value (new ValueType());
         value->Deserialize(in);
         container[key] = value;
@@ -201,11 +221,15 @@ void CalcDataHolder::LoadFicsData(){
                                       fandomListsFetchFunc);
 
 
-
+    qDebug() << "Loading fics";
     loadMultiThreaded(ficLoader,vectorUnifier, "fics", fics);
+    qDebug() << "Loading authors";
     loadMultiThreaded(ficLoader,vectorUnifier, "authors",authors);
+    qDebug() << "Loading favourites";
     loadMultiThreaded(favouritesLoader, hashUnifier, "fav", favourites);
+    qDebug() << "Loading genredata";
     loadMultiThreaded(genreLoader, hashUnifier, "genre",genreData);
+    qDebug() << "Loading fandomstats";
     loadMultiThreaded(fandomListsLoader, hashUnifier, "fandomstats",fandomLists);
 
 

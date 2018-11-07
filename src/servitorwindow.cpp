@@ -9,7 +9,7 @@
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/url_utils.h"
 #include "include/favholder.h"
-#include "include/calc_data_holder.h"
+
 #include "include/tasks/slash_task_processor.h"
 #include <QTextCodec>
 #include <QSettings>
@@ -687,12 +687,15 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
 {
     CommonRegex rx;
     rx.Init();
-    auto result = rx.ContainsSlash("A year after his mother's death, Ichigo finds himself in a world that he knows doesn't exist and met four spirits. Deciding to know what they truly are, he goes to his father who takes him to a shop. Take a different road IchiHime fans. Dual Wield Zanpakuto! Resurreccion! Quincy powers! OOC. New chapters every week or two. HIATUS",
+    auto result = rx.ContainsSlash("A year after his mother's death, Ichigo finds himself in a world that he knows doesn't exist and met four spirits. "
+                                   "Deciding to know what they truly are, he goes to his father who takes him to a shop. "
+                                   "Take a different road IchiHime fans. Dual Wield Zanpakuto! Resurreccion! "
+                                   "Quincy powers! OOC. New chapters every week or two. HIATUS",
                                    "[Ichigo K., Yoruichi S.] Rukia K., T. Harribel",
                                    "Bleach");
 }
 
-void ServitorWindow::on_pbCalcWeights_clicked()
+void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
 {
     auto db = QSqlDatabase::database();
     auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
@@ -702,34 +705,21 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     fanficsInterface->db = db;
     authorsInterface->db = db;
 
-    QVector<core::FicWeightPtr> fics;
-    QHash<int, QSet<int>> favourites;
-    QHash<int, std::array<double, 22>> genreLists;
-    QHash<int, core::AuthorFavFandomStatsPtr> fandomLists;
-    QList<core::AuthorPtr> authors;
     database::Transaction transaction(db);
 
-    if(!QFile::exists("ficdata_0.txt"))
+
+    if(!QFile::exists("TempData/fandomstats_0.txt"))
     {
         TimedAction action("Loading data",[&](){
-            fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(50);
-            favourites = authorsInterface->LoadFullFavouritesHashset();
-            genreLists = authorsInterface->GetListGenreData();
-            qDebug() << "got genre lists, size: " << genreLists.size();
-            fandomLists = authorsInterface->GetAuthorListFandomStatistics(favourites.keys());
-            qDebug() << "got fandom lists, size: " << fandomLists.size();
-            authors = authorsInterface->GetAllAuthors("ffn");
+            cdh.fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(1000);
+            cdh.favourites = authorsInterface->LoadFullFavouritesHashset();
+            cdh.genreData = authorsInterface->GetListGenreData();
+            qDebug() << "got genre lists, size: " << cdh.genreData.size();
+            cdh.fandomLists = authorsInterface->GetAuthorListFandomStatistics(cdh.favourites.keys());
+            qDebug() << "got fandom lists, size: " << cdh.fandomLists.size();
+            cdh.authors = authorsInterface->GetAllAuthors("ffn");
         });
         action.run();
-
-        for(auto fic: fics)
-            fic->genreString = fic->genreString.replace(" ", "_");
-        CalcDataHolder cdh;
-        cdh.fics = fics;
-        cdh.favourites = favourites;
-        cdh.genreData = genreLists;
-        cdh.fandomLists = fandomLists;
-        cdh.authors = authors;
 
         TimedAction saveAction("Saving data",[&](){
             cdh.SaveFicsData();
@@ -738,62 +728,109 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     }
     else
     {
-        CalcDataHolder cdh;
-
         TimedAction loadAction("Loading data",[&](){
             cdh.LoadFicsData();
         });
         loadAction.run();
-        fics = cdh.fics;
     }
     transaction.finalize();
-    return;
+    QSet<int> ficSet;
+    for(auto fic : cdh.fics)
+        ficSet.insert(fic->id);
 
-    //    QHash<int, core::FicWeightPtr> ficData;
-    //    QHash<int, QSet<int>> ficsForFandoms;
+    qDebug() << "ficset is of size:" << ficSet.size();
 
-    //    for(auto fic : fics)
-    //    {
-    //        ficData[fic->id] = fic;
-    //        for(auto fandom : fic->fandoms)
-    //            ficsForFandoms[fandom].insert(fic->id);
-    //    }
+    // need to reduce fav sets and remove every fic that isn't in the calculation
+    // to reduce throttling
+    // perhaps doesn't need to be a set, a vector might do
+    for(auto& favSet : cdh.favourites)
+        favSet.intersect(ficSet);
 
+}
 
-    //    QHash<int, QSet<int>> ficsToFavLists;
-    //    for(int key : favourites.keys())
-    //    {
-    //        auto& set = favourites[key];
-    //        for(auto fic : set)
-    //            ficsToFavLists[fic].insert(key);
-    //    }
+void ServitorWindow::on_pbCalcWeights_clicked()
+{
+    CalcDataHolder cdh;
+    LoadDataForCalculation(cdh);
 
 
+        QHash<int, core::FicWeightPtr> ficData;
+        QHash<int, QSet<int>> ficsForFandoms;
 
-    //    auto authors = authorsInterface->GetAllAuthors("ffn");
-    //    qDebug() << "got authors, size: " << genreLists.size();
+        for(auto fic : cdh.fics)
+        {
+            ficData[fic->id] = fic;
+            for(auto fandom : fic->fandoms)
+                ficsForFandoms[fandom].insert(fic->id);
+        }
+        qDebug() << "Will work with: " << ficData.size() << " fics";
+        qDebug() << 1;
 
 
-    //    QHash<int, core::FicWeightResult> result;
+        QHash<int, QSet<int>> ficsToFavLists;
+        for(int key : cdh.favourites.keys())
+        {
+            auto& set = cdh.favourites[key];
+            for(auto fic : set)
+                ficsToFavLists[fic].insert(key);
+        }
+
+        qDebug() << 2;
 
 
-    //    QSet<int> alreadyProcessed;
-    //    QHash<QPair<int, int>, QSet<int>> ficsMeeting;
 
-    //    {
-    //        for(int key : holder->favourites.keys())
-    //        {
-    //            auto& set = holder->favourites[key];
-    //            for(int i = 1; i < set.size(); i++)
-    //            {
-    //                for(int j = 0; j < set.size(); j++)
-    //                {
-    //                    ficsMeeting[{i,j}].insert(key);
-    //                }
-    //            }
-    //        }
-    //    }
-    //    qDebug() << "final set is of size: " << ficsMeeting.size();
+
+        QHash<int, core::FicWeightResult> result;
+        struct FicPair{
+            int fic1;
+            int fic2;
+            QSet<int> meetings;
+        };
+        QSet<int> alreadyProcessed;
+        QHash<QPair<int, int>, FicPair> ficsMeeting;
+
+        {
+            int counter = 0;
+            qDebug() << "full fav size: " << cdh.favourites.keys().size();
+            for(int key : cdh.favourites.keys())
+            {
+                if(counter%10000 == 0)
+                    qDebug() << " At: " << counter;
+                counter++;
+                auto values = cdh.favourites[key].toList();
+                //qDebug() << "Reading list of size: " << values.size();
+                int pairCounter = 0;
+                for(int i = 0; i < values.size(); i++)
+                {
+                    for(int j = i+1; j < values.size(); j++)
+                    {
+                        auto fic1 = values[i];
+                        auto fic2 = values[j];
+                        if(!ficData.contains(fic1) || !ficData.contains(fic2))
+                            continue;
+                        QPair<int, int> pair = {fic1,fic2};
+                        ficsMeeting[pair].fic1 = values[i];
+                        ficsMeeting[pair].fic2 = values[j];
+                        ficsMeeting[pair].meetings.insert(key);
+                        pairCounter++;
+                    }
+                }
+                //qDebug() << "List had: " << pairCounter << " pairs";
+            }
+        }
+        auto values = ficsMeeting.values();
+        std::sort(values.begin(), values.end(), [](const FicPair& fp1, const FicPair& fp2){
+            return fp1.meetings.size() > fp2.meetings.size();
+        });
+        QString prototype = "SELECT * FROM fanfics where  id in (%1, %2)";
+        for(int i = 0; i < 10; i++)
+        {
+            QString temp = prototype;
+            //qDebug() << << values[i].fic1 << " " << values[i].fic2 << " " << values[i].meetings.size();
+            qDebug().noquote() << temp.arg(values[i].fic1) .arg(values[i].fic2);
+            qDebug() << "Met times: " << values[i].meetings.size();
+            qDebug() << " ";
+        }
 
     //fanficsInterface->WriteFicRelations(result);
 }

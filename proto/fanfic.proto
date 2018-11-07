@@ -19,16 +19,24 @@ message GenreData{
     float relevance    = 2;
 }
 
+message SlashData{
+    bool keywords_yes     = 1;
+    bool keywords_no      = 2;
+    bool keywords_result  = 3;
+    bool filter_pass_1    = 4;
+    bool filter_pass_2    = 5;
+}
+
 
 // tags will be stored locally for the time being
 message Fanfic{
 
-    bool is_valid                    = 1;
+    bool is_valid                   = 1;
     int32 id                        = 2;
     int32 complete                  = 3;
     int32 recommendations           = 4;
 
-    string word_count                = 5;
+    string word_count               = 5;
     string chapters                 = 6;
     string reviews                  = 7;
     string favourites               = 8;
@@ -48,4 +56,5 @@ message Fanfic{
     string genres                   = 21;    
     SitePack site_pack              = 22;
     repeated GenreData real_genres  = 23;
+    SlashData slash_data            = 24; 
 }

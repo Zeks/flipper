@@ -324,7 +324,36 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     if(data) \
     data->PARAM = value.toString(); \
     } \
+    );
+
+
+#define ADD_STRING_NUMBER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const core::Fic* data) \
+{ \
+    if(data){ \
+    QString temp;\
+    QSettings settings("settings.ini", QSettings::IniFormat);\
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));\
+    if(settings.value("Settings/commasInWordcount", false).toBool()){\
+    QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));\
+    QLocale aEnglish;\
+    temp = aEnglish.toString(data->PARAM.toInt());}\
+    else{ \
+    temp = data->PARAM;} \
+    return QVariant(temp);} \
+    else \
+    return QVariant(); \
+    } \
     ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (core::Fic* data, QVariant value) \
+{ \
+    if(data) \
+    data->PARAM = value.toString(); \
+    } \
+    ); \
+
 
 #define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
@@ -395,7 +424,7 @@ void MainWindow::SetupTableAccess()
     ADD_DATE_GETSET(holder, 8, 0, updated);
     ADD_STRING_GETSET(holder, 9, 0, urlFFN);
     ADD_STRING_GETSET(holder, 10, 0, tags);
-    ADD_STRING_INTEGER_GETSET(holder, 11, 0, wordCount);
+    ADD_STRING_NUMBER_GETSET(holder, 11, 0, wordCount);
     ADD_STRING_INTEGER_GETSET(holder, 12, 0, favourites);
     ADD_STRING_INTEGER_GETSET(holder, 13, 0, reviews);
     ADD_STRING_INTEGER_GETSET(holder, 14, 0, chapters);

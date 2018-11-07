@@ -281,29 +281,64 @@ struct FicForWeightCalc
         out << sameLanguage;
         out << slash;
         out << wordCount;
-        out << fandoms.size();
 
+        out << fandoms.size();
         for(auto fandom: fandoms)
             out << fandom;
+    }
+    void Log()
+    {
+        qDebug() << id;
+        qDebug() << adult;
+        qDebug() << authorId;
+        qDebug() << complete;
+        qDebug() << dead;
+        qDebug() << favCount;
+        qDebug() << genreString;
+        qDebug() << published;
+        qDebug() << updated;
+        qDebug() << reviewCount;
+        qDebug() << sameLanguage;
+        qDebug() << slash;
+        qDebug() << wordCount;
+
+        qDebug() << fandoms.size();
+        for(auto fandom: fandoms)
+            qDebug() << fandom;
     }
 
     void Deserialize(QDataStream &in)
     {
         in >> id;
+        //qDebug() << "id: " << id;
         in >> adult;
+        //qDebug() << "adult: " << adult;
         in >> authorId;
+        //qDebug() << "authorId " << authorId;
         in >> complete;
+        //qDebug() << "complete: " << complete;
         in >> dead;
+        //qDebug() << "dead: " << dead;
         in >> favCount;
+        //qDebug() << "favCount: " << favCount;
         in >> genreString;
+        //qDebug() << "genreString: " << genreString;
         in >> published;
+        //qDebug() << "published: " << published;
         in >> updated;
+        //qDebug() << "updated: " << updated;
         in >> reviewCount;
+        //qDebug() << "reviewCount: " << reviewCount;
         in >> sameLanguage;
+        //qDebug() << "sameLanguage: " << sameLanguage;
         in >> slash;
+        //qDebug() << "slash: " << slash;
         in >> wordCount;
-        int size;
+        //qDebug() << "wordCount: " << wordCount;
+        int size = -1;
         in >> size;
+        if(size > 2 || size < 0)
+            qDebug() << "crap fandom size for fic: " << id << " size:" << size;
         int fandom = -1;
         for(int i = 0; i < size; i++)
         {
@@ -424,6 +459,7 @@ struct FandomStatsForWeightCalc{
         out << fandomCount;
         out << ficCount;
         out << fandomDiversity;
+
         out << fandomPresence;
         out << fandomCounts;
   }
@@ -434,8 +470,10 @@ struct FandomStatsForWeightCalc{
       in >> fandomCount;
       in >> ficCount;
       in >> fandomDiversity;
+
       in >> fandomPresence;
       in >> fandomCounts;
+
   }
 
 };
@@ -455,6 +493,14 @@ struct FicWeightResult{
 
 typedef QSharedPointer<FicForWeightCalc> FicWeightPtr;
 typedef QSharedPointer<FandomStatsForWeightCalc> AuthorFavFandomStatsPtr;
+
+struct SlashData{
+    bool keywords_yes   ;
+    bool keywords_no    ;
+    bool keywords_result;
+    bool filter_pass_1  ;
+    bool filter_pass_2  ;
+};
 
 class Fic : public DBEntity{
 public:
@@ -478,7 +524,7 @@ public:
     };
     Fic(){
         author = QSharedPointer<Author>(new Author);
-    };
+    }
     Fic(const Fic&) = default;
     Fic& operator=(const Fic&) = default;
     ~Fic(){}
@@ -546,7 +592,7 @@ public:
         genres = genresList;
 
 
-    };
+    }
     QString url(QString type)
     {
         if(urls.contains(type))
@@ -567,6 +613,7 @@ public:
     QList<genre_stats::GenreBit> realGenreData;
     QString realGenreString;
     QList<int> fandomIds;
+    SlashData slashData;
 };
 
 class Section : public DBEntity

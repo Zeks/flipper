@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "environment.h"
+#include "include/calc_data_holder.h"
 
 namespace Ui {
 class servitorWindow;
@@ -23,6 +24,7 @@ public:
     void UpdateInterval(int, int);
 
     void DetectGenres(int minAuthorRecs, int minFoundLists);
+    void LoadDataForCalculation(CalcDataHolder& data);
     QSharedPointer<database::IDBWrapper> dbInterface;
     CoreEnvironment env;
 
