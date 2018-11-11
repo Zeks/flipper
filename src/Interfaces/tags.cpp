@@ -1,6 +1,6 @@
 /*
 Flipper is a replacement search engine for fanfiction.net search results
-Copyright (C) 2017  Marchenko Nikolai
+Copyright (C) 2017-2018  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
