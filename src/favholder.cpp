@@ -23,13 +23,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "threaded_data/threaded_load.h"
 #include <QSettings>
 #include <QDir>
+#include <algorithm>
+#include <execution>
+#include <cmath>
 namespace core{
 
 void FavHolder::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface)
 {
     CreateTempDataDir();
     QSettings settings("settings_server.ini", QSettings::IniFormat);
-    if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists("ServerData/fav_0.txt"))
+    if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists("ServerData/roafav_0.txt"))
     {
         LoadStoredData();
     }
@@ -49,7 +52,12 @@ void FavHolder::CreateTempDataDir()
 
 void FavHolder::LoadDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface)
 {
-    favourites = authorInterface->LoadFullFavouritesHashset();
+    auto favourites = authorInterface->LoadFullFavouritesHashset();
+    for(auto key: favourites.keys())
+    {
+        for(auto item : favourites[key])
+        this->favourites[key].add(item);
+    }
 }
 
 void FavHolder::LoadStoredData()
@@ -67,6 +75,7 @@ struct AuthorResult{
     int matches;
     double ratio;
     int size;
+    double distance = 0;
 };
 
 
@@ -77,6 +86,15 @@ RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFic
     RecommendationListResult ficResult;
     //QHash<int, int> ficResult;
     auto& favs = favourites;
+    Roaring r;
+    for(auto bit : sourceFics)
+        r.add(bit);
+    qDebug() << "finished creating roaring";
+    int minMatches, maxMatches;
+    minMatches =  params->minimumMatch;
+    maxMatches = minMatches;
+    int matchSum = 0;
+    double ratioSum = 0;
     TimedAction action("Reclist Creation",[&](){
         auto it = favs.begin();
         while (it != favs.end())
@@ -84,26 +102,92 @@ RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFic
             auto& author = authorsResult[it.key()];
             author.id = it.key();
             author.matches = 0;
-            author.ratio = 0;
-            author.size = it.value().size();
-            for(auto source: sourceFics)
-            {
-                if(it.value().contains(source))
-                    author.matches = author.matches + 1;
-            }
-            //if(author.matches > 0)
-                //QLOG_INFO() << " Author: " << it.key() << " had: " << author.matches << " matches";
-            ++it;
+            author.size = it.value().cardinality();
+            Roaring temp = r;
+            temp = temp & it.value();
+            author.matches = temp.cardinality();
+            if(maxMatches < author.matches)
+                maxMatches = author.matches;
+            matchSum+=author.matches;
+
+            it++;
         }
+        QList<int> filteredAuthors;
+        filteredAuthors.reserve(authorsResult.size()/10);
         for(auto& author: authorsResult)
         {
-            if(author.matches > 0)
+            if(author.matches >= params->minimumMatch || author.matches >= params->alwaysPickAt)
+            {
                 author.ratio = static_cast<double>(author.size)/static_cast<double>(author.matches);
+
+                if(author.ratio <= params->pickRatio && author.matches > 0)
+                {
+                    qDebug() << "detected ratio of: " << author.ratio;
+                    ratioSum+=author.ratio;
+                    filteredAuthors.push_back(author.id);
+                }
+            }
+        }
+        int matchMedian = matchSum/favs.size();
+        double ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(filteredAuthors.size());
+
+        double normalizer = 1./static_cast<double>(filteredAuthors.size()-1.);
+        double sum = 0;
+        for(auto author: filteredAuthors)
+        {
+            sum+=std::pow(authorsResult[author].ratio - ratioMedian, 2);
+        }
+        auto quad = std::sqrt(normalizer * sum);
+
+
+        qDebug () << "median value is: " << matchMedian;
+        qDebug () << "median ratio is: " << ratioMedian;
+
+        auto keysRatio = favourites.keys();
+        auto keysMedian = favourites.keys();
+        std::sort(std::execution::par, keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
+            return authorsResult[i1].matches < authorsResult[i2].matches;
+        });
+
+        std::sort(std::execution::par, filteredAuthors.begin(), filteredAuthors.end(),[&](const int& i1, const int& i2){
+            return authorsResult[i1].ratio < authorsResult[i2].ratio;
+        });
+
+        auto ratioMedianIt = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& i2){
+                                         return authorsResult[i1].ratio < ratioMedian;
+                                     });
+        auto dist = ratioMedianIt - filteredAuthors.begin();
+        qDebug() << "distance to median is: " << dist;
+        qDebug() << "vector size is: " << filteredAuthors.size();
+
+        qDebug() << "sigma: " << quad;
+        qDebug() << "2 sigma: " << quad * 2;
+
+        auto ratioSigma2 = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& i2){
+                                         return authorsResult[i1].ratio < (ratioMedian - quad*2);
+                                     });
+        auto sigma2Dist = ratioSigma2 - filteredAuthors.begin();
+        qDebug() << "distance to sigma15 is: " << sigma2Dist;
+
+        for(auto& author: authorsResult)
+        {
             if((author.matches >= params->minimumMatch && author.ratio <= params->pickRatio)
                     || author.matches >= params->alwaysPickAt)
             {
+                bool gtSigma = (ratioMedian - quad) >= author.ratio;
+                bool gtSigma2 = (ratioMedian - 2 * quad) >= author.ratio;
+                bool gtSigma17 = (ratioMedian - 1.7 * quad) >= author.ratio;
+
+                int coef = 1;
+                if(gtSigma2)
+                    coef = 100;
+                else if(gtSigma17)
+                    coef = 30;
+                else if(gtSigma)
+                    coef = 10;
+
                 for(auto fic: favourites[author.id])
-                    ficResult.recommendations[fic]++;
+                    ficResult.recommendations[fic]+= coef;
             }
         }
     });

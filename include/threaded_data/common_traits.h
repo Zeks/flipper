@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSet>
 #include <QList>
 #include <array>
+#include "third_party/roaring/roaring.hh"
 template <typename T>
 struct is_shared_ptr {
   static const bool value = false;
@@ -50,6 +51,18 @@ template <typename Key>
 struct is_vector<QVector<Key> > {
   static const bool value = true;
 };
+
+
+template <typename T>
+struct is_roaring{
+  static const bool value = false;
+};
+
+template <>
+struct is_roaring<Roaring> {
+  static const bool value = true;
+};
+
 template <typename Key>
 struct is_vector<QList<Key> > {
   static const bool value = true;
@@ -75,3 +88,6 @@ constexpr bool is_serializable_pointer (){
 
     return has_serialize<typename T::value_type, QDataStream>();
 };
+
+
+

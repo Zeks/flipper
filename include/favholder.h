@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSharedPointer>
 #include <QVector>
 #include "GlobalHeaders/SingletonHolder.h"
+#include "third_party/roaring/roaring.hh"
 namespace interfaces{
 class Authors;
 }
@@ -43,7 +44,7 @@ public:
     void LoadStoredData();
     void SaveData();
     RecommendationListResult GetMatchedFicsForFavList(QSet<int> sourceFics,  QSharedPointer<core::RecommendationList> params);
-    QHash<int, QSet<int>> favourites;
+    QHash<int, Roaring> favourites;
 };
 }
 BIND_TO_SELF_SINGLE(core::FavHolder);

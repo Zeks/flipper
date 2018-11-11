@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
+
 struct DataKeeper{
     QFile data;
     QDataStream out;
@@ -117,6 +118,22 @@ void SaveFavouritesData(QString storageFolder, QHash<int, QSet<int>>& favourites
     Impl::fileWrapperHash(&keeper, threadCount, storageFolder + "/fav", favourites, [&](auto& out, auto it){
         out << it.key();
         out << it.value();
+    });
+}
+void SaveFavouritesData(QString storageFolder, QHash<int, Roaring>& favourites){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount, storageFolder + "/roafav", favourites, [&](auto& out, auto it){
+        out << it.key();
+
+        Roaring& r = it.value();
+        size_t  expectedsize = r.getSizeInBytes();
+        qDebug() << "writing roaring of size: " << expectedsize;
+        char *serializedbytes = new char [expectedsize];
+        r.write(serializedbytes);
+        QByteArray ba(QByteArray::fromRawData(serializedbytes, expectedsize));
+        out << ba;
+        delete[] serializedbytes;
     });
 }
 void SaveGenreDataForFavLists(QString storageFolder, QHash<int, std::array<double, 22> >& genreData){

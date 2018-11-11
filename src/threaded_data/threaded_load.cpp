@@ -53,7 +53,20 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
     if constexpr(is_hash<ContainerType>::value)
         in >> key;
 
-    if constexpr(is_serializable_pointer<ContainerValueType>())
+
+    if constexpr(is_roaring<ContainerValueType>::value)
+    {
+        using PtrType = ContainerValueType;
+
+        QByteArray ba;
+        in >> ba;
+        //qDebug() << "read byte array is: " << ba;
+        Roaring r = Roaring::readSafe(ba.constData(), ba.size());
+
+        //qDebug() << "read roaring of size: " << r.cardinality();
+        PutIntoContainer(container, r, key);
+    }
+    else if constexpr(is_serializable_pointer<ContainerValueType>())
     {
         using PtrType = ContainerValueType;
         using ValueType = typename PtrType::value_type;
@@ -210,6 +223,12 @@ void LoadFavouritesData(QString storage, QHash<int, QSet<int>>& favourites)
     qDebug() << "Loading favourites";
     loadMultiThreaded(genericLoader, hashUnifier, storage + "/fav", favourites);
 }
+void LoadFavouritesData(QString storage, QHash<int, Roaring> &favourites)
+{
+    qDebug() << "Loading favourites";
+    loadMultiThreaded(genericLoader, hashUnifier, storage + "/roafav", favourites);
+}
+
 void LoadGenreDataForFavLists(QString storage, QHash<int, std::array<double, 22> >& genreData)
 {
     qDebug() << "Loading authors";
