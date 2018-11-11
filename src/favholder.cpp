@@ -78,6 +78,23 @@ struct AuthorResult{
     double distance = 0;
 };
 
+double quadratic_coef(double ratio, double median, double sigma, int base, int scaler)
+{
+    auto  distanceFromMedian = median - ratio;
+    if(distanceFromMedian < 0)
+        return 0;
+    double tau = distanceFromMedian/sigma;
+    return base + std::pow(tau,2)*scaler;
+}
+
+double sqrt_coef(double ratio, double median, double sigma, int base, int scaler)
+{
+    auto  distanceFromMedian = median - ratio;
+    if(distanceFromMedian < 0)
+        return 0;
+    double tau = distanceFromMedian/sigma;
+    return base + std::sqrt(tau)*scaler;
+}
 
 
 RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFics, QSharedPointer<RecommendationList> params)
@@ -168,7 +185,9 @@ RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFic
                                      });
         auto sigma2Dist = ratioSigma2 - filteredAuthors.begin();
         qDebug() << "distance to sigma15 is: " << sigma2Dist;
-
+        int counter2Sigma = 0;
+        int counter17Sigma = 0;
+        int authorSize = filteredAuthors.size();
         for(auto& author: authorsResult)
         {
             if((author.matches >= params->minimumMatch && author.ratio <= params->pickRatio)
@@ -178,18 +197,32 @@ RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFic
                 bool gtSigma2 = (ratioMedian - 2 * quad) >= author.ratio;
                 bool gtSigma17 = (ratioMedian - 1.7 * quad) >= author.ratio;
 
-                int coef = 1;
+                double coef = 0;
                 if(gtSigma2)
-                    coef = 100;
+                {
+                    counter2Sigma++;
+                    coef = quadratic_coef(author.ratio,ratioMedian,2*quad,authorSize/10, authorSize/20);
+                }
                 else if(gtSigma17)
-                    coef = 30;
+                {
+                    counter17Sigma++;
+                    coef = quadratic_coef(author.ratio,ratioMedian, 1.7*quad,authorSize/20, authorSize/40);
+                }
                 else if(gtSigma)
-                    coef = 10;
+                    coef = quadratic_coef(author.ratio,ratioMedian, quad, 1, 5);
+
+//                if(gtSigma2)
+//                    coef = 100;
+//                else if(gtSigma17)
+//                    coef = 30;
+//                else if(gtSigma)
+//                    coef = 10;
 
                 for(auto fic: favourites[author.id])
-                    ficResult.recommendations[fic]+= coef;
+                    ficResult.recommendations[fic]+= 1+coef;
             }
         }
+        qDebug() << "All: " << filteredAuthors.size() << " 2s: " << counter2Sigma << " 17s: " << counter17Sigma;
     });
     action.run();
     for(auto author: authorsResult)
