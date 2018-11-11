@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "environment.h"
+#include "third_party/roaring/roaring.hh"
 #include "include/calc_data_holder.h"
 
 namespace Ui {
@@ -25,6 +26,13 @@ public:
 
     void DetectGenres(int minAuthorRecs, int minFoundLists);
     void LoadDataForCalculation(CalcDataHolder& data);
+    void ProcessCDHData(CalcDataHolder& data);
+    void CalcConstantMemory();
+    QHash<uint32_t, core::FicWeightPtr> ficData;
+    QHash<uint32_t, QSet<uint32_t>> ficsForFandoms;
+    QHash<uint32_t, Roaring> ficsToFavLists;
+    QList<uint32_t> keys;
+
     QSharedPointer<database::IDBWrapper> dbInterface;
     CoreEnvironment env;
 

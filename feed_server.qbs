@@ -28,7 +28,7 @@ App{
     cpp.defines: base.concat(["L_LOGGER_LIBRARY"])
     cpp.includePaths: [
         sourceDirectory,
-        sourceDirectory + "/../",
+        //sourceDirectory + "/../",
         sourceDirectory + "/include",
         sourceDirectory + "/libs",
         sourceDirectory + "/third_party/zlib",
@@ -36,8 +36,13 @@ App{
     ]
 
     files: [
+        "include/calc_data_holder.h",
         "include/grpc/grpc_source.h",
         "include/Interfaces/data_source.h",
+        "include/threaded_data/common_traits.h",
+        "include/threaded_data/threaded_load.h",
+        "include/threaded_data/threaded_save.h",
+        "src/calc_data_holder.cpp",
         "src/grpc/grpc_source.cpp",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",
@@ -67,6 +72,8 @@ App{
         "include/core/section.h",
         "include/storyfilter.h",
         "include/url_utils.h",
+        "src/threaded_data/threaded_load.cpp",
+        "src/threaded_data/threaded_save.cpp",
         "third_party/sqlite3/sqlite3.c",
         "third_party/sqlite3/sqlite3.h",
         "src/sqlcontext.cpp",
@@ -99,6 +106,10 @@ App{
         "src/servers/database_context.cpp",
         "include/servers/database_context.h",
     ]
+    cpp.systemIncludePaths: [
+        sourceDirectory +"/proto",
+        sourceDirectory + "/third_party",
+        sourceDirectory + "/../"]
 
     cpp.staticLibraries: {
         //var libs = ["UniversalModels", "logger", "quazip"]

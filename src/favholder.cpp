@@ -2,11 +2,47 @@
 #include "include/Interfaces/authors.h"
 #include "logger/QsLog.h"
 #include "include/timeutils.h"
+#include "threaded_data/threaded_save.h"
+#include "threaded_data/threaded_load.h"
+#include <QSettings>
+#include <QDir>
 namespace core{
 
 void FavHolder::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface)
 {
+    CreateTempDataDir();
+    QSettings settings("settings_server.ini", QSettings::IniFormat);
+    if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists("ServerData/fav_0.txt"))
+    {
+        LoadStoredData();
+    }
+    else
+    {
+        LoadDataFromDatabase(authorInterface);
+        SaveData();
+
+    }
+}
+
+void FavHolder::CreateTempDataDir()
+{
+    QDir dir(QDir::currentPath());
+    dir.mkdir("ServerData");
+}
+
+void FavHolder::LoadDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface)
+{
     favourites = authorInterface->LoadFullFavouritesHashset();
+}
+
+void FavHolder::LoadStoredData()
+{
+    thread_boost::LoadFavouritesData("ServerData", favourites);
+}
+
+void FavHolder::SaveData()
+{
+    thread_boost::SaveFavouritesData("ServerData", favourites);
 }
 
 struct AuthorResult{

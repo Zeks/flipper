@@ -10,11 +10,13 @@
 #include "include/url_utils.h"
 #include "include/favholder.h"
 
+
 #include "include/tasks/slash_task_processor.h"
 #include <QTextCodec>
 #include <QSettings>
 #include <QSqlRecord>
 #include <QFuture>
+#include <QMutex>
 #include <QtConcurrent>
 
 #include <QFutureWatcher>
@@ -26,6 +28,7 @@
 #include "pagegetter.h"
 #include "tasks/recommendations_reload_precessor.h"
 #include <type_traits>
+#include <algorithm>
 
 
 ServitorWindow::ServitorWindow(QWidget *parent) :
@@ -711,7 +714,7 @@ void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
     if(!QFile::exists("TempData/fandomstats_0.txt"))
     {
         TimedAction action("Loading data",[&](){
-            cdh.fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(1000);
+            cdh.fics = env.interfaces.fanfics->GetAllFicsWithEnoughFavesForWeights(ui->sbFicCount->value());
             cdh.favourites = authorsInterface->LoadFullFavouritesHashset();
             cdh.genreData = authorsInterface->GetListGenreData();
             qDebug() << "got genre lists, size: " << cdh.genreData.size();
@@ -746,91 +749,286 @@ void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
     for(auto& favSet : cdh.favourites)
         favSet.intersect(ficSet);
 
+    auto it = cdh.favourites.begin();
+    auto end = cdh.favourites.end();
+    while(it != end)
+    {
+        if(it.value().size() < 1200)
+            cdh.filteredFavourites.push_back({it.key(), it.value()});
+        it++;
+    }
+
+    std::sort(cdh.filteredFavourites.begin(), cdh.filteredFavourites.end(), [](const ListWithIdentifier& fp1, const ListWithIdentifier& fp2){
+        return fp1.favourites.size() < fp2.favourites.size();
+    });
+
+}
+
+struct FicPair{
+    uint32_t count = 0;
+    float val1;
+    float val2;
+    float val3;
+    float val4;
+    float val5;
+};
+
+//struct SmartHash{
+//    void CleanTemporaryStorage();
+//    void PrepareForList(const QList<QPair<uint32_t, uint32_t>>& list);
+
+//    QHash<QPair<uint32_t, uint32_t>, Roaring> workingSet;
+//};
+
+
+void ServitorWindow::ProcessCDHData(CalcDataHolder& cdh){
+
+    for(auto fav : cdh.filteredFavourites)
+    {
+        for(auto fic : fav.favourites)
+        {
+            ficsToFavLists[fic].setCopyOnWrite(true);
+            ficsToFavLists[fic].add(fav.id);
+        }
+    }
+
+    for(auto fic : cdh.fics)
+    {
+        if(!ficsToFavLists.contains(fic->id))
+            continue;
+        ficData[fic->id] = fic;
+        for(auto fandom : fic->fandoms)
+            ficsForFandoms[fandom].insert(fic->id);
+    }
+    qDebug() << "Will work with: " << ficData.size() << " fics";
+    qDebug() << 1;
+
+    qDebug() << 2;
+}
+
+struct Sink{
+    Sink(){}
+    template <typename T>
+    void SaveIntersection(uint32_t fic1,uint32_t fic2, const T& intersection){
+//        QVector<uint32_t> vec;
+//        for(auto item : intersection)
+//            vec.push_back(item);
+//        std::sort(vec.begin(), vec.end());
+//        qDebug() << fic1 << "  " << fic2;
+//        qDebug() << vec;
+        //QWriteLocker locker(&lock);
+        counter++;
+    }
+    std::atomic<int> counter = 0;
+    QHash<QPair<uint32_t,uint32_t>, QVector<int>> intersections;
+    QReadWriteLock lock;
+};
+
+void ServitorWindow::CalcConstantMemory()
+{
+    CalcDataHolder cdh;
+    LoadDataForCalculation(cdh);
+    ProcessCDHData(cdh);
+    Sink sink;
+    keys = ficData.keys();
+    auto rng = std::default_random_engine {};
+    std::shuffle(std::begin(keys), std::end(keys), rng);
+    auto worker = [&](int start, int end, int otherEnd, auto* saver)->void
+    {
+
+        for(int i = start; i < end; i++)
+        {
+//            if(i > start)
+//                break;
+            if(i%100 == 0)
+                qDebug() << "working from: " << start << " at: " << i;
+            auto fic1 = keys[i];
+            for(int j = i+1; j < otherEnd; j++)
+            {
+//                if(j > i+1)
+//                    break;
+                auto fic2 = keys[j];
+                const auto& set1 = ficsToFavLists[fic1];
+                const auto& set2 = ficsToFavLists[fic2];
+                auto temp = set1;
+                temp = temp & set2;
+
+                ///
+//                QVector<uint32_t> vec;
+//                for(auto item : set1)
+//                    vec.push_back(item);
+//                std::sort(vec.begin(), vec.end());
+//                qDebug() << vec;
+
+//                vec.clear();
+//                for(auto item : set2)
+//                    vec.push_back(item);
+//                std::sort(vec.begin(), vec.end());
+//                qDebug() << vec;
+
+//                vec.clear();
+//                for(auto item : temp)
+//                    vec.push_back(item);
+//                std::sort(vec.begin(), vec.end());
+//                qDebug() << vec;
+                ///
+
+                if(!temp.isEmpty())
+                    saver->SaveIntersection(fic1, fic2, temp);
+            }
+        }
+    };
+
+    QList<QFuture<void>> futures;
+    //int threads = 1;//QThread::idealThreadCount()-1;
+    int threads = QThread::idealThreadCount()-1;
+    for(int i = 0; i < threads; i++)
+    {
+        int partSize = keys.size() / threads;
+        int start = i*partSize;
+        int end = i == (threads - 1) ? keys.size() : (i+1)*partSize;
+        futures.push_back(QtConcurrent::run(worker,
+                          start,
+                          end,
+                          keys.size(),
+                          &sink));
+    }
+    TimedAction action("processing data",[&](){
+        for(auto future: futures)
+        {
+            future.waitForFinished();
+        }
+    });
+    action.run();
+    qDebug() << "Final count:" << sink.counter;
 }
 
 void ServitorWindow::on_pbCalcWeights_clicked()
 {
+
+
+    CalcConstantMemory();
+    return;
     CalcDataHolder cdh;
     LoadDataForCalculation(cdh);
+    ProcessCDHData(cdh);
+    QHash<int, core::FicWeightResult> result;
+    QSet<int> alreadyProcessed;
+
+    QHash<QPair<int, int>, QSet<int>> meetingSet;
+    QHash<QPair<uint32_t, uint32_t>, FicPair> ficsMeeting;
+    QHash<QPair<uint32_t, uint32_t>, FicPair>::iterator ficsIterator;
+    QHash<QPair<int, int>, QSet<int>>::iterator meetingIterator;
+    QHash<QPair<uint32_t, uint32_t>, Roaring> roaringSet;
+    QHash<QPair<uint32_t, uint32_t>, Roaring>::iterator roaringIterator;
 
 
-        QHash<int, core::FicWeightPtr> ficData;
-        QHash<int, QSet<int>> ficsForFandoms;
+    //            {
+    //                auto ficIds = ficData.keys();
+    //                for(int i = 0; i < ficIds.size(); i++)
+    //                {
+    //                    if(i%10 == 0)
+    //                        qDebug() << "working at: " << i;
+    //                    auto fic1 = ficIds[i];
+    //                    for(int j = i+1; j < ficIds.size(); j++)
+    //                    {
+    //                        auto fic2 = ficIds[i];
+    //                        auto keys = cdh.favourites.keys();
+    //                        QVector<int> intersection;
+    //                        auto& set1 = ficsToFavLists[fic1];
+    //                        auto& set2 = ficsToFavLists[fic2];
+    //                        intersection.reserve(std::max(set1.size(), set2.size()));
+    //                        std::set_intersection(set1.begin(), set1.end(),
+    //                                              set2.begin(), set2.end(),
+    //                                               std::back_inserter(intersection));
+    //                        ficsMeeting[{fic1, fic2}].count = intersection.size();
+    //                    }
+    //                }
+    //            }
+    // need to create limited sets of unique pairs
+    //    QList<QPair<int, int>> pairList;
+    //    {
+    //        auto ficIds = ficData.keys();
+    //        for(int i = 0; i < ficIds.size(); i++)
+    //        {
+    //            for(int j = i+1; j < ficIds.size(); j++)
+    //            {
+    //                pairList.push_back({ficIds[i], ficIds[j]});
+    //            }
+    //        }
+    //    }
 
-        for(auto fic : cdh.fics)
+    {
+        int counter = 0;
+        QPair<uint32_t, uint32_t> pair;
+        qDebug() << "full fav size: " << cdh.filteredFavourites.size();
+        for(auto fav : cdh.filteredFavourites)
         {
-            ficData[fic->id] = fic;
-            for(auto fandom : fic->fandoms)
-                ficsForFandoms[fandom].insert(fic->id);
-        }
-        qDebug() << "Will work with: " << ficData.size() << " fics";
-        qDebug() << 1;
-
-
-        QHash<int, QSet<int>> ficsToFavLists;
-        for(int key : cdh.favourites.keys())
-        {
-            auto& set = cdh.favourites[key];
-            for(auto fic : set)
-                ficsToFavLists[fic].insert(key);
-        }
-
-        qDebug() << 2;
-
-
-
-
-        QHash<int, core::FicWeightResult> result;
-        struct FicPair{
-            int fic1;
-            int fic2;
-            QSet<int> meetings;
-        };
-        QSet<int> alreadyProcessed;
-        QHash<QPair<int, int>, FicPair> ficsMeeting;
-
-        {
-            int counter = 0;
-            qDebug() << "full fav size: " << cdh.favourites.keys().size();
-            for(int key : cdh.favourites.keys())
+            if(counter%10000 == 0)
+                qDebug() << " At: " << counter;
+            counter++;
+            auto values = fav.favourites.toList();
+            //qDebug() << "Reading list of size: " << values.size();
+            for(int i = 0; i < values.size(); i++)
             {
-                if(counter%10000 == 0)
-                    qDebug() << " At: " << counter;
-                counter++;
-                auto values = cdh.favourites[key].toList();
-                //qDebug() << "Reading list of size: " << values.size();
-                int pairCounter = 0;
-                for(int i = 0; i < values.size(); i++)
+                for(int j = i+1; j < values.size(); j++)
                 {
-                    for(int j = i+1; j < values.size(); j++)
+                    uint32_t fic1 = values[i];
+                    uint32_t fic2 = values[j];
+
+                    //QPair<uint32_t, uint32_t> pair (std::min(fic1,fic2), std::max(fic1,fic2));
+                    pair.first = std::min(fic1,fic2);
+                    pair.second = std::max(fic1,fic2);
+                    //QPair<uint32_t, uint32_t> pair2 = {std::min(fic1,fic2), std::max(fic1,fic2)};
+                    //qDebug() << pair;
+                    //qDebug() << pair2;
+                    //roaring attempt
+                    //                    roaringIterator = roaringSet.find(pair);
+                    //                    if(roaringIterator == roaringSet.end())
+                    //                    {
+                    //                        roaringSet[pair];
+                    //                        roaringIterator = roaringSet.find(pair);
+                    //                    }
+
+                    //                    roaringIterator->add(fav.id);
+                    //                    roaringIterator->shrinkToFit();
+                    //meeting attempt
+                    //                    meetingIterator = meetingSet.find(pair);
+                    //                    if(meetingIterator == meetingSet.end())
+                    //                    {
+                    //                        meetingSet[pair];
+                    //                        meetingIterator = meetingSet.find(pair);
+                    //                    }
+
+                    //                    meetingIterator->insert(key);
+                    //valueattempt
+                    ficsIterator = ficsMeeting.find(pair);
+                    if(ficsIterator == ficsMeeting.end())
                     {
-                        auto fic1 = values[i];
-                        auto fic2 = values[j];
-                        if(!ficData.contains(fic1) || !ficData.contains(fic2))
-                            continue;
-                        QPair<int, int> pair = {fic1,fic2};
-                        ficsMeeting[pair].fic1 = values[i];
-                        ficsMeeting[pair].fic2 = values[j];
-                        ficsMeeting[pair].meetings.insert(key);
-                        pairCounter++;
+                        ficsMeeting[pair];
+                        ficsIterator = ficsMeeting.find(pair);
                     }
+
+                    ficsIterator.value().count++;
+                    //                    pairCounter++;
                 }
-                //qDebug() << "List had: " << pairCounter << " pairs";
             }
+            //qDebug() << "List had: " << pairCounter << " pairs";
         }
-        auto values = ficsMeeting.values();
-        std::sort(values.begin(), values.end(), [](const FicPair& fp1, const FicPair& fp2){
-            return fp1.meetings.size() > fp2.meetings.size();
-        });
-        QString prototype = "SELECT * FROM fanfics where  id in (%1, %2)";
-        for(int i = 0; i < 10; i++)
-        {
-            QString temp = prototype;
-            //qDebug() << << values[i].fic1 << " " << values[i].fic2 << " " << values[i].meetings.size();
-            qDebug().noquote() << temp.arg(values[i].fic1) .arg(values[i].fic2);
-            qDebug() << "Met times: " << values[i].meetings.size();
-            qDebug() << " ";
-        }
+    }
+    //    auto values = ficsMeeting.values();
+    //    std::sort(values.begin(), values.end(), [](const FicPair& fp1, const FicPair& fp2){
+    //        return fp1.count > fp2.count;
+    //    });
+    //    QString prototype = "SELECT * FROM fanfics where  id in (%1, %2)";
+    //    for(int i = 0; i < 10; i++)
+    //    {
+    //        QString temp = prototype;
+    //        //qDebug() << << values[i].fic1 << " " << values[i].fic2 << " " << values[i].meetings.size();
+    //        qDebug().noquote() << temp.arg(values[i].fic1) .arg(values[i].fic2);
+    //        qDebug() << "Met times: " << values[i].count;
+    //        qDebug() << " ";
+    //    }
 
     //fanficsInterface->WriteFicRelations(result);
 }
