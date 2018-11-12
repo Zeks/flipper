@@ -20,11 +20,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSet>
 #include <QSharedPointer>
 #include <QVector>
+#include <QDir>
+#include <QSettings>
+#include <utility>
 #include "GlobalHeaders/SingletonHolder.h"
 #include "third_party/roaring/roaring.hh"
-namespace interfaces{
-class Authors;
-}
+#include "include/core/section.h"
+#include "threaded_data/threaded_load.h"
+#include "threaded_data/threaded_save.h"
+#include "include/Interfaces/authors.h"
+#include "include/Interfaces/fanfics.h"
+//namespace interfaces{
+//class Authors;
+//class Fanfics;
+//}
 
 
 namespace core{
@@ -34,17 +43,120 @@ struct RecommendationListResult{
     QHash<int, int> matchReport;
 };
 
+enum ERecDataType
+{
+    rdt_favourites =0,
+    rdt_fics =1
+};
+
+template<ERecDataType E>
+struct DataHolderInfo
+{};
+
+template<>
+struct DataHolderInfo<rdt_favourites>
+{
+    static const std::string fileBase(){return "roafav";}
+    typedef  QHash<int, Roaring> type;
+    static auto loadFunc (){return [](QSharedPointer<interfaces::Authors> authorInterface){
+            auto favourites = authorInterface->LoadFullFavouritesHashset();
+            DataHolderInfo<rdt_favourites>::type roaring;
+            for(auto key: favourites.keys())
+            {
+                for(auto item : favourites[key])
+                    roaring[key].add(item);
+            }
+            return roaring;
+        };}
+};
+template<>
+struct DataHolderInfo<rdt_fics>
+{
+    static const std::string fileBase(){return "fics";}
+    typedef  QHash<int, core::FicWeightPtr> type;
+    static auto loadFunc (){return [](QSharedPointer<interfaces::Fanfics> fanficsInterface){
+            return fanficsInterface->GetAllFicsWithEnoughFavesForWeights(0);;
+        };}
+};
+
+
+struct DataHolder
+{
+    typedef DataHolderInfo<rdt_favourites>::type FavType;
+    typedef DataHolderInfo<rdt_fics>::type FicType;
+    DataHolder(QString settingsFile,
+               QSharedPointer<interfaces::Authors> authorsInterface,
+               QSharedPointer<interfaces::Fanfics> fanficsInterface)
+        :settingsFile(settingsFile),
+          authorsInterface(authorsInterface),
+          fanficsInterface(fanficsInterface){}
+
+    template <std::size_t I>
+    auto get()
+    {
+        if constexpr (I == rdt_favourites)
+                return std::tuple{std::ref(this->faves), this->authorsInterface};
+        else if constexpr (I == rdt_fics)
+                return std::tuple{std::ref(this->fics), this->fanficsInterface};
+    }
+
+    template <ERecDataType T>
+    void LoadData(QString storageFolder){
+        CreateTempDataDir(storageFolder);
+        QString fileBase = QString::fromStdString(DataHolderInfo<T>::fileBase());
+        auto[data, interface] = get<T>();
+        QSettings settings(settingsFile, QSettings::IniFormat);
+        if(settings.value("Settings/usestoreddata", true).toBool() && QFile::exists(storageFolder + "/" + fileBase + "_0.txt"))
+            thread_boost::LoadData(storageFolder, fileBase, data);
+        else
+        {
+            auto& item = data.get();
+            item = DataHolderInfo<T>::loadFunc()(interface);
+            SaveData<T>(storageFolder);
+        }
+
+    }
+    template <ERecDataType T>
+    void SaveData(QString storageFolder){
+        CreateTempDataDir(storageFolder);
+        auto[data, interface] = get<T>();
+        QString fileBase = QString::fromStdString(DataHolderInfo<T>::fileBase());
+        thread_boost::SaveData(storageFolder, fileBase, data);
+    }
+    void CreateTempDataDir(QString storageFolder)
+    {
+        QDir dir(QDir::currentPath());
+        dir.mkdir(storageFolder);
+    }
+
+    QString settingsFile;
+    QSharedPointer<interfaces::Authors> authorsInterface;
+    QSharedPointer<interfaces::Fanfics> fanficsInterface;
+
+    FavType faves;
+    FicType fics;
+};
+
+
+
 class RecommendationList;
-class FavHolder
+class RecCalculator
 {
 public:
-    void LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface);
+    RecCalculator(QString settingsFile = "", QSharedPointer<interfaces::Authors> authors = {}, QSharedPointer<interfaces::Fanfics> fanfics = {})
+        : holder(settingsFile, authors, fanfics){}
     void CreateTempDataDir();
-    void LoadDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface);
-    void LoadStoredData();
-    void SaveData();
+    void LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface);
+    void LoadFics(QSharedPointer<interfaces::Fanfics> fanficsInterface);
+    void LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface);
+    void LoadStoredFavouritesData();
+    void SaveFavouritesData();
+
     RecommendationListResult GetMatchedFicsForFavList(QSet<int> sourceFics,  QSharedPointer<core::RecommendationList> params);
-    QHash<int, Roaring> favourites;
+    DataHolder holder;
 };
+
+
+
 }
-BIND_TO_SELF_SINGLE(core::FavHolder);
+BIND_TO_SELF_SINGLE(core::RecCalculator);

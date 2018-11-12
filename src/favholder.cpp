@@ -28,46 +28,45 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <cmath>
 namespace core{
 
-void FavHolder::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface)
+void RecCalculator::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface)
 {
     CreateTempDataDir();
     QSettings settings("settings_server.ini", QSettings::IniFormat);
     if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists("ServerData/roafav_0.txt"))
     {
-        LoadStoredData();
+        LoadStoredFavouritesData();
     }
     else
     {
-        LoadDataFromDatabase(authorInterface);
-        SaveData();
-
+        LoadFavouritesDataFromDatabase(authorInterface);
+        SaveFavouritesData();
     }
 }
 
-void FavHolder::CreateTempDataDir()
+void RecCalculator::CreateTempDataDir()
 {
     QDir dir(QDir::currentPath());
     dir.mkdir("ServerData");
 }
 
-void FavHolder::LoadDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface)
+void RecCalculator::LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface)
 {
-    auto favourites = authorInterface->LoadFullFavouritesHashset();
-    for(auto key: favourites.keys())
-    {
-        for(auto item : favourites[key])
-        this->favourites[key].add(item);
-    }
+//    auto favourites = authorInterface->LoadFullFavouritesHashset();
+//    for(auto key: favourites.keys())
+//    {
+//        for(auto item : favourites[key])
+//        this->favourites[key].add(item);
+//    }
 }
 
-void FavHolder::LoadStoredData()
+void RecCalculator::LoadStoredFavouritesData()
 {
-    thread_boost::LoadFavouritesData("ServerData", favourites);
+    //thread_boost::LoadFavouritesData("ServerData", favourites);
 }
 
-void FavHolder::SaveData()
+void RecCalculator::SaveFavouritesData()
 {
-    thread_boost::SaveFavouritesData("ServerData", favourites);
+    //thread_boost::SaveFavouritesData("ServerData", favourites);
 }
 
 struct AuthorResult{
@@ -97,12 +96,13 @@ double sqrt_coef(double ratio, double median, double sigma, int base, int scaler
 }
 
 
-RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFics, QSharedPointer<RecommendationList> params)
+RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QSet<int> sourceFics, QSharedPointer<RecommendationList> params)
 {
     QHash<int, AuthorResult> authorsResult;
     RecommendationListResult ficResult;
     //QHash<int, int> ficResult;
-    auto& favs = favourites;
+    auto& favs = holder.faves;
+    qDebug() << "faves is of size: " << favs.size();
     Roaring r;
     for(auto bit : sourceFics)
         r.add(bit);
@@ -160,8 +160,8 @@ RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFic
         qDebug () << "median value is: " << matchMedian;
         qDebug () << "median ratio is: " << ratioMedian;
 
-        auto keysRatio = favourites.keys();
-        auto keysMedian = favourites.keys();
+        auto keysRatio = favs.keys();
+        auto keysMedian = favs.keys();
         std::sort(std::execution::par, keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
             return authorsResult[i1].matches < authorsResult[i2].matches;
         });
@@ -211,14 +211,7 @@ RecommendationListResult FavHolder::GetMatchedFicsForFavList(QSet<int> sourceFic
                 else if(gtSigma)
                     coef = quadratic_coef(author.ratio,ratioMedian, quad, 1, 5);
 
-//                if(gtSigma2)
-//                    coef = 100;
-//                else if(gtSigma17)
-//                    coef = 30;
-//                else if(gtSigma)
-//                    coef = 10;
-
-                for(auto fic: favourites[author.id])
+                for(auto fic: favs[author.id])
                     ficResult.recommendations[fic]+= 1+coef;
             }
         }

@@ -65,10 +65,13 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
     dbInterface->ReadDbFile("dbcode/dbinit.sql",GetDbNameFromCurrentThread());
 
-    An<core::FavHolder> holder;
+    An<core::RecCalculator> calculator;
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authors->db = mainDb;
-    holder->LoadFavourites(authors);
+    calculator->holder.authorsInterface = authors;
+    calculator->holder.settingsFile = "settings_server.ini";
+
+    calculator->holder.LoadData<core::rdt_favourites>("ServerData");
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
     connect(logTimer.data(), SIGNAL(timeout()), this, SLOT(OnPrintStatistics()), Qt::QueuedConnection);
@@ -274,7 +277,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     });
     action.run();
 
-    An<core::FavHolder> holder;
+    An<core::RecCalculator> holder;
     auto list = holder->GetMatchedFicsForFavList(sourceFics, params);
 
     auto* targetList = response->mutable_list();
