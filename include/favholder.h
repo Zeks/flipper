@@ -73,7 +73,7 @@ template<>
 struct DataHolderInfo<rdt_fics>
 {
     static const std::string fileBase(){return "fics";}
-    typedef  QHash<int, core::FicWeightPtr> type;
+    typedef  QVector<core::FicWeightPtr> type;
     static auto loadFunc (){return [](QSharedPointer<interfaces::Fanfics> fanficsInterface){
             return fanficsInterface->GetAllFicsWithEnoughFavesForWeights(0);;
         };}
@@ -101,21 +101,8 @@ struct DataHolder
     }
 
     template <ERecDataType T>
-    void LoadData(QString storageFolder){
-        CreateTempDataDir(storageFolder);
-        QString fileBase = QString::fromStdString(DataHolderInfo<T>::fileBase());
-        auto[data, interface] = get<T>();
-        QSettings settings(settingsFile, QSettings::IniFormat);
-        if(settings.value("Settings/usestoreddata", true).toBool() && QFile::exists(storageFolder + "/" + fileBase + "_0.txt"))
-            thread_boost::LoadData(storageFolder, fileBase, data);
-        else
-        {
-            auto& item = data.get();
-            item = DataHolderInfo<T>::loadFunc()(interface);
-            SaveData<T>(storageFolder);
-        }
+    void LoadData(QString storageFolder);
 
-    }
     template <ERecDataType T>
     void SaveData(QString storageFolder){
         CreateTempDataDir(storageFolder);

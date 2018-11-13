@@ -46,6 +46,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
 
+//template void core::DataHolder::LoadData<0>(QString);
+//template void core::DataHolder::LoadData<1>(QString);
+
 
 static QString GetDbNameFromCurrentThread(){
     std::stringstream ss;
