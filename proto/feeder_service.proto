@@ -2,6 +2,7 @@ syntax = "proto3";
 import "fanfic.proto";
 import "fandom.proto";
 import "filter.proto";
+import "favlist.proto";
 
 package ProtoSpace;
 
@@ -145,6 +146,16 @@ message StatusResponse{
     int32 protocol_version      = 5; 
 }
 
+message FavListDetailsRequest{
+    ControlInfo controls             = 1;
+    SiteIDPack id_packs              = 2;
+}
+
+message FavListDetailsResponse{
+    bool success                    = 1;
+    FavListDetails details          = 2; 
+}
+
 // will need to synchronize fandoms on app start somehow
 // can't leave fandom information on user side
 // because I dont want users to parse anything
@@ -163,4 +174,5 @@ service Feeder {
     rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
     rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
     rpc GetFFNFicIDS(FicIdRequest) returns (FicIdResponse) {}
+    rpc GetFavListdetails(FavListDetailsRequest) returns (FavListDetailsResponse) {}
 }

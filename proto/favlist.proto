@@ -1,0 +1,62 @@
+/*
+Flipper is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017-2018  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+syntax = "proto3";
+
+package ProtoSpace;
+
+
+message GenreRatings{
+    repeated string genres              = 1;
+    repeated double genre_percentages   = 2;
+}
+
+
+message FavListDetails{
+    int32 fic_count                     = 1;
+    int32 word_count                    = 2;
+    double average_wordcount            = 3;
+    
+    double explorer_rating              = 4;
+    double mega_explorer_rating         = 5;
+    double crossover_rating             = 6;
+    double unfinished_rating            = 7;
+    double mature_rating                = 8;
+    double slash_rating                 = 9;
+    double crack_rating                 = 10;
+    double smut_rating                  = 11;
+    double mood_uniformity_rating       = 11;
+    double mood_sad                     = 12;
+    double mood_neutral                 = 13;
+    double mood_happy                   = 14;
+    double size_tiny_rating             = 15;
+    double size_medium_rating           = 16;
+    double size_large_rating            = 17;
+    double size_huge_rating             = 18;
+    string published_first              = 19;
+    string published_last               = 20;
+    
+    double fandom_diversity             = 21;
+    repeated int top_ten_fandoms        = 22;
+    repeated int top_ten_fandoms_counts = 23;
+    
+    GenreRatings genre_ratings          = 24;
+    
+    repeated string prevalent_genres    = 25;
+    repeated double prevalent_genres_percentages = 26;
+    
+}
