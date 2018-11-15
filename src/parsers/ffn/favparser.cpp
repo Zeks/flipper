@@ -587,7 +587,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
     author->stats.favouriteStats.fandoms = resultingToken.fandomKeeper;
 
     author->stats.favouriteStats.ficWordCount = resultingToken.wordCount;
-    author->stats.favouriteStats.wordsPerChapter =
+    author->stats.favouriteStats.averageWordsPerChapter =
             static_cast<double>(author->stats.favouriteStats.ficWordCount)/static_cast<double>(resultingToken.chapterKeeper);
 
     author->stats.favouriteStats.favourites = resultingToken.ficCount;

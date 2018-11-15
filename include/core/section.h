@@ -107,11 +107,11 @@ public:
         kiddy = 1,
         mature = 2,
     };
-
+    bool isValid = false;
     int favourites = -1;
     int ficWordCount = 0;
 
-    double wordsPerChapter = 0;
+    double averageWordsPerChapter = 0;
     double averageLength = 0.0;
     double fandomsDiversity = 0.0;
     double explorerFactor = 0.0;
@@ -139,7 +139,9 @@ public:
     EntitySizeType sectionRelativeSize;
 
     QString prevalentGenre;
-    QHash<int, double> sizeFactors;
+    QHash<QString, double> genreFactors;
+
+    QMap<int, double> sizeFactors;
 
     QHash<QString, int> fandoms;
     QHash<QString, double> fandomFactors;
@@ -147,7 +149,7 @@ public:
     QHash<int, int> fandomsConverted;
     QHash<int, double> fandomFactorsConverted;
 
-    QHash<QString, double> genreFactors;
+
 
     QDate firstPublished;
     QDate lastPublished;

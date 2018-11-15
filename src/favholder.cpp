@@ -128,13 +128,14 @@ DISPATCH(rdt_fics)
         }
 
 
-        RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QSet<int> sourceFics, QSharedPointer<RecommendationList> params)
+        RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t, core::FicWeightPtr> fetchedFics, QSharedPointer<RecommendationList> params)
         {
             QHash<int, AuthorResult> authorsResult;
             RecommendationListResult ficResult;
             //QHash<int, int> ficResult;
             auto& favs = holder.faves;
             qDebug() << "faves is of size: " << favs.size();
+            auto sourceFics = QSet<uint32_t>::fromList(fetchedFics.keys());
             Roaring r;
             for(auto bit : sourceFics)
                 r.add(bit);

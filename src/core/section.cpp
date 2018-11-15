@@ -229,7 +229,7 @@ void core::FicSectionStats::Serialize(QDataStream &out)
 {
     out << favourites;
     out << ficWordCount;
-    out << wordsPerChapter;
+    out << averageWordsPerChapter;
     out << averageLength;
     out << fandomsDiversity;
     out << explorerFactor;
@@ -270,7 +270,7 @@ void core::FicSectionStats::Deserialize(QDataStream &in)
 {
     in >>  favourites;
     in >>  ficWordCount;
-    in >>  wordsPerChapter;
+    in >>  averageWordsPerChapter;
     in >>  averageLength;
     in >>  fandomsDiversity;
     in >>  explorerFactor;

@@ -108,7 +108,7 @@ message RecommendationListCreationRequest{
 message RecommendationListCreationResponse{
     string list_token           = 1;
     RecommendationListData list = 2;
-    ResponseInfo response_info                = 3;
+    ResponseInfo response_info   = 3;
 }
 
 message RecommendationListFetchRequest{
@@ -154,6 +154,8 @@ message FavListDetailsRequest{
 message FavListDetailsResponse{
     bool success                    = 1;
     FavListDetails details          = 2; 
+    ResponseInfo response_info      = 3;
+    
 }
 
 // will need to synchronize fandoms on app start somehow
@@ -166,7 +168,7 @@ message FavListDetailsResponse{
 // RecommendationListsFandoms needs to be returned with recommendation list data
 // I want to be able to display this to users ideally
 
-service Feeder {
+service Feeder { 
     rpc GetStatus(StatusRequest) returns (StatusResponse) {}
     rpc Search(SearchTask) returns (SearchResponse) {}
     rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
@@ -174,5 +176,5 @@ service Feeder {
     rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
     rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
     rpc GetFFNFicIDS(FicIdRequest) returns (FicIdResponse) {}
-    rpc GetFavListdetails(FavListDetailsRequest) returns (FavListDetailsResponse) {}
+    rpc GetFavListDetails(FavListDetailsRequest) returns (FavListDetailsResponse) {}
 }

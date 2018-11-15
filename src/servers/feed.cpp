@@ -266,6 +266,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     auto* recs = ThreadData::GetRecommendationData();
 
+    QHash<uint32_t, core::FicWeightPtr> fetchedFics;
     QSet<int> sourceFics;
     for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
     {
@@ -276,12 +277,12 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
     recs->sourceFics = sourceFics;
     TimedAction action("Fic ids conversion",[&](){
-        sourceFics = fanficsInterface->ConvertFFNSourceFicsToDB(userToken);
+        fetchedFics = fanficsInterface->GetFicsForRecCreation();
     });
     action.run();
 
     An<core::RecCalculator> holder;
-    auto list = holder->GetMatchedFicsForFavList(sourceFics, params);
+    auto list = holder->GetMatchedFicsForFavList(fetchedFics, params);
 
     auto* targetList = response->mutable_list();
     targetList->set_list_name(proto_converters::TS(params->name));
@@ -396,6 +397,55 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
         response->mutable_ids()->add_db_ids(fic);
     }
     return Status::OK;
+}
+
+grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context, const ProtoSpace::FavListDetailsRequest *task, ProtoSpace::FavListDetailsResponse *response)
+{
+    Q_UNUSED(context);
+    QString userToken = QString::fromStdString(task->controls().user_token());
+    QLOG_INFO() << "////////////Received reclists task from: " << userToken;
+    QLOG_INFO() << "Verifying user token";
+    if(!VerifyUserToken(userToken))
+    {
+        SetTokenError(response->mutable_response_info());
+        QLOG_INFO() << "token error, exiting";
+        return Status::OK;
+    }
+    QLOG_INFO() << "Verifying request params";
+    if(!VerifyIDPack(task->id_packs()))
+    {
+        SetFicIDSyncDataError(response->mutable_response_info());
+        return Status::OK;
+    }
+    An<UserTokenizer> keeper;
+    auto safetyToken = keeper->GetToken(userToken);
+    if(!safetyToken)
+    {
+        SetTokenMatchError(response->mutable_response_info());
+        return Status::OK;
+    }
+    AddToRecStatistics(userToken);
+    DatabaseContext dbContext;
+
+    QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+    fanficsInterface->db = dbContext.dbInterface->GetDatabase();
+
+    auto* recs = ThreadData::GetRecommendationData();
+
+    QHash<uint32_t, core::FicWeightPtr> fetchedFics;
+    QSet<int> sourceFics;
+    for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
+        sourceFics.insert(task->id_packs().ffn_ids(i));
+
+    if(sourceFics.size() == 0)
+        return Status::OK;
+
+    recs->sourceFics = sourceFics;
+    TimedAction action("Fic ids conversion",[&](){
+        fetchedFics = fanficsInterface->GetFicsForRecCreation();
+    });
+    action.run();
+
 }
 
 

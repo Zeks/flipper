@@ -1365,6 +1365,39 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
     return ctx.result;
 }
 
+static auto getFicWeightPtrFromQuery = [](auto& q){
+    core::FicWeightPtr fw(new core::FicForWeightCalc);
+    fw->adult = q.value("Rated").toString() == "M";
+    fw->authorId = q.value("author_id").toInt();
+    fw->complete = q.value("complete").toBool();
+    fw->dead = !fw->complete  && q.value("updated").toDateTime().daysTo(QDateTime::currentDateTime()) > 365;
+    fw->fandoms.push_back(q.value("fandom1").toInt());
+    fw->fandoms.push_back(q.value("fandom2").toInt());
+    fw->favCount = q.value("favourites").toInt();
+    fw->published = q.value("published").toDate();
+    fw->updated = q.value("updated").toDate();
+    fw->genreString = q.value("genres").toString();
+    fw->id = q.value("id").toInt();
+    fw->reviewCount = q.value("reviews").toInt();
+    fw->slash = q.value("filter_pass_1").toBool();
+    fw->wordCount = q.value("wordcount").toInt();
+    return fw;
+};
+
+DiagnosticSQLResult<QHash<uint32_t, core::FicWeightPtr>> GetFicsForRecCreation(QSqlDatabase db)
+{
+    SqlContext<QHash<uint32_t, core::FicWeightPtr>> ctx(db);
+    QString qs = QString("select id,rated, author_id, complete, updated, fandom1,fandom2,favourites, published, updated,  genres, reviews, filter_pass_1, wordcount"
+                         "  from fanfics where cfInSourceFics(ffn_id)");
+    ctx.FetchSelectFunctor(qs, DATAQ{
+                               auto fw = getFicWeightPtrFromQuery(q);
+                               if(fw)
+                                data[static_cast<uint32_t>(fw->id)] = fw;
+                           });
+    return ctx.result;
+
+
+}
 DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDatabase db)
 {
     SqlContext<int> ctx(db);
@@ -2760,21 +2793,7 @@ DiagnosticSQLResult<QVector<core::FicWeightPtr> > GetAllFicsWithEnoughFavesForWe
     QString qs = QString("select id,Rated, author_id, complete, updated, fandom1,fandom2,favourites, published, updated,  genres, reviews, filter_pass_1, wordcount"
                          "  from fanfics where favourites > %1 order by id").arg(QString::number(faves));
     ctx.FetchSelectFunctor(qs, DATAQ{
-                               core::FicWeightPtr fw(new core::FicForWeightCalc);
-                               fw->adult = q.value("Rated").toString() == "M";
-                               fw->authorId = q.value("author_id").toInt();
-                               fw->complete = q.value("complete").toBool();
-                               fw->dead = !fw->complete  && q.value("updated").toDateTime().daysTo(QDateTime::currentDateTime()) > 365;
-                               fw->fandoms.push_back(q.value("fandom1").toInt());
-                               fw->fandoms.push_back(q.value("fandom2").toInt());
-                               fw->favCount = q.value("favourites").toInt();
-                               fw->published = q.value("published").toDate();
-                               fw->updated = q.value("updated").toDate();
-                               fw->genreString = q.value("genres").toString();
-                               fw->id = q.value("id").toInt();
-                               fw->reviewCount = q.value("reviews").toInt();
-                               fw->slash = q.value("filter_pass_1").toBool();
-                               fw->wordCount = q.value("wordcount").toInt();
+                               auto fw = getFicWeightPtrFromQuery(q);
                                data.push_back(fw);
                            });
     return ctx.result;

@@ -281,6 +281,11 @@ QSet<int> Fanfics::ConvertFFNSourceFicsToDB(QString userToken)
     return database::puresql::ConvertFFNSourceFicsToDB(userToken, db).data;
 }
 
+QHash<uint32_t, core::FicWeightPtr> Fanfics::GetFicsForRecCreation()
+{
+    return database::puresql::GetFicsForRecCreation(db).data;
+}
+
 bool Fanfics::ConvertFFNTaggedFicsToDB(QHash<int, int>& hash)
 {
     return database::puresql::ConvertFFNTaggedFicsToDB(hash, db).success;

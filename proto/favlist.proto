@@ -19,44 +19,34 @@ syntax = "proto3";
 
 package ProtoSpace;
 
-
-message GenreRatings{
-    repeated string genres              = 1;
-    repeated double genre_percentages   = 2;
-}
-
-
 message FavListDetails{
-    int32 fic_count                     = 1;
-    int32 word_count                    = 2;
-    double average_wordcount            = 3;
+    bool is_valid                       = 1;
+    int32 fic_count                     = 2;
+    int32 word_count                    = 3;
+    double average_wordcount            = 4;
+    double average_words_per_chapter    = 5;
     
-    double explorer_rating              = 4;
-    double mega_explorer_rating         = 5;
-    double crossover_rating             = 6;
-    double unfinished_rating            = 7;
-    double mature_rating                = 8;
-    double slash_rating                 = 9;
-    double crack_rating                 = 10;
-    double smut_rating                  = 11;
-    double mood_uniformity_rating       = 11;
-    double mood_sad                     = 12;
-    double mood_neutral                 = 13;
-    double mood_happy                   = 14;
-    double size_tiny_rating             = 15;
-    double size_medium_rating           = 16;
-    double size_large_rating            = 17;
-    double size_huge_rating             = 18;
-    string published_first              = 19;
-    string published_last               = 20;
+    double explorer_rating              = 6;
+    double mega_explorer_rating         = 7;
+    double crossover_rating             = 8;
+    double unfinished_rating            = 9;
+    double mature_rating                = 10;
+    double slash_rating                 = 11;
+    double crack_rating                 = 12;
+    double smut_rating                  = 13;
+    double mood_uniformity_rating       = 14;
     
-    double fandom_diversity             = 21;
-    repeated int top_ten_fandoms        = 22;
-    repeated int top_ten_fandoms_counts = 23;
+    double fandom_diversity             = 15;
+    double genre_diversity_rating       = 16;
     
-    GenreRatings genre_ratings          = 24;
+    string published_first              = 17;
+    string published_last               = 18;
     
-    repeated string prevalent_genres    = 25;
-    repeated double prevalent_genres_percentages = 26;
+    repeated double mood_rating                     = 19; // sad neutral happy
+    repeated double size_rating                     = 20; // small medium large huge    
+    repeated string genres                          = 21;
+    repeated double genres_percentages              = 22;
+    repeated int32 fandoms                          = 23;
+    repeated int32 fandoms_counts                   = 24;
     
 }
