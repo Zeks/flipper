@@ -99,21 +99,22 @@ void FicListDataAccumulator::ProcessGenres()
         result.genreRatios[genre.indexInDatabase] = DivideAsDoubles(genreCounters[genre.indexInDatabase], ficCount);
         if(DivideAsDoubles(genreCounters[genre.indexInDatabase], ficCount) > 0.4)
             totalInClumps+=genreCounters[genre.indexInDatabase];
+        auto type = static_cast<size_t>(genre.moodType);
+        moodCounters[type]+= genreCounters[i];
     }
     for(size_t i = 0; i < 4; i++)
         result.moodRatios[i] += DivideAsDoubles(moodCounters[i], ficCount);
-
 
     int totalInRest = ficCount - totalInClumps;
     result.genreDiversityRatio= DivideAsDoubles(totalInRest, ficCount);
     auto minMood = std::min(result.moodRatios[1], std::min(result.moodRatios[2], result.moodRatios[3]));
     auto maxMood = std::max(result.moodRatios[1], std::max(result.moodRatios[2], result.moodRatios[3]));
     result.moodUniformityRatio = DivideAsDoubles(minMood,maxMood);
-    if(result.moodRatios[0] > result.moodRatios[1] && result.moodRatios[0] > result.moodRatios[2])
+    if(result.moodRatios[1] > result.moodRatios[2] && result.moodRatios[1] > result.moodRatios[3])
         result.prevalentMood = FicSectionStats::MoodType::sad;
-    if(result.moodRatios[1] > result.moodRatios[0] && result.moodRatios[1] > result.moodRatios[2])
+    if(result.moodRatios[2] > result.moodRatios[1] && result.moodRatios[2] > result.moodRatios[3])
         result.prevalentMood = FicSectionStats::MoodType::neutral;
-    if(result.moodRatios[2] > result.moodRatios[1] && result.moodRatios[2] > result.moodRatios[0])
+    if(result.moodRatios[3] > result.moodRatios[2] && result.moodRatios[3] > result.moodRatios[1])
         result.prevalentMood = FicSectionStats::MoodType::positive;
 }
 

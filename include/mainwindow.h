@@ -238,6 +238,8 @@ private:
     void ResetFilterUItoDefaults();
     void DetectGenreSearchState();
     void DetectSlashSearchState();
+    void LoadFFNProfileIntoTextBrowser(QTextBrowser *);
+    QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
@@ -440,6 +442,10 @@ private slots:
     void on_chkGenreUseImplied_stateChanged(int arg1);
 
     void on_cbSlashFilterAggressiveness_currentIndexChanged(int index);
+
+    void on_pbLoadUrlForAnalysis_clicked();
+
+    void on_pbAnalyzeListOfFics_clicked();
 
 signals:
 

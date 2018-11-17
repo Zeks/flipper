@@ -147,8 +147,8 @@ bool MainWindow::Init()
 
     ui->wdgTagsPlaceholder->fandomsInterface = env.interfaces.fandoms;
     ui->wdgTagsPlaceholder->tagsInterface = env.interfaces.tags;
-//    tagWidgetDynamic->fandomsInterface = env.interfaces.fandoms;
-//    tagWidgetDynamic->tagsInterface = env.interfaces.tags;
+    //    tagWidgetDynamic->fandomsInterface = env.interfaces.fandoms;
+    //    tagWidgetDynamic->tagsInterface = env.interfaces.tags;
 
     recentFandomsModel = new QStringListModel;
     ignoredFandomsModel = new QStringListModel;
@@ -854,7 +854,7 @@ QList<QSharedPointer<core::Fic>> MainWindow::LoadFavourteLinksFromFFNProfile(QSt
     auto end = result.end();
     auto it = std::remove_if(result.begin(), result.end(), [](QSharedPointer<core::Fic> f){
             return f->ficSource == core::Fic::efs_own_works;
-    });
+});
     if(it != end)
         result.erase(it, end);
 
@@ -879,7 +879,7 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
     if(!list.size())
         return;
     if(ui->cbIgnoreFandomSelector->currentText().trimmed() != list.at(0).trimmed())
-       ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
+        ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
     else if(list.size() > 1)
         ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
 }
@@ -1332,8 +1332,8 @@ void MainWindow::SetClientMode()
 {
     ui->widget_4->hide();
     //ui->wdgAdminActions->hide();
-//    ui->chkHeartProfile->setChecked(false);
-//    ui->chkHeartProfile->setVisible(false);
+    //    ui->chkHeartProfile->setChecked(false);
+    //    ui->chkHeartProfile->setVisible(false);
     ui->tabWidget->removeTab(2);
     ui->tabWidget->removeTab(1);
     ui->chkLimitPageSize->setChecked(true);
@@ -1488,7 +1488,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
                 ui->chkOnlySlashLocal->isChecked(),
                 ui->chkEnableSlashExceptions->isChecked(),
                 QList<int>{}, // temporary placeholder
-                ui->cbSlashFilterAggressiveness->currentIndex(),
+        ui->cbSlashFilterAggressiveness->currentIndex(),
                 ui->chkShowExactFilterLevel->isChecked(),
                 ui->chkStrongMOnly->isChecked()
     };
@@ -1757,32 +1757,8 @@ void MainWindow::on_chkRecsAutomaticSettings_toggled(bool checked)
 
 void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 {
-    auto fics = LoadFavourteLinksFromFFNProfile(ui->leRecsFFNUrl->text());
-    if(fics.size() == 0)
-        return;
-
-    LoadAutomaticSettingsForRecListSources(fics.size());
-    ui->edtRecsContents->setOpenExternalLinks(false);
-    ui->edtRecsContents->setOpenLinks(false);
-    ui->edtRecsContents->setReadOnly(false);
-    auto font = ui->edtRecsContents->font();
-    font.setPixelSize(14);
-
-    ui->edtRecsContents->setFont(font);
-    std::sort(fics.begin(), fics.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-        return f1->author->name < f2->author->name;
-    });
-
-    for(auto fic: fics)
-    {
-        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
-        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
-        ui->edtRecsContents->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
-        ui->edtRecsContents->insertHtml("<br>");
-    }
+    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents);
 }
-
-
 
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
@@ -1813,19 +1789,8 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     params->pickRatio = ui->leRecsPickRatio->text().toInt();
     params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
     TaskProgressGuard guard(this);
-    QVector<int> sourceFics;
-    QStringList lines = ui->edtRecsContents->toPlainText().split("\n");
-    QRegularExpression rx("https://www.fanfiction.net/s/(\\d+)");
-    for(auto line : lines)
-    {
-        if(!line.startsWith("http"))
-            continue;
-        auto match = rx.match(line);
-        if(!match.hasMatch())
-            continue;
-        QString val = match.captured(1);
-        sourceFics.push_back(val.toInt());
-    }
+
+    QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
     auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike->isChecked(), false);
     if(result == -1)
     {
@@ -1932,6 +1897,51 @@ void MainWindow::DetectSlashSearchState()
     }
 }
 
+void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit)
+{
+    auto fics = LoadFavourteLinksFromFFNProfile(ui->leRecsFFNUrl->text());
+    if(fics.size() == 0)
+        return;
+
+    LoadAutomaticSettingsForRecListSources(fics.size());
+    edit->setOpenExternalLinks(false);
+    edit->setOpenLinks(false);
+    edit->setReadOnly(false);
+    auto font = edit->font();
+    font.setPixelSize(14);
+
+    edit->setFont(font);
+    std::sort(fics.begin(), fics.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+        return f1->author->name < f2->author->name;
+    });
+
+    for(auto fic: fics)
+    {
+        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
+        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
+        edit->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+        edit->insertHtml("<br>");
+    }
+}
+
+QVector<int> MainWindow::PickFicIDsFromTextBrowser(QTextBrowser * edit)
+{
+    QVector<int> sourceFics;
+    QStringList lines = edit->toPlainText().split("\n");
+    QRegularExpression rx("https://www.fanfiction.net/s/(\\d+)");
+    for(auto line : lines)
+    {
+        if(!line.startsWith("http"))
+            continue;
+        auto match = rx.match(line);
+        if(!match.hasMatch())
+            continue;
+        QString val = match.captured(1);
+        sourceFics.push_back(val.toInt());
+    }
+    return sourceFics;
+}
+
 void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
 {
     if(ui->cbCurrentFilteringMode->currentText() == "Default")
@@ -1967,6 +1977,7 @@ void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
 void MainWindow::on_pbUseProfile_clicked()
 {
     ui->edtRecsContents->clear();
+    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents);
     on_pbRecsLoadFFNProfileIntoSource_clicked();
     if(ui->edtRecsContents->toPlainText().trimmed().size() == 0)
         return;
@@ -2052,14 +2063,14 @@ void MainWindow::on_pbGetSourceLinks_clicked()
 
 void MainWindow::on_pbProfileCompare_clicked()
 {
-    ui->edtRecsContents->clear();
-    ui->edtRecsContents->setOpenExternalLinks(false);
-    ui->edtRecsContents->setOpenLinks(false);
-    ui->edtRecsContents->setReadOnly(false);
-    auto font = ui->edtRecsContents->font();
+    ui->edtAnalysisResults->clear();
+    ui->edtAnalysisResults->setOpenExternalLinks(false);
+    ui->edtAnalysisResults->setOpenLinks(false);
+    ui->edtAnalysisResults->setReadOnly(false);
+    auto font = ui->edtAnalysisResults->font();
     font.setPixelSize(14);
 
-    ui->edtRecsContents->setFont(font);
+    ui->edtAnalysisResults->setFont(font);
 
     QList<QSharedPointer<core::Fic> > result;
 
@@ -2080,7 +2091,7 @@ void MainWindow::on_pbProfileCompare_clicked()
     });
 
     std::set_intersection(ficsLeft.begin(), ficsLeft.end(),
-                             ficsRight.begin(), ficsRight.end(),
+                          ficsRight.begin(), ficsRight.end(),
                           std::back_inserter(result), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
         return f1->ffn_id < f2->ffn_id;
     });
@@ -2089,18 +2100,18 @@ void MainWindow::on_pbProfileCompare_clicked()
         return f1->author->name < f2->author->name;
     });
 
-    ui->edtRecsContents->insertHtml(QString("First user has %1 favourites.").arg(QString::number(ficsLeft.size())));
-    ui->edtRecsContents->insertHtml("<br>");
-    ui->edtRecsContents->insertHtml(QString("Second user has %1 favourites.").arg(QString::number(ficsRight.size())));
-    ui->edtRecsContents->insertHtml("<br>");
-    ui->edtRecsContents->insertHtml(QString("They have %1 favourites in common.").arg(QString::number(result.size())));
-    ui->edtRecsContents->insertHtml("<br>");
+    ui->edtAnalysisResults->insertHtml(QString("First user has %1 favourites.").arg(QString::number(ficsLeft.size())));
+    ui->edtAnalysisResults->insertHtml("<br>");
+    ui->edtAnalysisResults->insertHtml(QString("Second user has %1 favourites.").arg(QString::number(ficsRight.size())));
+    ui->edtAnalysisResults->insertHtml("<br>");
+    ui->edtAnalysisResults->insertHtml(QString("They have %1 favourites in common.").arg(QString::number(result.size())));
+    ui->edtAnalysisResults->insertHtml("<br>");
     for(auto fic: result)
     {
         QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
         QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
-        ui->edtRecsContents->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
-        ui->edtRecsContents->insertHtml("<br>");
+        ui->edtAnalysisResults->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+        ui->edtAnalysisResults->insertHtml("<br>");
     }
 }
 
@@ -2112,4 +2123,120 @@ void MainWindow::on_chkGenreUseImplied_stateChanged(int )
 void MainWindow::on_cbSlashFilterAggressiveness_currentIndexChanged(int index)
 {
     DetectSlashSearchState();
+}
+
+void MainWindow::on_pbLoadUrlForAnalysis_clicked()
+{
+    LoadFFNProfileIntoTextBrowser(ui->edtAnalysisSources);
+}
+template <typename T>
+struct SortedBit{
+    T value;
+    QString name;
+};
+void MainWindow::on_pbAnalyzeListOfFics_clicked()
+{
+    auto ficIDs = PickFicIDsFromTextBrowser(ui->edtAnalysisSources);
+    if(ficIDs.size() == 0)
+    {
+        QMessageBox::warning(nullptr, "Warning!", "There are no FFN urls in the source section.\n"
+                                                  "Either load your profile with the button to the right\n"
+                                                  "or drop a bunch of FFN URLs below.");
+        return;
+    }
+    auto stats = env.GetStatsForFicList(ficIDs);
+    if(!stats.isValid)
+    {
+        QMessageBox::warning(nullptr, "Warning!", "Could not analyze the list.");
+        return;
+    }
+
+    ui->edtAnalysisResults->insertHtml("Analysis complete.<br>");
+    ui->edtAnalysisResults->insertHtml(QString("Fics in the list: <font color=blue>%1</font><br>").arg(QString::number(stats.favourites)));
+    ui->edtAnalysisResults->insertHtml(QString("Total count of words: <font color=blue>%1</font><br>").arg(QString::number(stats.ficWordCount)));
+    ui->edtAnalysisResults->insertHtml(QString("Average words per chapter: <font color=blue>%1</font><br>").arg(QString::number(stats.averageWordsPerChapter)));
+    ui->edtAnalysisResults->insertHtml(QString("Average words per fic: <font color=blue>%1</font><br>").arg(QString::number(stats.averageLength)));
+    ui->edtAnalysisResults->insertHtml("<br>");
+    ui->edtAnalysisResults->insertHtml(QString("First published fic: <font color=blue>%1</font><br>")
+                                       .arg(stats.firstPublished.toString("yyyy-MM-dd")));
+    ui->edtAnalysisResults->insertHtml(QString("Last published fic: <font color=blue>%1</font><br>")
+                                       .arg(stats.firstPublished.toString("yyyy-MM-dd")));
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+    ui->edtAnalysisResults->insertHtml(QString("Slash content%: <font color=blue>%1</font><br>").arg(QString::number(stats.slashRatio*100)));
+    ui->edtAnalysisResults->insertHtml(QString("Mature content%: <font color=blue>%1</font><br>").arg(QString::number(stats.esrbMature*100)));
+
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+
+    QVector<SortedBit<double>> sizes = {{stats.sizeFactors[0],  "small"},
+                                        {stats.sizeFactors[1], "medium"},
+                                        {stats.sizeFactors[2], "large"},
+                                        {stats.sizeFactors[3], "hude"}};
+    QString sizeTemplate = "%1: <font color=blue>%2</font> >";
+    std::sort(std::begin(sizes), std::end(sizes), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
+        return m1.value > m2.value;
+    });
+    for(auto size : sizes)
+    {
+        QString tmp = sizeTemplate;
+        tmp=tmp.arg(size.name).arg(QString::number(size.value));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+
+    ui->edtAnalysisResults->insertHtml(QString("Mood uniformity: <font color=blue>%1</font><br>").arg(QString::number(stats.moodUniformity)));
+    ui->edtAnalysisResults->insertHtml("Mood content:<br>");
+    QString moodTemplate = "%1: <font color=blue>%2</font> >";
+
+    QVector<SortedBit<double>> moodsVec = {{stats.moodSad,  "sad"},{stats.moodNeutral, "neutral"},{stats.moodHappy, "happy"}};
+    std::sort(std::begin(moodsVec), std::end(moodsVec), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
+        return m1.value > m2.value;
+    });
+    for(auto mood : moodsVec)
+    {
+        QString tmp = moodTemplate;
+        tmp=tmp.arg(mood.name).arg(QString::number(mood.value));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+    QVector<SortedBit<double>> genres;
+    for(auto genreKey : stats.genreFactors.keys())
+        genres.push_back({stats.genreFactors[genreKey],genreKey});
+    std::sort(std::begin(genres), std::end(genres), [](const SortedBit<double>& g1,const SortedBit<double>& g2){
+        return g1.value > g2.value;
+    });
+    QString genreTemplate = "%1: <font color=blue>%2</font> >";
+    ui->edtAnalysisResults->insertHtml(QString("Genre diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.genreDiversityFactor)));
+    ui->edtAnalysisResults->insertHtml("Important genres:<br>");
+    for(int i = 0; i < 5; i++)
+    {
+        QString tmp = genreTemplate;
+        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+    ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
+    ui->edtAnalysisResults->insertHtml("Most prominent fandoms:<br>");
+    QVector<SortedBit<int>> fandoms;
+    for(auto id : stats.fandomsConverted.keys())
+    {
+        QString name = env.interfaces.fandoms->GetNameForID(id);
+        int count = stats.fandomsConverted[id];
+        fandoms.push_back({count, name});
+    }
+    std::sort(std::begin(fandoms), std::end(fandoms), [](const SortedBit<int>& g1,const SortedBit<int>& g2){
+        return g1.value > g2.value;
+    });
+    QString fandomTemplate = "%1: <font color=blue>%2</font> >";
+    for(int i = 0; i < 5; i++)
+    {
+        QString tmp = fandomTemplate;
+        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
+
 }

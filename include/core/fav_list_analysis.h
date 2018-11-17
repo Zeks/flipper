@@ -36,7 +36,7 @@ struct FicDataAccumulatorResult{
 };
 
 struct FicListDataAccumulator{
-    std::array<short, 3> moodCounters;
+    std::array<short, 4> moodCounters;
     std::array<short, 4> sizeCounters;
     std::array<short, 22> genreCounters;
     std::array<short, 4> popularityCounters;

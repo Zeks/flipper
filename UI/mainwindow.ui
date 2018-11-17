@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1480</width>
+    <width>1597</width>
     <height>1159</height>
    </rect>
   </property>
@@ -367,57 +367,6 @@
                                 </item>
                                </layout>
                               </item>
-                              <item row="4" column="0">
-                               <widget class="QWidget" name="widget_7" native="true">
-                                <property name="minimumSize">
-                                 <size>
-                                  <width>0</width>
-                                  <height>0</height>
-                                 </size>
-                                </property>
-                                <layout class="QHBoxLayout" name="horizontalLayout_2">
-                                 <property name="leftMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="topMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="rightMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="bottomMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <item>
-                                  <widget class="QPushButton" name="pbProfileCompare">
-                                   <property name="sizePolicy">
-                                    <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                                     <horstretch>0</horstretch>
-                                     <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                   </property>
-                                   <property name="text">
-                                    <string>Compare</string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item>
-                                  <widget class="QLineEdit" name="leFFNProfileLeft">
-                                   <property name="placeholderText">
-                                    <string>First FFN Profile</string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item>
-                                  <widget class="QLineEdit" name="leFFNProfileRight">
-                                   <property name="placeholderText">
-                                    <string>Second FFN Profile</string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                </layout>
-                               </widget>
-                              </item>
                              </layout>
                             </widget>
                            </item>
@@ -669,6 +618,156 @@
                             </item>
                            </layout>
                           </widget>
+                         </widget>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                     <widget class="QWidget" name="tbFavBreak">
+                      <attribute name="title">
+                       <string>Fic List Breakdown</string>
+                      </attribute>
+                      <layout class="QGridLayout" name="gridLayout_6">
+                       <property name="leftMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="topMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="rightMargin">
+                        <number>0</number>
+                       </property>
+                       <property name="bottomMargin">
+                        <number>0</number>
+                       </property>
+                       <item row="0" column="0">
+                        <widget class="QPushButton" name="pbAnalyzeListOfFics">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="text">
+                          <string>Analyze</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QPushButton" name="pbLoadUrlForAnalysis">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="text">
+                          <string>Load</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="2">
+                        <widget class="QLineEdit" name="leFFNProfileLoad">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="placeholderText">
+                          <string>First FFN Profile</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="0" colspan="3">
+                        <widget class="QWidget" name="widget_7" native="true">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="minimumSize">
+                          <size>
+                           <width>0</width>
+                           <height>0</height>
+                          </size>
+                         </property>
+                         <layout class="QHBoxLayout" name="horizontalLayout_2">
+                          <property name="leftMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="topMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="rightMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="bottomMargin">
+                           <number>0</number>
+                          </property>
+                          <item>
+                           <widget class="QPushButton" name="pbProfileCompare">
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="text">
+                             <string>Compare</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QLineEdit" name="leFFNProfileLeft">
+                            <property name="placeholderText">
+                             <string>First FFN Profile</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QLineEdit" name="leFFNProfileRight">
+                            <property name="placeholderText">
+                             <string>Second FFN Profile</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </widget>
+                       </item>
+                       <item row="2" column="0" colspan="3">
+                        <widget class="QSplitter" name="splitter">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QWidget" name="">
+                          <layout class="QVBoxLayout" name="verticalLayout_6">
+                           <item>
+                            <widget class="QLabel" name="label_6">
+                             <property name="text">
+                              <string>Source Fics</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QTextBrowser" name="edtAnalysisSources"/>
+                           </item>
+                          </layout>
+                         </widget>
+                         <widget class="QWidget" name="">
+                          <layout class="QVBoxLayout" name="verticalLayout_7">
+                           <item>
+                            <widget class="QLabel" name="label_10">
+                             <property name="text">
+                              <string>Results</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QTextBrowser" name="edtAnalysisResults"/>
+                           </item>
+                          </layout>
                          </widget>
                         </widget>
                        </item>
@@ -967,33 +1066,6 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item row="8" column="0" colspan="2">
-                 <layout class="QHBoxLayout" name="horizontalLayout_12"/>
-                </item>
-                <item row="4" column="0">
-                 <widget class="QWidget" name="widget_5" native="true">
-                  <property name="minimumSize">
-                   <size>
-                    <width>0</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_7">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                  </layout>
-                 </widget>
-                </item>
                 <item row="3" column="0">
                  <widget class="QWidget" name="widget_3" native="true">
                   <property name="minimumSize">
@@ -1409,7 +1481,7 @@
                       <string/>
                      </property>
                      <property name="icon">
-                      <iconset>
+                      <iconset resource="../icons.qrc">
                        <normaloff>:/icons/icons/clipboard.png</normaloff>:/icons/icons/clipboard.png</iconset>
                      </property>
                      <property name="iconSize">
@@ -1442,7 +1514,7 @@
                       <string/>
                      </property>
                      <property name="icon">
-                      <iconset>
+                      <iconset resource="../icons.qrc">
                        <normaloff>:/icons/icons/cross_red.png</normaloff>:/icons/icons/cross_red.png</iconset>
                      </property>
                     </widget>
@@ -1494,6 +1566,115 @@
                      </property>
                     </spacer>
                    </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QWidget" name="widget_8" native="true">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_3">
+                   <property name="spacing">
+                    <number>6</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <widget class="QCheckBox" name="chkGenreUseImplied">
+                     <property name="text">
+                      <string>Use implied genre for search</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_2">
+                     <property name="text">
+                      <string>Rated:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="cbFicRating">
+                     <property name="minimumSize">
+                      <size>
+                       <width>60</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="currentIndex">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>T+M</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>T</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>M</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_2">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>819</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item row="8" column="0" colspan="2">
+                 <layout class="QHBoxLayout" name="horizontalLayout_12"/>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QWidget" name="widget_5" native="true">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_7">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
                   </layout>
                  </widget>
                 </item>
@@ -1735,88 +1916,6 @@
                    </widget>
                   </item>
                  </layout>
-                </item>
-                <item row="5" column="0">
-                 <widget class="QWidget" name="widget_8" native="true">
-                  <property name="minimumSize">
-                   <size>
-                    <width>0</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_3">
-                   <property name="spacing">
-                    <number>6</number>
-                   </property>
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <widget class="QCheckBox" name="chkGenreUseImplied">
-                     <property name="text">
-                      <string>Use implied genre for search</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLabel" name="label_2">
-                     <property name="text">
-                      <string>Rated:</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QComboBox" name="cbFicRating">
-                     <property name="minimumSize">
-                      <size>
-                       <width>60</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <property name="currentIndex">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <property name="text">
-                       <string>T+M</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>T</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>M</string>
-                      </property>
-                     </item>
-                    </widget>
-                   </item>
-                   <item>
-                    <spacer name="horizontalSpacer_2">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>819</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                  </layout>
-                 </widget>
                 </item>
                </layout>
               </widget>
@@ -2518,7 +2617,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1480</width>
+     <width>1597</width>
      <height>21</height>
     </rect>
    </property>
@@ -2542,6 +2641,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

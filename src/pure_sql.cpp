@@ -1725,6 +1725,29 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, QSqlDatabase db)
     return ctx.result;
 }
 
+DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, QSqlDatabase db)
+{
+    core::FandomPtr currentFandom;
+
+    QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
+                         " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
+                         " where id = :id");
+    SqlContext<core::FandomPtr> ctx(db, qs, BP1(id));
+
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        currentFandom = FandomfromQueryNew(q, currentFandom);
+    });
+    auto statResult = GetFandomStats(currentFandom, db);
+    if(!statResult.success)
+    {
+        ctx.result.success = false;
+        return ctx.result;
+    }
+
+    ctx.result.data = currentFandom;
+    return ctx.result;
+}
+
 DiagnosticSQLResult<bool> IgnoreFandom(int fandom_id, bool including_crossovers, QSqlDatabase db)
 {
     QString qs = QString(" insert into ignored_fandoms (fandom_id, including_crossovers) values (:fandom_id, :including_crossovers) ");

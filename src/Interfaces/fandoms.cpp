@@ -53,7 +53,6 @@ void Fandoms::ClearIndex()
 
 bool Fandoms::EnsureFandom(QString name)
 {
-
     name = core::Fandom::ConvertName(name.trimmed());
     if(name.contains("'"))
         name = core::Fandom::ConvertName(name.trimmed());
@@ -62,6 +61,12 @@ bool Fandoms::EnsureFandom(QString name)
     return false;
 }
 
+bool Fandoms::EnsureFandom(int id)
+{
+    if(idIndex.contains(id) || LoadFandom(id))
+        return true;
+    return false;
+}
 QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
 {
     QSet<QString> uniqueFandoms;
@@ -545,6 +550,14 @@ int Fandoms::GetIDForName(QString fandom)
     return result;
 }
 
+QString Fandoms::GetNameForID(int id)
+{
+    QString result;
+    if(EnsureFandom(id))
+        result = idIndex[id]->GetName();
+    return result;
+}
+
 void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
 {
     fandom = core::Fandom::ConvertName(fandom.trimmed());
@@ -598,6 +611,17 @@ bool Fandoms::LoadFandom(QString name)
 {
     name = core::Fandom::ConvertName(name);
     auto fandom = database::puresql::GetFandom(name, db).data;
+    if(!fandom)
+        return false;
+
+    fandoms.push_back(fandom);
+    AddToIndex(fandom);
+    return true;
+}
+
+bool Fandoms::LoadFandom(int id)
+{
+    auto fandom = database::puresql::GetFandom(id, db).data;
     if(!fandom)
         return false;
 

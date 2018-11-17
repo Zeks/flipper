@@ -618,7 +618,6 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
     if(!ficList->size())
         return true;
 
-
     QScopedPointer<ProtoSpace::FicIdResponse> response (new ProtoSpace::FicIdResponse);
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
@@ -759,10 +758,7 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
 bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& recList)
 {
     grpc::ClientContext context;
-
     ProtoSpace::RecommendationListCreationRequest task;
-
-
     QScopedPointer<ProtoSpace::RecommendationListCreationResponse> response (new ProtoSpace::RecommendationListCreationResponse);
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
@@ -842,6 +838,36 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
 core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack> ficList)
 {
     core::FicSectionStats result;
+
+    grpc::ClientContext context;
+
+    ProtoSpace::FavListDetailsRequest task;
+
+    if(!ficList.size())
+        return result;
+
+    QScopedPointer<ProtoSpace::FavListDetailsResponse> response (new ProtoSpace::FavListDetailsResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    for(core::IdPack& fic : ficList)
+    {
+        auto idPacks = task.mutable_id_packs();
+        idPacks->add_ffn_ids(fic.ffn);
+    }
+
+    grpc::Status status = stub_->GetFavListDetails(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    if(!response->success())
+        return result;
+
+    proto_converters::FavListProtoToLocal(response->details(), result);
+
     return result;
 }
 

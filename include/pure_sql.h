@@ -92,6 +92,7 @@ DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandoms(QSqlDatabase db);
 DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandomsAfter(int id, QSqlDatabase db);
 QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db);
 DiagnosticSQLResult<core::FandomPtr> GetFandom(QString name, QSqlDatabase db);
+DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, QSqlDatabase db);
 
 DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
