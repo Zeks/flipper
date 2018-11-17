@@ -87,6 +87,7 @@ QDate DateFromXUtime(QString value)
     }
     return temp.date();
 }
+
 inline void UpdatePopularity(QSharedPointer<core::Fic> fic, QHash<int, int>& popularUnpopularKeeper)
 {
     auto faveCount = fic->favourites.toInt();

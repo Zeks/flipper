@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QTextStream>
 #include <QDataStream>
 #include <QSet>
+#include <array>
 #include "core/fic_genre_data.h"
 namespace core {
 
@@ -51,11 +52,21 @@ class Author;
 typedef QSharedPointer<Author> AuthorPtr;
 
 enum class EntitySizeType{
-    small = 0,
+    none = 0,
+    small = 1,
     medium = 2,
     big = 3,
     huge = 4
 };
+
+enum class ExplorerRanges{
+    none = 0,
+    barely_known= 1,
+    relatively_unknown = 2,
+    popular = 3
+};
+core::EntitySizeType ProcesWordcountIntoSizeCategory(int);
+core::ExplorerRanges ProcesFavouritesIntoPopularityCategory(int);
 
 class FicSectionStatsTemporaryToken
 {
@@ -157,7 +168,58 @@ public:
     void Serialize(QDataStream &out);
     void Deserialize(QDataStream &in);
 };
+struct FicDataAccumulatorResult{
+    std::array<double, 3> moodRatios;
+    std::array<double, 4> sizeRatios;
+    std::array<double, 22> genreRatios;
 
+    double averageWordsPerFic = 0;
+    double averageWordsPerChapter = 0;
+
+    double explorerRatio = 0;
+    double megaExplorerRatio = 0;
+    double slashRatio = 0;
+    double crossoverRatio = 0;
+    double unfinishedRatio = 0;
+    double matureRatio = 0;
+    double moodUniformityRatio = 0;
+    double fandomDiversityRatio = 0;
+    double genreDiversityRatio = 0;
+
+    EntitySizeType mostFavouritedSize;
+    EntitySizeType sectionRelativeSize;
+};
+
+struct FicListDataAccumulator{
+    std::array<short, 3> moodCounters;
+    std::array<short, 4> sizeCounters;
+    std::array<short, 22> genreCounters;
+    std::array<short, 4> popularityCounters;
+    QHash<int, int> fandomCounters;
+    QDate firstPublished, lastPublished;
+    int slashCounter = 0;
+    int favourites = 0;
+    int ficCount = 0;
+    int crossoverCounter = 0;
+    int unfinishedCounter = 0;
+    int wordcount= 0;
+    int explorerCounter = 0;
+    int megaExplorerCounter = 0;
+    int chapterCounter = 0;
+    int matureCounter = 0;
+
+    void AddPublishDate(QDate date);
+    // favs, explorer, megaexplorer, fav size category
+    void AddFavourites(int favCount);
+    void AddFandoms(const QList<int>& fandoms);
+    // wordcount average fic wordcount, size factors
+    void AddWordcount(int wordcount, int chapters);
+    void ProcessIntoresult();
+    void ProcessFicSize();
+
+    core::FicDataAccumulatorResult result;
+
+};
 class AuthorStats
 {
 public:
@@ -252,10 +314,11 @@ struct FicForWeightCalc
     int favCount = -1;
     int reviewCount = -1;
     int wordCount = -1;
+    int chapterCount = 0;
     int authorId = -1;
 
     QList<int> fandoms;
-    QList<int> genres;
+    QStringList genres;
 
     QString genreString;
 

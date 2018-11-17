@@ -35,6 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/fandoms.h"
 #include "Interfaces/fanfics.h"
+#include "Interfaces/genres.h"
 #include "Interfaces/recommendation_lists.h"
 
 
@@ -445,6 +446,27 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context, cons
         fetchedFics = fanficsInterface->GetFicsForRecCreation();
     });
     action.run();
+    core::FicSectionStats result;
+
+    core::FicListDataAccumulator dataAccumulator;
+    auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    genresInterface->db = dbContext.dbInterface->GetDatabase();;
+    for(auto fic: fetchedFics)
+    {
+        for(auto genre: fic->genres)
+            if(auto index = genresInterface->GetGenreIndex(genre); index.has_value() && index != -1)
+                dataAccumulator.genreCounters[*index]++;
+        dataAccumulator.AddFandoms(fic->fandoms);
+        dataAccumulator.AddFavourites(fic->favCount);
+        dataAccumulator.AddPublishDate(fic->published);
+        dataAccumulator.AddWordcount(fic->wordCount, fic->chapterCount);
+        dataAccumulator.slashCounter += fic->slash;
+        dataAccumulator.unfinishedCounter += !fic->complete;
+        dataAccumulator.matureCounter += fic->adult;
+    }
+    result.isValid = true;
+    //result.averageLength
+
 
 }
 
