@@ -282,6 +282,11 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
     author->stats.favouriteStats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
 }
 
+//if(static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal) > 0.5)
+//    totalInClumps+=genreKeeper[genre];
+//int totalInRest = ficTotal - totalInClumps;
+//author->stats.favouriteStats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
+
 inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes, QHash<int, int>& ficSizeKeeper)
 {
     int total = sizes.size();

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/base.h"
 #include "core/section.h"
 #include "core/fic_genre_data.h"
+#include "GlobalHeaders/SingletonHolder.h"
 #include <QScopedPointer>
 #include <QSharedPointer>
 #include <QSqlDatabase>
@@ -91,7 +92,7 @@ enum EMoodType{
 };
 
 struct Genre{
-    int indexInDatabase;
+    size_t indexInDatabase;
     QString name;
     QString nameInDatabase;
     EMoodType moodType;
@@ -100,15 +101,18 @@ struct Genre{
 
 struct GenreIndex
 {
+    GenreIndex();
     void Init();
     void InitGenre(const Genre&  genre);
 
     QHash<QString, Genre> genresByName;
     QHash<QString, Genre> genresByDbName;
-    QHash<int, Genre> genresByIndex;
+    QHash<size_t, Genre> genresByIndex;
     QHash<int, QList<Genre>> genresByCategory;
     QHash<int, QList<Genre>> genresByMood;
 };
+
+
 class Genres{
 public:
     Genres();
@@ -131,3 +135,4 @@ private:
 
 
 }
+BIND_TO_SELF_SINGLE(interfaces::GenreIndex);

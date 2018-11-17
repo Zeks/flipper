@@ -75,7 +75,7 @@ public:
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
     bool GetFFNIDsForFics(QVector<core::IdPack>*);
-    std::optional<core::FicSectionStats> GetStatsForFicList();
+    std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::IdPack>);
 
     ServerStatus GetStatus();
 

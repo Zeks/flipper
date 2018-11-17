@@ -2575,7 +2575,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author,
     ctx.bindValue("author_id", author->id);
     ctx.bindValue("favourites", stats.favourites);
     ctx.bindValue("favourites_wordcount", stats.ficWordCount);
-    ctx.bindValue("average_words_per_chapter", stats.wordsPerChapter);
+    ctx.bindValue("average_words_per_chapter", stats.averageWordsPerChapter);
     ctx.bindValue("esrb_type", static_cast<int>(stats.esrbType));
     ctx.bindValue("prevalent_mood", static_cast<int>(stats.prevalentMood));
     ctx.bindValue("most_favourited_size", static_cast<int>(stats.mostFavouritedSize));

@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "tokenkeeper.h"
 #include "timeutils.h"
 #include "core/section.h"
+#include "core/fav_list_analysis.h"
 #include "in_tag_accessor.h"
 #include "logger/QsLog.h"
 #include "loggers/usage_statistics.h"
@@ -400,7 +401,49 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
     return Status::OK;
 }
 
-grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context, const ProtoSpace::FavListDetailsRequest *task, ProtoSpace::FavListDetailsResponse *response)
+void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicListDataAccumulator& dataResult)
+{
+    result.isValid = true;
+    result.favourites = dataResult.ficCount;
+    result.ficWordCount = dataResult.wordcount;
+    result.averageWordsPerChapter = dataResult.result.averageWordsPerChapter;
+    result.averageLength = dataResult.result.averageWordsPerFic;
+    result.firstPublished = dataResult.firstPublished;
+    result.lastPublished = dataResult.lastPublished;
+
+    result.fandomsDiversity = dataResult.result.fandomDiversityRatio;
+    result.explorerFactor = dataResult.result.explorerRatio;
+    result.megaExplorerFactor = dataResult.result.megaExplorerRatio;
+    result.crossoverFactor = dataResult.result.crossoverRatio;
+    result.unfinishedFactor = dataResult.result.unfinishedRatio;
+    result.genreDiversityFactor = dataResult.result.genreDiversityRatio;
+    result.moodUniformity = dataResult.result.moodUniformityRatio;
+
+    result.crackRatio = dataResult.result.crackRatio;
+    result.slashRatio = dataResult.result.slashRatio;
+    result.smutRatio = dataResult.result.smutRatio;
+    result.mostFavouritedSize = dataResult.result.mostFavouritedSize;
+    result.sectionRelativeSize = dataResult.result.sectionRelativeSize;
+
+    result.prevalentMood = dataResult.result.prevalentMood;
+    result.moodSad = dataResult.result.moodRatios[1];
+    result.moodNeutral = dataResult.result.moodRatios[2];
+    result.moodHappy = dataResult.result.moodRatios[3];
+
+    An<interfaces::GenreIndex> genreIndex;
+    for(size_t i = 0; i < dataResult.result.genreRatios.size(); i++)
+    {
+        const auto& genre =  genreIndex->genresByIndex[i];
+        result.genreFactors[genre.name] = dataResult.result.genreRatios[i];
+    }
+
+    for(auto fandom : dataResult.result.fandomRatios.keys())
+        result.fandomFactorsConverted[fandom] = dataResult.result.fandomRatios[fandom];
+}
+
+grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
+                                              const ProtoSpace::FavListDetailsRequest *task,
+                                              ProtoSpace::FavListDetailsResponse *response)
 {
     Q_UNUSED(context);
     QString userToken = QString::fromStdString(task->controls().user_token());
@@ -464,10 +507,12 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context, cons
         dataAccumulator.unfinishedCounter += !fic->complete;
         dataAccumulator.matureCounter += fic->adult;
     }
-    result.isValid = true;
-    //result.averageLength
-
-
+    dataAccumulator.ProcessIntoResult();
+    AccumulatorIntoSectionStats(result, dataAccumulator);
+    response->set_success(true);
+    auto details = response->mutable_details();
+    proto_converters::FavListLocalToProto(result, details);
+    return Status::OK;
 }
 
 

@@ -601,9 +601,14 @@ GenreConverter GenreConverter::Instance()
     return instance;
 }
 
+GenreIndex::GenreIndex()
+{
+    Init();
+}
+
 void GenreIndex::Init()
 {
-    int counter = 0;
+    size_t counter = 0;
     InitGenre({counter++,"General", "General_", mt_neutral, gc_neutral});
     InitGenre({counter++,"Humor", "", mt_happy, gc_funny});
     InitGenre({counter++,"Poetry", "", mt_neutral, gc_none});

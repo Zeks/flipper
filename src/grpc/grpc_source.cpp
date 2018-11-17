@@ -469,6 +469,7 @@ bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::Fic
         stats.genreFactors[FS(protoStats.genres(i))] = protoStats.genres_percentages(i);
     for(auto i = 0; i< protoStats.fandoms_size(); i++)
         stats.fandomsConverted[protoStats.fandoms(i)] = protoStats.fandoms_counts(i);
+    return true;
 }
 
 bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavListDetails *protoStats)
@@ -511,6 +512,8 @@ bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavList
         protoStats->add_fandoms(fandom);
         protoStats->add_genres_percentages(stats.fandomsConverted[fandom]);
     }
+    return true;
+}
 }
 
 class FicSourceGRPCImpl{
@@ -529,7 +532,7 @@ public:
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
     void ProcessStandardError(grpc::Status status);
-    core::FicSectionStats GetStatsForFicList();
+    core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
@@ -836,9 +839,10 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
     error+=QString::fromStdString(status.error_message());
 }
 
-core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList()
+core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack> ficList)
 {
-
+    core::FicSectionStats result;
+    return result;
 }
 
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
@@ -896,7 +900,7 @@ bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::IdPack> * ficList)
     return impl->GetFFNIDsForFics(ficList);
 }
 
-std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList()
+std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList(QVector<core::IdPack> ficList)
 {
     if(!impl)
         return {};
