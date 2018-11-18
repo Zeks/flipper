@@ -72,9 +72,9 @@ void FicListDataAccumulator::AddWordcount(int wordcount, int chapters){
     this->wordcount+=wordcount;
     this->chapterCounter+=chapters;
     auto category = static_cast<size_t>(core::ProcesWordcountIntoSizeCategory(wordcount));
-    if((wordcount > 20000 && wordcount < 100000) ||
-            wordcount > 400000 )
-    qDebug() << "Sending wordcount " << wordcount << " to category: " << category;
+//    if((wordcount > 20000 && wordcount < 100000) ||
+//            wordcount > 400000 )
+//    qDebug() << "Sending wordcount " << wordcount << " to category: " << category;
     sizeCounters[category]++;
 }
 

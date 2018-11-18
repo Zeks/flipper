@@ -804,6 +804,7 @@ public:
     int minimumMatch = -1;
     int alwaysPickAt = -2;
     double pickRatio = -1;
+    bool useWeighting = false;
     QDateTime created;
 };
 

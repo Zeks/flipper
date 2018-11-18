@@ -673,6 +673,8 @@ QString DefaultQueryBuilder::ProcessCrossovers(StoryFilter filter)
     {
         if(filter.crossoversOnly)
             queryString += QString(" and (select count(fandom_id) from ficfandoms where fic_id = f.id) > 1 ");
+        else if (!filter.includeCrossovers)
+            queryString += QString(" and (select count(fandom_id) from ficfandoms where fic_id = f.id) = 1 ");
 
         else
             queryString += QString("");

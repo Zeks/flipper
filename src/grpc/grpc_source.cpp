@@ -771,6 +771,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& 
     task.set_return_sources(true);
     task.set_min_fics_to_match(recList.listParams.minimumMatch);
     task.set_max_unmatched_to_one_matched(static_cast<int>(recList.listParams.pickRatio));
+    task.set_use_weighting(recList.listParams.useWeighting);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 

@@ -139,7 +139,8 @@ public:
     void LoadStoredFavouritesData();
     void SaveFavouritesData();
 
-    RecommendationListResult GetMatchedFicsForFavList(QHash<uint32_t, FicWeightPtr> fetchedFics,  QSharedPointer<core::RecommendationList> params);
+    RecommendationListResult GetMatchedFicsForFavList(QHash<uint32_t, FicWeightPtr> fetchedFics,
+                                                      QSharedPointer<core::RecommendationList> params);
     DataHolder holder;
 };
 

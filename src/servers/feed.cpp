@@ -76,7 +76,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     calculator->holder.authorsInterface = authors;
     calculator->holder.settingsFile = "settings_server.ini";
 
-    //calculator->holder.LoadData<core::rdt_favourites>("ServerData");
+    calculator->holder.LoadData<core::rdt_favourites>("ServerData");
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
     connect(logTimer.data(), SIGNAL(timeout()), this, SLOT(OnPrintStatistics()), Qt::QueuedConnection);
@@ -262,6 +262,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     params->minimumMatch = task->min_fics_to_match();
     params->pickRatio = task->max_unmatched_to_one_matched();
     params->alwaysPickAt = task->always_pick_at();
+    params->useWeighting = task->use_weighting();
 
     QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
     fanficsInterface->db = dbContext.dbInterface->GetDatabase();

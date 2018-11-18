@@ -1479,6 +1479,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
     filter.crossoversOnly= ui->chkCrossovers->isChecked();
+    filter.includeCrossovers = !ui->chkNonCrossovers->isChecked();
+    //chkNonCrossovers
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
@@ -1803,6 +1805,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
     params->pickRatio = ui->leRecsPickRatio->text().toInt();
     params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
+    params->useWeighting = ui->cRecsAlgo->currentText() == "Weighted";
     TaskProgressGuard guard(this);
 
     QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);

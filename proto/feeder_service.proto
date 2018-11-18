@@ -103,6 +103,7 @@ message RecommendationListCreationRequest{
     int32 always_pick_at                = 5;
     SiteIDPack id_packs                 = 6;
     bool return_sources                 = 7;
+    bool use_weighting                  = 8;
 }
 
 message RecommendationListCreationResponse{
