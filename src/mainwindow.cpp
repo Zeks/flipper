@@ -1991,7 +1991,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     auto stats = env.GetStatsForFicList(ficIDs);
     if(!stats.isValid)
     {
-        QMessageBox::warning(nullptr, "Warning!", "Could not analyze the list.");
+        //QMessageBox::warning(nullptr, "Warning!", "Could not analyze the list.");
         return;
     }
 
