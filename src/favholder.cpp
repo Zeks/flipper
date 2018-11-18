@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSettings>
 #include <QDir>
 #include <algorithm>
-#include <execution>
+//#include <execution>
 #include <cmath>
 namespace core{
 
@@ -226,11 +226,11 @@ public:
 
         auto keysRatio = favs.keys();
         auto keysMedian = favs.keys();
-        std::sort(std::execution::par, keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
+        std::sort(keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
             return allAuthors[i1].matches < allAuthors[i2].matches;
         });
 
-        std::sort(std::execution::par, filteredAuthors.begin(), filteredAuthors.end(),[&](const int& i1, const int& i2){
+        std::sort(filteredAuthors.begin(), filteredAuthors.end(),[&](const int& i1, const int& i2){
             return allAuthors[i1].ratio < allAuthors[i2].ratio;
         });
 
