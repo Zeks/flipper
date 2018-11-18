@@ -45,7 +45,7 @@ auto lambda = [](DataHolder* holder, QString storageFolder, QString fileBase, au
 template <> \
 void DataHolder::LoadData<X>(QString storageFolder){ \
     auto[data, interface] = get<X>(); \
-            lambda(this,storageFolder, "", data.get(),interface, DataHolderInfo<X>::loadFunc(),\
+            lambda(this,storageFolder, QString::fromStdString(DataHolderInfo<X>::fileBase()), data.get(),interface, DataHolderInfo<X>::loadFunc(),\
             std::bind(&DataHolder::SaveData<X>, this, std::placeholders::_1));\
 }
 

@@ -76,7 +76,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     calculator->holder.authorsInterface = authors;
     calculator->holder.settingsFile = "settings_server.ini";
 
-    calculator->holder.LoadData<core::rdt_favourites>("ServerData");
+    //calculator->holder.LoadData<core::rdt_favourites>("ServerData");
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
     connect(logTimer.data(), SIGNAL(timeout()), this, SLOT(OnPrintStatistics()), Qt::QueuedConnection);
@@ -418,6 +418,7 @@ void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicL
     result.unfinishedFactor = dataResult.result.unfinishedRatio;
     result.genreDiversityFactor = dataResult.result.genreDiversityRatio;
     result.moodUniformity = dataResult.result.moodUniformityRatio;
+    result.esrbMature = dataResult.result.matureRatio;
 
     result.crackRatio = dataResult.result.crackRatio;
     result.slashRatio = dataResult.result.slashRatio;
@@ -439,6 +440,11 @@ void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicL
 
     for(auto fandom : dataResult.result.fandomRatios.keys())
         result.fandomFactorsConverted[fandom] = dataResult.result.fandomRatios[fandom];
+    for(auto fandom : dataResult.fandomCounters.keys())
+        result.fandomsConverted[fandom] = dataResult.fandomCounters[fandom];
+
+    for(size_t i = 1; i < dataResult.result.sizeRatios.size(); i++)
+        result.sizeFactors[i] = dataResult.result.sizeRatios[i];
 }
 
 grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
@@ -494,11 +500,19 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
     core::FicListDataAccumulator dataAccumulator;
     auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     genresInterface->db = dbContext.dbInterface->GetDatabase();;
+    interfaces::GenreConverter conv;
+    An<interfaces::GenreIndex> genreIndex;
     for(auto fic: fetchedFics)
     {
+        fic->genres = conv.GetFFNGenreList(fic->genreString);
         for(auto genre: fic->genres)
-            if(auto index = genresInterface->GetGenreIndex(genre); index.has_value() && index != -1)
-                dataAccumulator.genreCounters[*index]++;
+        {
+            if(auto genreObject = genreIndex->GenreByName(genre); genreObject.isValid)
+            {
+                auto index = genreObject.indexInDatabase;
+                dataAccumulator.genreCounters[index]++;
+            }
+        }
         dataAccumulator.AddFandoms(fic->fandoms);
         dataAccumulator.AddFavourites(fic->favCount);
         dataAccumulator.AddPublishDate(fic->published);
@@ -506,6 +520,10 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
         dataAccumulator.slashCounter += fic->slash;
         dataAccumulator.unfinishedCounter += !fic->complete;
         dataAccumulator.matureCounter += fic->adult;
+    }
+    for(auto i = 0; i < 22; i++)
+    {
+        qDebug() << genreIndex->genresByIndex[i].name << " : " << dataAccumulator.genreCounters[i];
     }
     dataAccumulator.ProcessIntoResult();
     AccumulatorIntoSectionStats(result, dataAccumulator);

@@ -609,28 +609,28 @@ GenreIndex::GenreIndex()
 void GenreIndex::Init()
 {
     size_t counter = 0;
-    InitGenre({counter++,"General", "General_", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Humor", "", mt_happy, gc_funny});
-    InitGenre({counter++,"Poetry", "", mt_neutral, gc_none});
-    InitGenre({counter++,"Adventure", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Mystery", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Horror", "", mt_neutral, gc_shocky});
-    InitGenre({counter++,"Parody", "", mt_happy, gc_funny});
-    InitGenre({counter++,"Angst", "", mt_sad, gc_dramatic});
-    InitGenre({counter++,"Supernatural", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Suspense", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Romance", "", mt_neutral, gc_flirty});
-    InitGenre({counter++,"Drama", "", mt_sad, gc_dramatic});
-    InitGenre({counter++,"not found", "NoGenre", mt_neutral, gc_none});
-    InitGenre({counter++,"Sci-Fi", "SciFi", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Fantasy", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Spiritual", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Tragedy", "", mt_sad, gc_dramatic});
-    InitGenre({counter++,"Western", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Crime", "", mt_neutral, gc_neutral});
-    InitGenre({counter++,"Family", "", mt_neutral, gc_bondy});
-    InitGenre({counter++,"Hurt/Comfort", "HurtComfort", mt_neutral, gc_hurty});
-    InitGenre({counter++,"Crime", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"General", "General_", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Humor", "", mt_happy, gc_funny});
+    InitGenre({true,counter++,"Poetry", "", mt_neutral, gc_none});
+    InitGenre({true,counter++,"Adventure", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Mystery", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Horror", "", mt_neutral, gc_shocky});
+    InitGenre({true,counter++,"Parody", "", mt_happy, gc_funny});
+    InitGenre({true,counter++,"Angst", "", mt_sad, gc_dramatic});
+    InitGenre({true,counter++,"Supernatural", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Suspense", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Romance", "", mt_neutral, gc_flirty});
+    InitGenre({true,counter++,"not found", "NoGenre", mt_neutral, gc_none});
+    InitGenre({true,counter++,"Sci-Fi", "SciFi", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Fantasy", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Spiritual", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Tragedy", "", mt_sad, gc_dramatic});
+    InitGenre({true,counter++,"Western", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Crime", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Family", "", mt_neutral, gc_bondy});
+    InitGenre({true,counter++,"Hurt/Comfort", "HurtComfort", mt_neutral, gc_hurty});
+    InitGenre({true,counter++,"Friendship", "", mt_neutral, gc_bondy});
+    InitGenre({true,counter++,"Drama", "", mt_sad, gc_dramatic});
 }
 
 void GenreIndex::InitGenre(const Genre &genre)
@@ -640,6 +640,13 @@ void GenreIndex::InitGenre(const Genre &genre)
     genresByCategory[genre.genreCategory].push_back(genre);
     genresByMood[genre.moodType].push_back(genre);
     genresByDbName[genre.nameInDatabase] = genre;
+}
+
+Genre &GenreIndex::GenreByName(QString name)
+{
+    if(genresByName.contains(name))
+        return genresByName[name];
+    return nullGenre;
 }
 
 }

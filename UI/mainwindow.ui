@@ -741,7 +741,7 @@
                          <property name="orientation">
                           <enum>Qt::Horizontal</enum>
                          </property>
-                         <widget class="QWidget" name="">
+                         <widget class="QWidget" name="layoutWidget">
                           <layout class="QVBoxLayout" name="verticalLayout_6">
                            <item>
                             <widget class="QLabel" name="label_6">
@@ -751,11 +751,15 @@
                             </widget>
                            </item>
                            <item>
-                            <widget class="QTextBrowser" name="edtAnalysisSources"/>
+                            <widget class="QTextBrowser" name="edtAnalysisSources">
+                             <property name="readOnly">
+                              <bool>false</bool>
+                             </property>
+                            </widget>
                            </item>
                           </layout>
                          </widget>
-                         <widget class="QWidget" name="">
+                         <widget class="QWidget" name="layoutWidget">
                           <layout class="QVBoxLayout" name="verticalLayout_7">
                            <item>
                             <widget class="QLabel" name="label_10">

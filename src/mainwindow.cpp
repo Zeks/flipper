@@ -1757,7 +1757,7 @@ void MainWindow::on_chkRecsAutomaticSettings_toggled(bool checked)
 
 void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 {
-    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents);
+    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl);
 }
 
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
@@ -1897,9 +1897,9 @@ void MainWindow::DetectSlashSearchState()
     }
 }
 
-void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit)
+void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leUrl)
 {
-    auto fics = LoadFavourteLinksFromFFNProfile(ui->leRecsFFNUrl->text());
+    auto fics = LoadFavourteLinksFromFFNProfile(leUrl->text());
     if(fics.size() == 0)
         return;
 
@@ -1977,7 +1977,7 @@ void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
 void MainWindow::on_pbUseProfile_clicked()
 {
     ui->edtRecsContents->clear();
-    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents);
+    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl);
     on_pbRecsLoadFFNProfileIntoSource_clicked();
     if(ui->edtRecsContents->toPlainText().trimmed().size() == 0)
         return;
@@ -2127,7 +2127,7 @@ void MainWindow::on_cbSlashFilterAggressiveness_currentIndexChanged(int index)
 
 void MainWindow::on_pbLoadUrlForAnalysis_clicked()
 {
-    LoadFFNProfileIntoTextBrowser(ui->edtAnalysisSources);
+    LoadFFNProfileIntoTextBrowser(ui->edtAnalysisSources, ui->leFFNProfileLoad);
 }
 template <typename T>
 struct SortedBit{
@@ -2136,6 +2136,8 @@ struct SortedBit{
 };
 void MainWindow::on_pbAnalyzeListOfFics_clicked()
 {
+    ui->edtAnalysisResults->clear();
+    ui->edtAnalysisSources->setReadOnly(false);
     auto ficIDs = PickFicIDsFromTextBrowser(ui->edtAnalysisSources);
     if(ficIDs.size() == 0)
     {
@@ -2160,35 +2162,38 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
     ui->edtAnalysisResults->insertHtml(QString("First published fic: <font color=blue>%1</font><br>")
                                        .arg(stats.firstPublished.toString("yyyy-MM-dd")));
     ui->edtAnalysisResults->insertHtml(QString("Last published fic: <font color=blue>%1</font><br>")
-                                       .arg(stats.firstPublished.toString("yyyy-MM-dd")));
+                                       .arg(stats.lastPublished.toString("yyyy-MM-dd")));
     ui->edtAnalysisResults->insertHtml("<br>");
 
     ui->edtAnalysisResults->insertHtml(QString("Slash content%: <font color=blue>%1</font><br>").arg(QString::number(stats.slashRatio*100)));
-    ui->edtAnalysisResults->insertHtml(QString("Mature content%: <font color=blue>%1</font><br>").arg(QString::number(stats.esrbMature*100)));
+    //ui->edtAnalysisResults->insertHtml(QString("Mature content%: <font color=blue>%1</font><br>").arg(QString::number(stats.esrbMature*100)));
 
     ui->edtAnalysisResults->insertHtml("<br>");
 
 
-    QVector<SortedBit<double>> sizes = {{stats.sizeFactors[0],  "small"},
-                                        {stats.sizeFactors[1], "medium"},
-                                        {stats.sizeFactors[2], "large"},
-                                        {stats.sizeFactors[3], "hude"}};
-    QString sizeTemplate = "%1: <font color=blue>%2</font> >";
+    QVector<SortedBit<double>> sizes = {{stats.sizeFactors[0], "Small"},
+                                        {stats.sizeFactors[1], "Medium"},
+                                        {stats.sizeFactors[2], "Large"},
+                                        {stats.sizeFactors[3], "Huge"}};
+    ui->edtAnalysisResults->insertHtml("Sizes%:<br>");
+    QString sizeTemplate = "%1: <font color=blue>%2</font>";
     std::sort(std::begin(sizes), std::end(sizes), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
         return m1.value > m2.value;
     });
     for(auto size : sizes)
     {
         QString tmp = sizeTemplate;
-        tmp=tmp.arg(size.name).arg(QString::number(size.value));
+        tmp=tmp.arg(size.name).arg(QString::number(size.value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
 
 
+
     ui->edtAnalysisResults->insertHtml(QString("Mood uniformity: <font color=blue>%1</font><br>").arg(QString::number(stats.moodUniformity)));
-    ui->edtAnalysisResults->insertHtml("Mood content:<br>");
-    QString moodTemplate = "%1: <font color=blue>%2</font> >";
+    ui->edtAnalysisResults->insertHtml("Mood content%:<br>");
+
+    QString moodTemplate = "%1: <font color=blue>%2</font>";
 
     QVector<SortedBit<double>> moodsVec = {{stats.moodSad,  "sad"},{stats.moodNeutral, "neutral"},{stats.moodHappy, "happy"}};
     std::sort(std::begin(moodsVec), std::end(moodsVec), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
@@ -2197,7 +2202,7 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
     for(auto mood : moodsVec)
     {
         QString tmp = moodTemplate;
-        tmp=tmp.arg(mood.name).arg(QString::number(mood.value));
+        tmp=tmp.arg(mood.name.rightJustified(8)).arg(QString::number(mood.value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
@@ -2208,19 +2213,23 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
     std::sort(std::begin(genres), std::end(genres), [](const SortedBit<double>& g1,const SortedBit<double>& g2){
         return g1.value > g2.value;
     });
-    QString genreTemplate = "%1: <font color=blue>%2</font> >";
+    QString genreTemplate = "%1: <font color=blue>%2</font>";
+
+
     ui->edtAnalysisResults->insertHtml(QString("Genre diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.genreDiversityFactor)));
-    ui->edtAnalysisResults->insertHtml("Important genres:<br>");
-    for(int i = 0; i < 5; i++)
+    ui->edtAnalysisResults->insertHtml("Genres%:<br>");
+    for(int i = 0; i < 10; i++)
     {
         QString tmp = genreTemplate;
-        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value));
+        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
 
+
+
     ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
-    ui->edtAnalysisResults->insertHtml("Most prominent fandoms:<br>");
+    ui->edtAnalysisResults->insertHtml("Fandoms:<br>");
     QVector<SortedBit<int>> fandoms;
     for(auto id : stats.fandomsConverted.keys())
     {
@@ -2231,11 +2240,13 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
     std::sort(std::begin(fandoms), std::end(fandoms), [](const SortedBit<int>& g1,const SortedBit<int>& g2){
         return g1.value > g2.value;
     });
-    QString fandomTemplate = "%1: <font color=blue>%2</font> >";
-    for(int i = 0; i < 5; i++)
+    QString fandomTemplate = "%1: <font color=blue>%2</font>";
+    for(int i = 0; i < 20; i++)
     {
         QString tmp = fandomTemplate;
-        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value));
+        if(i >= fandoms.size())
+            break;
+        tmp=tmp.arg(fandoms[i].name).arg(QString::number(fandoms[i].value));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
 

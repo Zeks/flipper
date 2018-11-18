@@ -92,6 +92,7 @@ enum EMoodType{
 };
 
 struct Genre{
+    bool isValid;
     size_t indexInDatabase;
     QString name;
     QString nameInDatabase;
@@ -104,12 +105,14 @@ struct GenreIndex
     GenreIndex();
     void Init();
     void InitGenre(const Genre&  genre);
+    Genre& GenreByName(QString name);
 
     QHash<QString, Genre> genresByName;
     QHash<QString, Genre> genresByDbName;
     QHash<size_t, Genre> genresByIndex;
     QHash<int, QList<Genre>> genresByCategory;
     QHash<int, QList<Genre>> genresByMood;
+    Genre nullGenre;
 };
 
 

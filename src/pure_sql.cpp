@@ -1370,6 +1370,7 @@ static auto getFicWeightPtrFromQuery = [](auto& q){
     fw->adult = q.value("Rated").toString() == "M";
     fw->authorId = q.value("author_id").toInt();
     fw->complete = q.value("complete").toBool();
+    fw->chapterCount = q.value("chapters").toInt();
     fw->dead = !fw->complete  && q.value("updated").toDateTime().daysTo(QDateTime::currentDateTime()) > 365;
     fw->fandoms.push_back(q.value("fandom1").toInt());
     fw->fandoms.push_back(q.value("fandom2").toInt());
@@ -1387,8 +1388,10 @@ static auto getFicWeightPtrFromQuery = [](auto& q){
 DiagnosticSQLResult<QHash<uint32_t, core::FicWeightPtr>> GetFicsForRecCreation(QSqlDatabase db)
 {
     SqlContext<QHash<uint32_t, core::FicWeightPtr>> ctx(db);
-    QString qs = QString("select id,rated, author_id, complete, updated, fandom1,fandom2,favourites, published, updated,  genres, reviews, filter_pass_1, wordcount"
-                         "  from fanfics where cfInSourceFics(ffn_id)");
+    QString qs = QString("select id,rated, chapters, author_id, complete, updated, "
+                         "fandom1,fandom2,favourites, published, updated,"
+                         "  genres, reviews, filter_pass_1, wordcount"
+                         "  from fanfics where cfInSourceFics(ffn_id) order by id asc");
     ctx.FetchSelectFunctor(qs, DATAQ{
                                auto fw = getFicWeightPtrFromQuery(q);
                                if(fw)

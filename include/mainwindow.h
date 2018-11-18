@@ -238,7 +238,7 @@ private:
     void ResetFilterUItoDefaults();
     void DetectGenreSearchState();
     void DetectSlashSearchState();
-    void LoadFFNProfileIntoTextBrowser(QTextBrowser *);
+    void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit);
     QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
 
 //    QHash<int, int> CreateListOfNotSlashFics();

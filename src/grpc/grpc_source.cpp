@@ -492,14 +492,14 @@ bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavList
     protoStats->set_slash_rating(stats.slashRatio);
     protoStats->set_smut_rating(stats.smutRatio);
 
-    protoStats->set_published_first(stats.firstPublished.toString("yyyMMdd").toStdString());
-    protoStats->set_published_last(stats.lastPublished.toString("yyyMMdd").toStdString());
+    protoStats->set_published_first(stats.firstPublished.toString("yyyyMMdd").toStdString());
+    protoStats->set_published_last(stats.lastPublished.toString("yyyyMMdd").toStdString());
     protoStats->add_mood_rating(stats.moodSad);
     protoStats->add_mood_rating(stats.moodNeutral);
     protoStats->add_mood_rating(stats.moodHappy);
 
     for(auto size: stats.sizeFactors.keys())
-        protoStats->add_size_rating(size);
+        protoStats->add_size_rating(stats.sizeFactors[size]);
 
     for(auto genre: stats.genreFactors.keys())
     {
@@ -510,7 +510,7 @@ bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavList
     for(auto fandom: stats.fandomsConverted.keys())
     {
         protoStats->add_fandoms(fandom);
-        protoStats->add_genres_percentages(stats.fandomsConverted[fandom]);
+        protoStats->add_fandoms_counts(stats.fandomsConverted[fandom]);
     }
     return true;
 }

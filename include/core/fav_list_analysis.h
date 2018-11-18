@@ -7,9 +7,9 @@
 namespace core{
 
 struct FicDataAccumulatorResult{
-    std::array<double, 4> moodRatios;
-    std::array<double, 4> sizeRatios;
-    std::array<double, 22> genreRatios;
+    std::array<double, 4> moodRatios{};
+    std::array<double, 5> sizeRatios{};
+    std::array<double, 22> genreRatios{};
     QHash<int, double> fandomRatios;
 
     double averageWordsPerFic = 0;
@@ -36,10 +36,11 @@ struct FicDataAccumulatorResult{
 };
 
 struct FicListDataAccumulator{
-    std::array<short, 4> moodCounters;
-    std::array<short, 4> sizeCounters;
-    std::array<short, 22> genreCounters;
-    std::array<short, 4> popularityCounters;
+    FicListDataAccumulator();
+    std::array<short, 4> moodCounters{};
+    std::array<short, 5> sizeCounters{};
+    std::array<short, 22> genreCounters{};
+    std::array<short, 4> popularityCounters{};
     QHash<int, int> fandomCounters;
     QDate firstPublished, lastPublished;
     int slashCounter = 0;

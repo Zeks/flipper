@@ -35,10 +35,20 @@ core::ExplorerRanges core::ProcesFavouritesIntoPopularityCategory(int favourites
 }
 
 
+FicListDataAccumulator::FicListDataAccumulator()
+{
+//    sizeCounters[0] = 0;
+//    sizeCounters[1] = 0;
+//    sizeCounters[2] = 0;
+//    sizeCounters[3] = 0;
+//    sizeCounters[4] = 0;
+
+}
+
 void FicListDataAccumulator::AddPublishDate(QDate date){
-    if(!firstPublished.isValid() || firstPublished < date)
+    if(!firstPublished.isValid() || firstPublished > date)
         firstPublished = date;
-    if(!lastPublished.isValid() || lastPublished > date)
+    if(!lastPublished.isValid() || lastPublished < date)
         lastPublished = date;
 }
 void FicListDataAccumulator::AddFavourites(int favCount) // favs, explorer, megaexplorer, fav size category
@@ -49,16 +59,23 @@ void FicListDataAccumulator::AddFavourites(int favCount) // favs, explorer, mega
     popularityCounters[static_cast<size_t>(type)]++;
 }
 void FicListDataAccumulator::AddFandoms(const QList<int>& fandoms){
-    if(fandoms.size() > 1)
+    if(fandoms.size() > 1 && !fandoms.contains(-1))
         crossoverCounter++;
     for(auto ficFandom : fandoms)
-        fandomCounters[ficFandom]++;
+    {
+        if(ficFandom != -1)
+            fandomCounters[ficFandom]++;
+    }
 }
 // wordcount average fic wordcount, size factors
 void FicListDataAccumulator::AddWordcount(int wordcount, int chapters){
     this->wordcount+=wordcount;
     this->chapterCounter+=chapters;
-    sizeCounters[static_cast<size_t>(core::ProcesWordcountIntoSizeCategory(wordcount))]++;
+    auto category = static_cast<size_t>(core::ProcesWordcountIntoSizeCategory(wordcount));
+    if((wordcount > 20000 && wordcount < 100000) ||
+            wordcount > 400000 )
+    qDebug() << "Sending wordcount " << wordcount << " to category: " << category;
+    sizeCounters[category]++;
 }
 
 void FicListDataAccumulator::ProcessIntoResult()
@@ -76,13 +93,13 @@ void FicListDataAccumulator::ProcessIntoResult()
 void FicListDataAccumulator::ProcessFicSize()
 {
     short dominatingValue = 0;
-    for(size_t i = 0; i < sizeCounters.size(); i++)
+    for(size_t i = 1; i < sizeCounters.size(); i++)
     {
         result.sizeRatios[i] = DivideAsDoubles(sizeCounters[i],ficCount);
         if(sizeCounters[i] > dominatingValue)
             dominatingValue = static_cast<short>(i);
     }
-    result.mostFavouritedSize = static_cast<EntitySizeType>(1 + dominatingValue);
+    result.mostFavouritedSize = static_cast<EntitySizeType>(dominatingValue);
     result.averageWordsPerFic = DivideAsDoubles(wordcount,ficCount);
     result.averageWordsPerChapter = DivideAsDoubles(wordcount,chapterCounter);
 }
@@ -123,17 +140,18 @@ void FicListDataAccumulator::ProcessFandoms()
     double averageFicsPerFandom = DivideAsDoubles(ficCount,fandomCounters.keys().size()); //static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.keys().size());
 
     int totalInClumps = 0;
-    int totalValue = 0;
     for(auto fandom : fandomCounters.keys())
     {
-        if(fandomCounters[fandom] >= 2*averageFicsPerFandom)
+        auto currentFandomCounter = fandomCounters[fandom];
+        if(currentFandomCounter >= 2*averageFicsPerFandom)
             totalInClumps+=fandomCounters[fandom];
 
         result.fandomRatios[fandom]=DivideAsDoubles(fandomCounters[fandom], ficCount);
     }
-    int totalInRest = totalValue - totalInClumps;
+    int totalInRest = ficCount - totalInClumps;
     //diverse favourite list  will have this close to 1
     result.fandomDiversityRatio = DivideAsDoubles(totalInRest, ficCount);
+    result.crossoverRatio = DivideAsDoubles(crossoverCounter, ficCount);
 }
 
 }
