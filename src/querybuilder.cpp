@@ -286,7 +286,7 @@ QString DefaultQueryBuilder::ProcessAuthor(StoryFilter filter)
     if(filter.useThisAuthor == -1)
         return result;
     result = QString(" and f.author_id = %1 ").arg(filter.useThisAuthor);
-
+    return result;
 }
 
 QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
