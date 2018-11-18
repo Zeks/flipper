@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include <QThread>
 #include <QDebug>
+#include <QStringList>
 #include <QDataStream>
 #include <QFuture>
 #include <QFutureWatcher>
@@ -44,15 +45,14 @@ inline void PutIntoContainer(ContainerType& container, ValueType& value, int& ke
     container.push_back(value);
 }
 
-
 auto fetchFunc =  [](auto& container, QDataStream& in)->void{
-    using ContainerType = typename std::remove_reference<decltype(container)>::type;
+    //using ContainerType = std::remove_const_t<std::remove_volatile_t<std::remove_reference_t<decltype(container)>>>;
+    using ContainerType = std::remove_const_t<std::remove_volatile_t<std::remove_reference_t<decltype(container)>>>;
     using ContainerValueType =  typename ContainerValueTypeGetter<ContainerType>::type;
 
     int key;
     if constexpr(is_hash<ContainerType>::value)
     in >> key;
-
 
     if constexpr(is_roaring<ContainerValueType>::value)
     {
@@ -66,6 +66,7 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
         //qDebug() << "read roaring of size: " << r.cardinality();
         PutIntoContainer(container, r, key);
     }
+
     else if constexpr(is_serializable_pointer<ContainerValueType>())
     {
         using PtrType = ContainerValueType;
@@ -137,8 +138,8 @@ auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBas
 
 };
 
-auto vectorUnifier = [](auto& dest, auto& source){dest+=source;};
-auto hashUnifier = [](auto& dest, auto& source){dest.unite(source);};
+auto vectorUnifier = [](auto& dest, auto source){dest+=source;};
+auto hashUnifier = [](auto& dest, auto source){dest.unite(source);};
 auto genresFetchFunc = [](auto& container, QDataStream& in){
     int key;
     in >> key;

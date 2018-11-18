@@ -21,7 +21,7 @@ core::EntitySizeType ProcesWordcountIntoSizeCategory(int wordCount)
     return result;
 }
 
-core::ExplorerRanges core::ProcesFavouritesIntoPopularityCategory(int favourites)
+core::ExplorerRanges ProcesFavouritesIntoPopularityCategory(int favourites)
 {
     core::ExplorerRanges result{core::ExplorerRanges::none};
 
