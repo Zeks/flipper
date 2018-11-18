@@ -259,12 +259,12 @@ Rectangle {
                         if(lvFics.authorFilterActive === false)
                         {
                             lvFics.authorFilterActive = true;
-                            lvFics.authorToggled(index);
+                            lvFics.authorToggled(index, true);
                         }
                         else
                         {
-                            //lvFics.authorFilterActive = false;
-                            lvFics.refilterClicked();
+                            lvFics.authorFilterActive = false;
+                            lvFics.authorToggled(index, false);
                         }
 
                     }

@@ -331,7 +331,7 @@ public slots:
     QList<QSharedPointer<core::Fic> > LoadFavourteLinksFromFFNProfile(QString);
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
-    void OnQMLAuthorToggled(QVariant);
+    void OnQMLAuthorToggled(QVariant, QVariant active);
 private slots:
 
     // used to receive tag events from tag widget on Tags tab

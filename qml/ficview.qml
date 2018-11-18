@@ -180,7 +180,7 @@ Rectangle {
             signal recommenderCopyClicked(string msg)
             signal refilter()
             signal fandomToggled(var id)
-            signal authorToggled(var id)
+            signal authorToggled(var id, var toggled)
             signal refilterClicked()
         }
     }

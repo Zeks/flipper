@@ -503,8 +503,8 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
-    connect(childObject, SIGNAL(authorToggled(QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant)));
-    connect(childObject, SIGNAL(refilterClicked()), this, SLOT(on_pbLoadDatabase_clicked()));
+    connect(childObject, SIGNAL(authorToggled(QVariant, QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant,QVariant)));
+    //connect(childObject, SIGNAL(refilterClicked()), this, SLOT(on_pbLoadDatabase_clicked()));
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
 
@@ -611,8 +611,8 @@ void MainWindow::LoadData()
 
     env.LoadData();
     holder->SetData(env.fanfics);
-    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
-    childObject->setProperty("authorFilterActive", false);
+//    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+//    childObject->setProperty("authorFilterActive", false);
 }
 
 int MainWindow::GetResultCount()
@@ -895,7 +895,7 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
         ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
 }
 
-void MainWindow::OnQMLAuthorToggled(QVariant var)
+void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
 {
     auto fanficsInterface = env.interfaces.fanfics;
 
@@ -903,13 +903,17 @@ void MainWindow::OnQMLAuthorToggled(QVariant var)
 
     QModelIndex index = typetableModel->index(rownum, 0);
     auto data = index.data(static_cast<int>(FicModel::AuthorIdRole)).toInt();
+    if(active.toBool())
+        ui->leAuthorID->setText(QString::number(data));
+    else
+        ui->leAuthorID->setText("");
 
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    env.filter.useThisAuthor = data;
+    //env.filter.useThisAuthor = data;
     LoadData();
 
-    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
-    childObject->setProperty("authorFilterActive", true);
+//    /QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    //childObject->setProperty("authorFilterActive", true);
     AnalyzeCurrentFilter();
 
 }
@@ -1506,6 +1510,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
     filter.rating = static_cast<core::StoryFilter::ERatingFilter>(ui->cbFicRating->currentIndex());
+    if(!ui->leAuthorID->text().isEmpty())
+        filter.useThisAuthor = ui->leAuthorID->text().toInt();
 
     if(ui->cbGenrePresenceTypeExclude->currentText() == "Medium")
         filter.genrePresenceForExclude = core::StoryFilter::gp_medium;
