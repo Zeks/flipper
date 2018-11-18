@@ -249,7 +249,8 @@ Rectangle {
             }
             Image {
                 id: imgMagnify
-                width: 24
+                width: 24;
+                visible: author_id > 0;
                 height: 24
                 source: lvFics.authorFilterActive === true ? "qrc:/icons/icons/magnify_res_canc.png" : "qrc:/icons/icons/magnify_res.png"
                 MouseArea{
