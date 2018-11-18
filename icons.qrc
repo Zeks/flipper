@@ -40,5 +40,6 @@
         <file>icons/clipboard.png</file>
         <file>icons/magnify.png</file>
         <file>icons/magnify_res.png</file>
+        <file>icons/magnify_res_canc.png</file>
     </qresource>
 </RCC>

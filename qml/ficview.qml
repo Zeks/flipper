@@ -10,6 +10,7 @@ Rectangle {
     property color leadingColor:  "#fceaef"
     property bool havePagesBefore: false
     property bool havePagesAfter: false
+    property bool authorFilterActive: false
     property bool detailedGenreMode: false
     signal pageRequested(int page)
     signal backClicked()
@@ -158,6 +159,7 @@ Rectangle {
             property int previousIndex: -1
             property bool showUrlCopyIcon: urlCopyIconVisible
             property bool showScanIcon: scanIconVisible
+            property bool authorFilterActive: false
 
             spacing: 5
             clip:true
@@ -179,34 +181,7 @@ Rectangle {
             signal refilter()
             signal fandomToggled(var id)
             signal authorToggled(var id)
-
-//            MouseArea {
-//                id: ma
-//                anchors.fill: parent
-
-//                propagateComposedEvents: true
-//                onPressed:{
-//                    if(lvFics.indexAt(mouseX, mouseY) === -1)
-//                    {
-//                        lvFics.refilter()
-//                        mouse.accepted = true
-//                    }
-//                    else
-//                        mouse.accepted = false
-//                }
-//                onClicked:
-//                {
-//                    console.log("Clicked at: ", mouseX, mouseY)
-//                    if(lvFics.view.indexAt(mouseX, mouseY) === -1)
-//                    {
-//                        lvFics.refilter()
-//                        mouse.accepted = true
-//                    }
-//                    else
-//                        mouse.accepted = false
-//                }
-
-//            }
+            signal refilterClicked()
         }
     }
 

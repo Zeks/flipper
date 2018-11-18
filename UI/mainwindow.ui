@@ -357,7 +357,7 @@
                                           </widget>
                                          </item>
                                          <item>
-                                          <widget class="QComboBox" name="cRecsAlgo">
+                                          <widget class="QComboBox" name="cbRecsAlgo">
                                            <item>
                                             <property name="text">
                                              <string>Weighted</string>
@@ -797,7 +797,7 @@
                         </widget>
                        </item>
                        <item row="2" column="0" colspan="3">
-                        <widget class="QSplitter" name="splitter">
+                        <widget class="QSplitter" name="spSourceAnalysis">
                          <property name="orientation">
                           <enum>Qt::Horizontal</enum>
                          </property>

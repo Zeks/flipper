@@ -251,12 +251,22 @@ Rectangle {
                 id: imgMagnify
                 width: 24
                 height: 24
-                source: "qrc:/icons/icons/magnify_res.png"
+                source: lvFics.authorFilterActive === true ? "qrc:/icons/icons/magnify_res_canc.png" : "qrc:/icons/icons/magnify_res.png"
                 MouseArea{
                     anchors.fill : parent
                     propagateComposedEvents : true
                     onClicked : {
-                        lvFics.authorToggled(index);
+                        if(lvFics.authorFilterActive === false)
+                        {
+                            lvFics.authorFilterActive = true;
+                            lvFics.authorToggled(index);
+                        }
+                        else
+                        {
+                            //lvFics.authorFilterActive = false;
+                            lvFics.refilterClicked();
+                        }
+
                     }
                 }
             }

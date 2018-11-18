@@ -504,8 +504,10 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
     connect(childObject, SIGNAL(authorToggled(QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant)));
+    connect(childObject, SIGNAL(refilterClicked()), this, SLOT(on_pbLoadDatabase_clicked()));
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
+
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
 }
@@ -609,6 +611,8 @@ void MainWindow::LoadData()
 
     env.LoadData();
     holder->SetData(env.fanfics);
+    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    childObject->setProperty("authorFilterActive", false);
 }
 
 int MainWindow::GetResultCount()
@@ -903,6 +907,9 @@ void MainWindow::OnQMLAuthorToggled(QVariant var)
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     env.filter.useThisAuthor = data;
     LoadData();
+
+    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    childObject->setProperty("authorFilterActive", true);
     AnalyzeCurrentFilter();
 
 }
@@ -951,9 +958,11 @@ void MainWindow::ReadSettings()
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
+    ui->spSourceAnalysis->restoreState(uiSettings.value("Settings/spSourceAnalysis", false).toByteArray());
     ui->cbSortMode->setCurrentText(uiSettings.value("Settings/currentSortFilter", "Update Date").toString());
     ui->cbBiasFavor->setCurrentText(uiSettings.value("Settings/biasMode", "None").toString());
     ui->cbBiasOperator->setCurrentText(uiSettings.value("Settings/biasOperator", "<").toString());
+    ui->cbRecsAlgo->setCurrentText(uiSettings.value("Settings/cbRecsAlgo", "Weighted").toString());
     ui->leBiasValue->setText(uiSettings.value("Settings/biasValue", "2.5").toString());
 
     ui->sbMinimumListMatches->setValue(uiSettings.value("Settings/sbMinimumListMatches", "0").toInt());
@@ -1007,6 +1016,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/completed", ui->chkComplete->isChecked());
     settings.setValue("Settings/spMain", ui->spMain->saveState());
     settings.setValue("Settings/spDebug", ui->spDebug->saveState());
+    settings.setValue("Settings/spSourceAnalysis", ui->spSourceAnalysis->saveState());
     settings.setValue("Settings/currentSortFilter", ui->cbSortMode->currentText());
     settings.setValue("Settings/biasMode", ui->cbBiasFavor->currentText());
     settings.setValue("Settings/biasOperator", ui->cbBiasOperator->currentText());
@@ -1017,6 +1027,7 @@ void MainWindow::WriteSettings()
 
     settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
     settings.setValue("Settings/cbGenrePresenceTypeInclude", ui->cbGenrePresenceTypeInclude->currentText());
+    settings.setValue("Settings/cbRecsAlgo", ui->cbRecsAlgo->currentText());
     settings.setValue("Settings/cbGenrePresenceTypeExclude", ui->cbGenrePresenceTypeExclude->currentText());
     settings.setValue("Settings/cbFicRating", ui->cbFicRating->currentText());
 
@@ -1813,7 +1824,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
     params->pickRatio = ui->leRecsPickRatio->text().toInt();
     params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
-    params->useWeighting = ui->cRecsAlgo->currentText() == "Weighted";
+    params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
     TaskProgressGuard guard(this);
 
     QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
