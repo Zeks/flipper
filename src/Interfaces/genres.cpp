@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/genres.h"
 #include "pure_sql.h"
 
+
 namespace interfaces {
 
 
@@ -78,6 +79,11 @@ QHash<QString, QString> CreateDBToCodeGenreConverter()
 }
 
 
+Genres::Genres()
+{
+    index.Init();
+}
+
 bool interfaces::Genres::IsGenreList(QStringList list)
 {
     bool success = false;
@@ -116,6 +122,40 @@ void Genres::QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists,int
 bool Genres::WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics)
 {
     return database::puresql::WriteDetectedGenres(fics, db).success;
+}
+static QHash<QString, short> CreateGenreRedirects(){
+    QHash<QString, short> result;
+    result["General"] = 0;
+    result["Humor"] = 1;
+    result["Poetry"] = 2;
+    result["Adventure"] = 3;
+    result["Mystery"] = 4;
+    result["Horror"] = 5;
+    result["Parody"] = 6;
+    result["Angst"] = 7;
+    result["Supernatural"] = 8;
+    result["Suspense"] = 9;
+    result["Romance"] = 10;
+    result["not found"] = 11;
+    result["Sci-Fi"] = 13;
+    result["Fantasy"] = 14;
+    result["Spiritual"] = 15;
+    result["Tragedy"] = 16;
+    result["Western"] = 17;
+    result["Crime"] = 18;
+    result["Family"] = 19;
+    result["Hurt/Comfort"] = 20;
+    result["Friendship"] = 21;
+    result["Drama"] = 22;
+    return result;
+}
+std::optional<size_t> Genres::GetGenreIndex(QString genre)
+{
+    thread_local auto genreRedirects = CreateGenreRedirects();
+    if(genreRedirects.contains(genre))
+        return genreRedirects[genre];
+    return {};
+
 }
 
 //static QString GetSignificantNeutralType(QStringList list)
@@ -561,5 +601,52 @@ GenreConverter GenreConverter::Instance()
     return instance;
 }
 
+GenreIndex::GenreIndex()
+{
+    Init();
+}
+
+void GenreIndex::Init()
+{
+    size_t counter = 0;
+    InitGenre({true,counter++,"General", "General_", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Humor", "", mt_happy, gc_funny});
+    InitGenre({true,counter++,"Poetry", "", mt_neutral, gc_none});
+    InitGenre({true,counter++,"Adventure", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Mystery", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Horror", "", mt_neutral, gc_shocky});
+    InitGenre({true,counter++,"Parody", "", mt_happy, gc_funny});
+    InitGenre({true,counter++,"Angst", "", mt_sad, gc_dramatic});
+    InitGenre({true,counter++,"Supernatural", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Suspense", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Romance", "", mt_neutral, gc_flirty});
+    InitGenre({true,counter++,"not found", "NoGenre", mt_neutral, gc_none});
+    InitGenre({true,counter++,"Sci-Fi", "SciFi", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Fantasy", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Spiritual", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Tragedy", "", mt_sad, gc_dramatic});
+    InitGenre({true,counter++,"Western", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Crime", "", mt_neutral, gc_neutral});
+    InitGenre({true,counter++,"Family", "", mt_neutral, gc_bondy});
+    InitGenre({true,counter++,"Hurt/Comfort", "HurtComfort", mt_neutral, gc_hurty});
+    InitGenre({true,counter++,"Friendship", "", mt_neutral, gc_bondy});
+    InitGenre({true,counter++,"Drama", "", mt_sad, gc_dramatic});
+}
+
+void GenreIndex::InitGenre(const Genre &genre)
+{
+    genresByName[genre.name] = genre;
+    genresByIndex[genre.indexInDatabase] = genre;
+    genresByCategory[genre.genreCategory].push_back(genre);
+    genresByMood[genre.moodType].push_back(genre);
+    genresByDbName[genre.nameInDatabase] = genre;
+}
+
+Genre &GenreIndex::GenreByName(QString name)
+{
+    if(genresByName.contains(name))
+        return genresByName[name];
+    return nullGenre;
+}
 
 }

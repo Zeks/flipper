@@ -1,0 +1,53 @@
+/*
+Flipper is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017-2018  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+syntax = "proto3";
+
+package ProtoSpace;
+
+message FavListDetails{
+    bool is_valid                       = 1;
+    int32 fic_count                     = 2;
+    int32 word_count                    = 3;
+    double average_wordcount            = 4;
+    double average_words_per_chapter    = 5;
+    
+    double explorer_rating              = 6;
+    double mega_explorer_rating         = 7;
+    double crossover_rating             = 8;
+    double unfinished_rating            = 9;
+    double mature_rating                = 10;
+    double slash_rating                 = 11;
+    double crack_rating                 = 12;
+    double smut_rating                  = 13;
+    double mood_uniformity_rating       = 14;
+    
+    double fandom_diversity             = 15;
+    double genre_diversity_rating       = 16;
+    
+    string published_first              = 17;
+    string published_last               = 18;
+    
+    repeated double mood_rating                     = 19; // sad neutral happy
+    repeated double size_rating                     = 20; // small medium large huge    
+    repeated string genres                          = 21;
+    repeated double genres_percentages              = 22;
+    repeated int32 fandoms                          = 23;
+    repeated int32 fandoms_counts                   = 24;
+    
+    int32 no_info                                   = 25;    
+}

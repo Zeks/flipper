@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/data_source.h"
 #include <QSharedPointer>
 #include <QVector>
+#include <optional>
 
 class FicSourceGRPCImpl;
 namespace core {
@@ -32,6 +33,7 @@ class Fanfic;
 class Fandom;
 class UserData;
 class SiteIDPack;
+class FavListDetails;
 class RecommendationListCreationRequest;
 }
 
@@ -73,6 +75,7 @@ public:
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
     bool GetFFNIDsForFics(QVector<core::IdPack>*);
+    std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::IdPack>);
 
     ServerStatus GetStatus();
 
@@ -92,6 +95,9 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
 bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic);
 bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic *protoFic);
+
+bool FavListProtoToLocal(const ProtoSpace::FavListDetails& protoStats, core::FicSectionStats& stats);
+bool FavListLocalToProto(const core::FicSectionStats& stats, ProtoSpace::FavListDetails *protoStats);
 
 void LocalFandomToProtoFandom(const core::Fandom& coreFandom, ProtoSpace::Fandom* protoFandom);
 void ProtoFandomToLocalFandom(const ProtoSpace::Fandom& protoFandom, core::Fandom &coreFandom);

@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QList>
 #include <QUuid>
 #include <QVector>
+#include <optional>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -99,6 +100,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     result.set_rating(static_cast<ProtoSpace::Filter::RatingFilter>(filter.rating));
     result.set_genre_presence_include(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForInclude));
     result.set_genre_presence_exclude(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForExclude));
+    result.set_use_this_author_only(filter.useThisAuthor);
 
 
     auto* sizeLimits = result.mutable_size_limits();
@@ -137,14 +139,14 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     auto* tagFilter = result.mutable_tag_filter();
     tagFilter->set_ignore_already_tagged(filter.ignoreAlreadyTagged);
 
-//    auto* usertags = userData->mutable_user_tags();
-//    for(auto tag : filter.activeTags)
-//        usertags->add_searched_tags(tag);
+    //    auto* usertags = userData->mutable_user_tags();
+    //    for(auto tag : filter.activeTags)
+    //        usertags->add_searched_tags(tag);
 
-//    auto allTagged = GetTaggedIDs();
+    //    auto allTagged = GetTaggedIDs();
 
-//    for(auto id : allTagged)
-//        tagFilter->add_all_tagged(id);
+    //    for(auto id : allTagged)
+    //        tagFilter->add_all_tagged(id);
 
     auto* slashFilter = result.mutable_slash_filter();
     slashFilter->set_use_slash_filter(filter.slashFilter.slashFilterEnabled);
@@ -226,6 +228,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     result.recentAndPopularFavRatio = filter.recent_and_popular().fav_ratio();
     result.recentCutoff = DFS(filter.recent_and_popular().date_cutoff());
+    result.useThisAuthor = filter.use_this_author_only();
 
     result.fandom = filter.content_filter().fandom();
     result.includeCrossovers = filter.content_filter().include_crossovers();
@@ -357,6 +360,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
 
     coreFic.author = core::Author::NewAuthor();
     coreFic.author->name = FS(protoFic.author());
+    coreFic.author_id = protoFic.author_id();
 
     for(int i = 0; i < protoFic.fandoms_size(); i++)
         coreFic.fandoms.push_back(FS(protoFic.fandoms(i)));
@@ -409,6 +413,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     protoFic->set_language(TS(coreFic.language));
     protoFic->set_genres(TS(coreFic.genreString));
     protoFic->set_author(TS(coreFic.author->name));
+    protoFic->set_author_id(coreFic.author_id);
 
     protoFic->set_published(DTS(coreFic.published));
     protoFic->set_updated(DTS(coreFic.updated));
@@ -432,6 +437,88 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 
     return true;
 }
+
+bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::FicSectionStats &stats)
+{
+    stats.isValid = protoStats.is_valid();
+    if(!stats.isValid)
+        return false;
+
+    stats.favourites = protoStats.fic_count();
+    stats.ficWordCount = protoStats.word_count();
+    stats.averageWordsPerChapter = protoStats.average_words_per_chapter();
+    stats.averageLength = protoStats.average_wordcount();
+    stats.fandomsDiversity = protoStats.fandom_diversity();
+    stats.explorerFactor = protoStats.explorer_rating();
+    stats.megaExplorerFactor = protoStats.mega_explorer_rating();
+    stats.crossoverFactor = protoStats.crossover_rating();
+    stats.unfinishedFactor = protoStats.unfinished_rating();
+    stats.genreDiversityFactor = protoStats.genre_diversity_rating();
+    stats.moodUniformity = protoStats.mood_uniformity_rating();
+
+    stats.crackRatio = protoStats.crack_rating();
+    stats.slashRatio = protoStats.slash_rating();
+    stats.smutRatio = protoStats.smut_rating();
+
+    stats.firstPublished = QDate::fromString(FS(protoStats.published_first()), "yyyyMMdd");
+    stats.lastPublished = QDate::fromString(FS(protoStats.published_last()), "yyyyMMdd");
+
+    stats.moodSad = protoStats.mood_rating(0);
+    stats.moodNeutral = protoStats.mood_rating(1);
+    stats.moodHappy = protoStats.mood_rating(2);
+    stats.noInfoCount = protoStats.no_info();
+
+    for(auto i = 0; i< protoStats.size_rating_size(); i++)
+        stats.sizeFactors[i] = protoStats.size_rating(i);
+    for(auto i = 0; i< protoStats.genres_size(); i++)
+        stats.genreFactors[FS(protoStats.genres(i))] = protoStats.genres_percentages(i);
+    for(auto i = 0; i< protoStats.fandoms_size(); i++)
+        stats.fandomsConverted[protoStats.fandoms(i)] = protoStats.fandoms_counts(i);
+    return true;
+}
+
+bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavListDetails *protoStats)
+{
+    protoStats->set_is_valid(true);
+    protoStats->set_fic_count(stats.favourites);
+    protoStats->set_word_count(stats.ficWordCount);
+    protoStats->set_average_wordcount(stats.averageLength);
+    protoStats->set_average_words_per_chapter(stats.averageWordsPerChapter);
+    protoStats->set_fandom_diversity(stats.fandomsDiversity);
+    protoStats->set_explorer_rating(stats.explorerFactor);
+    protoStats->set_mega_explorer_rating(stats.megaExplorerFactor);
+    protoStats->set_crossover_rating(stats.crossoverFactor);
+    protoStats->set_unfinished_rating(stats.unfinishedFactor);
+    protoStats->set_genre_diversity_rating(stats.genreDiversityFactor);
+    protoStats->set_mood_uniformity_rating(stats.moodUniformity);
+
+
+    protoStats->set_crack_rating(stats.crackRatio);
+    protoStats->set_slash_rating(stats.slashRatio);
+    protoStats->set_smut_rating(stats.smutRatio);
+
+    protoStats->set_published_first(stats.firstPublished.toString("yyyyMMdd").toStdString());
+    protoStats->set_published_last(stats.lastPublished.toString("yyyyMMdd").toStdString());
+    protoStats->add_mood_rating(stats.moodSad);
+    protoStats->add_mood_rating(stats.moodNeutral);
+    protoStats->add_mood_rating(stats.moodHappy);
+
+    for(auto size: stats.sizeFactors.keys())
+        protoStats->add_size_rating(stats.sizeFactors[size]);
+
+    for(auto genre: stats.genreFactors.keys())
+    {
+        protoStats->add_genres(TS(genre));
+        protoStats->add_genres_percentages(stats.genreFactors[genre]);
+    }
+
+    for(auto fandom: stats.fandomsConverted.keys())
+    {
+        protoStats->add_fandoms(fandom);
+        protoStats->add_fandoms_counts(stats.fandomsConverted[fandom]);
+    }
+    return true;
+}
 }
 
 class FicSourceGRPCImpl{
@@ -450,6 +537,7 @@ public:
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
     void ProcessStandardError(grpc::Status status);
+    core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
@@ -534,7 +622,6 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
 
     if(!ficList->size())
         return true;
-
 
     QScopedPointer<ProtoSpace::FicIdResponse> response (new ProtoSpace::FicIdResponse);
     std::chrono::system_clock::time_point deadline =
@@ -676,10 +763,7 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
 bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& recList)
 {
     grpc::ClientContext context;
-
     ProtoSpace::RecommendationListCreationRequest task;
-
-
     QScopedPointer<ProtoSpace::RecommendationListCreationResponse> response (new ProtoSpace::RecommendationListCreationResponse);
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
@@ -692,6 +776,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& 
     task.set_return_sources(true);
     task.set_min_fics_to_match(recList.listParams.minimumMatch);
     task.set_max_unmatched_to_one_matched(static_cast<int>(recList.listParams.pickRatio));
+    task.set_use_weighting(recList.listParams.useWeighting);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
@@ -756,6 +841,42 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
     error+=QString::fromStdString(status.error_message());
 }
 
+core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack> ficList)
+{
+    core::FicSectionStats result;
+
+    grpc::ClientContext context;
+
+    ProtoSpace::FavListDetailsRequest task;
+
+    if(!ficList.size())
+        return result;
+
+    QScopedPointer<ProtoSpace::FavListDetailsResponse> response (new ProtoSpace::FavListDetailsResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    for(core::IdPack& fic : ficList)
+    {
+        auto idPacks = task.mutable_id_packs();
+        idPacks->add_ffn_ids(fic.ffn);
+    }
+
+    grpc::Status status = stub_->GetFavListDetails(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    if(!response->success())
+        return result;
+
+    proto_converters::FavListProtoToLocal(response->details(), result);
+
+    return result;
+}
+
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
                              QString userToken,
                              int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
@@ -809,6 +930,13 @@ bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::IdPack> * ficList)
     if(!impl)
         return false;
     return impl->GetFFNIDsForFics(ficList);
+}
+
+std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList(QVector<core::IdPack> ficList)
+{
+    if(!impl)
+        return {};
+    return impl->GetStatsForFicList(ficList);
 }
 
 ServerStatus FicSourceGRPC::GetStatus()
@@ -887,10 +1015,10 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserDa
         return false;
     if(!VerifyInt(filter.content_filter().word_inclusion_size(), 50))
         return false;
-//    if(!VerifyInt(filter.tag_filter().all_tagged_size(), 50000))
-//        return false;
-//    if(!VerifyInt(filter.tag_filter().active_tags_size(), 50000))
-//        return false;
+    //    if(!VerifyInt(filter.tag_filter().all_tagged_size(), 50000))
+    //        return false;
+    //    if(!VerifyInt(filter.tag_filter().active_tags_size(), 50000))
+    //        return false;
     if(!VerifyInt(user.recommendation_list().list_of_fics_size(), 1000000))
         return false;
     if(!VerifyInt(user.recommendation_list().list_of_matches_size(), 1000000))

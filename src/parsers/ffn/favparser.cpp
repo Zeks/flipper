@@ -87,6 +87,7 @@ QDate DateFromXUtime(QString value)
     }
     return temp.date();
 }
+
 inline void UpdatePopularity(QSharedPointer<core::Fic> fic, QHash<int, int>& popularUnpopularKeeper)
 {
     auto faveCount = fic->favourites.toInt();
@@ -280,6 +281,11 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
     int totalInRest = ficTotal - totalInClumps;
     author->stats.favouriteStats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
 }
+
+//if(static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal) > 0.5)
+//    totalInClumps+=genreKeeper[genre];
+//int totalInRest = ficTotal - totalInClumps;
+//author->stats.favouriteStats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
 
 inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes, QHash<int, int>& ficSizeKeeper)
 {
@@ -587,7 +593,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
     author->stats.favouriteStats.fandoms = resultingToken.fandomKeeper;
 
     author->stats.favouriteStats.ficWordCount = resultingToken.wordCount;
-    author->stats.favouriteStats.wordsPerChapter =
+    author->stats.favouriteStats.averageWordsPerChapter =
             static_cast<double>(author->stats.favouriteStats.ficWordCount)/static_cast<double>(resultingToken.chapterKeeper);
 
     author->stats.favouriteStats.favourites = resultingToken.ficCount;

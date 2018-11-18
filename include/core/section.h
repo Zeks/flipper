@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QTextStream>
 #include <QDataStream>
 #include <QSet>
+#include <array>
 #include "core/fic_genre_data.h"
 namespace core {
 
@@ -51,11 +52,21 @@ class Author;
 typedef QSharedPointer<Author> AuthorPtr;
 
 enum class EntitySizeType{
-    small = 0,
+    none = 0,
+    small = 1,
     medium = 2,
     big = 3,
     huge = 4
 };
+
+enum class ExplorerRanges{
+    none = 0,
+    barely_known= 1,
+    relatively_unknown = 2,
+    popular = 3
+};
+core::EntitySizeType ProcesWordcountIntoSizeCategory(int);
+core::ExplorerRanges ProcesFavouritesIntoPopularityCategory(int);
 
 class FicSectionStatsTemporaryToken
 {
@@ -107,11 +118,12 @@ public:
         kiddy = 1,
         mature = 2,
     };
-
+    bool isValid = false;
     int favourites = -1;
+    int noInfoCount = 0;
     int ficWordCount = 0;
 
-    double wordsPerChapter = 0;
+    double averageWordsPerChapter = 0;
     double averageLength = 0.0;
     double fandomsDiversity = 0.0;
     double explorerFactor = 0.0;
@@ -139,7 +151,9 @@ public:
     EntitySizeType sectionRelativeSize;
 
     QString prevalentGenre;
-    QHash<int, double> sizeFactors;
+    QHash<QString, double> genreFactors;
+
+    QMap<int, double> sizeFactors;
 
     QHash<QString, int> fandoms;
     QHash<QString, double> fandomFactors;
@@ -147,7 +161,7 @@ public:
     QHash<int, int> fandomsConverted;
     QHash<int, double> fandomFactorsConverted;
 
-    QHash<QString, double> genreFactors;
+
 
     QDate firstPublished;
     QDate lastPublished;
@@ -155,7 +169,6 @@ public:
     void Serialize(QDataStream &out);
     void Deserialize(QDataStream &in);
 };
-
 class AuthorStats
 {
 public:
@@ -250,10 +263,11 @@ struct FicForWeightCalc
     int favCount = -1;
     int reviewCount = -1;
     int wordCount = -1;
+    int chapterCount = 0;
     int authorId = -1;
 
     QList<int> fandoms;
-    QList<int> genres;
+    QStringList genres;
 
     QString genreString;
 
@@ -566,6 +580,7 @@ public:
     bool isValid =false;
     EFicSource ficSource = efs_search;
     QString authorName;
+    int author_id = -1;
     QSharedPointer<Author> author;
 
 
@@ -791,6 +806,7 @@ public:
     int minimumMatch = -1;
     int alwaysPickAt = -2;
     double pickRatio = -1;
+    bool useWeighting = false;
     QDateTime created;
 };
 

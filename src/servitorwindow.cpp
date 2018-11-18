@@ -135,7 +135,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 
 
 
-    An<core::FavHolder> holder;
+    An<core::RecCalculator> holder;
     holder->LoadFavourites(authors);
     qDebug() << "Finished list load";
 

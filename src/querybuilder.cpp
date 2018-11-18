@@ -59,7 +59,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             }
         }
 
-    queryString+=" from vFanfics f where   " ;
+    queryString+=" from vFanfics f " ;
 
     QString where = CreateWhere(filter);
 
@@ -110,7 +110,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
         }
 
         if(!filter.randomizeResults)
-            queryString += where;
+            queryString += " where " + where;
         else
         {
             auto match = rx.match(randomizer);
@@ -119,7 +119,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
                 qDebug() << "FOUND MATCH";
                 randomizer = randomizer.mid(match.captured().length());
             }
-            queryString += randomizer;
+            queryString +=  " where " + randomizer;
         }
         if(createLimits)
             queryString += BuildSortMode(filter);
@@ -140,6 +140,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     queryString.replace(" fid)", " f.id)");
     queryString.replace("(fid", "(f.id");
     qDebug().noquote() << query->str;
+
+
     return query;
 }
 
@@ -175,6 +177,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
 
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
+    queryString+= ProcessAuthor(filter);
     queryString+= tagFilterBuilder->GetString(filter);
     queryString+= ignoredFandomsBuilder->GetString(filter);
     //queryString+= ProcessFandomIgnore(filter);
@@ -275,6 +278,15 @@ QString DefaultQueryBuilder::ProcessTags(StoryFilter)
     else
         result = " '' as tags , \n";
     return result;
+}
+
+QString DefaultQueryBuilder::ProcessAuthor(StoryFilter filter)
+{
+    QString result;
+    if(filter.useThisAuthor == -1)
+        return result;
+    result = QString(" and f.author_id = %1 ").arg(filter.useThisAuthor);
+
 }
 
 QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
@@ -671,6 +683,8 @@ QString DefaultQueryBuilder::ProcessCrossovers(StoryFilter filter)
     {
         if(filter.crossoversOnly)
             queryString += QString(" and (select count(fandom_id) from ficfandoms where fic_id = f.id) > 1 ");
+        else if (!filter.includeCrossovers)
+            queryString += QString(" and (select count(fandom_id) from ficfandoms where fic_id = f.id) = 1 ");
 
         else
             queryString += QString("");

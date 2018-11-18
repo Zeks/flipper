@@ -69,6 +69,9 @@ public:
     Status GetFFNFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
                        ProtoSpace::FicIdResponse* response) override;
 
+    Status GetFavListDetails(ServerContext* context, const ProtoSpace::FavListDetailsRequest* task,
+                       ProtoSpace::FavListDetailsResponse* response) override;
+
 
 
     QHash<QString, StatisticsToken> tokenData;

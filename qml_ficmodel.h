@@ -50,7 +50,8 @@ public:
         RecommendationsRole,
         RealGenreRole,
         FicIdRole,
-        EndRole = FicIdRole
+        AuthorIdRole,
+        EndRole = AuthorIdRole
 
     };
 

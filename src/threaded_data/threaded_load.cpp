@@ -39,9 +39,9 @@ struct ContainerValueTypeGetter<T, typename std::enable_if<is_hash<T>::value>::t
 template <typename ContainerType, typename ValueType>
 inline void PutIntoContainer(ContainerType& container, ValueType& value, int& key){
     if constexpr(is_hash<ContainerType>::value)
-        container[key] = value;
+            container[key] = value;
     else
-        container.push_back(value);
+    container.push_back(value);
 }
 
 
@@ -51,9 +51,22 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
 
     int key;
     if constexpr(is_hash<ContainerType>::value)
-        in >> key;
+    in >> key;
 
-    if constexpr(is_serializable_pointer<ContainerValueType>())
+
+    if constexpr(is_roaring<ContainerValueType>::value)
+    {
+        using PtrType = ContainerValueType;
+
+        QByteArray ba;
+        in >> ba;
+        //qDebug() << "read byte array is: " << ba;
+        Roaring r = Roaring::readSafe(ba.constData(), ba.size());
+
+        //qDebug() << "read roaring of size: " << r.cardinality();
+        PutIntoContainer(container, r, key);
+    }
+    else if constexpr(is_serializable_pointer<ContainerValueType>())
     {
         using PtrType = ContainerValueType;
         using ValueType = typename PtrType::value_type;
@@ -76,9 +89,9 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
 
 auto loaderFunc = [](
         QString nameBase,
-        auto resultCreator,
-        int file,
-        auto valueFetcher){
+auto resultCreator,
+int file,
+auto valueFetcher){
     auto resultHolder = resultCreator();
     QString fileName = QString("%1_%2.txt").arg(nameBase).arg(QString::number(file));
     QFile data(fileName);
@@ -120,7 +133,8 @@ auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBas
     {
         resultUnifier(destination, future.result());
     }
-    qDebug() << "finished unification";
+    qDebug() << "finished unification, size:" << destination.size() ;
+
 };
 
 auto vectorUnifier = [](auto& dest, auto& source){dest+=source;};
@@ -164,33 +178,33 @@ auto favouritesFetchFunc = [](auto& container, QDataStream& in){
 
 
 auto ficLoader = std::bind(loaderFunc, std::placeholders::_1,
-                                  std::placeholders::_2,
-                                  std::placeholders::_3,
-                                  ficFetchFunc);
+                           std::placeholders::_2,
+                           std::placeholders::_3,
+                           ficFetchFunc);
 auto authorLoader = std::bind(loaderFunc, std::placeholders::_1,
-                                  std::placeholders::_2,
-                                  std::placeholders::_3,
-                                  ficFetchFunc);
+                              std::placeholders::_2,
+                              std::placeholders::_3,
+                              ficFetchFunc);
 auto favouritesLoader = std::bind(loaderFunc, std::placeholders::_1,
                                   std::placeholders::_2,
                                   std::placeholders::_3,
                                   favouritesFetchFunc);
 
 auto fandomListsLoader = std::bind(loaderFunc, std::placeholders::_1,
-                                  std::placeholders::_2,
-                                  std::placeholders::_3,
-                                  fandomListsFetchFunc);
+                                   std::placeholders::_2,
+                                   std::placeholders::_3,
+                                   fandomListsFetchFunc);
 
 auto genericLoader = std::bind(loaderFunc, std::placeholders::_1,
-                                  std::placeholders::_2,
-                                  std::placeholders::_3,
-                                  fetchFunc);
+                               std::placeholders::_2,
+                               std::placeholders::_3,
+                               fetchFunc);
 
 // special case, non standard fecther
 auto genreLoader = std::bind(loaderFunc, std::placeholders::_1,
-                                  std::placeholders::_2,
-                                  std::placeholders::_3,
-                                  genresFetchFunc);
+                             std::placeholders::_2,
+                             std::placeholders::_3,
+                             genresFetchFunc);
 }
 
 using namespace Impl;
@@ -210,6 +224,12 @@ void LoadFavouritesData(QString storage, QHash<int, QSet<int>>& favourites)
     qDebug() << "Loading favourites";
     loadMultiThreaded(genericLoader, hashUnifier, storage + "/fav", favourites);
 }
+void LoadFavouritesData(QString storage, QHash<int, Roaring> &favourites)
+{
+    qDebug() << "Loading favourites";
+    loadMultiThreaded(genericLoader, hashUnifier, storage + "/roafav", favourites);
+}
+
 void LoadGenreDataForFavLists(QString storage, QHash<int, std::array<double, 22> >& genreData)
 {
     qDebug() << "Loading authors";
@@ -219,6 +239,28 @@ void LoadFandomDataForFavLists(QString storage, QHash<int, core::AuthorFavFandom
 {
     qDebug() << "Loading favourites";
     loadMultiThreaded(genericLoader, hashUnifier, storage + "/fandomstats", fandomLists);
+}
+
+
+void LoadData(QString storageFolder, QString fileName, QHash<int, Roaring>& data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
+void LoadData(QString storageFolder, QString fileName, QHash<int, QSet<int>>& data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
+void LoadData(QString storageFolder, QString fileName, QHash<int, std::array<double, 22> > & data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genreLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
+void LoadData(QString storageFolder, QString fileName, QHash<int, core::AuthorFavFandomStatsPtr>& data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
+void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, vectorUnifier, storageFolder + QString("/") + fileName, data);
 }
 
 }

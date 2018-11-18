@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
+
 struct DataKeeper{
     QFile data;
     QDataStream out;
@@ -119,6 +120,22 @@ void SaveFavouritesData(QString storageFolder, QHash<int, QSet<int>>& favourites
         out << it.value();
     });
 }
+void SaveFavouritesData(QString storageFolder, QHash<int, Roaring>& favourites){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount, storageFolder + "/roafav", favourites, [&](auto& out, auto it){
+        out << it.key();
+
+        Roaring& r = it.value();
+        size_t  expectedsize = r.getSizeInBytes();
+        qDebug() << "writing roaring of size: " << expectedsize;
+        char *serializedbytes = new char [expectedsize];
+        r.write(serializedbytes);
+        QByteArray ba(QByteArray::fromRawData(serializedbytes, expectedsize));
+        out << ba;
+        delete[] serializedbytes;
+    });
+}
 void SaveGenreDataForFavLists(QString storageFolder, QHash<int, std::array<double, 22> >& genreData){
     DataKeeper keeper;
     int threadCount = QThread::idealThreadCount()-1;
@@ -136,4 +153,55 @@ void SaveFandomDataForFavLists(QString storageFolder, QHash<int, core::AuthorFav
         it.value()->Serialize(out);
     });
 }
+
+
+void SaveData(QString storageFolder, QString fileName, QHash<int, Roaring>& favourites){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount, storageFolder + "/" + fileName, favourites, [&](auto& out, auto it){
+        out << it.key();
+
+        Roaring& r = it.value();
+        size_t  expectedsize = r.getSizeInBytes();
+        qDebug() << "writing roaring of size: " << expectedsize;
+        char *serializedbytes = new char [expectedsize];
+        r.write(serializedbytes);
+        QByteArray ba(QByteArray::fromRawData(serializedbytes, expectedsize));
+        out << ba;
+        delete[] serializedbytes;
+    });
+}
+void SaveData(QString storageFolder, QString fileName, QHash<int, QSet<int>>& favourites){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount, storageFolder + "/" + fileName, favourites, [&](auto& out, auto it){
+        out << it.key();
+        out << it.value();
+    });
+}
+void SaveData(QString storageFolder, QString fileName, QHash<int, std::array<double, 22> > &genreData){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount, storageFolder+ "/" + fileName, genreData, [&](auto& out, auto it){
+        out << it.key();
+        for(auto value : it.value())
+            out << value;
+    });
+}
+void SaveData(QString storageFolder, QString fileName, QHash<int, core::AuthorFavFandomStatsPtr>& fandomLists){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount,storageFolder+ "/" + fileName, fandomLists, [&](auto& out, auto it){
+        out << it.key();
+        it.value()->Serialize(out);
+    });
+}
+void SaveData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& fics){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperVector(&keeper, threadCount, fics.size(),fics.size()/threadCount,storageFolder + "/" + fileName,[&](auto& out,int i){
+        fics[i]->Serialize(out);
+    });
+}
+
 }

@@ -37,12 +37,14 @@ App{
 
     files: [
         "include/calc_data_holder.h",
+        "include/core/fav_list_analysis.h",
         "include/grpc/grpc_source.h",
         "include/Interfaces/data_source.h",
         "include/threaded_data/common_traits.h",
         "include/threaded_data/threaded_load.h",
         "include/threaded_data/threaded_save.h",
         "src/calc_data_holder.cpp",
+        "src/core/fav_list_analysis.cpp",
         "src/grpc/grpc_source.cpp",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",
@@ -74,6 +76,9 @@ App{
         "include/url_utils.h",
         "src/threaded_data/threaded_load.cpp",
         "src/threaded_data/threaded_save.cpp",
+        "third_party/roaring/roaring.c",
+        "third_party/roaring/roaring.h",
+        "third_party/roaring/roaring.hh",
         "third_party/sqlite3/sqlite3.c",
         "third_party/sqlite3/sqlite3.h",
         "src/sqlcontext.cpp",
@@ -153,6 +158,7 @@ App{
             "proto/filter.proto",
             "proto/fanfic.proto",
             "proto/fandom.proto",
+            "proto/favlist.proto",
         ]
         fileTags: ["proto"]
     }

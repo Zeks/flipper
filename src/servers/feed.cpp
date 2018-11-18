@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "tokenkeeper.h"
 #include "timeutils.h"
 #include "core/section.h"
+#include "core/fav_list_analysis.h"
 #include "in_tag_accessor.h"
 #include "logger/QsLog.h"
 #include "loggers/usage_statistics.h"
@@ -35,6 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/fandoms.h"
 #include "Interfaces/fanfics.h"
+#include "Interfaces/genres.h"
 #include "Interfaces/recommendation_lists.h"
 
 
@@ -45,6 +47,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
+
+//template void core::DataHolder::LoadData<0>(QString);
+//template void core::DataHolder::LoadData<1>(QString);
 
 
 static QString GetDbNameFromCurrentThread(){
@@ -65,10 +70,13 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
     dbInterface->ReadDbFile("dbcode/dbinit.sql",GetDbNameFromCurrentThread());
 
-    An<core::FavHolder> holder;
+    An<core::RecCalculator> calculator;
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authors->db = mainDb;
-    holder->LoadFavourites(authors);
+    calculator->holder.authorsInterface = authors;
+    calculator->holder.settingsFile = "settings_server.ini";
+
+    calculator->holder.LoadData<core::rdt_favourites>("ServerData");
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
     connect(logTimer.data(), SIGNAL(timeout()), this, SLOT(OnPrintStatistics()), Qt::QueuedConnection);
@@ -254,12 +262,14 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     params->minimumMatch = task->min_fics_to_match();
     params->pickRatio = task->max_unmatched_to_one_matched();
     params->alwaysPickAt = task->always_pick_at();
+    params->useWeighting = task->use_weighting();
 
     QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
     fanficsInterface->db = dbContext.dbInterface->GetDatabase();
 
     auto* recs = ThreadData::GetRecommendationData();
 
+    QHash<uint32_t, core::FicWeightPtr> fetchedFics;
     QSet<int> sourceFics;
     for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
     {
@@ -270,12 +280,12 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
     recs->sourceFics = sourceFics;
     TimedAction action("Fic ids conversion",[&](){
-        sourceFics = fanficsInterface->ConvertFFNSourceFicsToDB(userToken);
+        fetchedFics = fanficsInterface->GetFicsForRecCreation();
     });
     action.run();
 
-    An<core::FavHolder> holder;
-    auto list = holder->GetMatchedFicsForFavList(sourceFics, params);
+    An<core::RecCalculator> holder;
+    auto list = holder->GetMatchedFicsForFavList(fetchedFics, params);
 
     auto* targetList = response->mutable_list();
     targetList->set_list_name(proto_converters::TS(params->name));
@@ -389,6 +399,139 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
         response->mutable_ids()->add_ffn_ids(idsToFill[fic]);
         response->mutable_ids()->add_db_ids(fic);
     }
+    return Status::OK;
+}
+
+void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicListDataAccumulator& dataResult)
+{
+    result.isValid = true;
+    result.favourites = dataResult.ficCount;
+    result.ficWordCount = dataResult.wordcount;
+    result.averageWordsPerChapter = dataResult.result.averageWordsPerChapter;
+    result.averageLength = dataResult.result.averageWordsPerFic;
+    result.firstPublished = dataResult.firstPublished;
+    result.lastPublished = dataResult.lastPublished;
+
+    result.fandomsDiversity = dataResult.result.fandomDiversityRatio;
+    result.explorerFactor = dataResult.result.explorerRatio;
+    result.megaExplorerFactor = dataResult.result.megaExplorerRatio;
+    result.crossoverFactor = dataResult.result.crossoverRatio;
+    result.unfinishedFactor = dataResult.result.unfinishedRatio;
+    result.genreDiversityFactor = dataResult.result.genreDiversityRatio;
+    result.moodUniformity = dataResult.result.moodUniformityRatio;
+    result.esrbMature = dataResult.result.matureRatio;
+
+    result.crackRatio = dataResult.result.crackRatio;
+    result.slashRatio = dataResult.result.slashRatio;
+    result.smutRatio = dataResult.result.smutRatio;
+    result.mostFavouritedSize = dataResult.result.mostFavouritedSize;
+    result.sectionRelativeSize = dataResult.result.sectionRelativeSize;
+
+    result.prevalentMood = dataResult.result.prevalentMood;
+    result.moodSad = dataResult.result.moodRatios[1];
+    result.moodNeutral = dataResult.result.moodRatios[2];
+    result.moodHappy = dataResult.result.moodRatios[3];
+
+    An<interfaces::GenreIndex> genreIndex;
+    for(size_t i = 0; i < dataResult.result.genreRatios.size(); i++)
+    {
+        const auto& genre =  genreIndex->genresByIndex[i];
+        result.genreFactors[genre.name] = dataResult.result.genreRatios[i];
+    }
+
+    for(auto fandom : dataResult.result.fandomRatios.keys())
+        result.fandomFactorsConverted[fandom] = dataResult.result.fandomRatios[fandom];
+    for(auto fandom : dataResult.fandomCounters.keys())
+        result.fandomsConverted[fandom] = dataResult.fandomCounters[fandom];
+
+    for(size_t i = 1; i < dataResult.result.sizeRatios.size(); i++)
+        result.sizeFactors[i] = dataResult.result.sizeRatios[i];
+}
+
+grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
+                                              const ProtoSpace::FavListDetailsRequest *task,
+                                              ProtoSpace::FavListDetailsResponse *response)
+{
+    Q_UNUSED(context);
+    QString userToken = QString::fromStdString(task->controls().user_token());
+    QLOG_INFO() << "////////////Received reclists task from: " << userToken;
+    QLOG_INFO() << "Verifying user token";
+    if(!VerifyUserToken(userToken))
+    {
+        SetTokenError(response->mutable_response_info());
+        QLOG_INFO() << "token error, exiting";
+        return Status::OK;
+    }
+    QLOG_INFO() << "Verifying request params";
+    if(!VerifyIDPack(task->id_packs()))
+    {
+        SetFicIDSyncDataError(response->mutable_response_info());
+        return Status::OK;
+    }
+    An<UserTokenizer> keeper;
+    auto safetyToken = keeper->GetToken(userToken);
+    if(!safetyToken)
+    {
+        SetTokenMatchError(response->mutable_response_info());
+        return Status::OK;
+    }
+    AddToRecStatistics(userToken);
+    DatabaseContext dbContext;
+
+    QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
+    fanficsInterface->db = dbContext.dbInterface->GetDatabase();
+
+    auto* recs = ThreadData::GetRecommendationData();
+
+    QHash<uint32_t, core::FicWeightPtr> fetchedFics;
+    QSet<int> sourceFics;
+    for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
+        sourceFics.insert(task->id_packs().ffn_ids(i));
+
+    if(sourceFics.size() == 0)
+        return Status::OK;
+
+    recs->sourceFics = sourceFics;
+    TimedAction action("Fic ids conversion",[&](){
+        fetchedFics = fanficsInterface->GetFicsForRecCreation();
+    });
+    action.run();
+    core::FicSectionStats result;
+
+    core::FicListDataAccumulator dataAccumulator;
+    auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    genresInterface->db = dbContext.dbInterface->GetDatabase();;
+    interfaces::GenreConverter conv;
+    An<interfaces::GenreIndex> genreIndex;
+    for(auto fic: fetchedFics)
+    {
+        fic->genres = conv.GetFFNGenreList(fic->genreString);
+        for(auto genre: fic->genres)
+        {
+            if(auto genreObject = genreIndex->GenreByName(genre); genreObject.isValid)
+            {
+                auto index = genreObject.indexInDatabase;
+                dataAccumulator.genreCounters[index]++;
+            }
+        }
+        dataAccumulator.AddFandoms(fic->fandoms);
+        dataAccumulator.AddFavourites(fic->favCount);
+        dataAccumulator.AddPublishDate(fic->published);
+        dataAccumulator.AddWordcount(fic->wordCount, fic->chapterCount);
+        dataAccumulator.slashCounter += fic->slash;
+        dataAccumulator.unfinishedCounter += !fic->complete;
+        dataAccumulator.matureCounter += fic->adult;
+    }
+    for(auto i = 0; i < 22; i++)
+    {
+        qDebug() << genreIndex->genresByIndex[i].name << " : " << dataAccumulator.genreCounters[i];
+    }
+    dataAccumulator.ProcessIntoResult();
+    AccumulatorIntoSectionStats(result, dataAccumulator);
+    response->set_success(true);
+    auto details = response->mutable_details();
+    proto_converters::FavListLocalToProto(result, details);
+    details->set_no_info(task->id_packs().ffn_ids_size() - fetchedFics.size());
     return Status::OK;
 }
 

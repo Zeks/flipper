@@ -23,11 +23,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDataStream>
 
 #include "include/core/section.h"
+#include "third_party/roaring/roaring.hh"
 
 namespace thread_boost{
 void LoadFicWeightCalcData(QString storage, QVector<core::FicWeightPtr>& fics);
 void LoadAuthorsData(QString storage,QList<core::AuthorPtr> &authors);
 void LoadFavouritesData(QString storage, QHash<int, QSet<int>>& favourites);
+void LoadFavouritesData(QString storage, QHash<int, Roaring>& favourites);
 void LoadGenreDataForFavLists(QString storage, QHash<int, std::array<double, 22> >& genreData);
 void LoadFandomDataForFavLists(QString storage, QHash<int, core::AuthorFavFandomStatsPtr>& fandomLists);
+
+
+void LoadData(QString storageFolder, QString fileName, QHash<int, Roaring>& );
+void LoadData(QString storageFolder, QString fileName, QHash<int, QSet<int>>& );
+void LoadData(QString storageFolder, QString fileName, QHash<int, std::array<double, 22> > &);
+void LoadData(QString storageFolder, QString fileName, QHash<int, core::AuthorFavFandomStatsPtr>& );
+void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& );
 }

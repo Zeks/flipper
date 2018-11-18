@@ -44,7 +44,9 @@ public:
     bool LoadAllFandoms(bool forced = false);
     QList<core::FandomPtr> LoadAllFandomsAfter(int id);
     virtual bool LoadFandom(QString name);
+    virtual bool LoadFandom(int id);
     virtual bool EnsureFandom(QString name);
+    bool EnsureFandom(int id);
     QSet<QString> EnsureFandoms(QList<core::FicPtr>);
     bool UploadFandomsIntoDatabase(QVector<core::Fandom>);
     bool RecalculateFandomStats(QStringList fandoms);
@@ -57,6 +59,7 @@ public:
     int GetLastFandomID();
 
     virtual int GetIDForName(QString) ;
+    virtual QString GetNameForID(int) ;
     virtual core::FandomPtr GetFandom(QString);
 
     virtual void SetLastUpdateDate(QString, QDate);

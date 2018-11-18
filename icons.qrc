@@ -38,5 +38,7 @@
         <file>icons/cross_red.png</file>
         <file>icons/clipboard_1.png</file>
         <file>icons/clipboard.png</file>
+        <file>icons/magnify.png</file>
+        <file>icons/magnify_res.png</file>
     </qresource>
 </RCC>

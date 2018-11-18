@@ -19,12 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/base.h"
 #include "core/section.h"
 #include "core/fic_genre_data.h"
+#include "GlobalHeaders/SingletonHolder.h"
 #include <QScopedPointer>
 #include <QSharedPointer>
 #include <QSqlDatabase>
 #include <QReadWriteLock>
 #include <QSet>
-
+#include <optional>
 
 namespace interfaces {
 
@@ -73,18 +74,61 @@ struct GenreConverter{
     static GenreConverter Instance();
 };
 
+enum EGenreCategory{
+    gc_none         = 0,
+    gc_funny        = 1,
+    gc_flirty       = 2,
+    gc_neutral      = 3,
+    gc_dramatic     = 4,
+    gc_shocky       = 5,
+    gc_hurty        = 6,
+    gc_bondy        = 7,
+};
+enum EMoodType{
+    mt_none = 0,
+    mt_sad = 1,
+    mt_neutral = 2,
+    mt_happy = 3
+};
+
+struct Genre{
+    bool isValid;
+    size_t indexInDatabase;
+    QString name;
+    QString nameInDatabase;
+    EMoodType moodType;
+    EGenreCategory genreCategory;
+};
+
+struct GenreIndex
+{
+    GenreIndex();
+    void Init();
+    void InitGenre(const Genre&  genre);
+    Genre& GenreByName(QString name);
+
+    QHash<QString, Genre> genresByName;
+    QHash<QString, Genre> genresByDbName;
+    QHash<size_t, Genre> genresByIndex;
+    QHash<int, QList<Genre>> genresByCategory;
+    QHash<int, QList<Genre>> genresByMood;
+    Genre nullGenre;
+};
+
+
 class Genres{
 public:
-    
+    Genres();
     bool IsGenreList(QStringList list);
     bool LoadGenres();
     genre_stats::FicGenreData GetGenreDataForFic(int id);
     QVector<genre_stats::FicGenreData> GetGenreDataForQueuedFics();
     void QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves);
     bool WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics);
+    std::optional<size_t> GetGenreIndex(QString genre);
 
+    GenreIndex index;
     QSqlDatabase db;
-
 private:
 
     QSet<QString> genres;
@@ -94,3 +138,4 @@ private:
 
 
 }
+BIND_TO_SELF_SINGLE(interfaces::GenreIndex);

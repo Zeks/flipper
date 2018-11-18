@@ -93,6 +93,8 @@ class Fanfics : public IDBWebIDIndex {
     // this uses preloaded fics from static data
     // to return an ID list for recommendations creator
     QSet<int> ConvertFFNSourceFicsToDB(QString userToken);
+    QHash<uint32_t, core::FicWeightPtr> GetFicsForRecCreation();
+
     bool ConvertFFNTaggedFicsToDB(QHash<int, int>& hash);
     bool ConvertDBFicsToFFN(QHash<int, int>& hash);
     void ResetActionQueue();
