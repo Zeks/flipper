@@ -242,6 +242,7 @@ private:
     QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
     QVector<int> PickFicIDsFromString(QString);
     void AnalyzeIdList(QVector<int>);
+    void AnalyzeCurrentFilter();
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
@@ -330,6 +331,7 @@ public slots:
     QList<QSharedPointer<core::Fic> > LoadFavourteLinksFromFFNProfile(QString);
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
+    void OnQMLAuthorToggled(QVariant);
 private slots:
 
     // used to receive tag events from tag widget on Tags tab

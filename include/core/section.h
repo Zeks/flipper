@@ -120,6 +120,7 @@ public:
     };
     bool isValid = false;
     int favourites = -1;
+    int noInfoCount = 0;
     int ficWordCount = 0;
 
     double averageWordsPerChapter = 0;
@@ -579,6 +580,7 @@ public:
     bool isValid =false;
     EFicSource ficSource = efs_search;
     QString authorName;
+    int author_id = -1;
     QSharedPointer<Author> author;
 
 

@@ -531,6 +531,7 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
     response->set_success(true);
     auto details = response->mutable_details();
     proto_converters::FavListLocalToProto(result, details);
+    details->set_no_info(task->id_packs().ffn_ids_size() - fetchedFics.size());
     return Status::OK;
 }
 

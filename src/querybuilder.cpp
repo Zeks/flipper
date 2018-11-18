@@ -177,6 +177,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
 
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
+    queryString+= ProcessAuthor(filter);
     queryString+= tagFilterBuilder->GetString(filter);
     queryString+= ignoredFandomsBuilder->GetString(filter);
     //queryString+= ProcessFandomIgnore(filter);
@@ -277,6 +278,15 @@ QString DefaultQueryBuilder::ProcessTags(StoryFilter)
     else
         result = " '' as tags , \n";
     return result;
+}
+
+QString DefaultQueryBuilder::ProcessAuthor(StoryFilter filter)
+{
+    QString result;
+    if(filter.useThisAuthor == -1)
+        return result;
+    result = QString(" and f.author_id = %1 ").arg(filter.useThisAuthor);
+
 }
 
 QString DefaultQueryBuilder::ProcessUrl(StoryFilter)

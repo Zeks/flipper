@@ -145,4 +145,5 @@ message Filter{
     bool use_implied_genre                      = 14;
     GenrePresence genre_presence_include        = 15;  
     GenrePresence genre_presence_exclude        = 16;
+    int32 use_this_author_only                  = 17;
 }

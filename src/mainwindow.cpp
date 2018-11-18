@@ -437,6 +437,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 17, 0, id);
     ADD_INTEGER_GETSET(holder, 18, 0, recommendations);
     ADD_STRING_GETSET(holder, 19, 0, realGenreString);
+    ADD_INTEGER_GETSET(holder, 20, 0, author_id);
 
 
     holder->AddFlagsFunctor(
@@ -464,7 +465,7 @@ void MainWindow::SetupFanficTable()
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendations" << "realGenres");
+                       << "recommendations" << "realGenres" << "author_id");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -502,6 +503,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
+    connect(childObject, SIGNAL(authorToggled(QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant)));
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
@@ -799,17 +801,7 @@ void MainWindow::on_pbLoadDatabase_clicked()
         LoadData();
         PlaceResults();
     }
-    QString result;
-    for(int i = 0; i < typetableModel->rowCount(); i ++)
-    {
-        if(ui->chkInfoForLinks->isChecked())
-        {
-            result += typetableModel->index(i, 2).data().toString() + "\n";
-        }
-        result += "https://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
-    }
-    auto ids = PickFicIDsFromString(result);
-    AnalyzeIdList(ids);
+    AnalyzeCurrentFilter();
 }
 
 void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
@@ -897,6 +889,22 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
         ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
     else if(list.size() > 1)
         ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
+}
+
+void MainWindow::OnQMLAuthorToggled(QVariant var)
+{
+    auto fanficsInterface = env.interfaces.fanfics;
+
+    int rownum = var.toInt();
+
+    QModelIndex index = typetableModel->index(rownum, 0);
+    auto data = index.data(static_cast<int>(FicModel::AuthorIdRole)).toInt();
+
+    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+    env.filter.useThisAuthor = data;
+    LoadData();
+    AnalyzeCurrentFilter();
+
 }
 
 
@@ -1482,7 +1490,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.includeCrossovers = !ui->chkNonCrossovers->isChecked();
     //chkNonCrossovers
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
-    filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
+//    /filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
@@ -1978,6 +1986,8 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
 
     ui->edtAnalysisResults->insertHtml("Analysis complete.<br>");
     ui->edtAnalysisResults->insertHtml(QString("Fics in the list: <font color=blue>%1</font><br>").arg(QString::number(stats.favourites)));
+    if(stats.noInfoCount > 0)
+        ui->edtAnalysisResults->insertHtml(QString("No info in DB for: <font color=blue>%1</font><br>").arg(QString::number(stats.noInfoCount)));
     ui->edtAnalysisResults->insertHtml(QString("Total count of words: <font color=blue>%1</font><br>").arg(QString::number(stats.ficWordCount)));
     ui->edtAnalysisResults->insertHtml(QString("Average words per chapter: <font color=blue>%1</font><br>").arg(QString::number(stats.averageWordsPerChapter)));
     ui->edtAnalysisResults->insertHtml(QString("Average words per fic: <font color=blue>%1</font><br>").arg(QString::number(stats.averageLength)));
@@ -2072,6 +2082,21 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
         tmp=tmp.arg(fandoms[i].name).arg(QString::number(fandoms[i].value));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
+}
+
+void MainWindow::AnalyzeCurrentFilter()
+{
+    QString result;
+    for(int i = 0; i < typetableModel->rowCount(); i ++)
+    {
+        if(ui->chkInfoForLinks->isChecked())
+        {
+            result += typetableModel->index(i, 2).data().toString() + "\n";
+        }
+        result += "https://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
+    }
+    auto ids = PickFicIDsFromString(result);
+    AnalyzeIdList(ids);
 }
 
 void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)

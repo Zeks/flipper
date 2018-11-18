@@ -100,6 +100,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     result.set_rating(static_cast<ProtoSpace::Filter::RatingFilter>(filter.rating));
     result.set_genre_presence_include(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForInclude));
     result.set_genre_presence_exclude(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForExclude));
+    result.set_use_this_author_only(filter.useThisAuthor);
 
 
     auto* sizeLimits = result.mutable_size_limits();
@@ -227,6 +228,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     result.recentAndPopularFavRatio = filter.recent_and_popular().fav_ratio();
     result.recentCutoff = DFS(filter.recent_and_popular().date_cutoff());
+    result.useThisAuthor = filter.use_this_author_only();
 
     result.fandom = filter.content_filter().fandom();
     result.includeCrossovers = filter.content_filter().include_crossovers();
@@ -358,6 +360,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
 
     coreFic.author = core::Author::NewAuthor();
     coreFic.author->name = FS(protoFic.author());
+    coreFic.author_id = protoFic.author_id();
 
     for(int i = 0; i < protoFic.fandoms_size(); i++)
         coreFic.fandoms.push_back(FS(protoFic.fandoms(i)));
@@ -410,6 +413,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     protoFic->set_language(TS(coreFic.language));
     protoFic->set_genres(TS(coreFic.genreString));
     protoFic->set_author(TS(coreFic.author->name));
+    protoFic->set_author_id(coreFic.author_id);
 
     protoFic->set_published(DTS(coreFic.published));
     protoFic->set_updated(DTS(coreFic.updated));
@@ -462,6 +466,7 @@ bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::Fic
     stats.moodSad = protoStats.mood_rating(0);
     stats.moodNeutral = protoStats.mood_rating(1);
     stats.moodHappy = protoStats.mood_rating(2);
+    stats.noInfoCount = protoStats.no_info();
 
     for(auto i = 0; i< protoStats.size_rating_size(); i++)
         stats.sizeFactors[i] = protoStats.size_rating(i);

@@ -49,4 +49,5 @@ message FavListDetails{
     repeated int32 fandoms                          = 23;
     repeated int32 fandoms_counts                   = 24;
     
+    int32 no_info                                   = 25;    
 }

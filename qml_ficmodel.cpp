@@ -75,6 +75,11 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return QString("");
         if(role == RealGenreRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toString().split(",", QString::SkipEmptyParts);
+        if(role == AuthorIdRole)
+        {
+            auto value = AdaptingTableModel::data(index.sibling(index.row(), 20), Qt::DisplayRole).toInt();
+            return AdaptingTableModel::data(index.sibling(index.row(), 20), Qt::DisplayRole).toInt();
+        }
 //        if(role == FicIdRole)
 //            return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toInt();
         if(role == CurrentChapterRole)
@@ -99,6 +104,7 @@ FicModel::FicModel(QObject *parent) : AdaptingTableModel(parent)
 QHash<int, QByteArray> FicModel::roleNames() const {
     QHash<int, QByteArray> roles;
     roles[AuthorRole] = "author";
+    roles[AuthorIdRole] = "author_id";
     roles[FandomRole] = "fandom";
     roles[TitleRole] = "title";
     roles[SummaryRole] = "summary";

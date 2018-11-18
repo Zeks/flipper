@@ -77,6 +77,7 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     for(auto id: q.value("FANDOMIDS").toString().split("&"))
         result.fandomIds.push_back(id.toInt());
     result.author = core::Author::NewAuthor();
+    result.author_id = q.value("AUTHOR_ID").toInt();;
     result.author->name = q.value("AUTHOR").toString();
     result.title = q.value("TITLE").toString();
     result.summary = q.value("SUMMARY").toString();

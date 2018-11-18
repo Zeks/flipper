@@ -177,16 +177,17 @@ void AdaptingTableModel::OnReloadDataFromInterface()
 {
     // Bouml preserved body begin 0021702A
     Q_D(AdaptingTableModel);
-    beginResetModel();
-    qDebug() << "previous rowCount: " << d->interface->PreviousRowCount() ;
-    if(d->interface->PreviousRowCount() != 0)
-    {
-        int removeLimit = d->interface->PreviousRowCount() == 0 ? 0 : d->interface->PreviousRowCount()- 1;
-        qDebug() << "Removing rowCount: " << removeLimit;
-        beginRemoveRows(QModelIndex(), 0, removeLimit);
-        endRemoveRows();
-    }
-    endResetModel();
+//    beginResetModel();
+//    qDebug() << "previous rowCount: " << d->interface->PreviousRowCount() ;
+//    if(d->interface->PreviousRowCount() != 0)
+//    {
+//        int removeLimit = d->interface->PreviousRowCount() == 0
+//                ? 0 : d->interface->PreviousRowCount()- 1;
+//        qDebug() << "Removing rowCount: " << removeLimit;
+//        beginRemoveRows(QModelIndex(), 0, removeLimit);
+//        endRemoveRows();
+//    }
+//    endResetModel();
     beginResetModel();
     int lastRow = d->interface->rowCount() - 1;
     qDebug() << QString("New last row: ") << QString::number(lastRow);

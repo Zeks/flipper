@@ -74,4 +74,5 @@ message Fanfic{
     SitePack site_pack              = 22;
     repeated GenreData real_genres  = 23;
     SlashData slash_data            = 24; 
+    int32 author_id                 = 25; 
 }

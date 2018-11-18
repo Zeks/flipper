@@ -221,6 +221,8 @@ Rectangle {
                 }
             }
 
+
+
             Rectangle {
                 id: lvFandoms
                 width: 300
@@ -244,6 +246,32 @@ Rectangle {
                         }
                     }
                 }
+            }
+            Image {
+                id: imgMagnify
+                width: 24
+                height: 24
+                source: "qrc:/icons/icons/magnify_res.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        lvFics.authorToggled(index);
+                    }
+                }
+            }
+            Text {
+                id: txtAuthor
+                width: 517
+                height: 21
+                textFormat: Text.RichText;
+                text: " <html><style>a:link{ color: 	#99853F33      ;}</style><a href=\"http://www.fanfiction.net/u/" +  author_id.toString() + "\">" +"By: " + author + "</a></body></html>"
+                verticalAlignment: Text.AlignVCenter
+                style: Text.Raised
+                font.pointSize: 12
+                font.family: "Verdana"
+                font.bold: false
+                onLinkActivated: Qt.openUrlExternally(link)
             }
 
             Text {
