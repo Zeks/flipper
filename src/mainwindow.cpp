@@ -95,7 +95,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/recommendation_lists.h"
 #include "Interfaces/tags.h"
 #include "Interfaces/genres.h"
-
+template <typename T>
+struct SortedBit{
+    T value;
+    QString name;
+};
 struct TaskProgressGuard
 {
     TaskProgressGuard(MainWindow* w){
@@ -795,6 +799,17 @@ void MainWindow::on_pbLoadDatabase_clicked()
         LoadData();
         PlaceResults();
     }
+    QString result;
+    for(int i = 0; i < typetableModel->rowCount(); i ++)
+    {
+        if(ui->chkInfoForLinks->isChecked())
+        {
+            result += typetableModel->index(i, 2).data().toString() + "\n";
+        }
+        result += "https://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
+    }
+    auto ids = PickFicIDsFromString(result);
+    AnalyzeIdList(ids);
 }
 
 void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
@@ -1926,8 +1941,13 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
 
 QVector<int> MainWindow::PickFicIDsFromTextBrowser(QTextBrowser * edit)
 {
+    return PickFicIDsFromString(edit->toPlainText());
+}
+
+QVector<int> MainWindow::PickFicIDsFromString(QString str)
+{
     QVector<int> sourceFics;
-    QStringList lines = edit->toPlainText().split("\n");
+    QStringList lines = str.split("\n");
     QRegularExpression rx("https://www.fanfiction.net/s/(\\d+)");
     for(auto line : lines)
     {
@@ -1940,6 +1960,115 @@ QVector<int> MainWindow::PickFicIDsFromTextBrowser(QTextBrowser * edit)
         sourceFics.push_back(val.toInt());
     }
     return sourceFics;
+}
+
+void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
+{
+    ui->edtAnalysisResults->clear();
+    ui->edtAnalysisSources->setReadOnly(false);
+    auto stats = env.GetStatsForFicList(ficIDs);
+    if(!stats.isValid)
+    {
+        QMessageBox::warning(nullptr, "Warning!", "Could not analyze the list.");
+        return;
+    }
+
+    ui->edtAnalysisResults->insertHtml("Analysis complete.<br>");
+    ui->edtAnalysisResults->insertHtml(QString("Fics in the list: <font color=blue>%1</font><br>").arg(QString::number(stats.favourites)));
+    ui->edtAnalysisResults->insertHtml(QString("Total count of words: <font color=blue>%1</font><br>").arg(QString::number(stats.ficWordCount)));
+    ui->edtAnalysisResults->insertHtml(QString("Average words per chapter: <font color=blue>%1</font><br>").arg(QString::number(stats.averageWordsPerChapter)));
+    ui->edtAnalysisResults->insertHtml(QString("Average words per fic: <font color=blue>%1</font><br>").arg(QString::number(stats.averageLength)));
+    ui->edtAnalysisResults->insertHtml("<br>");
+    ui->edtAnalysisResults->insertHtml(QString("First published fic: <font color=blue>%1</font><br>")
+                                       .arg(stats.firstPublished.toString("yyyy-MM-dd")));
+    ui->edtAnalysisResults->insertHtml(QString("Last published fic: <font color=blue>%1</font><br>")
+                                       .arg(stats.lastPublished.toString("yyyy-MM-dd")));
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+    ui->edtAnalysisResults->insertHtml(QString("Slash content%: <font color=blue>%1</font><br>").arg(QString::number(stats.slashRatio*100)));
+    //ui->edtAnalysisResults->insertHtml(QString("Mature content%: <font color=blue>%1</font><br>").arg(QString::number(stats.esrbMature*100)));
+
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+
+    QVector<SortedBit<double>> sizes = {{stats.sizeFactors[0], "Small"},
+                                        {stats.sizeFactors[1], "Medium"},
+                                        {stats.sizeFactors[2], "Large"},
+                                        {stats.sizeFactors[3], "Huge"}};
+    ui->edtAnalysisResults->insertHtml("Sizes%:<br>");
+    QString sizeTemplate = "%1: <font color=blue>%2</font>";
+    std::sort(std::begin(sizes), std::end(sizes), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
+        return m1.value > m2.value;
+    });
+    for(auto size : sizes)
+    {
+        QString tmp = sizeTemplate;
+        tmp=tmp.arg(size.name).arg(QString::number(size.value*100));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+
+
+    ui->edtAnalysisResults->insertHtml(QString("Mood uniformity: <font color=blue>%1</font><br>").arg(QString::number(stats.moodUniformity)));
+    ui->edtAnalysisResults->insertHtml("Mood content%:<br>");
+
+    QString moodTemplate = "%1: <font color=blue>%2</font>";
+
+    QVector<SortedBit<double>> moodsVec = {{stats.moodSad,  "sad"},{stats.moodNeutral, "neutral"},{stats.moodHappy, "happy"}};
+    std::sort(std::begin(moodsVec), std::end(moodsVec), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
+        return m1.value > m2.value;
+    });
+    for(auto mood : moodsVec)
+    {
+        QString tmp = moodTemplate;
+        tmp=tmp.arg(mood.name.rightJustified(8)).arg(QString::number(mood.value*100));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+    QVector<SortedBit<double>> genres;
+    for(auto genreKey : stats.genreFactors.keys())
+        genres.push_back({stats.genreFactors[genreKey],genreKey});
+    std::sort(std::begin(genres), std::end(genres), [](const SortedBit<double>& g1,const SortedBit<double>& g2){
+        return g1.value > g2.value;
+    });
+    QString genreTemplate = "%1: <font color=blue>%2</font>";
+
+
+    ui->edtAnalysisResults->insertHtml(QString("Genre diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.genreDiversityFactor)));
+    ui->edtAnalysisResults->insertHtml("Genres%:<br>");
+    for(int i = 0; i < 10; i++)
+    {
+        QString tmp = genreTemplate;
+        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value*100));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
+    ui->edtAnalysisResults->insertHtml("<br>");
+
+
+
+    ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
+    ui->edtAnalysisResults->insertHtml("Fandoms:<br>");
+    QVector<SortedBit<int>> fandoms;
+    for(auto id : stats.fandomsConverted.keys())
+    {
+        QString name = env.interfaces.fandoms->GetNameForID(id);
+        int count = stats.fandomsConverted[id];
+        fandoms.push_back({count, name});
+    }
+    std::sort(std::begin(fandoms), std::end(fandoms), [](const SortedBit<int>& g1,const SortedBit<int>& g2){
+        return g1.value > g2.value;
+    });
+    QString fandomTemplate = "%1: <font color=blue>%2</font>";
+    for(int i = 0; i < 20; i++)
+    {
+        QString tmp = fandomTemplate;
+        if(i >= fandoms.size())
+            break;
+        tmp=tmp.arg(fandoms[i].name).arg(QString::number(fandoms[i].value));
+        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
+    }
 }
 
 void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
@@ -2129,15 +2258,10 @@ void MainWindow::on_pbLoadUrlForAnalysis_clicked()
 {
     LoadFFNProfileIntoTextBrowser(ui->edtAnalysisSources, ui->leFFNProfileLoad);
 }
-template <typename T>
-struct SortedBit{
-    T value;
-    QString name;
-};
+
 void MainWindow::on_pbAnalyzeListOfFics_clicked()
 {
-    ui->edtAnalysisResults->clear();
-    ui->edtAnalysisSources->setReadOnly(false);
+
     auto ficIDs = PickFicIDsFromTextBrowser(ui->edtAnalysisSources);
     if(ficIDs.size() == 0)
     {
@@ -2146,108 +2270,6 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
                                                   "or drop a bunch of FFN URLs below.");
         return;
     }
-    auto stats = env.GetStatsForFicList(ficIDs);
-    if(!stats.isValid)
-    {
-        QMessageBox::warning(nullptr, "Warning!", "Could not analyze the list.");
-        return;
-    }
-
-    ui->edtAnalysisResults->insertHtml("Analysis complete.<br>");
-    ui->edtAnalysisResults->insertHtml(QString("Fics in the list: <font color=blue>%1</font><br>").arg(QString::number(stats.favourites)));
-    ui->edtAnalysisResults->insertHtml(QString("Total count of words: <font color=blue>%1</font><br>").arg(QString::number(stats.ficWordCount)));
-    ui->edtAnalysisResults->insertHtml(QString("Average words per chapter: <font color=blue>%1</font><br>").arg(QString::number(stats.averageWordsPerChapter)));
-    ui->edtAnalysisResults->insertHtml(QString("Average words per fic: <font color=blue>%1</font><br>").arg(QString::number(stats.averageLength)));
-    ui->edtAnalysisResults->insertHtml("<br>");
-    ui->edtAnalysisResults->insertHtml(QString("First published fic: <font color=blue>%1</font><br>")
-                                       .arg(stats.firstPublished.toString("yyyy-MM-dd")));
-    ui->edtAnalysisResults->insertHtml(QString("Last published fic: <font color=blue>%1</font><br>")
-                                       .arg(stats.lastPublished.toString("yyyy-MM-dd")));
-    ui->edtAnalysisResults->insertHtml("<br>");
-
-    ui->edtAnalysisResults->insertHtml(QString("Slash content%: <font color=blue>%1</font><br>").arg(QString::number(stats.slashRatio*100)));
-    //ui->edtAnalysisResults->insertHtml(QString("Mature content%: <font color=blue>%1</font><br>").arg(QString::number(stats.esrbMature*100)));
-
-    ui->edtAnalysisResults->insertHtml("<br>");
-
-
-    QVector<SortedBit<double>> sizes = {{stats.sizeFactors[0], "Small"},
-                                        {stats.sizeFactors[1], "Medium"},
-                                        {stats.sizeFactors[2], "Large"},
-                                        {stats.sizeFactors[3], "Huge"}};
-    ui->edtAnalysisResults->insertHtml("Sizes%:<br>");
-    QString sizeTemplate = "%1: <font color=blue>%2</font>";
-    std::sort(std::begin(sizes), std::end(sizes), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
-        return m1.value > m2.value;
-    });
-    for(auto size : sizes)
-    {
-        QString tmp = sizeTemplate;
-        tmp=tmp.arg(size.name).arg(QString::number(size.value*100));
-        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
-    }
-    ui->edtAnalysisResults->insertHtml("<br>");
-
-
-
-    ui->edtAnalysisResults->insertHtml(QString("Mood uniformity: <font color=blue>%1</font><br>").arg(QString::number(stats.moodUniformity)));
-    ui->edtAnalysisResults->insertHtml("Mood content%:<br>");
-
-    QString moodTemplate = "%1: <font color=blue>%2</font>";
-
-    QVector<SortedBit<double>> moodsVec = {{stats.moodSad,  "sad"},{stats.moodNeutral, "neutral"},{stats.moodHappy, "happy"}};
-    std::sort(std::begin(moodsVec), std::end(moodsVec), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
-        return m1.value > m2.value;
-    });
-    for(auto mood : moodsVec)
-    {
-        QString tmp = moodTemplate;
-        tmp=tmp.arg(mood.name.rightJustified(8)).arg(QString::number(mood.value*100));
-        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
-    }
-    ui->edtAnalysisResults->insertHtml("<br>");
-
-    QVector<SortedBit<double>> genres;
-    for(auto genreKey : stats.genreFactors.keys())
-        genres.push_back({stats.genreFactors[genreKey],genreKey});
-    std::sort(std::begin(genres), std::end(genres), [](const SortedBit<double>& g1,const SortedBit<double>& g2){
-        return g1.value > g2.value;
-    });
-    QString genreTemplate = "%1: <font color=blue>%2</font>";
-
-
-    ui->edtAnalysisResults->insertHtml(QString("Genre diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.genreDiversityFactor)));
-    ui->edtAnalysisResults->insertHtml("Genres%:<br>");
-    for(int i = 0; i < 10; i++)
-    {
-        QString tmp = genreTemplate;
-        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value*100));
-        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
-    }
-    ui->edtAnalysisResults->insertHtml("<br>");
-
-
-
-    ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
-    ui->edtAnalysisResults->insertHtml("Fandoms:<br>");
-    QVector<SortedBit<int>> fandoms;
-    for(auto id : stats.fandomsConverted.keys())
-    {
-        QString name = env.interfaces.fandoms->GetNameForID(id);
-        int count = stats.fandomsConverted[id];
-        fandoms.push_back({count, name});
-    }
-    std::sort(std::begin(fandoms), std::end(fandoms), [](const SortedBit<int>& g1,const SortedBit<int>& g2){
-        return g1.value > g2.value;
-    });
-    QString fandomTemplate = "%1: <font color=blue>%2</font>";
-    for(int i = 0; i < 20; i++)
-    {
-        QString tmp = fandomTemplate;
-        if(i >= fandoms.size())
-            break;
-        tmp=tmp.arg(fandoms[i].name).arg(QString::number(fandoms[i].value));
-        ui->edtAnalysisResults->insertHtml(tmp + "<br>");
-    }
+    AnalyzeIdList(ficIDs);
 
 }

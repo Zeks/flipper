@@ -59,7 +59,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             }
         }
 
-    queryString+=" from vFanfics f where   " ;
+    queryString+=" from vFanfics f " ;
 
     QString where = CreateWhere(filter);
 
@@ -110,7 +110,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
         }
 
         if(!filter.randomizeResults)
-            queryString += where;
+            queryString += " where " + where;
         else
         {
             auto match = rx.match(randomizer);
@@ -119,7 +119,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
                 qDebug() << "FOUND MATCH";
                 randomizer = randomizer.mid(match.captured().length());
             }
-            queryString += randomizer;
+            queryString +=  " where " + randomizer;
         }
         if(createLimits)
             queryString += BuildSortMode(filter);
@@ -140,6 +140,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     queryString.replace(" fid)", " f.id)");
     queryString.replace("(fid", "(f.id");
     qDebug().noquote() << query->str;
+
+
     return query;
 }
 

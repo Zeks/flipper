@@ -240,6 +240,8 @@ private:
     void DetectSlashSearchState();
     void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit);
     QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
+    QVector<int> PickFicIDsFromString(QString);
+    void AnalyzeIdList(QVector<int>);
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
