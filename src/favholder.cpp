@@ -102,9 +102,9 @@ void RecCalculator::SaveFavouritesData()
 }
 
 
-double quadratic_coef(double ratio, double median, double sigma, int base, int scaler)
+double quadratic_coef(double ratio, double median, double calcBase, double sigma, int base, int scaler)
 {
-    auto  distanceFromMedian = median - ratio;
+    auto  distanceFromMedian = (median - calcBase) - ratio;
     if(distanceFromMedian < 0)
         return 0;
     double tau = distanceFromMedian/sigma;
@@ -255,18 +255,18 @@ public:
         {
             result.authorType = AuthorWeightingResult::EAuthorType::unique;
             counter2Sigma++;
-            result.value = quadratic_coef(author.ratio,ratioMedian,2*quad,authorSize/10, authorSize/20);
+            result.value = quadratic_coef(author.ratio,ratioMedian, 2*quad, 2*quad, authorSize/10, authorSize/20);
         }
         else if(gtSigma17)
         {
             result.authorType = AuthorWeightingResult::EAuthorType::rare;
             counter17Sigma++;
-            result.value  = quadratic_coef(author.ratio,ratioMedian, 1.7*quad,authorSize/20, authorSize/40);
+            result.value  = quadratic_coef(author.ratio,ratioMedian, 1.7*quad, 2*quad - 1.7*quad,authorSize/20, authorSize/40);
         }
         else if(gtSigma)
         {
             result.authorType = AuthorWeightingResult::EAuthorType::uncommon;
-            result.value  = quadratic_coef(author.ratio,ratioMedian, quad, 1, 5);
+            result.value  = quadratic_coef(author.ratio, ratioMedian, quad, 1.7*quad - quad, 1, 5);
         }
         else
             result.authorType = AuthorWeightingResult::EAuthorType::common;
