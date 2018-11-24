@@ -3068,6 +3068,57 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
     return ctx.result;
 }
 
+//alter table RecommendationListData add column votes_common integer default 0;
+//alter table RecommendationListData add column votes_rare integer default 0;
+//alter table RecommendationListData add column votes_unique integer default 0;
+
+//alter table RecommendationListData add column value_common integer default 0;
+//alter table RecommendationListData add column value_rare integer default 0;
+//alter table RecommendationListData add column value_unique integer default 0;
+
+//alter table RecommendationListData add column breakdown_available integer default 0;
+
+
+DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
+                                             QSqlDatabase db)
+{
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin, "
+                         "breakdown_available,"
+                         "votes_common, votes_rare, votes_unique, "
+                         "value_common, value_rare, value_unique) "
+                         "values(:listId, :ficId, :matchCount, :is_origin,"
+                         ":breakdown_available,"
+                         ":votes_common, :votes_rare, :votes_unique, "
+                         ":value_common, :value_rare, :value_unique)");
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("listId", list->id);
+    for(int i = 0; i < list->ficData.fics.size(); i++)
+    {
+        int ficId = list->ficData.fics.at(i);
+        ctx.bindValue("ficId", ficId);
+        ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
+        bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
+        ctx.bindValue("is_origin", isOrigin);
+        ctx.bindValue("breakdown_available", true);
+
+        ctx.bindValue("votes_common", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::common]);
+        ctx.bindValue("votes_rare", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::rare]);
+        ctx.bindValue("votes_unique", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::unique]);
+
+        ctx.bindValue("value_common", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::common]);
+        ctx.bindValue("value_rare", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::rare]);
+        ctx.bindValue("value_unique", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::unique]);
+
+        if(!ctx.ExecAndCheck())
+        {
+            ctx.result.success = false;
+            break;
+        }
+    }
+    return ctx.result;
+}
+
 DiagnosticSQLResult<QString> GetUserToken(QSqlDatabase db)
 {
     QString qs = QString("Select value from user_settings where name = 'db_uuid'");

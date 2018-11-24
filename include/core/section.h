@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSet>
 #include <array>
 #include "core/fic_genre_data.h"
+#include "reclist_author_result.h"
 namespace core {
 
 class DBEntity{
@@ -552,6 +553,7 @@ public:
     int id = -1;
     bool isEnglish = true;
     int minSlashPass = 0;
+    QList<int> voteBreakdown;
 
     QString wordCount;
     QString chapters;
@@ -795,6 +797,17 @@ struct FicRecommendation
 class RecommendationList;
 typedef QSharedPointer<RecommendationList> RecPtr;
 
+struct RecommendationListFicData
+{
+    int id = -1;
+    QSet<int> sourceFics;
+    QVector<int> fics;
+    QVector<int> matchCounts;
+    QVector<int> authorIds;
+    QHash<int, int> matchReport;
+    QHash<int, core::MatchBreakdown> breakdowns;
+};
+
 
 class RecommendationList : public DBEntity{
 public:
@@ -809,7 +822,10 @@ public:
     double pickRatio = -1;
     bool useWeighting = false;
     QDateTime created;
+    RecommendationListFicData ficData;
 };
+
+
 
 }
 Q_DECLARE_METATYPE(core::AuthorPtr);

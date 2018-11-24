@@ -61,6 +61,7 @@ public:
     bool LoadListFromServerIntoDatabase(int listId,
                                         const QVector<int>& fics,
                                         const QVector<int>& matches, const QSet<int> &origins);
+    bool LoadListFromServerIntoDatabase(QSharedPointer<core::RecommendationList> list);
 
 
 

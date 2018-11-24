@@ -81,10 +81,9 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 20), Qt::DisplayRole).toInt();
         }
         if(role == SlashRole)
-        {
-            qDebug() << "slash data: " << AdaptingTableModel::data(index.sibling(index.row(), 21), Qt::DisplayRole).toInt();
             return AdaptingTableModel::data(index.sibling(index.row(), 21), Qt::DisplayRole).toInt();
-        }
+        if(role == BreakdownRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 22), Qt::DisplayRole).toList();
 
         if(role == CurrentChapterRole)
             return QString("");
@@ -133,6 +132,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[RecommendationsRole] = "recommendations";
     roles[RealGenreRole] = "realGenre";
     roles[SlashRole] = "minSlashLevel";
+    roles[BreakdownRole] = "roleBreakdown";
     return roles;
 }
 

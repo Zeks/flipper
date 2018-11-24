@@ -375,6 +375,12 @@ bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
     result = result && database::puresql::FillFicDataForList(listId, fics, matches, origins, db).success;
     return result;
 }
+bool RecommendationLists::LoadListFromServerIntoDatabase(QSharedPointer<core::RecommendationList> list)
+{
+    bool result = true;
+    result = result && database::puresql::FillFicDataForList(list, db).success;
+    return result;
+}
 
 bool RecommendationLists::UpdateFicCountInDatabase(int listId)
 {

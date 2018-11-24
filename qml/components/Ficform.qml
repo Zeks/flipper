@@ -1,7 +1,8 @@
 import QtQuick 2.5
-import QtQuick.Controls 1.4
+import QtQuick.Controls 2.4
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
+import QtCharts 2.0
 
 import "Funcs.js" as Funcs
 Rectangle {
@@ -39,31 +40,18 @@ Rectangle {
         id: tbAddGenre
         width: 16
         height: 16
-        iconSource: "qrc:/icons/icons/add.png"
+        //icon: "qrc:/icons/icons/add.png"
         enabled:false
         visible:false
+        Image {
+                id: imgGenreAdd
+                fillMode: Image.PreserveAspectFit
+                anchors.centerIn: parent
+                sourceSize.height: tbAddGenre.background.height - 6
+                height: sourceSize.height
+                source: "qrc:/icons/icons/add.png"
+            }
 
-    }
-
-    Column {
-        id: colControl
-        x: 120
-        y: 118
-
-        ToolButton {
-            id: tbTrack
-            enabled:false
-        }
-
-        ToolButton {
-            id: tbHide
-            enabled:false
-        }
-
-        ToolButton {
-            id: tbUpdate
-            enabled:false
-        }
     }
 
     Column {
@@ -372,20 +360,37 @@ Rectangle {
 
             Image {
                 id: imgRecommendations
-                //property int _MS_PER_DAY: 1000 * 60 * 60 * 24;
                 width: recommendations > 0 ? 20 : 0
                 height: 24
                 sourceSize.height: 24
                 sourceSize.width: 24
                 visible: recommendations > 0
                 source: "qrc:/icons/icons/heart.png"
+                Image{
+                    id: imgRecommendationsBreakdown
+                    visible: maRecs.containsMouse
+                    y: imgRecommendations.y - 20
+                    source: breakdownImage
+                }
+                BarSeries {
+                      id: mySeries
+                      axisX: BarCategoryAxis { categories: ["0", "1", "2"] }
+                      BarSet { values: favPercent[0] }
+                      BarSet { values: favPercent[1] }
+                      BarSet { values: favPercent[2] }
+                  }
                 MouseArea{
+                    id: maRecs
                     anchors.fill : parent
                     propagateComposedEvents : true
                     onClicked : {
                         lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
                     }
+                    onEntered: {
+
+                    }
                 }
+
             }
 
             Text {

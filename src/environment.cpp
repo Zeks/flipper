@@ -448,19 +448,22 @@ QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
     return sourceList;
 }
 
-int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,
+int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> list,
                                                      QVector<int> sourceFics,
                                                      bool automaticLike)
 {
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
-    RecommendationListGRPC list;
-    list.listParams = *params;
-    list.fics = sourceFics;
+
+
+    list->ficData.fics = sourceFics;
+
 
 
     database::Transaction transaction(interfaces.recs->db);
-    auto listId = interfaces.recs->GetListIdForName(params->name);
-    bool result = grpcSource->GetRecommendationListFromServer(list);
+    list->id = interfaces.recs->GetListIdForName(list->name);
+
+
+    bool result = grpcSource->GetRecommendationListFromServer(*list);
 
     QVector<core::IdPack> pack;
     pack.resize(sourceFics.size());
@@ -474,36 +477,35 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     QSet<int> sourceSet;
     sourceSet.reserve(sourceFics.size());
     for(auto id: pack)
-        sourceSet.insert(id.db);
+        list->ficData.sourceFics.insert(id.db);
+
+
 
     if(!result)
     {
         QLOG_ERROR() << "list creation failed";
         return -1;
     }
-    if(list.fics.size() == 0)
+    if(list->ficData.fics.size() == 0)
     {
         return -1;
     }
 
-    interfaces.recs->DeleteList(listId);
-    interfaces.recs->LoadListIntoDatabase(params);
-    qDebug() << list.fics;
-    interfaces.recs->LoadListFromServerIntoDatabase(params->id,
-                                                    list.fics,
-                                                    list.matchCounts,
-                                                    sourceSet);
+    interfaces.recs->DeleteList(list->id);
 
-    interfaces.recs->UpdateFicCountInDatabase(params->id);
-    interfaces.recs->SetCurrentRecommendationList(params->id);
+    interfaces.recs->LoadListIntoDatabase(list);
+    qDebug() << list->ficData.fics;
+    interfaces.recs->LoadListFromServerIntoDatabase(list);
+
+    interfaces.recs->UpdateFicCountInDatabase(list->id);
+    interfaces.recs->SetCurrentRecommendationList(list->id);
     emit resetEditorText();
-    auto keys = list.matchReport.keys();
+    auto keys = list->ficData.matchReport.keys();
     std::sort(keys.begin(), keys.end());
     emit updateInfo( QString("Matches: ") + QString("Times Found:") + "<br>");
     for(auto key: keys)
-    {
-        emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;") + " " + QString::number(list.matchReport[key]) + "<br>");
-    }
+        emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;")
+                        + " " + QString::number(list->ficData.matchReport[key]) + "<br>");
     if(automaticLike)
     {
         for(auto fic: sourceSet)
@@ -511,7 +513,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     }
 
     transaction.finalize();
-    return params->id;
+    return list->id;
 }
 
 core::FicSectionStats CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)

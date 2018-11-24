@@ -52,7 +52,8 @@ public:
         FicIdRole,
         AuthorIdRole,
         SlashRole,
-        EndRole = SlashRole
+        BreakdownRole,
+        EndRole = BreakdownRole
 
     };
 

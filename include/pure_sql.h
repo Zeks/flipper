@@ -291,6 +291,12 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
                                              const QSet<int> &origins,
                                              QSqlDatabase db);
 
+DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList>,
+                                             QSqlDatabase db);
+
+
+
+
 // potentially ethically problematic. better not do this
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int>&, QSqlDatabase db);
 

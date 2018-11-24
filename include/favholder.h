@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "threaded_data/threaded_save.h"
 #include "include/Interfaces/authors.h"
 #include "include/Interfaces/fanfics.h"
+#include "include/reclist_author_result.h"
 //namespace interfaces{
 //class Authors;
 //class Fanfics;
@@ -38,9 +39,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 namespace core{
 
+
 struct RecommendationListResult{
+    void AddToBreakdown(uint32_t fic, AuthorWeightingResult::EAuthorType type, double value){
+        if(!breakdowns.contains(fic))
+            breakdowns[fic].ficId = fic;
+        breakdowns[fic].AddAuthor(type, value);
+    }
     QHash<int, int> recommendations;
     QHash<int, int> matchReport;
+    QHash<uint32_t, MatchBreakdown> breakdowns;
 };
 
 enum ERecDataType

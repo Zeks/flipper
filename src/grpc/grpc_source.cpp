@@ -557,7 +557,7 @@ public:
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
     int GetFicCount(core::StoryFilter filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
-    bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
+    bool GetRecommendationListFromServer(core::RecommendationList &recList);
     void ProcessStandardError(grpc::Status status);
     core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
 
@@ -782,7 +782,7 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
     return true;
 }
 
-bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& recList)
+bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList& recList)
 {
     grpc::ClientContext context;
     ProtoSpace::RecommendationListCreationRequest task;
@@ -791,14 +791,14 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& 
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     auto* ffn = task.mutable_id_packs();
-    for(auto fic: recList.fics)
+    for(auto fic: recList.ficData.fics)
         ffn->add_ffn_ids(fic);
-    task.set_list_name(proto_converters::TS(recList.listParams.name));
-    task.set_always_pick_at(recList.listParams.alwaysPickAt);
+    task.set_list_name(proto_converters::TS(recList.name));
+    task.set_always_pick_at(recList.alwaysPickAt);
     task.set_return_sources(true);
-    task.set_min_fics_to_match(recList.listParams.minimumMatch);
-    task.set_max_unmatched_to_one_matched(static_cast<int>(recList.listParams.pickRatio));
-    task.set_use_weighting(recList.listParams.useWeighting);
+    task.set_min_fics_to_match(recList.minimumMatch);
+    task.set_max_unmatched_to_one_matched(static_cast<int>(recList.pickRatio));
+    task.set_use_weighting(recList.useWeighting);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
@@ -808,19 +808,35 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(RecommendationListGRPC& 
     if(!response->list().list_ready())
         return false;
 
-    recList.fics.clear();
-    recList.fics.reserve(response->list().fic_ids_size());
-    recList.matchCounts.reserve(response->list().fic_ids_size());
+    recList.ficData.fics.clear();
+    recList.ficData.fics.reserve(response->list().fic_ids_size());
+    recList.ficData.matchCounts.reserve(response->list().fic_ids_size());
     for(int i = 0; i < response->list().fic_ids_size(); i++)
     {
-        recList.fics.push_back(response->list().fic_ids(i));
-        recList.matchCounts.push_back(response->list().fic_matches(i));
+        recList.ficData.fics.push_back(response->list().fic_ids(i));
+        recList.ficData.matchCounts.push_back(response->list().fic_matches(i));
     }
     auto it = response->list().match_report().begin();
     while(it != response->list().match_report().end())
     {
-        recList.matchReport[it->first] = it->second;
+        recList.ficData.matchReport[it->first] = it->second;
         ++it;
+    }
+    using core::AuthorWeightingResult;
+    for(int i = 0; i < response->list().breakdowns_size(); i++)
+    {
+        auto ficid= response->list().breakdowns(i).id();
+        recList.ficData.breakdowns[ficid].ficId = ficid;
+        auto&  breakdown = recList.ficData.breakdowns[response->list().breakdowns(i).id()];
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
+                            response->list().breakdowns(i).counts_common(),
+                            response->list().breakdowns(i).votes_common());
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
+                            response->list().breakdowns(i).counts_rare(),
+                            response->list().breakdowns(i).votes_rare());
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::unique,
+                            response->list().breakdowns(i).counts_unique(),
+                            response->list().breakdowns(i).votes_unique());
     }
     return true;
 }
@@ -933,7 +949,7 @@ bool FicSourceGRPC::GetFandomListFromServer(int lastFandomID, QVector<core::Fand
     return impl->GetFandomListFromServer(lastFandomID, fandoms);
 }
 
-bool FicSourceGRPC::GetRecommendationListFromServer(RecommendationListGRPC &recList)
+bool FicSourceGRPC::GetRecommendationListFromServer(core::RecommendationList &recList)
 {
     if(!impl)
         return false;
