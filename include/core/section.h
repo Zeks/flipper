@@ -553,7 +553,7 @@ public:
     int id = -1;
     bool isEnglish = true;
     int minSlashPass = 0;
-    QList<int> voteBreakdown;
+    QStringList voteBreakdown;
 
     QString wordCount;
     QString chapters;

@@ -23,7 +23,7 @@ struct AuthorWeightingResult
     double GetCoefficient(){
         if(!isValid)
             return 1;
-        return value;
+        return 1 + value;
     }
     double value = 0;
     EAuthorType authorType;

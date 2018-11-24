@@ -102,6 +102,7 @@ void CoreEnvironment::LoadData()
     {
         interfaces.fandoms->FetchFandomsForFics(&newFanfics);
         interfaces.tags->FetchTagsForFics(&newFanfics);
+        interfaces.recs->FetchRecommendationsBreakdown(&newFanfics);
     }
     fanfics = newFanfics;
     currentLastFanficId = ficSource->lastFicId;

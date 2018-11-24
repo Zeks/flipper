@@ -791,8 +791,13 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     auto* ffn = task.mutable_id_packs();
+    //std::sort(std::begin(recList.ficData.fics), std::end(recList.ficData.fics));
+    //qDebug() << "Source fics  for list: ";
     for(auto fic: recList.ficData.fics)
+    {
+        //qDebug() << fic;
         ffn->add_ffn_ids(fic);
+    }
     task.set_list_name(proto_converters::TS(recList.name));
     task.set_always_pick_at(recList.alwaysPickAt);
     task.set_return_sources(true);
@@ -811,6 +816,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     recList.ficData.fics.clear();
     recList.ficData.fics.reserve(response->list().fic_ids_size());
     recList.ficData.matchCounts.reserve(response->list().fic_ids_size());
+
     for(int i = 0; i < response->list().fic_ids_size(); i++)
     {
         recList.ficData.fics.push_back(response->list().fic_ids(i));

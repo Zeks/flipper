@@ -413,12 +413,12 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     } \
     ); \
 
-#define ADD_INTLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
+#define ADD_STRINGLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
     [] (const core::Fic* data) \
 { \
     if(data) \
-    return QVariant::fromValue<QList<int>>(data->PARAM); \
+    return QVariant(data->PARAM); \
     else \
     return QVariant(); \
     } \
@@ -451,7 +451,7 @@ void MainWindow::SetupTableAccess()
     ADD_STRING_GETSET(holder, 19, 0, realGenreString);
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
     ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
-    ADD_INTLIST_GETTER(holder, 22, 0, voteBreakdown);
+    ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -478,7 +478,7 @@ void MainWindow::SetupFanficTable()
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel");
+                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel" << "roleBreakdown");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 

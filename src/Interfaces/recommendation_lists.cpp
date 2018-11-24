@@ -497,4 +497,12 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
     qSort(list.begin(), list.end());
     return list;
 }
+
+
+void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics)
+{
+    database::puresql::FetchRecommendationsBreakdown(fics, db);
+}
+
+
 }

@@ -58,7 +58,7 @@ Rectangle{
             height:rect.height
             visible: tagName === "Genre" && minSlashLevel > 0
             source: {
-                console.log("minSlashLevel is", minSlashLevel);
+                //console.log("minSlashLevel is", minSlashLevel);
                 if(minSlashLevel == 3)
                     return "qrc:/icons/icons/slash_uncertain.png"
                 if(minSlashLevel == 2)

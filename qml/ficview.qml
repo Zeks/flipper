@@ -1,6 +1,7 @@
 import QtQuick 2.10
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
+import QtCharts 2.2
 import "components"
 Rectangle {
     id:mainWindow
@@ -16,6 +17,34 @@ Rectangle {
     signal pageRequested(int page)
     signal backClicked()
     signal forwardClicked()
+
+    property bool chartDisplay: false
+    property int chartValueCommon: 100
+    property int chartValueRare: 100
+    property int chartValueUnique: 100
+
+    ChartView {
+        id: chartVotes
+         title: "Vote Distribution"
+        antialiasing: true
+        z: 100
+        width:300
+        height:300
+        margins.top: 0
+        margins.bottom: 0
+        margins.left: 0
+        margins.right: 0
+        //legend.visible: false
+        visible: mainWindow.chartDisplay
+        BarSeries {
+            labelsVisible :false
+
+            id: chrtBreakdown
+            BarSet {  label: "Closest"; values: [chartValueUnique] }
+            BarSet {  label: "Near"; values: [chartValueRare] }
+            BarSet {  label: "Average"; values: [chartValueCommon] }
+        }
+    }
 
 
     Rectangle{

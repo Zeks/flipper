@@ -44,13 +44,13 @@ Rectangle {
         enabled:false
         visible:false
         Image {
-                id: imgGenreAdd
-                fillMode: Image.PreserveAspectFit
-                anchors.centerIn: parent
-                sourceSize.height: tbAddGenre.background.height - 6
-                height: sourceSize.height
-                source: "qrc:/icons/icons/add.png"
-            }
+            id: imgGenreAdd
+            fillMode: Image.PreserveAspectFit
+            anchors.centerIn: parent
+            sourceSize.height: tbAddGenre.background.height - 6
+            height: sourceSize.height
+            source: "qrc:/icons/icons/add.png"
+        }
 
     }
 
@@ -364,33 +364,45 @@ Rectangle {
                 height: 24
                 sourceSize.height: 24
                 sourceSize.width: 24
+                property bool chartVisible: false
                 visible: recommendations > 0
                 source: "qrc:/icons/icons/heart.png"
-                Image{
-                    id: imgRecommendationsBreakdown
-                    visible: maRecs.containsMouse
-                    y: imgRecommendations.y - 20
-                    source: breakdownImage
-                }
-                BarSeries {
-                      id: mySeries
-                      axisX: BarCategoryAxis { categories: ["0", "1", "2"] }
-                      BarSet { values: favPercent[0] }
-                      BarSet { values: favPercent[1] }
-                      BarSet { values: favPercent[2] }
-                  }
                 MouseArea{
                     id: maRecs
+                    hoverEnabled :true
                     anchors.fill : parent
                     propagateComposedEvents : true
                     onClicked : {
                         lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
+                        console.log("Clicked heart icon")
                     }
                     onEntered: {
 
+                        mainWindow.chartValueCommon = parseInt(roleBreakdown[0],10)
+                        mainWindow.chartValueRare= parseInt(roleBreakdown[1],10)
+                        mainWindow.chartValueUnique= parseInt(roleBreakdown[2],10)
+//                        console.log(maRecs.mouseX)
+//                        console.log(maRecs.mouseY)
+                        var point = imgRecommendations.mapToGlobal(maRecs.mouseX,maRecs.mouseY)
+                        var mappedPoint = mainWindow.mapFromGlobal(point.x,point.y)
+
+                        //console.log("Mapped Y: ", imgRecommendations.mapToItem(mainWindow,0,0).y)
+                        if(imgRecommendations.mapToItem(mainWindow,0,0).y > mainWindow.height/2)
+                        {
+                            mappedPoint.y = mappedPoint.y - 300
+                        }
+                        chartVotes.x = mappedPoint.x
+                        chartVotes.y = mappedPoint.y
+
+//                        console.log("Displaying chart at: ", point.x)
+//                        console.log("Displaying chart at: ", point.y)
+                        mainWindow.chartDisplay = true
+
+                    }
+                    onExited: {
+                        mainWindow.chartDisplay = false
                     }
                 }
-
             }
 
             Text {

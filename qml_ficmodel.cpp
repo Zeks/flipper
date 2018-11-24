@@ -83,7 +83,11 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
         if(role == SlashRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 21), Qt::DisplayRole).toInt();
         if(role == BreakdownRole)
-            return AdaptingTableModel::data(index.sibling(index.row(), 22), Qt::DisplayRole).toList();
+        {
+            auto var = AdaptingTableModel::data(index.sibling(index.row(), 22), Qt::DisplayRole);
+            //qDebug() << "breakdown: " << var;
+            return var;
+        }
 
         if(role == CurrentChapterRole)
             return QString("");

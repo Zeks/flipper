@@ -1958,6 +1958,42 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
         fic.tags = tags[fic.id];
     return ctx.result;
 }
+template <typename T1, typename T2>
+inline double DivideAsDoubles(T1 arg1, T2 arg2){
+    return static_cast<double>(arg1)/static_cast<double>(arg2);
+}
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, QSqlDatabase db)
+{
+    QString qs = QString("select fic_id,  "
+                         "breakdown_available,"
+                         "votes_common, votes_rare, votes_unique, "
+                         "value_common, value_rare, value_unique "
+                         "from RecommendationListData where cfInSourceFics(fic_id) > 0 group by fic_id");
+    QHash<int, QStringList> breakdown;
+    auto* data= ThreadData::GetRecommendationData();
+    auto& sourceSet = data->sourceFics;
+
+    for(const auto& fic : *fics)
+        sourceSet.insert(fic.id);
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        int sumtotal =q.value("value_common").toInt() +
+                q.value("value_rare").toInt() +
+                q.value("value_unique").toInt();
+        int common = static_cast<int>(DivideAsDoubles(q.value("value_common").toInt()+1,sumtotal)*100);
+        int rare = static_cast<int>(DivideAsDoubles(q.value("value_rare").toInt()+1,sumtotal)*100);
+        int unique = static_cast<int>(DivideAsDoubles(q.value("value_unique").toInt()+1,sumtotal)*100);
+
+        breakdown[q.value("fic_id").toInt()].push_back(QString::number(common));
+        breakdown[q.value("fic_id").toInt()].push_back(QString::number(rare));
+        breakdown[q.value("fic_id").toInt()].push_back(QString::number(unique));
+    });
+    for(auto& fic : *fics)
+        fic.voteBreakdown = breakdown[fic.id];
+    return ctx.result;
+}
+
 
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QVector<int> ficIds, int list_id, QSqlDatabase db)
 {
