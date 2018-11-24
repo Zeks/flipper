@@ -66,10 +66,12 @@ list_id integer,
  match_count integer default 0,
  PRIMARY KEY (fic_id asc, list_id asc));
   alter table RecommendationListData add column votes_common integer default 0;
+  alter table RecommendationListData add column votes_uncommon integer default 0;
   alter table RecommendationListData add column votes_rare integer default 0;
   alter table RecommendationListData add column votes_unique integer default 0;
   
   alter table RecommendationListData add column value_common integer default 0;
+  alter table RecommendationListData add column value_uncommon integer default 0;
   alter table RecommendationListData add column value_rare integer default 0;
   alter table RecommendationListData add column value_unique integer default 0;
   

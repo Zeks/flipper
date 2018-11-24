@@ -20,15 +20,21 @@ Rectangle {
 
     property bool chartDisplay: false
     property int chartValueCommon: 100
+    property int chartValueUncommon: 100
     property int chartValueRare: 100
     property int chartValueUnique: 100
+
+    property string chartValueCountCommon
+    property string chartValueCountUncommon
+    property string chartValueCountRare
+    property string chartValueCountUnique
 
     ChartView {
         id: chartVotes
          title: "Vote Distribution"
         antialiasing: true
         z: 100
-        width:300
+        width:500
         height:300
         margins.top: 0
         margins.bottom: 0
@@ -40,9 +46,10 @@ Rectangle {
             labelsVisible :false
 
             id: chrtBreakdown
-            BarSet {  label: "Closest"; values: [chartValueUnique] }
-            BarSet {  label: "Near"; values: [chartValueRare] }
-            BarSet {  label: "Average"; values: [chartValueCommon] }
+            BarSet {  label: "Average(" + chartValueCountCommon + ")"; values: [chartValueCommon] }
+            BarSet {  label: "Uncommon(" + chartValueCountUncommon+ ")"; values: [chartValueCountUncommon] }
+            BarSet {  label: "Near(" + chartValueCountRare + ")"; values: [chartValueRare] }
+            BarSet {  label: "Closest(" + chartValueCountUnique + ")" ; values: [chartValueUnique] }
         }
     }
 

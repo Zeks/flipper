@@ -13,8 +13,9 @@ struct AuthorWeightingResult
 {
     enum class EAuthorType{
         common = 0,
-        rare = 1,
-        unique = 2
+        uncommon = 1,
+        rare = 2,
+        unique = 3
     };
 
     AuthorWeightingResult(){}

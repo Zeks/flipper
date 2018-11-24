@@ -265,9 +265,11 @@ public:
         }
         else if(gtSigma)
         {
-            result.authorType = AuthorWeightingResult::EAuthorType::common;
+            result.authorType = AuthorWeightingResult::EAuthorType::uncommon;
             result.value  = quadratic_coef(author.ratio,ratioMedian, quad, 1, 5);
         }
+        else
+            result.authorType = AuthorWeightingResult::EAuthorType::common;
         return result;
     }
 };

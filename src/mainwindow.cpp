@@ -452,6 +452,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
     ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
     ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
+    ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -478,7 +479,7 @@ void MainWindow::SetupFanficTable()
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel" << "roleBreakdown");
+                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel" << "roleBreakdown" << "roleBreakdownCount");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 

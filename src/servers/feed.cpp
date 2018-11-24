@@ -302,9 +302,12 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         auto* target = targetList->add_breakdowns();
         target->set_id(key);
         target->set_votes_common(list.breakdowns[key].authorTypeVotes[EAuthorType::common]);
+        target->set_votes_uncommon(list.breakdowns[key].authorTypeVotes[EAuthorType::uncommon]);
         target->set_votes_rare(list.breakdowns[key].authorTypeVotes[EAuthorType::rare]);
         target->set_votes_unique(list.breakdowns[key].authorTypeVotes[EAuthorType::unique]);
+
         target->set_counts_common(list.breakdowns[key].authorTypes[EAuthorType::common]);
+        target->set_counts_uncommon(list.breakdowns[key].authorTypes[EAuthorType::uncommon]);
         target->set_counts_rare(list.breakdowns[key].authorTypes[EAuthorType::rare]);
         target->set_counts_unique(list.breakdowns[key].authorTypes[EAuthorType::unique]);
     }

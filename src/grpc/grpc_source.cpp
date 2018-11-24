@@ -837,6 +837,9 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
         breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
                             response->list().breakdowns(i).counts_common(),
                             response->list().breakdowns(i).votes_common());
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::uncommon,
+                            response->list().breakdowns(i).counts_uncommon(),
+                            response->list().breakdowns(i).votes_uncommon());
         breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
                             response->list().breakdowns(i).counts_rare(),
                             response->list().breakdowns(i).votes_rare());

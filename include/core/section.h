@@ -554,6 +554,7 @@ public:
     bool isEnglish = true;
     int minSlashPass = 0;
     QStringList voteBreakdown;
+    QStringList voteBreakdownCounts;
 
     QString wordCount;
     QString chapters;
@@ -829,3 +830,4 @@ public:
 
 }
 Q_DECLARE_METATYPE(core::AuthorPtr);
+

@@ -379,8 +379,14 @@ Rectangle {
                     onEntered: {
 
                         mainWindow.chartValueCommon = parseInt(roleBreakdown[0],10)
-                        mainWindow.chartValueRare= parseInt(roleBreakdown[1],10)
-                        mainWindow.chartValueUnique= parseInt(roleBreakdown[2],10)
+                        mainWindow.chartValueUncommon = parseInt(roleBreakdown[1],10)
+                        mainWindow.chartValueRare= parseInt(roleBreakdown[2],10)
+                        mainWindow.chartValueUnique= parseInt(roleBreakdown[3],10)
+
+                        mainWindow.chartValueCountCommon = roleBreakdownCount[0]
+                        mainWindow.chartValueCountUncommon = roleBreakdownCount[1]
+                        mainWindow.chartValueCountRare= roleBreakdownCount[2]
+                        mainWindow.chartValueCountUnique= roleBreakdownCount[3]
 //                        console.log(maRecs.mouseX)
 //                        console.log(maRecs.mouseY)
                         var point = imgRecommendations.mapToGlobal(maRecs.mouseX,maRecs.mouseY)

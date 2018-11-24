@@ -53,7 +53,8 @@ public:
         AuthorIdRole,
         SlashRole,
         BreakdownRole,
-        EndRole = BreakdownRole
+        BreakdownCountRole,
+        EndRole = BreakdownCountRole
 
     };
 
