@@ -389,6 +389,7 @@ Rectangle {
                         mainWindow.chartValueCountUnique= roleBreakdownCount[3]
 //                        console.log(maRecs.mouseX)
 //                        console.log(maRecs.mouseY)
+                        //console.log(roleBreakdown)
                         var point = imgRecommendations.mapToGlobal(maRecs.mouseX,maRecs.mouseY)
                         var mappedPoint = mainWindow.mapFromGlobal(point.x,point.y)
 

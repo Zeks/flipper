@@ -47,7 +47,7 @@ Rectangle {
 
             id: chrtBreakdown
             BarSet {  label: "Average(" + chartValueCountCommon + ")"; values: [chartValueCommon] }
-            BarSet {  label: "Uncommon(" + chartValueCountUncommon+ ")"; values: [chartValueCountUncommon] }
+            BarSet {  label: "Uncommon(" + chartValueCountUncommon+ ")"; values: [chartValueUncommon] }
             BarSet {  label: "Near(" + chartValueCountRare + ")"; values: [chartValueRare] }
             BarSet {  label: "Closest(" + chartValueCountUnique + ")" ; values: [chartValueUnique] }
         }
