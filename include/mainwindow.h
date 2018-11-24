@@ -235,7 +235,7 @@ private:
     void CreateSimilarListForGivenFic(int);
 
     void SetClientMode();
-    void ResetFilterUItoDefaults();
+    void ResetFilterUItoDefaults(bool resetTagged = true);
     void DetectGenreSearchState();
     void DetectSlashSearchState();
     void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit);

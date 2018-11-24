@@ -390,6 +390,21 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.realGenreString = GenreDataToString(coreFic.realGenreData);
 
     coreFic.urlFFN = coreFic.urls["ffn"];
+
+    coreFic.slashData.keywords_no = protoFic.slash_data().keywords_no();
+    coreFic.slashData.keywords_yes = protoFic.slash_data().keywords_yes();
+    coreFic.slashData.keywords_result = protoFic.slash_data().keywords_result();
+    coreFic.slashData.filter_pass_1= protoFic.slash_data().filter_pass_1();
+    coreFic.slashData.filter_pass_2= protoFic.slash_data().filter_pass_2();
+    if(coreFic.slashData.keywords_result)
+        coreFic.minSlashPass = 1;
+    else if(coreFic.slashData.filter_pass_1)
+        coreFic.minSlashPass = 2;
+    else if(coreFic.slashData.filter_pass_2)
+        coreFic.minSlashPass = 3;
+    else
+        coreFic.minSlashPass = 0;
+
     return true;
 }
 
@@ -434,6 +449,13 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 
 
     protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.ffn_id);
+
+    auto slashData = protoFic->mutable_slash_data();
+    slashData->set_keywords_no(coreFic.slashData.keywords_no);
+    slashData->set_keywords_yes(coreFic.slashData.keywords_yes);
+    slashData->set_keywords_result(coreFic.slashData.keywords_result);
+    slashData->set_filter_pass_1(coreFic.slashData.filter_pass_1);
+    slashData->set_filter_pass_2(coreFic.slashData.filter_pass_2);
 
     return true;
 }

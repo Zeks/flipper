@@ -154,6 +154,30 @@ Rectangle {
                     }
                 }
             }
+            Image {
+                id: imgMagnify2
+                width: 24;
+                visible: author_id > 0 && !lvFics.displayAuthorName;
+                height: 24
+                source: lvFics.authorFilterActive === true ? "qrc:/icons/icons/magnify_res_canc.png" : "qrc:/icons/icons/magnify_res.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(lvFics.authorFilterActive === false)
+                        {
+                            lvFics.authorFilterActive = true;
+                            lvFics.authorToggled(index, true);
+                        }
+                        else
+                        {
+                            lvFics.authorFilterActive = false;
+                            lvFics.authorToggled(index, false);
+                        }
+
+                    }
+                }
+            }
             Text {
                 id: lblTitle
                 width: 517
@@ -250,7 +274,7 @@ Rectangle {
             Image {
                 id: imgMagnify
                 width: 24;
-                visible: author_id > 0;
+                visible: author_id > 0 && lvFics.displayAuthorName;
                 height: 24
                 source: lvFics.authorFilterActive === true ? "qrc:/icons/icons/magnify_res_canc.png" : "qrc:/icons/icons/magnify_res.png"
                 MouseArea{
@@ -275,6 +299,7 @@ Rectangle {
                 id: txtAuthor
                 width: 517
                 height: 21
+                visible: lvFics.displayAuthorName
                 textFormat: Text.RichText;
                 text: " <html><style>a:link{ color: 	#99853F33      ;}</style><a href=\"http://www.fanfiction.net/u/" +  author_id.toString() + "\">" +"By: " + author + "</a></body></html>"
                 verticalAlignment: Text.AlignVCenter

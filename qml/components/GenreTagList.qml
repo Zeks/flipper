@@ -32,6 +32,7 @@ Item {
         currentChoices: tags
         canAdd: true
         allChoices: tagModel
+        //minSlashLevel: minSlashLevel
     }
     function makeSelection(){
         console.log(tsTags.currentChoices);

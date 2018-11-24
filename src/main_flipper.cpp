@@ -45,7 +45,6 @@ void SetupLogger()
     logger->addDestination(fileDestination);
 
 }
-
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);

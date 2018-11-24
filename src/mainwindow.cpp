@@ -416,7 +416,7 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
 void MainWindow::SetupTableAccess()
 {
     //    holder->SetColumns(QStringList() << "fandom" << "author" << "title" << "summary" << "genre" << "characters" << "rated"
-    //                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" );
+    //                       << "published" << "updated" << "url" << "tags" << "wordCount" << "favourites" << "reviews" << "chapters" << "complete" << "atChapter" << "minSlashLevel" );
     ADD_STRING_GETSET(holder, 0, 0, fandom);
     ADD_STRING_GETSET(holder, 1, 0, author->name);
     ADD_STRING_GETSET(holder, 2, 0, title);
@@ -438,6 +438,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 18, 0, recommendations);
     ADD_STRING_GETSET(holder, 19, 0, realGenreString);
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
+    ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
 
 
     holder->AddFlagsFunctor(
@@ -465,7 +466,7 @@ void MainWindow::SetupFanficTable()
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendations" << "realGenres" << "author_id");
+                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -486,6 +487,8 @@ void MainWindow::SetupFanficTable()
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     qwFics->rootContext()->setContextProperty("urlCopyIconVisible",
                                               settings.value("Settings/urlCopyIconVisible", true).toBool());
+    qwFics->rootContext()->setContextProperty("displayAuthorNameInList",
+                                              settings.value("Settings/displayAuthorName", true).toBool());
     qwFics->rootContext()->setContextProperty("scanIconVisible",
                                               settings.value("Settings/scanIconVisible", true).toBool());
     QUrl source("qrc:/qml/ficview.qml");
@@ -1726,7 +1729,7 @@ void MainWindow::OnFindSimilarClicked(QVariant url)
     //auto id = env.interfaces.fanfics->GetIDFromWebID(url.toInt(),"ffn");
     if(url == "-1")
         return;
-    ResetFilterUItoDefaults();
+    ResetFilterUItoDefaults(false);
     ui->cbNormals->setCurrentText("");
     ui->leContainsGenre->setText("");
     ui->leNotContainsGenre->setText("");
@@ -1861,7 +1864,7 @@ void MainWindow::on_pbReapplyFilteringMode_clicked()
     on_cbCurrentFilteringMode_currentTextChanged(ui->cbCurrentFilteringMode->currentText());
 }
 
-void MainWindow::ResetFilterUItoDefaults()
+void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
 {
     ui->chkRandomizeSelection->setChecked(false);
     ui->chkEnableSlashFilter->setChecked(true);
@@ -1871,7 +1874,8 @@ void MainWindow::ResetFilterUItoDefaults()
     ui->chkShowUnfinished->setChecked(true);
     ui->chkActive->setChecked(false);
     ui->chkNoGenre->setChecked(true);
-    ui->chkIgnoreTags->setChecked(false);
+    if(resetTagged)
+        ui->chkIgnoreTags->setChecked(false);
     ui->chkOtherFandoms->setChecked(false);
     ui->chkGenrePlus->setChecked(false);
     ui->chkGenreMinus->setChecked(false);

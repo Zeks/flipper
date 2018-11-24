@@ -10,6 +10,7 @@ Rectangle {
     property color leadingColor:  "#fceaef"
     property bool havePagesBefore: false
     property bool havePagesAfter: false
+    property bool displayAuthorName: true
     property bool authorFilterActive: false
     property bool detailedGenreMode: false
     signal pageRequested(int page)
@@ -160,6 +161,7 @@ Rectangle {
             property bool showUrlCopyIcon: urlCopyIconVisible
             property bool showScanIcon: scanIconVisible
             property bool authorFilterActive: false
+            property bool displayAuthorName : displayAuthorNameInList
 
             spacing: 5
             clip:true

@@ -10,6 +10,7 @@ Rectangle{
     property string tagName
     property bool active: false
     property var allChoices
+    //property string minSlashLevel
     property var currentChoices
     property bool appendVisible: true
     property bool selectionMode: false
@@ -52,6 +53,21 @@ Rectangle{
         height: 24//txtGenre.height + 6
         width:parent.width
         color: tagSelectorColor
+        Image{
+            id:slashIndicator
+            height:rect.height
+            visible: tagName === "Genre" && minSlashLevel > 0
+            source: {
+                console.log("minSlashLevel is", minSlashLevel);
+                if(minSlashLevel == 3)
+                    return "qrc:/icons/icons/slash_uncertain.png"
+                if(minSlashLevel == 2)
+                    return "qrc:/icons/icons/slash_simple.png"
+                else
+                    return "qrc:/icons/icons/slash_certain.png"
+            }
+            width: appendVisible ? 24 : 0
+        }
         Text{
             id:txtGenre
             width:parent.width - plus.width
@@ -79,14 +95,6 @@ Rectangle{
             id:plus
             height:rect.height
             source: {
-                //                if(tagName === "Genre")
-                //                {
-                //                    if(mainWindow.detailedGenreMode)
-                //                        return "qrc:/icons/icons/search.png"
-                //                    else
-                //                        return "qrc:/icons/icons/search_gray.png"
-                //                }
-
                 return "qrc:/icons/icons/add.png"
             }
             anchors.left: txtGenre.right

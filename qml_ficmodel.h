@@ -51,7 +51,8 @@ public:
         RealGenreRole,
         FicIdRole,
         AuthorIdRole,
-        EndRole = AuthorIdRole
+        SlashRole,
+        EndRole = SlashRole
 
     };
 

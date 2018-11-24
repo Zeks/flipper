@@ -551,6 +551,7 @@ public:
     int webId = -1;
     int id = -1;
     bool isEnglish = true;
+    int minSlashPass = 0;
 
     QString wordCount;
     QString chapters;

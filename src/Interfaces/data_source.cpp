@@ -109,6 +109,12 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     if(!tg3.isEmpty())
         result.realGenreData.push_back({{tg3}, q.value("true_genre3_percent").toFloat()});
 
+    result.slashData.keywords_no = q.value("keywords_no").toInt();
+    result.slashData.keywords_yes = q.value("keywords_yes").toInt();
+    result.slashData.keywords_result = q.value("keywords_result").toInt();
+    result.slashData.filter_pass_1 = q.value("filter_pass_1").toInt();
+    result.slashData.filter_pass_2 = q.value("filter_pass_2").toInt();
+
     //QLOG_INFO() << "recs value: " << q.value("sumrecs").toInt();
     return result;
 }
