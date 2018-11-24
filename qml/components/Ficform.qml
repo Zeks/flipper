@@ -1,7 +1,8 @@
 import QtQuick 2.5
-import QtQuick.Controls 1.4
+import QtQuick.Controls 2.4
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
+import QtCharts 2.0
 
 import "Funcs.js" as Funcs
 Rectangle {
@@ -39,31 +40,18 @@ Rectangle {
         id: tbAddGenre
         width: 16
         height: 16
-        iconSource: "qrc:/icons/icons/add.png"
+        //icon: "qrc:/icons/icons/add.png"
         enabled:false
         visible:false
-
-    }
-
-    Column {
-        id: colControl
-        x: 120
-        y: 118
-
-        ToolButton {
-            id: tbTrack
-            enabled:false
+        Image {
+            id: imgGenreAdd
+            fillMode: Image.PreserveAspectFit
+            anchors.centerIn: parent
+            sourceSize.height: tbAddGenre.background.height - 6
+            height: sourceSize.height
+            source: "qrc:/icons/icons/add.png"
         }
 
-        ToolButton {
-            id: tbHide
-            enabled:false
-        }
-
-        ToolButton {
-            id: tbUpdate
-            enabled:false
-        }
     }
 
     Column {
@@ -372,18 +360,47 @@ Rectangle {
 
             Image {
                 id: imgRecommendations
-                //property int _MS_PER_DAY: 1000 * 60 * 60 * 24;
                 width: recommendations > 0 ? 20 : 0
                 height: 24
                 sourceSize.height: 24
                 sourceSize.width: 24
+                property bool chartVisible: false
                 visible: recommendations > 0
                 source: "qrc:/icons/icons/heart.png"
                 MouseArea{
+                    id: maRecs
+                    hoverEnabled :true
                     anchors.fill : parent
                     propagateComposedEvents : true
                     onClicked : {
                         lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
+                        console.log("Clicked heart icon")
+                    }
+                    onEntered: {
+
+                        mainWindow.chartValueCommon = parseInt(roleBreakdown[0],10)
+                        mainWindow.chartValueRare= parseInt(roleBreakdown[1],10)
+                        mainWindow.chartValueUnique= parseInt(roleBreakdown[2],10)
+//                        console.log(maRecs.mouseX)
+//                        console.log(maRecs.mouseY)
+                        var point = imgRecommendations.mapToGlobal(maRecs.mouseX,maRecs.mouseY)
+                        var mappedPoint = mainWindow.mapFromGlobal(point.x,point.y)
+
+                        //console.log("Mapped Y: ", imgRecommendations.mapToItem(mainWindow,0,0).y)
+                        if(imgRecommendations.mapToItem(mainWindow,0,0).y > mainWindow.height/2)
+                        {
+                            mappedPoint.y = mappedPoint.y - 300
+                        }
+                        chartVotes.x = mappedPoint.x
+                        chartVotes.y = mappedPoint.y
+
+//                        console.log("Displaying chart at: ", point.x)
+//                        console.log("Displaying chart at: ", point.y)
+                        mainWindow.chartDisplay = true
+
+                    }
+                    onExited: {
+                        mainWindow.chartDisplay = false
                     }
                 }
             }

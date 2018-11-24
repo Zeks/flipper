@@ -99,6 +99,7 @@ class Fanfics : public IDBWebIDIndex {
     bool ConvertDBFicsToFFN(QHash<int, int>& hash);
     void ResetActionQueue();
 
+
     // update interface
     QReadWriteLock mutex;
 

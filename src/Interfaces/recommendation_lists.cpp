@@ -375,6 +375,12 @@ bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
     result = result && database::puresql::FillFicDataForList(listId, fics, matches, origins, db).success;
     return result;
 }
+bool RecommendationLists::LoadListFromServerIntoDatabase(QSharedPointer<core::RecommendationList> list)
+{
+    bool result = true;
+    result = result && database::puresql::FillFicDataForList(list, db).success;
+    return result;
+}
 
 bool RecommendationLists::UpdateFicCountInDatabase(int listId)
 {
@@ -491,4 +497,12 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
     qSort(list.begin(), list.end());
     return list;
 }
+
+
+void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics)
+{
+    database::puresql::FetchRecommendationsBreakdown(fics, db);
+}
+
+
 }

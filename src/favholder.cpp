@@ -101,13 +101,6 @@ void RecCalculator::SaveFavouritesData()
     //thread_boost::SaveFavouritesData("ServerData", favourites);
 }
 
-struct AuthorResult{
-    int id;
-    int matches;
-    double ratio;
-    int size;
-    double distance = 0;
-};
 
 double quadratic_coef(double ratio, double median, double sigma, int base, int scaler)
 {
@@ -148,7 +141,7 @@ public:
     virtual void CalcWeightingParams() = 0;
     virtual FilterListType GetFilterList() = 0;
     virtual ActionListType  GetActionList() = 0;
-    virtual std::function<double(AuthorResult&, int)> GetWeightingFunc() = 0;
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int)> GetWeightingFunc() = 0;
 
 
     int matchSum = 0;
@@ -177,8 +170,8 @@ public:
     virtual ActionListType GetActionList(){
         return {authorAccumulator};
     }
-    virtual std::function<double(AuthorResult&, int)> GetWeightingFunc(){
-        return [](AuthorResult&, int){return 1.;};
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int)> GetWeightingFunc(){
+        return [](AuthorResult&, int){return AuthorWeightingResult();};
     }
     void CalcWeightingParams(){
         // does nothing
@@ -201,7 +194,7 @@ public:
         {ratioSum+=author.ratio;};
         return {authorAccumulator, ratioAccumulator};
     };
-    virtual std::function<double(AuthorResult&, int)> GetWeightingFunc(){
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int)> GetWeightingFunc(){
         return std::bind(&RecCalculatorImplWeighted::CalcWeightingForAuthor,
                          this,
                          std::placeholders::_1,
@@ -251,25 +244,31 @@ public:
         qDebug() << "distance to sigma15 is: " << sigma2Dist;
     }
 
-    double CalcWeightingForAuthor(AuthorResult& author, int authorSize){
+    AuthorWeightingResult CalcWeightingForAuthor(AuthorResult& author, int authorSize){
+        AuthorWeightingResult result;
+        result.isValid = true;
         bool gtSigma = (ratioMedian - quad) >= author.ratio;
         bool gtSigma2 = (ratioMedian - 2 * quad) >= author.ratio;
         bool gtSigma17 = (ratioMedian - 1.7 * quad) >= author.ratio;
 
-        double coef = 0;
         if(gtSigma2)
         {
+            result.authorType = AuthorWeightingResult::EAuthorType::unique;
             counter2Sigma++;
-            coef = quadratic_coef(author.ratio,ratioMedian,2*quad,authorSize/10, authorSize/20);
+            result.value = quadratic_coef(author.ratio,ratioMedian,2*quad,authorSize/10, authorSize/20);
         }
         else if(gtSigma17)
         {
+            result.authorType = AuthorWeightingResult::EAuthorType::rare;
             counter17Sigma++;
-            coef = quadratic_coef(author.ratio,ratioMedian, 1.7*quad,authorSize/20, authorSize/40);
+            result.value  = quadratic_coef(author.ratio,ratioMedian, 1.7*quad,authorSize/20, authorSize/40);
         }
         else if(gtSigma)
-            coef = quadratic_coef(author.ratio,ratioMedian, quad, 1, 5);
-        return 1 + coef;
+        {
+            result.authorType = AuthorWeightingResult::EAuthorType::common;
+            result.value  = quadratic_coef(author.ratio,ratioMedian, quad, 1, 5);
+        }
+        return result;
     }
 };
 void RecCalculatorImplBase::Calc(){
@@ -288,8 +287,9 @@ void RecCalculatorImplBase::CollectVotes()
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [weightingFunc, authorSize, this](int author){
         for(auto fic: favs[author])
         {
-            auto coef = weightingFunc(allAuthors[author],authorSize);
-            result.recommendations[fic]+= coef;
+            auto weighting = weightingFunc(allAuthors[author],authorSize);
+            result.recommendations[fic]+= weighting.GetCoefficient();
+            result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
 }

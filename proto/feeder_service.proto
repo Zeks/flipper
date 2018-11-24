@@ -81,14 +81,24 @@ message SiteIDPack{
     repeated int32 sb_ids  = 4;
     repeated int32 sv_ids  = 5;
 }
-
+message RecommendationBreakdown{
+    int32 id              = 1;
+    int32 counts_common   = 2;
+    int32 counts_rare     = 3;
+    int32 counts_unique   = 4;
+    int32 votes_common    = 5;
+    int32 votes_rare      = 6;
+    int32 votes_unique    = 7;
+}
 message RecommendationListData{
-    bool list_ready                 = 1;
-    string list_name                = 2;
-    repeated int32 fic_ids          = 3;
-    repeated int32 fic_matches      = 4;
-    map<int32, int32> match_report  = 5;
-    
+    bool list_ready                             = 1;
+    string list_name                            = 2;
+    repeated int32 fic_ids                      = 3;
+    repeated int32 fic_matches                  = 4;
+                                                
+    map<int32, int32> match_report              = 5;
+    repeated RecommendationBreakdown breakdowns = 6;
+
     // ethically complicated
     // probably best to disable this for release
     // don't want personal data seeping through

@@ -242,6 +242,8 @@ DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID( QSqlDatabase db);
 DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase db);
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, QSqlDatabase db);
+
 
 
 DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
@@ -290,6 +292,12 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
                                              const QVector<int>&,
                                              const QSet<int> &origins,
                                              QSqlDatabase db);
+
+DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList>,
+                                             QSqlDatabase db);
+
+
+
 
 // potentially ethically problematic. better not do this
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int>&, QSqlDatabase db);

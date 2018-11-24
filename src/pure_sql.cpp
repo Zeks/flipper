@@ -1958,6 +1958,42 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
         fic.tags = tags[fic.id];
     return ctx.result;
 }
+template <typename T1, typename T2>
+inline double DivideAsDoubles(T1 arg1, T2 arg2){
+    return static_cast<double>(arg1)/static_cast<double>(arg2);
+}
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, QSqlDatabase db)
+{
+    QString qs = QString("select fic_id,  "
+                         "breakdown_available,"
+                         "votes_common, votes_rare, votes_unique, "
+                         "value_common, value_rare, value_unique "
+                         "from RecommendationListData where cfInSourceFics(fic_id) > 0 group by fic_id");
+    QHash<int, QStringList> breakdown;
+    auto* data= ThreadData::GetRecommendationData();
+    auto& sourceSet = data->sourceFics;
+
+    for(const auto& fic : *fics)
+        sourceSet.insert(fic.id);
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        int sumtotal =q.value("value_common").toInt() +
+                q.value("value_rare").toInt() +
+                q.value("value_unique").toInt();
+        int common = static_cast<int>(DivideAsDoubles(q.value("value_common").toInt()+1,sumtotal)*100);
+        int rare = static_cast<int>(DivideAsDoubles(q.value("value_rare").toInt()+1,sumtotal)*100);
+        int unique = static_cast<int>(DivideAsDoubles(q.value("value_unique").toInt()+1,sumtotal)*100);
+
+        breakdown[q.value("fic_id").toInt()].push_back(QString::number(common));
+        breakdown[q.value("fic_id").toInt()].push_back(QString::number(rare));
+        breakdown[q.value("fic_id").toInt()].push_back(QString::number(unique));
+    });
+    for(auto& fic : *fics)
+        fic.voteBreakdown = breakdown[fic.id];
+    return ctx.result;
+}
+
 
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QVector<int> ficIds, int list_id, QSqlDatabase db)
 {
@@ -3059,6 +3095,57 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
         ctx.bindValue("matchCount", matchCounts.at(i));
         bool isOrigin = origins.contains(fics.at(i));
         ctx.bindValue("is_origin", isOrigin);
+        if(!ctx.ExecAndCheck())
+        {
+            ctx.result.success = false;
+            break;
+        }
+    }
+    return ctx.result;
+}
+
+//alter table RecommendationListData add column votes_common integer default 0;
+//alter table RecommendationListData add column votes_rare integer default 0;
+//alter table RecommendationListData add column votes_unique integer default 0;
+
+//alter table RecommendationListData add column value_common integer default 0;
+//alter table RecommendationListData add column value_rare integer default 0;
+//alter table RecommendationListData add column value_unique integer default 0;
+
+//alter table RecommendationListData add column breakdown_available integer default 0;
+
+
+DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
+                                             QSqlDatabase db)
+{
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin, "
+                         "breakdown_available,"
+                         "votes_common, votes_rare, votes_unique, "
+                         "value_common, value_rare, value_unique) "
+                         "values(:listId, :ficId, :matchCount, :is_origin,"
+                         ":breakdown_available,"
+                         ":votes_common, :votes_rare, :votes_unique, "
+                         ":value_common, :value_rare, :value_unique)");
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("listId", list->id);
+    for(int i = 0; i < list->ficData.fics.size(); i++)
+    {
+        int ficId = list->ficData.fics.at(i);
+        ctx.bindValue("ficId", ficId);
+        ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
+        bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
+        ctx.bindValue("is_origin", isOrigin);
+        ctx.bindValue("breakdown_available", true);
+
+        ctx.bindValue("votes_common", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::common]);
+        ctx.bindValue("votes_rare", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::rare]);
+        ctx.bindValue("votes_unique", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::unique]);
+
+        ctx.bindValue("value_common", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::common]);
+        ctx.bindValue("value_rare", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::rare]);
+        ctx.bindValue("value_unique", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::unique]);
+
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;

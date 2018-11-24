@@ -290,6 +290,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     auto* targetList = response->mutable_list();
     targetList->set_list_name(proto_converters::TS(params->name));
     targetList->set_list_ready(true);
+    using core::AuthorWeightingResult;
+    typedef core::AuthorWeightingResult::EAuthorType EAuthorType;
     for(int key: list.recommendations.keys())
     {
         //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
@@ -297,6 +299,14 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             continue;
         targetList->add_fic_ids(key);
         targetList->add_fic_matches(list.recommendations[key]);
+        auto* target = targetList->add_breakdowns();
+        target->set_id(key);
+        target->set_votes_common(list.breakdowns[key].authorTypeVotes[EAuthorType::common]);
+        target->set_votes_rare(list.breakdowns[key].authorTypeVotes[EAuthorType::rare]);
+        target->set_votes_unique(list.breakdowns[key].authorTypeVotes[EAuthorType::unique]);
+        target->set_counts_common(list.breakdowns[key].authorTypes[EAuthorType::common]);
+        target->set_counts_rare(list.breakdowns[key].authorTypes[EAuthorType::rare]);
+        target->set_counts_unique(list.breakdowns[key].authorTypes[EAuthorType::unique]);
     }
     for(int key: list.matchReport.keys())
     {
@@ -304,7 +314,6 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             continue;
         (*targetList->mutable_match_report())[key] = list.matchReport[key];
     }
-
     return Status::OK;
 }
 

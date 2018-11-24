@@ -61,6 +61,7 @@ public:
     bool LoadListFromServerIntoDatabase(int listId,
                                         const QVector<int>& fics,
                                         const QVector<int>& matches, const QSet<int> &origins);
+    bool LoadListFromServerIntoDatabase(QSharedPointer<core::RecommendationList> list);
 
 
 
@@ -89,6 +90,7 @@ public:
 
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);
+    void FetchRecommendationsBreakdown(QVector<core::Fic> * fics);
 
 
 

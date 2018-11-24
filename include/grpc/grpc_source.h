@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "include/storyfilter.h"
 #include "include/Interfaces/data_source.h"
+#include "reclist_author_result.h"
+
 #include <QSharedPointer>
 #include <QVector>
 #include <optional>
@@ -37,14 +39,7 @@ class FavListDetails;
 class RecommendationListCreationRequest;
 }
 
-struct RecommendationListGRPC
-{
-    core::RecommendationList listParams;
-    QVector<int> fics;
-    QVector<int> matchCounts;
-    QVector<int> authorIds;
-    QHash<int, int> matchReport;
-};
+
 
 struct ServerStatus
 {
@@ -72,7 +67,7 @@ public:
     virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*) override;
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
-    bool GetRecommendationListFromServer(RecommendationListGRPC& recList);
+    bool GetRecommendationListFromServer(core::RecommendationList &recList);
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
     bool GetFFNIDsForFics(QVector<core::IdPack>*);
     std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::IdPack>);
