@@ -127,6 +127,7 @@ double quadratic_coef(double ratio,
     switch(type)
     {
         case ECalcType::close:
+        qDebug() << "casting max vote: " << "matches: " << maximumMatches << " value: " << 0.2*static_cast<double>(maximumMatches);
         return 0.2*static_cast<double>(maximumMatches);
         //base = ;
         distanceToNextLevel = 9999;
@@ -144,7 +145,8 @@ double quadratic_coef(double ratio,
     break;
     case ECalcType::uncommon:
 //        return 5;
-    return  0.02*static_cast<double>(maximumMatches);
+        auto val = 0.005*static_cast<double>(maximumMatches);
+    return  val < 1 ? 1 : val;
     start = sigma;
     distanceToNextLevel = 0.7*sigma;
     distanceToNextBase = 0.07;
@@ -382,7 +384,7 @@ void RecCalculatorImplBase::CollectVotes()
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this](int author){
         for(auto fic: favs[author])
         {
-            auto weighting = weightingFunc(allAuthors[author],maxValue, authorSize);
+            auto weighting = weightingFunc(allAuthors[author],authorSize, maxValue );
             result.recommendations[fic]+= weighting.GetCoefficient();
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
