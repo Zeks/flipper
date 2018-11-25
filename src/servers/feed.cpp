@@ -360,7 +360,7 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     response->set_success(true);
     for(int fic: idsToFill.keys())
     {
-        QLOG_INFO() << "Returning fic ids: " << "DB: " << idsToFill[fic] << " FFN: " << fic;
+        //QLOG_INFO() << "Returning fic ids: " << "DB: " << idsToFill[fic] << " FFN: " << fic;
         response->mutable_ids()->add_ffn_ids(fic);
         response->mutable_ids()->add_db_ids(idsToFill[fic]);
     }
@@ -407,7 +407,7 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
     response->set_success(true);
     for(int fic: idsToFill.keys())
     {
-        QLOG_INFO() << "Returning fic ids: " << "FFN: " << idsToFill[fic] << " DB: " << fic;
+        //QLOG_INFO() << "Returning fic ids: " << "FFN: " << idsToFill[fic] << " DB: " << fic;
         response->mutable_ids()->add_ffn_ids(idsToFill[fic]);
         response->mutable_ids()->add_db_ids(fic);
     }

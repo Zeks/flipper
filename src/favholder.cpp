@@ -100,15 +100,80 @@ void RecCalculator::SaveFavouritesData()
 {
     //thread_boost::SaveFavouritesData("ServerData", favourites);
 }
+enum class ECalcType{
+    common,
+    uncommon,
+    near,
+    close
+};
 
-
-double quadratic_coef(double ratio, double median, double calcBase, double sigma, int base, int scaler)
+double quadratic_coef(double ratio,
+                      double median,
+                      double sigma,
+                      int authorSize,
+                      int maximumMatches,
+                      ECalcType type)
 {
-    auto  distanceFromMedian = (median - calcBase) - ratio;
-    if(distanceFromMedian < 0)
-        return 0;
-    double tau = distanceFromMedian/sigma;
-    return base + std::pow(tau,2)*scaler;
+    static QSet<int> bases;
+    if(!bases.contains(authorSize))
+    {
+        bases.insert(authorSize);
+        qDebug() << "Author size: " << authorSize;
+    }
+    double base;
+    double distanceToNextLevel = 0;
+    double distanceToNextBase = 0;
+    double start = 0;
+    switch(type)
+    {
+        case ECalcType::close:
+        return 0.2*static_cast<double>(maximumMatches);
+        //base = ;
+        distanceToNextLevel = 9999;
+        if(base < 15)
+            base = 5;
+        break;
+    case ECalcType::near:
+        //return 60;
+    return  0.05*static_cast<double>(maximumMatches);
+    distanceToNextLevel = 0.3*sigma;
+    distanceToNextBase = 0.2;
+    start = sigma*1.7;
+    if(base < 5)
+        base = 5;
+    break;
+    case ECalcType::uncommon:
+//        return 5;
+    return  0.02*static_cast<double>(maximumMatches);
+    start = sigma;
+    distanceToNextLevel = 0.7*sigma;
+    distanceToNextBase = 0.07;
+    if(base < 2)
+        base = 2;
+    break;
+    }
+
+    auto traveled = (median - start - ratio)/(distanceToNextLevel);
+
+
+
+    auto result = base + traveled*distanceToNextBase*authorSize;;
+
+    auto castBase = static_cast<int>(base);
+    if(!bases.contains(castBase))
+    {
+        bases.insert(castBase);
+
+        qDebug() << "traveled = (median - start - ratio)/distanceToNextLevel";
+        qDebug() << traveled << " = ( " << median << " - " << start << " - " << ratio << " )/ " << distanceToNextLevel;
+
+        qDebug() << "Calculating: " << "author size: " << authorSize
+                 << " ratio: " << ratio << " median: " << median
+                     << " sigma: " << sigma
+                       << " base: " << base;
+        qDebug() << "vote result: " << result;
+    }
+    return result;
 }
 
 double sqrt_coef(double ratio, double median, double sigma, int base, int scaler)
@@ -141,7 +206,7 @@ public:
     virtual void CalcWeightingParams() = 0;
     virtual FilterListType GetFilterList() = 0;
     virtual ActionListType  GetActionList() = 0;
-    virtual std::function<AuthorWeightingResult(AuthorResult&, int)> GetWeightingFunc() = 0;
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() = 0;
 
 
     int matchSum = 0;
@@ -149,7 +214,8 @@ public:
     QSharedPointer<RecommendationList> params;
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
     QHash<int, AuthorResult> allAuthors;
-
+    int maximumMatches = 0;
+    int prevMaximumMatches = 0;
     QList<int> filteredAuthors;
     RecommendationListResult result;
 };
@@ -170,8 +236,8 @@ public:
     virtual ActionListType GetActionList(){
         return {authorAccumulator};
     }
-    virtual std::function<AuthorWeightingResult(AuthorResult&, int)> GetWeightingFunc(){
-        return [](AuthorResult&, int){return AuthorWeightingResult();};
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc(){
+        return [](AuthorResult&, int, int){return AuthorWeightingResult();};
     }
     void CalcWeightingParams(){
         // does nothing
@@ -194,11 +260,12 @@ public:
         {ratioSum+=author.ratio;};
         return {authorAccumulator, ratioAccumulator};
     };
-    virtual std::function<AuthorWeightingResult(AuthorResult&, int)> GetWeightingFunc(){
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc(){
         return std::bind(&RecCalculatorImplWeighted::CalcWeightingForAuthor,
                          this,
                          std::placeholders::_1,
-                         std::placeholders::_2);
+                         std::placeholders::_2,
+                         std::placeholders::_3);
     }
 
     void CalcWeightingParams(){
@@ -244,7 +311,7 @@ public:
         qDebug() << "distance to sigma15 is: " << sigma2Dist;
     }
 
-    AuthorWeightingResult CalcWeightingForAuthor(AuthorResult& author, int authorSize){
+    AuthorWeightingResult CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches){
         AuthorWeightingResult result;
         result.isValid = true;
         bool gtSigma = (ratioMedian - quad) >= author.ratio;
@@ -253,23 +320,28 @@ public:
 
         if(gtSigma2)
         {
+
             result.authorType = AuthorWeightingResult::EAuthorType::unique;
             counter2Sigma++;
-            result.value = quadratic_coef(author.ratio,ratioMedian, 2*quad, 2*quad, authorSize/10, authorSize/20);
+            //result.value = quadratic_coef(author.ratio,ratioMedian, quad, authorSize/10, authorSize/20, authorSize);
+            result.value = quadratic_coef(author.ratio,ratioMedian, quad, authorSize, maximumMatches, ECalcType::close);
         }
         else if(gtSigma17)
         {
             result.authorType = AuthorWeightingResult::EAuthorType::rare;
             counter17Sigma++;
-            result.value  = quadratic_coef(author.ratio,ratioMedian, 1.7*quad, 2*quad - 1.7*quad,authorSize/20, authorSize/40);
+            //result.value  = quadratic_coef(author.ratio,ratioMedian,  quad,authorSize/20, authorSize/40, authorSize);
+            result.value  = quadratic_coef(author.ratio,ratioMedian,  quad,  authorSize, maximumMatches, ECalcType::near);
         }
         else if(gtSigma)
         {
             result.authorType = AuthorWeightingResult::EAuthorType::uncommon;
-            result.value  = quadratic_coef(author.ratio, ratioMedian, quad, 1.7*quad - quad, 1, 5);
+            result.value  = quadratic_coef(author.ratio, ratioMedian, quad,  authorSize, maximumMatches, ECalcType::uncommon);
         }
         else
+        {
             result.authorType = AuthorWeightingResult::EAuthorType::common;
+        }
         return result;
     }
 };
@@ -286,10 +358,31 @@ void RecCalculatorImplBase::CollectVotes()
 {
     auto weightingFunc = GetWeightingFunc();
     auto authorSize = filteredAuthors.size();
+    qDebug() << "Max Matches:" <<  prevMaximumMatches;
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [weightingFunc, authorSize, this](int author){
         for(auto fic: favs[author])
         {
-            auto weighting = weightingFunc(allAuthors[author],authorSize);
+            result.recommendations[fic]+= 1;
+        }
+    });
+    int maxValue = 0;
+    int maxId = -1;
+
+    for(auto fic: result.recommendations.keys()){
+        if(result.recommendations[fic] > maxValue )
+        {
+            maxValue = result.recommendations[fic];
+            maxId = fic;
+        }
+    }
+    qDebug() << "Max pure votes: " << maxValue;
+    qDebug() << "Max id: " << maxId;
+    result.recommendations.clear();
+
+    std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this](int author){
+        for(auto fic: favs[author])
+        {
+            auto weighting = weightingFunc(allAuthors[author],maxValue, authorSize);
             result.recommendations[fic]+= weighting.GetCoefficient();
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
@@ -303,9 +396,9 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     for(auto bit : sourceFics)
         r.add(bit);
     qDebug() << "finished creating roaring";
-    int minMatches, maxMatches;
+    int minMatches;
     minMatches =  params->minimumMatch;
-    maxMatches = minMatches;
+    maximumMatches = minMatches;
     TimedAction action("Relations Creation",[&](){
         auto it = favs.begin();
         while (it != favs.end())
@@ -317,8 +410,11 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             Roaring temp = r;
             temp = temp & it.value();
             author.matches = temp.cardinality();
-            if(maxMatches < author.matches)
-                maxMatches = author.matches;
+            if(maximumMatches < author.matches)
+            {
+                prevMaximumMatches = maximumMatches;
+                maximumMatches = author.matches;
+            }
             matchSum+=author.matches;
 
             it++;
