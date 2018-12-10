@@ -127,7 +127,7 @@ double quadratic_coef(double ratio,
     switch(type)
     {
         case ECalcType::close:
-        qDebug() << "casting max vote: " << "matches: " << maximumMatches << " value: " << 0.2*static_cast<double>(maximumMatches);
+        //qDebug() << "casting max vote: " << "matches: " << maximumMatches << " value: " << 0.2*static_cast<double>(maximumMatches);
         return 0.2*static_cast<double>(maximumMatches);
         //base = ;
         distanceToNextLevel = 9999;
@@ -353,19 +353,35 @@ public:
 void RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
-    FetchAuthorRelations();
-    Filter(filters, actions);
-    CalcWeightingParams();
-    CollectVotes();
-    for(auto& author: filteredAuthors)
-        result.matchReport[allAuthors[author].matches]++;
+
+    TimedAction relations("Fetching relations",[&](){
+        FetchAuthorRelations();
+    });
+    relations.run();
+    TimedAction filtering("Filtering data",[&](){
+        Filter(filters, actions);
+    });
+    filtering.run();
+    TimedAction weighting("weighting",[&](){
+        CalcWeightingParams();
+    });
+    weighting.run();
+    TimedAction collecting("collecting votes ",[&](){
+        CollectVotes();
+    });
+    collecting.run();
+    TimedAction report("writing match report",[&](){
+        for(auto& author: filteredAuthors)
+            result.matchReport[allAuthors[author].matches]++;
+    });
+    report.run();
 }
 void RecCalculatorImplBase::CollectVotes()
 {
     auto weightingFunc = GetWeightingFunc();
     auto authorSize = filteredAuthors.size();
     qDebug() << "Max Matches:" <<  prevMaximumMatches;
-    std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [weightingFunc, authorSize, this](int author){
+    std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [this](int author){
         for(auto fic: favs[author])
         {
             result.recommendations[fic]+= 1;
@@ -374,13 +390,23 @@ void RecCalculatorImplBase::CollectVotes()
     int maxValue = 0;
     int maxId = -1;
 
-    for(auto fic: result.recommendations.keys()){
-        if(result.recommendations[fic] > maxValue )
+    auto it = result.recommendations.begin();
+    while(it != result.recommendations.end())
+    {
+        if(it.value() > maxValue )
         {
-            maxValue = result.recommendations[fic];
-            maxId = fic;
+            maxValue = it.value();
+            maxId = it.key();
         }
+        it++;
     }
+//    for(auto fic: result.recommendations.keys()){
+//        if(result.recommendations[fic] > maxValue )
+//        {
+//            maxValue = result.recommendations[fic];
+//            maxId = fic;
+//        }
+//    }
     qDebug() << "Max pure votes: " << maxValue;
     qDebug() << "Max id: " << maxId;
     result.recommendations.clear();
@@ -397,6 +423,8 @@ void RecCalculatorImplBase::CollectVotes()
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
     qDebug() << "faves is of size: " << favs.size();
+    allAuthors.reserve(favs.size());
+
     auto sourceFics = QSet<uint32_t>::fromList(fetchedFics.keys());
     Roaring r;
     for(auto bit : sourceFics)
@@ -422,7 +450,6 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 maximumMatches = author.matches;
             }
             matchSum+=author.matches;
-
             it++;
         }
     });

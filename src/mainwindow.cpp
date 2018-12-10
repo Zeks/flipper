@@ -627,8 +627,8 @@ void MainWindow::LoadData()
 
     env.LoadData();
     holder->SetData(env.fanfics);
-//    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
-//    childObject->setProperty("authorFilterActive", false);
+    //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    //    childObject->setProperty("authorFilterActive", false);
 }
 
 int MainWindow::GetResultCount()
@@ -930,7 +930,7 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
     //env.filter.useThisAuthor = data;
     LoadData();
 
-//    /QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    //    /QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     //childObject->setProperty("authorFilterActive", true);
     AnalyzeCurrentFilter();
 
@@ -1390,8 +1390,8 @@ void MainWindow::SetClientMode()
     //ui->wdgAdminActions->hide();
     //    ui->chkHeartProfile->setChecked(false);
     //    ui->chkHeartProfile->setVisible(false);
-//    ui->tabWidget->removeTab(2);
-//    ui->tabWidget->removeTab(1);
+    //    ui->tabWidget->removeTab(2);
+    //    ui->tabWidget->removeTab(1);
     ui->chkLimitPageSize->setChecked(true);
     //ui->chkLimitPageSize->setEnabled(false);
 
@@ -1435,7 +1435,11 @@ void MainWindow::OpenRecommendationList(QString listName)
 int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
 {
     TaskProgressGuard guard(this);
-    auto result = env.BuildRecommendations(params, env.GetSourceFicsFromFile("lists/source.txt"), clearAuthors);
+    int result = -1;
+    TimedAction action("Full list creation: ",[&](){
+        result = env.BuildRecommendations(params, env.GetSourceFicsFromFile("lists/source.txt"), clearAuthors);
+    });
+    action.run();
     if(result == -1)
     {
         QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
@@ -1523,7 +1527,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.includeCrossovers = !ui->chkNonCrossovers->isChecked();
     //chkNonCrossovers
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
-//    /filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
+    //    /filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
@@ -1837,36 +1841,38 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         if(m.clickedButton() != yesButton)
             return;
     }
+    TimedAction action("Full list creation: ",[&](){
+        QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+        params->name = ui->leRecsListName->text();
+        if(params->name.trimmed().isEmpty())
+        {
+            QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
+            return;
+        }
+        params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
+        params->pickRatio = ui->leRecsPickRatio->text().toInt();
+        params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
+        params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
+        TaskProgressGuard guard(this);
 
-    QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-    params->name = ui->leRecsListName->text();
-    if(params->name.trimmed().isEmpty())
-    {
-        QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
-        return;
-    }
-    params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
-    params->pickRatio = ui->leRecsPickRatio->text().toInt();
-    params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
-    params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
-    TaskProgressGuard guard(this);
-
-    QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
-    auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike->isChecked(), false);
-    if(result == -1)
-    {
-        QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
-                                                    "Try using more source fics, or loosen the restrictions");
-        return;
-    }
-    Q_UNUSED(result);
-    auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
-    SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
-    ui->cbRecGroup->setCurrentText(params->name);
-    ui->cbSortMode->setCurrentText("Rec Count");
-    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
-    ui->pbGetSourceLinks->setEnabled(true);
-    ui->pbDeleteRecList->setEnabled(true);
+        QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+        auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike->isChecked(), false);
+        if(result == -1)
+        {
+            QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
+                                                        "Try using more source fics, or loosen the restrictions");
+            return;
+        }
+        Q_UNUSED(result);
+        auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
+        SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+        ui->cbRecGroup->setCurrentText(params->name);
+        ui->cbSortMode->setCurrentText("Rec Count");
+        env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
+        ui->pbGetSourceLinks->setEnabled(true);
+        ui->pbDeleteRecList->setEnabled(true);
+    });
+    action.run();
     on_pbLoadDatabase_clicked();
 }
 

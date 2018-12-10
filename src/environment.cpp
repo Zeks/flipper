@@ -456,6 +456,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
                                                      QVector<int> sourceFics,
                                                      bool automaticLike)
 {
+
     qDebug() << "At start list id is: " << list->id;
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
@@ -495,6 +496,10 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     {
         return -1;
     }
+    TimedAction action("List write: ",[&](){
+
+
+
     qDebug() << "Deleting list: " << list->id;
     interfaces.recs->DeleteList(list->id);
 
@@ -516,7 +521,8 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         for(auto fic: sourceSet)
             interfaces.tags->SetTagForFic(fic, "Liked");
     }
-
+    });
+    action.run();
     transaction.finalize();
     return list->id;
 }
