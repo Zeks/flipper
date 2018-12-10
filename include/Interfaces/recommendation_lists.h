@@ -90,7 +90,7 @@ public:
 
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);
-    void FetchRecommendationsBreakdown(QVector<core::Fic> * fics);
+    void FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId);
 
 
 

@@ -227,7 +227,10 @@ static auto matchesFilter = [](AuthorResult& author, QSharedPointer<Recommendati
 };
 static auto ratioFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params)
 {return author.ratio <= params->pickRatio && author.matches > 0;};
-static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author){ptr->filteredAuthors.push_back(author.id);};
+static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author)
+{
+    ptr->filteredAuthors.push_back(author.id);
+};
 //auto ratioAccumulator = [&ratioSum](RecCalculatorImplBase* ,AuthorResult & author){ratioSum+=author.ratio;};
 class RecCalculatorImplDefault: public RecCalculatorImplBase{
 public:
@@ -354,7 +357,8 @@ void RecCalculatorImplBase::Calc(){
     Filter(filters, actions);
     CalcWeightingParams();
     CollectVotes();
-
+    for(auto& author: filteredAuthors)
+        result.matchReport[allAuthors[author].matches]++;
 }
 void RecCalculatorImplBase::CollectVotes()
 {

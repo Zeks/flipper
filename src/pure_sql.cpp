@@ -923,7 +923,8 @@ DiagnosticSQLResult<QList<core::AuhtorStatsPtr>> GetRecommenderStatsForList(int 
                          "rts.author_id as author_id,"
                          "rts.fic_count as fic_count,"
                          "r.name as name"
-                         "  from RecommendationListAuthorStats rts, recommenders r where rts.author_id = r.id and list_id = :list_id order by %1 %2");
+                         "  from RecommendationListAuthorStats rts, recommenders r "
+                         " where rts.author_id = r.id and list_id = :list_id order by %1 %2");
     qs=qs.arg(sortOn).arg(order);
     SqlContext<QList<core::AuhtorStatsPtr>> ctx(db, qs, {{"list_id", listId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -1065,11 +1066,40 @@ DiagnosticSQLResult<bool> WriteAuthorRecommendationStatsForList(int listId, core
 }
 DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationLists(name) select '%1' "
-                         " where not exists(select 1 from RecommendationLists where name = '%1')").arg(list->name);
+    QString qs;
     SqlContext<bool> ctx(db, qs);
+    int freeId = -2;
+    {
+        qs = QString("select max(id) as id from RecommendationLists");
+        ctx.ReplaceQuery(qs);
+        if(!ctx.ExecAndCheckForData())
+        {
+            return ctx.result;
+        }
+        freeId = ctx.value("id").toInt() + 1;
+        qDebug() << "At this moment max id is: " << ctx.value("id").toInt();
+    }
+    qDebug() << "List's name is: " << list->name;
+    qs = QString("insert into RecommendationLists(name) select '%1' "
+                         " where not exists(select 1 from RecommendationLists where name = '%1')").arg(list->name);
+    ctx.ReplaceQuery(qs);
     if(!ctx.ExecAndCheck())
+    {
+        list->id = -1;
         return ctx.result;
+    }
+    qs = QString("select id from RecommendationLists where name = :name");
+    SqlContext<bool> ctx2(db, qs);
+    ctx2.bindValue("name",list->name);
+    if(!ctx2.ExecAndCheckForData())
+    {
+        list->id = -1;
+        return ctx2.result;
+    }
+    list->id = ctx2.value("id").toInt();
+    qDebug() << "Created new list with id: " << list->id;
+    ctx.result.data = list->id > 0;
+
     qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, "
                  " always_pick_at = :always_pick_at,  created = :created where name = :name");
     ctx.ReplaceQuery(qs);
@@ -1079,14 +1109,12 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.bindValue("always_pick_at",list->alwaysPickAt);
     ctx.bindValue("name",list->name);
     if(!ctx.ExecAndCheck())
+    {
+        list->id = -1;
         return ctx.result;
-    qs = QString("select id from RecommendationLists where name = :name");
-    ctx.ReplaceQuery(qs);
-    ctx.bindValue("name",list->name);
-    if(!ctx.ExecAndCheckForData())
-        return ctx.result;
-    list->id = ctx.value("id").toInt();
-    ctx.result.data = list->id > 0;
+    }
+
+
     return ctx.result;
 }
 
@@ -1705,7 +1733,7 @@ DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandomsAfter(int id, QSqlData
     });
     return ctx.result;
 }
-DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, QSqlDatabase db)
+DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, bool loadFandomStats, QSqlDatabase db)
 {
     core::FandomPtr currentFandom;
 
@@ -1717,18 +1745,21 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, QSqlDatabase db)
     ctx.ForEachInSelect([&](QSqlQuery& q){
         currentFandom = FandomfromQueryNew(q, currentFandom);
     });
-    auto statResult = GetFandomStats(currentFandom, db);
-    if(!statResult.success)
+    if(loadFandomStats)
     {
-        ctx.result.success = false;
-        return ctx.result;
+        auto statResult = GetFandomStats(currentFandom, db);
+        if(!statResult.success)
+        {
+            ctx.result.success = false;
+            return ctx.result;
+        }
     }
 
     ctx.result.data = currentFandom;
     return ctx.result;
 }
 
-DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, QSqlDatabase db)
+DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats, QSqlDatabase db)
 {
     core::FandomPtr currentFandom;
 
@@ -1740,11 +1771,14 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, QSqlDatabase db)
     ctx.ForEachInSelect([&](QSqlQuery& q){
         currentFandom = FandomfromQueryNew(q, currentFandom);
     });
-    auto statResult = GetFandomStats(currentFandom, db);
-    if(!statResult.success)
+    if(loadFandomStats)
     {
-        ctx.result.success = false;
-        return ctx.result;
+        auto statResult = GetFandomStats(currentFandom, db);
+        if(!statResult.success)
+        {
+            ctx.result.success = false;
+            return ctx.result;
+        }
     }
 
     ctx.result.data = currentFandom;
@@ -1962,13 +1996,15 @@ template <typename T1, typename T2>
 inline double DivideAsDoubles(T1 arg1, T2 arg2){
     return static_cast<double>(arg1)/static_cast<double>(arg2);
 }
-DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, QSqlDatabase db)
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db)
 {
     QString qs = QString("select fic_id,  "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
                          "value_common, value_uncommon, value_rare, value_unique "
-                         "from RecommendationListData where cfInSourceFics(fic_id) > 0 group by fic_id");
+                         "from RecommendationListData where "
+                         " cfInSourceFics(fic_id) > 0 and list_id = :listId"
+                         " group by fic_id");
     QHash<int, QStringList> breakdown;
     QHash<int, QStringList> breakdownCounts;
     auto* data= ThreadData::GetRecommendationData();
@@ -1978,6 +2014,7 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
         sourceSet.insert(fic.id);
 
     SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("listId", listId);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         int sumtotal = q.value("value_common").toInt() +
                 q.value("value_uncommon").toInt() +
@@ -3092,9 +3129,17 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
 {
-    QString qs = QString("insert into user_settings(name, value) values('db_uuid', '%1')");
+    QString qs;
+    qs = QString("select count(*) from user_settings where name = 'db_uuid'");
+    SqlContext<bool> ctx(db, qs);
+    if(!ctx.ExecAndCheck())
+        return ctx.result;
+    if(ctx.result.data > 0)
+        return ctx.result;
+    qs = QString("insert into user_settings(name, value) values('db_uuid', '%1')");
+    ctx.ReplaceQuery(qs);
     qs = qs.arg(id.toString());
-    return SqlContext<bool>(db, qs)();
+    return ctx();
 }
 
 DiagnosticSQLResult<bool> FillFicDataForList(int listId,
@@ -3146,6 +3191,7 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
 
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("listId", list->id);
+    qDebug() << "Creating new vote breakdown records for list with id: " << list->id;
     for(int i = 0; i < list->ficData.fics.size(); i++)
     {
         int ficId = list->ficData.fics.at(i);

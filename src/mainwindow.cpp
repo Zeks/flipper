@@ -198,7 +198,7 @@ bool MainWindow::Init()
 
 
     SetupFanficTable();
-    FillRecommenderListView();
+    //FillRecommenderListView();
     //CreatePageThreadWorker();
     callProgress = [&](int counter) {
         pbMain->setTextVisible(true);
@@ -813,6 +813,7 @@ void MainWindow::OnDoFormattedList()
 void MainWindow::on_pbLoadDatabase_clicked()
 {
     TaskProgressGuard guard(this);
+    database::Transaction transaction(env.interfaces.fandoms->db);
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     env.filter.recordPage = 0;
     env.pageOfCurrentQuery = 0;
@@ -822,6 +823,7 @@ void MainWindow::on_pbLoadDatabase_clicked()
         PlaceResults();
     }
     AnalyzeCurrentFilter();
+    transaction.finalize();
 }
 
 void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
@@ -940,7 +942,7 @@ void MainWindow::ReadSettings()
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    ui->wdgCustomActions->setVisible(settings.value("Settings/showCustomActions", false).toBool());
+    //ui->wdgCustomActions->setVisible(settings.value("Settings/showCustomActions", false).toBool());
     //ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
     //ui->chkInfoForLinks->setVisible(settings.value("Settings/showListCreation", false).toBool());
 
@@ -1384,12 +1386,12 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 
 void MainWindow::SetClientMode()
 {
-    ui->widget_4->hide();
+    //ui->widget_4->hide();
     //ui->wdgAdminActions->hide();
     //    ui->chkHeartProfile->setChecked(false);
     //    ui->chkHeartProfile->setVisible(false);
-    ui->tabWidget->removeTab(2);
-    ui->tabWidget->removeTab(1);
+//    ui->tabWidget->removeTab(2);
+//    ui->tabWidget->removeTab(1);
     ui->chkLimitPageSize->setChecked(true);
     //ui->chkLimitPageSize->setEnabled(false);
 
@@ -1575,7 +1577,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
-    //filter.Log();
+
     return filter;
 }
 

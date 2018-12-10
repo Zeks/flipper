@@ -499,9 +499,9 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
 }
 
 
-void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics)
+void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics, int listId)
 {
-    database::puresql::FetchRecommendationsBreakdown(fics, db);
+    database::puresql::FetchRecommendationsBreakdown(fics, listId, db);
 }
 
 

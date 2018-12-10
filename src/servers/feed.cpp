@@ -311,6 +311,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         target->set_counts_rare(list.breakdowns[key].authorTypes[EAuthorType::rare]);
         target->set_counts_unique(list.breakdowns[key].authorTypes[EAuthorType::unique]);
     }
+    qDebug() << "Match report will contain: " << list.matchReport.keys().size() << " fics";
     for(int key: list.matchReport.keys())
     {
         if(sourceFics.contains(key) && !task->return_sources())

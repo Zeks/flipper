@@ -610,7 +610,7 @@ QList<core::FandomPtr > Fandoms::ListOfTrackedFandoms()
 bool Fandoms::LoadFandom(QString name)
 {
     name = core::Fandom::ConvertName(name);
-    auto fandom = database::puresql::GetFandom(name, db).data;
+    auto fandom = database::puresql::GetFandom(name, !isClient, db).data;
     if(!fandom)
         return false;
 
@@ -621,7 +621,7 @@ bool Fandoms::LoadFandom(QString name)
 
 bool Fandoms::LoadFandom(int id)
 {
-    auto fandom = database::puresql::GetFandom(id, db).data;
+    auto fandom = database::puresql::GetFandom(id, !isClient, db).data;
     if(!fandom)
         return false;
 

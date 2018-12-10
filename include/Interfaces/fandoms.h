@@ -105,6 +105,7 @@ public:
 
     QList<core::FandomPtr> FilterFandoms(std::function<bool(core::FandomPtr)>);
 
+    bool isClient = false;
     QSqlDatabase db;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
 private:
@@ -122,9 +123,9 @@ private:
     QList<core::FandomPtr> trackedFandoms;
     QStringList fandomsList;
     int fandomCount = 0;
-
-
     bool isLoaded = false;
+
 };
+
 
 }

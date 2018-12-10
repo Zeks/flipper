@@ -140,12 +140,13 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     qDebug() << "Finished list load";
 
     QHash<int, QSet<int>> ficsToUse;
+    auto& faves  = holder->holder.faves;
 
-    for(int key : holder->favourites.keys())
+    for(int key : faves.keys())
     {
-        auto& set = holder->favourites[key];
+        auto& set = faves[key];
         //qDebug() <<  key << " set size is: " << set.size();
-        if(set.size() < minAuthorRecs)
+        if(set.cardinality() < minAuthorRecs)
             continue;
         //qDebug() << "processing";
         for(auto fic : set)
@@ -764,7 +765,12 @@ void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
     // to reduce throttling
     // perhaps doesn't need to be a set, a vector might do
     for(auto& favSet : cdh.favourites)
+    {
+        int previousSize = favSet.size();
         favSet.intersect(ficSet);
+        int newSize = favSet.size();
+        qDebug() << "P: " << previousSize << "N: " << newSize;
+    }
 
     auto it = cdh.favourites.begin();
     auto end = cdh.favourites.end();
@@ -778,16 +784,19 @@ void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
     std::sort(cdh.filteredFavourites.begin(), cdh.filteredFavourites.end(), [](const ListWithIdentifier& fp1, const ListWithIdentifier& fp2){
         return fp1.favourites.size() < fp2.favourites.size();
     });
+    for(auto& list: cdh.filteredFavourites)
+        qDebug() << "Size: " << list.favourites.size();
 
 }
 
 struct FicPair{
-    uint32_t count = 0;
-    float val1;
-    float val2;
-    float val3;
-    float val4;
-    float val5;
+//    /uint32_t count = 0;
+//    float val1;
+//    float val2;
+//    float val3;
+//    float val4;
+//    float val5;
+    Roaring r;
 };
 
 //struct SmartHash{
@@ -924,8 +933,8 @@ void ServitorWindow::on_pbCalcWeights_clicked()
 {
 
 
-    CalcConstantMemory();
-    return;
+//    CalcConstantMemory();
+//    return;
     CalcDataHolder cdh;
     LoadDataForCalculation(cdh);
     ProcessCDHData(cdh);
@@ -981,10 +990,13 @@ void ServitorWindow::on_pbCalcWeights_clicked()
         qDebug() << "full fav size: " << cdh.filteredFavourites.size();
         for(auto fav : cdh.filteredFavourites)
         {
-            if(counter%10000 == 0)
-                qDebug() << " At: " << counter;
-            counter++;
             auto values = fav.favourites.toList();
+            if(counter%100 == 0)
+                qDebug() << " At: " << counter << " size: " << values.size();
+            counter++;
+            if(counter > 213000 && counter%1000 == 0)
+                ficsMeeting.squeeze();
+
             //qDebug() << "Reading list of size: " << values.size();
             for(int i = 0; i < values.size(); i++)
             {
@@ -1026,13 +1038,26 @@ void ServitorWindow::on_pbCalcWeights_clicked()
                         ficsIterator = ficsMeeting.find(pair);
                     }
 
-                    ficsIterator.value().count++;
+                    //ficsIterator.value().count++;
+                    ficsIterator.value().r.add(fav.id);
+                    if(counter > 213000)
+                        ficsIterator.value().r.shrinkToFit();
                     //                    pairCounter++;
                 }
             }
             //qDebug() << "List had: " << pairCounter << " pairs";
         }
     }
+    int countPairs = 0;
+    int countListRecords = 0;
+
+    for(auto edge: ficsMeeting)
+    {
+        countPairs++;
+        countListRecords+=edge.r.cardinality();
+    }
+    qDebug() << "edge count: " << countPairs;
+    qDebug() << "list records count: " << countListRecords;
     //    auto values = ficsMeeting.values();
     //    std::sort(values.begin(), values.end(), [](const FicPair& fp1, const FicPair& fp2){
     //        return fp1.count > fp2.count;

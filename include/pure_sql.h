@@ -91,8 +91,8 @@ DiagnosticSQLResult<bool> CreateFandomInDatabase(QSharedPointer<core::Fandom> fa
 DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandoms(QSqlDatabase db);
 DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandomsAfter(int id, QSqlDatabase db);
 QList<core::FandomPtr> GetAllFandomsFromSingleTable(QSqlDatabase db);
-DiagnosticSQLResult<core::FandomPtr> GetFandom(QString name, QSqlDatabase db);
-DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, QSqlDatabase db);
+DiagnosticSQLResult<core::FandomPtr> GetFandom(QString name, bool loadFandomStats, QSqlDatabase db);
+DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats,  QSqlDatabase db);
 
 DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
@@ -242,7 +242,7 @@ DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID( QSqlDatabase db);
 DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase db);
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 
-DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db);
 
 
 

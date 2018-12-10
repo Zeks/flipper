@@ -102,7 +102,7 @@ void CoreEnvironment::LoadData()
     {
         interfaces.fandoms->FetchFandomsForFics(&newFanfics);
         interfaces.tags->FetchTagsForFics(&newFanfics);
-        interfaces.recs->FetchRecommendationsBreakdown(&newFanfics);
+        interfaces.recs->FetchRecommendationsBreakdown(&newFanfics, filter.listForRecommendations);
     }
     fanfics = newFanfics;
     currentLastFanficId = ficSource->lastFicId;
@@ -168,6 +168,7 @@ bool CoreEnvironment::Init()
         grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);
         if(fandoms.size() > 0)
             interfaces.fandoms->UploadFandomsIntoDatabase(fandoms);
+        interfaces.fandoms->ReloadRecentFandoms();
         auto recentFandoms = interfaces.fandoms->GetRecentFandoms();
         if(recentFandoms.size() == 0)
         {
@@ -227,6 +228,8 @@ void CoreEnvironment::InitInterfaces()
     interfaces.fanfics->db = userDBInterface->GetDatabase();
     interfaces.recs->db    = userDBInterface->GetDatabase();
     interfaces.fandoms->db = userDBInterface->GetDatabase();
+    if(thinClient)
+        interfaces.fandoms->isClient = true;
     interfaces.tags->db    = userDBInterface->GetDatabase();
     interfaces.genres->db  = userDBInterface->GetDatabase();
 
@@ -453,6 +456,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
                                                      QVector<int> sourceFics,
                                                      bool automaticLike)
 {
+    qDebug() << "At start list id is: " << list->id;
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
 
@@ -462,7 +466,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
     database::Transaction transaction(interfaces.recs->db);
     list->id = interfaces.recs->GetListIdForName(list->name);
-
+    qDebug() << "Fetched name for list is: " << list->name;
 
     bool result = grpcSource->GetRecommendationListFromServer(*list);
 
@@ -491,11 +495,11 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     {
         return -1;
     }
-
+    qDebug() << "Deleting list: " << list->id;
     interfaces.recs->DeleteList(list->id);
 
     interfaces.recs->LoadListIntoDatabase(list);
-    qDebug() << list->ficData.fics;
+    //qDebug() << list->ficData.fics;
     interfaces.recs->LoadListFromServerIntoDatabase(list);
 
     interfaces.recs->UpdateFicCountInDatabase(list->id);

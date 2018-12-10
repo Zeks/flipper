@@ -75,14 +75,12 @@ bool SqliteInterface::ReadDbFile(QString file, QString connectionName)
 QSqlDatabase SqliteInterface::InitDatabase(QString connectionName, bool setDefault)
 {
     db = sqlite::InitDatabase(connectionName, setDefault);
-    EnsureUUIDForUserDatabase();
     return db;
 }
 
 QSqlDatabase SqliteInterface::InitDatabase2(QString fileName, QString connectionName, bool setDefault)
 {
     db = sqlite::InitDatabase2(fileName, connectionName, setDefault);
-    EnsureUUIDForUserDatabase();
     return db;
 }
 

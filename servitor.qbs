@@ -180,6 +180,7 @@ App{
             "proto/filter.proto",
             "proto/fanfic.proto",
             "proto/fandom.proto",
+            "proto/favlist.proto",
         ]
         fileTags: ["proto"]
     }

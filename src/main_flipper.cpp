@@ -67,11 +67,13 @@ int main(int argc, char *argv[])
     {
         mainDb = dbInterface->InitDatabase("CrawlerDB", true);
         userDb = userDbInterface->InitDatabase("UserDB", false);
+        userDbInterface->EnsureUUIDForUserDatabase();
     }
     else
     {
        mainDb = dbInterface->InitDatabase("CrawlerDB", false);
        userDb = userDbInterface->InitDatabase("UserDB", true);
+       userDbInterface->EnsureUUIDForUserDatabase();
     }
     auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
 
