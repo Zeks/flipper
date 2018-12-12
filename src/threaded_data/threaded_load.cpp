@@ -117,7 +117,7 @@ auto valueFetcher){
 
 
 auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBase,auto& destination){
-    QList<QFuture<typename std::remove_reference<decltype(destination)>::type>> futures;
+    QVector<QFuture<typename std::remove_reference<decltype(destination)>::type>> futures;
     for(int i = 0; i < QThread::idealThreadCount()-1; i++)
     {
         futures.push_back(QtConcurrent::run([nameBase,i, loaderFunc](){
@@ -138,7 +138,9 @@ auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBas
 
 };
 
-auto vectorUnifier = [](auto& dest, auto source){dest+=source;};
+auto vectorUnifier = [](auto& dest, auto source){
+    dest+=source;
+};
 auto hashUnifier = [](auto& dest, auto source){dest.unite(source);};
 auto genresFetchFunc = [](auto& container, QDataStream& in){
     int key;

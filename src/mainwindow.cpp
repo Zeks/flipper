@@ -1972,6 +1972,7 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
         return;
 
     LoadAutomaticSettingsForRecListSources(fics.size());
+    edit->clear();
     edit->setOpenExternalLinks(false);
     edit->setOpenLinks(false);
     edit->setReadOnly(false);
@@ -2065,7 +2066,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
 
 
 
-    ui->edtAnalysisResults->insertHtml(QString("Mood uniformity: <font color=blue>%1</font><br>").arg(QString::number(stats.moodUniformity)));
+    //ui->edtAnalysisResults->insertHtml(QString("Mood uniformity: <font color=blue>%1</font><br>").arg(QString::number(stats.moodUniformity)));
     ui->edtAnalysisResults->insertHtml("Mood content%:<br>");
 
     QString moodTemplate = "%1: <font color=blue>%2</font>";
@@ -2091,7 +2092,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     QString genreTemplate = "%1: <font color=blue>%2</font>";
 
 
-    ui->edtAnalysisResults->insertHtml(QString("Genre diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.genreDiversityFactor)));
+    //ui->edtAnalysisResults->insertHtml(QString("Genre diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.genreDiversityFactor)));
     ui->edtAnalysisResults->insertHtml("Genres%:<br>");
     for(int i = 0; i < 10; i++)
     {
@@ -2103,7 +2104,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
 
 
 
-    ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
+    //ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
     ui->edtAnalysisResults->insertHtml("Fandoms:<br>");
     QVector<SortedBit<int>> fandoms;
     for(auto id : stats.fandomsConverted.keys())

@@ -3129,17 +3129,34 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
 {
+    DiagnosticSQLResult<bool> result;
     QString qs;
-    qs = QString("select count(*) from user_settings where name = 'db_uuid'");
-    SqlContext<bool> ctx(db, qs);
-    if(!ctx.ExecAndCheck())
-        return ctx.result;
+    qs = QString("select count(*) as cnt from user_settings where name = 'db_uuid'");
+    SqlContext<int> ctx(db, qs);
+    ctx.FetchSingleValue<int>("cnt", 0);
+    if(!ctx.Success())
+    {
+        result.oracleError = ctx.result.oracleError;
+        return result;
+    }
+    result.success = true;
     if(ctx.result.data > 0)
-        return ctx.result;
+    {
+
+        return result;
+    }
     qs = QString("insert into user_settings(name, value) values('db_uuid', '%1')");
-    ctx.ReplaceQuery(qs);
     qs = qs.arg(id.toString());
-    return ctx();
+    ctx.ReplaceQuery(qs);
+
+    ctx();
+    if(!ctx.Success())
+    {
+        result.oracleError = ctx.result.oracleError;
+        result.success = false;
+        return result;
+    }
+    return result;
 }
 
 DiagnosticSQLResult<bool> FillFicDataForList(int listId,

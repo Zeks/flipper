@@ -1247,7 +1247,7 @@
                       <string>Limits te amount of fics to display. Needed for randomization due to the way it selects random fics from the database.</string>
                      </property>
                      <property name="maximum">
-                      <number>50</number>
+                      <number>100</number>
                      </property>
                      <property name="value">
                       <number>6</number>

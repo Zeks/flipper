@@ -110,20 +110,25 @@ void FicListDataAccumulator::ProcessGenres()
     An<interfaces::GenreIndex> genreIndex;
     //int moodSum = 0;
     int totalInClumps = 0;
+    int total = 0;
     for(size_t i = 0; i < genreCounters.size(); i++)
     {
         const auto& genre = genreIndex->genresByIndex[i];
         result.genreRatios[genre.indexInDatabase] = DivideAsDoubles(genreCounters[genre.indexInDatabase], ficCount);
+        total+=genreCounters[genre.indexInDatabase];
         if(DivideAsDoubles(genreCounters[genre.indexInDatabase], ficCount) > 0.4)
             totalInClumps+=genreCounters[genre.indexInDatabase];
         auto type = static_cast<size_t>(genre.moodType);
         moodCounters[type]+= genreCounters[i];
     }
+    int totalMoodValue = 0;
     for(size_t i = 0; i < 4; i++)
-        result.moodRatios[i] += DivideAsDoubles(moodCounters[i], ficCount);
+        totalMoodValue += moodCounters[i];
+    for(size_t i = 0; i < 4; i++)
+        result.moodRatios[i] += DivideAsDoubles(moodCounters[i], totalMoodValue);
 
-    int totalInRest = ficCount - totalInClumps;
-    result.genreDiversityRatio= DivideAsDoubles(totalInRest, ficCount);
+    int totalInRest = total - totalInClumps;
+    result.genreDiversityRatio= DivideAsDoubles(totalInRest, total);
     auto minMood = std::min(result.moodRatios[1], std::min(result.moodRatios[2], result.moodRatios[3]));
     auto maxMood = std::max(result.moodRatios[1], std::max(result.moodRatios[2], result.moodRatios[3]));
     result.moodUniformityRatio = DivideAsDoubles(minMood,maxMood);
@@ -140,15 +145,17 @@ void FicListDataAccumulator::ProcessFandoms()
     double averageFicsPerFandom = DivideAsDoubles(ficCount,fandomCounters.keys().size()); //static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.keys().size());
 
     int totalInClumps = 0;
+    int total = 0;
     for(auto fandom : fandomCounters.keys())
     {
         auto currentFandomCounter = fandomCounters[fandom];
+        total+=fandomCounters[fandom];
         if(currentFandomCounter >= 2*averageFicsPerFandom)
             totalInClumps+=fandomCounters[fandom];
 
         result.fandomRatios[fandom]=DivideAsDoubles(fandomCounters[fandom], ficCount);
     }
-    int totalInRest = ficCount - totalInClumps;
+    int totalInRest = total - totalInClumps;
     //diverse favourite list  will have this close to 1
     result.fandomDiversityRatio = DivideAsDoubles(totalInRest, ficCount);
     result.crossoverRatio = DivideAsDoubles(crossoverCounter, ficCount);
