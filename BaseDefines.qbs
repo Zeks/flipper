@@ -20,6 +20,7 @@ Product{
             var addition = qbs.buildVariant == "release" ? "/release" : "/debug";
             path= path.concat(conditionals.projectPath + addition)
             path= path.concat("/home/zeks/grpc/libs/opt")
+            //path= path.concat("/home/zeks/flipper/Run")
             path= path.concat("/home/zeks/grpc/third_party/protobuf/src/.libs")
         }
         return path
