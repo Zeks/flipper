@@ -106,6 +106,15 @@ message RecommendationListData{
     // don't want personal data seeping through
     // repeated int32 author_ids   = 4;
 }
+message NegativeTagsToken{
+    repeated int32 basicNegatives       = 1;
+    repeated int32 strongNegatives      = 2;
+}
+
+message RecListUserData{
+    IgnoredFandomsToken ignored_fandoms = 1;
+    NegativeTagsToken negative_feedback = 2;
+}
 
 message RecommendationListCreationRequest{
     ControlInfo controls                = 1;
@@ -116,6 +125,7 @@ message RecommendationListCreationRequest{
     SiteIDPack id_packs                 = 6;
     bool return_sources                 = 7;
     bool use_weighting                  = 8;
+    RecListUserData user_data           = 9;
 }
 
 message RecommendationListCreationResponse{

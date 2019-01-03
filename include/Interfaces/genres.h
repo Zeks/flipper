@@ -125,7 +125,6 @@ public:
     QVector<genre_stats::FicGenreData> GetGenreDataForQueuedFics();
     void QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves);
     bool WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics);
-    std::optional<size_t> GetGenreIndex(QString genre);
 
     GenreIndex index;
     QSqlDatabase db;

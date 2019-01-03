@@ -267,6 +267,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     params->pickRatio = task->max_unmatched_to_one_matched();
     params->alwaysPickAt = task->always_pick_at();
     params->useWeighting = task->use_weighting();
+    params->Log();
 
     QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
     fanficsInterface->db = dbContext.dbInterface->GetDatabase();
@@ -283,6 +284,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         }
         if(sourceFics.size() == 0)
             return Status::OK;
+        QLOG_INFO() << "source contains fics: " << sourceFics.size();
         recs->sourceFics = sourceFics;
         TimedAction action("Fic ids conversion",[&](){
             fetchedFics = fanficsInterface->GetFicsForRecCreation();
@@ -325,6 +327,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         }
         });
         dataPassAction.run();
+        QLOG_INFO() << "Byte size will be: " << response->ByteSize();
         return Status::OK;
     }
 
@@ -419,6 +422,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             response->mutable_ids()->add_ffn_ids(idsToFill[fic]);
             response->mutable_ids()->add_db_ids(fic);
         }
+
         return Status::OK;
     }
 
