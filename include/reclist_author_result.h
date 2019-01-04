@@ -7,6 +7,7 @@ struct AuthorResult{
     int matches;
     double ratio;
     int size;
+    uint64_t sizeAfterIgnore = 0;
     double distance = 0;
 };
 struct AuthorWeightingResult

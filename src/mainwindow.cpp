@@ -1853,6 +1853,9 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         params->pickRatio = ui->leRecsPickRatio->text().toInt();
         params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
         params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
+        auto ids = env.interfaces.fandoms->GetIgnoredFandomsIDs();
+        for(auto fandom: ids.keys())
+            params->ignoredFandoms.insert(fandom);
         TaskProgressGuard guard(this);
 
         QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);

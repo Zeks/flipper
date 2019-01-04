@@ -822,6 +822,9 @@ public:
     int alwaysPickAt = -2;
     double pickRatio = -1;
     bool useWeighting = false;
+    QSet<int> ignoredFandoms;
+    QSet<int> minorNegativeVotes;
+    QSet<int> majorNegativeVotes;
     QDateTime created;
     RecommendationListFicData ficData;
 };

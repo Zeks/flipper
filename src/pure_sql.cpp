@@ -350,7 +350,7 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
     fic->webId     = q1.value(website + "_ID").toInt();
     fic->id        = q1.value("ID").toInt();
     fic->wordCount = q1.value("WORDCOUNT").toString();
-    fic->chapters = q1.value("CHAPTERS").toString();
+    //fic->chapters = q1.value("CHAPTERS").toString();
     fic->reviews = q1.value("REVIEWS").toString();
     fic->favourites = q1.value("FAVOURITES").toString();
     fic->follows = q1.value("FOLLOWS").toString();
@@ -1398,7 +1398,7 @@ static auto getFicWeightPtrFromQuery = [](auto& q){
     fw->adult = q.value("Rated").toString() == "M";
     fw->authorId = q.value("author_id").toInt();
     fw->complete = q.value("complete").toBool();
-    fw->chapterCount = q.value("chapters").toInt();
+    //fw->chapterCount = q.value("chapters").toInt();
     fw->dead = !fw->complete  && q.value("updated").toDateTime().daysTo(QDateTime::currentDateTime()) > 365;
     fw->fandoms.push_back(q.value("fandom1").toInt());
     fw->fandoms.push_back(q.value("fandom2").toInt());

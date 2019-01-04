@@ -196,7 +196,9 @@ public:
     typedef QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> FilterListType;
     typedef QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> ActionListType;
 
-    RecCalculatorImplBase(const DataHolder::FavType& faves):favs(faves){}
+    RecCalculatorImplBase(const DataHolder::FavType& faves,
+                          const DataHolder::FicType& fics):favs(faves),fics(fics){}
+
     virtual ~RecCalculatorImplBase(){}
 
     void Calc();
@@ -213,6 +215,7 @@ public:
 
     int matchSum = 0;
     const DataHolder::FavType& favs;
+    const DataHolder::FicType& fics;
     QSharedPointer<RecommendationList> params;
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
     QHash<int, AuthorResult> allAuthors;
@@ -234,7 +237,7 @@ static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & aut
 //auto ratioAccumulator = [&ratioSum](RecCalculatorImplBase* ,AuthorResult & author){ratioSum+=author.ratio;};
 class RecCalculatorImplDefault: public RecCalculatorImplBase{
 public:
-    RecCalculatorImplDefault(const DataHolder::FavType& faves): RecCalculatorImplBase(faves){}
+    RecCalculatorImplDefault(const DataHolder::FavType& faves, const DataHolder::FicType& fics): RecCalculatorImplBase(faves, fics){}
     virtual FilterListType GetFilterList(){
         return {matchesFilter, ratioFilter};
     }
@@ -250,7 +253,7 @@ public:
 };
 class RecCalculatorImplWeighted : public RecCalculatorImplBase{
 public:
-    RecCalculatorImplWeighted(const DataHolder::FavType& faves): RecCalculatorImplBase(faves){}
+    RecCalculatorImplWeighted(const DataHolder::FavType& faves,const DataHolder::FicType& fics): RecCalculatorImplBase(faves, fics){}
     double ratioSum = 0;
     double ratioMedian = 0;
     double quad = 0;
@@ -424,6 +427,19 @@ void RecCalculatorImplBase::FetchAuthorRelations()
 {
     qDebug() << "faves is of size: " << favs.size();
     allAuthors.reserve(favs.size());
+    Roaring ignores;
+    //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
+    TimedAction ignoresCreation("Building ignores",[&](){
+        for(auto fic: fics)
+        {
+            for(auto fandom: fic->fandoms)
+                if(params->ignoredFandoms.contains(fandom) && fandom > 1)
+                    ignores.add(fic->id);
+        }
+    });
+    ignoresCreation.run();
+    QLOG_INFO() << "fanfic ignore list is of size: " << ignores.cardinality();
+
 
     auto sourceFics = QSet<uint32_t>::fromList(fetchedFics.keys());
     Roaring r;
@@ -440,10 +456,30 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             auto& author = allAuthors[it.key()];
             author.id = it.key();
             author.matches = 0;
+            //QLOG_INFO
+            //these are the fics from the current fav list that are ignored
+
+            bool hasIgnoredMatches = false;
+            Roaring ignoredTemp = it.value();
+            ignoredTemp = ignoredTemp & ignores;
+
+            if(ignoredTemp.cardinality() > 0)
+            {
+                hasIgnoredMatches = true;
+//                QLOG_INFO() << "ficl list size is: " << it.value().cardinality();
+//                QLOG_INFO() << "of those ignored are: " << ignoredTemp.cardinality();
+            }
             author.size = it.value().cardinality();
             Roaring temp = r;
+            // first we need to remove ignored fics
+            auto unignoredSize = it.value().xor_cardinality(ignoredTemp);
+//            if(hasIgnoredMatches)
+//                QLOG_INFO() << "this leaves unignored: " << unignoredSize;
             temp = temp & it.value();
             author.matches = temp.cardinality();
+            author.sizeAfterIgnore = unignoredSize;
+            if(ignores.cardinality() == 0)
+                author.sizeAfterIgnore = author.size;
             if(maximumMatches < author.matches)
             {
                 prevMaximumMatches = maximumMatches;
@@ -462,7 +498,7 @@ void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSh
     auto params = this->params;
     auto thisPtr = this;
     std::for_each(allAuthors.begin(), allAuthors.end(), [filters, actions, params,thisPtr](AuthorResult& author){
-        author.ratio = author.matches != 0 ? static_cast<double>(author.size)/static_cast<double>(author.matches) : 999999;
+        author.ratio = author.matches != 0 ? static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches) : 999999;
         bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
                 return filter(author, params) == 0;
     });
@@ -483,9 +519,9 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
 {
     QSharedPointer<RecCalculatorImplBase> calculator;
     if(params->useWeighting)
-        calculator.reset(new RecCalculatorImplWeighted(holder.faves));
+        calculator.reset(new RecCalculatorImplWeighted(holder.faves, holder.fics));
     else
-        calculator.reset(new RecCalculatorImplDefault(holder.faves));
+        calculator.reset(new RecCalculatorImplDefault(holder.faves, holder.fics));
     calculator->fetchedFics = fetchedFics;
     calculator->params = params;
     TimedAction action("Reclist Creation",[&](){

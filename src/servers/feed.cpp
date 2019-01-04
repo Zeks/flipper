@@ -73,10 +73,16 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     An<core::RecCalculator> calculator;
     auto authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authors->db = mainDb;
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    fanfics->db = mainDb;
+    fanfics->authorInterface = authors;
     calculator->holder.authorsInterface = authors;
+    calculator->holder.fanficsInterface = fanfics;
     calculator->holder.settingsFile = "settings_server.ini";
 
+    calculator->holder.LoadData<core::rdt_fics>("ServerData");
     calculator->holder.LoadData<core::rdt_favourites>("ServerData");
+
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
     connect(logTimer.data(), SIGNAL(timeout()), this, SLOT(OnPrintStatistics()), Qt::QueuedConnection);
@@ -267,6 +273,14 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     params->pickRatio = task->max_unmatched_to_one_matched();
     params->alwaysPickAt = task->always_pick_at();
     params->useWeighting = task->use_weighting();
+    for(auto i = 0; i< task->user_data().ignored_fandoms().fandom_ids_size(); i++)
+        params->ignoredFandoms.insert(task->user_data().ignored_fandoms().fandom_ids(i));
+    for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
+        params->minorNegativeVotes.insert(task->user_data().negative_feedback().basicnegatives(i));
+    for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
+        params->majorNegativeVotes.insert(task->user_data().negative_feedback().strongnegatives(i));
+
+
     params->Log();
 
     QSharedPointer<interfaces::Fanfics> fanficsInterface (new interfaces::FFNFanfics());
@@ -679,3 +693,4 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     {
         PrintStatistics();
     }
+
