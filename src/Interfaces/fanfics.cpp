@@ -220,6 +220,11 @@ QSet<int> Fanfics::GetAllKnownFicIDs(QString where)
     return data.data;
 }
 
+QSet<int> Fanfics::GetFicIDsWithUnsetAuthors()
+{
+    return database::puresql::GetFicIDsWithUnsetAuthors(db).data;
+}
+
 QVector<core::FicWeightPtr> Fanfics::GetAllFicsWithEnoughFavesForWeights(int faves)
 {
     return database::puresql::GetAllFicsWithEnoughFavesForWeights(faves, db).data;
@@ -347,6 +352,12 @@ bool Fanfics::WriteFicRelations(QList<core::FicWeightResult> result)
 {
     return database::puresql::WriteFicRelations(result, db).success;
 }
+
+bool Fanfics::WriteAuthorsForFics(QHash<uint32_t, uint32_t> data)
+{
+    return database::puresql::WriteAuthorsForFics(data, db).success;
+}
+
 
 void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
 {

@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/grpc/grpc_source.h"
 #include "include/url_utils.h"
 #include "include/Interfaces/fandoms.h"
+#include "include/tokenkeeper.h"
+#include "include/servers/token_processing.h"
 #include "proto/filter.pb.h"
 #include "proto/fanfic.pb.h"
 #include "proto/fandom.pb.h"
@@ -541,6 +543,18 @@ bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavList
     }
     return true;
 }
+
+bool AuthorListProtoToLocal(const ProtoSpace::AuthorsForFicsResponse &proto, QHash<uint32_t, uint32_t> &result)
+{
+    if(!proto.success())
+        return false;
+
+    for(auto i = 0; i < proto.fics_size(); i ++)
+        result[static_cast<uint32_t>(proto.fics(i))] = static_cast<uint32_t>(proto.authors(i));
+
+    return true;
+}
+
 }
 
 class FicSourceGRPCImpl{
@@ -560,6 +574,7 @@ public:
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
     void ProcessStandardError(grpc::Status status);
     core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
+    QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
@@ -929,6 +944,42 @@ core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack
     return result;
 }
 
+QHash<uint32_t, uint32_t> FicSourceGRPCImpl::GetAuthorsForFicList(QSet<int> ficList)
+{
+    QHash<uint32_t, uint32_t> result;
+
+    grpc::ClientContext context;
+
+    ProtoSpace::AuthorsForFicsRequest task;
+
+    if(!ficList.size())
+        return result;
+
+    QScopedPointer<ProtoSpace::AuthorsForFicsResponse> response (new ProtoSpace::AuthorsForFicsResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    for(auto fic : ficList)
+    {
+        auto idPacks = task.mutable_id_packs();
+        idPacks->add_db_ids(fic);
+    }
+
+    grpc::Status status = stub_->GetAuthorsForFicList(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    if(!response->success())
+        return result;
+
+    proto_converters::AuthorListProtoToLocal(*response, result);
+
+    return result;
+}
+
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
                              QString userToken,
                              int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
@@ -991,6 +1042,13 @@ std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList(QVector<c
     return impl->GetStatsForFicList(ficList);
 }
 
+QHash<uint32_t, uint32_t> FicSourceGRPC::GetAuthorsForFicList(QSet<int> ficList)
+{
+    if(!impl)
+        return {};
+    return impl->GetAuthorsForFicList(ficList);
+}
+
 ServerStatus FicSourceGRPC::GetStatus()
 {
     if(!impl)
@@ -1022,23 +1080,29 @@ bool VerifyNotEmpty(const int& val){
     return true;
 }
 
-bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack)
+bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseInfo* info)
 {
+    bool isValid = true;
     if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 )
-        return false;
+        isValid = true;
     if(idPack.ffn_ids().size() > 10000)
-        return false;
+        isValid = true;
     if(idPack.ao3_ids().size() > 10000)
-        return false;
+        isValid = true;
     if(idPack.sb_ids().size() > 10000)
-        return false;
+        isValid = true;
     if(idPack.sv_ids().size() > 10000)
+        isValid = true;
+    if(!isValid)
+    {
+        SetFicIDSyncDataError(info);
         return false;
+    }
     return true;
 }
 
 
-bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request)
+bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request,  ProtoSpace::ResponseInfo* info)
 {
     if(request->list_name().size() > 100)
         return false;
@@ -1048,7 +1112,7 @@ bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRe
         return false;
     if(request->always_pick_at() < 1)
         return false;
-    if(!VerifyIDPack(request->id_packs()))
+    if(!VerifyIDPack(request->id_packs(), info))
         return false;
     return true;
 }

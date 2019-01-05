@@ -18,6 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "servers/database_context.h"
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
+#include "Interfaces/ffn/ffn_authors.h"
+#include "Interfaces/ffn/ffn_fanfics.h"
+#include "Interfaces/fandoms.h"
 static QString GetDbNameFromCurrentThread(){
     std::stringstream ss;
     ss << std::this_thread::get_id();
@@ -30,4 +33,30 @@ DatabaseContext::DatabaseContext(){
     QString name = GetDbNameFromCurrentThread();
     qDebug() << "OPENING CONNECTION:" << name;
     dbInterface->InitDatabase2("CrawlerDB", name, false);
+}
+
+void DatabaseContext::InitFanfics()
+{
+    authors =  QSharedPointer<interfaces::Authors> {new interfaces::FFNAuthors()};
+    authors->db = dbInterface->GetDatabase();
+    fandoms =  QSharedPointer<interfaces::Fandoms> {new interfaces::Fandoms()};
+    fandoms->db = dbInterface->GetDatabase();
+
+
+    fanfics =  QSharedPointer<interfaces::Fanfics> {new interfaces::FFNFanfics()};
+    fanfics->db = dbInterface->GetDatabase();
+    fanfics->authorInterface = authors;
+    fanfics->fandomInterface = fandoms;
+}
+
+void DatabaseContext::InitFandoms()
+{
+    fandoms =  QSharedPointer<interfaces::Fandoms> {new interfaces::Fandoms()};
+    fandoms->db = dbInterface->GetDatabase();
+}
+
+void DatabaseContext::InitAuthors()
+{
+    authors =  QSharedPointer<interfaces::Authors> {new interfaces::FFNAuthors()};
+    authors->db = dbInterface->GetDatabase();
 }

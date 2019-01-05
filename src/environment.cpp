@@ -191,6 +191,21 @@ bool CoreEnvironment::Init()
     interfaces.fandoms->Load();
     interfaces.recs->LoadAvailableRecommendationLists();
     interfaces.fandoms->FillFandomList(true);
+
+    auto fics = interfaces.fanfics->GetFicIDsWithUnsetAuthors();
+    if(fics.size() > 0)
+    {
+        auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+        if(grpcSource)
+        {
+            auto authors = grpcSource->GetAuthorsForFicList(fics);
+            for(auto fic: authors.keys())
+                QLOG_INFO() << "Fic: "  << fic << " Author: " << authors[fic];
+            interfaces.fanfics->WriteAuthorsForFics(authors);
+        }
+    }
+
+
     return true;
 }
 

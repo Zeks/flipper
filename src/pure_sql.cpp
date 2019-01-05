@@ -553,6 +553,29 @@ DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> ficRela
     return result;
 }
 
+DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  QSqlDatabase db)
+{
+    QString qs = " insert into FicAuthors (fic_id, author_id)"
+                 " values(:fic_id, :author_id); ";
+    SqlContext<bool> ctx(db);
+    ctx.Prepare(qs);
+    DiagnosticSQLResult<bool> result;
+    for(auto fic: data.keys())
+    {
+        ctx.bindValue("fic_id",fic);
+        ctx.bindValue("author_id",data[fic]);
+        ctx();
+        if(!ctx.result.success)
+        {
+            result.success = false;
+            result.oracleError = ctx.result.oracleError;
+            break;
+        }
+    }
+    return result;
+}
+
+
 DiagnosticSQLResult<int>  GetAuthorIdFromUrl(QString url, QSqlDatabase db)
 {
     QString qsl = " select id from recommenders where url like '%%1%' ";
@@ -588,6 +611,18 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase d
 
 }
 
+DiagnosticSQLResult<QHash<uint32_t, int>> GetHashAuthorsForFics(QSet<int> fics, QSqlDatabase db)
+{
+    auto* userThreadData = ThreadData::GetUserData();
+    userThreadData->ficsForAuthorSearch = fics;
+    QString qs = "select author_id, id from fanfics where cfInFicsForAuthors(id) > 0";
+    SqlContext<QHash<uint32_t, int>> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data[q.value("id").toUInt()] = q.value("author_id").toInt();
+    });
+
+    return ctx.result;
+}
 
 DiagnosticSQLResult<bool> AssignNewNameToAuthorWithId(core::AuthorPtr author, QSqlDatabase db)
 {
@@ -2899,6 +2934,14 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db
     ctx.FetchLargeSelectIntoList<int>("id",
                                       "select id from fanfics where " + where,
                                       "select count(*) from fanfics where " + where);
+
+    return ctx.result;
+}
+DiagnosticSQLResult<QSet<int>>  GetFicIDsWithUnsetAuthors(QSqlDatabase db)
+{
+    SqlContext<QSet<int>> ctx(db);
+    ctx.FetchLargeSelectIntoList<int>("fic_id",
+                                      "select distinct fic_id from fictags where fic_id not in (select distinct fic_id from ficauthors)");
 
     return ctx.result;
 }

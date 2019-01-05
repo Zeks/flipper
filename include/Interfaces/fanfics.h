@@ -65,6 +65,8 @@ class Fanfics : public IDBWebIDIndex {
     void CalcStatsForFics(QList<QSharedPointer<core::Fic>>);
     bool WriteRecommendations();
     bool WriteFicRelations(QList<core::FicWeightResult> result);
+    bool WriteAuthorsForFics(QHash<uint32_t, uint32_t>);
+
     bool FlushDataQueues();
 
     virtual bool DeactivateFic(int ficId, QString website);
@@ -76,6 +78,7 @@ class Fanfics : public IDBWebIDIndex {
     QSet<int> GetAllKnownNotSlashFics();
     QSet<int> GetSingularFicsInLargeButSlashyLists();
     QSet<int> GetAllKnownFicIDs(QString where);
+    QSet<int> GetFicIDsWithUnsetAuthors();
 
     QVector<core::FicWeightPtr> GetAllFicsWithEnoughFavesForWeights(int faves);
 

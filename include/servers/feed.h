@@ -11,6 +11,9 @@
 
 #include "proto/feeder_service.grpc.pb.h"
 #include "proto/feeder_service.pb.h"
+#include "include/tokenkeeper.h"
+#include "include/storyfilter.h"
+#include "servers/database_context.h"
 
 #include <grpc/grpc.h>
 #include <grpc++/server.h>
@@ -25,9 +28,14 @@ using grpc::ServerReader;
 using grpc::ServerWriter;
 using grpc::Status;
 class FicSource;
-namespace core{
-class StoryFilter;
-}
+
+
+struct UsedInSearch{
+  QSharedPointer<FicSource> ficSource;
+  core::StoryFilter filter;
+  bool isValid = false;
+};
+
 struct StatisticsToken
 {
     QDateTime lastUsed;
@@ -37,10 +45,21 @@ struct StatisticsToken
     int recommendationsSearches = 0;
     int randomSearches = 0;
 };
-
+struct RecommendationsData;
+class FeederService;
+struct RequestContext{
+    RequestContext(QString requestName, const ::ProtoSpace::ControlInfo&, FeederService* server);
+    bool Process(::ProtoSpace::ResponseInfo*);
+    QSharedPointer<UserToken<UserTokenizer>> safetyToken;
+    QString userToken;
+    FeederService* server;
+    DatabaseContext dbContext;
+    RecommendationsData* recsData;
+};
 
 class FeederService final : public QObject, public ProtoSpace::Feeder::Service  {
 Q_OBJECT
+    friend struct  RequestContext;
 public:
     FeederService(QObject* parent = nullptr);
     ~FeederService() override;
@@ -71,6 +90,8 @@ public:
 
     Status GetFavListDetails(ServerContext* context, const ProtoSpace::FavListDetailsRequest* task,
                        ProtoSpace::FavListDetailsResponse* response) override;
+    Status GetAuthorsForFicList(ServerContext* context, const ProtoSpace::AuthorsForFicsRequest* task,
+                       ProtoSpace::AuthorsForFicsResponse* response) override;
 
 
 
@@ -100,6 +121,11 @@ private:
                                      const ::ProtoSpace::UserData&);
 
     QSharedPointer<FicSource> InitFicSource(QString userToken);
+    QSet<int> ProcessIDPackIntoFfnFicSet(const ::ProtoSpace::SiteIDPack& );
+    UsedInSearch PrepareSearch(::ProtoSpace::ResponseInfo* response,
+                               const ::ProtoSpace::Filter& filter,
+                               const ::ProtoSpace::UserData& userData,
+                               RequestContext& reqContext);
 public slots:
     void OnPrintStatistics();
 };

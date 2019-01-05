@@ -443,6 +443,11 @@ QSet<int> Authors::GetAuthorsForFics(QSet<int> fics)
     return database::puresql::GetAuthorsForFics(fics, db).data;
 }
 
+QHash<uint32_t, int> Authors::GetHashAuthorsForFics(QSet<int> fics)
+{
+    return database::puresql::GetHashAuthorsForFics(fics, db).data;
+}
+
 bool Authors::AssignAuthorNamesForWebIDsInFanficTable()
 {
     return database::puresql::AssignAuthorNamesForWebIDsInFanficTable(db).data;

@@ -178,6 +178,18 @@ message FavListDetailsResponse{
     bool success                    = 1;
     FavListDetails details          = 2; 
     ResponseInfo response_info      = 3;
+}
+
+message AuthorsForFicsRequest{
+    ControlInfo controls             = 1;
+    SiteIDPack id_packs              = 2;
+}
+
+message AuthorsForFicsResponse{
+    bool success                    = 1;
+    repeated int32 fics             = 2; 
+    repeated int32 authors          = 3; 
+    ResponseInfo response_info      = 4;
     
 }
 
@@ -200,4 +212,5 @@ service Feeder {
     rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
     rpc GetFFNFicIDS(FicIdRequest) returns (FicIdResponse) {}
     rpc GetFavListDetails(FavListDetailsRequest) returns (FavListDetailsResponse) {}
+    rpc GetAuthorsForFicList(AuthorsForFicsRequest) returns (AuthorsForFicsResponse) {}
 }

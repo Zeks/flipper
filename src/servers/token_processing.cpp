@@ -23,21 +23,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include <QRegularExpression>
 
-bool VerifyUserToken(QString userToken)
+bool VerifyUserToken(QString userToken, ProtoSpace::ResponseInfo* info)
 {
+    QLOG_INFO() << "Verifying user token";
     QRegularExpression rx("{[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}}");
     if(userToken.length() != 38)
         return false;
     auto match = rx.match(userToken);
     if(!match.hasMatch())
+    {
+        SetTokenError(info);
+        QLOG_INFO() << "token error, exiting";
         return false;
+    }
     return true;
 }
 
 
-bool ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken)
+bool ProcessUserToken(const ::ProtoSpace::UserData& user_data, QString userToken, ProtoSpace::ResponseInfo * responseInfo)
 {
-    if(!VerifyUserToken(userToken))
+    if(!VerifyUserToken(userToken, responseInfo))
         return false;
 
     const auto& taskTags = user_data.user_tags();

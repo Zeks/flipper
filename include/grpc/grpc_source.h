@@ -37,6 +37,8 @@ class UserData;
 class SiteIDPack;
 class FavListDetails;
 class RecommendationListCreationRequest;
+class AuthorsForFicsResponse;
+class ResponseInfo;
 }
 
 
@@ -71,6 +73,7 @@ public:
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
     bool GetFFNIDsForFics(QVector<core::IdPack>*);
     std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::IdPack>);
+    QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int>);
 
     ServerStatus GetStatus();
 
@@ -79,8 +82,8 @@ public:
 };
 
 bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserData &user);
-bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack);
-bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request);
+bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseInfo* info);
+bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request, ProtoSpace::ResponseInfo *info);
 
 namespace proto_converters
 {
@@ -93,7 +96,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic *protoFic);
 
 bool FavListProtoToLocal(const ProtoSpace::FavListDetails& protoStats, core::FicSectionStats& stats);
 bool FavListLocalToProto(const core::FicSectionStats& stats, ProtoSpace::FavListDetails *protoStats);
-
+bool AuthorListProtoToLocal(const ProtoSpace::AuthorsForFicsResponse& protoStats,  QHash<uint32_t, uint32_t>& result);
 void LocalFandomToProtoFandom(const core::Fandom& coreFandom, ProtoSpace::Fandom* protoFandom);
 void ProtoFandomToLocalFandom(const ProtoSpace::Fandom& protoFandom, core::Fandom &coreFandom);
 QString FS(const std::string& s);

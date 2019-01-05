@@ -432,9 +432,18 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     TimedAction ignoresCreation("Building ignores",[&](){
         for(auto fic: fics)
         {
+            int count = 0;
+            bool inIgnored = false;
             for(auto fandom: fic->fandoms)
+            {
+                if(fandom != -1)
+                    count++;
                 if(params->ignoredFandoms.contains(fandom) && fandom > 1)
-                    ignores.add(fic->id);
+                    inIgnored = true;
+            }
+            if(/*count == 1 && */inIgnored)
+                ignores.add(fic->id);
+
         }
     });
     ignoresCreation.run();

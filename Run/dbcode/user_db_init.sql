@@ -103,3 +103,19 @@ CREATE INDEX if not exists  I_REC_STATS_AUTHOR ON RecommendationListAuthorStats 
 CREATE INDEX if not exists  I_REC_STATS_RATIO ON RecommendationListAuthorStats (match_ratio ASC);
 CREATE INDEX if not exists  I_REC_STATS_COUNT ON RecommendationListAuthorStats (match_count ASC);
 CREATE INDEX if not exists  I_REC_STATS_TOTAL_FICS ON RecommendationListAuthorStats (fic_count ASC);
+
+--CREATE TABLE if not exists authorstats (author_id INTEGER NOT NULL PRIMARY KEY, minor_liked INTEGER, minor_disliked integer major_liked double, major_disliked integer);
+--CREATE INDEX if not exists  I_AUTHOR_STATS_AUTHOR_ID ON authorstats (author_id ASC);
+--CREATE INDEX if not exists  I_AUTHOR_STATS_AUTHOR_ID_MINOR_LIKED ON authorstats (author_id  ASC, minor_liked asc);
+--CREATE INDEX if not exists  I_AUTHOR_STATS_AUTHOR_ID_MINOR_DISLIKED ON authorstats (author_id  ASC, minor_disliked asc);
+--CREATE INDEX if not exists  I_AUTHOR_STATS_AUTHOR_ID_MAJOR_LIKED ON authorstats (author_id  ASC, major_liked asc);
+--CREATE INDEX if not exists  I_AUTHOR_STATS_AUTHOR_ID_MAJOR_DISLIKED ON authorstats (author_id  ASC, major_disliked asc);
+
+-- fictag table;
+CREATE TABLE if not exists FicAuthors (
+ fic_id integer default -1,
+ author_id integer default -1,  PRIMARY KEY (fic_id, author_id)
+ );
+CREATE INDEX if not exists I_FICAUTHORS_FIC_ID ON FicAuthors (fic_id ASC);
+CREATE INDEX if not exists I_FICAUTHORS_AUTHOR_ID ON FicAuthors (author_id ASC);
+

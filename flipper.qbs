@@ -74,7 +74,6 @@ App{
         "src/generic_utils.cpp",
         "src/parsers/ffn/fandomindexparser.cpp",
         "include/mainwindow.h",
-
         "include/parse.h",
         "include/querybuilder.h",
         "include/queryinterfaces.h",
@@ -87,6 +86,7 @@ App{
         "include/url_utils.h",
         "qml_ficmodel.cpp",
         "qml_ficmodel.h",
+        "src/servers/token_processing.cpp",
         "src/tasks/author_cache_reprocessor.cpp",
         "src/tasks/fandom_task_processor.cpp",
         "src/tasks/author_task_processor.cpp",
