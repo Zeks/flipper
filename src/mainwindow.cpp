@@ -246,6 +246,7 @@ void MainWindow::InitConnections()
 {
     connect(ui->pbCopyAllUrls, SIGNAL(clicked(bool)), this, SLOT(OnCopyAllUrls()));
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagToggled, this, &MainWindow::OnTagToggled);
+    connect(ui->wdgTagsPlaceholder, &TagWidget::createUrlsForTags, this, &MainWindow::OnGetUrlsForTags);
     connect(ui->wdgTagsPlaceholder, &TagWidget::refilter, [&](){
         qwFics->rootContext()->setContextProperty("ficModel", nullptr);
 
@@ -936,6 +937,20 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
     //childObject->setProperty("authorFilterActive", true);
     AnalyzeCurrentFilter();
 
+}
+
+void MainWindow::OnGetUrlsForTags()
+{
+    TaskProgressGuard guard(this);
+    QClipboard *clipboard = QApplication::clipboard();
+    auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    auto fics  = env.interfaces.tags->GetAllTaggedFics(tags);
+    auto ffnFics = env.GetFFNIds(fics);
+    QString result;
+    for(auto fic : ffnFics)
+        result += "https://www.fanfiction.net/s/" + QString::number(fic) + "\n";
+
+    clipboard->setText(result);
 }
 
 

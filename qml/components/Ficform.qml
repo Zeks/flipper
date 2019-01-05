@@ -368,7 +368,7 @@ Rectangle {
                 visible: recommendations > 0
                 source: {
                     if(likedAuthor > 0)
-                        return "qrc:/icons/icons/heart_green_test2.png"
+                        return "qrc:/icons/icons/heart_half.png"
                     else
                         return "qrc:/icons/icons/heart.png"
                 }

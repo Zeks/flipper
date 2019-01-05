@@ -59,6 +59,7 @@ signals:
     void refilter();
     void dbIDRequest();
     void tagReloadRequested();
+    void createUrlsForTags();
 
 
 public slots:
@@ -73,6 +74,7 @@ public slots:
 
 private slots:
     void on_pbAssignTagToFandom_clicked();
+    void on_pbUrlsForTags_clicked();
 };
 
 #endif // TAGWIDGET_H

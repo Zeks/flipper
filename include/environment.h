@@ -118,6 +118,7 @@ public:
 
     void CreateSimilarListForGivenFic(int id,  QSqlDatabase db);
     QVector<int> GetListSourceFFNIds(int listId);
+    QVector<int> GetFFNIds(QSet<int> fics);
 
     void Log(QString);
 

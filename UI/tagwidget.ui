@@ -156,6 +156,17 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="pbUrlsForTags">
+       <property name="text">
+        <string>Urls for tag set</string>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>../icons/clipboard.png</normaloff>../icons/clipboard.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QCheckBox" name="chkUseTagsForAuthors">
        <property name="text">
         <string>Show fics from the authors with selected tags instead</string>

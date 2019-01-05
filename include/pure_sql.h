@@ -33,6 +33,10 @@ namespace puresql{
 //bool ExecAndCheck(QSqlQuery& q);
 bool CheckExecution(QSqlQuery& q);
 
+enum IDType{
+    idt_db = 0,
+    idt_ffn = 1
+};
 
 struct FanficIdRecord
 {

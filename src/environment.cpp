@@ -729,6 +729,26 @@ QVector<int> CoreEnvironment::GetListSourceFFNIds(int listId)
     return result;
 }
 
+QVector<int> CoreEnvironment::GetFFNIds(QSet<int> sources)
+{
+    QVector<int> result;
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    QVector<core::IdPack> pack;
+    pack.resize(sources.size());
+    result.reserve(sources.size());
+    int i = 0;
+    for(auto source: sources)
+    {
+        pack[i].db = source;
+        i++;
+    }
+    grpcSource->GetFFNIDsForFics(&pack);
+    for(auto id : pack)
+        result.push_back(id.ffn);
+
+    return result;
+}
+
 core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
 {
     WebPage page;

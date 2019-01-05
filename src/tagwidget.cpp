@@ -249,3 +249,8 @@ void TagWidget::on_pbAssignTagToFandom_clicked()
                                         ui->chkTagIncludingCrosses->isChecked());
 }
 
+
+void TagWidget::on_pbUrlsForTags_clicked()
+{
+    emit createUrlsForTags();
+}

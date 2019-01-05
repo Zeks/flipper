@@ -47,5 +47,6 @@
         <file>icons/slash_uncertain.png</file>
         <file>icons/heart_green_test.png</file>
         <file>icons/heart_green_test2.png</file>
+        <file>icons/heart_half.png</file>
     </qresource>
 </RCC>
