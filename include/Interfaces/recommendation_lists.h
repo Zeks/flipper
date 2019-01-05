@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "Interfaces/base.h"
 #include "Interfaces/db_interface.h"
+#include "include/storyfilter.h"
 #include "core/section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
@@ -79,9 +80,9 @@ public:
     QList<core::AuhtorStatsPtr> GetAuthorStatsForList(int id, bool forced = false);
     core::AuhtorStatsPtr GetIndividualAuthorStatsForList(int id, int authorId);
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
-    QVector<int> GetAllFicIDs(int listId);
+    QVector<int> GetAllFicIDs(int listId, core::StoryFilter::ESourceListLimiter limiter);
     QVector<int> GetAllSourceFicIDs(int listId);
-    QHash<int, int> GetAllFicsHash(int listId, int minMatchCount = 0);
+    QHash<int, int> GetAllFicsHash(int listId, int minMatchCount = 0, core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QList<int> GetRecommendersForFicId(int ficId);

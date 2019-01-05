@@ -93,7 +93,7 @@ void CoreEnvironment::LoadData()
     }
 
     QVector<int> recFics;
-    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
+    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
 
     QVector<core::Fic> newFanfics;
     ficSource->FetchData(filter,
@@ -273,7 +273,8 @@ int CoreEnvironment::GetResultCount()
         ficSource->userData = userData;
     }
     QVector<int> recFics;
-    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
+    //filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
+    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
 
     return ficSource->GetFicCount(filter);
 }

@@ -85,6 +85,12 @@ struct StoryFilter{
         gp_minimal = 2,
         gp_none = 3
     };
+    enum ESourceListLimiter{
+        sll_all = 0,
+        sll_above_average = 1,
+        sll_very_close = 2,
+        sll_exceptional = 3
+    };
     //do I even need that?
     //QString ficCategory;
     bool isValid = true;
@@ -119,6 +125,7 @@ struct StoryFilter{
     int minFavourites = 0;
     int minRecommendations = 0;
     int listForRecommendations = -1;
+
     int recentAndPopularFavRatio;
     int ignoredFandomCount = 0;
     int recommendationsCount = 0;
@@ -132,6 +139,7 @@ struct StoryFilter{
     ERatingFilter rating;
     EGenrePresence genrePresenceForInclude;
     EGenrePresence genrePresenceForExclude;
+    ESourceListLimiter sourcesLimiter = ESourceListLimiter::sll_all;
 
     int fandom = -1;
     QString website;

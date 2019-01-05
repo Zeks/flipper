@@ -985,16 +985,23 @@ DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int lis
     return ctx.result;
 }
 
-DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db)
+DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId,  core::StoryFilter::ESourceListLimiter limiter, QSqlDatabase db)
 {
     QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id");
+
+    if(limiter == core::StoryFilter::sll_above_average)
+        qs+=" and (votes_uncommon > 0 or votes_rare > 0 or votes_unique> 0)";
+    else if(limiter == core::StoryFilter::sll_very_close)
+        qs+=" and (votes_rare > 0 or votes_unique > 0)";
+    if(limiter == core::StoryFilter::sll_exceptional)
+        qs+=" and (votes_unique > 0)";
     SqlContext<QVector<int>> ctx(db);
     ctx.bindValue("list_id",listId);
     ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
     return ctx.result;
 }
 
-DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId, QSqlDatabase db)
+DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId,  QSqlDatabase db)
 {
     QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id and is_origin = 1");
     SqlContext<QVector<int>> ctx(db);
@@ -1006,11 +1013,22 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 
 
-DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db, int minMatchCount)
+DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId,
+                                                                         QSqlDatabase db,
+                                                                         int minMatchCount,
+                                                                         core::StoryFilter::ESourceListLimiter limiter)
 {
     QString qs = QString("select fic_id, match_count from RecommendationListData where list_id = :list_id");
     if(minMatchCount != 0)
         qs += " and match_count > :match_count";
+
+    if(limiter == core::StoryFilter::sll_above_average)
+        qs+=" and (votes_uncommon > 0 or votes_rare > 0 or votes_unique> 0)";
+    else if(limiter == core::StoryFilter::sll_very_close)
+        qs+=" and (votes_rare > 0 or votes_unique > 0)";
+    if(limiter == core::StoryFilter::sll_exceptional)
+        qs+=" and (votes_unique > 0)";
+
     SqlContext<QHash<int,int>> ctx(db, qs);
     ctx.bindValue("list_id",listId);
     if(minMatchCount != 0)
@@ -3516,6 +3534,7 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
 
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
+
 
 
 

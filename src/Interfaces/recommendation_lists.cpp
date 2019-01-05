@@ -178,7 +178,7 @@ int RecommendationLists::GetMatchCountForRecommenderOnList(int authorId, int lis
     return data->matchesWithReference;
 }
 
-QVector<int> RecommendationLists::GetAllFicIDs(int listId)
+QVector<int> RecommendationLists::GetAllFicIDs(int listId ,core::StoryFilter::ESourceListLimiter limiter)
 {
     QVector<int> result;
     if(!EnsureList(listId))
@@ -186,7 +186,7 @@ QVector<int> RecommendationLists::GetAllFicIDs(int listId)
 
     if(!ficsCacheForLists.contains(listId))
     {
-        result = database::puresql::GetAllFicIDsFromRecommendationList(listId,db).data;
+        result = database::puresql::GetAllFicIDsFromRecommendationList(listId, limiter, db).data;
         ficsCacheForLists[listId] = result;
     }
     else
@@ -202,19 +202,19 @@ QVector<int> RecommendationLists::GetAllSourceFicIDs(int listId)
     return result;
 }
 
-QHash<int, int> RecommendationLists::GetAllFicsHash(int listId, int minMatchCount)
+QHash<int, int> RecommendationLists::GetAllFicsHash(int listId, int minMatchCount, core::StoryFilter::ESourceListLimiter limiter)
 {
     QHash<int, int> result;
     if(!EnsureList(listId))
         return result;
 
-    if(!grpcCacheForLists.contains({listId, minMatchCount}))
-    {
-        result = database::puresql::GetAllFicsHashFromRecommendationList(listId,db, minMatchCount).data;
+//    if(!grpcCacheForLists.contains({listId, minMatchCount}))
+//    {
+        result = database::puresql::GetAllFicsHashFromRecommendationList(listId,db, minMatchCount, limiter).data;
         grpcCacheForLists[{listId, minMatchCount}] = result;
-    }
-    else
-        result = grpcCacheForLists[{listId, minMatchCount}];
+//    }
+//    else
+//        result = grpcCacheForLists[{listId, minMatchCount}];
 
     return result;
 }

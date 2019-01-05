@@ -1011,6 +1011,7 @@ void MainWindow::ReadSettings()
     ui->cbGenrePresenceTypeInclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeInclude", "").toString());
     ui->cbGenrePresenceTypeExclude->setCurrentText(uiSettings.value("Settings/cbGenrePresenceTypeExclude", "").toString());
     ui->cbFicRating->setCurrentText(uiSettings.value("Settings/cbFicRating", "<").toString());
+    ui->cbSourceListLimiter->setCurrentText(uiSettings.value("Settings/cbSourceListLimiter", "All").toString());
 
     ui->chkStrongMOnly->setChecked(uiSettings.value("Settings/chkStrongMOnly", false).toBool());
     ui->cbSlashFilterAggressiveness->setCurrentText(uiSettings.value("Settings/cbSlashFilterAggressiveness", "").toString());
@@ -1069,6 +1070,9 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/cbRecsAlgo", ui->cbRecsAlgo->currentText());
     settings.setValue("Settings/cbGenrePresenceTypeExclude", ui->cbGenrePresenceTypeExclude->currentText());
     settings.setValue("Settings/cbFicRating", ui->cbFicRating->currentText());
+    settings.setValue("Settings/cbSourceListLimiter", ui->cbSourceListLimiter->currentText());
+
+
 
     settings.setValue("Settings/chkStrongMOnly", ui->chkStrongMOnly->isChecked());
     settings.setValue("Settings/cbSlashFilterAggressiveness", ui->cbSlashFilterAggressiveness->currentText());
@@ -1595,6 +1599,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
         filter.listForRecommendations = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     else
         filter.listForRecommendations = env.interfaces.recs->GetListIdForName(listToUse);
+    filter.sourcesLimiter = static_cast<core::StoryFilter::ESourceListLimiter>(ui->cbSourceListLimiter->currentIndex());
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
@@ -1951,7 +1956,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkGenreUseImplied->setChecked(false);
     ui->sbMinimumListMatches->setValue(0);
     ui->wdgTagsPlaceholder->ClearSelection();
-
+    ui->cbSourceListLimiter->setCurrentIndex(0);
 }
 
 void MainWindow::DetectGenreSearchState()
@@ -2364,3 +2369,4 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
     AnalyzeIdList(ficIDs);
 
 }
+

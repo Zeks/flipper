@@ -9,6 +9,7 @@
 #include <QSharedPointer>
 #include "core/section.h"
 #include "core/fic_genre_data.h"
+#include "include/storyfilter.h"
 #include "regex_utils.h"
 #include "transaction.h"
 #include "sqlcontext.h"
@@ -223,10 +224,13 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
 
 DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db);
 
-DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, QSqlDatabase db);
+DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, core::StoryFilter::ESourceListLimiter limiter, QSqlDatabase db);
 DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId, QSqlDatabase db);
 
-DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId, QSqlDatabase db, int minMatchCount = 0);
+DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId,
+                                                                         QSqlDatabase db,
+                                                                         int minMatchCount = 0,
+                                                                         core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all);
 DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db);
 
 DiagnosticSQLResult<int> GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db);
