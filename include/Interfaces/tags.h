@@ -37,6 +37,7 @@ public:
     bool ExportToFile(QString);
     bool ImportFromFile(QString);
     QSet<int> GetAllTaggedFics(QStringList = QStringList());
+    QSet<int> GetAuthorsForTags(QStringList);
     QVector<core::IdPack> GetAllFicsThatDontHaveDBID();
     bool FillDBIDsForFics(QVector<core::IdPack>);
     bool FetchTagsForFics(QVector<core::Fic>*);

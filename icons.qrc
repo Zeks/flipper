@@ -45,5 +45,7 @@
         <file>icons/slash_first_pass.png</file>
         <file>icons/slash_simple.png</file>
         <file>icons/slash_uncertain.png</file>
+        <file>icons/heart_green_test.png</file>
+        <file>icons/heart_green_test2.png</file>
     </qresource>
 </RCC>

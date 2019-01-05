@@ -245,6 +245,10 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 DiagnosticSQLResult<QList<int> > GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase db);
+
+
+
 DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID( QSqlDatabase db);
 DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase db);
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);

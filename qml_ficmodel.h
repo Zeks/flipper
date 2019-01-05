@@ -54,7 +54,8 @@ public:
         SlashRole,
         BreakdownRole,
         BreakdownCountRole,
-        EndRole = BreakdownCountRole
+        LikedAuthorRole,
+        EndRole = LikedAuthorRole
 
     };
 

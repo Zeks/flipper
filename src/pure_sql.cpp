@@ -1981,6 +1981,14 @@ DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase 
     ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
     return ctx.result;
 }
+DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase db){
+    QString qs = QString("select distinct author_id from ficauthors ");
+    qs += QString(" where fic_id in (select distinct fic_id from fictags where tag in ('%1'))").arg(tags.join("','"));
+    SqlContext<QSet<int>> ctx(db, qs);
+    ctx.FetchLargeSelectIntoList<int>("author_id", qs);
+    return ctx.result;
+
+}
 DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID(QSqlDatabase db)
 {
     QString qs = QString("select distinct ffn_id from fictags where fic_id < 1");

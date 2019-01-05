@@ -141,6 +141,7 @@ public:
     QSharedPointer<FicSource> ficSource;
     QSharedPointer<core::IRNGGenerator> rngGenerator;
     QString userToken;
+    QSet<int> likedAuthors;
     bool thinClient = true;
 
 

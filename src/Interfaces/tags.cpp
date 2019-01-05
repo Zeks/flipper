@@ -121,6 +121,11 @@ QSet<int> Tags::GetAllTaggedFics(QStringList tags)
     return database::puresql::GetAllTaggedFics(tags, db).data;
 }
 
+QSet<int> Tags::GetAuthorsForTags(QStringList tags)
+{
+    return database::puresql::GetAuthorsForTags(tags, db).data;
+}
+
 QVector<core::IdPack> Tags::GetAllFicsThatDontHaveDBID()
 {
     auto result =  database::puresql::GetAllFicsThatDontHaveDBID(db).data;

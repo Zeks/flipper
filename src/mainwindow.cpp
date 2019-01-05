@@ -453,6 +453,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
     ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
     ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
+    ADD_INTEGER_GETSET(holder, 24, 0, likedAuthor);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -479,7 +480,7 @@ void MainWindow::SetupFanficTable()
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel" << "roleBreakdown" << "roleBreakdownCount");
+                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel" << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -626,6 +627,7 @@ void MainWindow::LoadData()
     //ui->edtResults->setUpdatesEnabled(false);
 
     env.LoadData();
+
     holder->SetData(env.fanfics);
     //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     //    childObject->setProperty("authorFilterActive", false);

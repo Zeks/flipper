@@ -94,6 +94,8 @@ public:
     QSet<int> GetAuthorsForFics(QSet<int>);
     QHash<uint32_t, int> GetHashAuthorsForFics(QSet<int>);
 
+
+
     bool AssignAuthorNamesForWebIDsInFanficTable();
 
     QHash<int, std::array<double, 22>> GetListGenreData();

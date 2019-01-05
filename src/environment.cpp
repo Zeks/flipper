@@ -106,6 +106,11 @@ void CoreEnvironment::LoadData()
     }
     fanfics = newFanfics;
     currentLastFanficId = ficSource->lastFicId;
+    for(auto& fic : fanfics)
+    {
+        if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
+            fic.likedAuthor = true;
+    }
 }
 
 CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj)
@@ -199,12 +204,15 @@ bool CoreEnvironment::Init()
         if(grpcSource)
         {
             auto authors = grpcSource->GetAuthorsForFicList(fics);
-            for(auto fic: authors.keys())
-                QLOG_INFO() << "Fic: "  << fic << " Author: " << authors[fic];
+//            for(auto fic: authors.keys())
+//                QLOG_INFO() << "Fic: "  << fic << " Author: " << authors[fic];
             interfaces.fanfics->WriteAuthorsForFics(authors);
         }
     }
 
+    auto positiveTags = settings.value("Tags/minorPositive").toString().split(",", QString::SkipEmptyParts);
+    positiveTags += settings.value("Tags/majorPositive").toString().split(",", QString::SkipEmptyParts);
+    likedAuthors = interfaces.tags->GetAuthorsForTags(positiveTags);
 
     return true;
 }

@@ -552,6 +552,7 @@ public:
     int webId = -1;
     int id = -1;
     bool isEnglish = true;
+    bool likedAuthor = false;
     int minSlashPass = 0;
     QStringList voteBreakdown;
     QStringList voteBreakdownCounts;
@@ -627,6 +628,7 @@ public:
     QString urlFFN;
     int recommendations = 0;
     QString webSite = "ffn";
+
     UpdateMode updateMode = UpdateMode::none;
     FicCalcStats calcStats;
     QList<genre_stats::GenreBit> realGenreData;

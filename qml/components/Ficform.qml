@@ -366,7 +366,12 @@ Rectangle {
                 sourceSize.width: 24
                 property bool chartVisible: false
                 visible: recommendations > 0
-                source: "qrc:/icons/icons/heart.png"
+                source: {
+                    if(likedAuthor > 0)
+                        return "qrc:/icons/icons/heart_green_test2.png"
+                    else
+                        return "qrc:/icons/icons/heart.png"
+                }
                 MouseArea{
                     id: maRecs
                     hoverEnabled :true

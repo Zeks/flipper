@@ -93,6 +93,11 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             auto var = AdaptingTableModel::data(index.sibling(index.row(), 23), Qt::DisplayRole);
             return var;
         }
+        if(role == LikedAuthorRole)
+        {
+            auto var = AdaptingTableModel::data(index.sibling(index.row(), 24), Qt::DisplayRole);
+            return var;
+        }
 
         if(role == CurrentChapterRole)
             return QString("");
@@ -143,6 +148,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[SlashRole] = "minSlashLevel";
     roles[BreakdownRole] = "roleBreakdown";
     roles[BreakdownCountRole] = "roleBreakdownCount";
+    roles[LikedAuthorRole] = "likedAuthor";
 
     return roles;
 }
