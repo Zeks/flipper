@@ -92,6 +92,10 @@ public:
                        ProtoSpace::FavListDetailsResponse* response) override;
     Status GetAuthorsForFicList(ServerContext* context, const ProtoSpace::AuthorsForFicsRequest* task,
                        ProtoSpace::AuthorsForFicsResponse* response) override;
+    Status GetAuthorsFromRecListContainingFic(ServerContext* context, const ProtoSpace::AuthorsForFicInReclistRequest* task,
+                       ProtoSpace::AuthorsForFicInReclistResponse* response) override;
+    Status SearchByFFNID(ServerContext* context, const ProtoSpace::SearchByFFNIDTask* task,
+                       ProtoSpace::SearchByFFNIDResponse* response) override;
 
 
 
@@ -120,7 +124,7 @@ private:
     core::StoryFilter FilterFromTask(const ::ProtoSpace::Filter&,
                                      const ::ProtoSpace::UserData&);
 
-    QSharedPointer<FicSource> InitFicSource(QString userToken);
+    QSharedPointer<FicSource> InitFicSource(QString userToken, QSharedPointer<database::IDBWrapper> dbInterface);
     QSet<int> ProcessIDPackIntoFfnFicSet(const ::ProtoSpace::SiteIDPack& );
     UsedInSearch PrepareSearch(::ProtoSpace::ResponseInfo* response,
                                const ::ProtoSpace::Filter& filter,

@@ -67,6 +67,7 @@ public:
     virtual ~FicSourceGRPC() override;
 
     virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*) override;
+    void FetchFic(int ficId, QVector<core::Fic>*fics);
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
@@ -74,6 +75,8 @@ public:
     bool GetFFNIDsForFics(QVector<core::IdPack>*);
     std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::IdPack>);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int>);
+    QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
+
 
     ServerStatus GetStatus();
 

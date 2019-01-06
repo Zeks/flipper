@@ -1412,8 +1412,33 @@
                <item>
                 <widget class="QLabel" name="label_13">
                  <property name="text">
-                  <string>Author:</string>
+                  <string>ID Search</string>
                  </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="cbIDMode">
+                 <property name="minimumSize">
+                  <size>
+                   <width>100</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>FFN Fanfic</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>FFN Author</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>DB Recommender</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
                <item>
@@ -1458,6 +1483,31 @@
               <property name="leftMargin">
                <number>2</number>
               </property>
+              <item row="2" column="4" colspan="3">
+               <widget class="QComboBox" name="cbGenrePresenceTypeExclude">
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Medium</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Minimal</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
               <item row="1" column="2">
                <widget class="QPushButton" name="pbExpandPlusGenre">
                 <property name="sizePolicy">
@@ -1483,75 +1533,6 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="2">
-               <widget class="QPushButton" name="pbExpandMinusGenre">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>20</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>20</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="chkGenrePlus">
-                <property name="text">
-                 <string>+Genre</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QLineEdit" name="leNotContainsGenre">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="leContainsGenre">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QCheckBox" name="chkGenreMinus">
-                <property name="text">
-                 <string>-Genre</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
-               <widget class="QLabel" name="lblGenreInclude">
-                <property name="text">
-                 <string>Min Genre Presence:</string>
-                </property>
-               </widget>
-              </item>
               <item row="4" column="0">
                <widget class="QCheckBox" name="chkWordsMinus">
                 <property name="text">
@@ -1559,8 +1540,8 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="5">
-               <widget class="QPushButton" name="pbExpandMinusWords">
+              <item row="2" column="2">
+               <widget class="QPushButton" name="pbExpandMinusGenre">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1591,45 +1572,23 @@
                 </property>
                </widget>
               </item>
-              <item row="4" column="1" colspan="4">
-               <widget class="QLineEdit" name="leNotContainsWords">
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="leNotContainsGenre">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="5">
-               <widget class="QPushButton" name="pbExpandPlusWords">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>20</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>20</width>
-                  <height>16777215</height>
-                 </size>
                 </property>
                 <property name="text">
-                 <string>...</string>
+                 <string/>
                 </property>
                </widget>
               </item>
-              <item row="3" column="1" colspan="4">
-               <widget class="QLineEdit" name="leContainsWords">
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="leContainsGenre">
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
@@ -1643,7 +1602,28 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="4" colspan="2">
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="chkGenrePlus">
+                <property name="text">
+                 <string>+Genre</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="chkGenreMinus">
+                <property name="text">
+                 <string>-Genre</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QLabel" name="lblGenreInclude">
+                <property name="text">
+                 <string>Min Genre Presence:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="4" colspan="3">
                <widget class="QComboBox" name="cbGenrePresenceTypeInclude">
                 <property name="minimumSize">
                  <size>
@@ -1668,29 +1648,74 @@
                 </item>
                </widget>
               </item>
-              <item row="2" column="4" colspan="2">
-               <widget class="QComboBox" name="cbGenrePresenceTypeExclude">
+              <item row="3" column="6">
+               <widget class="QPushButton" name="pbExpandPlusWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="minimumSize">
                  <size>
-                  <width>100</width>
+                  <width>20</width>
                   <height>0</height>
                  </size>
                 </property>
-                <item>
-                 <property name="text">
-                  <string>Medium</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Minimal</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>None</string>
-                 </property>
-                </item>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="6">
+               <widget class="QPushButton" name="pbExpandMinusWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1" colspan="5">
+               <widget class="QLineEdit" name="leContainsWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1" colspan="5">
+               <widget class="QLineEdit" name="leNotContainsWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                </widget>
               </item>
              </layout>

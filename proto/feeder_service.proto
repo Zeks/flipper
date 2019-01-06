@@ -47,9 +47,21 @@ message SearchTask
 }
 
 message SearchResponse{
-    repeated Fanfic fanfics = 1;
+    repeated Fanfic fanfics               = 1;
     ResponseInfo response_info            = 2;
 }
+message SearchByFFNIDTask
+{
+    ControlInfo controls    = 1;
+    int32 id                = 2;
+}
+
+message SearchByFFNIDResponse{
+    bool success                          = 1;
+    Fanfic fanfic                         = 2;
+    ResponseInfo response_info            = 3;
+}
+
 
 message SyncFandomListTask{
     ControlInfo controls    = 1;
@@ -101,10 +113,9 @@ message RecommendationListData{
     map<int32, int32> match_report              = 5;
     repeated RecommendationBreakdown breakdowns = 6;
 
-    // ethically complicated
-    // probably best to disable this for release
-    // don't want personal data seeping through
-    // repeated int32 author_ids   = 4;
+    // these are internal ids
+    // no conflict & harassment possibilities here
+    repeated int32 author_ids                   = 7;
 }
 message NegativeTagsToken{
     repeated int32 basicNegatives       = 1;
@@ -193,6 +204,18 @@ message AuthorsForFicsResponse{
     
 }
 
+message AuthorsForFicInReclistRequest{
+    ControlInfo controls             = 1;
+    int32 fic_id                     = 2;
+    string author_list               = 3;
+}
+
+message AuthorsForFicInReclistResponse{
+    bool success                    = 1;
+    repeated int32 filtered_authors = 2; 
+    ResponseInfo response_info      = 3;
+}
+
 // will need to synchronize fandoms on app start somehow
 // can't leave fandom information on user side
 // because I dont want users to parse anything
@@ -206,6 +229,7 @@ message AuthorsForFicsResponse{
 service Feeder { 
     rpc GetStatus(StatusRequest) returns (StatusResponse) {}
     rpc Search(SearchTask) returns (SearchResponse) {}
+    rpc SearchByFFNID(SearchByFFNIDTask) returns (SearchByFFNIDResponse) {}
     rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
     rpc SyncFandomList(SyncFandomListTask) returns (SyncFandomListResponse) {}
     rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
@@ -213,4 +237,5 @@ service Feeder {
     rpc GetFFNFicIDS(FicIdRequest) returns (FicIdResponse) {}
     rpc GetFavListDetails(FavListDetailsRequest) returns (FavListDetailsResponse) {}
     rpc GetAuthorsForFicList(AuthorsForFicsRequest) returns (AuthorsForFicsResponse) {}
+    rpc GetAuthorsFromRecListContainingFic(AuthorsForFicInReclistRequest) returns (AuthorsForFicInReclistResponse) {}
 }

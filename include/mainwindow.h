@@ -306,6 +306,8 @@ public slots:
     // triggered when user removes tag from a fic in qml
     void OnTagRemove(QVariant tag, QVariant row);
 
+    void OnHeartDoubleClicked(QVariant);
+
     // triggered when user adds tag in qml
     void OnTagAddInTagWidget(QVariant tag, QVariant row);
     // triggered when user removes tag from a fic in qml

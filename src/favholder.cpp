@@ -66,7 +66,8 @@ void RecCalculator::LoadFavourites(QSharedPointer<interfaces::Authors> authorInt
     QSettings settings("settings_server.ini", QSettings::IniFormat);
     if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists("ServerData/roafav_0.txt"))
     {
-        LoadStoredFavouritesData();
+        holder.LoadData<core::rdt_favourites>("ServerData");
+        //LoadStoredFavouritesData();
     }
     else
     {
@@ -217,6 +218,7 @@ public:
     const DataHolder::FavType& favs;
     const DataHolder::FicType& fics;
     QSharedPointer<RecommendationList> params;
+    //QList<int> matchedAuthors;
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
     QHash<int, AuthorResult> allAuthors;
     int maximumMatches = 0;
@@ -537,6 +539,7 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
         calculator->Calc();
     });
     action.run();
+    calculator->result.authors = calculator->filteredAuthors;
 
     return calculator->result;
 }

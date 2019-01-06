@@ -94,7 +94,6 @@ void cfInFicsForAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
 }
 
 
-
 void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);

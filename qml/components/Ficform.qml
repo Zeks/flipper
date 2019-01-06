@@ -381,6 +381,10 @@ Rectangle {
                         lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
                         console.log("Clicked heart icon")
                     }
+                    onDoubleClicked: {
+                        lvFics.heartDoubleClicked(indexOfThisDelegate)
+                    }
+
                     onEntered: {
 
                         mainWindow.chartValueCommon = parseInt(roleBreakdown[0],10)

@@ -150,7 +150,11 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
             continue;
         //qDebug() << "processing";
         for(auto fic : set)
+        {
+//            if(fic != 38212)
+//                continue;
             ficsToUse[fic].insert(key);
+        }
     }
     qDebug() << "Finished author processing, resulting set is of size:" << ficsToUse.size();
 
@@ -184,6 +188,8 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     int counter = 0;
     for(auto fic : result)
     {
+//        if(fic != 38212)
+//            continue;
         if(counter%10000 == 0)
             qDebug() << "processing fic: " << counter;
 

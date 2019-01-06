@@ -458,6 +458,11 @@ QList<core::AuthorPtr> RecommendationLists::GetAuthorsForRecommendationList(int 
     return currentRecommenderSet.values();
 }
 
+QString RecommendationLists::GetAuthorsForRecommendationListClient(int listId)
+{
+    return database::puresql::GetAuthorsForRecommendationListClient(listId, db).data;
+}
+
 QList<int> RecommendationLists::GetRecommendersForFicId(int ficId)
 {
     QList<int> result;

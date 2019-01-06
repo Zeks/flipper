@@ -178,6 +178,8 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessStatusFilters(filter);
     queryString+= ProcessNormalOrCrossover(filter);
     queryString+= ProcessAuthor(filter);
+    queryString+= ProcessFicID(filter);
+    queryString+= ProcessRecommenders(filter);
     queryString+= tagFilterBuilder->GetString(filter);
     queryString+= ignoredFandomsBuilder->GetString(filter);
     //queryString+= ProcessFandomIgnore(filter);
@@ -285,10 +287,38 @@ QString DefaultQueryBuilder::ProcessAuthor(StoryFilter filter)
     QString result;
     if(filter.useThisAuthor == -1)
         return result;
-    result = QString(" and f.author_id = %1 ").arg(filter.useThisAuthor);
+    QStringList authorList;
+//    for(auto author : filter.usedAuthors)
+//        authorList.push_back(QString::number(author));
+
+    result = QString(" and f.author_id = %1 ").arg(QString::number(filter.useThisAuthor ));
     return result;
 }
 
+QString DefaultQueryBuilder::ProcessFicID(StoryFilter filter)
+{
+    QString result;
+    if(filter.useThisFic == -1)
+        return result;
+
+    result = QString(" and f.ffn_id = %1 ").arg(QString::number(filter.useThisFic));
+    return result;
+}
+QString DefaultQueryBuilder::ProcessRecommenders(StoryFilter filter)
+{
+    QString result;
+    if(filter.usedRecommenders.size() == 0)
+        return result;
+//    QStringList authorList;
+//    for(auto author : filter.usedRecommenders)
+//        authorList.push_back(QString::number(author));
+
+//    result = QString(" and exists (select distinct fic_id from recommendations where recommender_id in (%1) and fic_id = f.id) ")
+//            .arg("'"+ authorList.join("','") +"'");
+    result = " and cfInFicsForAuthors(f.id) > 0 ";
+    return result;
+
+}
 QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
 {
     QString currentTagValue = " f.ffn_id as url, ";

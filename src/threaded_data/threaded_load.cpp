@@ -141,7 +141,9 @@ auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBas
 auto vectorUnifier = [](auto& dest, auto source){
     dest+=source;
 };
-auto hashUnifier = [](auto& dest, auto source){dest.unite(source);};
+auto hashUnifier = [](auto& dest, auto source){
+    dest.unite(source);
+};
 auto genresFetchFunc = [](auto& container, QDataStream& in){
     int key;
     in >> key;

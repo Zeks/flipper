@@ -602,13 +602,28 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase d
     userThreadData->ficsForAuthorSearch = fics;
     QString qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
     SqlContext<QSet<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("author_d", qs, "",[](QSqlQuery& q){
+    ctx.FetchLargeSelectIntoList<int>("author_id", qs, "",[](QSqlQuery& q){
         return q.value("author_id").toInt();
     });
     ctx.result.data.remove(0);
     ctx.result.data.remove(-1);
     return ctx.result;
 
+}
+DiagnosticSQLResult<QSet<int>> GetRecommendersForFics(QSet<int> fics, QSqlDatabase db)
+{
+    QString qs = "select distinct recommender_id from  recommendations where fic_id in (%1)";
+    QStringList list;
+    for(auto fic: fics)
+        list.push_back(QString::number(fic));
+    qs = qs.arg("'" + list.join("','") + "'");
+    SqlContext<QSet<int>> ctx(db, qs);
+    ctx.FetchLargeSelectIntoList<int>("recommender_id", qs, "",[](QSqlQuery& q){
+        return q.value("recommender_id").toInt();
+    });
+    ctx.result.data.remove(0);
+    ctx.result.data.remove(-1);
+    return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<uint32_t, int>> GetHashAuthorsForFics(QSet<int> fics, QSqlDatabase db)
@@ -765,6 +780,14 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int 
         auto author = AuthorFromQuery(q);
         ctx.result.data.push_back(author);
     });
+    return ctx.result;
+}
+
+DiagnosticSQLResult<QString> GetAuthorsForRecommendationListClient(int list_id,  QSqlDatabase db)
+{
+    QString qs = "select sources from recommendationlists where id = :list_id";
+    SqlContext<QString> ctx(db, qs, BP1(list_id));
+    ctx.FetchSingleValue<QString>("sources", "");
     return ctx.result;
 }
 
@@ -1154,13 +1177,17 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.result.data = list->id > 0;
 
     qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, "
-                 " always_pick_at = :always_pick_at,  created = :created where name = :name");
+                 " always_pick_at = :always_pick_at,  created = :created,  sources = :sources where name = :name");
     ctx.ReplaceQuery(qs);
     ctx.bindValue("minimum",list->minimumMatch);
     ctx.bindValue("pick_ratio",list->pickRatio);
     ctx.bindValue("created",creationTimestamp);
     ctx.bindValue("always_pick_at",list->alwaysPickAt);
     ctx.bindValue("name",list->name);
+    QStringList authors;
+    for(auto id : list->ficData.authorIds)
+        authors.push_back(QString::number(id));
+    ctx.bindValue("sources",authors.join(","));
     if(!ctx.ExecAndCheck())
     {
         list->id = -1;
@@ -1647,6 +1674,16 @@ DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db)
     });
     return ctx.result;
 
+}
+
+DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendationIDs(int id, QSqlDatabase db)
+{
+    QString qs = QString("select distinct fic_id from recommendations where recommender_id = :author_id");
+    SqlContext<QList<int>> ctx (db, qs, {{"author_id", id}});
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data.push_back(q.value("fic_id").toInt());
+    });
+    return ctx.result;
 }
 
 DiagnosticSQLResult<bool> IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db)

@@ -90,6 +90,8 @@ protected:
     QString ProcessSumRecs(StoryFilter, bool appendComma = true);
     QString ProcessTags(StoryFilter);
     QString ProcessAuthor(StoryFilter);
+    QString ProcessFicID(StoryFilter);
+    QString ProcessRecommenders(StoryFilter);
     QString ProcessUrl(StoryFilter);
     QString ProcessGenreValues(StoryFilter);
     QString ProcessWordcount(StoryFilter);

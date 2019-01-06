@@ -146,6 +146,7 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
     if(!data)
         return;
     QLOG_INFO() << "Starting to build query";
+
     auto q = BuildQuery(searchfilter);
     QLOG_INFO() << "Build query: success";
     q.setForwardOnly(true);

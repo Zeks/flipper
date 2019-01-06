@@ -126,6 +126,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cbNormals->lineEdit()->setClearButtonEnabled(true);
     ui->leContainsWords->setClearButtonEnabled(true);
     ui->leContainsGenre->setClearButtonEnabled(true);
+    ui->leAuthorID->setClearButtonEnabled(true);
     ui->leNotContainsWords->setClearButtonEnabled(true);
     ui->leNotContainsGenre->setClearButtonEnabled(true);
 
@@ -513,6 +514,7 @@ void MainWindow::SetupFanficTable()
 
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
+    connect(childObject, SIGNAL(heartDoubleClicked(QVariant)), this, SLOT(OnHeartDoubleClicked(QVariant)));
     connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeletedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagRemoveInTagWidget(QVariant,QVariant)));
@@ -562,7 +564,8 @@ void MainWindow::OnDisplayExactPage(int page)
 {
     TaskProgressGuard guard(this);
     if(page < 0
-            || page*env.filter.recordLimit > env.sizeOfCurrentQuery
+            //|| (page-1)*env.filter.recordLimit > env.sizeOfCurrentQuery
+            || env.sizeOfCurrentQuery < (page - 1)*env.filter.recordLimit
             || (env.filter.recordPage+1) == page)
         return;
     QObject* windowObject= qwFics->rootObject();
@@ -1015,6 +1018,9 @@ void MainWindow::ReadSettings()
 
     ui->chkStrongMOnly->setChecked(uiSettings.value("Settings/chkStrongMOnly", false).toBool());
     ui->cbSlashFilterAggressiveness->setCurrentText(uiSettings.value("Settings/cbSlashFilterAggressiveness", "").toString());
+    ui->cbIDMode->setCurrentText(uiSettings.value("Settings/cbIDMode", "").toString());
+    ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
+
 
     DetectGenreSearchState();
     DetectSlashSearchState();
@@ -1071,8 +1077,8 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/cbGenrePresenceTypeExclude", ui->cbGenrePresenceTypeExclude->currentText());
     settings.setValue("Settings/cbFicRating", ui->cbFicRating->currentText());
     settings.setValue("Settings/cbSourceListLimiter", ui->cbSourceListLimiter->currentText());
-
-
+    settings.setValue("Settings/cbIDMode", ui->cbIDMode->currentText());
+    settings.setValue("Settings/leAuthorID", ui->leAuthorID->text());
 
     settings.setValue("Settings/chkStrongMOnly", ui->chkStrongMOnly->isChecked());
     settings.setValue("Settings/cbSlashFilterAggressiveness", ui->cbSlashFilterAggressiveness->currentText());
@@ -1128,6 +1134,29 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
     typetableModel->updateAll();
 }
 
+void MainWindow::OnHeartDoubleClicked(QVariant row)
+{
+    int rownum = row.toInt();
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto authors = env.GetAuthorsContainingFicFromRecList(id, ui->cbRecGroup->currentText());
+    QStringList authorList;
+    for(auto author: authors)
+        authorList.push_back(QString::number(author));
+    ui->leAuthorID->setText(authorList.join(","));
+    ui->chkRandomizeSelection->setChecked(false);
+    ui->cbIDMode->setCurrentIndex(1);
+
+    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+    env.filter.recordPage = 0;
+    env.pageOfCurrentQuery = 0;
+//    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
+//    if(childObject)
+//        childObject->setProperty("chartDisplay", false);
+    qwFics->rootObject()->setProperty("chartDisplay", false);
+
+    LoadData();
+}
+
 void MainWindow::OnTagAddInTagWidget(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
@@ -1173,6 +1202,8 @@ void MainWindow::PlaceResults()
     ui->edtResults->setUpdatesEnabled(true);
     ui->edtResults->setReadOnly(true);
     holder->SetData(env.fanfics);
+    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    QMetaObject::invokeMethod(childObject, "positionViewAtBeginning");
     ReinitRecent(GetCurrentFandomName());
 }
 
@@ -1553,8 +1584,17 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
     filter.rating = static_cast<core::StoryFilter::ERatingFilter>(ui->cbFicRating->currentIndex());
-    if(!ui->leAuthorID->text().isEmpty())
+    if(ui->cbIDMode->currentIndex() == 0 && !ui->leAuthorID->text().isEmpty())
+        filter.useThisFic = ui->leAuthorID->text().toInt();
+    if(ui->cbIDMode->currentIndex() == 1 && !ui->leAuthorID->text().isEmpty())
         filter.useThisAuthor = ui->leAuthorID->text().toInt();
+    if(ui->cbIDMode->currentIndex() == 2 && !ui->leAuthorID->text().isEmpty())
+    {
+        for(auto id : ui->leAuthorID->text().split(",", QString::SkipEmptyParts))
+        filter.usedRecommenders.push_back(id.toInt());
+    }
+
+
 
     if(ui->cbGenrePresenceTypeExclude->currentText() == "Medium")
         filter.genrePresenceForExclude = core::StoryFilter::gp_medium;
@@ -1957,6 +1997,8 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->sbMinimumListMatches->setValue(0);
     ui->wdgTagsPlaceholder->ClearSelection();
     ui->cbSourceListLimiter->setCurrentIndex(0);
+    ui->cbIDMode->setCurrentIndex(0);
+    ui->leAuthorID->setText("");
 }
 
 void MainWindow::DetectGenreSearchState()

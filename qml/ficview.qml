@@ -220,6 +220,7 @@ Rectangle {
             signal fandomToggled(var id)
             signal authorToggled(var id, var toggled)
             signal refilterClicked()
+            signal heartDoubleClicked(var id)
         }
     }
 

@@ -49,6 +49,7 @@ struct RecommendationListResult{
     QHash<int, int> recommendations;
     QHash<int, int> matchReport;
     QHash<uint32_t, MatchBreakdown> breakdowns;
+    QList<int> authors;
 };
 
 enum ERecDataType

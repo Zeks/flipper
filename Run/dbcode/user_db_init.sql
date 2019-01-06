@@ -45,6 +45,8 @@ CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT N
  
 -- a list of all recommendaton lists with their names and statistics;
 create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUTOINCREMENT default 1, name VARCHAR unique NOT NULL, minimum integer NOT NULL default 1, pick_ratio double not null default 1, always_pick_at integer not null default 9999, fic_count integer default 0,  created DATETIME);
+alter table RecommendationLists add column sources varchar;
+
 CREATE INDEX if not exists  I_RecommendationLists_ID ON RecommendationLists (id asc);
 CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (NAME asc);
 CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists (created asc);

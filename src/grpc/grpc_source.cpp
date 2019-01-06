@@ -104,6 +104,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     result.set_genre_presence_exclude(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForExclude));
     result.set_use_this_author_only(filter.useThisAuthor);
 
+    for(auto author : filter.usedRecommenders)
+        result.add_used_recommender_ids(author);
 
     auto* sizeLimits = result.mutable_size_limits();
     sizeLimits->set_record_limit(filter.recordLimit);
@@ -231,6 +233,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.recentAndPopularFavRatio = filter.recent_and_popular().fav_ratio();
     result.recentCutoff = DFS(filter.recent_and_popular().date_cutoff());
     result.useThisAuthor = filter.use_this_author_only();
+    for(int i = 0; i < filter.used_recommender_ids_size(); i++)
+        result.usedRecommenders.push_back(filter.used_recommender_ids(i));
 
     result.fandom = filter.content_filter().fandom();
     result.includeCrossovers = filter.content_filter().include_crossovers();
@@ -569,12 +573,16 @@ public:
     bool GetInternalIDsForFics(QVector<core::IdPack> * ficList);
     bool GetFFNIDsForFics(QVector<core::IdPack> * ficList);
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
+    void FetchFic(int ficId, QVector<core::Fic> * fics);
+
     int GetFicCount(core::StoryFilter filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
     void ProcessStandardError(grpc::Status status);
     core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
+    QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
+
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
@@ -731,6 +739,30 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
     task.release_filter();
 }
 
+void FicSourceGRPCImpl::FetchFic(int ficId, QVector<core::Fic> *fics)
+{
+    grpc::ClientContext context;
+
+    ProtoSpace::SearchByFFNIDTask task;
+
+    ProtoSpace::Filter protoFilter;
+    QScopedPointer<ProtoSpace::SearchByFFNIDResponse> response (new ProtoSpace::SearchByFFNIDResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+    task.set_id(ficId);
+
+
+    grpc::Status status = stub_->SearchByFFNID(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    fics->resize(1);
+    proto_converters::ProtoFicToLocalFic(response->fanfic(), (*fics)[static_cast<size_t>(0)]);
+}
+
 int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
 {
     grpc::ClientContext context;
@@ -842,6 +874,10 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
         recList.ficData.fics.push_back(response->list().fic_ids(i));
         recList.ficData.matchCounts.push_back(response->list().fic_matches(i));
     }
+
+    for(int i = 0; i < response->list().author_ids_size(); i++)
+        recList.ficData.authorIds.push_back(response->list().author_ids(i));
+
     auto it = response->list().match_report().begin();
     while(it != response->list().match_report().end())
     {
@@ -980,6 +1016,35 @@ QHash<uint32_t, uint32_t> FicSourceGRPCImpl::GetAuthorsForFicList(QSet<int> ficL
     return result;
 }
 
+QSet<int> FicSourceGRPCImpl::GetAuthorsForFicInRecList(int sourceFic, QString authors)
+{
+    QSet<int> result;
+
+    grpc::ClientContext context;
+
+    ProtoSpace::AuthorsForFicInReclistRequest task;
+
+    QScopedPointer<ProtoSpace::AuthorsForFicInReclistResponse> response (new ProtoSpace::AuthorsForFicInReclistResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+    task.set_fic_id(sourceFic);
+    task.set_author_list(authors.toStdString());
+
+    grpc::Status status = stub_->GetAuthorsFromRecListContainingFic(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    if(!response->success())
+        return result;
+    for(auto i = 0; i < response->filtered_authors_size(); i++)
+        result.insert(response->filtered_authors(i));
+
+    return result;
+}
+
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
                              QString userToken,
                              int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
@@ -997,6 +1062,13 @@ void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics
         return;
     impl->userData = userData;
     impl->FetchData(filter, fics);
+}
+
+void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fic> *fics)
+{
+    if(!impl)
+        return;
+    impl->FetchFic(ficId, fics);
 }
 
 int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
@@ -1047,6 +1119,13 @@ QHash<uint32_t, uint32_t> FicSourceGRPC::GetAuthorsForFicList(QSet<int> ficList)
     if(!impl)
         return {};
     return impl->GetAuthorsForFicList(ficList);
+}
+
+QSet<int> FicSourceGRPC::GetAuthorsForFicInRecList(int sourceFic, QString authors)
+{
+    if(!impl)
+        return {};
+    return impl->GetAuthorsForFicInRecList(sourceFic, authors);
 }
 
 ServerStatus FicSourceGRPC::GetStatus()

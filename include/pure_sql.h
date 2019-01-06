@@ -142,6 +142,8 @@ DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  Q
 DiagnosticSQLResult<int> GetAuthorIdFromUrl(QString url, QSqlDatabase db);
 DiagnosticSQLResult<int> GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>> GetAuthorsForFics(QSet<int>, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>> GetRecommendersForFics(QSet<int>, QSqlDatabase db);
+
 DiagnosticSQLResult<QHash<uint32_t, int>> GetHashAuthorsForFics(QSet<int>, QSqlDatabase db);
 
 DiagnosticSQLResult<bool>  AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db);
@@ -161,6 +163,8 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db);
 
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db);
+DiagnosticSQLResult<QList<int> > GetAllAuthorRecommendationIDs(int id, QSqlDatabase db);
+
 
 DiagnosticSQLResult<QList<core::AuthorPtr> > GetAllAuthors(QString website, QSqlDatabase db,  int limit = 0);
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QString website, QDateTime date, QSqlDatabase db,  int limit = 0);
@@ -169,6 +173,8 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
                                                                  QDateTime dateEnd, QSqlDatabase db, int limit = 0);
 
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db);
+DiagnosticSQLResult<QString> GetAuthorsForRecommendationListClient(int list_id,  QSqlDatabase db);
+
 
 
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QString website,  QSqlDatabase db);

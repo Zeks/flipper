@@ -76,6 +76,7 @@ public:
                                                             int limit = 0);
     QStringList GetAllAuthorsUrls(QString website, bool forced = false);
     QStringList GetAllAuthorsFavourites(int id);
+    QList<int> GetAllAuthorRecommendationIDs(int id);
     QList<int> GetAllAuthorIds();
     int GetFicCount(int authorId);
     QList<int> GetFicList(core::AuthorPtr author) const;
@@ -92,6 +93,8 @@ public:
 
     bool AssignNewNameForAuthor(core::AuthorPtr, QString name);
     QSet<int> GetAuthorsForFics(QSet<int>);
+    QSet<int> GetRecommendersForFics(QSet<int>);
+
     QHash<uint32_t, int> GetHashAuthorsForFics(QSet<int>);
 
 

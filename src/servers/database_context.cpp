@@ -31,7 +31,7 @@ static QString GetDbNameFromCurrentThread(){
 DatabaseContext::DatabaseContext(){
     dbInterface.reset(new database::SqliteInterface());
     QString name = GetDbNameFromCurrentThread();
-    qDebug() << "OPENING CONNECTION:" << name;
+    QLOG_INFO() << "OPENING CONNECTION:" << name;
     dbInterface->InitDatabase2("CrawlerDB", name, false);
 }
 

@@ -309,6 +309,12 @@ QStringList Authors::GetAllAuthorsFavourites(int id)
     return result.data;
 }
 
+QList<int> Authors::GetAllAuthorRecommendationIDs(int id)
+{
+    auto result = database::puresql::GetAllAuthorRecommendationIDs(id, db);
+    return result.data;
+}
+
 QList<int> Authors::GetAllAuthorIds()
 {
     //! todo need to regenerate cache
@@ -441,6 +447,11 @@ bool Authors::AssignNewNameForAuthor(core::AuthorPtr author, QString name)
 QSet<int> Authors::GetAuthorsForFics(QSet<int> fics)
 {
     return database::puresql::GetAuthorsForFics(fics, db).data;
+}
+
+QSet<int> Authors::GetRecommendersForFics(QSet<int> fics)
+{
+    return database::puresql::GetRecommendersForFics(fics, db).data;
 }
 
 QHash<uint32_t, int> Authors::GetHashAuthorsForFics(QSet<int> fics)

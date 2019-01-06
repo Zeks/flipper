@@ -85,6 +85,7 @@ public:
     QHash<int, int> GetAllFicsHash(int listId, int minMatchCount = 0, core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
+    QString GetAuthorsForRecommendationListClient(int listId);
     QList<int> GetRecommendersForFicId(int ficId);
     QStringList GetLinkedPagesForList(int listId, QString website);
     QHash<int, int> GetMatchesForUID(QString uid);

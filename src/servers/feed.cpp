@@ -129,15 +129,23 @@ UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
                           response))
         return result;
 
-    reqContext.dbContext.InitAuthors();
+
 
 
     core::StoryFilter filter = FilterFromTask(protoFilter, userData);
-    auto ficSource = InitFicSource(reqContext.userToken);
+    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.dbInterface);
+    reqContext.dbContext.InitAuthors();
+
     if(filter.tagsAreUsedForAuthors)
     {
         auto* userThreadData = ThreadData::GetUserData();
         userThreadData->usedAuthors = reqContext.dbContext.authors->GetAuthorsForFics(userThreadData->ficIDsForActivetags);
+    }
+
+    for(auto recommender: filter.usedRecommenders)
+    {
+        auto* userThreadData = ThreadData::GetUserData();
+        userThreadData->ficsForAuthorSearch += QSet<int>::fromList(reqContext.dbContext.authors->GetAllAuthorRecommendationIDs(recommender));
     }
 
     result.filter = filter;
@@ -150,6 +158,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
                              ProtoSpace::SearchResponse* response)
 {
     Q_UNUSED(context);
+    QLOG_INFO() << "///Searching";
     RequestContext reqContext("Searching",task->controls(), this);
     auto prepared = PrepareSearch(response->mutable_response_info(),task->filter(),
                                   task->user_data(),reqContext);
@@ -177,7 +186,31 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     QLOG_INFO() << " ";
     return Status::OK;
 }
+grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *context, const ProtoSpace::SearchByFFNIDTask *task, ProtoSpace::SearchByFFNIDResponse *response)
+{
+    RequestContext reqContext("Authors for fic in reclist", task->controls(), this);
+    if(!reqContext.Process(response->mutable_response_info()))
+        return Status::OK;
 
+    QLOG_INFO() << "Verifying request params";
+    if(task->id() < 1)
+        return Status::OK;
+
+    auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.dbInterface);
+    core::StoryFilter filter;
+    filter.mode = core::StoryFilter::filtering_in_fics;
+    filter.useThisFic = task->id();
+
+    QVector<core::Fic> data;
+    TimedAction action("Fetching data",[&](){
+        ficSource->FetchData(filter, &data);
+    });
+    action.run();
+    for(const auto& fic: data)
+        proto_converters::LocalFicToProtoFic(fic, response->mutable_fanfic());
+    response->set_success(true);
+    return Status::OK;
+}
 Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicCountTask* task,
                                   ProtoSpace::FicCountResponse* response)
 {
@@ -315,6 +348,9 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             target->set_counts_unique(list.breakdowns[key].authorTypes[EAuthorType::unique]);
         }
         qDebug() << "Match report will contain: " << list.matchReport.keys().size() << " fics";
+        for(auto author: list.authors)
+            response->mutable_list()->add_author_ids(author);
+
         for(int key: list.matchReport.keys())
         {
             if(sourceFics.contains(key) && !task->return_sources())
@@ -342,7 +378,7 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     QHash<int, int> idsToFill;
     for(int i = 0; i < task->ids().ffn_ids_size(); i++)
         idsToFill[task->ids().ffn_ids(i)] = -1;
-
+    reqContext.dbContext.InitFanfics();
     bool result = reqContext.dbContext.fanfics->ConvertFFNTaggedFicsToDB(idsToFill);
     if(!result)
     {
@@ -492,6 +528,36 @@ grpc::Status FeederService::GetAuthorsForFicList(grpc::ServerContext *context, c
     return Status::OK;
 }
 
+grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerContext *context, const ProtoSpace::AuthorsForFicInReclistRequest *task, ProtoSpace::AuthorsForFicInReclistResponse *response)
+{
+    Q_UNUSED(context);
+    RequestContext reqContext("Authors for fic in reclist", task->controls(), this);
+    if(!reqContext.Process(response->mutable_response_info()))
+        return Status::OK;
+
+    QLOG_INFO() << "Verifying request params";
+    if(task->fic_id() < 1)
+        return Status::OK;
+
+    reqContext.dbContext.InitAuthors();
+    auto allAuthors = reqContext.dbContext.authors->GetRecommendersForFics({task->fic_id()});
+    auto recsAuthorsList = QString::fromStdString(task->author_list()).split(",", QString::SkipEmptyParts);
+    QSet<int> result;
+    for(auto author: recsAuthorsList)
+    {
+        if(allAuthors.contains(author.toInt()))
+            result.insert(author.toInt());
+    }
+    for(auto author : result)
+    {
+        response->add_filtered_authors(author);
+    }
+    response->set_success(true);
+    return Status::OK;
+}
+
+
+
 
 void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filter){
     StatisticsToken token;
@@ -599,10 +665,11 @@ core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcf
     return filter;
 }
 
-QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken)
+QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken,
+                                                       QSharedPointer<database::IDBWrapper> dbInterface)
 {
-    DatabaseContext dbContext;
-    QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbContext.dbInterface));
+    //DatabaseContext dbContext;
+    QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface));
     FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
     QLOG_INFO() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);

@@ -58,46 +58,55 @@ void CoreEnvironment::InitMetatypes()
 
 void CoreEnvironment::LoadData()
 {
-    if(thinClient)
+    QVector<core::Fic> newFanfics;
+    if(filter.useThisFic != -1)
     {
-        UserData userData;
-        userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
-        if(filter.activeTags.size() > 0)
-        {
-            userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
-            if(userData.ficIDsForActivetags.size() == 0)
-            {
-                QMessageBox::warning(nullptr, "Warning!", "There are no fics tagged with selected tag(s)\nAborting search.");
-                return;
-            }
+        FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
-        }
-        else
-        {
-            if(filter.showRecSources)
+        grpcSource->FetchFic(filter.useThisFic,
+                             &newFanfics);
+    }
+    else {
+
+            UserData userData;
+            userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
+            if(filter.activeTags.size() > 0)
             {
-                auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
-                for(auto fic : sources)
-                    userData.allTaggedFics.remove(fic);
+                userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+                if(userData.ficIDsForActivetags.size() == 0)
+                {
+                    QMessageBox::warning(nullptr, "Warning!", "There are no fics tagged with selected tag(s)\nAborting search.");
+                    return;
+                }
+
             }
             else
             {
-                auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
-                for(auto fic : sources)
-                    userData.allTaggedFics.insert(fic);
+                if(filter.showRecSources)
+                {
+                    auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
+                    for(auto fic : sources)
+                        userData.allTaggedFics.remove(fic);
+                }
+                else
+                {
+                    auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
+                    for(auto fic : sources)
+                        userData.allTaggedFics.insert(fic);
+                }
             }
-        }
 
-        userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
-        ficSource->userData = userData;
+            userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
+            ficSource->userData = userData;
+
+
+            QVector<int> recFics;
+            filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
+
+
+            ficSource->FetchData(filter,
+                                 &newFanfics);
     }
-
-    QVector<int> recFics;
-    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
-
-    QVector<core::Fic> newFanfics;
-    ficSource->FetchData(filter,
-                         &newFanfics);
     if(thinClient)
     {
         interfaces.fandoms->FetchFandomsForFics(&newFanfics);
@@ -204,8 +213,8 @@ bool CoreEnvironment::Init()
         if(grpcSource)
         {
             auto authors = grpcSource->GetAuthorsForFicList(fics);
-//            for(auto fic: authors.keys())
-//                QLOG_INFO() << "Fic: "  << fic << " Author: " << authors[fic];
+            //            for(auto fic: authors.keys())
+            //                QLOG_INFO() << "Fic: "  << fic << " Author: " << authors[fic];
             interfaces.fanfics->WriteAuthorsForFics(authors);
         }
     }
@@ -524,27 +533,27 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
 
 
-    qDebug() << "Deleting list: " << list->id;
-    interfaces.recs->DeleteList(list->id);
+        qDebug() << "Deleting list: " << list->id;
+        interfaces.recs->DeleteList(list->id);
 
-    interfaces.recs->LoadListIntoDatabase(list);
-    //qDebug() << list->ficData.fics;
-    interfaces.recs->LoadListFromServerIntoDatabase(list);
+        interfaces.recs->LoadListIntoDatabase(list);
+        //qDebug() << list->ficData.fics;
+        interfaces.recs->LoadListFromServerIntoDatabase(list);
 
-    interfaces.recs->UpdateFicCountInDatabase(list->id);
-    interfaces.recs->SetCurrentRecommendationList(list->id);
-    emit resetEditorText();
-    auto keys = list->ficData.matchReport.keys();
-    std::sort(keys.begin(), keys.end());
-    emit updateInfo( QString("Matches: ") + QString("Times Found:") + "<br>");
-    for(auto key: keys)
-        emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;")
-                        + " " + QString::number(list->ficData.matchReport[key]) + "<br>");
-    if(automaticLike)
-    {
-        for(auto fic: sourceSet)
-            interfaces.tags->SetTagForFic(fic, "Liked");
-    }
+        interfaces.recs->UpdateFicCountInDatabase(list->id);
+        interfaces.recs->SetCurrentRecommendationList(list->id);
+        emit resetEditorText();
+        auto keys = list->ficData.matchReport.keys();
+        std::sort(keys.begin(), keys.end());
+        emit updateInfo( QString("Matches: ") + QString("Times Found:") + "<br>");
+        for(auto key: keys)
+            emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;")
+                            + " " + QString::number(list->ficData.matchReport[key]) + "<br>");
+        if(automaticLike)
+        {
+            for(auto fic: sourceSet)
+                interfaces.tags->SetTagForFic(fic, "Liked");
+        }
     });
     action.run();
     transaction.finalize();
@@ -839,6 +848,15 @@ void CoreEnvironment::FillDBIDsForTags()
     grpcSource->GetInternalIDsForFics(&pack);
     interfaces.tags->FillDBIDsForFics(pack);
     transaction.finalize();
+}
+
+QSet<int> CoreEnvironment::GetAuthorsContainingFicFromRecList(int fic, QString recList)
+{
+    auto currentList = interfaces.recs->GetListIdForName(recList);
+    auto authors = interfaces.recs->GetAuthorsForRecommendationListClient(currentList);
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    auto resultingAuthors = grpcSource->GetAuthorsForFicInRecList(fic, authors);
+    return resultingAuthors;
 }
 
 void CoreEnvironment::UseFandomTask(PageTaskPtr task)
