@@ -698,21 +698,21 @@ Rectangle {
                 height: 24
                 sourceSize.height: 20
                 sourceSize.width: 20
-                opacity: tags.indexOf("Gem") !== -1 ? 0.8 : 0.5
-                source: tags.indexOf("Gem") !== -1 ? "qrc:/icons/icons/gem_blue.png" : "qrc:/icons/icons/gem_gray.png"
+                opacity: tags.indexOf("Gems") !== -1 ? 0.8 : 0.5
+                source: tags.indexOf("Gems") !== -1 ? "qrc:/icons/icons/gem_blue.png" : "qrc:/icons/icons/gem_gray.png"
 
                 MouseArea{
                     hoverEnabled: true
                     ToolTip.delay: 1000
                     ToolTip.visible: containsMouse
-                    ToolTip.text: qsTr("Tag: Gem")
+                    ToolTip.text: qsTr("Tag: Gems")
                     anchors.fill : parent
                     propagateComposedEvents : true
                     onClicked : {
-                        if(tags.indexOf("Gem") === -1)
-                            lvFics.tagAdded("Gem",indexOfThisDelegate)
+                        if(tags.indexOf("Gems") === -1)
+                            lvFics.tagAdded("Gems",indexOfThisDelegate)
                         else
-                            lvFics.tagDeleted("Gem",indexOfThisDelegate)
+                            lvFics.tagDeleted("Gems",indexOfThisDelegate)
                     }
                 }
             }
