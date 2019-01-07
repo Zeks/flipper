@@ -193,8 +193,8 @@ bool CoreEnvironment::Init()
             interfaces.fandoms->PushFandomToTopOfRecent("Harry Potter");
         }
     }
-    else
-        ficSource.reset(new FicSourceDirect(interfaces.db));
+//    else
+//        ficSource.reset(new FicSourceDirect(interfaces.db));
 
     auto result = interfaces.tags->ReadUserTags();
 

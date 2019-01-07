@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "GlobalHeaders/SingletonHolder.h"
 #include "GlobalHeaders/simplesettings.h"
 #include "GlobalHeaders/SignalBlockerWrapper.h"
+#include "qml/imageprovider.h"
 #include "Interfaces/recommendation_lists.h"
 #include "Interfaces/authors.h"
 #include "Interfaces/fandoms.h"
@@ -117,55 +118,6 @@ struct TaskProgressGuard
 
 };
 
-#include <QQuickImageProvider>
-#include <QPainter>
-#include "third_party/qr/QrCode.hpp"
-class MyQuickImageProvider : public QQuickImageProvider {
-public:
-    MyQuickImageProvider(): QQuickImageProvider(QQuickImageProvider::Pixmap){}
-    // Overriden method of base class; should return cropped image
-    virtual QPixmap requestPixmap ( const QString &id, QSize *size, const QSize &requestedSize )
-    {
-        QSize localSize;
-        localSize.setWidth(300);
-        localSize.setHeight(300);
-        QPixmap pix(300,300);
-        pix.fill("white");
-        QScopedPointer<QPainter> paint = QScopedPointer<QPainter> (new QPainter());
-        paint->begin(&pix);
-        paintQR(*paint.data(), localSize, url, QColor("black"));
-        return pix;
-    }
-
-    void paintQR(QPainter &painter, const QSize sz, const QString &data, QColor fg)
-    {
-        // NOTE: At this point you will use the API to get the encoding and format you want, instead of my hardcoded stuff:
-        qrcodegen::QrCode qr = qrcodegen::QrCode::encodeText(data.toUtf8().constData(), qrcodegen::QrCode::Ecc::LOW);
-        const int s=qr.getSize()>0?qr.getSize():1;
-        const double w=sz.width();
-        const double h=sz.height();
-        const double aspect=w/h;
-        const double size=((aspect>1.0)?h:w);
-        const double scale=size/(s+2);
-        // NOTE: For performance reasons my implementation only draws the foreground parts in supplied color.
-        // It expects background to be prepared already (in white or whatever is preferred).
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(fg);
-        for(int y=0; y<s; y++) {
-            for(int x=0; x<s; x++) {
-                const int color=qr.getModule(x, y);  // 0 for white, 1 for black
-                if(0!=color) {
-                    const double rx1=(x+1)*scale, ry1=(y+1)*scale;
-                    QRectF r(rx1, ry1, scale, scale);
-                    painter.drawRects(&r,1);
-                }
-            }
-        }
-    }
-    QString url = "initial";
-    QPainter paint;
-};
-static MyQuickImageProvider imgProvider;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -293,6 +245,9 @@ bool MainWindow::Init()
     ui->spRecsFan->setSizes({0,1000});
     ui->wdgSlashFandomExceptions->hide();
     ui->chkEnableSlashExceptions->hide();
+
+    imgProvider.reset(new QRImageProvider);
+
     return true;
 }
 
@@ -543,7 +498,7 @@ void MainWindow::SetupFanficTable()
 
     holder->SetData(env.fanfics);
     qwFics = new QQuickWidget();
-    qwFics->engine()->addImageProvider("qrImageProvider",&imgProvider);
+    qwFics->engine()->addImageProvider("qrImageProvider",imgProvider.data());
     QHBoxLayout* lay = new QHBoxLayout;
     lay->addWidget(qwFics);
     ui->wdgFicviewPlaceholder->setLayout(lay);
@@ -987,7 +942,7 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
         ui->leAuthorID->setText(QString::number(data));
     else
         ui->leAuthorID->setText("");
-
+    ui->cbIDMode->setCurrentIndex(1);
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     //env.filter.useThisAuthor = data;
     LoadData();
@@ -1221,9 +1176,9 @@ void MainWindow::OnNewQRSource(QVariant row)
 {
     int rownum = row.toInt();
     auto id = typetableModel->data(typetableModel->index(rownum, 9), 0).toInt();
-    imgProvider.url = QString("https://www.fanfiction.net/s/%1/1").arg(QString::number(id));
+    imgProvider->url = QString("https://www.fanfiction.net/s/%1/1").arg(QString::number(id));
     QSize size(200,200);
-    auto px = imgProvider.requestPixmap("test", &size, {});
+    auto px = imgProvider->requestPixmap("test", &size, {});
     QLOG_INFO() << "Created pixmap";
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("imgQRCode");
     if(childObject)

@@ -60,6 +60,7 @@ class QQuickView;
 class QStringListModel;
 class ActionProgress;
 class FFNFandomIndexParserBase;
+class QRImageProvider;
 
 namespace database {
 class IDBWrapper;
@@ -84,6 +85,9 @@ struct FilterErrors{
     bool hasErrors = false;
     QStringList errors;
 };
+
+
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -289,6 +293,7 @@ private:
     QMenu fandomMenu;
     QMenu ignoreFandomMenu;
     QMenu ignoreFandomSlashFilterMenu;
+    QSharedPointer<QRImageProvider> imgProvider;
 
 
 public slots:
