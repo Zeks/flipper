@@ -117,11 +117,31 @@ Rectangle {
                 source: "qrc:/icons/icons/copy.png"
                 visible: lvFics.showUrlCopyIcon
                 MouseArea{
+                    id: maCopy
                     anchors.fill : parent
                     propagateComposedEvents : true
-
+                    hoverEnabled :true
                     onClicked : {
                         lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
+                    }
+                    onEntered: {
+                        console.log("Entered copy image")
+                        lvFics.newQRSource(indexOfThisDelegate);
+
+                        var point = imgCopy.mapToGlobal(maCopy.mouseX,maCopy.mouseY)
+                        var mappedPoint = mainWindow.mapFromGlobal(point.x,point.y)
+
+                        if(imgCopy.mapToItem(mainWindow,0,0).y > mainWindow.height/2)
+                        {
+                            mappedPoint.y = mappedPoint.y - 300
+                        }
+                        imgQRCode.x = mappedPoint.x + 20
+                        imgQRCode.y = mappedPoint.y
+
+                        mainWindow.qrDisplay = true
+                    }
+                    onExited: {
+                        mainWindow.qrDisplay = false
                     }
                 }
             }

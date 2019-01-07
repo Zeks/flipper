@@ -156,6 +156,17 @@ App{
         "src/rng.cpp",
         "include/rng.h",
     ]
+    Group{
+    name: "qr"
+    files: [
+        "third_party/qr/BitBuffer.cpp",
+        "third_party/qr/BitBuffer.hpp",
+        "third_party/qr/QrCode.cpp",
+        "third_party/qr/QrCode.hpp",
+        "third_party/qr/QrSegment.cpp",
+        "third_party/qr/QrSegment.hpp"
+    ]
+    }
     //cpp.dynamicLibraries: ["zlib"]
     cpp.staticLibraries: {
         var libs = ["UniversalModels", "logger", "quazip"]

@@ -52,6 +52,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include <QMovie>
 
+
+
 class QSortFilterProxyModel;
 class QQuickWidget;
 class QQuickView;
@@ -307,6 +309,8 @@ public slots:
     void OnTagRemove(QVariant tag, QVariant row);
 
     void OnHeartDoubleClicked(QVariant);
+    void OnNewQRSource(QVariant);
+
 
     // triggered when user adds tag in qml
     void OnTagAddInTagWidget(QVariant tag, QVariant row);
@@ -464,5 +468,6 @@ signals:
     // page task when iterating through favourites pages
     // contains urls from a SUBtask
     void pageTaskList(QStringList, ECacheMode);
+    void qrChange();
 };
 

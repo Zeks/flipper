@@ -19,6 +19,7 @@ Rectangle {
     signal forwardClicked()
 
     property bool chartDisplay: false
+    property bool qrDisplay: false
     property int chartValueCommon: 100
     property int chartValueUncommon: 100
     property int chartValueRare: 100
@@ -28,6 +29,27 @@ Rectangle {
     property string chartValueCountUncommon
     property string chartValueCountRare
     property string chartValueCountUnique
+
+    Image {
+        id: imgQRCode
+        objectName: "imgQRCode"
+        width: 200
+        height: 200
+        //verticalAlignment: Text.AlignVCenter
+        source: "image://qrImageProvider/qrcode"
+        //source: "qrc:/icons/icons/add.png"
+
+        visible: qrDisplay
+        z: 100
+    }
+    Connections {
+        target: main
+        onQrChange: {
+            console.log("In source change slot")
+            imgQRCode.source = "image://qrImageProvider/qrcode?" + Math.random()
+            // change URL to refresh image. Add random URL part to avoid caching
+        }
+    }
 
     ChartView {
         id: chartVotes
@@ -215,6 +237,7 @@ Rectangle {
             signal callTagWindow()
             signal urlCopyClicked(string msg)
             signal findSimilarClicked(var id)
+            signal newQRSource(var id)
             signal recommenderCopyClicked(string msg)
             signal refilter()
             signal fandomToggled(var id)
