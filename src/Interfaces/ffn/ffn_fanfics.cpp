@@ -40,6 +40,7 @@ bool FFNFanfics::DeactivateFic(int ficId)
 
 int FFNFanfics::GetIdForUrl(QString url)
 {
+    Q_UNUSED(url)
     return -1; //! todo
 }
 
@@ -50,6 +51,7 @@ bool FFNFanfics::IsDataLoaded()
 
 bool FFNFanfics::Sync(bool forcedSync)
 {
+    Q_UNUSED(forcedSync)
     return true;
 }
 

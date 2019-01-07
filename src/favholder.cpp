@@ -84,6 +84,7 @@ void RecCalculator::CreateTempDataDir()
 
 void RecCalculator::LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface)
 {
+       Q_UNUSED(authorInterface)
     //    auto favourites = authorInterface->LoadFullFavouritesHashset();
     //    for(auto key: favourites.keys())
     //    {
@@ -115,68 +116,77 @@ double quadratic_coef(double ratio,
                       int maximumMatches,
                       ECalcType type)
 {
+    Q_UNUSED(ratio);
+    Q_UNUSED(median);
+    Q_UNUSED(sigma);
     static QSet<int> bases;
     if(!bases.contains(authorSize))
     {
         bases.insert(authorSize);
         qDebug() << "Author size: " << authorSize;
     }
-    double base;
-    double distanceToNextLevel = 0;
-    double distanceToNextBase = 0;
-    double start = 0;
+//    double base;
+//    double distanceToNextLevel = 0;
+//    double distanceToNextBase = 0;
+//    double start = 0;
+    double result = 0;
     switch(type)
     {
         case ECalcType::close:
         //qDebug() << "casting max vote: " << "matches: " << maximumMatches << " value: " << 0.2*static_cast<double>(maximumMatches);
-        return 0.2*static_cast<double>(maximumMatches);
+        result =  0.2*static_cast<double>(maximumMatches);
         //base = ;
-        distanceToNextLevel = 9999;
-        if(base < 15)
-            base = 5;
+//        distanceToNextLevel = 9999;
+//        if(base < 15)
+//            base = 5;
         break;
     case ECalcType::near:
         //return 60;
-    return  0.05*static_cast<double>(maximumMatches);
-    distanceToNextLevel = 0.3*sigma;
-    distanceToNextBase = 0.2;
-    start = sigma*1.7;
-    if(base < 5)
-        base = 5;
+    result = 0.05*static_cast<double>(maximumMatches);
+//    distanceToNextLevel = 0.3*sigma;
+//    distanceToNextBase = 0.2;
+//    start = sigma*1.7;
+//    if(base < 5)
+//        base = 5;
     break;
     case ECalcType::uncommon:
-//        return 5;
-        auto val = 0.005*static_cast<double>(maximumMatches);
-    return  val < 1 ? 1 : val;
-    start = sigma;
-    distanceToNextLevel = 0.7*sigma;
-    distanceToNextBase = 0.07;
-    if(base < 2)
-        base = 2;
-    break;
-    }
-
-    auto traveled = (median - start - ratio)/(distanceToNextLevel);
-
-
-
-    auto result = base + traveled*distanceToNextBase*authorSize;;
-
-    auto castBase = static_cast<int>(base);
-    if(!bases.contains(castBase))
     {
-        bases.insert(castBase);
-
-        qDebug() << "traveled = (median - start - ratio)/distanceToNextLevel";
-        qDebug() << traveled << " = ( " << median << " - " << start << " - " << ratio << " )/ " << distanceToNextLevel;
-
-        qDebug() << "Calculating: " << "author size: " << authorSize
-                 << " ratio: " << ratio << " median: " << median
-                     << " sigma: " << sigma
-                       << " base: " << base;
-        qDebug() << "vote result: " << result;
+        //        return 5;
+        auto val = 0.005*static_cast<double>(maximumMatches);
+        result = val < 1 ? 1 : val;
+    }
+//    start = sigma;
+//    distanceToNextLevel = 0.7*sigma;
+//    distanceToNextBase = 0.07;
+//    if(base < 2)
+//        base = 2;
+    break;
+    default:
+        result = 1;
     }
     return result;
+
+//    auto traveled = (median - start - ratio)/(distanceToNextLevel);
+
+
+
+//    auto result = base + traveled*distanceToNextBase*authorSize;;
+
+//    auto castBase = static_cast<int>(base);
+//    if(!bases.contains(castBase))
+//    {
+//        bases.insert(castBase);
+
+//        qDebug() << "traveled = (median - start - ratio)/distanceToNextLevel";
+//        qDebug() << traveled << " = ( " << median << " - " << start << " - " << ratio << " )/ " << distanceToNextLevel;
+
+//        qDebug() << "Calculating: " << "author size: " << authorSize
+//                 << " ratio: " << ratio << " median: " << median
+//                     << " sigma: " << sigma
+//                       << " base: " << base;
+//        qDebug() << "vote result: " << result;
+//    }
+//    return result;
 }
 
 double sqrt_coef(double ratio, double median, double sigma, int base, int scaler)
@@ -266,7 +276,7 @@ public:
         return {matchesFilter, ratioFilter};
     }
     virtual ActionListType GetActionList(){
-        auto ratioAccumulator = [ratioSum = std::reference_wrapper<double>(this->ratioSum)](RecCalculatorImplBase* ptr,AuthorResult & author)
+        auto ratioAccumulator = [ratioSum = std::reference_wrapper<double>(this->ratioSum)](RecCalculatorImplBase* ,AuthorResult & author)
         {ratioSum+=author.ratio;};
         return {authorAccumulator, ratioAccumulator};
     };
@@ -304,7 +314,7 @@ public:
             return allAuthors[i1].ratio < allAuthors[i2].ratio;
         });
 
-        auto ratioMedianIt = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& i2){
+        auto ratioMedianIt = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& ){
             return allAuthors[i1].ratio < ratioMedian;
         });
         auto dist = ratioMedianIt - filteredAuthors.begin();
@@ -314,7 +324,7 @@ public:
         qDebug() << "sigma: " << quad;
         qDebug() << "2 sigma: " << quad * 2;
 
-        auto ratioSigma2 = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& i2){
+        auto ratioSigma2 = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& ){
             return allAuthors[i1].ratio < (ratioMedian - quad*2);
         });
         sigma2Dist = ratioSigma2 - filteredAuthors.begin();
@@ -477,13 +487,13 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             //QLOG_INFO
             //these are the fics from the current fav list that are ignored
 
-            bool hasIgnoredMatches = false;
+            //bool hasIgnoredMatches = false;
             Roaring ignoredTemp = it.value();
             ignoredTemp = ignoredTemp & ignores;
 
             if(ignoredTemp.cardinality() > 0)
             {
-                hasIgnoredMatches = true;
+                //hasIgnoredMatches = true;
 //                QLOG_INFO() << "ficl list size is: " << it.value().cardinality();
 //                QLOG_INFO() << "of those ignored are: " << ignoredTemp.cardinality();
             }

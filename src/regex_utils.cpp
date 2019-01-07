@@ -70,7 +70,7 @@ QString GetSingleNarrow(QString text,QString regex1, QString regex2, bool forwar
 
 QString GetDoubleNarrow(QString text,
                         QString regex1, QString regex2, bool forward1,
-                        QString regex3, QString regex4, bool forward2,
+                        QString regex3, QString regex4, bool ,
                         int lengthOfLastTag)
 {
     QString result;
@@ -101,6 +101,7 @@ QString BouncingSearch(QString str, FieldSearcher finder)
     QStringRef reversedRef(&reversed);
     QStringRef currentString;
     int lastPosition = 0;
+    Q_UNUSED(lastPosition);
     int skip = 0;
     bool found = true;
     int originalSize;

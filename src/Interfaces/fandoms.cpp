@@ -116,6 +116,8 @@ bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms)
 bool Fandoms::RecalculateFandomStats(QStringList fandoms)
 {
     bool success = true;
+Q_UNUSED(fandoms)
+
     //todo
 //    for(auto fandom : fandoms)
 //    {

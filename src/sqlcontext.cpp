@@ -22,6 +22,9 @@ namespace puresql{
 bool ExecAndCheck(QSqlQuery& q, bool reportErrors ,  bool ignoreUniqueness )
 {
     bool success = q.exec();
+
+Q_UNUSED(success)
+
     if(q.lastError().isValid())
     {
         if(reportErrors && !(ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed")))

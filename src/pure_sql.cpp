@@ -45,6 +45,7 @@ bool NullPtrGuard(T item)
     return true;
 }
 #define DATAQ [&](auto& data, auto q)
+#define DATAQN [&](auto& , auto q)
 #define COMMAND(NAME)  { #NAME, NAME}
 
 #define BP1(X) {COMMAND(X)}
@@ -1144,7 +1145,7 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
 {
     QString qs;
     SqlContext<bool> ctx(db, qs);
-    int freeId = -2;
+    //int freeId = -2;
     {
         qs = QString("select max(id) as id from RecommendationLists");
         ctx.ReplaceQuery(qs);
@@ -1152,7 +1153,7 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
         {
             return ctx.result;
         }
-        freeId = ctx.value("id").toInt() + 1;
+        //freeId = ctx.value("id").toInt() + 1;
         qDebug() << "At this moment max id is: " << ctx.value("id").toInt();
     }
     qDebug() << "List's name is: " << list->name;
@@ -2698,7 +2699,7 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
 
     QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag"};
     QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag) values(:fic_id, :ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
-    bool isOpen = currentDB.isOpen();
+    //bool isOpen = currentDB.isOpen();
     ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserFicTags", keyList,
                                   currentDB, insertQS, keyList);
     return ctx();
@@ -3058,7 +3059,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
         core::AuthorFavFandomStatsPtr fs(new core::FandomStatsForWeightCalc);
 
         fs->listId = author;
-        ctx.FetchSelectFunctor(qs, DATAQ{
+        ctx.FetchSelectFunctor(qs, DATAQN{
                                fs->fandomPresence[q.value("fandom_id").toInt()] = q.value("fandom_ratio").toDouble();
                                fs->fandomCounts[q.value("fandom_id").toInt()] = q.value("fic_count").toInt();
                            }, true);

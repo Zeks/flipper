@@ -44,7 +44,7 @@ void CalcDataHolder::LoadFromFile(){}
 
 
 void CalcDataHolder::SaveFicsData(){
-    int threadCount = QThread::idealThreadCount()-1;
+    //int threadCount = QThread::idealThreadCount()-1;
     thread_boost::SaveFicWeightCalcData("TempData", fics);
     thread_boost::SaveAuthorsData("TempData", authors);
     thread_boost::SaveFavouritesData("TempData", favourites);

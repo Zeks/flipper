@@ -365,6 +365,9 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
 bool BackupSqliteDatabase(QString dbName)
 {
     bool success = true;
+    #ifndef CLIENT_APP
+    Q_UNUSED(dbName)
+    #endif
 #ifdef CLIENT_APP
     QDir dir("backups");
     QStringList filters;

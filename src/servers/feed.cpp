@@ -187,7 +187,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     QLOG_INFO() << " ";
     return Status::OK;
 }
-grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *context, const ProtoSpace::SearchByFFNIDTask *task, ProtoSpace::SearchByFFNIDResponse *response)
+grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpace::SearchByFFNIDTask *task, ProtoSpace::SearchByFFNIDResponse *response)
 {
     RequestContext reqContext("Authors for fic in reclist", task->controls(), this);
     if(!reqContext.Process(response->mutable_response_info()))

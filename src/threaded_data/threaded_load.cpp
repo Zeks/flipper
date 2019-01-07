@@ -56,7 +56,7 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
 
     if constexpr(is_roaring<ContainerValueType>::value)
     {
-        using PtrType = ContainerValueType;
+        //using PtrType = ContainerValueType;
 
         QByteArray ba;
         in >> ba;

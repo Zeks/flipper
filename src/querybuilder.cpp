@@ -160,6 +160,7 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
 QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
                                          bool usePageLimiter)
 {
+    Q_UNUSED(usePageLimiter)
     QString queryString;
 
     queryString+= ProcessWordcount(filter);

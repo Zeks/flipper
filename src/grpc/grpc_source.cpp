@@ -49,7 +49,7 @@ void DumpToLog(QString precede, const ::google::protobuf::Message* message)
 }
 
 
-static inline int GetChapterForFic(int ficId){
+static inline int GetChapterForFic(int ){
     return 0;
 }
 

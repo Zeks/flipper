@@ -377,6 +377,7 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
             {
                 QWriteLocker lock(&mutex);
                 bool insert = false;
+                   Q_UNUSED(insert)
                 if(fic->updateMode == core::UpdateMode::update && !updateQueue.contains(id))
                 {
                     updateQueue[id] = fic;
