@@ -74,7 +74,7 @@ public:
     void SetIdRNGgenerator(IRNGGenerator* generator){rng.reset(generator);}
     virtual void ProcessBindings(StoryFilter, QSharedPointer<Query>);
     void InitTagFilterBuilder(bool client = false, QString userToken = QString());
-    QScopedPointer<IRNGGenerator> rng;
+    QSharedPointer<IRNGGenerator> rng;
 
 protected:
     virtual void InitQuery();

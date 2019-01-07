@@ -65,6 +65,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     genericSearches = 0;
     recommendationsSearches = 0;
     randomSearches = 0;
+    rngData.reset(new core::RNGData);
 
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
@@ -675,7 +676,7 @@ QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken,
                                                        QSharedPointer<database::IDBWrapper> dbInterface)
 {
     //DatabaseContext dbContext;
-    QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface));
+    QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface,rngData));
     FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
     QLOG_INFO() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);

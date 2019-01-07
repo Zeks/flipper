@@ -734,20 +734,20 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     wherePart = wherePart.arg(userToken);
     wherePart.replace("COLLATE NOCASE", "");
     wherePart+=" COLLATE NOCASE";
-    for(int i = 0; i < filter.maxFics; i++)
-    {
+//    for(int i = 0; i < filter.maxFics; i++)
+//    {
         if(rng)
         {
             auto q = NewQuery();
             q->bindings = query->bindings;
             q->str = wherePart;
 
-            auto value = rng->Get(q, userToken, db);
-            if(value == "-1")
+            auto values = rng->Get(q, userToken, db, filter.maxFics);
+            if(values.size() == 0)
                 return "";
-            idList+=value;
+            idList=values;
         }
-    }
+//    }
     if(idList.size() == 0)
         return result;
     result = part.arg(idList.join(","));

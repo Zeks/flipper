@@ -14,6 +14,8 @@
 #include "include/tokenkeeper.h"
 #include "include/storyfilter.h"
 #include "servers/database_context.h"
+#include "rng.h"
+
 
 #include <grpc/grpc.h>
 #include <grpc++/server.h>
@@ -111,6 +113,7 @@ public:
     QDateTime startedAt;
     QReadWriteLock lock;
     QSharedPointer<QTimer> logTimer;
+    QSharedPointer<core::RNGData> rngData;
 private:
     void AddToStatistics(QString uuid, const core::StoryFilter& filter);
     void AddToStatistics(QString uuid);

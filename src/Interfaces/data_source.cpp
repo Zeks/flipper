@@ -25,14 +25,16 @@ FicFilter::FicFilter(){}
 FicFilter::~FicFilter(){}
 FicSource::FicSource(){}
 FicSource::~FicSource(){}
-FicSourceDirect::FicSourceDirect(QSharedPointer<database::IDBWrapper> dbInterface){
+FicSourceDirect::FicSourceDirect(QSharedPointer<database::IDBWrapper> dbInterface, QSharedPointer<core::RNGData> rngData){
     this->db = dbInterface;
     std::unique_ptr<core::DefaultRNGgenerator> rng (new core::DefaultRNGgenerator());
     rng->portableDBInterface = dbInterface;
+    rng->rngData = rngData;
     queryBuilder.portableDBInterface = dbInterface;
     countQueryBuilder.portableDBInterface = dbInterface;
     QLOG_INFO() << "RNG INIT";
     queryBuilder.SetIdRNGgenerator(rng.release());
+    countQueryBuilder.rng = queryBuilder.rng;
 }
 FicSourceDirect::~FicSourceDirect(){}
 

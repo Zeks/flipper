@@ -21,32 +21,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <random>
 
 namespace core{
-QString DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase )
+QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase, int values)
 {
     QString where = userToken + query->str;
-
+    QStringList result;
     bool containsWhere = false;
     for(auto bind: query->bindings)
         where += bind.key + bind.value.toString().left(30);
     {
         // locking to make sure it's not modified when we search
-        QReadLocker locker(&lock);
-        containsWhere = randomIdLists.contains(where);
+        QReadLocker locker(&rngData->lock);
+        containsWhere = rngData->randomIdLists.contains(where);
     }
 
-    //QLOG_INFO() << "RANDOM USING WHERE:" <<
+    QLOG_INFO() << "RANDOM USING WHERE:" << where;
     if(!containsWhere)
     {
+        QWriteLocker locker(&rngData->lock);
+        QLOG_INFO() << "GENERATING RANDOM SEQUENCE";
         auto idList = portableDBInterface->GetIdListForQuery(query);
         if(idList.size() == 0)
             idList.push_back("-1");
-        randomIdLists[where] = idList;
+        rngData->randomIdLists[where] = idList;
     }
+    else
+        QLOG_INFO() << "USING CACHED RANDOM SEQUENCE";
+
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 eng(rd()); // seed the generator
-    auto& currentList = randomIdLists[where];
+    auto& currentList = rngData->randomIdLists[where];
     std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
-    auto value = distr(eng);
-    return currentList[value];
+    for(auto i = 0; i < values; i++)
+    {
+        auto value = distr(eng);
+        result.push_back(currentList[value]);
+    }
+    return result;
 }
 }

@@ -28,15 +28,22 @@ namespace core{
 
 struct IRNGGenerator{
     virtual ~IRNGGenerator(){}
-    virtual QString Get(QSharedPointer<Query>, QString userToken, QSqlDatabase db)  = 0;
+    virtual QStringList Get(QSharedPointer<Query>, QString userToken, QSqlDatabase db, int values = 1)  = 0;
+};
+
+
+struct RNGData{
+    QHash<QString, QStringList> randomIdLists;
+    QReadWriteLock lock;
 };
 
 struct DefaultRNGgenerator : public IRNGGenerator{
-    virtual QString Get(QSharedPointer<Query> where,
+    virtual QStringList Get(QSharedPointer<Query> where,
                         QString userToken,
-                        QSqlDatabase db);
-    QHash<QString, QStringList> randomIdLists;
+                        QSqlDatabase db, int values = 1);
+
+    QSharedPointer<RNGData> rngData;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
-    QReadWriteLock lock;
+
 };
 }

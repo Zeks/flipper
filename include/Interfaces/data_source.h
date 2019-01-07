@@ -64,7 +64,7 @@ public:
 class FicSourceDirect : public FicSource
 {
 public:
-    FicSourceDirect(QSharedPointer<database::IDBWrapper> db);
+    FicSourceDirect(QSharedPointer<database::IDBWrapper> db, QSharedPointer<core::RNGData> rngData);
     virtual ~FicSourceDirect();
     virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*);
     QSqlQuery BuildQuery(core::StoryFilter filter, bool countOnly = false) ;
