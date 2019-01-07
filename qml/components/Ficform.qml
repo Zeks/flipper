@@ -424,8 +424,8 @@ Rectangle {
                         mainWindow.chartValueCountUncommon = roleBreakdownCount[1]
                         mainWindow.chartValueCountRare= roleBreakdownCount[2]
                         mainWindow.chartValueCountUnique= roleBreakdownCount[3]
-//                        console.log(maRecs.mouseX)
-//                        console.log(maRecs.mouseY)
+                        //                        console.log(maRecs.mouseX)
+                        //                        console.log(maRecs.mouseY)
                         //console.log(roleBreakdown)
                         var point = imgRecommendations.mapToGlobal(maRecs.mouseX,maRecs.mouseY)
                         var mappedPoint = mainWindow.mapFromGlobal(point.x,point.y)
@@ -438,8 +438,8 @@ Rectangle {
                         chartVotes.x = mappedPoint.x
                         chartVotes.y = mappedPoint.y
 
-//                        console.log("Displaying chart at: ", point.x)
-//                        console.log("Displaying chart at: ", point.y)
+                        //                        console.log("Displaying chart at: ", point.x)
+                        //                        console.log("Displaying chart at: ", point.y)
                         mainWindow.chartDisplay = true
 
                     }
@@ -458,70 +458,7 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 16
             }
-            Image {
-                id: imgLike
-                width: 20
-                height: 24
-                sourceSize.height: 20
-                sourceSize.width: 20
-                opacity: ((tags.indexOf("Disliked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Liked")  !== -1) ?  1 : 0.3
-                source: tags.indexOf("Liked") !== -1 ? "qrc:/icons/icons/like_green.png" :  "qrc:/icons/icons/like.png"
 
-                MouseArea{
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(tags.indexOf("Liked") === -1)
-                        {
-                            lvFics.tagAdded("Liked",indexOfThisDelegate)
-                            lvFics.tagDeleted("Disliked",indexOfThisDelegate)
-                        }
-                        else
-                            lvFics.tagDeleted("Liked",indexOfThisDelegate)
-                    }
-                }
-            }
-            Image {
-                id: imgDislike
-                width: 20
-                height: 24
-                sourceSize.height: 20
-                sourceSize.width: 20
-                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Disliked")  !== -1) ?  1 : 0.3
-                source: tags.indexOf("Disliked") !== -1 ? "qrc:/icons/icons/dislike_red.png" :  "qrc:/icons/icons/dislike.png"
-                MouseArea{
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(tags.indexOf("Disliked") === -1)
-                        {
-                            lvFics.tagAdded("Disliked",indexOfThisDelegate)
-                            lvFics.tagDeleted("Liked",indexOfThisDelegate)
-                        }
-                        else
-                            lvFics.tagDeleted("Disliked",indexOfThisDelegate)
-                    }
-                }
-            }
-            Image {
-                id: imgDiscard
-                width: 20
-                height: 24
-                sourceSize.height: 20
-                sourceSize.width: 20
-                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
-                source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
-                MouseArea{
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(tags.indexOf("Hide") === -1)
-                            lvFics.tagAdded("Hide",indexOfThisDelegate)
-                        else
-                            lvFics.tagDeleted("Hide",indexOfThisDelegate)
-                    }
-                }
-            }
             Text {
                 id: txtWords
                 width: 70
@@ -546,6 +483,287 @@ Rectangle {
                 }
             }
 
+        }
+
+        RowLayout{
+            Text{
+                id: txtTagsExpanations
+                text: "Tags:"
+                visible:false
+                Layout.fillHeight: true
+                font.pixelSize: 16
+            }
+
+            Image {
+                id: imgLike
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: ((tags.indexOf("Disliked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Liked")  !== -1) ?  1 : 0.3
+                source: tags.indexOf("Liked") !== -1 ? "qrc:/icons/icons/like_green.png" :  "qrc:/icons/icons/like.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Liked")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Liked") === -1)
+                        {
+                            lvFics.tagAdded("Liked",indexOfThisDelegate)
+                            lvFics.tagDeleted("Disliked",indexOfThisDelegate)
+                        }
+                        else
+                            lvFics.tagDeleted("Liked",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgDislike
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Disliked")  !== -1) ?  1 : 0.3
+                source: tags.indexOf("Disliked") !== -1 ? "qrc:/icons/icons/dislike_red.png" :  "qrc:/icons/icons/dislike.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Disliked")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Disliked") === -1)
+                        {
+                            lvFics.tagAdded("Disliked",indexOfThisDelegate)
+                            lvFics.tagDeleted("Liked",indexOfThisDelegate)
+                        }
+                        else
+                            lvFics.tagDeleted("Disliked",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgDiscard
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
+                source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Hide")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Hide") === -1)
+                            lvFics.tagAdded("Hide",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Hide",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgDead
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity:  0.5
+                source: tags.indexOf("Limbo") !== -1 ? "qrc:/icons/icons/ghost.png" : "qrc:/icons/icons/ghost_gray.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Limbo")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Limbo") === -1)
+                            lvFics.tagAdded("Limbo",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Limbo",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgWait
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Wait") !== -1  ? 1 : 0.5
+                source: tags.indexOf("Wait") !== -1 ? "qrc:/icons/icons/clock_green.png" : "qrc:/icons/icons/clock_gray.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Wait")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Wait") === -1)
+                            lvFics.tagAdded("Wait",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Wait",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgQueue
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Queue") !== -1 ? 0.8 : 0.5
+                source: tags.indexOf("Queue") !== -1 ? "qrc:/icons/icons/book.png" : "qrc:/icons/icons/book_gray.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Queue")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Queue") === -1)
+                            lvFics.tagAdded("Queue",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Queue",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgReading
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Reading") !== -1 ? 0.8 : 0.5
+                source: tags.indexOf("Reading") !== -1 ? "qrc:/icons/icons/open_book.png" : "qrc:/icons/icons/open_book_gray.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Reading")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Reading") === -1)
+                            lvFics.tagAdded("Reading",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Reading",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgFinishedReading
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Finished") !== -1 ? 0.8 : 0.5
+                source: tags.indexOf("Finished") !== -1 ? "qrc:/icons/icons/ok.png" : "qrc:/icons/icons/ok_grayed.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Finished")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Finished") === -1)
+                            lvFics.tagAdded("Finished",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Finished",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgGem
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Gem") !== -1 ? 0.8 : 0.5
+                source: tags.indexOf("Gem") !== -1 ? "qrc:/icons/icons/gem_blue.png" : "qrc:/icons/icons/gem_gray.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Gem")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Gem") === -1)
+                            lvFics.tagAdded("Gem",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Gem",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgLove
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Rec") !== -1  ? 1 : 0.5
+                source: tags.indexOf("Rec") !== -1 ? "qrc:/icons/icons/heart_tag.png" : "qrc:/icons/icons/heart_tag_gray.png"
+
+                MouseArea{
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    hoverEnabled: true
+                    ToolTip.text: qsTr("Tag: Rec")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Rec") === -1)
+                            lvFics.tagAdded("Rec",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Rec",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgSeries
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Series") !== -1  ? 1 : 0.5
+                source: tags.indexOf("Series") !== -1 ? "qrc:/icons/icons/link.png" : "qrc:/icons/icons/link.png"
+
+                MouseArea{
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    hoverEnabled: true
+                    ToolTip.text: qsTr("Tag: Series")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Series") === -1)
+                            lvFics.tagAdded("Series",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Series",indexOfThisDelegate)
+                    }
+                }
+            }
         }
     }
 

@@ -202,7 +202,7 @@ bool MainWindow::Init()
     FillRecTagCombobox();
 
 
-
+    imgProvider.reset(new QRImageProvider);
     SetupFanficTable();
     //FillRecommenderListView();
     //CreatePageThreadWorker();
@@ -246,7 +246,7 @@ bool MainWindow::Init()
     ui->wdgSlashFandomExceptions->hide();
     ui->chkEnableSlashExceptions->hide();
 
-    imgProvider.reset(new QRImageProvider);
+
 
     return true;
 }

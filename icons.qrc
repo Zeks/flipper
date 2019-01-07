@@ -49,5 +49,19 @@
         <file>icons/heart_green_test2.png</file>
         <file>icons/heart_half.png</file>
         <file>icons/magnify_inactive.png</file>
+        <file>icons/ghost.png</file>
+        <file>icons/ghost_gray.png</file>
+        <file>icons/clock_gray.png</file>
+        <file>icons/clock_green.png</file>
+        <file>icons/book.png</file>
+        <file>icons/book_gray.png</file>
+        <file>icons/open_book.png</file>
+        <file>icons/open_book_gray.png</file>
+        <file>icons/gem_blue.png</file>
+        <file>icons/gem_gray.png</file>
+        <file>icons/heart_gray.png</file>
+        <file>icons/heart_tag.png</file>
+        <file>icons/heart_tag_gray.png</file>
+        <file>icons/link.png</file>
     </qresource>
 </RCC>
