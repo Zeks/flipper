@@ -876,7 +876,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
 
     ProcessStandardError(status);
-    DumpToLog("Test Dump", response.data());
+    //DumpToLog("Test Dump", response.data());
     if(!response->list().list_ready())
         return false;
 
