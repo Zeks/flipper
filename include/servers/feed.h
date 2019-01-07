@@ -129,6 +129,7 @@ private:
 
     QSharedPointer<FicSource> InitFicSource(QString userToken, QSharedPointer<database::IDBWrapper> dbInterface);
     QSet<int> ProcessIDPackIntoFfnFicSet(const ::ProtoSpace::SiteIDPack& );
+    QSet<int> ProcessFFNIDPackIntoFfnFicSet(const ProtoSpace::SiteIDPack & pack);
     UsedInSearch PrepareSearch(::ProtoSpace::ResponseInfo* response,
                                const ::ProtoSpace::Filter& filter,
                                const ::ProtoSpace::UserData& userData,

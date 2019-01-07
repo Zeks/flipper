@@ -1179,11 +1179,11 @@ void MainWindow::OnNewQRSource(QVariant row)
     imgProvider->url = QString("https://www.fanfiction.net/s/%1/1").arg(QString::number(id));
     QSize size(200,200);
     auto px = imgProvider->requestPixmap("test", &size, {});
-    QLOG_INFO() << "Created pixmap";
+    //QLOG_INFO() << "Created pixmap";
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("imgQRCode");
     if(childObject)
     {
-        QLOG_INFO() << "assigning image source";
+        //QLOG_INFO() << "assigning image source";
         childObject->setProperty("source", px);
     }
     emit qrChange();

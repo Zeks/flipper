@@ -454,7 +454,7 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
     reqContext.dbContext.InitFanfics();
 
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
-    auto  sourceFics = ProcessIDPackIntoFfnFicSet(task->id_packs());
+    auto  sourceFics = ProcessFFNIDPackIntoFfnFicSet(task->id_packs());
 
     if(sourceFics.size() == 0)
         return Status::OK;
@@ -690,6 +690,14 @@ QSet<int> FeederService::ProcessIDPackIntoFfnFicSet(const ProtoSpace::SiteIDPack
     QLOG_INFO() << "passing fic set of size: " << pack.db_ids_size();
     for(int i = 0; i < pack.db_ids_size(); i++)
         fics.insert(pack.db_ids(i));
+    return fics;
+}
+QSet<int> FeederService::ProcessFFNIDPackIntoFfnFicSet(const ProtoSpace::SiteIDPack & pack)
+{
+    QSet<int> fics;
+    QLOG_INFO() << "passing fic set of size: " << pack.ffn_ids_size();
+    for(int i = 0; i < pack.ffn_ids_size(); i++)
+        fics.insert(pack.ffn_ids(i));
     return fics;
 }
 
