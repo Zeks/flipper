@@ -58,6 +58,7 @@ void CoreEnvironment::InitMetatypes()
 
 void CoreEnvironment::LoadData()
 {
+    TimedAction action("Full data load",[&](){
     QVector<core::Fic> newFanfics;
     if(filter.useThisFic != -1)
     {
@@ -120,6 +121,8 @@ void CoreEnvironment::LoadData()
         if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
             fic.likedAuthor = true;
     }
+    });
+    action.run();
 }
 
 CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj)
