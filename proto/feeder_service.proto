@@ -137,6 +137,7 @@ message RecommendationListCreationRequest{
     bool return_sources                 = 7;
     bool use_weighting                  = 8;
     RecListUserData user_data           = 9;
+    int32 users_ffn_profile_id          = 10;
 }
 
 message RecommendationListCreationResponse{

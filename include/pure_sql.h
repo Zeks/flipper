@@ -157,6 +157,9 @@ DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int> &, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>, QSqlDatabase db);
+DiagnosticSQLResult<bool> SetUserProfile(int id,  QSqlDatabase db);
+DiagnosticSQLResult<int> GetUserProfile(QSqlDatabase db);
+DiagnosticSQLResult<int> GetRecommenderIDByFFNId(int id, QSqlDatabase db);
 
 
 

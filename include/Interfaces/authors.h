@@ -65,8 +65,9 @@ public:
     QList<core::AuthorPtr> GetAllByName(QString name);
     QSet<int> GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid);
     //core::AuthorPtr GetByUrl(QString url);
-    core::AuthorPtr GetByWebID(QString website, int id);
     core::AuthorPtr GetById(int id);
+    core::AuthorPtr GetByWebID(QString website, int id);
+    int GetRecommenderIDByFFNId(int id);
     QList<core::AuthorPtr> GetAllAuthors(QString website, bool forced = false);
     QList<core::AuthorPtr> GetAllAuthorsLimited(QString website, int limit);
     QList<core::AuthorPtr> GetAllAuthorsWithFavUpdateSince(QString website, QDateTime date, int limit = 0);

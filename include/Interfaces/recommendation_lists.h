@@ -89,6 +89,8 @@ public:
     QList<int> GetRecommendersForFicId(int ficId);
     QStringList GetLinkedPagesForList(int listId, QString website);
     QHash<int, int> GetMatchesForUID(QString uid);
+    bool SetUserProfile(int id);
+    int GetUserProfile();
 
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);

@@ -484,6 +484,16 @@ QHash<int, int> RecommendationLists::GetMatchesForUID(QString uid)
     return  database::puresql::GetMatchesForUID(uid,  db).data;
 }
 
+bool RecommendationLists::SetUserProfile(int id)
+{
+    return  database::puresql::SetUserProfile(id,  db).success;
+}
+
+int RecommendationLists::GetUserProfile()
+{
+    return database::puresql::GetUserProfile(db).data;
+}
+
 void RecommendationLists::SetCurrentRecommendationList(int value)
 {
     currentRecommendationList = value;

@@ -147,6 +147,9 @@ bool MainWindow::Init()
     ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
                                       "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
                                       "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
+//    ui->pbUseProfile->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
+//                                      "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
+//                                      "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
 
 
 
@@ -1008,6 +1011,8 @@ void MainWindow::ReadSettings()
     ui->leBiasValue->setText(uiSettings.value("Settings/biasValue", "2.5").toString());
 
     ui->sbMinimumListMatches->setValue(uiSettings.value("Settings/sbMinimumListMatches", "0").toInt());
+    ui->chkUseReclistMatches->setChecked(uiSettings.value("Settings/chkUseReclistMatches", false).toBool());
+
     ui->sbMinimumFavourites->setValue(uiSettings.value("Settings/sbMinimumFavourites", "0").toInt());
 
     ui->chkGenreUseImplied->setChecked(uiSettings.value("Settings/chkGenreUseImplied", false).toBool());
@@ -1039,6 +1044,8 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/maxWordCount", ui->cbMaxWordCount->currentText());
 
     settings.setValue("Settings/sbMinimumListMatches", ui->sbMinimumListMatches->value());
+    settings.setValue("Settings/chkUseReclistMatches", ui->chkUseReclistMatches->isChecked());
+
     settings.setValue("Settings/sbMinimumFavourites", ui->sbMinimumFavourites->value());
     settings.setValue("Settings/chkFaveLimitActivated", ui->chkFaveLimitActivated->isChecked());
     settings.setValue("Settings/chkAutomaticLike", ui->chkAutomaticLike->isChecked());
@@ -1532,7 +1539,7 @@ FilterErrors MainWindow::ValidateFilter()
     bool emptyList = !list || list->ficCount == 0;
     if(emptyList && (ui->cbSortMode->currentText() == "Rec Count"
                      || ui->chkSearchWithinList->isChecked()
-                     || ui->sbMinimumListMatches->value() > 0))
+                     || (ui->chkUseReclistMatches->isChecked() && ui->sbMinimumListMatches->value() > 0)))
     {
         result.AddError("Current filter doesn't make sense because selected recommendation list is empty");
     }
@@ -1630,7 +1637,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
     filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
-    filter.minRecommendations =  ui->sbMinimumListMatches->value();
+    if(ui->chkUseReclistMatches->isChecked())
+        filter.minRecommendations =  ui->sbMinimumListMatches->value();
     filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : 5000;
     filter.recordPage = ui->chkLimitPageSize->isChecked() ?  0 : -1;
     filter.listOpenMode = ui->chkSearchWithinList->isChecked();
@@ -1888,13 +1896,15 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
+    bool ownRecs = false;
     if(ui->chkAutomaticLike->isChecked())
     {
         QMessageBox m;
         m.setIcon(QMessageBox::Warning);
-        m.setText("\"Automatic Like\" option is enabled!\n"
+        m.setText("\"Is your profile\" option is enabled!\n"
                   "Only enable this while you are loading your own favourite list.\n"
-                  "Otherwise you will not see fics from that URL in your searches.\n"
+                  "This tells flipper to discard your own profile from recommendations for better results\n"
+                  "This will also automatically assing \"Liked\" to all of the fics in the loaded profile\n"
                   "Are you sure you want to continue?");
         auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
         auto noButton =  m.addButton("No", QMessageBox::AcceptRole);
@@ -1903,9 +1913,29 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         if(m.clickedButton() != yesButton)
             return;
     }
+    if(ui->chkUserOwnProfile->isChecked())
+        ownRecs = true;
+
     TimedAction action("Full list creation: ",[&](){
+        QRegularExpression rx("(\\d{1,9})");
+        auto match = rx.match(ui->leRecsFFNUrl->text());
+        int ownId = -1;
+        if(match.hasMatch())
+        {
+            qDebug() << match.capturedTexts();
+            ownId = match.capturedTexts().at(1).toInt();
+        }
+
+
         QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
         params->name = ui->leRecsListName->text();
+        if(ownRecs)
+        {
+            params->userFFNId = ownId;
+            env.interfaces.recs->SetUserProfile(ownId);
+        }
+        else
+            params->userFFNId = env.interfaces.recs->GetUserProfile();
         if(params->name.trimmed().isEmpty())
         {
             QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
@@ -1994,6 +2024,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkSearchWithinList->setChecked(false);
     ui->chkShowSources->setChecked(false);
     ui->chkGenreUseImplied->setChecked(false);
+    ui->chkUseReclistMatches->setChecked(false);
     ui->sbMinimumListMatches->setValue(0);
     ui->wdgTagsPlaceholder->ClearSelection();
     ui->cbSourceListLimiter->setCurrentIndex(0);
@@ -2224,6 +2255,7 @@ void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
         ui->cbSortMode->setCurrentText("Rec Count");
         ui->chkSearchWithinList->setChecked(true);
         ui->sbMinimumListMatches->setValue(1);
+        ui->chkUseReclistMatches->setChecked(true);
     }
     if(ui->cbCurrentFilteringMode->currentText() == "Tag Search")
     {

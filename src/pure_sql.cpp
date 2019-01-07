@@ -1652,7 +1652,6 @@ DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase
     return ctx.result;
 }
 
-
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db)
 {
     QString qs = QString("select id, ffn_id, ao3_id, sb_id, sv_id from fanfics where id in (select fic_id from recommendations where recommender_id = :author_id )");
@@ -1880,6 +1879,28 @@ DiagnosticSQLResult<bool> IgnoreFandom(int fandom_id, bool including_crossovers,
     QString qs = QString(" insert into ignored_fandoms (fandom_id, including_crossovers) values (:fandom_id, :including_crossovers) ");
     SqlContext<bool> ctx(db, qs,  BP2(fandom_id,including_crossovers));
     return ctx(true);
+}
+
+DiagnosticSQLResult<bool> SetUserProfile(int id,  QSqlDatabase db)
+{
+    QString qs = QString(" update user_settings set value = :id where name = 'user_ffn_id' ");
+    SqlContext<bool> ctx(db, qs,  BP1(id));
+    return ctx(true);
+}
+
+DiagnosticSQLResult<int> GetUserProfile(QSqlDatabase db)
+{
+    QString qs = QString("select value from user_settings where name = 'user_ffn_id'");
+    SqlContext<int> ctx(db, qs);
+    ctx.FetchSingleValue<int>("value", -1);
+    return ctx.result;
+}
+DiagnosticSQLResult<int> GetRecommenderIDByFFNId(int id, QSqlDatabase db)
+{
+    QString qs = QString("select id from recommenders where ffn_id = :id");
+    SqlContext<int> ctx(db, qs, BP1(id));
+    ctx.FetchSingleValue<int>("id", -1);
+    return ctx.result;
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int fandom_id, QSqlDatabase db)

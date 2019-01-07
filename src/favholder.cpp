@@ -464,6 +464,13 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         auto it = favs.begin();
         while (it != favs.end())
         {
+            if(params->userFFNId == it.key())
+            {
+                QLOG_INFO() << "Skipping user's own list: " << params->userFFNId ;
+                it++;
+                continue;
+            }
+
             auto& author = allAuthors[it.key()];
             author.id = it.key();
             author.matches = 0;

@@ -288,9 +288,14 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     reqContext.dbContext.InitFanfics();
 
+    //reqContext.dbContext.InitAuthors();
+
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->name =  proto_converters::FS(task->list_name());
     params->minimumMatch = task->min_fics_to_match();
+    params->userFFNId = task->users_ffn_profile_id();
+    if(params->userFFNId != -1)
+        params->userFFNId  = reqContext.dbContext.authors->GetRecommenderIDByFFNId(params->userFFNId);
     params->pickRatio = task->max_unmatched_to_one_matched();
     params->alwaysPickAt = task->always_pick_at();
     params->useWeighting = task->use_weighting();
@@ -326,6 +331,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         auto* targetList = response->mutable_list();
         targetList->set_list_name(proto_converters::TS(params->name));
         targetList->set_list_ready(true);
+        QLOG_INFO() << "setting list ready to true";
         using core::AuthorWeightingResult;
         typedef core::AuthorWeightingResult::EAuthorType EAuthorType;
         for(int key: list.recommendations.keys())

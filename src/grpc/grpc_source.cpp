@@ -35,9 +35,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/security/credentials.h>
+#include "google/protobuf/util/time_util.h"
+#include "google/protobuf/text_format.h"
+#include "google/protobuf/empty.pb.h"
 
-
-
+void DumpToLog(QString precede, const ::google::protobuf::Message* message)
+{
+    std::string asText;
+    ::google::protobuf::TextFormat::Printer printer;
+    printer.SetUseUtf8StringEscaping(true);
+    printer.PrintToString(*message, &asText);
+    QLOG_INFO() << precede << QString::fromStdString(asText);
+}
 
 
 static inline int GetChapterForFic(int ficId){
@@ -568,6 +577,10 @@ public:
         :stub_(ProtoSpace::Feeder::NewStub(grpc::CreateChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials()))),
           deadline(deadline)
     {
+            grpc::ChannelArguments args;
+            args.SetMaxReceiveMessageSize(10000000);
+            auto customChannel = grpc::CreateCustomChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials(), args);
+            stub_ = ProtoSpace::Feeder::NewStub(customChannel);
     }
     ServerStatus GetStatus();
     bool GetInternalIDsForFics(QVector<core::IdPack> * ficList);
@@ -851,6 +864,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     task.set_min_fics_to_match(recList.minimumMatch);
     task.set_max_unmatched_to_one_matched(static_cast<int>(recList.pickRatio));
     task.set_use_weighting(recList.useWeighting);
+    task.set_users_ffn_profile_id(recList.userFFNId);
     auto userData = task.mutable_user_data();
     auto ignores = userData->mutable_ignored_fandoms();
     for(auto ignore: recList.ignoredFandoms)
@@ -862,6 +876,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
 
     ProcessStandardError(status);
+    DumpToLog("Test Dump", response.data());
     if(!response->list().list_ready())
         return false;
 

@@ -222,6 +222,11 @@ core::AuthorPtr Authors::GetByWebID(QString website, int id)
     return result;
 }
 
+int Authors::GetRecommenderIDByFFNId(int id)
+{
+    return database::puresql::GetRecommenderIDByFFNId(id, db).data;
+}
+
 //core::AuthorPtr Authors::GetByUrl(QString url)
 //{
 //    core::AuthorPtr result;

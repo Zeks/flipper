@@ -823,6 +823,7 @@ public:
     int minimumMatch = -1;
     int alwaysPickAt = -2;
     double pickRatio = -1;
+    int userFFNId = -1;
     bool useWeighting = false;
     QSet<int> ignoredFandoms;
     QSet<int> minorNegativeVotes;
