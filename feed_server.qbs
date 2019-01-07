@@ -114,6 +114,7 @@ App{
     cpp.systemIncludePaths: [
         sourceDirectory +"/proto",
         sourceDirectory + "/third_party",
+        "/home/zeks/grpc/third_party/protobuf/src",
         sourceDirectory + "/../"]
 
     cpp.staticLibraries: {
