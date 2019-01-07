@@ -14,3 +14,5 @@ proto/*.pb.cc
 proto/*.pb.h
 Run/*.log
 Run/*.sqlite
+Run/bot_token*.ini
+Run/lib*.a
