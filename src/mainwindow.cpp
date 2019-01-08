@@ -1159,7 +1159,7 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
         authorList.push_back(QString::number(author));
     ui->leAuthorID->setText(authorList.join(","));
     ui->chkRandomizeSelection->setChecked(false);
-    ui->cbIDMode->setCurrentIndex(1);
+    ui->cbIDMode->setCurrentIndex(2);
 
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     env.filter.recordPage = 0;
