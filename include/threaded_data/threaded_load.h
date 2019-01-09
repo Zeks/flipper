@@ -39,4 +39,5 @@ void LoadData(QString storageFolder, QString fileName, QHash<int, QSet<int>>& );
 void LoadData(QString storageFolder, QString fileName, QHash<int, std::array<double, 22> > &);
 void LoadData(QString storageFolder, QString fileName, QHash<int, core::AuthorFavFandomStatsPtr>& );
 void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& );
+void LoadData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr>& );
 }

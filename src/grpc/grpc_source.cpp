@@ -91,6 +91,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
     result.set_randomize_results(filter.randomizeResults);
     result.set_use_implied_genre(filter.useRealGenres);
+    result.set_descending_direction(filter.descendingDirection);
 
     auto* basicFilters = result.mutable_basic_filters();
     basicFilters->set_website(filter.website.toStdString());
@@ -212,6 +213,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     core::StoryFilter result;
     result.randomizeResults = filter.randomize_results();
     result.useRealGenres = filter.use_implied_genre();
+    result.descendingDirection = filter.descending_direction();
+
     result.website = FS(filter.basic_filters().website());
     result.minWords = filter.basic_filters().min_words();
     result.maxWords = filter.basic_filters().max_words();

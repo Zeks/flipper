@@ -1246,6 +1246,27 @@
                      </item>
                     </widget>
                    </item>
+                   <item>
+                    <widget class="QLabel" name="label_16">
+                     <property name="text">
+                      <string>Direction:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="cbSortDirection">
+                     <item>
+                      <property name="text">
+                       <string>DESC</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>ASC</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
                   </layout>
                  </item>
                  <item row="0" column="3" rowspan="2">

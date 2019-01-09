@@ -82,9 +82,9 @@ template<>
 struct DataHolderInfo<rdt_fics>
 {
     static const std::string fileBase(){return "fics";}
-    typedef  QVector<core::FicWeightPtr> type;
+    typedef  QHash<int, core::FicWeightPtr> type;
     static auto loadFunc (){return [](QSharedPointer<interfaces::Fanfics> fanficsInterface){
-            return fanficsInterface->GetAllFicsWithEnoughFavesForWeights(0);;
+            return fanficsInterface->GetHashOfAllFicsWithEnoughFavesForWeights(0);
         };}
 };
 

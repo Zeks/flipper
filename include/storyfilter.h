@@ -109,7 +109,7 @@ struct StoryFilter{
     bool showRecSources = false;
     bool tagsAreUsedForAuthors = false;
     bool useRealGenres = false;
-
+    bool descendingDirection = true;
 
 
     SlashFilterState slashFilter;

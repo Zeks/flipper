@@ -76,6 +76,7 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
         value->Deserialize(in);
 
         PutIntoContainer(container, value, key);
+
     }
     else
     {
@@ -266,6 +267,12 @@ void LoadData(QString storageFolder, QString fileName, QHash<int, core::AuthorFa
 void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& data){
     qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, vectorUnifier, storageFolder + QString("/") + fileName, data);
+}
+
+void LoadData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr> & data)
+{
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
 
 }

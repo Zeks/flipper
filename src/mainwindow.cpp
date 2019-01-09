@@ -1033,6 +1033,7 @@ void MainWindow::ReadSettings()
     ui->cbSlashFilterAggressiveness->setCurrentText(uiSettings.value("Settings/cbSlashFilterAggressiveness", "").toString());
     ui->cbIDMode->setCurrentText(uiSettings.value("Settings/cbIDMode", "").toString());
     ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
+    ui->cbSortDirection->setCurrentText(uiSettings.value("Settings/cbSortDirection", "").toString());
 
 
     DetectGenreSearchState();
@@ -1097,7 +1098,7 @@ void MainWindow::WriteSettings()
 
     settings.setValue("Settings/chkStrongMOnly", ui->chkStrongMOnly->isChecked());
     settings.setValue("Settings/cbSlashFilterAggressiveness", ui->cbSlashFilterAggressiveness->currentText());
-
+    settings.setValue("Settings/cbSortDirection", ui->cbSortDirection->currentText());
 
     settings.setValue("Settings/appsize", this->size());
     settings.setValue("Settings/position", this->pos());
@@ -1676,6 +1677,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
+    filter.descendingDirection = ui->cbSortDirection->currentIndex() == 0;
 
     return filter;
 }
