@@ -21,13 +21,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <random>
 
 namespace core{
-QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase, int values)
+QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userToken, QSqlDatabase, StoryFilter &filter)
 {
     QString where = userToken + query->str;
     QStringList result;
     bool containsWhere = false;
     for(auto bind: query->bindings)
         where += bind.key + bind.value.toString().left(30);
+    where += "Minrecs: " + QString::number(filter.minRecommendations);
+    where += "Rated: " + QString::number(filter.rating);
     {
         // locking to make sure it's not modified when we search
         QReadLocker locker(&rngData->lock);
@@ -51,7 +53,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
     std::mt19937 eng(rd()); // seed the generator
     auto& currentList = rngData->randomIdLists[where];
     std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
-    for(auto i = 0; i < values; i++)
+    for(auto i = 0; i < filter.maxFics; i++)
     {
         auto value = distr(eng);
         result.push_back(currentList[value]);

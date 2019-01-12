@@ -28,7 +28,7 @@ namespace core{
 
 struct IRNGGenerator{
     virtual ~IRNGGenerator(){}
-    virtual QStringList Get(QSharedPointer<Query>, QString userToken, QSqlDatabase db, int values = 1)  = 0;
+    virtual QStringList Get(QSharedPointer<Query>, QString userToken, QSqlDatabase db, StoryFilter& filter)  = 0;
 };
 
 
@@ -40,7 +40,7 @@ struct RNGData{
 struct DefaultRNGgenerator : public IRNGGenerator{
     virtual QStringList Get(QSharedPointer<Query> where,
                         QString userToken,
-                        QSqlDatabase db, int values = 1);
+                        QSqlDatabase db, StoryFilter& filter);
 
     QSharedPointer<RNGData> rngData;
     QSharedPointer<database::IDBWrapper> portableDBInterface;

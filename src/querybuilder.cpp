@@ -745,7 +745,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
             q->bindings = query->bindings;
             q->str = wherePart;
 
-            auto values = rng->Get(q, userToken, db, filter.maxFics);
+            auto values = rng->Get(q, userToken, db, filter);
             if(values.size() == 0)
                 return "";
             idList=values;

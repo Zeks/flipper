@@ -613,6 +613,7 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
     {
         if(allAuthors[tempAuthors[i]].breakdown.priority1)
             QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+                       "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
                        "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
                        "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
                        "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
@@ -625,6 +626,7 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
     {
         if(allAuthors[tempAuthors[i]].breakdown.priority2)
             QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+                       "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
                        "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
                        "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
                        "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
@@ -637,6 +639,7 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
     {
         if(allAuthors[tempAuthors[i]].breakdown.priority3)
             QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+                        "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
                        "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
                        "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
                        "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<

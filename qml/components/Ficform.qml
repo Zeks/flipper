@@ -493,7 +493,30 @@ Rectangle {
                 Layout.fillHeight: true
                 font.pixelSize: 16
             }
+            Image {
+                id: imgDiscard
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
+                source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
 
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Hide")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Hide") === -1)
+                            lvFics.tagAdded("Hide",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Hide",indexOfThisDelegate)
+                    }
+                }
+            }
             Image {
                 id: imgLike
                 width: 20
@@ -548,30 +571,7 @@ Rectangle {
                     }
                 }
             }
-            Image {
-                id: imgDiscard
-                width: 20
-                height: 24
-                sourceSize.height: 20
-                sourceSize.width: 20
-                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
-                source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
 
-                MouseArea{
-                    hoverEnabled: true
-                    ToolTip.delay: 1000
-                    ToolTip.visible: containsMouse
-                    ToolTip.text: qsTr("Tag: Hide")
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(tags.indexOf("Hide") === -1)
-                            lvFics.tagAdded("Hide",indexOfThisDelegate)
-                        else
-                            lvFics.tagDeleted("Hide",indexOfThisDelegate)
-                    }
-                }
-            }
             Image {
                 id: imgDead
                 width: 20
