@@ -384,10 +384,11 @@ void RecCalculatorImplBase::Calc(){
     });
     weighting.run();
 
-    TimedAction authorMatchQuality("Fetching match qualities for authors",[&](){
-        CollectFicMatchQuality();
-    });
-    authorMatchQuality.run();
+    // not very satisfied with the results
+//    TimedAction authorMatchQuality("Fetching match qualities for authors",[&](){
+//        CollectFicMatchQuality();
+//    });
+//    authorMatchQuality.run();
 
 
     TimedAction collecting("collecting votes ",[&](){
