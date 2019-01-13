@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #define SERVITORWINDOW_H
 
 #include <QMainWindow>
+//#include <QtCharts>
+
+//using namespace QtCharts;
 #include "environment.h"
 #include "third_party/roaring/roaring.hh"
 #include "include/calc_data_holder.h"
@@ -30,7 +33,26 @@ class servitorWindow;
 namespace database {
 class IDBWrapper;
 }
+namespace QtCharts{
+class QChartView;
+class QChart;
+class QValueAxis;
+}
 
+struct GenreDetectionSources{
+    QHash<int, std::array<double, 22>> genreAuthorLists;
+    QHash<int, genre_stats::ListMoodData> moodAuthorLists;
+    QHash<int, QString> originalFicGenres;
+    QHash<int, QSet<int>> ficsToUse; // set of authors that have it
+};
+struct CutoffControls{
+    float funny = 0.3f;
+    float flirty = 0.5f;
+    float adventure = 0.3f;
+    float drama = 0.3f;
+    float bonds = 0.3f;
+    float hurty = 0.15f;
+};
 class ServitorWindow : public QMainWindow
 {
     Q_OBJECT
@@ -41,10 +63,17 @@ public:
     void ReadSettings();
     void WriteSettings();
     void UpdateInterval(int, int);
+    void CreateChartView();
+    void InitGenreChartView(QString);
+    void InitMoodChartView(QString);
+
 
     void DetectGenres(int minAuthorRecs, int minFoundLists);
-    void DetectGenresIteration2(int minAuthorRecs, int minFoundLists);
-
+    void CreateAdjustedGenresForAuthors();
+    void CreateSecondIterationOfGenresForFics(int minAuthorRecs, int minFoundLists);
+    QVector<genre_stats::FicGenreData> CreateGenreDataForFics(GenreDetectionSources input,
+                                                              CutoffControls cutoff,
+                                                              bool userIterationForGenreProcessing = false, bool displayLog = false);
     void LoadDataForCalculation(CalcDataHolder& data);
     void ProcessCDHData(CalcDataHolder& data);
     void CalcConstantMemory();
@@ -57,6 +86,17 @@ public:
     CoreEnvironment env;
     AuthorGenreIterationProcessor iteratorProcessor;
     QHash<int, std::array<double, 22>> authorGenreDataOriginal;
+
+    QHash<int, genre_stats::ListMoodData> originalMoodData;
+    QHash<int, genre_stats::ListMoodData> adjustedMoodData;
+
+    QSharedPointer<QtCharts::QChartView> genreChartView;
+    QSharedPointer<QtCharts::QChart> genreChart;
+    QSharedPointer<QtCharts::QValueAxis> genreAxisY;
+
+    QSharedPointer<QtCharts::QChartView> moodChartView;
+    QSharedPointer<QtCharts::QChart> moodChart;
+    QSharedPointer<QtCharts::QValueAxis> moodAxisY;
 
 private slots:
     void on_pbLoadFic_clicked();
@@ -101,6 +141,14 @@ private slots:
     void on_pbCleanPrecalc_clicked();
 
     void on_pbGenresIteration2_clicked();
+
+    void on_cbGenres_currentIndexChanged(const QString &arg1);
+
+    void on_pbLoadGenreDistributions_clicked();
+
+    void on_cbMoodSelector_currentTextChanged(const QString &arg1);
+
+    void on_pbCalcFicGenres_clicked();
 
 private:
     Ui::servitorWindow *ui;

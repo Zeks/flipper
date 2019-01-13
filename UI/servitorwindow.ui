@@ -108,7 +108,7 @@
     <item row="5" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -134,7 +134,7 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Graph</string>
+        <string>Genre graph</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
         <property name="leftMargin">
@@ -166,7 +166,45 @@
          <widget class="QComboBox" name="cbGenres"/>
         </item>
         <item row="1" column="0" colspan="2">
-         <widget class="QWidget" name="widget_4" native="true"/>
+         <widget class="QWidget" name="wdgCharts" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_3">
+       <attribute name="title">
+        <string>Mood Graph</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_5">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item row="0" column="0">
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>698</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="cbMoodSelector"/>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QWidget" name="wdgMoodChart" native="true"/>
         </item>
        </layout>
       </widget>
@@ -218,6 +256,27 @@
         <widget class="QPushButton" name="pbGenresIteration2">
          <property name="text">
           <string>Genres I2</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbLoadGenreDistributions">
+         <property name="text">
+          <string>Load Distributions</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbCalcFicGenres">
+         <property name="text">
+          <string>Calc Fic Genres</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chkLogFic">
+         <property name="text">
+          <string>Log</string>
          </property>
         </widget>
        </item>

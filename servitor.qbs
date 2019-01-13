@@ -15,6 +15,7 @@ App{
     Depends { name: "Qt.network" }
     Depends { name: "Qt.gui" }
     Depends { name: "Qt.quick" }
+    Depends { name: "Qt.charts" }
     Depends { name: "Qt.concurrent" }
     Depends { name: "Qt.quickwidgets" }
     Depends { name: "cpp" }

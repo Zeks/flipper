@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSettings>
 #include <QSqlRecord>
 #include <QFuture>
+#include <QVBoxLayout>
 #include <QMutex>
 #include <QtConcurrent>
 
@@ -46,6 +47,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "tasks/recommendations_reload_precessor.h"
 #include <type_traits>
 #include <algorithm>
+//#include <QtCharts>
+#include <QChartView>
+#include <QChart>
+#include <QBarSeries>
+#include <QBarSet>
+#include <QBarCategoryAxis>
+#include <QValueAxis>
 
 
 ServitorWindow::ServitorWindow(QWidget *parent) :
@@ -59,6 +67,34 @@ ServitorWindow::ServitorWindow(QWidget *parent) :
     //    qRegisterMetaType<FandomParseTask>("FandomParseTask");
     //    qRegisterMetaType<FandomParseTaskResult>("FandomParseTaskResult");
     ReadSettings();
+
+    An<interfaces::GenreIndex> genreIndex;
+    ui->cbGenres->blockSignals(true);
+
+    QStringList genreList;
+    genreList << "not found" << "Romance" << "Drama" << "Tragedy" << "Angst"
+              << "Humor" << "Parody" << "Hurt/Comfort" << "Family" << "Friendship"
+              << "Horror" << "Adventure" << "Mystery" << "Supernatural" <<  "Suspense" << "Sci-Fi"
+              << "Fantasy" << "Spiritual" << "Western" << "Crime";
+
+
+    for(auto i = 0; i < genreList.size(); i++)
+        ui->cbGenres->addItem(genreList[i]);
+
+    ui->cbGenres->blockSignals(false);
+
+    ui->cbMoodSelector->blockSignals(true);
+
+    QStringList moodList;
+    moodList << "Neutral" << "Flirty" << "Funny" << "Dramatic" << "Hurty" << "Bondy" << "Shocky";
+
+
+    for(auto i = 0; i < moodList.size(); i++)
+        ui->cbMoodSelector->addItem(moodList[i]);
+
+    ui->cbMoodSelector->blockSignals(false);
+
+    CreateChartView();
 }
 
 ServitorWindow::~ServitorWindow()
@@ -91,6 +127,223 @@ void ServitorWindow::UpdateInterval(int, int)
 
 }
 
+void ServitorWindow::CreateChartView()
+{
+    //using namespace QtCharts;
+    QStringList categoryNames;
+    categoryNames << "0" << "0.05" << "0.1" <<
+                     "0.15" << "0.2" <<
+                     "0.25" << "0.3" <<
+                     "0.35" << "0.4" <<
+                     "0.45" << "0.5" <<
+                     "0.55" << "0.6" <<
+                     "0.65" << "0.7" <<
+                     "0.75" << "0.8" <<
+                     "0.85" << "0.9" <<
+                     "0.95" << "1" << "1+";
+    // genres
+    genreChartView.reset(new QtCharts::QChartView());
+    genreChart.reset(new QtCharts::QChart());
+    genreChartView->setRenderHint(QPainter::Antialiasing);
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(genreChartView.data());
+    ui->wdgCharts->setLayout(layout);
+
+    QtCharts::QBarCategoryAxis *axisX = new QtCharts::QBarCategoryAxis();
+    axisX->append(categoryNames);
+    genreChart->addAxis(axisX, Qt::AlignBottom);
+    genreAxisY.reset(new QtCharts::QValueAxis());
+    genreAxisY->setRange(0,20000);
+    genreChart->addAxis(genreAxisY.data(), Qt::AlignLeft);
+    genreChart->setTitle("Genre distributions");
+    genreChart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
+    // moods
+
+    moodChartView.reset(new QtCharts::QChartView());
+    moodChart.reset(new QtCharts::QChart());
+    moodChartView->setRenderHint(QPainter::Antialiasing);
+    QVBoxLayout *moodLayout = new QVBoxLayout;
+    moodLayout->addWidget(moodChartView.data());
+    ui->wdgMoodChart->setLayout(moodLayout);
+
+    QtCharts::QBarCategoryAxis *moodAxisX = new QtCharts::QBarCategoryAxis();
+    moodAxisX->append(categoryNames);
+    moodChart->addAxis(moodAxisX, Qt::AlignBottom);
+    moodAxisY.reset(new QtCharts::QValueAxis());
+    moodAxisY->setRange(0,20000);
+    moodAxisY->setTickCount(10);
+    moodChart->addAxis(moodAxisY.data(), Qt::AlignLeft);
+    moodChart->setTitle("Genre distributions");
+    moodChart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
+}
+
+void ServitorWindow::InitGenreChartView(QString name)
+{
+
+    // first need to create the series
+    An<interfaces::GenreIndex> genreIndex;
+    auto genre = genreIndex->GenreByName(name);
+    if(!genre.isValid)
+    {
+        QLOG_INFO() << "invalid genre!";
+        return;
+    }
+    genreChart->removeAllSeries();
+
+    auto index = genre.indexInDatabase;
+    QList<double> categories;
+    categories << 0 << 0.05 << 0.1 <<
+                  0.15 << 0.2 <<
+                  0.25 << 0.3 <<
+                  0.35 << 0.4 <<
+                  0.45 << 0.5 <<
+                  0.55 << 0.6 <<
+                  0.65 << 0.7 <<
+                  0.75 << 0.8 <<
+                  0.85 << 0.9 <<
+                  0.95 << 1.001 << 100;
+
+
+
+    QVector<int> countsOriginal;
+    QVector<int> countsAdjusted;
+    QtCharts::QBarSet *setOriginals = new QtCharts::QBarSet("Originals");
+    QtCharts::QBarSet *setAdjusted = new QtCharts::QBarSet("Adjusted");
+    int maxValue = 0;
+    QLOG_INFO() << "Size of original author data: " << authorGenreDataOriginal.size();
+    QLOG_INFO() << "Size of adjusted author data: " << iteratorProcessor.resultingGenreAuthorData.size();
+    for(int i = 0; i < categories.size() - 1; i++)
+    {
+        auto value = std::count_if(std::begin(authorGenreDataOriginal), std::end(authorGenreDataOriginal), [categories,index, start = i, end = i+1](const std::array<double, 22>& data){
+            return data[index] >= categories[start] && data[index] < categories[end];
+        });
+        countsOriginal.push_back(value);
+        *setOriginals << value;
+        if(value > maxValue)
+            maxValue = value;
+        value = std::count_if(std::begin(iteratorProcessor.resultingGenreAuthorData), std::end(iteratorProcessor.resultingGenreAuthorData), [categories,index, start = i, end = i+1](const std::array<double, 22>& data){
+            return data[index] >= categories[start] && data[index] < categories[end];
+        });
+        countsAdjusted.push_back(value);
+        *setAdjusted << value;
+        if(value > maxValue)
+            maxValue = value;
+    }
+
+
+    QLOG_INFO()  << "Original distribution: "<< countsOriginal;
+    QLOG_INFO()  << "Adjusted distribution: "<< countsAdjusted;
+
+
+    QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
+    series->append(setOriginals);
+    series->append(setAdjusted);
+    genreChart->addSeries(series);
+    genreChart->setGeometry(genreChartView->rect());
+    genreChart->removeAxis(genreAxisY.data());
+    genreAxisY.reset(new QtCharts::QValueAxis);
+    genreAxisY->setRange(0, maxValue*1.05);
+    genreAxisY->setTickCount(10);
+
+
+    //    axisY->setTickCount(5);
+    genreChart->setTitle(name + " distribution.");
+    genreChartView->setChart(genreChart.data());
+    genreChart->setAxisY(genreAxisY.data(), series);
+
+    //chartView->chart()->setAxisY(axisY, series);
+
+}
+
+void ServitorWindow::InitMoodChartView(QString name)
+{
+    An<interfaces::GenreIndex> genreIndex;
+    moodChart->removeAllSeries();
+    auto moodValue = [](genre_stats::ListMoodData& data, QString name) -> float{
+        if(name == "Neutral")
+            return data.strengthNeutral;
+        if(name == "Flirty")
+            return data.strengthFlirty;
+        if(name == "Funny")
+            return data.strengthFunny;
+        if(name == "Dramatic")
+            return data.strengthDramatic;
+        if(name == "Bondy")
+            return data.strengthBondy;
+        if(name == "Shocky")
+            return data.strengthShocky;
+        if(name == "Hurty")
+            return data.strengthHurty;
+        return 0;
+    };
+    //moodList << "Neutral" << "Flirty" << "Humorous" << "Dramatic" << "Hurty" << "Bondy" << "Shocky";
+    QList<float> categories;
+    //categories << -1 << 10.1f;
+    categories << -1 << 0.05f << 0.1f <<
+                  0.15f << 0.2f <<
+                  0.25f << 0.3f <<
+                  0.35f << 0.4f <<
+                  0.45f << 0.5f <<
+                  0.55f << 0.6f <<
+                  0.65f << 0.7f <<
+                  0.75f << 0.8f <<
+                  0.85f << 0.9f <<
+                  0.95f << 1.001f << 100.f;
+    QVector<int> countsOriginal;
+    QVector<int> countsAdjusted;
+    QtCharts::QBarSet *setOriginals = new QtCharts::QBarSet("Originals");
+    QtCharts::QBarSet *setAdjusted = new QtCharts::QBarSet("Adjusted");
+    int maxValue = 0;
+    QLOG_INFO()  << "Original distribution size: "<< originalMoodData.size();
+    QLOG_INFO()  << "Adjusted distribution size: "<< adjustedMoodData.size();
+
+    int sumOriginal = 0;
+    int sumAdjusted = 0;
+    for(int i = 0; i < categories.size() - 1; i++)
+    {
+        auto value = std::count_if(std::begin(originalMoodData), std::end(originalMoodData),
+                                   [moodValue, categories,name, start = i, end = i+1](genre_stats::ListMoodData& data){
+            return moodValue(data, name) >= categories[start] && moodValue(data, name) < categories[end];
+        });
+        countsOriginal.push_back(value);
+        sumOriginal+=value;
+        *setOriginals << value;
+        if(value > maxValue)
+            maxValue = value;
+        value = std::count_if(std::begin(adjustedMoodData), std::end(adjustedMoodData),
+                              [moodValue, categories,name, start = i, end = i+1](genre_stats::ListMoodData& data){
+            return moodValue(data, name) >= categories[start] && moodValue(data, name) < categories[end];
+        });
+        countsAdjusted.push_back(value);
+        sumAdjusted+=value;
+        *setAdjusted << value;
+        if(value > maxValue)
+            maxValue = value;
+    }
+    QLOG_INFO()  << "Original sum: "<< sumOriginal;
+    QLOG_INFO()  << "Adjusted sum: "<< sumAdjusted;
+
+    QLOG_INFO()  << "Original distribution: "<< countsOriginal;
+    QLOG_INFO()  << "Adjusted distribution: "<< countsAdjusted;
+
+
+    QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
+    series->append(setOriginals);
+    series->append(setAdjusted);
+    moodChart->addSeries(series);
+    moodChart->setGeometry(moodChartView->rect());
+    moodChart->removeAxis(moodAxisY.data());
+    moodAxisY.reset(new QtCharts::QValueAxis);
+    moodAxisY->setRange(0, maxValue*1.2);
+    moodAxisY->setTickCount(10);
+
+
+    //    axisY->setTickCount(5);
+    moodChart->setTitle(name + " distribution.");
+    moodChartView->setChart(moodChart.data());
+    moodChart->setAxisY(moodAxisY.data(), series);
+}
+
 static QHash<QString, int> CreateGenreRedirects(){
     QHash<QString, int> result;
     result["General"] = 0;
@@ -118,52 +371,52 @@ static QHash<QString, int> CreateGenreRedirects(){
     return result;
 }
 
-struct GenreDetectionSources{
-    QHash<int, std::array<double, 22>> genreAuthorLists;
-    QHash<int, genre_stats::ListMoodData> moodAuthorLists;
-    QHash<int, QString> originalFicGenres;
-    QHash<int, QSet<int>> ficsToUse; // set of authors that have it
-};
 
-QVector<genre_stats::FicGenreData> CreateGenreDataForFics(GenreDetectionSources input, bool userIterationForGenreProcessing = false){
+
+QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreDetectionSources input,
+                                                                          CutoffControls cutoff,
+                                                                          bool userIterationForGenreProcessing, bool displayLog){
     QVector<genre_stats::FicGenreData> ficGenreDataList;
     ficGenreDataList.reserve(input.ficsToUse.keys().size());
     interfaces::GenreConverter genreConverter;
     int counter = 0;
+
+
     for(auto fic : input.ficsToUse.keys())
     {
-//        if(fic != 5365)
-//            continue;
+        if(!ui->leFicIdForGenre->text().isEmpty() && fic != ui->leFicIdForGenre->text().toInt())
+            continue;
+
         if(counter%10000 == 0)
             qDebug() << "processing fic: " << counter;
 
         //gettting amount of funny lists
         int64_t funny = std::count_if(std::begin(input.ficsToUse[fic]), std::end(input.ficsToUse[fic]), [&](int listId){
-            return input.moodAuthorLists[listId].strengthFunny >= 0.3f;
+            return input.moodAuthorLists[listId].strengthFunny >= cutoff.funny;
         });
         int64_t flirty = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
-            return input.moodAuthorLists[listId].strengthFlirty >= 0.5f;
+            return input.moodAuthorLists[listId].strengthFlirty >= cutoff.flirty;
         });
         auto listSet = input.ficsToUse[fic];
         int64_t neutralAdventure = 0;
         for(auto listId : listSet)
-            if(input.genreAuthorLists[listId][3] >= 0.3)
+            if(input.genreAuthorLists[listId][3] >= cutoff.adventure)
                 neutralAdventure++;
 
         //qDebug() << "Adventure list count: " << neutralAdventure;
 
         int64_t hurty = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
-            return input.moodAuthorLists[listId].strengthHurty>= 0.15f;
+            return input.moodAuthorLists[listId].strengthHurty >= cutoff.hurty;
         });
         int64_t bondy = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
-            return input.moodAuthorLists[listId].strengthBondy >= 0.3f;
+            return input.moodAuthorLists[listId].strengthBondy >= cutoff.bonds;
         });
 
         int64_t neutral = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
-            return input.moodAuthorLists[listId].strengthNeutral>= 0.3f;
+            return input.moodAuthorLists[listId].strengthNeutral>= cutoff.adventure;
         });
         int64_t dramatic = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
-            return input.moodAuthorLists[listId].strengthDramatic >= 0.3f;
+            return input.moodAuthorLists[listId].strengthDramatic >= cutoff.drama;
         });
 
         int64_t total = input.ficsToUse[fic].size();
@@ -179,7 +432,8 @@ QVector<genre_stats::FicGenreData> CreateGenreDataForFics(GenreDetectionSources 
         genreData.strengthHurtComfort = static_cast<float>(hurty)/static_cast<float>(total);
         genreData.strengthNeutralComposite = static_cast<float>(neutral)/static_cast<float>(total);
         genreData.strengthNeutralAdventure = static_cast<float>(neutralAdventure)/static_cast<float>(total);
-        //genreData.Log();
+        if(displayLog)
+            genreData.Log();
         if(!userIterationForGenreProcessing)
             genreConverter.ProcessGenreResult(genreData);
         else
@@ -242,8 +496,8 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
         //qDebug() << "processing";
         for(auto fic : set)
         {
-//            if(fic != 38212)
-//                continue;
+            //            if(fic != 38212)
+            //                continue;
             ficsToUse[fic].insert(key);
         }
     }
@@ -286,7 +540,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
             CreateGenreDataForFics({genreLists,
                                     moodLists,
                                     genresForFics,
-                                    filteredFicsToUse});
+                                    filteredFicsToUse}, CutoffControls{});
 
     database::Transaction transaction(db);
     if(!genres->WriteDetectedGenres(ficGenreDataList))
@@ -297,6 +551,8 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     qDebug() << "Starting the second iteration";
 
 }
+
+
 //        int64_t pureDrama = std::count_if(genreLists[fic].begin(), genreLists[fic].end(), [&](int listId){
 //            return genreLists[listId][static_cast<size_t>(genreRedirects["Drama"])] - genreLists[listId][static_cast<size_t>(genreRedirects["Romance"])] >= 0.05;
 //        });
@@ -319,44 +575,58 @@ struct InputForGenresIteration2{
 };
 
 template <core::ERecDataType EnumType, typename ContainerType, typename InterfaceType>
-void LoadDataForCalc(InterfaceType interface, ContainerType& container, QString storageFolder)
+void LoadDataForCalc(InterfaceType interface, ContainerType& container, QString storageFolder, QString suffix = "")
 {
     QDir dir(QDir::currentPath());
     dir.mkdir("ServerData");
 
+    QString ptrStr = QString("0x%1").arg((quintptr)&container,
+                                         QT_POINTER_SIZE * 2, 16, QChar('0'));
+    QLOG_INFO() << "loading with suffix: " << suffix << " to: " << ptrStr;
+
+    QString fileBase;
+    if(suffix.isEmpty())
+        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase());
+    else
+        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase(suffix));
+
     QSettings settings("settings_server.ini", QSettings::IniFormat);
     if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists(storageFolder + "/" +
-                                                                                 QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase())
+                                                                                 fileBase
                                                                                  + "_0.txt"))
     {
         thread_boost::LoadData(storageFolder,
-                               QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase()),
-                                                      container);
+                               fileBase,
+                               container);
     }
     else
     {
         container = core::DataHolderInfo<EnumType>::loadFunc()(interface);
         thread_boost::SaveData(storageFolder,
-                               QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase()),
+                               fileBase,
                                container);
     }
 }
 
 template <core::ERecDataType EnumType, typename ContainerType>
-void SaveDataForCalc(ContainerType& container, QString storageFolder)
+void SaveDataForCalc(ContainerType& container, QString storageFolder, QString suffix = "")
 {
-    QString fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase());
+    QString fileBase;
+    if(suffix.isEmpty())
+        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase());
+    else
+        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase(suffix));
     QDir dir(QDir::currentPath());
     if(fileBase.isEmpty())
         return;
-//    dir.remove(fileBase + "*");
+    //    dir.remove(fileBase + "*");
     thread_boost::SaveData(storageFolder,
                            fileBase,
                            container);
 }
 
 
-void ServitorWindow::DetectGenresIteration2(int minAuthorRecs, int minFoundLists)
+void ServitorWindow::CreateAdjustedGenresForAuthors()
 {
     InputForGenresIteration2 inputs;
 
@@ -378,14 +648,55 @@ void ServitorWindow::DetectGenresIteration2(int minAuthorRecs, int minFoundLists
     LoadDataForCalc<core::rdt_favourites,
             InputForGenresIteration2::FavType,
             QSharedPointer<interfaces::Authors>>(authors, inputs.faves, "TempData");
-    LoadDataForCalc<core::rdt_fic_genres_original,
-            InputForGenresIteration2::FicGenreOriginalType,
-            QSharedPointer<interfaces::Fanfics>>(fanfics, inputs.ficGenresOriginal, "TempData");
 
-
+    auto& faves  = inputs.faves;
+    QLOG_INFO() << "Loaded faves of size: " << inputs.faves.size();
 
     //return;
     authorGenreDataOriginal = authors->GetListGenreData();
+    SaveDataForCalc<core::rdt_author_genre_distribution,
+            QHash<int, std::array<double, 22>>>(authorGenreDataOriginal, "TempData", "original");
+
+
+    qDebug() << "Starting the second iteration";
+    iteratorProcessor.ReprocessGenreStats(inputs.ficGenresComposite, faves);
+    SaveDataForCalc<core::rdt_author_genre_distribution,
+            QHash<int, std::array<double, 22>>>(iteratorProcessor.resultingGenreAuthorData, "TempData", "adjusted");
+    qDebug() << "finished iteration";
+    //return;
+    QLOG_INFO() << "Size of original author data: " << authorGenreDataOriginal.size();
+    QLOG_INFO() << "Size of adjusted author data: " << iteratorProcessor.resultingGenreAuthorData.size();
+
+    originalMoodData = iteratorProcessor.CreateMoodDataFromGenres(authorGenreDataOriginal);
+    adjustedMoodData = iteratorProcessor.resultingMoodAuthorData;
+
+
+    qDebug() << "Finished queue set";
+}
+void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int minFoundLists)
+{
+    InputForGenresIteration2 inputs;
+    QVector<int> ficIds;
+    auto db = QSqlDatabase::database();
+    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    genres->db = db;
+    fanfics->db = db;
+    authors->db = db;
+
+//    LoadDataForCalc<core::rdt_fic_genres_composite,
+//            InputForGenresIteration2::FicGenreCompositeType,
+//            QSharedPointer<interfaces::Genres>>(genres, inputs.ficGenresComposite, "TempData");
+    LoadDataForCalc<core::rdt_favourites,
+            InputForGenresIteration2::FavType,
+            QSharedPointer<interfaces::Authors>>(authors, inputs.faves, "TempData");
+//    LoadDataForCalc<core::rdt_fic_genres_original,
+//            InputForGenresIteration2::FicGenreOriginalType,
+//            QSharedPointer<interfaces::Fanfics>>(fanfics, inputs.ficGenresOriginal, "TempData");
+
+
+
     QHash<int, QSet<int>> ficsToUse;
     auto& faves  = inputs.faves;
 
@@ -409,39 +720,56 @@ void ServitorWindow::DetectGenresIteration2(int minAuthorRecs, int minFoundLists
             inputs.filteredFicGenresComposite[key] = inputs.ficGenresComposite[key];
         }
     }
+    QLOG_INFO() << "////////////// ORIGINAL DATA /////////////////";
 
-//    SaveDataForCalc<core::rdt_fic_genres_original,
-//            InputForGenresIteration2::FicGenreOriginalType>(inputs.filteredFicGenresOriginal, "TempData");
-//    SaveDataForCalc<core::rdt_fic_genres_composite,
-//            InputForGenresIteration2::FicGenreCompositeType>(inputs.filteredFicGenresComposite, "TempData");
+    QVector<genre_stats::FicGenreData> ficGenreDataList = CreateGenreDataForFics({authorGenreDataOriginal,
+                                                                                  originalMoodData,
+                                                                                  inputs.ficGenresOriginal,
+                                                                                  filteredFicsToUse}, CutoffControls{}, false, ui->chkLogFic->isChecked());
+    QLOG_INFO() << "////////////// ADJUSTED DATA /////////////////";
+    CutoffControls customCutoff;
+    customCutoff.funny = 0.15;
+    customCutoff.adventure = 0.2;
+    customCutoff.flirty = 0.45;
+    customCutoff.drama = 0.2;
+    customCutoff.hurty = 0.12;
+    customCutoff.bonds = 0.3;
+    ficGenreDataList = CreateGenreDataForFics({iteratorProcessor.resultingGenreAuthorData,
+                                                                                  adjustedMoodData,
+                                                                                  inputs.ficGenresOriginal,
+                                                                                  filteredFicsToUse}, customCutoff ,false, ui->chkLogFic->isChecked());
+    database::Transaction transaction(db);
 
-    //return;
-    //return;
-
-    qDebug() << "Finished counts";
-    //auto genresForFics = fanfics->GetGenreForFics();
-
-    qDebug() << "Starting the second iteration";
-    //auto fullGenreList = genres->GetFullGenreList();
-    AuthorGenreIterationProcessor iteratorProcessor;
-    iteratorProcessor.ReprocessGenreStats(inputs.ficGenresComposite, faves);
-    qDebug() << "finished iteration";
-    //return;
-
-//    QVector<genre_stats::FicGenreData> ficGenreDataList = CreateGenreDataForFics({iteratorProcessor.resultingGenreAuthorData,
-//                                               iteratorProcessor.resultingMoodAuthorData,
-//                                               inputs.ficGenresOriginal,
-//                                               filteredFicsToUse}, false);
-//    database::Transaction transaction(db);
-//    if(!genres->WriteDetectedGenresIteration2(ficGenreDataList))
-//        transaction.cancel();
-
+    if(!genres->WriteDetectedGenresIteration2(ficGenreDataList))
+        transaction.cancel();
+    else
+        transaction.finalize();
     qDebug() << "finished writing genre data for fics";
-    //transaction.finalize();
-    qDebug() << "Finished queue set";
+
 }
+void ServitorWindow::on_pbLoadGenreDistributions_clicked()
+{
+    auto db = QSqlDatabase::database();
+    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    genres->db = db;
+    fanfics->db = db;
+    authors->db = db;
+    authorGenreDataOriginal.clear();
+    iteratorProcessor.resultingGenreAuthorData.clear();
 
+    LoadDataForCalc<core::rdt_author_genre_distribution,
+            QHash<int, std::array<double, 22>>,
+            QSharedPointer<interfaces::Authors>>(authors, iteratorProcessor.resultingGenreAuthorData, "TempData", "adjusted");
 
+    LoadDataForCalc<core::rdt_author_genre_distribution,
+            QHash<int, std::array<double, 22>>,
+            QSharedPointer<interfaces::Authors>>(authors, authorGenreDataOriginal, "TempData", "original");
+    originalMoodData = iteratorProcessor.CreateMoodDataFromGenres(authorGenreDataOriginal);
+    adjustedMoodData = iteratorProcessor.CreateMoodDataFromGenres(iteratorProcessor.resultingGenreAuthorData);
+
+}
 
 void ServitorWindow::on_pbLoadFic_clicked()
 {
@@ -496,7 +824,8 @@ void ServitorWindow::on_pbGetGenresForEverything_clicked()
 
 void ServitorWindow::on_pbGenresIteration2_clicked()
 {
-    DetectGenresIteration2(25, 15);
+    CreateAdjustedGenresForAuthors();
+    //25, 15
 }
 
 void ServitorWindow::on_pushButton_2_clicked()
@@ -955,12 +1284,12 @@ void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
 }
 
 struct FicPair{
-//    /uint32_t count = 0;
-//    float val1;
-//    float val2;
-//    float val3;
-//    float val4;
-//    float val5;
+    //    /uint32_t count = 0;
+    //    float val1;
+    //    float val2;
+    //    float val3;
+    //    float val4;
+    //    float val5;
     Roaring r;
 };
 
@@ -1001,12 +1330,12 @@ struct Sink{
     Sink(){}
     template <typename T>
     void SaveIntersection(uint32_t fic1,uint32_t fic2, const T& intersection){
-//        QVector<uint32_t> vec;
-//        for(auto item : intersection)
-//            vec.push_back(item);
-//        std::sort(vec.begin(), vec.end());
-//        qDebug() << fic1 << "  " << fic2;
-//        qDebug() << vec;
+        //        QVector<uint32_t> vec;
+        //        for(auto item : intersection)
+        //            vec.push_back(item);
+        //        std::sort(vec.begin(), vec.end());
+        //        qDebug() << fic1 << "  " << fic2;
+        //        qDebug() << vec;
         //QWriteLocker locker(&lock);
         counter++;
     }
@@ -1029,15 +1358,15 @@ void ServitorWindow::CalcConstantMemory()
 
         for(int i = start; i < end; i++)
         {
-//            if(i > start)
-//                break;
+            //            if(i > start)
+            //                break;
             if(i%100 == 0)
                 qDebug() << "working from: " << start << " at: " << i;
             auto fic1 = keys[i];
             for(int j = i+1; j < otherEnd; j++)
             {
-//                if(j > i+1)
-//                    break;
+                //                if(j > i+1)
+                //                    break;
                 auto fic2 = keys[j];
                 const auto& set1 = ficsToFavLists[fic1];
                 const auto& set2 = ficsToFavLists[fic2];
@@ -1045,23 +1374,23 @@ void ServitorWindow::CalcConstantMemory()
                 temp = temp & set2;
 
                 ///
-//                QVector<uint32_t> vec;
-//                for(auto item : set1)
-//                    vec.push_back(item);
-//                std::sort(vec.begin(), vec.end());
-//                qDebug() << vec;
+                //                QVector<uint32_t> vec;
+                //                for(auto item : set1)
+                //                    vec.push_back(item);
+                //                std::sort(vec.begin(), vec.end());
+                //                qDebug() << vec;
 
-//                vec.clear();
-//                for(auto item : set2)
-//                    vec.push_back(item);
-//                std::sort(vec.begin(), vec.end());
-//                qDebug() << vec;
+                //                vec.clear();
+                //                for(auto item : set2)
+                //                    vec.push_back(item);
+                //                std::sort(vec.begin(), vec.end());
+                //                qDebug() << vec;
 
-//                vec.clear();
-//                for(auto item : temp)
-//                    vec.push_back(item);
-//                std::sort(vec.begin(), vec.end());
-//                qDebug() << vec;
+                //                vec.clear();
+                //                for(auto item : temp)
+                //                    vec.push_back(item);
+                //                std::sort(vec.begin(), vec.end());
+                //                qDebug() << vec;
                 ///
 
                 if(!temp.isEmpty())
@@ -1079,10 +1408,10 @@ void ServitorWindow::CalcConstantMemory()
         int start = i*partSize;
         int end = i == (threads - 1) ? keys.size() : (i+1)*partSize;
         futures.push_back(QtConcurrent::run(worker,
-                          start,
-                          end,
-                          keys.size(),
-                          &sink));
+                                            start,
+                                            end,
+                                            keys.size(),
+                                            &sink));
     }
     TimedAction action("processing data",[&](){
         for(auto future: futures)
@@ -1098,8 +1427,8 @@ void ServitorWindow::on_pbCalcWeights_clicked()
 {
 
 
-//    CalcConstantMemory();
-//    return;
+    //    CalcConstantMemory();
+    //    return;
     CalcDataHolder cdh;
     LoadDataForCalculation(cdh);
     ProcessCDHData(cdh);
@@ -1246,3 +1575,18 @@ void ServitorWindow::on_pbCleanPrecalc_clicked()
     QFile::remove("ficsdata.txt");
 }
 
+
+void ServitorWindow::on_cbGenres_currentIndexChanged(const QString &arg1)
+{
+    InitGenreChartView(arg1);
+}
+
+void ServitorWindow::on_cbMoodSelector_currentTextChanged(const QString &arg1)
+{
+    InitMoodChartView(arg1);
+}
+
+void ServitorWindow::on_pbCalcFicGenres_clicked()
+{
+    CreateSecondIterationOfGenresForFics(25, 15);
+}

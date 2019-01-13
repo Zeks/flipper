@@ -42,6 +42,11 @@ struct IteratorTask{
     QHash<int, Roaring>::iterator end;
 };
 
+
+struct GenreResult{
+    AuthorGenreData genreData;
+    genre_stats::ListMoodData moodData;
+};
 void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_stats::GenreBit> > inputFicData,
                                                         QHash<int, Roaring> inputAuthorData)
 {
@@ -49,26 +54,31 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
     statistics_utils::UserPageSink<AuthorGenreData> sink;
 
     QList<IteratorTask> iteratorTasks;
-    //int processingThreads = QThread::idealThreadCount()-1;
-    int processingThreads = 1;
+    int processingThreads = QThread::idealThreadCount()-1;
+    //int processingThreads = 1;
     int chunkSize = inputAuthorData.size()/processingThreads;
-    for(int i = 0; i< processingThreads; i ++)
+    int i = 0;
+    for(; i < processingThreads; i++)
     {
         iteratorTasks.push_back({inputAuthorData.begin()+i*chunkSize,
-                                 i == processingThreads ? inputAuthorData.end() : inputAuthorData.begin()+(i+1)*chunkSize});
+                                 (i + 1) == processingThreads ? inputAuthorData.end() : inputAuthorData.begin()+(i+1)*chunkSize});
     }
+//    if(inputAuthorData.size()%processingThreads != 0)
+//        iteratorTasks.push_back({inputAuthorData.begin()+i*chunkSize,inputAuthorData.end()});
 
     sink.tokens.reserve(inputAuthorData.size());
-    auto processor = [](IteratorTask task, const QHash<int, QList<genre_stats::GenreBit>> inputFicData) -> QList<AuthorGenreData> {
+    auto processor = [](IteratorTask task, const QHash<int, QList<genre_stats::GenreBit>> inputFicData) -> QList<GenreResult> {
         auto it = task.start;
-        QList<AuthorGenreData> result;
+        QList<GenreResult> result;
         result.reserve(std::distance(task.start, task.end));
         An<interfaces::GenreIndex> genreIndex;
         thread_local AuthorGenreData data;
+        thread_local genre_stats::ListMoodData moodData;
         thread_local QHash<QString, float> genreKeeper;
         while(it != task.end)
         {
             data.Clear();
+            moodData.Clear();
             genreKeeper.clear();
             //interfaces::Genres::LogGenreDistribution(data.genreFactors, "this is supposed to be clean");
             data.authorId = it.key();
@@ -83,6 +93,8 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                     continue;
                 }
                 QString log = "genres for fic: " +  QString::number(ficId) + " ";
+                QHash<QString, float> moodHashForFic;
+                moodHashForFic.clear();
                 for(auto genreBit: ficIt.value())
                 {
                     for(auto actualBit: genreBit.genres)
@@ -90,10 +102,19 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                         //if(genreBit.isInTheOriginal)
                         log +=  "{"  + actualBit + " " + QString::number(genreBit.relevance) + "} ";
                         if(genreBit.isInTheOriginal)
+                        {
                             genreKeeper[actualBit] += genreBit.relevance;
+                            QString moodForGenre = interfaces::Genres::MoodForGenre(actualBit);
+                            if(!moodHashForFic.contains(moodForGenre) || moodHashForFic[moodForGenre] < genreBit.relevance)
+                                moodHashForFic[moodForGenre] = genreBit.relevance;
+                        }
                     }
                 }
+                for(auto key : moodHashForFic.keys())
+                    interfaces::Genres::WriteMoodValue(key, moodHashForFic[key], moodData);
+
                 //QLOG_INFO() << log;
+
             }
 
             //QLOG_INFO() << "genre keeper: " << genreKeeper;
@@ -107,13 +128,15 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
             }
             //QLOG_INFO() << "Genre distribution for author: " << data.authorId;
             //interfaces::Genres::LogGenreDistribution(data.genreFactors);
-            result.push_back(data);
+            //moodData.Log();
+            moodData.DivideByCount(ficTotal);
+            result.push_back({data, moodData});
             it++;
         }
         return result;
     };
 
-    QList<QFuture<QList<AuthorGenreData>>> futures;
+    QList<QFuture<QList<GenreResult>>> futures;
     for(int i = 0; i < processingThreads; i++)
     {
         futures.push_back(QtConcurrent::run(processor, iteratorTasks[i], inputFicData));
@@ -123,14 +146,25 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
         future.waitForFinished();
     }
     for(auto future: futures)
-        for(auto data : future.result())
-            resultingGenreAuthorData[data.authorId] = data.genreFactors;
-
-
-    An<interfaces::GenreIndex> genreIndex;
-    for(auto key: resultingGenreAuthorData.keys())
     {
-        auto& genreData = resultingGenreAuthorData[key];
+        for(auto data : future.result())
+        {
+            resultingGenreAuthorData[data.genreData.authorId] = data.genreData.genreFactors;
+            resultingMoodAuthorData [data.genreData.authorId] = data.moodData;
+        }
+    }
+
+    //resultingMoodAuthorData = CreateMoodDataFromGenres(resultingGenreAuthorData);
+
+}
+
+QHash<int, genre_stats::ListMoodData> AuthorGenreIterationProcessor::CreateMoodDataFromGenres(QHash<int, std::array<double, 22> > &genres)
+{
+    QHash<int, genre_stats::ListMoodData>  result;
+    An<interfaces::GenreIndex> genreIndex;
+    for(auto key: genres.keys())
+    {
+        auto& genreData = genres[key];
         genre_stats::ListMoodData moodData;
         moodData.strengthBondy = static_cast<float>(
                     genreData[genreIndex->IndexByFFNName("Friendship")] + genreData[genreIndex->IndexByFFNName("Family")]
@@ -145,7 +179,7 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                     genreData[genreIndex->IndexByFFNName("Romance")]
                 );
         moodData.strengthNeutral= static_cast<float>(
-                genreData[genreIndex->IndexByFFNName("Adventure")] + genreData[genreIndex->IndexByFFNName("Sci-Fi")] +
+                    genreData[genreIndex->IndexByFFNName("Adventure")] + genreData[genreIndex->IndexByFFNName("Sci-Fi")] +
                 genreData[genreIndex->IndexByFFNName("Spiritual")] + genreData[genreIndex->IndexByFFNName("Supernatural")] +
                 genreData[genreIndex->IndexByFFNName("Suspense")] + genreData[genreIndex->IndexByFFNName("Mystery")] +
                 genreData[genreIndex->IndexByFFNName("Crime")] + genreData[genreIndex->IndexByFFNName("Fantasy")] +
@@ -156,9 +190,8 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                 );
         moodData.listId = key;
         //moodData.Log();
-        resultingMoodAuthorData[key] = moodData;
-
+        result[key] = moodData;
     }
-
+    return result;
 }
 

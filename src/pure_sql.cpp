@@ -3098,7 +3098,9 @@ DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetGenreData(QString key
 
 DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetListGenreData(QSqlDatabase db)
 {
-    return GetGenreData("author_id", "select * from AuthorFavouritesGenreStatistics order by author_id asc", db);
+    return GetGenreData("author_id", "select * from AuthorFavouritesGenreStatistics "
+                                     " where author_id  in (select distinct recommender_id from recommendations) "
+                                     " order by author_id asc", db);
 }
 DiagnosticSQLResult<QHash<int, std::array<double, 22> > > GetFullFicGenreData(QSqlDatabase db)
 {
@@ -3560,7 +3562,9 @@ DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QS
 
 DiagnosticSQLResult<QHash<int, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db)
 {
-    QString query = " select * from AuthorMoodStatistics order by author_id asc ";
+    QString query = " select * from AuthorMoodStatistics order "
+                    " where author_id in (select distinct recommender_id from recommendations) "
+                    " by author_id asc ";
 
     SqlContext<QHash<int, genre_stats::ListMoodData>> ctx(db, query);
     auto genreConverter = interfaces::GenreConverter::Instance();

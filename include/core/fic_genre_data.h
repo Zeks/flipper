@@ -155,7 +155,57 @@ struct ListMoodData
     float strengthNonHurty =0.0f;
 
     float strengthOther =0.0f;
+    void DivideByCount(int count){
+        strengthNone =strengthNone/static_cast<float>(count);
+        strengthNeutral=strengthNeutral/static_cast<float>(count);
+        strengthNonNeutral=strengthNonNeutral/static_cast<float>(count);
 
+        strengthFlirty =strengthFlirty/static_cast<float>(count);
+        strengthNonFlirty =strengthNonFlirty/static_cast<float>(count);
+
+        strengthBondy =strengthBondy/static_cast<float>(count);
+        strengthNonBondy =strengthNonBondy/static_cast<float>(count);
+
+        strengthFunny =strengthFunny/static_cast<float>(count);
+        strengthNonFunny =strengthNonFunny/static_cast<float>(count);
+
+        strengthDramatic =strengthDramatic/static_cast<float>(count);
+        strengthNonDramatic =strengthNonDramatic/static_cast<float>(count);
+
+        strengthShocky =strengthShocky/static_cast<float>(count);
+        strengthNonShocky =strengthNonShocky/static_cast<float>(count);
+
+        strengthHurty =strengthHurty/static_cast<float>(count);
+        strengthNonHurty =strengthNonHurty/static_cast<float>(count);
+
+        strengthOther =strengthOther/static_cast<float>(count);
+    }
+    void Clear(){
+        listId = -1;
+        strengthNone =0.0f;
+        strengthNeutral=0.0f;
+        strengthNonNeutral=0.0f;
+
+        strengthFlirty =0.0f;
+        strengthNonFlirty =0.0f;
+
+        strengthBondy =0.0f;
+        strengthNonBondy =0.0f;
+
+        strengthFunny =0.0f;
+        strengthNonFunny =0.0f;
+
+        strengthDramatic =0.0f;
+        strengthNonDramatic =0.0f;
+
+        strengthShocky =0.0f;
+        strengthNonShocky =0.0f;
+
+        strengthHurty =0.0f;
+        strengthNonHurty =0.0f;
+
+        strengthOther =0.0f;
+    }
     void Log(){
         QLOG_INFO() << "";
         QLOG_INFO() << "///////////////";

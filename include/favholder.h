@@ -58,7 +58,8 @@ enum ERecDataType
     rdt_favourites =0,
     rdt_fics =1,
     rdt_fic_genres_composite = 2,
-    rdt_fic_genres_original = 3
+    rdt_fic_genres_original = 3,
+    rdt_author_genre_distribution = 4
 };
 
 template<ERecDataType E>
@@ -68,7 +69,13 @@ struct DataHolderInfo
 template<>
 struct DataHolderInfo<rdt_favourites>
 {
-    static const std::string fileBase(){return "roafav";}
+    static const std::string fileBase(QString suffix = ""){
+        if(suffix.isEmpty())
+            return "roafav";
+        else
+            return QString("roafav" + suffix).toStdString();
+    }
+
     typedef  QHash<int, Roaring> type;
     static auto loadFunc (){return [](QSharedPointer<interfaces::Authors> authorInterface){
             auto favourites = authorInterface->LoadFullFavouritesHashset();
@@ -84,7 +91,12 @@ struct DataHolderInfo<rdt_favourites>
 template<>
 struct DataHolderInfo<rdt_fics>
 {
-    static const std::string fileBase(){return "fics";}
+    static const std::string fileBase(QString suffix = ""){
+        if(suffix.isEmpty())
+            return "fics";
+        else
+            return QString("fics" + suffix).toStdString();
+    }
     typedef  QHash<int, core::FicWeightPtr> type;
     static auto loadFunc (){return [](QSharedPointer<interfaces::Fanfics> fanficsInterface){
             return fanficsInterface->GetHashOfAllFicsWithEnoughFavesForWeights(0);
@@ -93,7 +105,12 @@ struct DataHolderInfo<rdt_fics>
 template<>
 struct DataHolderInfo<rdt_fic_genres_composite>
 {
-    static const std::string fileBase(){return "fic_genres_composite";}
+    static const std::string fileBase(QString suffix = ""){
+        if(suffix.isEmpty())
+            return "fic_genres_composite";
+        else
+            return QString("fic_genres_composite" + suffix).toStdString();
+    }
     typedef  QHash<int, QList<genre_stats::GenreBit>>  type;
     static auto loadFunc (){return [](QSharedPointer<interfaces::Genres> genreInterface){
             return genreInterface->GetFullGenreList();
@@ -102,12 +119,34 @@ struct DataHolderInfo<rdt_fic_genres_composite>
 template<>
 struct DataHolderInfo<rdt_fic_genres_original>
 {
-    static const std::string fileBase(){return "fic_genres_original";}
+    static const std::string fileBase(QString suffix = ""){
+        if(suffix.isEmpty())
+            return "fic_genres_original";
+        else
+            return QString("fic_genres_original_" + suffix).toStdString();
+    }
     typedef  QHash<int, QString>  type;
     static auto loadFunc (){return [](QSharedPointer<interfaces::Fanfics> fanficsInterface){
             return fanficsInterface->GetGenreForFics();
         };}
 };
+
+template<>
+struct DataHolderInfo<rdt_author_genre_distribution>
+{
+    static const std::string fileBase(QString suffix = ""){
+        if(suffix.isEmpty())
+            return "agd";
+        else
+            return QString("agd_" + suffix).toStdString();
+    }
+    typedef  QHash<int, std::array<double, 22>>  type;
+    static auto loadFunc (){return [](QSharedPointer<interfaces::Authors> authorInterface){
+            return authorInterface->GetListGenreData();
+        };}
+};
+
+
 struct DataHolder
 {
     typedef DataHolderInfo<rdt_favourites>::type FavType;

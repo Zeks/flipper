@@ -132,7 +132,8 @@ public:
     bool WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fics);
     QHash<int, QList<genre_stats::GenreBit>> GetFullGenreList();
     static void LogGenreDistribution(std::array<double, 22>& data, QString target= "");
-
+    static QString MoodForGenre(QString genre);
+    static void WriteMoodValue(QString mood,  float value, genre_stats::ListMoodData& );
 
 
     GenreIndex index;

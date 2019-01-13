@@ -151,6 +151,54 @@ void Genres::LogGenreDistribution(std::array<double, 22> &data, QString target)
 
 }
 
+QString Genres::MoodForGenre(QString genre)
+{
+    //QLOG_INFO() << "Reading mood for genre: " << genre;
+    QString result;
+    thread_local QStringList neutral = {"Adventure" , "Mystery" , "Supernatural" ,  "Suspense" , "Sci-Fi"
+                                        , "Fantasy" , "Spiritual" , "Western" , "Crime"};
+    thread_local QStringList flirty = {"Romance"};
+    thread_local QStringList funny = {"Humor" , "Parody"};
+    thread_local QStringList hurty = {"Hurt/Comfort"};
+    thread_local QStringList bondy = {"Family" , "Friendship"};
+    thread_local QStringList dramatic = { "Drama" , "Tragedy" , "Angst"};
+    thread_local QStringList shocky = {"Horror"};
+    if(neutral.contains(genre))
+        result = "Neutral";
+    if(flirty.contains(genre))
+        result = "Flirty";
+    if(funny.contains(genre))
+        result = "Funny";
+    if(hurty.contains(genre))
+        result = "Hurty";
+    if(bondy.contains(genre))
+        result = "Bondy";
+    if(dramatic.contains(genre))
+        result = "Dramatic";
+    if(shocky.contains(genre))
+        result = "Shocky";
+    //QLOG_INFO() << "returning:" << result;
+    return result;
+}
+
+void Genres::WriteMoodValue(QString mood, float value, genre_stats::ListMoodData & data)
+{
+    if(mood =="Neutral")
+        data.strengthNeutral+=value;
+    if(mood =="Funny")
+        data.strengthFunny+=value;
+    if(mood =="Hurty")
+        data.strengthHurty+=value;
+    if(mood =="Bondy")
+        data.strengthBondy+=value;
+    if(mood =="Dramatic")
+        data.strengthDramatic+=value;
+    if(mood =="Shocky")
+        data.strengthShocky+=value;
+    if(mood =="Flirty")
+        data.strengthFlirty+=value;
+}
+
 
 static QStringList GetSignificantNeutralTypes(QStringList list, bool addAdventure = false)
 {
@@ -375,12 +423,14 @@ void GenreConverter::ProcessGenreResultIteration2(genre_stats::FicGenreData & ge
         genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 0.4f});
     else if(genreData.strengthHumor > 0.25f && genreData.strengthDrama < 0.3f )
         genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 0.2f});
+
     if(genreData.strengthRomance > 0.7f)
         genreData.realGenres.push_back({{"Romance"}, 1});
     else if(genreData.strengthRomance > 0.5f)
         genreData.realGenres.push_back({{"Romance"}, 0.6f});
     else if(genreData.strengthRomance > 0.25f)
         genreData.realGenres.push_back({{"Romance"}, 0.2f});
+
     if(genreData.strengthDrama > 0.6f)
         genreData.realGenres.push_back({GetSignificantDramaTypes(genreData.originalGenres), 1});
     else if(genreData.strengthDrama > 0.45f)
@@ -388,17 +438,19 @@ void GenreConverter::ProcessGenreResultIteration2(genre_stats::FicGenreData & ge
     else if(genreData.strengthDrama > 0.25f && genreData.strengthHumor < 0.3f)
         genreData.realGenres.push_back({GetSignificantDramaTypes(genreData.originalGenres), 0.2f});
 
-    if(genreData.strengthBonds > 0.5f)
+    if(genreData.strengthBonds > 0.7f)
         genreData.realGenres.push_back({GetSignificantFamilyTypes(genreData.originalGenres), 1});
-    else if(genreData.strengthBonds > 0.3f)
+    else if(genreData.strengthBonds > 0.5f)
         genreData.realGenres.push_back({GetSignificantFamilyTypes(genreData.originalGenres), 0.7f});
-    else if(genreData.strengthBonds > 0.2f)
+    else if(genreData.strengthBonds > 0.35f)
         genreData.realGenres.push_back({GetSignificantFamilyTypes(genreData.originalGenres), 0.3f});
-    if(genreData.strengthHurtComfort> 0.5f)
+
+
+    if(genreData.strengthHurtComfort> 0.7f)
         genreData.realGenres.push_back({{"Hurt/Comfort"}, 1});
-    else if(genreData.strengthHurtComfort > 0.4f)
+    else if(genreData.strengthHurtComfort > 0.5f)
         genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.7f});
-    else if(genreData.strengthHurtComfort > 0.2f)
+    else if(genreData.strengthHurtComfort > 0.4f)
         genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.5f});
 
     genreData.processedGenres = FinalGenreProcessing(genreData);
