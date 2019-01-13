@@ -124,6 +124,34 @@ bool Genres::WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics)
     return database::puresql::WriteDetectedGenres(fics, db).success;
 }
 
+bool Genres::WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fics)
+{
+    return database::puresql::WriteDetectedGenresIteration2(fics, db).success;
+}
+
+QHash<int, QList<genre_stats::GenreBit> > Genres::GetFullGenreList()
+{
+    return database::puresql::GetFullGenreList(db).data;
+}
+
+void Genres::LogGenreDistribution(std::array<double, 22> &data, QString target)
+{
+    An<interfaces::GenreIndex> genreIndex;
+    QLOG_INFO() << "///////////////////";
+    if(!target.isEmpty())
+        QLOG_INFO() << target;
+    for(size_t i = 0; i < 22; i++)
+    {
+
+        auto genre = genreIndex->genresByIndex[i];
+        auto value = std::abs(data[i]) > 0.005 ? data[i] : 0;
+        QLOG_INFO() << genre.name << ": " << value;
+    }
+    QLOG_INFO() << "///////////////////";
+
+}
+
+
 static QStringList GetSignificantNeutralTypes(QStringList list, bool addAdventure = false)
 {
     QStringList result;
@@ -323,6 +351,59 @@ void GenreConverter::ProcessGenreResult(genre_stats::FicGenreData & genreData)
     genreData.processedGenres = FinalGenreProcessing(genreData);
 }
 
+void GenreConverter::ProcessGenreResultIteration2(genre_stats::FicGenreData & genreData)
+{
+    QVector<genre_stats::GenreBit> result;
+
+    for(auto genre: GetSignificantKeptGenres(genreData.originalGenres))
+        genreData.realGenres.push_back({{genre}, 1});
+
+    if(genreData.strengthNeutralAdventure >= 0.8f)
+        genreData.realGenres.push_back({GetSignificantNeutralTypes(genreData.originalGenres, true), 1 - (0.8f - genreData.strengthNeutralAdventure)*2.f});
+    else if (genreData.strengthNeutralComposite >= 0.8f && genreData.strengthNeutralAdventure >= 0.5f)
+        genreData.realGenres.push_back({GetSignificantNeutralTypes(genreData.originalGenres, true), 1 - (0.8f - genreData.strengthNeutralAdventure)*2.f});
+
+    else if(genreData.strengthNeutralComposite >= 0.6f)
+        genreData.realGenres.push_back({GetSignificantNeutralTypes(genreData.originalGenres), 1 - (0.8f - genreData.strengthNeutralComposite)*2.f});
+
+
+    if(genreData.strengthHumor > 0.5f)
+        genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 1});
+    else if(genreData.strengthHumor > 0.4f)
+        genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 0.7f});
+    else if(genreData.strengthHumor > 0.3f)
+        genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 0.4f});
+    else if(genreData.strengthHumor > 0.25f && genreData.strengthDrama < 0.3f )
+        genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 0.2f});
+    if(genreData.strengthRomance > 0.7f)
+        genreData.realGenres.push_back({{"Romance"}, 1});
+    else if(genreData.strengthRomance > 0.5f)
+        genreData.realGenres.push_back({{"Romance"}, 0.6f});
+    else if(genreData.strengthRomance > 0.25f)
+        genreData.realGenres.push_back({{"Romance"}, 0.2f});
+    if(genreData.strengthDrama > 0.6f)
+        genreData.realGenres.push_back({GetSignificantDramaTypes(genreData.originalGenres), 1});
+    else if(genreData.strengthDrama > 0.45f)
+        genreData.realGenres.push_back({GetSignificantDramaTypes(genreData.originalGenres), 0.5f});
+    else if(genreData.strengthDrama > 0.25f && genreData.strengthHumor < 0.3f)
+        genreData.realGenres.push_back({GetSignificantDramaTypes(genreData.originalGenres), 0.2f});
+
+    if(genreData.strengthBonds > 0.5f)
+        genreData.realGenres.push_back({GetSignificantFamilyTypes(genreData.originalGenres), 1});
+    else if(genreData.strengthBonds > 0.3f)
+        genreData.realGenres.push_back({GetSignificantFamilyTypes(genreData.originalGenres), 0.7f});
+    else if(genreData.strengthBonds > 0.2f)
+        genreData.realGenres.push_back({GetSignificantFamilyTypes(genreData.originalGenres), 0.3f});
+    if(genreData.strengthHurtComfort> 0.5f)
+        genreData.realGenres.push_back({{"Hurt/Comfort"}, 1});
+    else if(genreData.strengthHurtComfort > 0.4f)
+        genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.7f});
+    else if(genreData.strengthHurtComfort > 0.2f)
+        genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.5f});
+
+    genreData.processedGenres = FinalGenreProcessing(genreData);
+}
+
 void GenreConverter::DetectRealGenres(genre_stats::FicGenreData & data)
 {
     //bool romanceHigherThanDrama = (data.strengthRomance - data.strengthDrama) > 0.15f;
@@ -484,6 +565,14 @@ Genre &GenreIndex::GenreByName(QString name)
     if(genresByName.contains(name))
         return genresByName[name];
     return nullGenre;
+}
+
+size_t GenreIndex::IndexByFFNName(QString name) const
+{
+    if(genresByName.contains(name))
+        return genresByName[name].indexInDatabase;
+    Q_ASSERT(false);
+    return -1;
 }
 
 }

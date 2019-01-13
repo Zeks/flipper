@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "threaded_data/threaded_save.h"
 #include "include/Interfaces/authors.h"
 #include "include/Interfaces/fanfics.h"
+#include "include/Interfaces/genres.h"
 #include "include/reclist_author_result.h"
 //namespace interfaces{
 //class Authors;
@@ -55,7 +56,9 @@ struct RecommendationListResult{
 enum ERecDataType
 {
     rdt_favourites =0,
-    rdt_fics =1
+    rdt_fics =1,
+    rdt_fic_genres_composite = 2,
+    rdt_fic_genres_original = 3
 };
 
 template<ERecDataType E>
@@ -87,8 +90,24 @@ struct DataHolderInfo<rdt_fics>
             return fanficsInterface->GetHashOfAllFicsWithEnoughFavesForWeights(0);
         };}
 };
-
-
+template<>
+struct DataHolderInfo<rdt_fic_genres_composite>
+{
+    static const std::string fileBase(){return "fic_genres_composite";}
+    typedef  QHash<int, QList<genre_stats::GenreBit>>  type;
+    static auto loadFunc (){return [](QSharedPointer<interfaces::Genres> genreInterface){
+            return genreInterface->GetFullGenreList();
+        };}
+};
+template<>
+struct DataHolderInfo<rdt_fic_genres_original>
+{
+    static const std::string fileBase(){return "fic_genres_original";}
+    typedef  QHash<int, QString>  type;
+    static auto loadFunc (){return [](QSharedPointer<interfaces::Fanfics> fanficsInterface){
+            return fanficsInterface->GetGenreForFics();
+        };}
+};
 struct DataHolder
 {
     typedef DataHolderInfo<rdt_favourites>::type FavType;

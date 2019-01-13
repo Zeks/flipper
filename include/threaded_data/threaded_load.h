@@ -40,4 +40,6 @@ void LoadData(QString storageFolder, QString fileName, QHash<int, std::array<dou
 void LoadData(QString storageFolder, QString fileName, QHash<int, core::AuthorFavFandomStatsPtr>& );
 void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& );
 void LoadData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr>& );
+void LoadData(QString storageFolder, QString fileName, QHash<int, QList<genre_stats::GenreBit>>& );
+void LoadData(QString storageFolder, QString fileName, QHash<int, QString>& );
 }

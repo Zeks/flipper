@@ -117,6 +117,100 @@ static QHash<QString, int> CreateGenreRedirects(){
     result["Drama"] = 22;
     return result;
 }
+
+struct GenreDetectionSources{
+    QHash<int, std::array<double, 22>> genreAuthorLists;
+    QHash<int, genre_stats::ListMoodData> moodAuthorLists;
+    QHash<int, QString> originalFicGenres;
+    QHash<int, QSet<int>> ficsToUse; // set of authors that have it
+};
+
+QVector<genre_stats::FicGenreData> CreateGenreDataForFics(GenreDetectionSources input, bool userIterationForGenreProcessing = false){
+    QVector<genre_stats::FicGenreData> ficGenreDataList;
+    ficGenreDataList.reserve(input.ficsToUse.keys().size());
+    interfaces::GenreConverter genreConverter;
+    int counter = 0;
+    for(auto fic : input.ficsToUse.keys())
+    {
+//        if(fic != 5365)
+//            continue;
+        if(counter%10000 == 0)
+            qDebug() << "processing fic: " << counter;
+
+        //gettting amount of funny lists
+        int64_t funny = std::count_if(std::begin(input.ficsToUse[fic]), std::end(input.ficsToUse[fic]), [&](int listId){
+            return input.moodAuthorLists[listId].strengthFunny >= 0.3f;
+        });
+        int64_t flirty = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+            return input.moodAuthorLists[listId].strengthFlirty >= 0.5f;
+        });
+        auto listSet = input.ficsToUse[fic];
+        int64_t neutralAdventure = 0;
+        for(auto listId : listSet)
+            if(input.genreAuthorLists[listId][3] >= 0.3)
+                neutralAdventure++;
+
+        //qDebug() << "Adventure list count: " << neutralAdventure;
+
+        int64_t hurty = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+            return input.moodAuthorLists[listId].strengthHurty>= 0.15f;
+        });
+        int64_t bondy = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+            return input.moodAuthorLists[listId].strengthBondy >= 0.3f;
+        });
+
+        int64_t neutral = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+            return input.moodAuthorLists[listId].strengthNeutral>= 0.3f;
+        });
+        int64_t dramatic = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+            return input.moodAuthorLists[listId].strengthDramatic >= 0.3f;
+        });
+
+        int64_t total = input.ficsToUse[fic].size();
+
+        genre_stats::FicGenreData genreData;
+        genreData.ficId = fic;
+        genreData.originalGenres =  genreConverter.GetFFNGenreList(input.originalFicGenres[fic]);
+        genreData.totalLists = static_cast<int>(total);
+        genreData.strengthHumor = static_cast<float>(funny)/static_cast<float>(total);
+        genreData.strengthRomance = static_cast<float>(flirty)/static_cast<float>(total);
+        genreData.strengthDrama = static_cast<float>(dramatic)/static_cast<float>(total);
+        genreData.strengthBonds = static_cast<float>(bondy)/static_cast<float>(total);
+        genreData.strengthHurtComfort = static_cast<float>(hurty)/static_cast<float>(total);
+        genreData.strengthNeutralComposite = static_cast<float>(neutral)/static_cast<float>(total);
+        genreData.strengthNeutralAdventure = static_cast<float>(neutralAdventure)/static_cast<float>(total);
+        //genreData.Log();
+        if(!userIterationForGenreProcessing)
+            genreConverter.ProcessGenreResult(genreData);
+        else
+            genreConverter.ProcessGenreResultIteration2(genreData);
+        ficGenreDataList.push_back(genreData);
+        counter++;
+    }
+
+
+    for(auto fic : ficGenreDataList)
+    {
+        QStringList keptList;
+        for(auto genre: fic.processedGenres)
+        {
+            if(genre.relevance < 0.1f)
+                keptList += genre.genres;
+        }
+
+        for(auto genre : fic.processedGenres)
+        {
+            QString writtenGenre = genre.genres.join(",");
+            if(genre.relevance > fic.maxGenrePercent && !writtenGenre.isEmpty())
+                fic.maxGenrePercent = genre.relevance;
+        }
+        fic.keptToken = keptList.join(",");
+    }
+
+    return ficGenreDataList;
+}
+
+
 void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 {
     interfaces::GenreConverter converter;
@@ -131,9 +225,6 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     genres->db = db;
     fanfics->db = db;
     authors->db = db;
-
-
-
 
     An<core::RecCalculator> holder;
     holder->LoadFavourites(authors);
@@ -167,8 +258,17 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
             result.push_back(key);
 
     }
+
+    QHash<int, QSet<int>> filteredFicsToUse;
+    for(auto key : ficsToUse.keys())
+    {
+        if(ficsToUse[key].size() >= minFoundLists)
+            filteredFicsToUse[key] = ficsToUse[key];
+
+    }
+
     qDebug() << "Finished counts";
-    database::Transaction transaction(db);
+
     //    for(auto fic: result)
     //        fanfics->AssignQueuedForFic(fic);
 
@@ -180,73 +280,22 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     auto moodLists = authors->GetMoodDataForLists();
     qDebug() << "got mood lists, size: " << moodLists.size();
 
-    auto genreRedirects = CreateGenreRedirects();
+    //auto genreRedirects = CreateGenreRedirects();
 
-    QVector<genre_stats::FicGenreData> ficGenreDataList;
-    ficGenreDataList.reserve(ficsToUse.keys().size());
-    interfaces::GenreConverter genreConverter;
-    int counter = 0;
-    for(auto fic : result)
-    {
-//        if(fic != 38212)
-//            continue;
-        if(counter%10000 == 0)
-            qDebug() << "processing fic: " << counter;
+    QVector<genre_stats::FicGenreData> ficGenreDataList =
+            CreateGenreDataForFics({genreLists,
+                                    moodLists,
+                                    genresForFics,
+                                    filteredFicsToUse});
 
-        //gettting amount of funny lists
-        int64_t funny = std::count_if(std::begin(ficsToUse[fic]), std::end(ficsToUse[fic]), [&moodLists](int listId){
-            return moodLists[listId].strengthFunny >= 0.3f;
-        });
-        int64_t flirty = std::count_if(ficsToUse[fic].begin(), ficsToUse[fic].end(), [&](int listId){
-            return moodLists[listId].strengthFlirty >= 0.5f;
-        });
-        auto listSet = ficsToUse[fic];
-        int64_t neutralAdventure = 0;
-        for(auto listId : listSet)
-            if(genreLists[listId][3] >= 0.3)
-                neutralAdventure++;
-
-        //qDebug() << "Adventure list count: " << neutralAdventure;
-
-        int64_t hurty = std::count_if(ficsToUse[fic].begin(), ficsToUse[fic].end(), [&](int listId){
-            return moodLists[listId].strengthHurty>= 0.15f;
-        });
-        int64_t bondy = std::count_if(ficsToUse[fic].begin(), ficsToUse[fic].end(), [&](int listId){
-            return moodLists[listId].strengthBondy >= 0.3f;
-        });
-
-        int64_t neutral = std::count_if(ficsToUse[fic].begin(), ficsToUse[fic].end(), [&](int listId){
-            return moodLists[listId].strengthNeutral>= 0.3f;
-        });
-        int64_t dramatic = std::count_if(ficsToUse[fic].begin(), ficsToUse[fic].end(), [&](int listId){
-            return moodLists[listId].strengthDramatic >= 0.3f;
-        });
-
-        int64_t total = ficsToUse[fic].size();
-
-        genre_stats::FicGenreData genreData;
-        genreData.ficId = fic;
-        genreData.originalGenres =  genreConverter.GetFFNGenreList(genresForFics[fic]);
-        genreData.totalLists = static_cast<int>(total);
-        genreData.strengthHumor = static_cast<float>(funny)/static_cast<float>(total);
-        genreData.strengthRomance = static_cast<float>(flirty)/static_cast<float>(total);
-        genreData.strengthDrama = static_cast<float>(dramatic)/static_cast<float>(total);
-        genreData.strengthBonds = static_cast<float>(bondy)/static_cast<float>(total);
-        genreData.strengthHurtComfort = static_cast<float>(hurty)/static_cast<float>(total);
-        genreData.strengthNeutralComposite = static_cast<float>(neutral)/static_cast<float>(total);
-        genreData.strengthNeutralAdventure = static_cast<float>(neutralAdventure)/static_cast<float>(total);
-        //        qDebug() << "Calculating adventure value: " << "Adventure lists: " <<  neutralAdventure << " total lists: " << total << " fic: " << fic;
-        //        qDebug() << "Calculated value: " << genreData.strengthNeutralAdventure;
-        genreConverter.ProcessGenreResult(genreData);
-        ficGenreDataList.push_back(genreData);
-        counter++;
-    }
-
+    database::Transaction transaction(db);
     if(!genres->WriteDetectedGenres(ficGenreDataList))
         transaction.cancel();
+
     qDebug() << "finished writing genre data for fics";
     transaction.finalize();
-    qDebug() << "Finished queue set";
+    qDebug() << "Starting the second iteration";
+
 }
 //        int64_t pureDrama = std::count_if(genreLists[fic].begin(), genreLists[fic].end(), [&](int listId){
 //            return genreLists[listId][static_cast<size_t>(genreRedirects["Drama"])] - genreLists[listId][static_cast<size_t>(genreRedirects["Romance"])] >= 0.05;
@@ -254,6 +303,144 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 //        int64_t pureRomance = std::count_if(genreLists[fic].begin(), genreLists[fic].end(), [&](int listId){
 //            return genreLists[listId][static_cast<size_t>(genreRedirects["Romance"])] - genreLists[listId][static_cast<size_t>(genreRedirects["Drama"])] >= 0.8;
 //        });
+
+struct InputForGenresIteration2{
+    typedef core::DataHolderInfo<core::rdt_favourites>::type FavType;
+    typedef core::DataHolderInfo<core::rdt_fic_genres_composite>::type FicGenreCompositeType;
+    typedef core::DataHolderInfo<core::rdt_fic_genres_original>::type FicGenreOriginalType;
+
+    FavType faves;
+    FicGenreCompositeType ficGenresComposite;
+    FicGenreOriginalType ficGenresOriginal;
+
+
+    FicGenreCompositeType filteredFicGenresComposite;
+    FicGenreOriginalType filteredFicGenresOriginal;
+};
+
+template <core::ERecDataType EnumType, typename ContainerType, typename InterfaceType>
+void LoadDataForCalc(InterfaceType interface, ContainerType& container, QString storageFolder)
+{
+    QDir dir(QDir::currentPath());
+    dir.mkdir("ServerData");
+
+    QSettings settings("settings_server.ini", QSettings::IniFormat);
+    if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists(storageFolder + "/" +
+                                                                                 QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase())
+                                                                                 + "_0.txt"))
+    {
+        thread_boost::LoadData(storageFolder,
+                               QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase()),
+                                                      container);
+    }
+    else
+    {
+        container = core::DataHolderInfo<EnumType>::loadFunc()(interface);
+        thread_boost::SaveData(storageFolder,
+                               QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase()),
+                               container);
+    }
+}
+
+template <core::ERecDataType EnumType, typename ContainerType>
+void SaveDataForCalc(ContainerType& container, QString storageFolder)
+{
+    QString fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase());
+    QDir dir(QDir::currentPath());
+    if(fileBase.isEmpty())
+        return;
+//    dir.remove(fileBase + "*");
+    thread_boost::SaveData(storageFolder,
+                           fileBase,
+                           container);
+}
+
+
+void ServitorWindow::DetectGenresIteration2(int minAuthorRecs, int minFoundLists)
+{
+    InputForGenresIteration2 inputs;
+
+
+    interfaces::GenreConverter converter;
+
+    QVector<int> ficIds;
+    auto db = QSqlDatabase::database();
+    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    genres->db = db;
+    fanfics->db = db;
+    authors->db = db;
+
+    LoadDataForCalc<core::rdt_fic_genres_composite,
+            InputForGenresIteration2::FicGenreCompositeType,
+            QSharedPointer<interfaces::Genres>>(genres, inputs.ficGenresComposite, "TempData");
+    LoadDataForCalc<core::rdt_favourites,
+            InputForGenresIteration2::FavType,
+            QSharedPointer<interfaces::Authors>>(authors, inputs.faves, "TempData");
+    LoadDataForCalc<core::rdt_fic_genres_original,
+            InputForGenresIteration2::FicGenreOriginalType,
+            QSharedPointer<interfaces::Fanfics>>(fanfics, inputs.ficGenresOriginal, "TempData");
+
+
+
+    //return;
+    authorGenreDataOriginal = authors->GetListGenreData();
+    QHash<int, QSet<int>> ficsToUse;
+    auto& faves  = inputs.faves;
+
+    for(int key : faves.keys())
+    {
+        auto& set = faves[key];
+        if(set.cardinality() < minAuthorRecs)
+            continue;
+        for(auto fic : set)
+            ficsToUse[fic].insert(key);
+    }
+    qDebug() << "Finished author processing, resulting set is of size:" << ficsToUse.size();
+
+    QHash<int, QSet<int>> filteredFicsToUse;
+    for(auto key : ficsToUse.keys())
+    {
+        if(ficsToUse[key].size() >= minFoundLists)
+        {
+            filteredFicsToUse[key] = ficsToUse[key];
+            inputs.filteredFicGenresOriginal[key] = inputs.ficGenresOriginal[key];
+            inputs.filteredFicGenresComposite[key] = inputs.ficGenresComposite[key];
+        }
+    }
+
+//    SaveDataForCalc<core::rdt_fic_genres_original,
+//            InputForGenresIteration2::FicGenreOriginalType>(inputs.filteredFicGenresOriginal, "TempData");
+//    SaveDataForCalc<core::rdt_fic_genres_composite,
+//            InputForGenresIteration2::FicGenreCompositeType>(inputs.filteredFicGenresComposite, "TempData");
+
+    //return;
+    //return;
+
+    qDebug() << "Finished counts";
+    //auto genresForFics = fanfics->GetGenreForFics();
+
+    qDebug() << "Starting the second iteration";
+    //auto fullGenreList = genres->GetFullGenreList();
+    AuthorGenreIterationProcessor iteratorProcessor;
+    iteratorProcessor.ReprocessGenreStats(inputs.ficGenresComposite, faves);
+    qDebug() << "finished iteration";
+    //return;
+
+//    QVector<genre_stats::FicGenreData> ficGenreDataList = CreateGenreDataForFics({iteratorProcessor.resultingGenreAuthorData,
+//                                               iteratorProcessor.resultingMoodAuthorData,
+//                                               inputs.ficGenresOriginal,
+//                                               filteredFicsToUse}, false);
+//    database::Transaction transaction(db);
+//    if(!genres->WriteDetectedGenresIteration2(ficGenreDataList))
+//        transaction.cancel();
+
+    qDebug() << "finished writing genre data for fics";
+    //transaction.finalize();
+    qDebug() << "Finished queue set";
+}
+
 
 
 void ServitorWindow::on_pbLoadFic_clicked()
@@ -305,39 +492,11 @@ void ServitorWindow::on_pbGetGenresForFic_clicked()
 void ServitorWindow::on_pbGetGenresForEverything_clicked()
 {
     DetectGenres(25,15);
-    interfaces::GenreConverter converter;
+}
 
-    //    QVector<int> ficIds;
-    //    auto db = QSqlDatabase::database();
-    //    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
-    //    genres->db = db;
-    //    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
-    //    fanfics->db = db;
-
-    //    QSettings settings("settings_servitor.ini", QSettings::IniFormat);
-    //    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    //    bool alreadyQueued = settings.value("Settings/genrequeued", false).toBool();
-    //    if(!alreadyQueued)
-    //    {
-    //        database::Transaction transaction(db);
-    //        genres->QueueFicsForGenreDetection(25, 15, 0);
-    //        settings.setValue("Settings/genrequeued", true);
-    //        settings.sync();
-    //        transaction.finalize();
-    //    }
-    //    database::Transaction transaction(db);
-    //    qDebug() << "reading genre data for fics";
-    //    auto genreData = genres->GetGenreDataForQueuedFics();
-    //    qDebug() << "finished reading genre data for fics";
-    //    for(auto& fic : genreData)
-    //    {
-    //        converter.ProcessGenreResult(fic);
-    //    }
-    //    qDebug() << "finished processing genre data for fics";
-    //    if(!genres->WriteDetectedGenres(genreData))
-    //        transaction.cancel();
-    //    qDebug() << "finished writing genre data for fics";
-    //    transaction.finalize();
+void ServitorWindow::on_pbGenresIteration2_clicked()
+{
+    DetectGenresIteration2(25, 15);
 }
 
 void ServitorWindow::on_pushButton_2_clicked()
@@ -1086,3 +1245,4 @@ void ServitorWindow::on_pbCleanPrecalc_clicked()
 {
     QFile::remove("ficsdata.txt");
 }
+

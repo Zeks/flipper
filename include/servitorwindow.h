@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "environment.h"
 #include "third_party/roaring/roaring.hh"
 #include "include/calc_data_holder.h"
+#include "tasks/author_genre_iteration_processor.h"
 
 namespace Ui {
 class servitorWindow;
@@ -42,6 +43,8 @@ public:
     void UpdateInterval(int, int);
 
     void DetectGenres(int minAuthorRecs, int minFoundLists);
+    void DetectGenresIteration2(int minAuthorRecs, int minFoundLists);
+
     void LoadDataForCalculation(CalcDataHolder& data);
     void ProcessCDHData(CalcDataHolder& data);
     void CalcConstantMemory();
@@ -52,6 +55,8 @@ public:
 
     QSharedPointer<database::IDBWrapper> dbInterface;
     CoreEnvironment env;
+    AuthorGenreIterationProcessor iteratorProcessor;
+    QHash<int, std::array<double, 22>> authorGenreDataOriginal;
 
 private slots:
     void on_pbLoadFic_clicked();
@@ -94,6 +99,8 @@ private slots:
     void on_pbCalcWeights_clicked();
 
     void on_pbCleanPrecalc_clicked();
+
+    void on_pbGenresIteration2_clicked();
 
 private:
     Ui::servitorWindow *ui;

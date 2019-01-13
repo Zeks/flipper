@@ -261,7 +261,6 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
                         int ficTotal,
                         QHash<QString, int>& genreKeeper)
 {
-    QHash<int, double> moodFactors;
     double maxPrevalence = 0.0;
     int totalInClumps = 0;
     for(auto genre : genreKeeper.keys())

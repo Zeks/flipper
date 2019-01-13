@@ -34,12 +34,12 @@ void SetupLogger()
 
     An<QsLogging::Logger> logger;
     logger->setLoggingLevel(static_cast<QsLogging::Level>(settings.value("Logging/loglevel").toInt()));
-    QString logFile = settings.value("Logging/filename").toString();
+    QString logFile = "servitor.log";
     QsLogging::DestinationPtr fileDestination(
 
                 QsLogging::DestinationFactory::MakeFileDestination(logFile,
                                                                    settings.value("Logging/rotate", true).toBool(),
-                                                                   settings.value("Logging/filesize", 512).toInt()*1000000,
+                                                                   settings.value("Logging/filesize", 5120).toInt()*1000000,
                                                                    settings.value("Logging/amountOfFilesToKeep", 50).toInt()));
 
     QsLogging::DestinationPtr debugDestination(

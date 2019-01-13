@@ -15,6 +15,163 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>Normalize Fandoms</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbCleanPrecalc">
+        <property name="text">
+         <string>Clean Precalc</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="sbFicCount">
+        <property name="maximum">
+         <number>1000000</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbCalcWeights">
+        <property name="text">
+         <string>Calc Weights</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="0">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="3">
+       <widget class="QPushButton" name="pbPCRescue">
+        <property name="text">
+         <string>Rescue PageCache</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLineEdit" name="leReprocessFics"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pbReprocessFics">
+        <property name="text">
+         <string>Reprocess Fics</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pbLoadFic">
+        <property name="text">
+         <string>(Re) Load Fic URL</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="pbSlashCalc">
+        <property name="text">
+         <string>Recalc Slash</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="2">
+       <widget class="QLineEdit" name="leFicUrl"/>
+      </item>
+      <item row="1" column="3">
+       <widget class="QPushButton" name="pbFindSlashSummary">
+        <property name="text">
+         <string>Check Summary</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="5" column="0">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Text</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item row="0" column="0">
+         <widget class="QTextEdit" name="edtLog"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Graph</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item row="0" column="0">
+         <spacer name="horizontalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>698</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="cbGenres"/>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QWidget" name="widget_4" native="true"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
     <item row="2" column="0">
      <widget class="QWidget" name="widget" native="true">
       <property name="minimumSize">
@@ -54,6 +211,13 @@
         <widget class="QPushButton" name="pbGetGenresForEverything">
          <property name="text">
           <string>Genre For Everything</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pbGenresIteration2">
+         <property name="text">
+          <string>Genres I2</string>
          </property>
         </widget>
        </item>
@@ -155,99 +319,6 @@
        </item>
       </layout>
      </widget>
-    </item>
-    <item row="1" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QPushButton" name="pushButton">
-        <property name="text">
-         <string>Normalize Fandoms</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pbCleanPrecalc">
-        <property name="text">
-         <string>Clean Precalc</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="sbFicCount">
-        <property name="maximum">
-         <number>1000000</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pbCalcWeights">
-        <property name="text">
-         <string>Calc Weights</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="5" column="0">
-     <widget class="QTextEdit" name="edtLog"/>
-    </item>
-    <item row="0" column="0">
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="3">
-       <widget class="QPushButton" name="pbPCRescue">
-        <property name="text">
-         <string>Rescue PageCache</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLineEdit" name="leReprocessFics"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="pbReprocessFics">
-        <property name="text">
-         <string>Reprocess Fics</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="pbLoadFic">
-        <property name="text">
-         <string>(Re) Load Fic URL</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="pbSlashCalc">
-        <property name="text">
-         <string>Recalc Slash</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1" colspan="2">
-       <widget class="QLineEdit" name="leFicUrl"/>
-      </item>
-      <item row="1" column="3">
-       <widget class="QPushButton" name="pbFindSlashSummary">
-        <property name="text">
-         <string>Check Summary</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </item>
     <item row="4" column="0">
      <widget class="QWidget" name="widget_3" native="true">

@@ -67,7 +67,6 @@ void RecCalculator::LoadFavourites(QSharedPointer<interfaces::Authors> authorInt
     if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists("ServerData/roafav_0.txt"))
     {
         holder.LoadData<core::rdt_favourites>("ServerData");
-        //LoadStoredFavouritesData();
     }
     else
     {

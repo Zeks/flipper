@@ -69,6 +69,7 @@ struct GenreConverter{
     }
 
     void ProcessGenreResult(genre_stats::FicGenreData&);
+    void ProcessGenreResultIteration2(genre_stats::FicGenreData&);
     void DetectRealGenres(genre_stats::FicGenreData&);
 
     static GenreConverter Instance();
@@ -106,7 +107,7 @@ struct GenreIndex
     void Init();
     void InitGenre(const Genre&  genre);
     Genre& GenreByName(QString name);
-
+    size_t IndexByFFNName(QString) const;
     QHash<QString, Genre> genresByName;
     QHash<QString, Genre> genresByDbName;
     QHash<size_t, Genre> genresByIndex;
@@ -115,6 +116,9 @@ struct GenreIndex
     Genre nullGenre;
 };
 
+struct AdjustedFicGenresFromFanfics{
+    QList<genre_stats::GenreBit> genres;
+};
 
 class Genres{
 public:
@@ -125,6 +129,11 @@ public:
     QVector<genre_stats::FicGenreData> GetGenreDataForQueuedFics();
     void QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves);
     bool WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics);
+    bool WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fics);
+    QHash<int, QList<genre_stats::GenreBit>> GetFullGenreList();
+    static void LogGenreDistribution(std::array<double, 22>& data, QString target= "");
+
+
 
     GenreIndex index;
     QSqlDatabase db;
