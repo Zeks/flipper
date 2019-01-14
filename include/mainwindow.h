@@ -343,7 +343,7 @@ public slots:
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
     void OnQMLAuthorToggled(QVariant, QVariant active);
-    void OnGetUrlsForTags();
+    void OnGetUrlsForTags(bool);
 private slots:
 
     // used to receive tag events from tag widget on Tags tab

@@ -107,6 +107,11 @@ void TagWidget::ClearSelection()
     InitEditFromTags(allTags);
 }
 
+bool TagWidget::DbIdsRequested()
+{
+    return ui->cbTagEntitySelector->currentIndex() == 2;
+}
+
 void TagWidget::on_pbAddTag_clicked()
 {
     QString tag = ui->leTag->text().trimmed();
@@ -252,5 +257,5 @@ void TagWidget::on_pbAssignTagToFandom_clicked()
 
 void TagWidget::on_pbUrlsForTags_clicked()
 {
-    emit createUrlsForTags();
+    emit createUrlsForTags(ui->cbTagEntitySelector->currentIndex() == 1);
 }

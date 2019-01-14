@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/url_utils.h"
 #include "include/favholder.h"
-
+#include "include/grpc/grpc_source.h"
 
 #include "include/tasks/slash_task_processor.h"
 #include <QTextCodec>
@@ -55,7 +55,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QBarCategoryAxis>
 #include <QValueAxis>
 
-
+inline QString CreateConnectString(QString ip,QString port)
+{
+    QString server_address_proto("%1:%2");
+    auto result = server_address_proto.arg(ip).arg(port);
+    return result;
+}
 ServitorWindow::ServitorWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::servitorWindow)
@@ -71,7 +76,6 @@ ServitorWindow::ServitorWindow(QWidget *parent) :
     An<interfaces::GenreIndex> genreIndex;
     ui->cbGenres->blockSignals(true);
 
-    QStringList genreList;
     genreList << "not found" << "Romance" << "Drama" << "Tragedy" << "Angst"
               << "Humor" << "Parody" << "Hurt/Comfort" << "Family" << "Friendship"
               << "Horror" << "Adventure" << "Mystery" << "Supernatural" <<  "Suspense" << "Sci-Fi"
@@ -85,7 +89,6 @@ ServitorWindow::ServitorWindow(QWidget *parent) :
 
     ui->cbMoodSelector->blockSignals(true);
 
-    QStringList moodList;
     moodList << "Neutral" << "Flirty" << "Funny" << "Dramatic" << "Hurty" << "Bondy" << "Shocky";
 
 
@@ -94,7 +97,8 @@ ServitorWindow::ServitorWindow(QWidget *parent) :
 
     ui->cbMoodSelector->blockSignals(false);
 
-    CreateChartView();
+    CreateChartViews();
+
 }
 
 ServitorWindow::~ServitorWindow()
@@ -127,9 +131,27 @@ void ServitorWindow::UpdateInterval(int, int)
 
 }
 
-void ServitorWindow::CreateChartView()
+void ServitorWindow::CreateChartView(ChartData & view, QWidget* widget, QStringList categories)
 {
-    //using namespace QtCharts;
+    view.chartView.reset(new QtCharts::QChartView());
+    view.chart.reset(new QtCharts::QChart());
+    view.chartView->setRenderHint(QPainter::Antialiasing);
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(view.chartView.data());
+    widget->setLayout(layout);
+
+    QtCharts::QBarCategoryAxis *axisX = new QtCharts::QBarCategoryAxis();
+    axisX->append(categories);
+    view.chart->addAxis(axisX, Qt::AlignBottom);
+    view.axisY.reset(new QtCharts::QValueAxis());
+    view.axisY->setRange(0,20000);
+    view.chart->addAxis(view.axisY.data(), Qt::AlignLeft);
+    view.chart->setTitle("Genre distributions");
+    view.chart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
+}
+
+void ServitorWindow::CreateChartViews()
+{
     QStringList categoryNames;
     categoryNames << "0" << "0.05" << "0.1" <<
                      "0.15" << "0.2" <<
@@ -142,39 +164,10 @@ void ServitorWindow::CreateChartView()
                      "0.85" << "0.9" <<
                      "0.95" << "1" << "1+";
     // genres
-    genreChartView.reset(new QtCharts::QChartView());
-    genreChart.reset(new QtCharts::QChart());
-    genreChartView->setRenderHint(QPainter::Antialiasing);
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(genreChartView.data());
-    ui->wdgCharts->setLayout(layout);
-
-    QtCharts::QBarCategoryAxis *axisX = new QtCharts::QBarCategoryAxis();
-    axisX->append(categoryNames);
-    genreChart->addAxis(axisX, Qt::AlignBottom);
-    genreAxisY.reset(new QtCharts::QValueAxis());
-    genreAxisY->setRange(0,20000);
-    genreChart->addAxis(genreAxisY.data(), Qt::AlignLeft);
-    genreChart->setTitle("Genre distributions");
-    genreChart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
-    // moods
-
-    moodChartView.reset(new QtCharts::QChartView());
-    moodChart.reset(new QtCharts::QChart());
-    moodChartView->setRenderHint(QPainter::Antialiasing);
-    QVBoxLayout *moodLayout = new QVBoxLayout;
-    moodLayout->addWidget(moodChartView.data());
-    ui->wdgMoodChart->setLayout(moodLayout);
-
-    QtCharts::QBarCategoryAxis *moodAxisX = new QtCharts::QBarCategoryAxis();
-    moodAxisX->append(categoryNames);
-    moodChart->addAxis(moodAxisX, Qt::AlignBottom);
-    moodAxisY.reset(new QtCharts::QValueAxis());
-    moodAxisY->setRange(0,20000);
-    moodAxisY->setTickCount(10);
-    moodChart->addAxis(moodAxisY.data(), Qt::AlignLeft);
-    moodChart->setTitle("Genre distributions");
-    moodChart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
+    CreateChartView(viewGenre, ui->wdgCharts, categoryNames);
+    CreateChartView(viewMood, ui->wdgMoodChart, categoryNames);
+    CreateChartView(viewListCompare, ui->wdgGenreCompare, genreList);
+    CreateChartView(viewMoodCompare, ui->wdgMoodCompare, moodList);
 }
 
 void ServitorWindow::InitGenreChartView(QString name)
@@ -188,7 +181,7 @@ void ServitorWindow::InitGenreChartView(QString name)
         QLOG_INFO() << "invalid genre!";
         return;
     }
-    genreChart->removeAllSeries();
+    viewGenre.chart->removeAllSeries();
 
     auto index = genre.indexInDatabase;
     QList<double> categories;
@@ -238,18 +231,18 @@ void ServitorWindow::InitGenreChartView(QString name)
     QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
     series->append(setOriginals);
     //series->append(setAdjusted);
-    genreChart->addSeries(series);
-    genreChart->setGeometry(genreChartView->rect());
-    genreChart->removeAxis(genreAxisY.data());
-    genreAxisY.reset(new QtCharts::QValueAxis);
-    genreAxisY->setRange(0, maxValue*1.05);
-    genreAxisY->setTickCount(10);
+    viewGenre.chart->addSeries(series);
+    viewGenre.chart->setGeometry(viewGenre.chartView->rect());
+    viewGenre.chart->removeAxis(viewGenre.axisY.data());
+    viewGenre.axisY.reset(new QtCharts::QValueAxis);
+    viewGenre.axisY->setRange(0, maxValue*1.05);
+    viewGenre.axisY->setTickCount(10);
 
 
     //    axisY->setTickCount(5);
-    genreChart->setTitle(name + " distribution.");
-    genreChartView->setChart(genreChart.data());
-    genreChart->setAxisY(genreAxisY.data(), series);
+    viewGenre.chart->setTitle(name + " distribution.");
+    viewGenre.chartView->setChart(viewGenre.chart.data());
+    viewGenre.chart->setAxisY(viewGenre.axisY.data(), series);
 
     //chartView->chart()->setAxisY(axisY, series);
 
@@ -258,7 +251,7 @@ void ServitorWindow::InitGenreChartView(QString name)
 void ServitorWindow::InitMoodChartView(QString name)
 {
     An<interfaces::GenreIndex> genreIndex;
-    moodChart->removeAllSeries();
+    viewMood.chart->removeAllSeries();
     auto moodValue = [](genre_stats::ListMoodData& data, QString name) -> float{
         if(name == "Neutral")
             return data.strengthNeutral;
@@ -330,18 +323,129 @@ void ServitorWindow::InitMoodChartView(QString name)
     QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
     series->append(setOriginals);
     series->append(setAdjusted);
-    moodChart->addSeries(series);
-    moodChart->setGeometry(moodChartView->rect());
-    moodChart->removeAxis(moodAxisY.data());
-    moodAxisY.reset(new QtCharts::QValueAxis);
-    moodAxisY->setRange(0, maxValue*1.2);
-    moodAxisY->setTickCount(10);
+    viewMood.chart->addSeries(series);
+    viewMood.chart->setGeometry(viewMood.chartView->rect());
+    viewMood.chart->removeAxis(viewMood.axisY.data());
+    viewMood.axisY.reset(new QtCharts::QValueAxis);
+    viewMood.axisY->setRange(0, maxValue*1.2);
+    viewMood.axisY->setTickCount(10);
 
 
     //    axisY->setTickCount(5);
-    moodChart->setTitle(name + " distribution.");
-    moodChartView->setChart(moodChart.data());
-    moodChart->setAxisY(moodAxisY.data(), series);
+    viewMood.chart->setTitle(name + " distribution.");
+    viewMood.chartView->setChart(viewMood.chart.data());
+    viewMood.chart->setAxisY(viewMood.axisY.data(), series);
+}
+
+void ServitorWindow::InitGenreCompareChartView(QList<int> users)
+{
+    viewListCompare.chart->removeAllSeries();
+    An<interfaces::GenreIndex> genreIndex;
+
+    QList<QtCharts::QBarSet *> userSets;
+    for(auto i = 0; i < users.size(); i++)
+    {
+        if(i == 0)
+            userSets.push_back(new QtCharts::QBarSet("Me"));
+        else
+            userSets.push_back(new QtCharts::QBarSet("User" + QString::number(i)));
+    }
+
+    for(int i =0 ; i < genreList.size(); i++)
+    {
+        auto index = genreIndex->genresByName[genreList[i]].indexInDatabase;
+        for(auto u = 0; u < users.size(); u++)
+            *userSets[u] << authorGenreDataOriginal[users[u]][index];
+
+    }
+    QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
+    for(auto u = 0; u < users.size(); u++)
+        series->append(userSets[u]);
+
+    viewListCompare.chart->addSeries(series);
+    viewListCompare.chart->setGeometry(viewListCompare.chartView->rect());
+    viewListCompare.chart->removeAxis(viewListCompare.axisY.data());
+    viewListCompare.axisY.reset(new QtCharts::QValueAxis);
+    viewListCompare.axisY->setRange(0, 0.8);
+    viewListCompare.axisY->setTickCount(5);
+
+
+    //    axisY->setTickCount(5);
+    viewMood.chart->setTitle("Genre compare");
+    viewListCompare.chartView->setChart(viewListCompare.chart.data());
+    viewListCompare.chart->setAxisY(viewListCompare.axisY.data(), series);
+}
+
+void ServitorWindow::InitMoodCompareChartView(QList<int> users, bool useOriginalMoods)
+{
+    viewMoodCompare.chart->removeAllSeries();
+
+    QList<QtCharts::QBarSet *> userSets;
+    for(auto i = 0; i < users.size(); i++)
+    {
+        if(i == 0)
+            userSets.push_back(new QtCharts::QBarSet("Me"));
+        else
+        {
+            auto ratio = QString::number(matchesForUsers[users[i]].ratio);
+            userSets.push_back(new QtCharts::QBarSet("User" + QString::number(users[i])
+                                                     + "(" + ratio + ")"));
+        }
+    }
+
+    for(int i =0 ; i < moodList.size(); i++)
+    {
+        for(auto u = 0; u < users.size(); u++)
+        {
+            if(useOriginalMoods)
+            {
+                if(!ui->edtLog->toPlainText().isEmpty() && u == 0)
+                    *userSets[u] << interfaces::Genres::ReadMoodValue(moodList[i], listMoodData);
+                else
+                    *userSets[u] << interfaces::Genres::ReadMoodValue(moodList[i], originalMoodData[users[u]]);
+
+            }
+            else
+            {
+                if(!ui->edtLog->toPlainText().isEmpty() && u == 0)
+                    *userSets[u] << interfaces::Genres::ReadMoodValue(moodList[i], adjustedListMoodData);
+                else
+                    *userSets[u] << interfaces::Genres::ReadMoodValue(moodList[i], adjustedMoodData[users[u]]);
+            }
+
+        }
+
+    }
+    QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
+    for(auto u = 0; u < users.size(); u++)
+        series->append(userSets[u]);
+
+    viewMoodCompare.chart->addSeries(series);
+    viewMoodCompare.chart->setGeometry(viewMoodCompare.chartView->rect());
+    viewMoodCompare.chart->removeAxis(viewMoodCompare.axisY.data());
+    viewMoodCompare.axisY.reset(new QtCharts::QValueAxis);
+    viewMoodCompare.axisY->setRange(0, 1.2);
+    viewMoodCompare.axisY->setTickCount(5);
+
+
+    //    axisY->setTickCount(5);
+    viewMood.chart->setTitle("Genre compare");
+    viewMoodCompare.chartView->setChart(viewMoodCompare.chart.data());
+    viewMoodCompare.chart->setAxisY(viewMoodCompare.axisY.data(), series);
+}
+
+void ServitorWindow::InitGrpcSource()
+{
+    if(!grpcSource)
+    {
+        QSettings settings("settings.ini", QSettings::IniFormat);
+
+        auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
+        auto port = settings.value("Settings/serverPort", "3055").toString();
+
+       grpcSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), env.userToken,  160));
+       grpcSource->userToken = env.userToken;
+    }
 }
 
 static QHash<QString, int> CreateGenreRedirects(){
@@ -567,6 +671,7 @@ struct InputForGenresIteration2{
 
     FavType faves;
     FicGenreCompositeType ficGenresComposite;
+    FicGenreCompositeType ficGenresOriginalsInCompositeFormat;
     FicGenreOriginalType ficGenresOriginal;
 
 
@@ -1423,6 +1528,8 @@ void ServitorWindow::CalcConstantMemory()
     qDebug() << "Final count:" << sink.counter;
 }
 
+
+
 void ServitorWindow::on_pbCalcWeights_clicked()
 {
 
@@ -1589,4 +1696,131 @@ void ServitorWindow::on_cbMoodSelector_currentTextChanged(const QString &arg1)
 void ServitorWindow::on_pbCalcFicGenres_clicked()
 {
     CreateSecondIterationOfGenresForFics(25, 15);
+}
+
+void ServitorWindow::on_pbCompareGenres_clicked()
+{
+    if(ui->leGenreUser1->text().isEmpty() || ui->leGenreUser2->text().isEmpty())
+        return;
+
+    int user1 = ui->leGenreUser1->text().trimmed().toInt();
+    QString otherUsers = ui->leGenreUser2->text().trimmed();
+
+
+    auto db = QSqlDatabase::database();
+    auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
+    auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    genres->db = db;
+    fanfics->db = db;
+    authors->db = db;
+
+
+
+    QList<int> users;
+
+    users << user1;
+    ui->cbUserIDs->clear();
+    InitGrpcSource();
+
+    QList<int> otherUserIds;
+    for(auto user: otherUsers.split(QRegExp("[\\s,]"), QString::SkipEmptyParts))
+    {
+        users.push_back(user.toInt());
+        otherUserIds.push_back(user.toInt());
+        ui->cbUserIDs->blockSignals(true);
+        ui->cbUserIDs->addItem(user);
+        ui->cbUserIDs->blockSignals(false);
+    }
+    QStringList ficList;
+    if(ui->edtLog->toPlainText().isEmpty())
+        matchesForUsers = grpcSource->GetMatchesForUsers(user1, otherUserIds);
+    else
+    {
+        ficList = ui->edtLog->toPlainText().split(QRegExp("[\\s,]"), QString::SkipEmptyParts);
+        matchesForUsers = grpcSource->GetMatchesForUsers(ficList, otherUserIds);
+    }
+    InputForGenresIteration2 inputs;
+    if(authorGenreDataOriginal.size() == 0)
+    {
+
+        LoadDataForCalc<core::rdt_favourites,
+                InputForGenresIteration2::FavType,
+                QSharedPointer<interfaces::Authors>>(authors, inputs.faves, "TempData");
+
+        auto& faves  = inputs.faves;
+        LoadDataForCalc<core::rdt_author_genre_distribution,
+                QHash<int, std::array<double, 22>>,
+                QSharedPointer<interfaces::Authors>>(authors, authorGenreDataOriginal, "TempData", "original");
+        LoadDataForCalc<core::rdt_fic_genres_composite,
+                InputForGenresIteration2::FicGenreCompositeType,
+                QSharedPointer<interfaces::Genres>>(genres, inputs.ficGenresComposite, "TempData");
+
+        genres->loadOriginalGenresOnly = true;
+        LoadDataForCalc<core::rdt_fic_genres_composite,
+                InputForGenresIteration2::FicGenreCompositeType,
+                QSharedPointer<interfaces::Genres>>(genres, inputs.ficGenresOriginalsInCompositeFormat, "TempData", "CF");
+        genres->loadOriginalGenresOnly = false;
+
+//        LoadDataForCalc<core::rdt_fic_genres_original,
+//                InputForGenresIteration2::FicGenreOriginalType,
+//                QSharedPointer<interfaces::Genres>>(genres, inputs.ficGenresOriginal, "TempData");
+        originalMoodData = iteratorProcessor.CreateMoodDataFromGenres(authorGenreDataOriginal);
+        iteratorProcessor.ReprocessGenreStats(inputs.ficGenresComposite, faves);
+        adjustedMoodData = iteratorProcessor.resultingMoodAuthorData;
+        {
+            AuthorGenreIterationProcessor iteratorProcessor;
+            Roaring r;
+            for(auto fic : ficList)
+                r.add(fic.toInt());
+
+            QHash<int, Roaring> favourites;
+            favourites[ui->leGenreUser1->text().toInt()] = r;
+            iteratorProcessor.ReprocessGenreStats(inputs.ficGenresOriginalsInCompositeFormat, favourites);
+            listGenreData = iteratorProcessor.resultingGenreAuthorData[ui->leGenreUser1->text().toInt()];
+            listMoodData = iteratorProcessor.resultingMoodAuthorData[ui->leGenreUser1->text().toInt()];
+            iteratorProcessor.ReprocessGenreStats(inputs.ficGenresComposite, favourites);
+            adjustedListGenreData = iteratorProcessor.resultingGenreAuthorData[ui->leGenreUser1->text().toInt()];
+            adjustedListMoodData = iteratorProcessor.resultingMoodAuthorData[ui->leGenreUser1->text().toInt()];
+        }
+    }
+
+
+
+    FillFicsForUser(ui->cbUserIDs->currentText());
+
+
+    bool useOriginalMood =ui->cbMoodSource->currentIndex() == 1;
+    if(ui->cbGenreMood->currentIndex() == 0)
+        InitMoodCompareChartView(users, useOriginalMood);
+    else
+        InitGenreCompareChartView(users);
+
+}
+
+void ServitorWindow::FillFicsForUser(QString user)
+{
+    InitGrpcSource();
+
+    QVector<core::Fic> fics;
+    for(auto fic: matchesForUsers[user.toInt()].matches)
+    {
+        QVector<core::Fic> tempFics;
+        grpcSource->FetchFic(fic, &tempFics, core::StoryFilter::EUseThisFicType::utf_db_id);
+        fics+=tempFics;
+    }
+    ui->edtFics->clear();
+    for(auto fic : fics)
+    {
+        ui->edtFics->append(fic.title);
+    }
+}
+void ServitorWindow::on_cbMoodSource_currentIndexChanged(const QString &arg1)
+{
+    on_pbCompareGenres_clicked();
+}
+
+void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
+{
+    FillFicsForUser(ui->cbUserIDs->currentText());
 }

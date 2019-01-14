@@ -100,6 +100,8 @@ int main(int argc, char *argv[])
     w.env.interfaces.tasks = tasksInterface;
     w.env.thinClient = false;
     w.env.InitInterfaces();
+    w.env.userToken = QUuid::createUuid().toString();
+
     w.show();
 
 

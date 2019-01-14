@@ -98,6 +98,8 @@ public:
                        ProtoSpace::AuthorsForFicInReclistResponse* response) override;
     Status SearchByFFNID(ServerContext* context, const ProtoSpace::SearchByFFNIDTask* task,
                        ProtoSpace::SearchByFFNIDResponse* response) override;
+    Status GetUserMatches(ServerContext* context, const ProtoSpace::UserMatchRequest* task,
+                       ProtoSpace::UserMatchResponse* response) override;
 
 
 

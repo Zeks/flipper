@@ -160,7 +160,7 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
 
 DiagnosticSQLResult<bool> WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData>, QSqlDatabase db);
 
-DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(QSqlDatabase db, bool useOriginalOnly = false);
 DiagnosticSQLResult<bool> SetUserProfile(int id,  QSqlDatabase db);
 DiagnosticSQLResult<int> GetUserProfile(QSqlDatabase db);
 DiagnosticSQLResult<int> GetRecommenderIDByFFNId(int id, QSqlDatabase db);

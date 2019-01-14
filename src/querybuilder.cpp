@@ -302,7 +302,10 @@ QString DefaultQueryBuilder::ProcessFicID(StoryFilter filter)
     if(filter.useThisFic == -1)
         return result;
 
-    result = QString(" and f.ffn_id = %1 ").arg(QString::number(filter.useThisFic));
+    if(filter.useThisFicType == StoryFilter::EUseThisFicType::utf_ffn_id )
+        result = QString(" and f.ffn_id = %1 ").arg(QString::number(filter.useThisFic));
+    else
+        result = QString(" and f.id = %1 ").arg(QString::number(filter.useThisFic));
     return result;
 }
 QString DefaultQueryBuilder::ProcessRecommenders(StoryFilter filter)

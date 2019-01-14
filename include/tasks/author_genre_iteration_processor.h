@@ -30,6 +30,7 @@ public:
     void ReprocessGenreStats(QHash<int, QList<genre_stats::GenreBit>> inputFicData,
                              QHash<int, Roaring> inputAuthorData);
 
+
     QHash<int, genre_stats::ListMoodData> CreateMoodDataFromGenres(QHash<int, std::array<double, 22>>&);
 
 

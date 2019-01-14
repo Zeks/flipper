@@ -38,7 +38,7 @@ class QChartView;
 class QChart;
 class QValueAxis;
 }
-
+class FicSourceGRPC;
 struct GenreDetectionSources{
     QHash<int, std::array<double, 22>> genreAuthorLists;
     QHash<int, genre_stats::ListMoodData> moodAuthorLists;
@@ -53,6 +53,12 @@ struct CutoffControls{
     float bonds = 0.3f;
     float hurty = 0.15f;
 };
+
+struct ChartData{
+    QSharedPointer<QtCharts::QChartView> chartView;
+    QSharedPointer<QtCharts::QChart> chart;
+    QSharedPointer<QtCharts::QValueAxis> axisY;
+};
 class ServitorWindow : public QMainWindow
 {
     Q_OBJECT
@@ -63,10 +69,13 @@ public:
     void ReadSettings();
     void WriteSettings();
     void UpdateInterval(int, int);
-    void CreateChartView();
+    void CreateChartView(ChartData&, QWidget *widget, QStringList categories);
+    void CreateChartViews();
     void InitGenreChartView(QString);
     void InitMoodChartView(QString);
-
+    void InitGenreCompareChartView(QList<int> users);
+    void InitMoodCompareChartView(QList<int> users, bool useOriginalMoods = true);
+    void InitGrpcSource();
 
     void DetectGenres(int minAuthorRecs, int minFoundLists);
     void CreateAdjustedGenresForAuthors();
@@ -77,6 +86,7 @@ public:
     void LoadDataForCalculation(CalcDataHolder& data);
     void ProcessCDHData(CalcDataHolder& data);
     void CalcConstantMemory();
+    void FillFicsForUser(QString);
     QHash<uint32_t, core::FicWeightPtr> ficData;
     QHash<uint32_t, QSet<uint32_t>> ficsForFandoms;
     QHash<uint32_t, Roaring> ficsToFavLists;
@@ -87,16 +97,22 @@ public:
     AuthorGenreIterationProcessor iteratorProcessor;
     QHash<int, std::array<double, 22>> authorGenreDataOriginal;
 
+    std::array<double, 22> listGenreData;
+    genre_stats::ListMoodData listMoodData;
+    std::array<double, 22> adjustedListGenreData;
+    genre_stats::ListMoodData adjustedListMoodData;
+
     QHash<int, genre_stats::ListMoodData> originalMoodData;
     QHash<int, genre_stats::ListMoodData> adjustedMoodData;
 
-    QSharedPointer<QtCharts::QChartView> genreChartView;
-    QSharedPointer<QtCharts::QChart> genreChart;
-    QSharedPointer<QtCharts::QValueAxis> genreAxisY;
-
-    QSharedPointer<QtCharts::QChartView> moodChartView;
-    QSharedPointer<QtCharts::QChart> moodChart;
-    QSharedPointer<QtCharts::QValueAxis> moodAxisY;
+    ChartData viewGenre;
+    ChartData viewMood;
+    ChartData viewListCompare;
+    ChartData viewMoodCompare;
+    QStringList genreList;
+    QStringList moodList;
+    QHash<int, core::MatchedFics> matchesForUsers;
+    QSharedPointer<FicSourceGRPC> grpcSource;
 
 private slots:
     void on_pbLoadFic_clicked();
@@ -149,6 +165,12 @@ private slots:
     void on_cbMoodSelector_currentTextChanged(const QString &arg1);
 
     void on_pbCalcFicGenres_clicked();
+
+    void on_pbCompareGenres_clicked();
+
+    void on_cbMoodSource_currentIndexChanged(const QString &arg1);
+
+    void on_cbUserIDs_currentIndexChanged(const QString &arg1);
 
 private:
     Ui::servitorWindow *ui;

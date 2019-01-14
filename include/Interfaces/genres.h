@@ -130,14 +130,16 @@ public:
     void QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves);
     bool WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics);
     bool WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fics);
-    QHash<int, QList<genre_stats::GenreBit>> GetFullGenreList();
+    QHash<int, QList<genre_stats::GenreBit>> GetFullGenreList(bool useOriginalgenres = false);
     static void LogGenreDistribution(std::array<double, 22>& data, QString target= "");
     static QString MoodForGenre(QString genre);
     static void WriteMoodValue(QString mood,  float value, genre_stats::ListMoodData& );
+    static float ReadMoodValue(QString mood, const genre_stats::ListMoodData& );
 
 
     GenreIndex index;
     QSqlDatabase db;
+    bool loadOriginalGenresOnly = false;
 private:
 
     QSet<QString> genres;

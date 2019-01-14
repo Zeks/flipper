@@ -101,6 +101,19 @@ void RecCalculator::SaveFavouritesData()
 {
     //thread_boost::SaveFavouritesData("ServerData", favourites);
 }
+
+MatchedFics RecCalculator::GetMatchedFics(Roaring user1, int user2)
+{
+    MatchedFics result;
+    QLOG_INFO() << "Blargh";
+    Roaring temp = user1;
+    temp = temp & holder.faves[user2];
+    for(auto fic : temp)
+        result.matches.push_back(fic);
+    result.ratio = static_cast<float>(holder.faves[user2].cardinality())/static_cast<float>(temp.cardinality());
+    return result;
+}
+
 enum class ECalcType{
     common,
     uncommon,

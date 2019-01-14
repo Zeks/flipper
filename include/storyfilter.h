@@ -91,6 +91,10 @@ struct StoryFilter{
         sll_very_close = 2,
         sll_exceptional = 3
     };
+    enum EUseThisFicType{
+      utf_ffn_id = 0,
+      utf_db_id = 1
+    };
     //do I even need that?
     //QString ficCategory;
     bool isValid = true;
@@ -142,6 +146,7 @@ struct StoryFilter{
     EGenrePresence genrePresenceForInclude;
     EGenrePresence genrePresenceForExclude;
     ESourceListLimiter sourcesLimiter = ESourceListLimiter::sll_all;
+    EUseThisFicType useThisFicType = EUseThisFicType::utf_ffn_id;
 
     int fandom = -1;
     QString website;
@@ -158,7 +163,7 @@ struct StoryFilter{
 
 //    QSet<int> allTaggedIDs;
 //    QSet<int> idsForActiveTags;
-    QVector<int> recFics;
+    QList<int> recFics;
     QHash<int, int> recsHash; // for use on the server
     QString userToken;
 };

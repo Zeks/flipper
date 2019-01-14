@@ -192,7 +192,6 @@ struct DataHolder
 };
 
 
-
 class RecommendationList;
 class RecCalculator
 {
@@ -205,6 +204,7 @@ public:
     void LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface);
     void LoadStoredFavouritesData();
     void SaveFavouritesData();
+    MatchedFics GetMatchedFics(Roaring user1, int user2);
 
     RecommendationListResult GetMatchedFicsForFavList(QHash<uint32_t, FicWeightPtr> fetchedFics,
                                                       QSharedPointer<core::RecommendationList> params);

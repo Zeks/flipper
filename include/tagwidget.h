@@ -42,6 +42,7 @@ public:
     void SetAddDialogVisibility(bool);
     bool UseTagsForAuthors();
     void ClearSelection();
+    bool DbIdsRequested();
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
 private:
@@ -59,7 +60,7 @@ signals:
     void refilter();
     void dbIDRequest();
     void tagReloadRequested();
-    void createUrlsForTags();
+    void createUrlsForTags(bool);
 
 
 public slots:

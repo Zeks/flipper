@@ -129,9 +129,13 @@ bool Genres::WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fi
     return database::puresql::WriteDetectedGenresIteration2(fics, db).success;
 }
 
-QHash<int, QList<genre_stats::GenreBit> > Genres::GetFullGenreList()
+
+QHash<int, QList<genre_stats::GenreBit> > Genres::GetFullGenreList(bool useOriginalgenres)
 {
-    return database::puresql::GetFullGenreList(db).data;
+    if(loadOriginalGenresOnly)
+        return database::puresql::GetFullGenreList(db, true).data;
+    else
+        return database::puresql::GetFullGenreList(db, useOriginalgenres).data;
 }
 
 void Genres::LogGenreDistribution(std::array<double, 22> &data, QString target)
@@ -197,6 +201,25 @@ void Genres::WriteMoodValue(QString mood, float value, genre_stats::ListMoodData
         data.strengthShocky+=value;
     if(mood =="Flirty")
         data.strengthFlirty+=value;
+}
+
+float Genres::ReadMoodValue(QString mood, const genre_stats::ListMoodData & data)
+{
+    if(mood =="Neutral")
+        return data.strengthNeutral;
+    if(mood =="Funny")
+        return data.strengthFunny;
+    if(mood =="Hurty")
+        return data.strengthHurty;
+    if(mood =="Bondy")
+        return data.strengthBondy;
+    if(mood =="Dramatic")
+        return data.strengthDramatic;
+    if(mood =="Shocky")
+        return data.strengthShocky;
+    if(mood =="Flirty")
+        return data.strengthFlirty;
+    return 0.f;
 }
 
 

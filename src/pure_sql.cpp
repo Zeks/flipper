@@ -1675,7 +1675,7 @@ DiagnosticSQLResult<bool> WriteDetectedGenresIteration2(QVector<genre_stats::Fic
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(QSqlDatabase db,bool useOriginalOnly)
 {
     QString qs = QString("select id, genres, "
                          " true_genre1, "
@@ -1691,11 +1691,8 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(Q
         QList<genre_stats::GenreBit> dataForFic;
         auto id = q.value("id").toInt();
         QString genres = q.value("genres").toString();
-        if(q.value("true_genre1").toString().trimmed().isEmpty())
+        if(q.value("true_genre1").toString().trimmed().isEmpty() || useOriginalOnly)
         {
-            if(id == 1067445)
-                QLOG_INFO() << "Loaded ID 1067445 in no tg branch";
-
             // genres not detected
 
             genres = genres.replace("Hurt/Comfort", "HurtComfort");
@@ -1711,8 +1708,7 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(Q
             }
         }
         else{
-            if(id == 1067445)
-                QLOG_INFO() << "Loaded ID 1067445 in tg branch";
+
             // genres detected
             for(int i = 1; i < 4; i++)
             {

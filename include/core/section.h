@@ -832,6 +832,10 @@ public:
     RecommendationListFicData ficData;
 };
 
+struct MatchedFics{
+    int ratio = 0;
+    QList<int> matches;
+};
 
 
 }
