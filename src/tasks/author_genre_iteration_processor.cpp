@@ -101,12 +101,19 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                     {
                         //if(genreBit.isInTheOriginal)
                         log +=  "{"  + actualBit + " " + QString::number(genreBit.relevance) + "} ";
+
+                        QString moodForGenre = interfaces::Genres::MoodForGenre(actualBit);
+
+//                        if( ((genreBit.relevance > 0.5 && moodForGenre != "Hurty" && moodForGenre != "Bondy") || genreBit.isInTheOriginal)
+//                                || genreBit.relevance > 1 )
                         if(genreBit.isInTheOriginal)
                         {
                             genreKeeper[actualBit] += genreBit.relevance;
-                            QString moodForGenre = interfaces::Genres::MoodForGenre(actualBit);
+
                             if(!moodHashForFic.contains(moodForGenre) || moodHashForFic[moodForGenre] < genreBit.relevance)
-                                moodHashForFic[moodForGenre] = genreBit.relevance;
+                                moodHashForFic[moodForGenre] = 1;
+                                //moodHashForFic[moodForGenre] = genreBit.relevance;
+
                         }
                     }
                 }

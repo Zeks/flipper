@@ -237,7 +237,7 @@ void ServitorWindow::InitGenreChartView(QString name)
 
     QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
     series->append(setOriginals);
-    series->append(setAdjusted);
+    //series->append(setAdjusted);
     genreChart->addSeries(series);
     genreChart->setGeometry(genreChartView->rect());
     genreChart->removeAxis(genreAxisY.data());
@@ -419,19 +419,19 @@ QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreD
             return input.moodAuthorLists[listId].strengthDramatic >= cutoff.drama;
         });
 
-        int64_t total = input.ficsToUse[fic].size();
+        int64_t totalUsersForFic = input.ficsToUse[fic].size();
 
         genre_stats::FicGenreData genreData;
         genreData.ficId = fic;
         genreData.originalGenres =  genreConverter.GetFFNGenreList(input.originalFicGenres[fic]);
-        genreData.totalLists = static_cast<int>(total);
-        genreData.strengthHumor = static_cast<float>(funny)/static_cast<float>(total);
-        genreData.strengthRomance = static_cast<float>(flirty)/static_cast<float>(total);
-        genreData.strengthDrama = static_cast<float>(dramatic)/static_cast<float>(total);
-        genreData.strengthBonds = static_cast<float>(bondy)/static_cast<float>(total);
-        genreData.strengthHurtComfort = static_cast<float>(hurty)/static_cast<float>(total);
-        genreData.strengthNeutralComposite = static_cast<float>(neutral)/static_cast<float>(total);
-        genreData.strengthNeutralAdventure = static_cast<float>(neutralAdventure)/static_cast<float>(total);
+        genreData.totalLists = static_cast<int>(totalUsersForFic);
+        genreData.strengthHumor = static_cast<float>(funny)/static_cast<float>(totalUsersForFic);
+        genreData.strengthRomance = static_cast<float>(flirty)/static_cast<float>(totalUsersForFic);
+        genreData.strengthDrama = static_cast<float>(dramatic)/static_cast<float>(totalUsersForFic);
+        genreData.strengthBonds = static_cast<float>(bondy)/static_cast<float>(totalUsersForFic);
+        genreData.strengthHurtComfort = static_cast<float>(hurty)/static_cast<float>(totalUsersForFic);
+        genreData.strengthNeutralComposite = static_cast<float>(neutral)/static_cast<float>(totalUsersForFic);
+        genreData.strengthNeutralAdventure = static_cast<float>(neutralAdventure)/static_cast<float>(totalUsersForFic);
         if(displayLog)
             genreData.Log();
         if(!userIterationForGenreProcessing)
@@ -728,12 +728,12 @@ void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int
                                                                                   filteredFicsToUse}, CutoffControls{}, false, ui->chkLogFic->isChecked());
     QLOG_INFO() << "////////////// ADJUSTED DATA /////////////////";
     CutoffControls customCutoff;
-    customCutoff.funny = 0.15;
-    customCutoff.adventure = 0.2;
-    customCutoff.flirty = 0.45;
-    customCutoff.drama = 0.2;
-    customCutoff.hurty = 0.12;
-    customCutoff.bonds = 0.3;
+//    customCutoff.funny = 0.15;
+//    customCutoff.adventure = 0.2;
+//    customCutoff.flirty = 0.45;
+//    customCutoff.drama = 0.2;
+//    customCutoff.hurty = 0.12;
+//    customCutoff.bonds = 0.3;
     ficGenreDataList = CreateGenreDataForFics({iteratorProcessor.resultingGenreAuthorData,
                                                                                   adjustedMoodData,
                                                                                   inputs.ficGenresOriginal,
