@@ -34,6 +34,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         // locking to make sure it's not modified when we search
         QReadLocker locker(&rngData->lock);
         containsWhere = rngData->randomIdLists.contains(where);
+        containsWhere  = rngData->randomIdLists[where].generationDate > QDateTime::currentDateTimeUtc().addDays(-1);
     }
 
     QLOG_INFO() << "RANDOM USING WHERE:" << where;
@@ -44,14 +45,15 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         auto idList = portableDBInterface->GetIdListForQuery(query);
         if(idList.size() == 0)
             idList.push_back("-1");
-        rngData->randomIdLists[where] = idList;
+        rngData->randomIdLists[where].ids = idList;
+        rngData->randomIdLists[where].generationDate = QDateTime::currentDateTimeUtc();
     }
     else
         QLOG_INFO() << "USING CACHED RANDOM SEQUENCE";
 
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 eng(rd()); // seed the generator
-    auto& currentList = rngData->randomIdLists[where];
+    auto& currentList = rngData->randomIdLists[where].ids;
     std::uniform_int_distribution<> distr(0, currentList.size()-1); // define the range
     for(auto i = 0; i < filter.maxFics; i++)
     {

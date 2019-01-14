@@ -31,9 +31,13 @@ struct IRNGGenerator{
     virtual QStringList Get(QSharedPointer<Query>, QString userToken, QSqlDatabase db, StoryFilter& filter)  = 0;
 };
 
+struct RNGList{
+    QDateTime generationDate;
+    QStringList ids;
+};
 
 struct RNGData{
-    QHash<QString, QStringList> randomIdLists;
+    QHash<QString, RNGList> randomIdLists;
     QReadWriteLock lock;
 };
 
