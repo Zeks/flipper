@@ -227,17 +227,27 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
     QHash<int, core::MatchedFics> fics;
     QLOG_INFO() << "received user task of size: " << task->test_users_size();
     Roaring r;
+    Roaring ignoredFandoms;
     if(task->user_fics_size() > 0)
     {
         for(int i = 0; i < task->user_fics_size(); i++)
             r.add(task->user_fics(i));
+        QLOG_INFO() << "reading fandom ignores";
+        for(int i = 0; i < task->fandom_ignores_size(); i++)
+        {
+            if(task->fandom_ignores(i) >= 0)
+                ignoredFandoms.add(task->fandom_ignores(i));
+        }
     }
     else
         r = holder->holder.faves[task->source_user()];
-
+    core::UserMatchesInput input;
+    input.userFavourites = r;
+    input.userIgnoredFandoms = ignoredFandoms;
     for(int i = 0; i < task->test_users_size(); i++)
     {
-        fics[task->test_users(i)] = holder->GetMatchedFics(r, task->test_users(i));
+        QLOG_INFO() << "Processing user: " << i;
+        fics[task->test_users(i)] = holder->GetMatchedFics(input, task->test_users(i));
         QLOG_INFO() << "Ratio for user: " << task->test_users(i) << " " << fics[task->test_users(i)].ratio;
         QLOG_INFO() << "Matches for user: " << task->test_users(i) << " " << fics[task->test_users(i)].matches;
     }
@@ -248,6 +258,7 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
       auto match = response->add_matches();
       match->set_user_id(user);
       match->set_ratio(fics[user].ratio);
+      match->set_ratio_without_ignores(fics[user].ratioWithoutIgnores);
       for(auto fic: fics[user].matches)
           match->add_fic_id(fic);
     }

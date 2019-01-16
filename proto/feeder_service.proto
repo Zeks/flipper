@@ -224,13 +224,15 @@ message UserMatchRequest{
     ControlInfo controls             = 1;
     int32 source_user                = 2;
     repeated int32 user_fics         = 3;
-    repeated int32 test_users        = 4;
+    repeated int32 fandom_ignores    = 4;
+    repeated int32 test_users        = 5;
 }
 message UserMatch{
-    int32 user_id             = 1;
-    int32 ratio               = 2; 
-    repeated int32 fic_id     = 3;
-    repeated string fic_title = 4;
+    int32 user_id                  = 1;
+    int32 ratio                    = 2; 
+    int32 ratio_without_ignores    = 3;
+    repeated int32 fic_id          = 4;
+    repeated string fic_title      = 5;
 }
 
 message UserMatchResponse{

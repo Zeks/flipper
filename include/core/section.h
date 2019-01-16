@@ -834,6 +834,7 @@ public:
 
 struct MatchedFics{
     int ratio = 0;
+    int ratioWithoutIgnores = 0;
     QList<int> matches;
 };
 

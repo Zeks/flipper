@@ -598,7 +598,7 @@ public:
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
     QHash<int, core::MatchedFics > GetMatchesForUsers(int sourceUser, QList<int> users);
-    QHash<int, core::MatchedFics> GetMatchesForUsers(QStringList userFics, QList<int> users);
+    QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches data, QList<int> users);
 
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
@@ -1096,6 +1096,7 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(int sourceU
     {
         auto match = response->matches(i);
         result[match.user_id()].ratio = match.ratio();
+        result[match.user_id()].ratioWithoutIgnores = match.ratio_without_ignores();
         for(auto j = 0; j < match.fic_id_size(); j++)
             result[match.user_id()].matches.push_back(match.fic_id(j));
     }
@@ -1103,7 +1104,7 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(int sourceU
     return result;
 }
 
-QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(QStringList userFics, QList<int> users)
+QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMatches data, QList<int> users)
 {
     QHash<int, core::MatchedFics> result;
 
@@ -1117,8 +1118,10 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(QStringList
     context.set_deadline(deadline);
 //    auto* controls = task.mutable_controls();
 //    controls->set_user_token(proto_converters::TS(userToken));
-    for(auto fic: userFics)
+    for(auto fic: data.userFics)
         task.add_user_fics(fic.toInt());
+    for(auto fic: data.userIgnores)
+        task.add_fandom_ignores(fic.toInt());
     for(auto user: users)
         task.add_test_users(user);
 
@@ -1132,6 +1135,7 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(QStringList
     {
         auto match = response->matches(i);
         result[match.user_id()].ratio = match.ratio();
+        result[match.user_id()].ratioWithoutIgnores = match.ratio_without_ignores();
         for(auto j = 0; j < match.fic_id_size(); j++)
             result[match.user_id()].matches.push_back(match.fic_id(j));
     }
@@ -1228,11 +1232,11 @@ QHash<int, core::MatchedFics > FicSourceGRPC::GetMatchesForUsers(int sourceUser,
         return {};
     return impl->GetMatchesForUsers(sourceUser, users);
 }
-QHash<int, core::MatchedFics> FicSourceGRPC::GetMatchesForUsers(QStringList userFics, QList<int> users)
+QHash<int, core::MatchedFics> FicSourceGRPC::GetMatchesForUsers(InputsForMatches data, QList<int> users)
 {
     if(!impl)
         return {};
-    return impl->GetMatchesForUsers(userFics, users);
+    return impl->GetMatchesForUsers(data, users);
 }
 ServerStatus FicSourceGRPC::GetStatus()
 {

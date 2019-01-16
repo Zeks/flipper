@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //using namespace QtCharts;
 #include "environment.h"
+#include "include/favholder.h"
 #include "third_party/roaring/roaring.hh"
 #include "include/calc_data_holder.h"
 #include "tasks/author_genre_iteration_processor.h"
@@ -59,6 +60,22 @@ struct ChartData{
     QSharedPointer<QtCharts::QChart> chart;
     QSharedPointer<QtCharts::QValueAxis> axisY;
 };
+
+struct InputForGenresIteration2{
+    typedef core::DataHolderInfo<core::rdt_favourites>::type FavType;
+    typedef core::DataHolderInfo<core::rdt_fic_genres_composite>::type FicGenreCompositeType;
+    typedef core::DataHolderInfo<core::rdt_fic_genres_original>::type FicGenreOriginalType;
+
+    FavType faves;
+    FicGenreCompositeType ficGenresComposite;
+    FicGenreCompositeType ficGenresOriginalsInCompositeFormat;
+    FicGenreOriginalType ficGenresOriginal;
+
+
+    FicGenreCompositeType filteredFicGenresComposite;
+    FicGenreOriginalType filteredFicGenresOriginal;
+};
+
 class ServitorWindow : public QMainWindow
 {
     Q_OBJECT
@@ -75,6 +92,7 @@ public:
     void InitMoodChartView(QString);
     void InitGenreCompareChartView(QList<int> users);
     void InitMoodCompareChartView(QList<int> users, bool useOriginalMoods = true);
+    void InitMatchingListChartView(genre_stats::ListMoodData data, genre_stats::ListMoodData combinedData);
     void InitGrpcSource();
 
     void DetectGenres(int minAuthorRecs, int minFoundLists);
@@ -87,6 +105,7 @@ public:
     void ProcessCDHData(CalcDataHolder& data);
     void CalcConstantMemory();
     void FillFicsForUser(QString);
+    QHash<int, int> CreateSummaryMatches();
     QHash<uint32_t, core::FicWeightPtr> ficData;
     QHash<uint32_t, QSet<uint32_t>> ficsForFandoms;
     QHash<uint32_t, Roaring> ficsToFavLists;
@@ -109,10 +128,12 @@ public:
     ChartData viewMood;
     ChartData viewListCompare;
     ChartData viewMoodCompare;
+    ChartData viewMatchingList;
     QStringList genreList;
     QStringList moodList;
     QHash<int, core::MatchedFics> matchesForUsers;
     QSharedPointer<FicSourceGRPC> grpcSource;
+    InputForGenresIteration2 inputs;
 
 private slots:
     void on_pbLoadFic_clicked();

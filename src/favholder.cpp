@@ -102,17 +102,6 @@ void RecCalculator::SaveFavouritesData()
     //thread_boost::SaveFavouritesData("ServerData", favourites);
 }
 
-MatchedFics RecCalculator::GetMatchedFics(Roaring user1, int user2)
-{
-    MatchedFics result;
-    QLOG_INFO() << "Blargh";
-    Roaring temp = user1;
-    temp = temp & holder.faves[user2];
-    for(auto fic : temp)
-        result.matches.push_back(fic);
-    result.ratio = static_cast<float>(holder.faves[user2].cardinality())/static_cast<float>(temp.cardinality());
-    return result;
-}
 
 enum class ECalcType{
     common,
@@ -225,6 +214,7 @@ public:
     virtual ~RecCalculatorImplBase(){}
 
     void Calc();
+    Roaring BuildIgnoreList();
     void FetchAuthorRelations();
     void CollectFicMatchQuality();
     void Filter(QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
@@ -413,6 +403,8 @@ void RecCalculatorImplBase::Calc(){
     });
     report.run();
 }
+
+
 void RecCalculatorImplBase::CollectVotes()
 {
     auto weightingFunc = GetWeightingFunc();
@@ -457,6 +449,37 @@ void RecCalculatorImplBase::CollectVotes()
         }
     });
 }
+
+Roaring RecCalculatorImplBase::BuildIgnoreList()
+{
+    Roaring ignores;
+    //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
+    QLOG_INFO() << "Building ignore list";
+    TimedAction ignoresCreation("Building ignores",[&](){
+        for(auto fic: fics)
+        {
+            if(!fic)
+                continue;
+
+            int count = 0;
+            bool inIgnored = false;
+            for(auto fandom: fic->fandoms)
+            {
+                if(fandom != -1)
+                    count++;
+                if(params->ignoredFandoms.contains(fandom) && fandom > 1)
+                    inIgnored = true;
+            }
+            if(/*count == 1 && */inIgnored)
+                ignores.add(fic->id);
+
+        }
+    });
+    ignoresCreation.run();
+    QLOG_INFO() << "fanfic ignore list is of size: " << ignores.cardinality();
+    return ignores;
+}
+
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
     qDebug() << "faves is of size: " << favs.size();
@@ -701,6 +724,37 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
 
     return calculator->result;
 }
+
+MatchedFics RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
+{
+    QLOG_INFO() << "Creating calculator";
+    QSharedPointer<RecCalculatorImplWeighted> calculator;
+    calculator.reset(new RecCalculatorImplWeighted(holder.faves, holder.fics));
+    //calculator->fetchedFics = fetchedFics;
+    QSharedPointer<RecommendationList> params(new RecommendationList);
+    for(auto ignore: input.userIgnoredFandoms)
+        params->ignoredFandoms.insert(ignore);
+    calculator->params = params;
+
+    auto ignores = calculator->BuildIgnoreList();
+    QLOG_INFO() << "Making & list";
+    Roaring ignoredTemp = holder.faves[user2];
+    ignoredTemp = ignoredTemp & ignores;
+    QLOG_INFO() << "Checking cardinality";
+    auto unignoredSize = holder.faves[user2].xor_cardinality(ignoredTemp);
+
+
+    MatchedFics result;
+    QLOG_INFO() << "Blargh";
+    Roaring temp = input.userFavourites;
+    temp = temp & holder.faves[user2];
+    for(auto fic : temp)
+        result.matches.push_back(fic);
+    result.ratioWithoutIgnores = static_cast<float>(holder.faves[user2].cardinality())/static_cast<float>(temp.cardinality());
+    result.ratio = static_cast<float>(unignoredSize)/static_cast<float>(temp.cardinality());
+    return result;
+}
+
 
 // unused logging chunk
 //QList<AuthorResult> authors = authorsResult.values();

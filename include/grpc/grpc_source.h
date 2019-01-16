@@ -60,6 +60,11 @@ struct ServerStatus
     QString error;
 };
 
+struct InputsForMatches{
+    QStringList userFics;
+    QStringList userIgnores;
+};
+
 class FicSourceGRPC : public FicSource
 {
 public:
@@ -77,7 +82,7 @@ public:
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int>);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
     QHash<int, core::MatchedFics> GetMatchesForUsers(int sourceUser, QList<int> users);
-    QHash<int, core::MatchedFics> GetMatchesForUsers(QStringList, QList<int> users);
+    QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches, QList<int> users);
 
 
     ServerStatus GetStatus();
