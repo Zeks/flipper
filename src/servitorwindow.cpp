@@ -379,6 +379,7 @@ void ServitorWindow::InitGenreCompareChartView(QList<int> users)
 
 void ServitorWindow::InitMoodCompareChartView(QList<int> users, bool useOriginalMoods)
 {
+    QLOG_INFO() << "InitMoodCompareChartView";
     viewMoodCompare.chart->removeAllSeries();
 
     QList<QtCharts::QBarSet *> userSets;
@@ -394,8 +395,9 @@ void ServitorWindow::InitMoodCompareChartView(QList<int> users, bool useOriginal
                                                      + "(" + ratio + "/" + ratioWithoutIgnores + ")"));
         }
     }
-
+    QLOG_INFO() << "InitMoodCompareChartView 2";
     userSets.push_back(new QtCharts::QBarSet("Diff"));
+    QLOG_INFO() << "InitMoodCompareChartView 3";
 
     genre_stats::ListMoodData moodSumData;
     for(int i =0 ; i < moodList.size(); i++)
@@ -419,7 +421,7 @@ void ServitorWindow::InitMoodCompareChartView(QList<int> users, bool useOriginal
 
         }
     }
-
+    QLOG_INFO() << "1";
     float sum = 0, sumMeaningful = 0;
     genre_stats::ListMoodData averageDiffData;
     for(int i =0 ; i < moodList.size(); i++)
@@ -433,6 +435,7 @@ void ServitorWindow::InitMoodCompareChartView(QList<int> users, bool useOriginal
         if(moodList[i] != "Neutral" && moodList[i] != "Funny")
             sumMeaningful  += divided;
     }
+    QLOG_INFO() << "2";
     ui->leFinalDiff->setText(QString::number(sum));
     ui->leMeaningfulMoodDiff->setText(QString::number(sumMeaningful));
 
@@ -460,12 +463,12 @@ void ServitorWindow::InitMoodCompareChartView(QList<int> users, bool useOriginal
         *userSets[users.size()] << interfaces::Genres::ReadMoodValue(moodList[i], averageDiffData);
     }
 
-
+    QLOG_INFO() << "3";
 
     QtCharts::QBarSeries *series = new QtCharts::QBarSeries();
     for(auto u = 0; u < userSets.size(); u++)
         series->append(userSets[u]);
-
+    QLOG_INFO() << "4";
     viewMoodCompare.chart->addSeries(series);
     viewMoodCompare.chart->setGeometry(viewMoodCompare.chartView->rect());
     viewMoodCompare.chart->removeAxis(viewMoodCompare.axisY.data());
@@ -1766,29 +1769,36 @@ void ServitorWindow::on_pbCalcFicGenres_clicked()
 
 void ServitorWindow::on_pbCompareGenres_clicked()
 {
+    QLOG_INFO() << "on_pbCompareGenres_clicked 1";
     if(ui->leGenreUser1->text().isEmpty() || ui->leGenreUser2->text().isEmpty())
         return;
 
     int user1 = ui->leGenreUser1->text().trimmed().toInt();
     QString otherUsers = ui->leGenreUser2->text().trimmed();
+    QLOG_INFO() << "on_pbCompareGenres_clicked 1.1";
 
 
     auto db = QSqlDatabase::database();
+    QLOG_INFO() << "on_pbCompareGenres_clicked 1.2";
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     auto authors= QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
+    QLOG_INFO() << "on_pbCompareGenres_clicked 1.3";
     genres->db = db;
     fanfics->db = db;
     authors->db = db;
-
+    QLOG_INFO() << "on_pbCompareGenres_clicked 1.4";
 
 
     QList<int> users;
-
+    QLOG_INFO() << "on_pbCompareGenres_clicked 1.5";
     users << user1;
+    ui->cbUserIDs->blockSignals(true);
     ui->cbUserIDs->clear();
+    ui->cbUserIDs->blockSignals(false);
+    QLOG_INFO() << "on_pbCompareGenres_clicked 1.6";
     InitGrpcSource();
-
+    QLOG_INFO() << "on_pbCompareGenres_clicked 2";
     QList<int> otherUserIds;
     for(auto user: otherUsers.split(QRegExp("[\\s,]"), QString::SkipEmptyParts))
     {
@@ -1807,7 +1817,27 @@ void ServitorWindow::on_pbCompareGenres_clicked()
         ignoreList = ui->edtIgnores->toPlainText().split(QRegExp("[\\s,]"), QString::SkipEmptyParts);
         matchesForUsers = grpcSource->GetMatchesForUsers({ficList, ignoreList}, otherUserIds);
     }
+    QLOG_INFO() << "on_pbCompareGenres_clicked 3";
 
+
+    if(!ui->chkOver50->isChecked())
+    {
+        QList<int> toErase;
+        for(auto user : matchesForUsers.keys())
+        {
+            if(matchesForUsers[user].ratioWithoutIgnores > 50)
+                toErase.push_back(user);
+        }
+        for(auto user : toErase)
+        {
+            matchesForUsers.remove(user);
+        }
+        users = {user1};
+        for(auto user : matchesForUsers.keys())
+            users.push_back(user);
+
+    }
+    QLOG_INFO() << "on_pbCompareGenres_clicked 4";
     if(authorGenreDataOriginal.size() == 0)
     {
 
@@ -1832,9 +1862,11 @@ void ServitorWindow::on_pbCompareGenres_clicked()
 //        LoadDataForCalc<core::rdt_fic_genres_original,
 //                InputForGenresIteration2::FicGenreOriginalType,
 //                QSharedPointer<interfaces::Genres>>(genres, inputs.ficGenresOriginal, "TempData");
+        QLOG_INFO() << "on_pbCompareGenres_clicked 5";
         originalMoodData = iteratorProcessor.CreateMoodDataFromGenres(authorGenreDataOriginal);
         iteratorProcessor.ReprocessGenreStats(inputs.ficGenresComposite, faves);
         adjustedMoodData = iteratorProcessor.resultingMoodAuthorData;
+        QLOG_INFO() << "on_pbCompareGenres_clicked 6";
         {
             AuthorGenreIterationProcessor iteratorProcessor;
             Roaring r;
@@ -1851,11 +1883,12 @@ void ServitorWindow::on_pbCompareGenres_clicked()
             adjustedListMoodData = iteratorProcessor.resultingMoodAuthorData[ui->leGenreUser1->text().toInt()];
         }
     }
+    QLOG_INFO() << "on_pbCompareGenres_clicked 7";
 
 
 
     FillFicsForUser(ui->cbUserIDs->currentText());
-
+    QLOG_INFO() << "on_pbCompareGenres_clicked 8";
 
     bool useOriginalMood =ui->cbMoodSource->currentIndex() == 1;
     if(ui->cbGenreMood->currentIndex() == 0)

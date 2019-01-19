@@ -488,13 +488,6 @@
           </spacer>
          </item>
          <item>
-          <widget class="QCheckBox" name="chkOver50">
-           <property name="text">
-            <string>Over 50</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QComboBox" name="cbGenreMood">
            <item>
             <property name="text">
@@ -583,6 +576,16 @@
            </property>
            <property name="text">
             <string>100646,71471,55125</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="chkOver50">
+           <property name="text">
+            <string>Over 50</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

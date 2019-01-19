@@ -83,6 +83,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
 
     calculator->holder.LoadData<core::rdt_fics>("ServerData");
     calculator->holder.LoadData<core::rdt_favourites>("ServerData");
+    calculator->holder.LoadData<core::rdt_author_genre_distribution>("ServerData");
 
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
@@ -249,6 +250,7 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
         QLOG_INFO() << "Processing user: " << i;
         fics[task->test_users(i)] = holder->GetMatchedFics(input, task->test_users(i));
         QLOG_INFO() << "Ratio for user: " << task->test_users(i) << " " << fics[task->test_users(i)].ratio;
+        QLOG_INFO() << "Ratio without ignores for user: " << task->test_users(i) << " " << fics[task->test_users(i)].ratioWithoutIgnores;
         QLOG_INFO() << "Matches for user: " << task->test_users(i) << " " << fics[task->test_users(i)].matches;
     }
     QLOG_INFO() << "Responding";
