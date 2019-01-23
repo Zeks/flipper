@@ -1513,19 +1513,25 @@ DiagnosticSQLResult<QHash<uint32_t, core::FicWeightPtr>> GetFicsForRecCreation(Q
 DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDatabase db)
 {
     SqlContext<int> ctx(db);
-
+    QLOG_INFO() << "keys list:" << hash.keys();
     for(int ffn_id: hash.keys())
     {
         ctx.bindValue("ffn_id", ffn_id);
-        ctx.FetchSingleValue<int>("id", -1,true, "select id from fanfics where ffn_id = :ffn_id");
+        ctx.FetchSingleValue<int>("id", -1,false, "select id from fanfics where ffn_id = :ffn_id");
         QString error = ctx.result.oracleError;
         if(!error.isEmpty() && error != "no data to read")
         {
+            QLOG_ERROR() << "///ERROR///" << error;
             ctx.result.success = false;
             break;
         }
-        hash[ffn_id] = ctx.result.data;
+        if(ctx.result.data != -1)
+            hash[ffn_id] = ctx.result.data;
+        else
+            hash.remove(ffn_id);
     }
+
+    QLOG_INFO() << "Resulting list:" << hash;
 
     SqlContext<bool> ctx1(db);
     ctx1.result.success = ctx.result.success;
@@ -3335,14 +3341,19 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
                          ":value_common, :value_uncommon, :value_rare, :value_unique)");
 
     SqlContext<bool> ctx(db, qs);
-    ctx.bindValue("listId", list->id);
+    //QLOG_INFO() << "Origins list: " << list->ficData.sourceFics;
+
     qDebug() << "Creating new vote breakdown records for list with id: " << list->id;
+    ctx.bindValue("listId", list->id);
     for(int i = 0; i < list->ficData.fics.size(); i++)
     {
+
         int ficId = list->ficData.fics.at(i);
+
         ctx.bindValue("ficId", ficId);
         ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
         bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
+        //QLOG_INFO() << "Writing fic: " << ficId << " isOrigin: " << isOrigin;
         ctx.bindValue("is_origin", isOrigin);
         ctx.bindValue("breakdown_available", true);
 

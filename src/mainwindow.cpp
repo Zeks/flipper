@@ -1922,7 +1922,7 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
     bool ownRecs = false;
-    if(ui->chkAutomaticLike->isChecked())
+    if(ui->chkUserOwnProfile->isChecked())
     {
         QMessageBox m;
         m.setIcon(QMessageBox::Warning);
@@ -1937,9 +1937,9 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         m.exec();
         if(m.clickedButton() != yesButton)
             return;
-    }
-    if(ui->chkUserOwnProfile->isChecked())
+
         ownRecs = true;
+    }
 
     TimedAction action("Full list creation: ",[&](){
         QRegularExpression rx("(\\d{1,9})");
@@ -1976,7 +1976,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         TaskProgressGuard guard(this);
 
         QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
-        auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike->isChecked(), false);
+        auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike->isChecked() || ownRecs, false);
         if(result == -1)
         {
             QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"

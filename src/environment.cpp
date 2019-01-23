@@ -505,8 +505,6 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     list->id = interfaces.recs->GetListIdForName(list->name);
     qDebug() << "Fetched name for list is: " << list->name;
 
-    bool result = grpcSource->GetRecommendationListFromServer(*list);
-
     QVector<core::IdPack> pack;
     pack.resize(sourceFics.size());
     int i = 0;
@@ -516,8 +514,13 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         i++;
     }
     grpcSource->GetInternalIDsForFics(&pack);
-    QSet<int> sourceSet;
-    sourceSet.reserve(sourceFics.size());
+
+
+    bool result = grpcSource->GetRecommendationListFromServer(*list);
+
+
+//    QSet<int> sourceSet;
+//    sourceSet.reserve(sourceFics.size());
     for(auto id: pack)
         list->ficData.sourceFics.insert(id.db);
 
@@ -554,8 +557,12 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
                             + " " + QString::number(list->ficData.matchReport[key]) + "<br>");
         if(automaticLike)
         {
-            for(auto fic: sourceSet)
+            QLOG_INFO() << "autolike is enabled";
+            for(auto fic: list->ficData.sourceFics)
+            {
+                //QLOG_INFO() << "liking fic: "  << fic;
                 interfaces.tags->SetTagForFic(fic, "Liked");
+            }
         }
     });
     action.run();
