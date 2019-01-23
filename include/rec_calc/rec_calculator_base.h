@@ -37,14 +37,19 @@ struct FicBaseScoreCalculator{
 
 };
 
+struct RecInputVectors{
+    const DataHolder::FavType& faves;
+    const DataHolder::FicType& fics;
+    const DataHolder::GenreType& genres;
+};
+
 class RecCalculatorImplBase
 {
 public:
     typedef QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> FilterListType;
     typedef QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> ActionListType;
 
-    RecCalculatorImplBase(const DataHolder::FavType& faves,
-                          const DataHolder::FicType& fics):favs(faves),fics(fics){}
+    RecCalculatorImplBase(RecInputVectors input):inputs(input){}
 
     virtual ~RecCalculatorImplBase(){}
 
@@ -63,8 +68,7 @@ public:
 
 
     int matchSum = 0;
-    const DataHolder::FavType& favs;
-    const DataHolder::FicType& fics;
+    RecInputVectors inputs;
     QSharedPointer<RecommendationList> params;
     //QList<int> matchedAuthors;
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
@@ -89,7 +93,7 @@ static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & aut
 //auto ratioAccumulator = [&ratioSum](RecCalculatorImplBase* ,AuthorResult & author){ratioSum+=author.ratio;};
 class RecCalculatorImplDefault: public RecCalculatorImplBase{
 public:
-    RecCalculatorImplDefault(const DataHolder::FavType& faves, const DataHolder::FicType& fics): RecCalculatorImplBase(faves, fics){}
+    RecCalculatorImplDefault(RecInputVectors input): RecCalculatorImplBase(input){}
     virtual FilterListType GetFilterList(){
         return {matchesFilter, ratioFilter};
     }

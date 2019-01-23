@@ -118,7 +118,7 @@ auto valueFetcher){
 
 
 auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBase,auto& destination){
-    QVector<QFuture<typename std::remove_reference<decltype(destination)>::type>> futures;
+    static QVector<QFuture<typename std::remove_reference<decltype(destination)>::type>> futures;
     for(int i = 0; i < QThread::idealThreadCount()-1; i++)
     {
         futures.push_back(QtConcurrent::run([nameBase,i, loaderFunc](){

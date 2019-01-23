@@ -80,9 +80,9 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
 {
     QSharedPointer<RecCalculatorImplBase> calculator;
     if(params->useWeighting)
-        calculator.reset(new RecCalculatorImplWeighted(holder.faves, holder.fics));
+        calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.genres}));
     else
-        calculator.reset(new RecCalculatorImplDefault(holder.faves, holder.fics));
+        calculator.reset(new RecCalculatorImplDefault({holder.faves, holder.fics, holder.genres}));
     calculator->fetchedFics = fetchedFics;
     calculator->params = params;
     TimedAction action("Reclist Creation",[&](){
@@ -98,7 +98,7 @@ MatchedFics RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
 {
     QLOG_INFO() << "Creating calculator";
     QSharedPointer<RecCalculatorImplWeighted> calculator;
-    calculator.reset(new RecCalculatorImplWeighted(holder.faves, holder.fics));
+    calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.genres}));
     //calculator->fetchedFics = fetchedFics;
     QSharedPointer<RecommendationList> params(new RecommendationList);
     for(auto ignore: input.userIgnoredFandoms)

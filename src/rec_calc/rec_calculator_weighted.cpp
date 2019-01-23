@@ -74,7 +74,7 @@ std::function<AuthorWeightingResult(AuthorResult&, int, int)> RecCalculatorImplW
 }
 
 void RecCalculatorImplWeighted::CalcWeightingParams(){
-    int matchMedian = matchSum/favs.size();
+    int matchMedian = matchSum/inputs.faves.size();
     ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(filteredAuthors.size());
 
     double normalizer = 1./static_cast<double>(filteredAuthors.size()-1.);
@@ -89,8 +89,8 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     qDebug () << "median value is: " << matchMedian;
     qDebug () << "median ratio is: " << ratioMedian;
 
-    auto keysRatio = favs.keys();
-    auto keysMedian = favs.keys();
+    auto keysRatio = inputs.faves.keys();
+    auto keysMedian = inputs.faves.keys();
     std::sort(keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
         return allAuthors[i1].matches < allAuthors[i2].matches;
     });

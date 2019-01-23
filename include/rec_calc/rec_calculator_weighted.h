@@ -24,7 +24,7 @@ double sqrt_coef(double ratio, double median, double sigma, int base, int scaler
 
 class RecCalculatorImplWeighted : public RecCalculatorImplBase{
 public:
-    RecCalculatorImplWeighted(const DataHolder::FavType& faves,const DataHolder::FicType& fics): RecCalculatorImplBase(faves, fics){}
+    RecCalculatorImplWeighted(RecInputVectors input): RecCalculatorImplBase(input){}
     virtual FilterListType GetFilterList();
     virtual ActionListType GetActionList();
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc();

@@ -44,7 +44,7 @@ void RecCalculatorImplBase::CollectVotes()
     auto authorSize = filteredAuthors.size();
     qDebug() << "Max Matches:" <<  prevMaximumMatches;
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [this](int author){
-        for(auto fic: favs[author])
+        for(auto fic: inputs.faves[author])
         {
             result.recommendations[fic]+= 1;
         }
@@ -74,7 +74,7 @@ void RecCalculatorImplBase::CollectVotes()
     result.recommendations.clear();
 
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this](int author){
-        for(auto fic: favs[author])
+        for(auto fic: inputs.faves[author])
         {
             auto weighting = weightingFunc(allAuthors[author],authorSize, maxValue );
             result.recommendations[fic]+= weighting.GetCoefficient();
@@ -89,7 +89,7 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
     //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
     QLOG_INFO() << "Building ignore list";
     TimedAction ignoresCreation("Building ignores",[&](){
-        for(auto fic: fics)
+        for(auto fic: inputs.fics)
         {
             if(!fic)
                 continue;
@@ -115,12 +115,12 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
 
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
-    qDebug() << "faves is of size: " << favs.size();
-    allAuthors.reserve(favs.size());
+    qDebug() << "faves is of size: " << inputs.faves.size();
+    allAuthors.reserve(inputs.faves.size());
     Roaring ignores;
     //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
     TimedAction ignoresCreation("Building ignores",[&](){
-        for(auto fic: fics)
+        for(auto fic: inputs.fics)
         {
             int count = 0;
             bool inIgnored = false;
@@ -149,8 +149,8 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     minMatches =  params->minimumMatch;
     maximumMatches = minMatches;
     TimedAction action("Relations Creation",[&](){
-        auto it = favs.begin();
-        while (it != favs.end())
+        auto it = inputs.faves.begin();
+        while (it != inputs.faves.end())
         {
             if(params->userFFNId == it.key())
             {
@@ -206,13 +206,13 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
     {
         tempAuthors.push_back(authorId);
         auto& author = allAuthors[authorId];
-        auto& authorFaves = favs[authorId];
+        auto& authorFaves = inputs.faves[authorId];
         Roaring temp = ownFavourites;
         auto matches = temp & authorFaves;
         for(auto value : matches)
         {
-            auto itFic = fics.find(value);
-            if(itFic == fics.end())
+            auto itFic = inputs.fics.find(value);
+            if(itFic == inputs.fics.end())
                 continue;
 
             // < 500 1 votes
