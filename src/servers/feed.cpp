@@ -83,6 +83,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
 
     calculator->holder.LoadData<core::rdt_fics>("ServerData");
     calculator->holder.LoadData<core::rdt_favourites>("ServerData");
+    calculator->holder.LoadData<core::rdt_author_genre_distribution>("ServerData");
 
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
@@ -189,7 +190,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
 }
 grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpace::SearchByFFNIDTask *task, ProtoSpace::SearchByFFNIDResponse *response)
 {
-    RequestContext reqContext("Authors for fic in reclist", task->controls(), this);
+    RequestContext reqContext("Search by FFN id", task->controls(), this);
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
@@ -200,7 +201,13 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     auto ficSource = InitFicSource(reqContext.userToken, reqContext.dbContext.dbInterface);
     core::StoryFilter filter;
     filter.mode = core::StoryFilter::filtering_in_fics;
+    filter.sortMode = core::StoryFilter::sm_wordcount;
+    filter.slashFilter.slashFilterEnabled = false;
+
     filter.useThisFic = task->id();
+    filter.useThisFicType = task->id_type() == ProtoSpace::SearchByFFNIDTask::ffn ? core::StoryFilter::EUseThisFicType::utf_ffn_id : core::StoryFilter::EUseThisFicType::utf_db_id;
+    QLOG_INFO() << "Fetching data for fic ID: " << task->id();
+    QLOG_INFO() << "ID type: " << task->id_type();
 
     QVector<core::Fic> data;
     TimedAction action("Fetching data",[&](){
@@ -210,6 +217,53 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     for(const auto& fic: data)
         proto_converters::LocalFicToProtoFic(fic, response->mutable_fanfic());
     response->set_success(true);
+    return Status::OK;
+}
+
+grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const ProtoSpace::UserMatchRequest *task, ProtoSpace::UserMatchResponse *response)
+{
+    Q_UNUSED(context);
+    QLOG_INFO() << "Starting user matches";
+    An<core::RecCalculator> holder;
+    QHash<int, core::MatchedFics> fics;
+    QLOG_INFO() << "received user task of size: " << task->test_users_size();
+    Roaring r;
+    Roaring ignoredFandoms;
+    if(task->user_fics_size() > 0)
+    {
+        for(int i = 0; i < task->user_fics_size(); i++)
+            r.add(task->user_fics(i));
+        QLOG_INFO() << "reading fandom ignores";
+        for(int i = 0; i < task->fandom_ignores_size(); i++)
+        {
+            if(task->fandom_ignores(i) >= 0)
+                ignoredFandoms.add(task->fandom_ignores(i));
+        }
+    }
+    else
+        r = holder->holder.faves[task->source_user()];
+    core::UserMatchesInput input;
+    input.userFavourites = r;
+    input.userIgnoredFandoms = ignoredFandoms;
+    for(int i = 0; i < task->test_users_size(); i++)
+    {
+        QLOG_INFO() << "Processing user: " << i;
+        fics[task->test_users(i)] = holder->GetMatchedFics(input, task->test_users(i));
+        QLOG_INFO() << "Ratio for user: " << task->test_users(i) << " " << fics[task->test_users(i)].ratio;
+        QLOG_INFO() << "Ratio without ignores for user: " << task->test_users(i) << " " << fics[task->test_users(i)].ratioWithoutIgnores;
+        QLOG_INFO() << "Matches for user: " << task->test_users(i) << " " << fics[task->test_users(i)].matches;
+    }
+    QLOG_INFO() << "Responding";
+    response->set_success(true);
+    for(auto user : fics.keys())
+    {
+      auto match = response->add_matches();
+      match->set_user_id(user);
+      match->set_ratio(fics[user].ratio);
+      match->set_ratio_without_ignores(fics[user].ratioWithoutIgnores);
+      for(auto fic: fics[user].matches)
+          match->add_fic_id(fic);
+    }
     return Status::OK;
 }
 Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicCountTask* task,

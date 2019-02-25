@@ -51,9 +51,13 @@ message SearchResponse{
     ResponseInfo response_info            = 2;
 }
 message SearchByFFNIDTask
-{
+{    enum IDType{
+        ffn         = 0;
+        db          = 1;
+    };
     ControlInfo controls    = 1;
     int32 id                = 2;
+    IDType id_type          = 3;
 }
 
 message SearchByFFNIDResponse{
@@ -216,6 +220,26 @@ message AuthorsForFicInReclistResponse{
     repeated int32 filtered_authors = 2; 
     ResponseInfo response_info      = 3;
 }
+message UserMatchRequest{
+    ControlInfo controls             = 1;
+    int32 source_user                = 2;
+    repeated int32 user_fics         = 3;
+    repeated int32 fandom_ignores    = 4;
+    repeated int32 test_users        = 5;
+}
+message UserMatch{
+    int32 user_id                  = 1;
+    int32 ratio                    = 2; 
+    int32 ratio_without_ignores    = 3;
+    repeated int32 fic_id          = 4;
+    repeated string fic_title      = 5;
+}
+
+message UserMatchResponse{
+    bool success                    = 1;
+    repeated UserMatch matches      = 2; 
+    ResponseInfo response_info      = 3;
+}
 
 // will need to synchronize fandoms on app start somehow
 // can't leave fandom information on user side
@@ -239,4 +263,5 @@ service Feeder {
     rpc GetFavListDetails(FavListDetailsRequest) returns (FavListDetailsResponse) {}
     rpc GetAuthorsForFicList(AuthorsForFicsRequest) returns (AuthorsForFicsResponse) {}
     rpc GetAuthorsFromRecListContainingFic(AuthorsForFicInReclistRequest) returns (AuthorsForFicInReclistResponse) {}
+    rpc GetUserMatches(UserMatchRequest) returns (UserMatchResponse) {}
 }

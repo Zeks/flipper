@@ -81,6 +81,7 @@ class Fanfics : public IDBWebIDIndex {
     QSet<int> GetFicIDsWithUnsetAuthors();
 
     QVector<core::FicWeightPtr> GetAllFicsWithEnoughFavesForWeights(int faves);
+    QHash<int, core::FicWeightPtr> GetHashOfAllFicsWithEnoughFavesForWeights(int faves);
 
     bool ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func);
 

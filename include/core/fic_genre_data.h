@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QList>
 #include <QVector>
 #include <QStringList>
+#include <QDataStream>
 #include "logger/QsLog.h"
 
 namespace genre_stats
@@ -27,11 +28,44 @@ namespace genre_stats
 struct GenreBit
 {
     QStringList genres;
-    float relevance;
+    float relevance = 0.f;
+    bool isDetected = false;
+    bool isInTheOriginal = false;
     void Log(){
-        qDebug() << "genres:" << genres << " relevance: " << relevance;
+        QLOG_INFO() << "genres:" << genres << " relevance: " << relevance;
     }
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
+    friend QDataStream &operator<<(QDataStream &, const GenreBit &);
+    friend QDataStream &operator>>(QDataStream &, GenreBit &);
 };
+//void GenreBit::Serialize(QDataStream &out)
+//{
+//    out << genres;
+//    out << relevance;
+//    out << isDetected;
+//}
+
+//void GenreBit::Deserialize(QDataStream &in)
+//{
+//    in >> genres;
+//    in >> relevance;
+//    in >> isDetected;
+//}
+inline QDataStream &operator<<(QDataStream & out, const GenreBit & data){
+    out << data.genres;
+    out << data.relevance;
+    out << data.isDetected;
+    out << data.isInTheOriginal;
+    return out;
+}
+inline QDataStream &operator>>(QDataStream & in, GenreBit & data){
+    in >> data.genres;
+    in >> data.relevance;
+    in >> data.isDetected;
+    in >> data.isInTheOriginal;
+    return in;
+}
 
 struct FicGenreData
 {
@@ -54,17 +88,25 @@ struct FicGenreData
         genresToKeep.clear();
     }
     void Log(){
-        qDebug() << "Weird genre token";
-        qDebug() << "fic: " << ficId;
-        qDebug() << "originals: " << originalGenres;
-        qDebug() << "kept: " << genresToKeep;
-        qDebug() << "dumping real genres:";
+        QLOG_INFO() << "Weird genre token";
+        QLOG_INFO() << "fic: " << ficId;
+        QLOG_INFO() << "ffn: " << ffnId;
+        QLOG_INFO() << "originals: " << originalGenres;
+        QLOG_INFO() << "kept: " << genresToKeep;
+        QLOG_INFO() << "dumping real genres:";
         for(auto realGenre: realGenres)
             realGenre.Log();
-        qDebug() << " ";
-        qDebug() << "dumping processed genres:";
+        QLOG_INFO() << " ";
+        QLOG_INFO() << "dumping processed genres:";
         for(auto genre: processedGenres)
             genre.Log();
+        QLOG_INFO() << "strengthNeutralAdventure: " << strengthNeutralAdventure;
+        QLOG_INFO() << "strengthNeutralComposite: " << strengthNeutralComposite;
+        QLOG_INFO() << "strengthHumor: " << strengthHumor;
+        QLOG_INFO() << "strengthRomance: " << strengthRomance;
+        QLOG_INFO() << "strengthDrama: " << strengthDrama;
+        QLOG_INFO() << "strengthBonds: " << strengthBonds;
+        QLOG_INFO() << "strengthHurtComfort: " << strengthHurtComfort;
     }
     int totalLists = 0;
     int ficId = -1;
@@ -82,6 +124,8 @@ struct FicGenreData
     QList<GenreBit> realGenres;
     QVector<GenreBit> processedGenres;
     QStringList genresToKeep;
+    QString keptToken;
+    float maxGenrePercent = 0.f;
 };
 
 
@@ -111,5 +155,73 @@ struct ListMoodData
     float strengthNonHurty =0.0f;
 
     float strengthOther =0.0f;
+    void DivideByCount(int count){
+        strengthNone =strengthNone/static_cast<float>(count);
+        strengthNeutral=strengthNeutral/static_cast<float>(count);
+        strengthNonNeutral=strengthNonNeutral/static_cast<float>(count);
+
+        strengthFlirty =strengthFlirty/static_cast<float>(count);
+        strengthNonFlirty =strengthNonFlirty/static_cast<float>(count);
+
+        strengthBondy =strengthBondy/static_cast<float>(count);
+        strengthNonBondy =strengthNonBondy/static_cast<float>(count);
+
+        strengthFunny =strengthFunny/static_cast<float>(count);
+        strengthNonFunny =strengthNonFunny/static_cast<float>(count);
+
+        strengthDramatic =strengthDramatic/static_cast<float>(count);
+        strengthNonDramatic =strengthNonDramatic/static_cast<float>(count);
+
+        strengthShocky =strengthShocky/static_cast<float>(count);
+        strengthNonShocky =strengthNonShocky/static_cast<float>(count);
+
+        strengthHurty =strengthHurty/static_cast<float>(count);
+        strengthNonHurty =strengthNonHurty/static_cast<float>(count);
+
+        strengthOther =strengthOther/static_cast<float>(count);
+    }
+    void Clear(){
+        listId = -1;
+        strengthNone =0.0f;
+        strengthNeutral=0.0f;
+        strengthNonNeutral=0.0f;
+
+        strengthFlirty =0.0f;
+        strengthNonFlirty =0.0f;
+
+        strengthBondy =0.0f;
+        strengthNonBondy =0.0f;
+
+        strengthFunny =0.0f;
+        strengthNonFunny =0.0f;
+
+        strengthDramatic =0.0f;
+        strengthNonDramatic =0.0f;
+
+        strengthShocky =0.0f;
+        strengthNonShocky =0.0f;
+
+        strengthHurty =0.0f;
+        strengthNonHurty =0.0f;
+
+        strengthOther =0.0f;
+    }
+    void Log(){
+        QLOG_INFO() << "";
+        QLOG_INFO() << "///////////////";
+        QLOG_INFO() << "Mood data for author:" << listId;
+        QLOG_INFO() << "";
+        QLOG_INFO() << "Bondy:" << strengthBondy;
+        QLOG_INFO() << "Neutral:" << strengthNeutral;
+        QLOG_INFO() << "Flirty:" << strengthFlirty;
+        QLOG_INFO() << "Funny:" << strengthFunny;
+        QLOG_INFO() << "Dramatic:" << strengthDramatic;
+        QLOG_INFO() << "Shocky:" << strengthShocky;
+        QLOG_INFO() << "Hurty:" << strengthHurty;
+        QLOG_INFO() << "///////////////";
+    }
 };
+
+
+
 }

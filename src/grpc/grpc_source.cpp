@@ -91,6 +91,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
     result.set_randomize_results(filter.randomizeResults);
     result.set_use_implied_genre(filter.useRealGenres);
+    result.set_descending_direction(filter.descendingDirection);
 
     auto* basicFilters = result.mutable_basic_filters();
     basicFilters->set_website(filter.website.toStdString());
@@ -212,6 +213,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     core::StoryFilter result;
     result.randomizeResults = filter.randomize_results();
     result.useRealGenres = filter.use_implied_genre();
+    result.descendingDirection = filter.descending_direction();
+
     result.website = FS(filter.basic_filters().website());
     result.minWords = filter.basic_filters().min_words();
     result.maxWords = filter.basic_filters().max_words();
@@ -586,8 +589,7 @@ public:
     bool GetInternalIDsForFics(QVector<core::IdPack> * ficList);
     bool GetFFNIDsForFics(QVector<core::IdPack> * ficList);
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
-    void FetchFic(int ficId, QVector<core::Fic> * fics);
-
+    void FetchFic(int ficId, QVector<core::Fic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
     int GetFicCount(core::StoryFilter filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
@@ -595,6 +597,8 @@ public:
     core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
+    QHash<int, core::MatchedFics > GetMatchesForUsers(int sourceUser, QList<int> users);
+    QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches data, QList<int> users);
 
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
@@ -752,7 +756,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
     task.release_filter();
 }
 
-void FicSourceGRPCImpl::FetchFic(int ficId, QVector<core::Fic> *fics)
+void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fic> *fics, core::StoryFilter::EUseThisFicType idType)
 {
     grpc::ClientContext context;
 
@@ -766,6 +770,10 @@ void FicSourceGRPCImpl::FetchFic(int ficId, QVector<core::Fic> *fics)
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
     task.set_id(ficId);
+    if(idType == core::StoryFilter::EUseThisFicType::utf_ffn_id)
+        task.set_id_type(ProtoSpace::SearchByFFNIDTask::ffn);
+    else
+        task.set_id_type(ProtoSpace::SearchByFFNIDTask::db);
 
 
     grpc::Status status = stub_->SearchByFFNID(&context, task, response.data());
@@ -1060,6 +1068,81 @@ QSet<int> FicSourceGRPCImpl::GetAuthorsForFicInRecList(int sourceFic, QString au
     return result;
 }
 
+QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(int sourceUser, QList<int> users)
+{
+    QHash<int, core::MatchedFics> result;
+
+    grpc::ClientContext context;
+
+    ProtoSpace::UserMatchRequest task;
+
+    QScopedPointer<ProtoSpace::UserMatchResponse> response (new ProtoSpace::UserMatchResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+//    auto* controls = task.mutable_controls();
+//    controls->set_user_token(proto_converters::TS(userToken));
+    task.set_source_user(sourceUser);
+    for(auto user: users)
+        task.add_test_users(user);
+
+    grpc::Status status = stub_->GetUserMatches(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    if(!response->success())
+        return result;
+    for(auto i = 0; i < response->matches_size(); i++)
+    {
+        auto match = response->matches(i);
+        result[match.user_id()].ratio = match.ratio();
+        result[match.user_id()].ratioWithoutIgnores = match.ratio_without_ignores();
+        for(auto j = 0; j < match.fic_id_size(); j++)
+            result[match.user_id()].matches.push_back(match.fic_id(j));
+    }
+
+    return result;
+}
+
+QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMatches data, QList<int> users)
+{
+    QHash<int, core::MatchedFics> result;
+
+    grpc::ClientContext context;
+
+    ProtoSpace::UserMatchRequest task;
+
+    QScopedPointer<ProtoSpace::UserMatchResponse> response (new ProtoSpace::UserMatchResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+//    auto* controls = task.mutable_controls();
+//    controls->set_user_token(proto_converters::TS(userToken));
+    for(auto fic: data.userFics)
+        task.add_user_fics(fic.toInt());
+    for(auto fic: data.userIgnores)
+        task.add_fandom_ignores(fic.toInt());
+    for(auto user: users)
+        task.add_test_users(user);
+
+    grpc::Status status = stub_->GetUserMatches(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    if(!response->success())
+        return result;
+    for(auto i = 0; i < response->matches_size(); i++)
+    {
+        auto match = response->matches(i);
+        result[match.user_id()].ratio = match.ratio();
+        result[match.user_id()].ratioWithoutIgnores = match.ratio_without_ignores();
+        for(auto j = 0; j < match.fic_id_size(); j++)
+            result[match.user_id()].matches.push_back(match.fic_id(j));
+    }
+
+    return result;
+}
+
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
                              QString userToken,
                              int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
@@ -1079,11 +1162,11 @@ void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics
     impl->FetchData(filter, fics);
 }
 
-void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fic> *fics)
+void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fic> *fics, core::StoryFilter::EUseThisFicType idType)
 {
     if(!impl)
         return;
-    impl->FetchFic(ficId, fics);
+    impl->FetchFic(ficId, fics, idType);
 }
 
 int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
@@ -1143,6 +1226,18 @@ QSet<int> FicSourceGRPC::GetAuthorsForFicInRecList(int sourceFic, QString author
     return impl->GetAuthorsForFicInRecList(sourceFic, authors);
 }
 
+QHash<int, core::MatchedFics > FicSourceGRPC::GetMatchesForUsers(int sourceUser, QList<int> users)
+{
+    if(!impl)
+        return {};
+    return impl->GetMatchesForUsers(sourceUser, users);
+}
+QHash<int, core::MatchedFics> FicSourceGRPC::GetMatchesForUsers(InputsForMatches data, QList<int> users)
+{
+    if(!impl)
+        return {};
+    return impl->GetMatchesForUsers(data, users);
+}
 ServerStatus FicSourceGRPC::GetStatus()
 {
     if(!impl)

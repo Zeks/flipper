@@ -15,6 +15,7 @@ App{
     Depends { name: "Qt.network" }
     Depends { name: "Qt.gui" }
     Depends { name: "Qt.quick" }
+    Depends { name: "Qt.charts" }
     Depends { name: "Qt.concurrent" }
     Depends { name: "Qt.quickwidgets" }
     Depends { name: "cpp" }
@@ -41,12 +42,17 @@ App{
         "include/servers/token_processing.h",
         "include/servitorwindow.h",
         "include/tasks/author_cache_reprocessor.h",
+        "include/tasks/author_genre_iteration_processor.h",
         "include/tasks/slash_task_processor.h",
         "include/threaded_data/common_traits.h",
         "include/threaded_data/threaded_load.h",
         "include/threaded_data/threaded_save.h",
         "src/calc_data_holder.cpp",
+        "src/data_code/rec_calc_data.cpp",
         "src/main_servitor.cpp",
+        "src/rec_calc/rec_calculator_base.cpp",
+        "src/rec_calc/rec_calculator_mood_adjusted.cpp",
+        "src/rec_calc/rec_calculator_weighted.cpp",
         "src/servers/token_processing.cpp",
         "src/servitorwindow.cpp",
         "src/Interfaces/data_source.cpp",
@@ -79,6 +85,7 @@ App{
         "include/storyfilter.h",
         "include/url_utils.h",
         "src/tasks/author_cache_reprocessor.cpp",
+        "src/tasks/author_genre_iteration_processor.cpp",
         "src/tasks/slash_task_processor.cpp",
         "src/threaded_data/threaded_load.cpp",
         "src/threaded_data/threaded_save.cpp",

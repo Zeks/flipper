@@ -21,39 +21,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "include/pageconsumer.h"
 #include "include/environment.h"
 #include "include/core/section.h"
+#include "third_party/roaring/roaring.hh"
 
-namespace interfaces{
-class Fanfics;
-class Fandoms;
-class Authors;
-class PageTask;
-}
-namespace database{
-class IDBWrapper;
-}
-class PageTask;
-typedef QSharedPointer<PageTask> PageTaskPtr;
-
-
-class AuthorStatsProcessor: public PageConsumer{
-Q_OBJECT
+class AuthorGenreIterationProcessor{
 public:
-    AuthorStatsProcessor(QSqlDatabase db,
-                        QSharedPointer<interfaces::Fanfics> fanficInterface,
-                        QSharedPointer<interfaces::Fandoms> fandomsInterface,
-                        QSharedPointer<interfaces::Authors> authorsInterface,
-                        QObject* obj = nullptr);
+    AuthorGenreIterationProcessor();
 
-    void ReprocessAllAuthorsStats(ECacheMode cacheMode);
+    void ReprocessGenreStats(QHash<int, QList<genre_stats::GenreBit>> inputFicData,
+                             QHash<int, Roaring> inputAuthorData);
 
 
-private:
-    QSqlDatabase db;
-    QSharedPointer<interfaces::Fanfics> fanficsInterface;
-    QSharedPointer<interfaces::Fandoms> fandomsInterface;
-    QSharedPointer<interfaces::Authors> authorsInterface;
-    QSharedPointer<interfaces::PageTask> pageInterface;
-    QSharedPointer<database::IDBWrapper> dbInterface;
+    QHash<int, genre_stats::ListMoodData> CreateMoodDataFromGenres(QHash<int, std::array<double, 22>>&);
+
+
+
+    QHash<int, std::array<double, 22>> resultingGenreAuthorData;
+    QHash<int, genre_stats::ListMoodData> resultingMoodAuthorData;
+    QHash<int, QList<genre_stats::GenreBit>> resultingFicData;
+
 signals:
     void requestProgressbar(int);
     void updateCounter(int);

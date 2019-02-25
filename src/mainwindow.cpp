@@ -953,7 +953,7 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
 
 }
 
-void MainWindow::OnGetUrlsForTags()
+void MainWindow::OnGetUrlsForTags(bool idMode)
 {
     TaskProgressGuard guard(this);
     QClipboard *clipboard = QApplication::clipboard();
@@ -961,8 +961,23 @@ void MainWindow::OnGetUrlsForTags()
     auto fics  = env.interfaces.tags->GetAllTaggedFics(tags);
     auto ffnFics = env.GetFFNIds(fics);
     QString result;
-    for(auto fic : ffnFics)
-        result += "https://www.fanfiction.net/s/" + QString::number(fic) + "\n";
+    if(ui->wdgTagsPlaceholder->DbIdsRequested())
+    {
+        for(auto fic : fics)
+           result += QString::number(fic) + ",";
+    }
+    else
+    {
+        for(auto fic : ffnFics)
+        {
+            if(idMode)
+            {
+                result += QString::number(fic) + ",";
+            }
+            else
+                result += "https://www.fanfiction.net/s/" + QString::number(fic) + "\n";
+        }
+    }
 
     clipboard->setText(result);
 }
@@ -1033,6 +1048,7 @@ void MainWindow::ReadSettings()
     ui->cbSlashFilterAggressiveness->setCurrentText(uiSettings.value("Settings/cbSlashFilterAggressiveness", "").toString());
     ui->cbIDMode->setCurrentText(uiSettings.value("Settings/cbIDMode", "").toString());
     ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
+    ui->cbSortDirection->setCurrentText(uiSettings.value("Settings/cbSortDirection", "").toString());
 
 
     DetectGenreSearchState();
@@ -1097,7 +1113,7 @@ void MainWindow::WriteSettings()
 
     settings.setValue("Settings/chkStrongMOnly", ui->chkStrongMOnly->isChecked());
     settings.setValue("Settings/cbSlashFilterAggressiveness", ui->cbSlashFilterAggressiveness->currentText());
-
+    settings.setValue("Settings/cbSortDirection", ui->cbSortDirection->currentText());
 
     settings.setValue("Settings/appsize", this->size());
     settings.setValue("Settings/position", this->pos());
@@ -1157,19 +1173,21 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
     QStringList authorList;
     for(auto author: authors)
         authorList.push_back(QString::number(author));
-    ui->leAuthorID->setText(authorList.join(","));
-    ui->chkRandomizeSelection->setChecked(false);
-    ui->cbIDMode->setCurrentIndex(2);
+    //ui->leAuthorID->setText(authorList.join(","));
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(authorList.join(","));
+//    ui->chkRandomizeSelection->setChecked(false);
+    //ui->cbIDMode->setCurrentIndex(2);
 
-    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-    env.filter.recordPage = 0;
-    env.pageOfCurrentQuery = 0;
-//    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
-//    if(childObject)
-//        childObject->setProperty("chartDisplay", false);
-    qwFics->rootObject()->setProperty("chartDisplay", false);
+//    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+//    env.filter.recordPage = 0;
+//    env.pageOfCurrentQuery = 0;
+////    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
+////    if(childObject)
+////        childObject->setProperty("chartDisplay", false);
+//    qwFics->rootObject()->setProperty("chartDisplay", false);
 
-    LoadData();
+//    LoadData();
 }
 
 void MainWindow::OnNewQRSource(QVariant row)
@@ -1676,6 +1694,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
+    filter.descendingDirection = ui->cbSortDirection->currentIndex() == 0;
 
     return filter;
 }

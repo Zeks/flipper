@@ -76,6 +76,7 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
         value->Deserialize(in);
 
         PutIntoContainer(container, value, key);
+
     }
     else
     {
@@ -117,7 +118,7 @@ auto valueFetcher){
 
 
 auto loadMultiThreaded = [](auto loaderFunc, auto resultUnifier, QString nameBase,auto& destination){
-    QVector<QFuture<typename std::remove_reference<decltype(destination)>::type>> futures;
+    static QVector<QFuture<typename std::remove_reference<decltype(destination)>::type>> futures;
     for(int i = 0; i < QThread::idealThreadCount()-1; i++)
     {
         futures.push_back(QtConcurrent::run([nameBase,i, loaderFunc](){
@@ -268,5 +269,19 @@ void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPt
     loadMultiThreaded(genericLoader, vectorUnifier, storageFolder + QString("/") + fileName, data);
 }
 
+void LoadData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr> & data)
+{
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
+void LoadData(QString storageFolder, QString fileName, QHash<int, QList<genre_stats::GenreBit>>& data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
+
+void LoadData(QString storageFolder, QString fileName, QHash<int, QString>& data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
 }
 

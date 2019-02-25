@@ -128,7 +128,7 @@ void SaveFavouritesData(QString storageFolder, QHash<int, Roaring>& favourites){
 
         Roaring& r = it.value();
         size_t  expectedsize = r.getSizeInBytes();
-        qDebug() << "writing roaring of size: " << expectedsize;
+        //qDebug() << "writing roaring of size: " << expectedsize;
         char *serializedbytes = new char [expectedsize];
         r.write(serializedbytes);
         QByteArray ba(QByteArray::fromRawData(serializedbytes, expectedsize));
@@ -163,7 +163,7 @@ void SaveData(QString storageFolder, QString fileName, QHash<int, Roaring>& favo
 
         Roaring& r = it.value();
         size_t  expectedsize = r.getSizeInBytes();
-        qDebug() << "writing roaring of size: " << expectedsize;
+        //qDebug() << "writing roaring of size: " << expectedsize;
         char *serializedbytes = new char [expectedsize];
         r.write(serializedbytes);
         QByteArray ba(QByteArray::fromRawData(serializedbytes, expectedsize));
@@ -201,6 +201,34 @@ void SaveData(QString storageFolder, QString fileName, QVector<core::FicWeightPt
     int threadCount = QThread::idealThreadCount()-1;
     Impl::fileWrapperVector(&keeper, threadCount, fics.size(),fics.size()/threadCount,storageFolder + "/" + fileName,[&](auto& out,int i){
         fics[i]->Serialize(out);
+    });
+}
+void SaveData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr> &fics){
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount,storageFolder+ "/" + fileName, fics, [&](auto& out, auto it){
+        out << it.key();
+        it.value()->Serialize(out);
+    });
+}
+
+void SaveData(QString storageFolder, QString fileName, QHash<int, QList<genre_stats::GenreBit>>& fics)
+{
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount,storageFolder+ "/" + fileName, fics, [&](auto& out, auto it){
+        out << it.key();
+        out << it.value();
+    });
+}
+
+void SaveData(QString storageFolder, QString fileName, QHash<int, QString> &fics)
+{
+    DataKeeper keeper;
+    int threadCount = QThread::idealThreadCount()-1;
+    Impl::fileWrapperHash(&keeper, threadCount,storageFolder+ "/" + fileName, fics, [&](auto& out, auto it){
+        out << it.key();
+        out << it.value();
     });
 }
 

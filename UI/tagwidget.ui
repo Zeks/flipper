@@ -156,9 +156,28 @@
       </spacer>
      </item>
      <item>
+      <widget class="QComboBox" name="cbTagEntitySelector">
+       <item>
+        <property name="text">
+         <string>Urls</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>IDs</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>DB Ids</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pbUrlsForTags">
        <property name="text">
-        <string>Urls for tag set</string>
+        <string>For tag set</string>
        </property>
        <property name="icon">
         <iconset>

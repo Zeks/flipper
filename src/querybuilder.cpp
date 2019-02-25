@@ -219,7 +219,7 @@ QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
     //return QString();
     QString fandoms = " "
             //"( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n"
-            "cast(fandom1 as text)||'&'||cast(fandom2 as text)  as fandomids, \n"
+            "cast(fandom1 as text)||'::::'||cast(fandom2 as text)  as fandomids, \n"
             "";
     return fandoms;
 }
@@ -302,7 +302,10 @@ QString DefaultQueryBuilder::ProcessFicID(StoryFilter filter)
     if(filter.useThisFic == -1)
         return result;
 
-    result = QString(" and f.ffn_id = %1 ").arg(QString::number(filter.useThisFic));
+    if(filter.useThisFicType == StoryFilter::EUseThisFicType::utf_ffn_id )
+        result = QString(" and f.ffn_id = %1 ").arg(QString::number(filter.useThisFic));
+    else
+        result = QString(" and f.id = %1 ").arg(QString::number(filter.useThisFic));
     return result;
 }
 QString DefaultQueryBuilder::ProcessRecommenders(StoryFilter filter)
@@ -610,23 +613,25 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
 {
     QString diffField;
     if(filter.sortMode == StoryFilter::sm_wordcount)
-        diffField = " WORDCOUNT DESC";
+        diffField = " WORDCOUNT";
     if(filter.sortMode == StoryFilter::sm_wcrcr)
-        diffField = " (wcr ) asc";
+        diffField = " (wcr )";
     else if(filter.sortMode == StoryFilter::sm_favourites)
-        diffField = " FAVOURITES DESC";
+        diffField = " FAVOURITES";
     else if(filter.sortMode == StoryFilter::sm_updatedate)
-        diffField = " updated DESC";
+        diffField = " updated";
     else if(filter.sortMode == StoryFilter::sm_publisdate)
-        diffField = " published DESC";
+        diffField = " published";
     else if(filter.sortMode == StoryFilter::sm_reccount)
-        diffField = " sumrecs desc";
+        diffField = " sumrecs";
     else if(filter.sortMode == StoryFilter::sm_favrate)
-        diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
+        diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
     else if(filter.sortMode == StoryFilter::sm_revtofav)
-        diffField = " favourites /(reviews + 1) desc";
+        diffField = " favourites /(reviews + 1)";
     else if(filter.sortMode == StoryFilter::sm_genrevalues)
-        diffField = " genrevalue desc";
+        diffField = " genrevalue";
+
+    diffField += filter.descendingDirection ? " DESC" : " ASC";
     return diffField;
 }
 

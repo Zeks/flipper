@@ -38,5 +38,8 @@ void SaveData(QString storageFolder, QString fileName, QHash<int, QSet<int>>& fa
 void SaveData(QString storageFolder, QString fileName, QHash<int, std::array<double, 22> > &genreData);
 void SaveData(QString storageFolder, QString fileName, QHash<int, core::AuthorFavFandomStatsPtr>& fandomLists);
 void SaveData(QString storageFolder, QString fileName, QVector<core::FicWeightPtr>& fics);
+void SaveData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr>& fics);
+void SaveData(QString storageFolder, QString fileName, QHash<int, QList<genre_stats::GenreBit>>& fics);
+void SaveData(QString storageFolder, QString fileName, QHash<int, QString>& fics);
 
 }

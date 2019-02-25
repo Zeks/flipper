@@ -81,6 +81,7 @@ true_genre1_percent,true_genre2_percent,true_genre3_percent, kept_genres, max_ge
  from fanfics;
 
 
+
  
 CREATE INDEX  if  not exists  main.I_FANFICS_IDENTITY ON FANFICS (AUTHOR ASC, TITLE ASC);
 --CREATE  INDEX if  not exists main.I_FANFICS_WORDCOUNT ON FANFICS (WORDCOUNT ASC);
@@ -124,6 +125,18 @@ CREATE INDEX if not exists  I_SDFFN_KW_NO ON slash_data_ffn (keywords_no ASC);
 CREATE INDEX if not exists  I_SDFFN_KW_RESULT ON slash_data_ffn (keywords_result ASC);
 CREATE INDEX if not exists  I_SDFFN_FIRST ON slash_data_ffn (filter_pass_1 ASC);
 CREATE INDEX if not exists  I_SDFFN_SECOND  ON slash_data_ffn (filter_pass_2 ASC);
+ 
+ 
+create table if not exists FIC_GENRE_ITERATIONS ( fic_id integer primary key );
+alter table FIC_GENRE_ITERATIONS add column true_genre1 VARCHAR;
+alter table FIC_GENRE_ITERATIONS add column true_genre2 VARCHAR;
+alter table FIC_GENRE_ITERATIONS add column true_genre3 VARCHAR;
+alter table FIC_GENRE_ITERATIONS add column true_genre1_percent real;
+alter table FIC_GENRE_ITERATIONS add column true_genre2_percent real;
+alter table FIC_GENRE_ITERATIONS add column true_genre3_percent real;
+alter table FIC_GENRE_ITERATIONS add column kept_genres VARCHAR;
+alter table FIC_GENRE_ITERATIONS add column max_genre_percent real;
+CREATE INDEX if not exists  I_FGI_PK  ON FIC_GENRE_ITERATIONS (fic_id ASC);
  
 -- algo passes;
  create table if not exists algopasses (fic_id integer primary key);
@@ -304,6 +317,32 @@ CREATE INDEX if not exists I_IGNORED_FANDOMS_ID ON ignored_fandoms (fandom_id AS
  alter table AuthorFavouritesGenreStatistics add column Family real default 0;
  alter table AuthorFavouritesGenreStatistics add column HurtComfort real default 0;
  alter table AuthorFavouritesGenreStatistics add column Friendship real default 0;
+ 
+ 
+  -- contains percentage per genre for favourite lists;
+ CREATE TABLE if not exists AuthorFavouritesGenreStatisticsIter2 (author_id INTEGER PRIMARY KEY NOT NULL UNIQUE);
+ alter table AuthorFavouritesGenreStatisticsIter2 add column General_ real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Humor real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Poetry real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Adventure real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Mystery real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Horror real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Drama real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Parody real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Angst real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Supernatural real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Suspense real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Romance real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column NoGenre real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column SciFi real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Fantasy real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Spiritual real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Tragedy real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Western real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Crime real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Family real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column HurtComfort real default 0;
+ alter table AuthorFavouritesGenreStatisticsIter2 add column Friendship real default 0;
  
   -- contains averaged percentage per genre for fics;
  CREATE TABLE if not exists FicGenreStatistics (fic_id INTEGER PRIMARY KEY NOT NULL UNIQUE);

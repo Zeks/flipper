@@ -230,6 +230,15 @@ QVector<core::FicWeightPtr> Fanfics::GetAllFicsWithEnoughFavesForWeights(int fav
     return database::puresql::GetAllFicsWithEnoughFavesForWeights(faves, db).data;
 }
 
+QHash<int, core::FicWeightPtr> Fanfics::GetHashOfAllFicsWithEnoughFavesForWeights(int faves)
+{
+    QHash<int, core::FicWeightPtr> result;
+    auto temp = GetAllFicsWithEnoughFavesForWeights(faves);
+    for(auto fic : temp)
+        result[fic->id] = fic;
+    return result;
+}
+
 bool Fanfics::ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func)
 {
      auto result = database::puresql::ProcessSlashFicsBasedOnWords(func, db);
