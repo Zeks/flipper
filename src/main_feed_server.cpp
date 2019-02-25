@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 void SetupLogger()
 {
-    QSettings settings("settings_server.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
 
     An<QsLogging::Logger> logger;
     logger->setLoggingLevel(static_cast<QsLogging::Level>(settings.value("Logging/loglevel").toInt()));
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     QLOG_INFO() << "Feeder app started server";
     FeederService service;
     auto serverSetup = [&](){
-        QSettings settings("settings_server.ini", QSettings::IniFormat);
+        QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
         auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
         auto port = settings.value("Settings/serverPort", "3055").toString();
 

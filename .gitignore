@@ -16,3 +16,4 @@ Run/*.log
 Run/*.sqlite
 Run/bot_token*.ini
 Run/lib*.a
+Run/settings

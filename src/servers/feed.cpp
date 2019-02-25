@@ -79,7 +79,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     fanfics->authorInterface = authors;
     calculator->holder.authorsInterface = authors;
     calculator->holder.fanficsInterface = fanfics;
-    calculator->holder.settingsFile = "settings_server.ini";
+    calculator->holder.settingsFile = "settings/settings_server.ini";
 
     calculator->holder.LoadData<core::rdt_fics>("ServerData");
     calculator->holder.LoadData<core::rdt_favourites>("ServerData");
@@ -100,7 +100,7 @@ Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::Status
     Q_UNUSED(context);
     QString userToken = QString::fromStdString(task->controls().user_token());
     QLOG_INFO() << "Received status request from: " << userToken;
-    QSettings settings("settings_server.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
     auto motd = settings.value("Settings/motd", "Have fun searching.").toString();
     bool attached = settings.value("Settings/DBAttached", true).toBool();
     response->set_message_of_the_day(motd.toStdString());

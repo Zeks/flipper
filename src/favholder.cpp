@@ -63,7 +63,7 @@ DISPATCH(rdt_fics)
 void RecCalculator::LoadFavourites(QSharedPointer<interfaces::Authors> authorInterface)
 {
     CreateTempDataDir();
-    QSettings settings("settings_server.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
     if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists("ServerData/roafav_0.txt"))
     {
         holder.LoadData<core::rdt_favourites>("ServerData");
