@@ -219,7 +219,7 @@ QString DefaultQueryBuilder::ProcessFandoms(StoryFilter)
     //return QString();
     QString fandoms = " "
             //"( select group_concat(name, ' & ') from fandomindex where id in (select fandom_id  from ficfandoms where fic_id = f.id)) as fandom, \n"
-            "cast(fandom1 as text)||'&'||cast(fandom2 as text)  as fandomids, \n"
+            "cast(fandom1 as text)||'::::'||cast(fandom2 as text)  as fandomids, \n"
             "";
     return fandoms;
 }

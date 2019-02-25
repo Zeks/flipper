@@ -355,6 +355,13 @@
            <widget class="QLineEdit" name="leGetCachedData"/>
           </item>
           <item>
+           <widget class="QCheckBox" name="chkForcedLoad">
+            <property name="text">
+             <string>Forced</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pbUpdateFreshAuthors">
             <property name="text">
              <string>Update Fresh</string>

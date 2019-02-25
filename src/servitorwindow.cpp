@@ -1204,7 +1204,8 @@ void ServitorWindow::on_pbUnpdateInterval_clicked()
 
 
     reloader.SetStagedAuthors(authors);
-    reloader.ReloadRecommendationsList(ECacheMode::use_cache);
+    bool useCache = ui->chkForcedLoad->isChecked();
+    reloader.ReloadRecommendationsList(useCache ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
 }
 
 void ServitorWindow::on_pbReprocessAllFavPages_clicked()
