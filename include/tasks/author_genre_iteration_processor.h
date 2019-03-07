@@ -36,7 +36,7 @@ public:
 
 
     QHash<int, std::array<double, 22>> resultingGenreAuthorData;
-    QHash<int, genre_stats::ListMoodData> resultingMoodAuthorData;
+    QHash<uint32_t, genre_stats::ListMoodData> resultingMoodAuthorData;
     QHash<int, QList<genre_stats::GenreBit>> resultingFicData;
 
 signals:

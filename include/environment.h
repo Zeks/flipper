@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "libs/UniversalModels/include/AdaptingTableModel.h"
 #include "include/tasks/fandom_task_processor.h"
 #include "include/tasks/author_task_processor.h"
-#include "qml_ficmodel.h"
+//#include "qml_ficmodel.h"
 #include "include/core/section.h"
 #include "include/pagetask.h"
 #include "include/rng.h"

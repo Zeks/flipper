@@ -56,7 +56,8 @@ public:
     MatchedFics GetMatchedFics(UserMatchesInput user1, int user2);
 
     RecommendationListResult GetMatchedFicsForFavList(QHash<uint32_t, FicWeightPtr> fetchedFics,
-                                                      QSharedPointer<core::RecommendationList> params);
+                                                      QSharedPointer<core::RecommendationList> params,
+                                                      genre_stats::GenreMoodData moodData = {});
     DataHolder holder;
 };
 

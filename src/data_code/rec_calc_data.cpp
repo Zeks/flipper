@@ -32,5 +32,7 @@ auto lambda = [](DataHolder* holder, QString storageFolder, QString fileBase, au
 DISPATCH(rdt_favourites)
 DISPATCH(rdt_fics)
 DISPATCH(rdt_author_genre_distribution)
+DISPATCH(rdt_author_mood_distribution)
+DISPATCH(rdt_fic_genres_composite)
 
 }

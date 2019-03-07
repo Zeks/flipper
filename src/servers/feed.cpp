@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fanfics.h"
 #include "Interfaces/genres.h"
 #include "Interfaces/recommendation_lists.h"
+#include "tasks/author_genre_iteration_processor.h"
 
 
 #include <QSettings>
@@ -83,7 +84,16 @@ FeederService::FeederService(QObject* parent): QObject(parent){
 
     calculator->holder.LoadData<core::rdt_fics>("ServerData");
     calculator->holder.LoadData<core::rdt_favourites>("ServerData");
-    calculator->holder.LoadData<core::rdt_author_genre_distribution>("ServerData");
+    calculator->holder.LoadData<core::rdt_fic_genres_composite>("ServerData");
+    calculator->holder.LoadData<core::rdt_author_mood_distribution>("ServerData");
+
+    if(calculator->holder.authorMoodDistributions.size() == 0)
+    {
+        AuthorGenreIterationProcessor iteratorProcessor;
+        calculator->holder.LoadData<core::rdt_author_genre_distribution>("ServerData");
+        iteratorProcessor.ReprocessGenreStats(calculator->holder.genreComposites, calculator->holder.faves);
+        thread_boost::SaveData("ServerData","ams",iteratorProcessor.resultingMoodAuthorData);
+    }
 
     logTimer.reset(new QTimer());
     logTimer->start(3600000);
@@ -116,9 +126,9 @@ Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::Status
 
 
 UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
-                           const ::ProtoSpace::Filter& protoFilter,
-                           const ::ProtoSpace::UserData& userData,
-                           RequestContext& reqContext)
+                                          const ::ProtoSpace::Filter& protoFilter,
+                                          const ::ProtoSpace::UserData& userData,
+                                          RequestContext& reqContext)
 {
     UsedInSearch result;
     if(!reqContext.Process(response))
@@ -257,12 +267,12 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
     response->set_success(true);
     for(auto user : fics.keys())
     {
-      auto match = response->add_matches();
-      match->set_user_id(user);
-      match->set_ratio(fics[user].ratio);
-      match->set_ratio_without_ignores(fics[user].ratioWithoutIgnores);
-      for(auto fic: fics[user].matches)
-          match->add_fic_id(fic);
+        auto match = response->add_matches();
+        match->set_user_id(user);
+        match->set_ratio(fics[user].ratio);
+        match->set_ratio_without_ignores(fics[user].ratioWithoutIgnores);
+        for(auto fic: fics[user].matches)
+            match->add_fic_id(fic);
     }
     return Status::OK;
 }
@@ -323,6 +333,24 @@ Status FeederService::SyncFandomList(ServerContext* context, const ProtoSpace::S
     QLOG_INFO() << " ";
     return Status::OK;
 }
+
+genre_stats::GenreMoodData CalcMoodDistributionForFicList(QList<uint32_t> ficList, core::FicGenreCompositeType ficGenres){
+
+    genre_stats::GenreMoodData result;
+    Roaring r;
+    for(auto fic : ficList)
+        r.add(fic);
+
+    QHash<int, Roaring> favourites;
+    AuthorGenreIterationProcessor iteratorProcessor;
+    favourites[0] = r;
+    iteratorProcessor.ReprocessGenreStats(ficGenres, favourites);
+    result.isValid = true;
+    result.listMoodData = iteratorProcessor.resultingMoodAuthorData[0];
+    result.listGenreData = iteratorProcessor.resultingGenreAuthorData[0];
+    return result;
+}
+
 Status FeederService::RecommendationListCreation(ServerContext* context, const ProtoSpace::RecommendationListCreationRequest* task,
                                                  ProtoSpace::RecommendationListCreationResponse* response)
 {
@@ -380,9 +408,12 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     });
     action.run();
 
+
     An<core::RecCalculator> holder;
-    auto list = holder->GetMatchedFicsForFavList(fetchedFics, params);
-    TimedAction dataPassAction("Pssing data: ",[&](){
+    auto moodData = CalcMoodDistributionForFicList(fetchedFics.keys(), holder->holder.genreComposites);
+
+    auto list = holder->GetMatchedFicsForFavList(fetchedFics, params, moodData);
+    TimedAction dataPassAction("Passing data: ",[&](){
         auto* targetList = response->mutable_list();
         targetList->set_list_name(proto_converters::TS(params->name));
         targetList->set_list_ready(true);

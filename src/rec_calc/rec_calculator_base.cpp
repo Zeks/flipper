@@ -37,6 +37,16 @@ void RecCalculatorImplBase::Calc(){
     report.run();
 }
 
+double GetCoeffForTouchyDiff(double diff)
+{
+    if(diff <= 0.1)
+        return 1.1;
+    if(diff <= 0.3)
+        return 1;
+    return 0.8;
+}
+
+
 
 void RecCalculatorImplBase::CollectVotes()
 {
@@ -60,6 +70,7 @@ void RecCalculatorImplBase::CollectVotes()
             maxValue = it.value();
             maxId = it.key();
         }
+        result.pureMatches[it.key()] = it.value();
         it++;
     }
 //    for(auto fic: result.recommendations.keys()){
@@ -77,10 +88,25 @@ void RecCalculatorImplBase::CollectVotes()
         for(auto fic: inputs.faves[author])
         {
             auto weighting = weightingFunc(allAuthors[author],authorSize, maxValue );
-            result.recommendations[fic]+= weighting.GetCoefficient();
+            double matchCountSimilarityCoef = weighting.GetCoefficient();
+
+            double vote = votesBase;
+
+            //std::optional<double> neutralMoodSimilarity = GetNeutralDiffForLists(author);
+            std::optional<double> touchyMoodSimilarity = GetTouchyDiffForLists(author);
+            if(touchyMoodSimilarity.has_value())
+                vote = votesBase*GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
+            vote = vote * matchCountSimilarityCoef;
+            result.recommendations[fic]+= vote;
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
+
+//    for(auto ficId : result.recommendations.keys())
+//    {
+//        result.recommendations[ficId] = result.recommendations[ficId]
+//    }
+
 }
 
 Roaring RecCalculatorImplBase::BuildIgnoreList()

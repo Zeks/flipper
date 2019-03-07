@@ -42,4 +42,5 @@ void LoadData(QString storageFolder, QString fileName, QVector<core::FicWeightPt
 void LoadData(QString storageFolder, QString fileName, QHash<int, core::FicWeightPtr>& );
 void LoadData(QString storageFolder, QString fileName, QHash<int, QList<genre_stats::GenreBit>>& );
 void LoadData(QString storageFolder, QString fileName, QHash<int, QString>& );
+void LoadData(QString storageFolder, QString fileName, QHash<uint32_t, genre_stats::ListMoodData>& );
 }

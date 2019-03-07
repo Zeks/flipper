@@ -825,6 +825,7 @@ public:
     double pickRatio = -1;
     int userFFNId = -1;
     bool useWeighting = false;
+    bool useMoodAdjustment = false;
     QSet<int> ignoredFandoms;
     QSet<int> minorNegativeVotes;
     QSet<int> majorNegativeVotes;

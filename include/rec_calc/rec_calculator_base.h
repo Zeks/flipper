@@ -17,6 +17,7 @@ struct RecommendationListResult{
     QHash<int, int> recommendations;
     QHash<int, int> matchReport;
     QHash<uint32_t, MatchBreakdown> breakdowns;
+    QHash<int, int> pureMatches;
     QList<int> authors;
 };
 
@@ -40,7 +41,12 @@ struct FicBaseScoreCalculator{
 struct RecInputVectors{
     const DataHolder::FavType& faves;
     const DataHolder::FicType& fics;
-    const DataHolder::GenreType& genres;
+    const core::AuthorMoodDistributions& moods;
+};
+
+struct ListMoodDifference{
+    int neutralDifference = 0.;
+    int touchyDifference = 0.;
 };
 
 class RecCalculatorImplBase
@@ -66,6 +72,8 @@ public:
     virtual ActionListType  GetActionList() = 0;
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() = 0;
 
+    virtual std::optional<double> GetNeutralDiffForLists(uint32_t){return {};}
+    virtual std::optional<double> GetTouchyDiffForLists(uint32_t){return {};}
 
     int matchSum = 0;
     RecInputVectors inputs;
@@ -78,6 +86,8 @@ public:
     QList<int> filteredAuthors;
     Roaring ownFavourites;
     RecommendationListResult result;
+
+    int votesBase = 1;
 };
 static auto matchesFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params){
     return author.matches >= params->minimumMatch || author.matches >= params->alwaysPickAt;

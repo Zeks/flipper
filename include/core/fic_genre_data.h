@@ -131,6 +131,7 @@ struct FicGenreData
 
 struct ListMoodData
 {
+    typedef ListMoodData value_type;
     int listId = -1;
     float strengthNone =0.0f;
     float strengthNeutral=0.0f;
@@ -220,6 +221,55 @@ struct ListMoodData
         QLOG_INFO() << "Hurty:" << strengthHurty;
         QLOG_INFO() << "///////////////";
     }
+};
+
+inline QDataStream &operator<<(QDataStream & out, const ListMoodData & data){
+    out << data.listId;
+    out << data.strengthNone;
+    out << data.strengthNeutral;
+    out << data.strengthNonNeutral;
+    out << data.strengthFlirty;
+    out << data.strengthNonFlirty;
+    out << data.strengthBondy;
+    out << data.strengthNonBondy;
+    out << data.strengthFunny;
+    out << data.strengthNonFunny;
+    out << data.strengthDramatic;
+    out << data.strengthNonDramatic;
+    out << data.strengthShocky;
+    out << data.strengthNonShocky;
+    out << data.strengthHurty;
+    out << data.strengthNonHurty;
+    out << data.strengthOther;
+    return out;
+}
+
+inline QDataStream &operator>>(QDataStream & in, ListMoodData & data){
+    in >> data.listId;
+    in >> data.strengthNone;
+    in >> data.strengthNeutral;
+    in >> data.strengthNonNeutral;
+    in >> data.strengthFlirty;
+    in >> data.strengthNonFlirty;
+    in >> data.strengthBondy;
+    in >> data.strengthNonBondy;
+    in >> data.strengthFunny;
+    in >> data.strengthNonFunny;
+    in >> data.strengthDramatic;
+    in >> data.strengthNonDramatic;
+    in >> data.strengthShocky;
+    in >> data.strengthNonShocky;
+    in >> data.strengthHurty;
+    in >> data.strengthNonHurty;
+    in >> data.strengthOther;
+    return in;
+}
+
+struct GenreMoodData{
+    bool isValid = false;
+    std::array<double, 22> listGenreData;
+    genre_stats::ListMoodData listMoodData;
+
 };
 
 

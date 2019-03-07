@@ -25,6 +25,10 @@ struct DataHolder
                 return std::tuple{std::ref(this->fics), this->fanficsInterface};
         else if constexpr (I == rdt_author_genre_distribution)
                 return std::tuple{std::ref(this->genres), this->authorsInterface};
+        else if constexpr (I == rdt_fic_genres_composite)
+                return std::tuple{std::ref(this->genreComposites), this->genresInterface};
+        else if constexpr (I == rdt_author_mood_distribution)
+                return std::tuple{std::ref(this->authorMoodDistributions), this->authorsInterface};
     }
 
     template <ERecDataType T>
@@ -46,10 +50,14 @@ struct DataHolder
     QString settingsFile;
     QSharedPointer<interfaces::Authors> authorsInterface;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
+    QSharedPointer<interfaces::Genres>  genresInterface;
 
     FavType faves;
     GenreType genres;
+    FicGenreCompositeType genreComposites;
+    AuthorMoodDistributions authorMoodDistributions;
     FicType fics;
 };
     
 }
+

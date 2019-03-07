@@ -76,7 +76,6 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
         value->Deserialize(in);
 
         PutIntoContainer(container, value, key);
-
     }
     else
     {
@@ -280,6 +279,10 @@ void LoadData(QString storageFolder, QString fileName, QHash<int, QList<genre_st
 }
 
 void LoadData(QString storageFolder, QString fileName, QHash<int, QString>& data){
+    qDebug() << "Loading:" << fileName;
+    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+}
+void LoadData(QString storageFolder, QString fileName, QHash<uint32_t, genre_stats::ListMoodData> & data){
     qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }

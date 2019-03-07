@@ -24,7 +24,8 @@ enum ERecDataType
     rdt_fics =1,
     rdt_fic_genres_composite = 2,
     rdt_fic_genres_original = 3,
-    rdt_author_genre_distribution = 4
+    rdt_author_genre_distribution = 4,
+    rdt_author_mood_distribution = 5
 };
 
 template<ERecDataType E>
@@ -95,6 +96,22 @@ struct DataHolderInfo<rdt_fic_genres_original>
             return fanficsInterface->GetGenreForFics();
         };}
 };
+template<>
+struct DataHolderInfo<rdt_author_mood_distribution>
+{
+    static const std::string fileBase(QString suffix = ""){
+        if(suffix.isEmpty())
+            return "amd";
+        else
+            return QString("amd_" + suffix).toStdString();
+    }
+    typedef  QHash<uint32_t, genre_stats::ListMoodData> type;
+    static auto loadFunc (){return [](QSharedPointer<interfaces::Authors>){
+            // this intentionally return empty vector
+            return QHash<uint32_t, genre_stats::ListMoodData>();
+        };}
+};
+
 
 template<>
 struct DataHolderInfo<rdt_author_genre_distribution>
@@ -110,6 +127,10 @@ struct DataHolderInfo<rdt_author_genre_distribution>
             return authorInterface->GetListGenreData();
         };}
 };
+
+typedef core::DataHolderInfo<core::rdt_fic_genres_composite>::type FicGenreCompositeType;
+typedef core::DataHolderInfo<core::rdt_fic_genres_original>::type FicGenreOriginalType;
+typedef core::DataHolderInfo<core::rdt_author_mood_distribution>::type AuthorMoodDistributions;
 
 
 }

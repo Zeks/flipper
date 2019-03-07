@@ -19,9 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/authors.h"
 #include "logger/QsLog.h"
 #include "include/timeutils.h"
+#include "core/fic_genre_data.h"
 #include "threaded_data/threaded_save.h"
 #include "threaded_data/threaded_load.h"
 #include "rec_calc/rec_calculator_weighted.h"
+#include "rec_calc/rec_calculator_mood_adjusted.h"
 
 #include <QSettings>
 #include <QDir>
@@ -76,13 +78,19 @@ void RecCalculator::SaveFavouritesData()
 
 
 RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t, core::FicWeightPtr> fetchedFics,
-                                                                 QSharedPointer<RecommendationList> params)
+                                                                 QSharedPointer<RecommendationList> params,
+                                                                 genre_stats::GenreMoodData moodData)
 {
     QSharedPointer<RecCalculatorImplBase> calculator;
     if(params->useWeighting)
-        calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.genres}));
+    {
+        if(params->useMoodAdjustment)
+           calculator.reset(new RecCalculatorImplMoodAdjusted({holder.faves, holder.fics, holder.authorMoodDistributions}, moodData));
+        else
+            calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.authorMoodDistributions}));
+    }
     else
-        calculator.reset(new RecCalculatorImplDefault({holder.faves, holder.fics, holder.genres}));
+        calculator.reset(new RecCalculatorImplDefault({holder.faves, holder.fics, holder.authorMoodDistributions}));
     calculator->fetchedFics = fetchedFics;
     calculator->params = params;
     TimedAction action("Reclist Creation",[&](){
@@ -98,7 +106,7 @@ MatchedFics RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
 {
     QLOG_INFO() << "Creating calculator";
     QSharedPointer<RecCalculatorImplWeighted> calculator;
-    calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.genres}));
+    calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.authorMoodDistributions}));
     //calculator->fetchedFics = fetchedFics;
     QSharedPointer<RecommendationList> params(new RecommendationList);
     for(auto ignore: input.userIgnoredFandoms)
