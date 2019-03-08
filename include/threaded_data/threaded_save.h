@@ -42,5 +42,6 @@ void SaveData(QString storageFolder, QString fileName, QHash<int, core::FicWeigh
 void SaveData(QString storageFolder, QString fileName, QHash<int, QList<genre_stats::GenreBit>>& fics);
 void SaveData(QString storageFolder, QString fileName, QHash<int, QString>& fics);
 void SaveData(QString storageFolder, QString fileName, QHash<uint32_t, genre_stats::ListMoodData>& moods);
+//void SaveData(QString storageFolder, QString fileName, QHash<int, double>& fics);
 
 }

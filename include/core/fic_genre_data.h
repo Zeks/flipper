@@ -40,6 +40,12 @@ struct GenreBit
     friend QDataStream &operator<<(QDataStream &, const GenreBit &);
     friend QDataStream &operator>>(QDataStream &, GenreBit &);
 };
+
+struct GenreHolder
+{
+    QList<GenreBit> bits;
+    double maxValue;
+};
 //void GenreBit::Serialize(QDataStream &out)
 //{
 //    out << genres;
@@ -270,7 +276,7 @@ struct GenreMoodData{
     bool isValid = false;
     std::array<double, 22> listGenreData;
     genre_stats::ListMoodData listMoodData;
-
+    QStringList moodAxis;
 };
 
 

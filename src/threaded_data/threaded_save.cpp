@@ -241,5 +241,14 @@ void SaveData(QString storageFolder, QString fileName, QHash<uint32_t, genre_sta
         out << it.value();
     });
 }
+//void SaveData(QString storageFolder, QString fileName, QHash<int, double> &fics)
+//{
+//    DataKeeper keeper;
+//    int threadCount = QThread::idealThreadCount()-1;
+//    Impl::fileWrapperHash(&keeper, threadCount,storageFolder+ "/" + fileName, fics, [&](auto& out, auto it){
+//        out << it.key();
+//        out << it.value();
+//    });
+//}
 
 }

@@ -30,6 +30,8 @@ struct AuthorResult{
     int size;
     uint64_t sizeAfterIgnore = 0;
     double distance = 0;
+    double usedRatio = 0;
+    int usedSize= 0;
     AuthorMatchBreakdown breakdown;
     ListMoodDifference listDiff;
 };

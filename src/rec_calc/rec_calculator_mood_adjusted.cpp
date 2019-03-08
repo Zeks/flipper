@@ -8,6 +8,8 @@ namespace core {
 static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<RecommendationList> params)
 {
     bool firstPass =  author.ratio <= params->pickRatio && author.matches > 0;
+    author.usedRatio = params->pickRatio;
+    author.usedSize= params->minimumMatch;
 
     if(!firstPass)
         return false;

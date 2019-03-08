@@ -368,6 +368,21 @@ genre_stats::GenreMoodData CalcMoodDistributionForFicList(QList<uint32_t> ficLis
     result.isValid = true;
     result.listMoodData = iteratorProcessor.resultingMoodAuthorData[0];
     result.listGenreData = iteratorProcessor.resultingGenreAuthorData[0];
+    qDebug() << "Logging reference list";
+    result.listMoodData.Log();
+
+    QStringList moodList;
+    moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+    for(int i= 0; i < moodList.size(); i++)
+    {
+        auto userValue =  interfaces::Genres::ReadMoodValue(moodList[i], result.listMoodData);
+        if(userValue >= 0.5)
+        {
+            qDebug() << "detected axis mood:" << moodList[i];
+            result.moodAxis.push_back(moodList[i]);
+        }
+    }
+
     return result;
 }
 
@@ -404,6 +419,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     params->useWeighting = task->use_weighting();
     for(auto i = 0; i< task->user_data().ignored_fandoms().fandom_ids_size(); i++)
         params->ignoredFandoms.insert(task->user_data().ignored_fandoms().fandom_ids(i));
+    for(auto i = 0; i< task->user_data().liked_authors_size(); i++)
+        params->likedAuthors.insert(task->user_data().liked_authors(i));
     for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
         params->minorNegativeVotes.insert(task->user_data().negative_feedback().basicnegatives(i));
     for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
@@ -445,19 +462,48 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             if(sourceFics.contains(key) && !task->return_sources())
                 continue;
-
-            if(((list.recommendations[key]/(100*list.pureMatches[key])) < 1) && list.decentMatches[key] == 0)
+            int adjustedVotes = list.recommendations[key]/(100);
+            if(adjustedVotes < 1)
+                adjustedVotes = 1;
+            if(((list.recommendations[key]/(100*list.pureMatches[key])) < 1) &&
+                    list.decentMatches[key] == 0 &&
+                    !params->likedAuthors.contains(holder->holder.fics[key]->authorId))
             {
-                targetList->add_purged(1);
-                if(list.recommendations[key]/(100) < 1)
-                    targetList->add_fic_matches(1);
+                bool axisGenre = false;;
+                qDebug() << "attempting to purge fic: " << key;
+                QHash<int, QList<genre_stats::GenreBit>>& ref = holder->holder.genreComposites;
+                QList<genre_stats::GenreBit>& refList = ref[key];
+                double maxValue = 0.;
+                // shit code, but I really don't want to refactor rn
+                for(auto genreBit: refList)
+                {
+                    if(genreBit.relevance > maxValue)
+                        maxValue = genreBit.relevance;
+                }
+
+                for(auto genreBit: refList)
+                {
+                    qDebug() << "genres: " << genreBit.genres << " relevance: " << genreBit.relevance;
+                    if(genreBit.relevance/maxValue > 0.45)
+                    {
+                        for(auto actualGenre : genreBit.genres)
+                        {
+                            auto mood = interfaces::Genres::MoodForGenre(actualGenre);
+                            if(moodData.moodAxis.contains(mood))
+                                axisGenre = true;
+                        }
+                    }
+                }
+
+                if(!axisGenre)
+                    targetList->add_purged(1);
                 else
-                    targetList->add_fic_matches(list.recommendations[key]/100);
+                    targetList->add_purged(0);
             }
             else {
                 targetList->add_purged(0);
-                targetList->add_fic_matches(list.recommendations[key]/100);
             }
+            targetList->add_fic_matches(adjustedVotes);
 
             targetList->add_fic_ids(key);
             //targetList->add_fic_matches(list.recommendations[key]/100);

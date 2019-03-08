@@ -286,5 +286,9 @@ void LoadData(QString storageFolder, QString fileName, QHash<uint32_t, genre_sta
     qDebug() << "Loading:" << fileName;
     loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
 }
+//void LoadData(QString storageFolder, QString fileName, QHash<int, double>& data){
+//    qDebug() << "Loading:" << fileName;
+//    loadMultiThreaded(genericLoader, hashUnifier, storageFolder + QString("/") + fileName, data);
+//}
 }
 

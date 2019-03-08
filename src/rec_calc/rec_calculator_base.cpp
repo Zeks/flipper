@@ -20,10 +20,10 @@ void RecCalculatorImplBase::Calc(){
     weighting.run();
 
     // not very satisfied with the results
-//    TimedAction authorMatchQuality("Fetching match qualities for authors",[&](){
-//        CollectFicMatchQuality();
-//    });
-//    authorMatchQuality.run();
+    //    TimedAction authorMatchQuality("Fetching match qualities for authors",[&](){
+    //        CollectFicMatchQuality();
+    //    });
+    //    authorMatchQuality.run();
 
 
     TimedAction collecting("collecting votes ",[&](){
@@ -37,17 +37,24 @@ void RecCalculatorImplBase::Calc(){
     report.run();
 }
 
-double GetCoeffForTouchyDiff(double diff)
+double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
 {
+
     if(diff <= 0.1)
         return 1.2;
     if(diff <= 0.18)
         return 1.1;
-    if(diff <= 0.3)
+    if(diff <= 0.35)
         return 1;
-    if(diff <= 0.4)
-        return 0.8;
-    return 0.5;
+    if(useScaleDown)
+    {
+        if(diff <= 0.45)
+            return 0.8;
+        return 0.5;
+    }
+    else {
+        return 1;
+    }
 }
 
 
@@ -77,13 +84,13 @@ void RecCalculatorImplBase::CollectVotes()
         result.pureMatches[it.key()] = it.value();
         it++;
     }
-//    for(auto fic: result.recommendations.keys()){
-//        if(result.recommendations[fic] > maxValue )
-//        {
-//            maxValue = result.recommendations[fic];
-//            maxId = fic;
-//        }
-//    }
+    //    for(auto fic: result.recommendations.keys()){
+    //        if(result.recommendations[fic] > maxValue )
+    //        {
+    //            maxValue = result.recommendations[fic];
+    //            maxId = fic;
+    //        }
+    //    }
     qDebug() << "Max pure votes: " << maxValue;
     qDebug() << "Max id: " << maxId;
     result.recommendations.clear();
@@ -102,11 +109,17 @@ void RecCalculatorImplBase::CollectVotes()
 
             if(touchyMoodSimilarity.has_value())
             {
-                auto coef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
+                double coef  = 1;
+                if(weighting.authorType == core::AuthorWeightingResult::EAuthorType::rare ||
+                        weighting.authorType == core::AuthorWeightingResult::EAuthorType::unique)
+                    coef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value(), false);
+                else
+                    coef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
+
                 if(coef > 0.99)
-                   result.decentMatches[fic] = 1;
-//                if(author == 77257)
-//                    qDebug() << "similarity coef for author: " << 77257 << "is: " << coef;
+                    result.decentMatches[fic] = 1;
+                //                if(author == 77257)
+                //                    qDebug() << "similarity coef for author: " << 77257 << "is: " << coef;
                 vote = votesBase*coef;
             }
             vote = vote * matchCountSimilarityCoef;
@@ -115,10 +128,10 @@ void RecCalculatorImplBase::CollectVotes()
         }
     });
 
-//    for(auto ficId : result.recommendations.keys())
-//    {
-//        result.recommendations[ficId] = result.recommendations[ficId]
-//    }
+    //    for(auto ficId : result.recommendations.keys())
+    //    {
+    //        result.recommendations[ficId] = result.recommendations[ficId]
+    //    }
 
 }
 
@@ -211,15 +224,15 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             if(ignoredTemp.cardinality() > 0)
             {
                 //hasIgnoredMatches = true;
-//                QLOG_INFO() << "ficl list size is: " << it.value().cardinality();
-//                QLOG_INFO() << "of those ignored are: " << ignoredTemp.cardinality();
+                //                QLOG_INFO() << "ficl list size is: " << it.value().cardinality();
+                //                QLOG_INFO() << "of those ignored are: " << ignoredTemp.cardinality();
             }
             author.size = it.value().cardinality();
             Roaring temp = ownFavourites;
             // first we need to remove ignored fics
             auto unignoredSize = it.value().xor_cardinality(ignoredTemp);
-//            if(hasIgnoredMatches)
-//                QLOG_INFO() << "this leaves unignored: " << unignoredSize;
+            //            if(hasIgnoredMatches)
+            //                QLOG_INFO() << "this leaves unignored: " << unignoredSize;
             temp = temp & it.value();
             author.matches = temp.cardinality();
             author.sizeAfterIgnore = unignoredSize;
@@ -321,11 +334,11 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
     {
         if(allAuthors[tempAuthors[i]].breakdown.priority1)
             QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                       "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                       "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                       "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                       "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                       "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
     }
     QLOG_INFO() << "//////////////////////";
     QLOG_INFO() << "P2: ";
@@ -334,11 +347,11 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
     {
         if(allAuthors[tempAuthors[i]].breakdown.priority2)
             QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                       "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                       "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                       "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                       "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                       "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
     }
     QLOG_INFO() << "//////////////////////";
     QLOG_INFO() << "P3: ";
@@ -347,11 +360,11 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
     {
         if(allAuthors[tempAuthors[i]].breakdown.priority3)
             QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                        "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                       "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                       "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                       "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                       "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
     }
 
 }

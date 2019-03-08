@@ -130,6 +130,7 @@ message NegativeTagsToken{
 message RecListUserData{
     IgnoredFandomsToken ignored_fandoms = 1;
     NegativeTagsToken negative_feedback = 2;
+    repeated int32 liked_authors        = 3;
 }
 
 message RecommendationListCreationRequest{
@@ -143,6 +144,7 @@ message RecommendationListCreationRequest{
     bool use_weighting                  = 8;
     RecListUserData user_data           = 9;
     int32 users_ffn_profile_id          = 10;
+    
 }
 
 message RecommendationListCreationResponse{
