@@ -80,8 +80,6 @@ std::optional<double> RecCalculatorImplMoodAdjusted::GetTouchyDiffForLists(uint3
     if(it == moodDiffs.end())
         return {};
 
-//    if(author == 77257)
-//        qDebug() << "reading touchy coef: " << it.value().touchyDifference;
     return it.value().touchyDifference;
 }
 

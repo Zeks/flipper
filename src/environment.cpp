@@ -103,7 +103,10 @@ void CoreEnvironment::LoadData()
 
 
             QVector<int> recFics;
-            filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
+            filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(),
+                                                              filter.minRecommendations,
+                                                              filter.sourcesLimiter,
+                                                              filter.displayPurgedFics);
 
             ficSource->FetchData(filter,
                                  &newFanfics);
@@ -121,13 +124,6 @@ void CoreEnvironment::LoadData()
         if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
             fic.likedAuthor = true;
     }
-
-//    auto end = fanfics.end();
-//    auto it = std::remove_if(fanfics.begin(), fanfics.end(), [](const core::Fic& f){
-//            return f.purged == 1 && f.likedAuthor != true;
-//    });
-//    if(it != end)
-//        fanfics.erase(it, fanfics.end());
     });
     action.run();
 }

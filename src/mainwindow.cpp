@@ -613,8 +613,6 @@ WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool auto
     QString toInsert = "<a href=\"" + pageUrl + "\"> %1 </a>";
     toInsert= toInsert.arg(pageUrl);
     ui->edtResults->append("<span>Processing url: </span>");
-    if(toInsert.trimmed().isEmpty())
-        toInsert=toInsert;
     ui->edtResults->insertHtml(toInsert);
 
     pbMain->setTextVisible(false);
@@ -1027,6 +1025,9 @@ void MainWindow::ReadSettings()
     ui->chkSearchWithinList->setChecked(uiSettings.value("Settings/chkSearchWithinList", false).toBool());
     ui->chkAutomaticLike->setChecked(uiSettings.value("Settings/chkAutomaticLike", false).toBool());
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
+    ui->chkDisplayPurged->setChecked(uiSettings.value("Settings/chkDisplayPurged", false).toBool());
+
+
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
     ui->spSourceAnalysis->restoreState(uiSettings.value("Settings/spSourceAnalysis", false).toByteArray());
@@ -1106,6 +1107,9 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkSearchWithinList", ui->chkShowSources->isChecked());
 
     settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
+    settings.setValue("Settings/chkDisplayPurged", ui->chkDisplayPurged->isChecked());
+
+
     settings.setValue("Settings/cbGenrePresenceTypeInclude", ui->cbGenrePresenceTypeInclude->currentText());
     settings.setValue("Settings/cbRecsAlgo", ui->cbRecsAlgo->currentText());
     settings.setValue("Settings/cbGenrePresenceTypeExclude", ui->cbGenrePresenceTypeExclude->currentText());
@@ -1176,21 +1180,31 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
     QStringList authorList;
     for(auto author: authors)
         authorList.push_back(QString::number(author));
-    //ui->leAuthorID->setText(authorList.join(","));
-    QClipboard *clipboard = QApplication::clipboard();
-    clipboard->setText(authorList.join(","));
-//    ui->chkRandomizeSelection->setChecked(false);
-    //ui->cbIDMode->setCurrentIndex(2);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    if(settings.value("Settings/clipboardAuthorsOnHeartClick", false).toBool())
+    {
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(authorList.join(","));
+    }
+    else
+    {
+        ui->leAuthorID->setText(authorList.join(","));
 
-//    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-//    env.filter.recordPage = 0;
-//    env.pageOfCurrentQuery = 0;
-////    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
-////    if(childObject)
-////        childObject->setProperty("chartDisplay", false);
-//    qwFics->rootObject()->setProperty("chartDisplay", false);
+        ui->chkRandomizeSelection->setChecked(false);
+        ui->cbIDMode->setCurrentIndex(2);
 
-//    LoadData();
+        env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+        env.filter.recordPage = 0;
+        env.pageOfCurrentQuery = 0;
+    //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
+    //    if(childObject)
+    //        childObject->setProperty("chartDisplay", false);
+        qwFics->rootObject()->setProperty("chartDisplay", false);
+
+        LoadData();
+    }
+
+
 }
 
 void MainWindow::OnNewQRSource(QVariant row)
@@ -1694,6 +1708,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     else
         filter.listForRecommendations = env.interfaces.recs->GetListIdForName(listToUse);
     filter.sourcesLimiter = static_cast<core::StoryFilter::ESourceListLimiter>(ui->cbSourceListLimiter->currentIndex());
+    filter.displayPurgedFics = ui->chkDisplayPurged->isChecked();
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
@@ -1992,6 +2007,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         params->pickRatio = ui->leRecsPickRatio->text().toInt();
         params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
         params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
+        params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
         auto ids = env.interfaces.fandoms->GetIgnoredFandomsIDs();
         for(auto fandom: ids.keys())
             params->ignoredFandoms.insert(fandom);
@@ -2072,6 +2088,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkShowSources->setChecked(false);
     ui->chkGenreUseImplied->setChecked(false);
     ui->chkUseReclistMatches->setChecked(false);
+    ui->chkDisplayPurged->setChecked(false);
     ui->sbMinimumListMatches->setValue(0);
     ui->wdgTagsPlaceholder->ClearSelection();
     ui->cbSourceListLimiter->setCurrentIndex(0);

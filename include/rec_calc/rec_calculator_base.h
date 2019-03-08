@@ -93,14 +93,6 @@ static auto matchesFilter = [](AuthorResult& author, QSharedPointer<Recommendati
 };
 static auto ratioFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params)
 {
-//    auto cleanRatio = author.matches != 0 ? static_cast<double>(author.size)/static_cast<double>(author.matches) : 999999;
-//    auto authorcoef = this->GetTouchyDiffForLists(author.id);
-//    if((cleanRatio > params->pickRatio) && authorcoef  >= 0.4)
-//    {
-//        qDebug() << "skipping author: " << author.id << "with coef: "  << authorcoef  << " and ratio: " <<  cleanRatio;
-//        author.ratio = 999999;
-//    }
-
     return author.ratio <= params->pickRatio && author.matches > 0;
 };
 static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author)

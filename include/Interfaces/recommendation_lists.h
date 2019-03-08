@@ -82,7 +82,10 @@ public:
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId, core::StoryFilter::ESourceListLimiter limiter);
     QVector<int> GetAllSourceFicIDs(int listId);
-    QHash<int, int> GetAllFicsHash(int listId, int minMatchCount = 0, core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all);
+    QHash<int, int> GetAllFicsHash(int listId,
+                                   int minMatchCount = 0,
+                                   core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all,
+                                   bool displayPurged = false);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QString GetAuthorsForRecommendationListClient(int listId);
