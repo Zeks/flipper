@@ -877,6 +877,10 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     auto ignores = userData->mutable_ignored_fandoms();
     for(auto ignore: recList.ignoredFandoms)
         ignores->add_fandom_ids(ignore);
+    auto likedAuthors = userData->mutable_liked_authors();
+    for(auto authorId: recList.likedAuthors)
+        userData->add_liked_authors(authorId);
+
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));

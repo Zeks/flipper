@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 struct UserData{
     QSet<int> allTaggedFics;
     QSet<int> usedAuthors;
+    //QSet<int> likedAuthors;
     QSet<int> ficIDsForActivetags;
     QSet<int> ficsForAuthorSearch;
     QHash<int, bool> ignoredFandoms;

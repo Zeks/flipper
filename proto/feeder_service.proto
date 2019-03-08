@@ -144,7 +144,6 @@ message RecommendationListCreationRequest{
     bool use_weighting                  = 8;
     RecListUserData user_data           = 9;
     int32 users_ffn_profile_id          = 10;
-    
 }
 
 message RecommendationListCreationResponse{
