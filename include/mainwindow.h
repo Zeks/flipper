@@ -250,6 +250,12 @@ private:
     void AnalyzeIdList(QVector<int>);
     void AnalyzeCurrentFilter();
 
+    bool CreateRecommendationList(QSharedPointer<core::RecommendationList> params,
+                                  QVector<int> sources,
+                                  bool automaticLike,
+                                  bool ownProfile);
+    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool ownRecs);
+
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
 
@@ -462,6 +468,8 @@ private slots:
     void on_pbLoadUrlForAnalysis_clicked();
 
     void on_pbAnalyzeListOfFics_clicked();
+
+    void on_pbRefreshRecList_clicked();
 
 signals:
 

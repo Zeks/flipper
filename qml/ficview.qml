@@ -75,10 +75,10 @@ Rectangle {
         z: 100
         width:500
         height:300
-        margins.top: 0
-        margins.bottom: 0
-        margins.left: 0
-        margins.right: 0
+//        margins.top: 0
+//        margins.bottom: 0
+//        margins.left: 0
+//        margins.right: 0
         //legend.visible: false
         visible: mainWindow.chartDisplay
         BarSeries {
