@@ -1,6 +1,7 @@
 #pragma once
 #include <QHash>
 #include <QSet>
+#include <optional>
 //#include "include/rec_calc/rec_calculator_base.h"
 
 

@@ -31,7 +31,7 @@ public:
                              QHash<int, Roaring> inputAuthorData);
 
 
-    QHash<int, genre_stats::ListMoodData> CreateMoodDataFromGenres(QHash<int, std::array<double, 22>>&);
+    QHash<uint32_t, genre_stats::ListMoodData> CreateMoodDataFromGenres(QHash<int, std::array<double, 22>>&);
 
 
 

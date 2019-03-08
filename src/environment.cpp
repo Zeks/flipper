@@ -121,6 +121,13 @@ void CoreEnvironment::LoadData()
         if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
             fic.likedAuthor = true;
     }
+
+//    auto end = fanfics.end();
+//    auto it = std::remove_if(fanfics.begin(), fanfics.end(), [](QSharedPointer<core::Fic> f){
+//            return f->purged == 1 && f->likedAuthor != true;
+//    });
+//    if(it != end)
+//        fanfics.erase(it, fanfics.end());
     });
     action.run();
 }
@@ -151,7 +158,7 @@ bool CoreEnvironment::Init()
 {
     InitMetatypes();
 
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Settings/serverPort", "3055").toString();
@@ -231,7 +238,7 @@ bool CoreEnvironment::Init()
 
 void CoreEnvironment::InitInterfaces()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     QSharedPointer<database::IDBWrapper> userDBInterface;
     if(thinClient)
         userDBInterface = interfaces.userDb;
@@ -274,7 +281,7 @@ void CoreEnvironment::InitInterfaces()
 
 int CoreEnvironment::GetResultCount()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(thinClient)
     {
         UserData userData;
@@ -648,7 +655,7 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
                                           bool automaticLike,
                                           bool clearAuthors)
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     int result = -1;
     if(settings.value("Settings/thinClient").toBool())
     {
@@ -661,7 +668,7 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
 
 bool CoreEnvironment::ResumeUnfinishedTasks()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/skipUnfinishedTasksCheck",true).toBool())
         return false;
     auto tasks = interfaces.pageTask->GetUnfinishedTasks();
@@ -884,7 +891,7 @@ void CoreEnvironment::UseFandomTask(PageTaskPtr task)
 static QString CreatePrototypeWithSearchParams(QString cutoffText)
 {
     QString lastPart = "?&srt=1&lan=1&r=10&len=%1";
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     int lengthCutoff = cutoffText == "100k Words" ? 100 : 60;
     lastPart=lastPart.arg(lengthCutoff);

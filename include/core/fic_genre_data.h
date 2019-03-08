@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QStringList>
 #include <QDataStream>
 #include "logger/QsLog.h"
+#include <array>
 
 namespace genre_stats
 {

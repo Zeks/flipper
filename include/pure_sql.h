@@ -209,7 +209,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
 
 DiagnosticSQLResult<QSet<int>>  GetSingularFicsInLargeButSlashyLists(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetListGenreData(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db);
+DiagnosticSQLResult<QHash<uint32_t, genre_stats::ListMoodData> > GetMoodDataForLists(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double>>  GetFicGenreData(QString genre, QString cutoff, QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetFullFicGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db);

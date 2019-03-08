@@ -154,6 +154,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[BreakdownRole] = "roleBreakdown";
     roles[BreakdownCountRole] = "roleBreakdownCount";
     roles[LikedAuthorRole] = "likedAuthor";
+    roles[PurgedRole] = "purged";
 
     return roles;
 }

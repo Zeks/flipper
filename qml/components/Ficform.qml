@@ -31,7 +31,7 @@ Rectangle {
     height: mainLayout.height > (tagColumn.height + genreTagList1.height) ? mainLayout.height + 30 : (tagColumn.height + genreTagList1.height) + 10
     clip: false
     id: delegateItem
-    color: purged == 0 ?  "#B0E0E6FF" : "#FFE0E6FF"
+    color: purged == 0 ?  "#B0E0E6FF" : "#B0FFE6FF"
     border.width: 2
     radius: 0
     border.color: Qt.rgba(0, 0, 1, 0.4)

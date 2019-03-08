@@ -520,7 +520,7 @@ void ServitorWindow::InitGrpcSource()
 {
     if(!grpcSource)
     {
-        QSettings settings("settings.ini", QSettings::IniFormat);
+        QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
         auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
         auto port = settings.value("Settings/serverPort", "3055").toString();

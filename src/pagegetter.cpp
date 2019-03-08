@@ -188,7 +188,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     QSqlQuery q(QSqlDatabase::database("PageCache"));
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
@@ -300,7 +300,7 @@ void PageManager::SetAutomaticCacheForCurrentDate(bool value)
 
 void PageManager::WipeOldCache()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/keepOldCache", false).toBool())
         d->WipeOldCache();
 }
