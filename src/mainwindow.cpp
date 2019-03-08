@@ -613,8 +613,6 @@ WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool auto
     QString toInsert = "<a href=\"" + pageUrl + "\"> %1 </a>";
     toInsert= toInsert.arg(pageUrl);
     ui->edtResults->append("<span>Processing url: </span>");
-    if(toInsert.trimmed().isEmpty())
-        toInsert=toInsert;
     ui->edtResults->insertHtml(toInsert);
 
     pbMain->setTextVisible(false);
@@ -1027,6 +1025,9 @@ void MainWindow::ReadSettings()
     ui->chkSearchWithinList->setChecked(uiSettings.value("Settings/chkSearchWithinList", false).toBool());
     ui->chkAutomaticLike->setChecked(uiSettings.value("Settings/chkAutomaticLike", false).toBool());
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
+    ui->chkDisplayPurged->setChecked(uiSettings.value("Settings/chkDisplayPurged", false).toBool());
+
+
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
     ui->spSourceAnalysis->restoreState(uiSettings.value("Settings/spSourceAnalysis", false).toByteArray());
@@ -1106,6 +1107,9 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkSearchWithinList", ui->chkShowSources->isChecked());
 
     settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
+    settings.setValue("Settings/chkDisplayPurged", ui->chkDisplayPurged->isChecked());
+
+
     settings.setValue("Settings/cbGenrePresenceTypeInclude", ui->cbGenrePresenceTypeInclude->currentText());
     settings.setValue("Settings/cbRecsAlgo", ui->cbRecsAlgo->currentText());
     settings.setValue("Settings/cbGenrePresenceTypeExclude", ui->cbGenrePresenceTypeExclude->currentText());
@@ -1694,6 +1698,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     else
         filter.listForRecommendations = env.interfaces.recs->GetListIdForName(listToUse);
     filter.sourcesLimiter = static_cast<core::StoryFilter::ESourceListLimiter>(ui->cbSourceListLimiter->currentIndex());
+    filter.displayPurgedFics = ui->chkDisplayPurged->isChecked();
     //filter.titleInclusion = nothing for now
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
@@ -2072,6 +2077,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkShowSources->setChecked(false);
     ui->chkGenreUseImplied->setChecked(false);
     ui->chkUseReclistMatches->setChecked(false);
+    ui->chkDisplayPurged->setChecked(false);
     ui->sbMinimumListMatches->setValue(0);
     ui->wdgTagsPlaceholder->ClearSelection();
     ui->cbSourceListLimiter->setCurrentIndex(0);

@@ -1040,7 +1040,7 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId,
                                                                          QSqlDatabase db,
                                                                          int minMatchCount,
-                                                                         core::StoryFilter::ESourceListLimiter limiter)
+                                                                         core::StoryFilter::ESourceListLimiter limiter, bool displayPurged)
 {
     QString qs = QString("select fic_id, match_count from RecommendationListData where list_id = :list_id");
     if(minMatchCount != 0)
@@ -1052,6 +1052,9 @@ DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int lis
         qs+=" and (votes_rare > 0 or votes_unique > 0)";
     if(limiter == core::StoryFilter::sll_exceptional)
         qs+=" and (votes_unique > 0)";
+
+    if(!displayPurged)
+        qs+=" and (purged = 0)";
 
     SqlContext<QHash<int,int>> ctx(db, qs);
     ctx.bindValue("list_id",listId);

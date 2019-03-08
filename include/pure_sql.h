@@ -243,7 +243,7 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId,
                                                                          QSqlDatabase db,
                                                                          int minMatchCount = 0,
-                                                                         core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all);
+                                                                         core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all, bool displayPurged = false);
 DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db);
 
 DiagnosticSQLResult<int> GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db);

@@ -103,7 +103,10 @@ void CoreEnvironment::LoadData()
 
 
             QVector<int> recFics;
-            filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
+            filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(),
+                                                              filter.minRecommendations,
+                                                              filter.sourcesLimiter,
+                                                              filter.displayPurgedFics);
 
             ficSource->FetchData(filter,
                                  &newFanfics);

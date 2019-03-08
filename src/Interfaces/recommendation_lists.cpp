@@ -202,7 +202,9 @@ QVector<int> RecommendationLists::GetAllSourceFicIDs(int listId)
     return result;
 }
 
-QHash<int, int> RecommendationLists::GetAllFicsHash(int listId, int minMatchCount, core::StoryFilter::ESourceListLimiter limiter)
+QHash<int, int> RecommendationLists::GetAllFicsHash(int listId,
+                                                    int minMatchCount,
+                                                    core::StoryFilter::ESourceListLimiter limiter, bool displayPurged)
 {
     QHash<int, int> result;
     if(!EnsureList(listId))
@@ -210,7 +212,7 @@ QHash<int, int> RecommendationLists::GetAllFicsHash(int listId, int minMatchCoun
 
 //    if(!grpcCacheForLists.contains({listId, minMatchCount}))
 //    {
-        result = database::puresql::GetAllFicsHashFromRecommendationList(listId,db, minMatchCount, limiter).data;
+        result = database::puresql::GetAllFicsHashFromRecommendationList(listId,db, minMatchCount, limiter, displayPurged).data;
         grpcCacheForLists[{listId, minMatchCount}] = result;
 //    }
 //    else
