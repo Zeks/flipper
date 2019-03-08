@@ -337,6 +337,19 @@
                               </item>
                              </layout>
                             </item>
+                            <item row="1" column="1">
+                             <widget class="QCheckBox" name="chkFilterGenres">
+                              <property name="toolTip">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Purges fics from your reclist when they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                              <property name="text">
+                               <string>Use Genre Filter</string>
+                              </property>
+                              <property name="checked">
+                               <bool>true</bool>
+                              </property>
+                             </widget>
+                            </item>
                            </layout>
                           </item>
                          </layout>

@@ -872,6 +872,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     task.set_min_fics_to_match(recList.minimumMatch);
     task.set_max_unmatched_to_one_matched(static_cast<int>(recList.pickRatio));
     task.set_use_weighting(recList.useWeighting);
+    task.set_use_mood_filtering(recList.useMoodAdjustment);
     task.set_users_ffn_profile_id(recList.userFFNId);
     auto userData = task.mutable_user_data();
     auto ignores = userData->mutable_ignored_fandoms();

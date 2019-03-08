@@ -2007,6 +2007,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         params->pickRatio = ui->leRecsPickRatio->text().toInt();
         params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
         params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
+        params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
         auto ids = env.interfaces.fandoms->GetIgnoredFandomsIDs();
         for(auto fandom: ids.keys())
             params->ignoredFandoms.insert(fandom);
