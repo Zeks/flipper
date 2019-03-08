@@ -1180,21 +1180,31 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
     QStringList authorList;
     for(auto author: authors)
         authorList.push_back(QString::number(author));
-    //ui->leAuthorID->setText(authorList.join(","));
-    QClipboard *clipboard = QApplication::clipboard();
-    clipboard->setText(authorList.join(","));
-//    ui->chkRandomizeSelection->setChecked(false);
-    //ui->cbIDMode->setCurrentIndex(2);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    if(settings.value("Settings/clipboardAuthorsOnHeartClick", false).toBool())
+    {
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(authorList.join(","));
+    }
+    else
+    {
+        ui->leAuthorID->setText(authorList.join(","));
 
-//    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
-//    env.filter.recordPage = 0;
-//    env.pageOfCurrentQuery = 0;
-////    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
-////    if(childObject)
-////        childObject->setProperty("chartDisplay", false);
-//    qwFics->rootObject()->setProperty("chartDisplay", false);
+        ui->chkRandomizeSelection->setChecked(false);
+        ui->cbIDMode->setCurrentIndex(2);
 
-//    LoadData();
+        env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+        env.filter.recordPage = 0;
+        env.pageOfCurrentQuery = 0;
+    //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
+    //    if(childObject)
+    //        childObject->setProperty("chartDisplay", false);
+        qwFics->rootObject()->setProperty("chartDisplay", false);
+
+        LoadData();
+    }
+
+
 }
 
 void MainWindow::OnNewQRSource(QVariant row)
