@@ -84,13 +84,6 @@ void RecCalculatorImplBase::CollectVotes()
         result.pureMatches[it.key()] = it.value();
         it++;
     }
-    //    for(auto fic: result.recommendations.keys()){
-    //        if(result.recommendations[fic] > maxValue )
-    //        {
-    //            maxValue = result.recommendations[fic];
-    //            maxId = fic;
-    //        }
-    //    }
     qDebug() << "Max pure votes: " << maxValue;
     qDebug() << "Max id: " << maxId;
     result.recommendations.clear();
@@ -127,12 +120,6 @@ void RecCalculatorImplBase::CollectVotes()
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
-
-    //    for(auto ficId : result.recommendations.keys())
-    //    {
-    //        result.recommendations[ficId] = result.recommendations[ficId]
-    //    }
-
 }
 
 Roaring RecCalculatorImplBase::BuildIgnoreList()
