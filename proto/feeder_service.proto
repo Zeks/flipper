@@ -130,6 +130,7 @@ message NegativeTagsToken{
 message RecListUserData{
     IgnoredFandomsToken ignored_fandoms = 1;
     NegativeTagsToken negative_feedback = 2;
+    repeated int32 liked_authors        = 3; 
 }
 
 message RecommendationListCreationRequest{

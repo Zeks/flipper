@@ -829,6 +829,7 @@ public:
     bool useWeighting = false;
     bool useMoodAdjustment = false;
     QSet<int> ignoredFandoms;
+    QSet<int> likedAuthors;
     QSet<int> minorNegativeVotes;
     QSet<int> majorNegativeVotes;
     QDateTime created;

@@ -98,12 +98,12 @@ void CoreEnvironment::LoadData()
             }
 
             userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
+            //userData.likedAuthors = likedAuthors;
             ficSource->userData = userData;
 
 
             QVector<int> recFics;
             filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
-
 
             ficSource->FetchData(filter,
                                  &newFanfics);
@@ -123,8 +123,8 @@ void CoreEnvironment::LoadData()
     }
 
 //    auto end = fanfics.end();
-//    auto it = std::remove_if(fanfics.begin(), fanfics.end(), [](QSharedPointer<core::Fic> f){
-//            return f->purged == 1 && f->likedAuthor != true;
+//    auto it = std::remove_if(fanfics.begin(), fanfics.end(), [](const core::Fic& f){
+//            return f.purged == 1 && f.likedAuthor != true;
 //    });
 //    if(it != end)
 //        fanfics.erase(it, fanfics.end());
@@ -522,7 +522,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     }
     grpcSource->GetInternalIDsForFics(&pack);
 
-
+    list->likedAuthors = likedAuthors;
     bool result = grpcSource->GetRecommendationListFromServer(*list);
 
 
