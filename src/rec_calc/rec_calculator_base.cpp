@@ -40,10 +40,14 @@ void RecCalculatorImplBase::Calc(){
 double GetCoeffForTouchyDiff(double diff)
 {
     if(diff <= 0.1)
+        return 1.2;
+    if(diff <= 0.18)
         return 1.1;
     if(diff <= 0.3)
         return 1;
-    return 0.8;
+    if(diff <= 0.4)
+        return 0.8;
+    return 0.5;
 }
 
 
@@ -93,9 +97,16 @@ void RecCalculatorImplBase::CollectVotes()
             double vote = votesBase;
 
             //std::optional<double> neutralMoodSimilarity = GetNeutralDiffForLists(author);
+
             std::optional<double> touchyMoodSimilarity = GetTouchyDiffForLists(author);
+
             if(touchyMoodSimilarity.has_value())
-                vote = votesBase*GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
+            {
+                auto coef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
+                if(author == 77257)
+                    qDebug() << "similarity coef for author: " << 77257 << "is: " << coef;
+                vote = votesBase*coef;
+            }
             vote = vote * matchCountSimilarityCoef;
             result.recommendations[fic]+= vote;
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
@@ -348,8 +359,10 @@ void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSh
 {
     auto params = this->params;
     auto thisPtr = this;
-    std::for_each(allAuthors.begin(), allAuthors.end(), [filters, actions, params,thisPtr](AuthorResult& author){
+
+    std::for_each(allAuthors.begin(), allAuthors.end(), [this, filters, actions, params,thisPtr](AuthorResult& author){
         author.ratio = author.matches != 0 ? static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches) : 999999;
+        author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
         bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
                 return filter(author, params) == 0;
     });

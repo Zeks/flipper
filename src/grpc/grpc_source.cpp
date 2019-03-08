@@ -890,12 +890,14 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
 
     recList.ficData.fics.clear();
     recList.ficData.fics.reserve(response->list().fic_ids_size());
+    recList.ficData.purges.reserve(response->list().fic_ids_size());
     recList.ficData.matchCounts.reserve(response->list().fic_ids_size());
 
     for(int i = 0; i < response->list().fic_ids_size(); i++)
     {
         recList.ficData.fics.push_back(response->list().fic_ids(i));
         recList.ficData.matchCounts.push_back(response->list().fic_matches(i));
+        recList.ficData.purges.push_back(response->list().purged(i));
     }
 
     for(int i = 0; i < response->list().author_ids_size(); i++)
@@ -1335,3 +1337,4 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserDa
 
     return true;
 }
+

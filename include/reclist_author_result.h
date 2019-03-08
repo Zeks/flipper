@@ -1,7 +1,14 @@
 #pragma once
 #include <QHash>
+#include <QSet>
+//#include "include/rec_calc/rec_calculator_base.h"
+
 
 namespace core{
+struct ListMoodDifference{
+    std::optional<double> neutralDifference = 0.;
+    std::optional<double> touchyDifference = 0.;
+};
 struct AuthorMatchBreakdown{
     int below50 = 0;
     int below100 = 0;
@@ -23,6 +30,7 @@ struct AuthorResult{
     uint64_t sizeAfterIgnore = 0;
     double distance = 0;
     AuthorMatchBreakdown breakdown;
+    ListMoodDifference listDiff;
 };
 struct AuthorWeightingResult
 {
@@ -39,7 +47,7 @@ struct AuthorWeightingResult
     double GetCoefficient(){
         if(!isValid)
             return 1;
-        return value;
+        return 1 + value;
     }
     double value = 0;
     EAuthorType authorType;

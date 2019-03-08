@@ -77,22 +77,42 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     authors->db = mainDb;
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     fanfics->db = mainDb;
+    auto genres = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
+    genres->db = mainDb;
     fanfics->authorInterface = authors;
     calculator->holder.authorsInterface = authors;
     calculator->holder.fanficsInterface = fanfics;
+    calculator->holder.genresInterface = genres;
     calculator->holder.settingsFile = "settings/settings_server.ini";
 
+    qDebug() << "loading fics";
     calculator->holder.LoadData<core::rdt_fics>("ServerData");
+    qDebug() << "loading favourites";
     calculator->holder.LoadData<core::rdt_favourites>("ServerData");
+    qDebug() << "loading genres composite";
+    //genres->loadOriginalGenresOnly = true;
     calculator->holder.LoadData<core::rdt_fic_genres_composite>("ServerData");
+    //genres->loadOriginalGenresOnly = false;
+    qDebug() << "loading moods";
     calculator->holder.LoadData<core::rdt_author_mood_distribution>("ServerData");
 
     if(calculator->holder.authorMoodDistributions.size() == 0)
     {
+        qDebug() << "calculating moods";
         AuthorGenreIterationProcessor iteratorProcessor;
         calculator->holder.LoadData<core::rdt_author_genre_distribution>("ServerData");
         iteratorProcessor.ReprocessGenreStats(calculator->holder.genreComposites, calculator->holder.faves);
-        thread_boost::SaveData("ServerData","ams",iteratorProcessor.resultingMoodAuthorData);
+        auto testedAuthor = iteratorProcessor.resultingMoodAuthorData[94186];
+        QStringList moodList;
+        moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+        for(int i= 0; i < moodList.size(); i++)
+        {
+            auto userValue =  interfaces::Genres::ReadMoodValue(moodList[i], testedAuthor);
+            qDebug() << moodList[i] << ": " << userValue;
+        }
+        qDebug() << "saving moods";
+        thread_boost::SaveData("ServerData","amd",iteratorProcessor.resultingMoodAuthorData);
+        qDebug() << "finished saving moods";
     }
 
     logTimer.reset(new QTimer());
@@ -425,8 +445,20 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             if(sourceFics.contains(key) && !task->return_sources())
                 continue;
+
+            if(list.recommendations[key]/100 < 1)
+            {
+                //continue;
+                targetList->add_purged(1);
+                targetList->add_fic_matches(1);
+            }
+            else {
+                targetList->add_purged(0);
+                targetList->add_fic_matches(list.recommendations[key]/100);
+            }
+
             targetList->add_fic_ids(key);
-            targetList->add_fic_matches(list.recommendations[key]);
+            targetList->add_fic_matches(list.recommendations[key]/100);
             auto* target = targetList->add_breakdowns();
             target->set_id(key);
             target->set_votes_common(list.breakdowns[key].authorTypeVotes[EAuthorType::common]);

@@ -120,6 +120,7 @@ message RecommendationListData{
     // these are internal ids
     // no conflict & harassment possibilities here
     repeated int32 author_ids                   = 7;
+    repeated int32 purged                       = 8;
 }
 message NegativeTagsToken{
     repeated int32 basicNegatives       = 1;

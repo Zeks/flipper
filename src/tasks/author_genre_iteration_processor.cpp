@@ -99,6 +99,8 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                 {
                     for(auto actualBit: genreBit.genres)
                     {
+
+                        actualBit = actualBit.trimmed();
                         //if(genreBit.isInTheOriginal)
                         log +=  "{"  + actualBit + " " + QString::number(genreBit.relevance) + "} ";
 

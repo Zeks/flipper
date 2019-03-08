@@ -55,6 +55,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDebug>
 #include <QQuickView>
 #include <QQuickItem>
+#include <QTextCodec>
 #include <QQmlContext>
 #include <QThread>
 #include <QFuture>
@@ -464,6 +465,7 @@ void MainWindow::SetupTableAccess()
     ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
     ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
     ADD_INTEGER_GETSET(holder, 24, 0, likedAuthor);
+    ADD_INTEGER_GETSET(holder, 25, 0, purged);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -490,7 +492,8 @@ void MainWindow::SetupFanficTable()
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel" << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor");
+                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel"
+                       << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 

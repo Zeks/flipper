@@ -127,9 +127,9 @@ App{
         "src/storyfilter.cpp",
         "src/transaction.cpp",
         "src/url_utils.cpp",
-        "ui/mainwindow.ui",
-        "ui/tagwidget.ui",
-        "ui/fanficdisplay.ui",
+        "UI/mainwindow.ui",
+        "UI/tagwidget.ui",
+        "UI/fanficdisplay.ui",
         "src/mainwindow.cpp",
         "src/tagwidget.cpp",
         "src/fanficdisplay.cpp",
@@ -180,6 +180,12 @@ App{
             libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
         return libs
     }
+
+    cpp.systemIncludePaths: [
+        sourceDirectory +"/proto",
+        sourceDirectory + "/third_party",
+        "/home/zeks/grpc/third_party/protobuf/src",
+        sourceDirectory + "/../"]
 
     Group{
         name:"grpc files"

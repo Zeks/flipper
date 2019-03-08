@@ -84,10 +84,10 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
     QSharedPointer<RecCalculatorImplBase> calculator;
     if(params->useWeighting)
     {
-        if(params->useMoodAdjustment)
+        //if(params->useMoodAdjustment)
            calculator.reset(new RecCalculatorImplMoodAdjusted({holder.faves, holder.fics, holder.authorMoodDistributions}, moodData));
-        else
-            calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.authorMoodDistributions}));
+//        else
+//            calculator.reset(new RecCalculatorImplWeighted({holder.faves, holder.fics, holder.authorMoodDistributions}));
     }
     else
         calculator.reset(new RecCalculatorImplDefault({holder.faves, holder.fics, holder.authorMoodDistributions}));

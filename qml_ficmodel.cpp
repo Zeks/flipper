@@ -98,6 +98,11 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             auto var = AdaptingTableModel::data(index.sibling(index.row(), 24), Qt::DisplayRole);
             return var;
         }
+        if(role == PurgedRole)
+        {
+            auto var = AdaptingTableModel::data(index.sibling(index.row(), 25), Qt::DisplayRole);
+            return var;
+        }
 
         if(role == CurrentChapterRole)
             return QString("");

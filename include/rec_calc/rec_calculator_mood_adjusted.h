@@ -11,6 +11,7 @@ public:
     RecCalculatorImplMoodAdjusted(RecInputVectors input, genre_stats::GenreMoodData moodData);
     std::optional<double> GetNeutralDiffForLists(uint32_t);
     std::optional<double> GetTouchyDiffForLists(uint32_t);
+    virtual FilterListType GetFilterList();
 
     QHash<uint32_t, ListMoodDifference> moodDiffs;
     genre_stats::GenreMoodData moodData;

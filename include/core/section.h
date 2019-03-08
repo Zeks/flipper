@@ -554,6 +554,7 @@ public:
     bool isEnglish = true;
     bool likedAuthor = false;
     int minSlashPass = 0;
+    bool purged = false;
     QStringList voteBreakdown;
     QStringList voteBreakdownCounts;
 
@@ -805,6 +806,7 @@ struct RecommendationListFicData
     int id = -1;
     QSet<int> sourceFics;
     QVector<int> fics;
+    QVector<int> purges;
     QVector<int> matchCounts;
     QVector<int> authorIds;
     QHash<int, int> matchReport;

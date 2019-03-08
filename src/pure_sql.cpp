@@ -2224,7 +2224,7 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
     QString qs = QString("select fic_id,  "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
-                         "value_common, value_uncommon, value_rare, value_unique "
+                         "value_common, value_uncommon, value_rare, value_unique, purged "
                          "from RecommendationListData where "
                          " cfInSourceFics(fic_id) > 0 and list_id = :listId"
                          " group by fic_id");
@@ -2235,10 +2235,11 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
 
     for(const auto& fic : *fics)
         sourceSet.insert(fic.id);
-
+    QSet<int> purgedFics;
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("listId", listId);
     ctx.ForEachInSelect([&](QSqlQuery& q){
+        auto ficId = q.value("fic_id").toInt();
         int sumtotal = q.value("value_common").toInt() +
                 q.value("value_uncommon").toInt() +
                 q.value("value_rare").toInt() +
@@ -2247,17 +2248,20 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
         int uncommon = static_cast<int>(DivideAsDoubles(q.value("value_uncommon").toInt(),sumtotal)*100);
         int rare = static_cast<int>(DivideAsDoubles(q.value("value_rare").toInt(),sumtotal)*100);
         int unique = static_cast<int>(DivideAsDoubles(q.value("value_unique").toInt(),sumtotal)*100);
+        bool purged = q.value("purged").toBool();
+        if(purged == true)
+            purgedFics.insert(ficId);
 
-        breakdown[q.value("fic_id").toInt()].push_back(QString::number(common));
-        breakdown[q.value("fic_id").toInt()].push_back(QString::number(uncommon));
-        breakdown[q.value("fic_id").toInt()].push_back(QString::number(rare));
-        breakdown[q.value("fic_id").toInt()].push_back(QString::number(unique));
+        breakdown[ficId].push_back(QString::number(common));
+        breakdown[ficId].push_back(QString::number(uncommon));
+        breakdown[ficId].push_back(QString::number(rare));
+        breakdown[ficId].push_back(QString::number(unique));
 
 
-        breakdownCounts[q.value("fic_id").toInt()].push_back(q.value("votes_common").toString());
-        breakdownCounts[q.value("fic_id").toInt()].push_back(q.value("votes_uncommon").toString());
-        breakdownCounts[q.value("fic_id").toInt()].push_back(q.value("votes_rare").toString());
-        breakdownCounts[q.value("fic_id").toInt()].push_back(q.value("votes_unique").toString());
+        breakdownCounts[ficId].push_back(q.value("votes_common").toString());
+        breakdownCounts[ficId].push_back(q.value("votes_uncommon").toString());
+        breakdownCounts[ficId].push_back(q.value("votes_rare").toString());
+        breakdownCounts[ficId].push_back(q.value("votes_unique").toString());
 
 
     });
@@ -2267,6 +2271,8 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
     {
         fic.voteBreakdown = breakdown[fic.id];
         fic.voteBreakdownCounts = breakdownCounts[fic.id];
+        if(purgedFics.contains(fic.id))
+            fic.purged = true;
     }
     return ctx.result;
 }
@@ -3433,11 +3439,11 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
     QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin, "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
-                         "value_common, value_uncommon, value_rare, value_unique) "
+                         "value_common, value_uncommon, value_rare, value_unique, purged) "
                          "values(:listId, :ficId, :matchCount, :is_origin,"
                          ":breakdown_available,"
                          ":votes_common, :votes_uncommon, :votes_rare, :votes_unique, "
-                         ":value_common, :value_uncommon, :value_rare, :value_unique)");
+                         ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)");
 
     SqlContext<bool> ctx(db, qs);
     //QLOG_INFO() << "Origins list: " << list->ficData.sourceFics;
@@ -3450,6 +3456,7 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
         int ficId = list->ficData.fics.at(i);
 
         ctx.bindValue("ficId", ficId);
+        ctx.bindValue("purged", list->ficData.purges.at(i));
         ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
         bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
         //QLOG_INFO() << "Writing fic: " << ficId << " isOrigin: " << isOrigin;
@@ -3465,7 +3472,6 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
         ctx.bindValue("value_uncommon", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::uncommon]);
         ctx.bindValue("value_rare", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::rare]);
         ctx.bindValue("value_unique", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::unique]);
-
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;
