@@ -446,11 +446,13 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             if(sourceFics.contains(key) && !task->return_sources())
                 continue;
 
-            if(list.recommendations[key]/100 < 1)
+            if(((list.recommendations[key]/(100*list.pureMatches[key])) < 1) && list.decentMatches[key] == 0)
             {
-                //continue;
                 targetList->add_purged(1);
-                targetList->add_fic_matches(1);
+                if(list.recommendations[key]/(100) < 1)
+                    targetList->add_fic_matches(1);
+                else
+                    targetList->add_fic_matches(list.recommendations[key]/100);
             }
             else {
                 targetList->add_purged(0);
@@ -458,7 +460,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             }
 
             targetList->add_fic_ids(key);
-            targetList->add_fic_matches(list.recommendations[key]/100);
+            //targetList->add_fic_matches(list.recommendations[key]/100);
+            //targetList->add_fic_matches(list.recommendations[key]);
             auto* target = targetList->add_breakdowns();
             target->set_id(key);
             target->set_votes_common(list.breakdowns[key].authorTypeVotes[EAuthorType::common]);

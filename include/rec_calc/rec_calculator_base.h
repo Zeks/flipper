@@ -19,6 +19,7 @@ struct RecommendationListResult{
     QHash<int, int> matchReport;
     QHash<uint32_t, MatchBreakdown> breakdowns;
     QHash<int, int> pureMatches;
+    QHash<int, int> decentMatches;
     QList<int> authors;
 };
 

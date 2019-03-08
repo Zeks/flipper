@@ -103,8 +103,10 @@ void RecCalculatorImplBase::CollectVotes()
             if(touchyMoodSimilarity.has_value())
             {
                 auto coef = GetCoeffForTouchyDiff(touchyMoodSimilarity.value());
-                if(author == 77257)
-                    qDebug() << "similarity coef for author: " << 77257 << "is: " << coef;
+                if(coef > 0.99)
+                   result.decentMatches[fic] = 1;
+//                if(author == 77257)
+//                    qDebug() << "similarity coef for author: " << 77257 << "is: " << coef;
                 vote = votesBase*coef;
             }
             vote = vote * matchCountSimilarityCoef;
