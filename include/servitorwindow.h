@@ -42,7 +42,7 @@ class QValueAxis;
 class FicSourceGRPC;
 struct GenreDetectionSources{
     QHash<int, std::array<double, 22>> genreAuthorLists;
-    QHash<int, genre_stats::ListMoodData> moodAuthorLists;
+    QHash<uint32_t, genre_stats::ListMoodData> moodAuthorLists;
     QHash<int, QString> originalFicGenres;
     QHash<int, QSet<int>> ficsToUse; // set of authors that have it
 };
@@ -121,8 +121,8 @@ public:
     std::array<double, 22> adjustedListGenreData;
     genre_stats::ListMoodData adjustedListMoodData;
 
-    QHash<int, genre_stats::ListMoodData> originalMoodData;
-    QHash<int, genre_stats::ListMoodData> adjustedMoodData;
+    QHash<uint32_t, genre_stats::ListMoodData> originalMoodData;
+    QHash<uint32_t, genre_stats::ListMoodData> adjustedMoodData;
 
     ChartData viewGenre;
     ChartData viewMood;

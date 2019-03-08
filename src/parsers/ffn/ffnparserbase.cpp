@@ -228,7 +228,7 @@ void FFNParserBase::ProcessSection(core::Section &section, int &currentPosition,
 
     GetStatSection(section, currentPosition, str);
     ProcessStatSection(section);
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/logParsedFics", false).toBool())
         section.result->Log();
     //settings.value("Settings/logParsedFics", false).toBool();

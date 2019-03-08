@@ -51,7 +51,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //    while(q.next())
 //    {
 //        QString lastPart = "/?&srt=1&lan=1&r=10&len=%1";
-//        QSettings settings("settings.ini", QSettings::IniFormat);
+//        QSettings settings("settings/settings.ini", QSettings::IniFormat);
 //        settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 //        int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
 //        lastPart=lastPart.arg(lengthCutoff);
@@ -76,7 +76,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //        rebindName = "/" + temp.at(2) + "-Crossovers" + "/" + temp.at(3);
 //        QString lastPart = "/0/?&srt=1&lan=1&r=10&len=%1";
-//        QSettings settings("settings.ini", QSettings::IniFormat);
+//        QSettings settings("settings/settings.ini", QSettings::IniFormat);
 //        settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 //        int lengthCutoff = ui->cbWordCutoff->currentText() == "100k Words" ? 100 : 60;
 //        lastPart=lastPart.arg(lengthCutoff);

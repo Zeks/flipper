@@ -297,7 +297,7 @@ bool ReadDbFile(QString file, QString connectionName)
 {
     QFile data(file);
 
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     auto reportSchemaErrors = settings.value("Settings/reportSchemaErrors", false).toBool();
 

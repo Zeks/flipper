@@ -105,7 +105,7 @@ public:
     QHash<int, std::array<double, 22>> GetListGenreData();
     QHash<int, QSet<int>> GetListFandomSet();
     QHash<int, core::AuthorFavFandomStatsPtr> GetAuthorListFandomStatistics(QList<int> authors);
-    QHash<int, genre_stats::ListMoodData> GetMoodDataForLists();
+    QHash<uint32_t, genre_stats::ListMoodData> GetMoodDataForLists();
 
     //! todo those are required for managing recommendation lists and somewhat outdated
     // moved them to dump temporarily

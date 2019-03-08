@@ -120,7 +120,7 @@ void FeederEnvironment::Init()
     rng->portableDBInterface = interfaces.db;
     queryBuilder.SetIdRNGgenerator(rng.release());
 
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     auto storedRecList = settings.value("Settings/currentList").toString();
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(storedRecList));
     interfaces.recs->LoadAvailableRecommendationLists();

@@ -479,7 +479,7 @@ QHash<int, core::AuthorFavFandomStatsPtr> Authors::GetAuthorListFandomStatistics
     return database::puresql::GetAuthorListFandomStatistics(authors, db).data;
 }
 
-QHash<int, genre_stats::ListMoodData> Authors::GetMoodDataForLists()
+QHash<uint32_t, genre_stats::ListMoodData> Authors::GetMoodDataForLists()
 {
     return database::puresql::GetMoodDataForLists(db).data;
 }

@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
     int threads =  sqlite3_threadsafe();
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(settings.value("Settings/doBackups", true).toBool())
         dbInterface->BackupDatabase("CrawlerDB");
     qDebug() << "current appPath is: " << QDir::currentPath();

@@ -38,7 +38,7 @@ TagWidget::TagWidget(QWidget *parent) :
     connect(ui->pbTagImport, &QPushButton::clicked, this, &TagWidget::OnTagImport);
     ui->edtTags->setFont(QFont("Verdana", 12));
 
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ui->wdgMassTag->setVisible(settings.value("Settings/showMassTagger", false).toBool());
 

@@ -168,9 +168,9 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
 }
 
 
-QHash<int, genre_stats::ListMoodData> AuthorGenreIterationProcessor::CreateMoodDataFromGenres(QHash<int, std::array<double, 22> > &genres)
+QHash<uint32_t, genre_stats::ListMoodData> AuthorGenreIterationProcessor::CreateMoodDataFromGenres(QHash<int, std::array<double, 22> > &genres)
 {
-    QHash<int, genre_stats::ListMoodData>  result;
+    QHash<uint32_t, genre_stats::ListMoodData>  result;
     An<interfaces::GenreIndex> genreIndex;
     for(auto key: genres.keys())
     {

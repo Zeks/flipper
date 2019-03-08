@@ -137,7 +137,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 bool MainWindow::Init()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
     if(!env.Init())
         return false;
@@ -348,7 +348,7 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
 { \
     if(data){ \
     QString temp;\
-    QSettings settings("settings.ini", QSettings::IniFormat);\
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);\
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));\
     if(settings.value("Settings/commasInWordcount", false).toBool()){\
     QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));\
@@ -511,7 +511,7 @@ void MainWindow::SetupFanficTable()
     env.interfaces.tags->LoadAlltags();
     tagList = env.interfaces.tags->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     qwFics->rootContext()->setContextProperty("urlCopyIconVisible",
                                               settings.value("Settings/urlCopyIconVisible", true).toBool());
@@ -988,7 +988,7 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
 
 void MainWindow::ReadSettings()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     //ui->wdgCustomActions->setVisible(settings.value("Settings/showCustomActions", false).toBool());
@@ -1000,7 +1000,7 @@ void MainWindow::ReadSettings()
 
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
 
-    QSettings uiSettings("ui.ini", QSettings::IniFormat);
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     ui->cbNormals->setCurrentText(uiSettings.value("Settings/normals", "").toString());
@@ -1065,7 +1065,7 @@ void MainWindow::ReadSettings()
 
 void MainWindow::WriteSettings()
 {
-    QSettings settings("ui.ini", QSettings::IniFormat);
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/minWordCount", ui->cbMinWordCount->currentText());
     settings.setValue("Settings/maxWordCount", ui->cbMaxWordCount->currentText());
@@ -1296,7 +1296,7 @@ void MainWindow::OnTagToggled(QString , bool )
 // needed to bind values to reasonable limits
 void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     auto ficLimitActive =  ui->chkRandomizeSelection->isChecked();
     int maxFicCountValue = ficLimitActive ? ui->sbMaxRandomFicCount->value()  : 0;
     if(checked && (maxFicCountValue < 1 || maxFicCountValue >50))
@@ -1306,7 +1306,7 @@ void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
 
 void MainWindow::on_cbSortMode_currentTextChanged(const QString &)
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     if(ui->cbSortMode->currentText() == "Rec Count")
         ui->cbRecGroup->setVisible(settings.value("Settings/showRecListSelector", false).toBool());
@@ -1425,7 +1425,7 @@ void MainWindow::FillRecTagCombobox()
         ui->pbGetSourceLinks->setEnabled(false);
     }
 
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     auto storedRecList = settings.value("Settings/currentList").toString();
     qDebug() << QDir::currentPath();
     ui->cbRecGroup->setCurrentText(storedRecList);
@@ -2313,7 +2313,7 @@ void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
 
 void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.sync();
