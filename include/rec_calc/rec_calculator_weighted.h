@@ -37,6 +37,8 @@ public:
     int sigma2Dist = 0;
     int counter2Sigma = 0;
     int counter17Sigma = 0;
+
+
 };
 
 

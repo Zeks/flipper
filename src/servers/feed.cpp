@@ -417,6 +417,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     params->pickRatio = task->max_unmatched_to_one_matched();
     params->alwaysPickAt = task->always_pick_at();
     params->useWeighting = task->use_weighting();
+    params->useMoodAdjustment = task->use_mood_filtering();
     for(auto i = 0; i< task->user_data().ignored_fandoms().fandom_ids_size(); i++)
         params->ignoredFandoms.insert(task->user_data().ignored_fandoms().fandom_ids(i));
     for(auto i = 0; i< task->user_data().liked_authors_size(); i++)
