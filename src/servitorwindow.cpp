@@ -109,7 +109,7 @@ ServitorWindow::~ServitorWindow()
 
 void ServitorWindow::ReadSettings()
 {
-    QSettings settings("servitor.ini", QSettings::IniFormat);
+    QSettings settings("settings/servitor.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ui->leFicUrl->setText(settings.value("Settings/ficUrl", "").toString());
     ui->leReprocessFics->setText(settings.value("Settings/reprocessIds", "").toString());
@@ -117,7 +117,7 @@ void ServitorWindow::ReadSettings()
 
 void ServitorWindow::WriteSettings()
 {
-    QSettings settings("servitor.ini", QSettings::IniFormat);
+    QSettings settings("settings/servitor.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     if(!ui->leFicUrl->text().trimmed().isEmpty())
         settings.setValue("Settings/ficUrl", ui->leFicUrl->text());
@@ -764,7 +764,7 @@ void LoadDataForCalc(InterfaceType interface, ContainerType& container, QString 
     else
         fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase(suffix));
 
-    QSettings settings("settings_server.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
     if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists(storageFolder + "/" +
                                                                                  fileBase
                                                                                  + "_0.txt"))
@@ -1007,7 +1007,7 @@ void ServitorWindow::on_pushButton_2_clicked()
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     fanfics->db = QSqlDatabase::database();
     fanfics->ResetActionQueue();
-    QSettings settings("settings_servitor.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings_servitor.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/genrequeued", false);
     settings.sync();
