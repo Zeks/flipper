@@ -150,9 +150,9 @@ bool MainWindow::Init()
     ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
                                       "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
                                       "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
-//    ui->pbUseProfile->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
-//                                      "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
-//                                      "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
+    //    ui->pbUseProfile->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
+    //                                      "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
+    //                                      "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
 
 
 
@@ -959,13 +959,19 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
     TaskProgressGuard guard(this);
     QClipboard *clipboard = QApplication::clipboard();
     auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    if(tags.size() == 0)
+    {
+        QMessageBox::warning(nullptr, "Attention!", "No tags are selected in the Tags tab. Aborting.");
+        clipboard->setText("");
+        return;
+    }
     auto fics  = env.interfaces.tags->GetAllTaggedFics(tags);
     auto ffnFics = env.GetFFNIds(fics);
     QString result;
     if(ui->wdgTagsPlaceholder->DbIdsRequested())
     {
         for(auto fic : fics)
-           result += QString::number(fic) + ",";
+            result += QString::number(fic) + ",";
     }
     else
     {
@@ -1196,9 +1202,9 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
         env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
         env.filter.recordPage = 0;
         env.pageOfCurrentQuery = 0;
-    //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
-    //    if(childObject)
-    //        childObject->setProperty("chartDisplay", false);
+        //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("mainWindow");
+        //    if(childObject)
+        //        childObject->setProperty("chartDisplay", false);
         qwFics->rootObject()->setProperty("chartDisplay", false);
 
         LoadData();
@@ -1637,8 +1643,17 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.fandom = GetCurrentFandomID();
     filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
+    auto fixGenre = [](QStringList& genres) -> void{
+        for(auto& genre: genres)
+            genre = genre.at(0).toUpper() + genre.mid(1).toLower();
+    };
+
     filter.genreExclusion = valueIfChecked(ui->chkGenreMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text(), "###"));
     filter.genreInclusion = valueIfChecked(ui->chkGenrePlus,core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text(), "###"));
+    fixGenre(filter.genreExclusion);
+    fixGenre(filter.genreInclusion);
+
+
     filter.wordExclusion = valueIfChecked(ui->chkWordsMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text(), "###"));
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
@@ -1658,7 +1673,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     if(ui->cbIDMode->currentIndex() == 2 && !ui->leAuthorID->text().isEmpty())
     {
         for(auto id : ui->leAuthorID->text().split(",", QString::SkipEmptyParts))
-        filter.usedRecommenders.push_back(id.toInt());
+            filter.usedRecommenders.push_back(id.toInt());
     }
 
 
@@ -1956,87 +1971,175 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
     LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl);
 }
 
-void MainWindow::on_pbRecsCreateListFromSources_clicked()
-{
-    bool ownRecs = false;
-    if(ui->chkUserOwnProfile->isChecked())
-    {
-        QMessageBox m;
-        m.setIcon(QMessageBox::Warning);
-        m.setText("\"Is your profile\" option is enabled!\n"
-                  "Only enable this while you are loading your own favourite list.\n"
-                  "This tells flipper to discard your own profile from recommendations for better results\n"
-                  "This will also automatically assing \"Liked\" to all of the fics in the loaded profile\n"
-                  "Are you sure you want to continue?");
-        auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
-        auto noButton =  m.addButton("No", QMessageBox::AcceptRole);
-        Q_UNUSED(noButton);
-        m.exec();
-        if(m.clickedButton() != yesButton)
-            return;
 
-        ownRecs = true;
+bool DisplayOwnProfilePrompt()
+{
+    QMessageBox m;
+    m.setIcon(QMessageBox::Warning);
+    m.setText("\"Is your profile\" option is enabled!\n"
+              "Only enable this while you are loading your own favourite list.\n"
+              "This tells flipper to discard your own profile from recommendations for better results\n"
+              "This will also automatically assing \"Liked\" to all of the fics in the loaded profile\n"
+              "Are you sure you want to continue?");
+    auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
+    auto noButton =  m.addButton("No", QMessageBox::AcceptRole);
+    Q_UNUSED(noButton);
+    m.exec();
+    if(m.clickedButton() != yesButton)
+        return false;
+    return true;
+}
+
+QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(bool ownRecs){
+    QRegularExpression rx("(\\d{1,9})");
+    auto match = rx.match(ui->leRecsFFNUrl->text());
+    int ownId = -1;
+    if(match.hasMatch())
+    {
+        qDebug() << match.capturedTexts();
+        ownId = match.capturedTexts().at(1).toInt();
     }
 
+    QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+    params->name = ui->leRecsListName->text();
+    if(ownRecs)
+    {
+        params->userFFNId = ownId;
+        env.interfaces.recs->SetUserProfile(ownId);
+    }
+    else
+        params->userFFNId = env.interfaces.recs->GetUserProfile();
+    if(params->name.trimmed().isEmpty())
+    {
+        QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
+        return QSharedPointer<core::RecommendationList>();
+    }
+    params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
+    params->pickRatio = ui->leRecsPickRatio->text().toInt();
+    params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
+    params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
+    params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
+    auto ids = env.interfaces.fandoms->GetIgnoredFandomsIDs();
+    for(auto fandom: ids.keys())
+        params->ignoredFandoms.insert(fandom);
+
+    return params;
+}
+
+
+bool MainWindow::CreateRecommendationList(QSharedPointer<core::RecommendationList> params,
+                                          QVector<int> sourceFics,
+                                          bool automaticLike,
+                                          bool ownProfile)
+{
+    if(!params)
+        return false;
+    bool success = false;
     TimedAction action("Full list creation: ",[&](){
-        QRegularExpression rx("(\\d{1,9})");
-        auto match = rx.match(ui->leRecsFFNUrl->text());
-        int ownId = -1;
-        if(match.hasMatch())
-        {
-            qDebug() << match.capturedTexts();
-            ownId = match.capturedTexts().at(1).toInt();
-        }
-
-
-        QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-        params->name = ui->leRecsListName->text();
-        if(ownRecs)
-        {
-            params->userFFNId = ownId;
-            env.interfaces.recs->SetUserProfile(ownId);
-        }
-        else
-            params->userFFNId = env.interfaces.recs->GetUserProfile();
-        if(params->name.trimmed().isEmpty())
-        {
-            QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
-            return;
-        }
-        params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
-        params->pickRatio = ui->leRecsPickRatio->text().toInt();
-        params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
-        params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
-        params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
-        auto ids = env.interfaces.fandoms->GetIgnoredFandomsIDs();
-        for(auto fandom: ids.keys())
-            params->ignoredFandoms.insert(fandom);
         TaskProgressGuard guard(this);
-
-        QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
-        auto result = env.BuildRecommendations(params, sourceFics, ui->chkAutomaticLike->isChecked() || ownRecs, false);
+        auto result = env.BuildRecommendations(params, sourceFics, automaticLike || ownProfile, false);
         if(result == -1)
         {
             QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
                                                         "Try using more source fics, or loosen the restrictions");
-            return;
+            success = false;
         }
-        Q_UNUSED(result);
-        auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
-        SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
-        ui->cbRecGroup->setCurrentText(params->name);
-        ui->cbSortMode->setCurrentText("Rec Count");
-        env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
-        ui->pbGetSourceLinks->setEnabled(true);
-        ui->pbDeleteRecList->setEnabled(true);
+        success = true;
     });
     action.run();
+    return success;
+}
+
+void MainWindow::on_pbRecsCreateListFromSources_clicked()
+{
+
+    bool ownProfile = ui->chkUserOwnProfile->isChecked();
+    bool autoLike = ui->chkAutomaticLike->isChecked() ;
+    if(ownProfile && !DisplayOwnProfilePrompt())
+        return;
+
+    auto params = CreateReclistParamsFromUI(ownProfile);
+    if(!params)
+        return;
+    if(ui->cbRecsSource->currentIndex() == 0)
+    {
+
+        QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+        if(sourceFics.size() == 0)
+            return;
+
+        bool result = CreateRecommendationList(params, sourceFics, autoLike, ownProfile);
+        if(!result)
+            return;
+    }
+    else if(ui->cbRecsSource->currentIndex() == 1)
+    {
+        ui->wdgTagsPlaceholder->on_pbUrlsForTags_clicked();
+        QClipboard *clipboard = QApplication::clipboard();
+        ui->edtRecsContents->clear();
+        QString text = clipboard->text();
+        if(text.trimmed().isEmpty())
+        {
+            QMessageBox::warning(nullptr, "Attention!", "Failed to load urls from tags\n"
+                                                        "Are you sure you have already assigned fics to the selected tags?");
+            return;
+        }
+        ui->edtRecsContents->setText(clipboard->text());
+        QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+        bool result = CreateRecommendationList(params, sourceFics, autoLike, ownProfile);
+        if(!result)
+            return;
+    }
+
+    ResetFilterUItoDefaults();
+    ui->wdgTagsPlaceholder->ClearSelection();
+    ui->cbSortMode->setCurrentText("Rec Count");
+    ui->cbSortDirection->setCurrentText("DESC");
+
+
+    auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
+    SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+    ui->cbRecGroup->setCurrentText(params->name);
+    ui->cbSortMode->setCurrentText("Rec Count");
+    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
+    ui->pbGetSourceLinks->setEnabled(true);
+    ui->pbDeleteRecList->setEnabled(true);
     on_pbLoadDatabase_clicked();
 }
 
 
 
+void MainWindow::on_pbRefreshRecList_clicked()
+{
+    auto params = env.interfaces.recs->FetchParamsForRecList(ui->cbRecGroup->currentText());
+    if(!params)
+    {
+        QMessageBox::warning(nullptr, "Attention!", "Failed to read params for reclist refresh");
+        return;
+    }
+    auto listId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
+    auto sources = env.GetListSourceFFNIds(listId);
+    QString result;
+    for(auto source: sources)
+        result+="https://www.fanfiction.net/s/" + QString::number(source)  + "\n";
 
+    ui->edtRecsContents->clear();
+
+    if(result.trimmed().isEmpty())
+    {
+        QMessageBox::warning(nullptr, "Attention!", "Failed to read source fics for reclist refresh");
+        return;
+    }
+    ui->edtRecsContents->setText(result);
+    QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    CreateRecommendationList(params, sourceFics, false, false);
+
+    ResetFilterUItoDefaults();
+    ui->cbSortMode->setCurrentText("Rec Count");
+    ui->cbSortDirection->setCurrentText("DESC");
+
+    on_pbLoadDatabase_clicked();
+}
 
 void MainWindow::on_pbReapplyFilteringMode_clicked()
 {
@@ -2304,6 +2407,8 @@ void MainWindow::AnalyzeCurrentFilter()
     AnalyzeIdList(ids);
 }
 
+
+
 void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
 {
     if(ui->cbCurrentFilteringMode->currentText() == "Default")
@@ -2364,7 +2469,7 @@ void MainWindow::on_pbMore_clicked()
         ui->spRecsFan->setCollapsible(1,0);
         ui->wdgDetailedRecControl->hide();
         ui->spRecsFan->setSizes({0,1000});
-        ui->pbMore->setText("More");
+        ui->pbMore->setText("Advanced Mode");
     }
 }
 
@@ -2507,4 +2612,6 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
     AnalyzeIdList(ficIDs);
 
 }
+
+
 

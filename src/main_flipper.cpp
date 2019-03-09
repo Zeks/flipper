@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSettings>
 void SetupLogger()
 {
-    QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
     An<QsLogging::Logger> logger;
     logger->setLoggingLevel(static_cast<QsLogging::Level>(settings.value("Logging/loglevel").toInt()));
@@ -65,38 +65,50 @@ int main(int argc, char *argv[])
     QSqlDatabase mainDb, userDb;
     if(mainDBIsCrawler)
     {
-        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+//        QLOG_INFO() << "Init CrawlerDB";
+//        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+        QLOG_INFO() << "Init UserDB";
         userDb = userDbInterface->InitDatabase("UserDB", false);
         userDbInterface->EnsureUUIDForUserDatabase();
     }
     else
     {
-       mainDb = dbInterface->InitDatabase("CrawlerDB", false);
-       userDb = userDbInterface->InitDatabase("UserDB", true);
-       userDbInterface->EnsureUUIDForUserDatabase();
+//        QLOG_INFO() << "Init CrawlerDB";
+//        mainDb = dbInterface->InitDatabase("CrawlerDB", false);
+        QLOG_INFO() << "Init UserDB";
+        userDb = userDbInterface->InitDatabase("UserDB", true);
+        userDbInterface->EnsureUUIDForUserDatabase();
     }
     auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
 
-    dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
+//    QLOG_INFO() << "reading CrawlerDB";
+//    dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
+    QLOG_INFO() << "reading UserDB";
     userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
+    QLOG_INFO() << "reading PageCache";
     pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
     if(mainDBIsCrawler)
     {
-        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+//        QLOG_INFO() << "reinit CrawlerDB";
+//        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+        QLOG_INFO() << "reinit UserDB";
         userDb = userDbInterface->InitDatabase("UserDB", false);
         userDbInterface->EnsureUUIDForUserDatabase();
     }
     else
     {
-       mainDb = dbInterface->InitDatabase("CrawlerDB", false);
-       userDb = userDbInterface->InitDatabase("UserDB", true);
-       userDbInterface->EnsureUUIDForUserDatabase();
+//        QLOG_INFO() << "reinit CrawlerDB";
+//        mainDb = dbInterface->InitDatabase("CrawlerDB", false);
+        QLOG_INFO() << "reinit UserDB";
+        userDb = userDbInterface->InitDatabase("UserDB", true);
+        userDbInterface->EnsureUUIDForUserDatabase();
     }
     QSqlDatabase tasksDb;
-
+    QLOG_INFO() << "Init Tasks";
     tasksDb = tasksInterface->InitDatabase("Tasks");
+    QLOG_INFO() << "reading Tasks";
     tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
-
+    QLOG_INFO() << "finished db";
 
     MainWindow w;
     w.env.interfaces.db = dbInterface;

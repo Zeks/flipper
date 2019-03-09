@@ -98,7 +98,7 @@ public:
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);
     void FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId);
-
+    QSharedPointer<core::RecommendationList> FetchParamsForRecList(QString name);
 
 
     QList<core::RecPtr> lists;

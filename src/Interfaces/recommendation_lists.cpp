@@ -521,5 +521,14 @@ void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics
     database::puresql::FetchRecommendationsBreakdown(fics, listId, db);
 }
 
+QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecList(QString name)
+{
+    auto id = GetListIdForName(name);
+    if(id == -1)
+        return QSharedPointer<core::RecommendationList>();
+
+    return database::puresql::FetchParamsForRecList(id, db).data;
+}
+
 
 }

@@ -1181,17 +1181,21 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.result.data = list->id > 0;
 
     qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, "
-                 " always_pick_at = :always_pick_at,  created = :created,  sources = :sources where name = :name");
+                 " always_pick_at = :always_pick_at,  created = :created,"
+                 "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,"
+                 " sources = :sources where name = :name");
     ctx.ReplaceQuery(qs);
     ctx.bindValue("minimum",list->minimumMatch);
     ctx.bindValue("pick_ratio",list->pickRatio);
-    ctx.bindValue("created",creationTimestamp);
     ctx.bindValue("always_pick_at",list->alwaysPickAt);
-    ctx.bindValue("name",list->name);
+    ctx.bindValue("created",creationTimestamp);
+    ctx.bindValue("use_weighting",list->useWeighting);
+    ctx.bindValue("use_mood_adjustment",list->useMoodAdjustment);
     QStringList authors;
     for(auto id : list->ficData.authorIds)
         authors.push_back(QString::number(id));
     ctx.bindValue("sources",authors.join(","));
+    ctx.bindValue("name",list->name);
     if(!ctx.ExecAndCheck())
     {
         list->id = -1;
@@ -2279,7 +2283,23 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
     }
     return ctx.result;
 }
-
+DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db)
+{
+    QString qs = QString(" select * from recommendationlists where id = :id ");
+    SqlContext<QSharedPointer<core::RecommendationList>> ctx(db, qs, BP1(id));
+    //QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data = QSharedPointer<core::RecommendationList>{new core::RecommendationList};
+        ctx.result.data->id = q.value("id").toInt();
+        ctx.result.data->name = q.value("name").toString();
+        ctx.result.data->pickRatio = q.value("pick_ratio").toDouble();
+        ctx.result.data->alwaysPickAt = q.value("always_pick_at").toInt();
+        ctx.result.data->minimumMatch = q.value("minimum").toInt();
+        ctx.result.data->useWeighting = q.value("use_weighting").toInt();
+        ctx.result.data->useMoodAdjustment= q.value("use_mood_adjustment").toInt();
+    });
+    return ctx.result;
+}
 
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QVector<int> ficIds, int list_id, QSqlDatabase db)
 {
@@ -3770,4 +3790,5 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
 //    }
 //    return true;
 //}
+
 

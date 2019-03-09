@@ -72,10 +72,10 @@ public slots:
     void OnRemoveTagFromEdit(QString);
     void OnTagExport();
     void OnTagImport();
-
+    void on_pbUrlsForTags_clicked();
 private slots:
     void on_pbAssignTagToFandom_clicked();
-    void on_pbUrlsForTags_clicked();
+
 };
 
 #endif // TAGWIDGET_H
