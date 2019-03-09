@@ -451,6 +451,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     auto moodData = CalcMoodDistributionForFicList(fetchedFics.keys(), holder->holder.genreComposites);
 
     auto list = holder->GetMatchedFicsForFavList(fetchedFics, params, moodData);
+    int baseVotes = params->useMoodAdjustment ? 100 : 1;
     TimedAction dataPassAction("Passing data: ",[&](){
         auto* targetList = response->mutable_list();
         targetList->set_list_name(proto_converters::TS(params->name));
@@ -468,10 +469,10 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             }
             if(sourceFics.contains(key) && !task->return_sources())
                 continue;
-            int adjustedVotes = list.recommendations[key]/(100);
+            int adjustedVotes = list.recommendations[key]/(baseVotes);
             if(adjustedVotes < 1)
                 adjustedVotes = 1;
-            if(((list.recommendations[key]/(100*list.pureMatches[key])) < 1) &&
+            if((params->useMoodAdjustment && (list.recommendations[key]/(baseVotes*list.pureMatches[key])) < 1) &&
                     list.decentMatches[key] == 0 &&
                     !params->likedAuthors.contains(holder->holder.fics[key]->authorId))
             {
