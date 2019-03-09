@@ -11,3 +11,5 @@ The currently present files are for Qt 5.11.2 and SQLITE 3.24.0
 Manual can be found at: https://docs.google.com/document/d/1rEXQBQnDbFljBTAea_Ljbq731OGUDjHoew2s9jmj2tk/edit?usp=sharing
 
 If you have questions, email me at ficflipper@gmail.com or ping me at https://discord.gg/AdDvX5H
+
+UPD: I now have a patreon: https://www.patreon.com/zekses
