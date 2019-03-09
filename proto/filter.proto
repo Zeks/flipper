@@ -148,4 +148,5 @@ message Filter{
     int32 use_this_author_only                  = 17; 
     repeated int32 used_recommender_ids         = 18;
     bool descending_direction                   = 19;
+    bool display_purged_fics                    = 20;
 }

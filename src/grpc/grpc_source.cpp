@@ -113,6 +113,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     result.set_genre_presence_include(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForInclude));
     result.set_genre_presence_exclude(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForExclude));
     result.set_use_this_author_only(filter.useThisAuthor);
+    result.set_display_purged_fics(filter.displayPurgedFics);
 
     for(auto author : filter.usedRecommenders)
         result.add_used_recommender_ids(author);
@@ -213,6 +214,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     core::StoryFilter result;
     result.randomizeResults = filter.randomize_results();
     result.useRealGenres = filter.use_implied_genre();
+    result.displayPurgedFics = filter.display_purged_fics();
     result.descendingDirection = filter.descending_direction();
 
     result.website = FS(filter.basic_filters().website());
@@ -253,6 +255,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.crossoversOnly = filter.content_filter().crossovers_only();
     result.otherFandomsMode = filter.content_filter().other_fandoms_mode();
     result.ignoreFandoms = filter.content_filter().use_ignored_fandoms();
+
 
 
     for(int i = 0; i < filter.content_filter().genre_exclusion_size(); i++)
