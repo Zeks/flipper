@@ -78,6 +78,10 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     a.setApplicationName("Flipper");
+
+    QSettings stateFile("server_state.ini", QSettings::IniFormat);
+    stateFile.setValue("server_state", "Initializing");
+    stateFile.sync();
     SetupLogger();
     SetupStatLogger();
     QLOG_INFO() << "Feeder app started server";
@@ -95,6 +99,9 @@ int main(int argc, char *argv[])
         builder.RegisterService(&service);
         std::unique_ptr<Server> server(builder.BuildAndStart());
         QLOG_INFO() << "Starting server";
+        stateFile.setValue("server_state", "Ready");
+        stateFile.sync();
+        settings.sync();
         server->Wait();
     };
     QtConcurrent::run(serverSetup);
