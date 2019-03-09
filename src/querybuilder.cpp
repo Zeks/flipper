@@ -43,21 +43,21 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
     bool useRecommendationOrdering = useRecommendationFiltering && !filter.listOpenMode;
 
-        if(createLimits)
+    if(createLimits)
+    {
+        queryString = "ID, ";
+        queryString+= CreateCustomFields(filter);
+        queryString+=  + " f.* ";
+    }
+    else
+    {
+        queryString = " f.ID as id ";
+        if(useRecommendationOrdering)
         {
-            queryString = "ID, ";
-            queryString+= CreateCustomFields(filter);
-            queryString+=  + " f.* ";
+            queryString += " , cfRecommendationsMatchCount(f.id) as sumrecs ";
+            queryString = queryString.arg(userToken);
         }
-        else
-        {
-            queryString = " f.ID as id ";
-            if(useRecommendationOrdering)
-            {
-                queryString += " , cfRecommendationsMatchCount(f.id) as sumrecs ";
-                queryString = queryString.arg(userToken);
-            }
-        }
+    }
 
     queryString+=" from vFanfics f " ;
 
@@ -231,10 +231,10 @@ QString DefaultQueryBuilder::ProcessOtherFandomsMode(StoryFilter filter, bool re
     {
         queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) > 0").arg(userToken);
     }
-//        queryString += " and not exists ("
-//                       "select fandom_id from ficfandoms where fic_id = f.id and fandom_id in "
-//                       "(select id from fandomindex where name in (select distinct fandom from recent_fandoms)"
-//                       "))" ;
+    //        queryString += " and not exists ("
+    //                       "select fandom_id from ficfandoms where fic_id = f.id and fandom_id in "
+    //                       "(select id from fandomindex where name in (select distinct fandom from recent_fandoms)"
+    //                       "))" ;
 
     if(!renameToFID)
         queryString.replace(" fid ", " ff.id ");
@@ -289,8 +289,8 @@ QString DefaultQueryBuilder::ProcessAuthor(StoryFilter filter)
     if(filter.useThisAuthor == -1)
         return result;
     QStringList authorList;
-//    for(auto author : filter.usedAuthors)
-//        authorList.push_back(QString::number(author));
+    //    for(auto author : filter.usedAuthors)
+    //        authorList.push_back(QString::number(author));
 
     result = QString(" and f.author_id = %1 ").arg(QString::number(filter.useThisAuthor ));
     return result;
@@ -313,12 +313,12 @@ QString DefaultQueryBuilder::ProcessRecommenders(StoryFilter filter)
     QString result;
     if(filter.usedRecommenders.size() == 0)
         return result;
-//    QStringList authorList;
-//    for(auto author : filter.usedRecommenders)
-//        authorList.push_back(QString::number(author));
+    //    QStringList authorList;
+    //    for(auto author : filter.usedRecommenders)
+    //        authorList.push_back(QString::number(author));
 
-//    result = QString(" and exists (select distinct fic_id from recommendations where recommender_id in (%1) and fic_id = f.id) ")
-//            .arg("'"+ authorList.join("','") +"'");
+    //    result = QString(" and exists (select distinct fic_id from recommendations where recommender_id in (%1) and fic_id = f.id) ")
+    //            .arg("'"+ authorList.join("','") +"'");
     result = " and cfInFicsForAuthors(f.id) > 0 ";
     return result;
 
@@ -496,7 +496,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             {
                 auto counter1 = ++counter;
                 genreResult.push_back(QString(" true_genre1  = :genreinc%1 and  true_genre1_percent/max_genre_percent > %2  ")
-                        .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre2  = :genreinc%1 and  true_genre2_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre3  = :genreinc%1 and  true_genre3_percent/max_genre_percent > %2 ")
@@ -523,7 +523,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             {
                 auto counter1 = ++counter;
                 genreResult.push_back(QString(" true_genre1  = :genreexc%1 and  true_genre1_percent/max_genre_percent > %2  ")
-                        .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre2  = :genreexc%1 and  true_genre2_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre3  = :genreexc%1 and  true_genre3_percent/max_genre_percent > %2 ")
@@ -612,26 +612,51 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
 {
     QString diffField;
-    if(filter.sortMode == StoryFilter::sm_wordcount)
-        diffField = " WORDCOUNT";
-    if(filter.sortMode == StoryFilter::sm_wcrcr)
-        diffField = " (wcr )";
-    else if(filter.sortMode == StoryFilter::sm_favourites)
-        diffField = " FAVOURITES";
-    else if(filter.sortMode == StoryFilter::sm_updatedate)
-        diffField = " updated";
-    else if(filter.sortMode == StoryFilter::sm_publisdate)
-        diffField = " published";
-    else if(filter.sortMode == StoryFilter::sm_reccount)
-        diffField = " sumrecs";
-    else if(filter.sortMode == StoryFilter::sm_favrate)
-        diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
-    else if(filter.sortMode == StoryFilter::sm_revtofav)
-        diffField = " favourites /(reviews + 1)";
-    else if(filter.sortMode == StoryFilter::sm_genrevalues)
-        diffField = " genrevalue";
 
-    diffField += filter.descendingDirection ? " DESC" : " ASC";
+    if(filter.protocolVersion == 0)
+    {
+        if(filter.sortMode == StoryFilter::sm_wordcount)
+            diffField = " WORDCOUNT DESC";
+        if(filter.sortMode == StoryFilter::sm_wcrcr)
+            diffField = " (wcr ) asc";
+        else if(filter.sortMode == StoryFilter::sm_favourites)
+            diffField = " FAVOURITES DESC";
+        else if(filter.sortMode == StoryFilter::sm_updatedate)
+            diffField = " updated DESC";
+        else if(filter.sortMode == StoryFilter::sm_publisdate)
+            diffField = " published DESC";
+        else if(filter.sortMode == StoryFilter::sm_reccount)
+            diffField = " sumrecs desc";
+        else if(filter.sortMode == StoryFilter::sm_favrate)
+            diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
+        else if(filter.sortMode == StoryFilter::sm_revtofav)
+            diffField = " favourites /(reviews + 1) desc";
+        else if(filter.sortMode == StoryFilter::sm_genrevalues)
+            diffField = " genrevalue desc";
+    }
+    else{
+
+        if(filter.sortMode == StoryFilter::sm_wordcount)
+            diffField = " WORDCOUNT";
+        if(filter.sortMode == StoryFilter::sm_wcrcr)
+            diffField = " (wcr )";
+        else if(filter.sortMode == StoryFilter::sm_favourites)
+            diffField = " FAVOURITES";
+        else if(filter.sortMode == StoryFilter::sm_updatedate)
+            diffField = " updated";
+        else if(filter.sortMode == StoryFilter::sm_publisdate)
+            diffField = " published";
+        else if(filter.sortMode == StoryFilter::sm_reccount)
+            diffField = " sumrecs";
+        else if(filter.sortMode == StoryFilter::sm_favrate)
+            diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
+        else if(filter.sortMode == StoryFilter::sm_revtofav)
+            diffField = " favourites /(reviews + 1)";
+        else if(filter.sortMode == StoryFilter::sm_genrevalues)
+            diffField = " genrevalue";
+        diffField += filter.descendingDirection ? " DESC" : " ASC";
+    }
+
     return diffField;
 }
 
@@ -740,20 +765,20 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     wherePart = wherePart.arg(userToken);
     wherePart.replace("COLLATE NOCASE", "");
     wherePart+=" COLLATE NOCASE";
-//    for(int i = 0; i < filter.maxFics; i++)
-//    {
-        if(rng)
-        {
-            auto q = NewQuery();
-            q->bindings = query->bindings;
-            q->str = wherePart;
+    //    for(int i = 0; i < filter.maxFics; i++)
+    //    {
+    if(rng)
+    {
+        auto q = NewQuery();
+        q->bindings = query->bindings;
+        q->str = wherePart;
 
-            auto values = rng->Get(q, userToken, db, filter);
-            if(values.size() == 0)
-                return "";
-            idList=values;
-        }
-//    }
+        auto values = rng->Get(q, userToken, db, filter);
+        if(values.size() == 0)
+            return "";
+        idList=values;
+    }
+    //    }
     if(idList.size() == 0)
         return result;
     result = part.arg(idList.join(","));
@@ -774,10 +799,10 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         q->bindings.push_back({":list_id",filter.listForRecommendations});
         q->bindings.push_back({":list_id2",filter.listForRecommendations});
     }
-//    if(filter.minRecommendations > -1 && filter.listOpenMode)
-//        q->bindings.push_back({":match_count",filter.minRecommendations});
-//    else if (filter.minRecommendations > -1)
-//        q->bindings.push_back({":match_count",filter.minRecommendations + 1});
+    //    if(filter.minRecommendations > -1 && filter.listOpenMode)
+    //        q->bindings.push_back({":match_count",filter.minRecommendations});
+    //    else if (filter.minRecommendations > -1)
+    //        q->bindings.push_back({":match_count",filter.minRecommendations + 1});
     if(!filter.useRealGenres)
     {
         if(!filter.genreInclusion.isEmpty())

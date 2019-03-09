@@ -7,7 +7,7 @@ import "favlist.proto";
 package ProtoSpace;
 
 message ControlInfo{
-    string user_token = 1;
+    string user_token       = 1;
 }
 message ResponseInfo{
     bool is_valid                = 1;

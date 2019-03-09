@@ -149,4 +149,5 @@ message Filter{
     repeated int32 used_recommender_ids         = 18;
     bool descending_direction                   = 19;
     bool display_purged_fics                    = 20;
+    string protocol_version                     = 21;
 }

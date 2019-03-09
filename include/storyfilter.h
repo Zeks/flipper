@@ -137,6 +137,7 @@ struct StoryFilter{
     int allTagsCount = 0;
     int useThisAuthor = -1;
     int useThisFic = -1;
+    int protocolVersion = 0;
     QList<int> usedRecommenders;
     ESortMode sortMode;
     EReviewBiasMode reviewBias;
