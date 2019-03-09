@@ -1980,7 +1980,7 @@ bool DisplayOwnProfilePrompt()
     m.setText("\"Is your profile\" option is enabled!\n"
               "Only enable this while you are loading your own favourite list.\n"
               "This tells flipper to discard your own profile from recommendations for better results\n"
-              "This will also automatically assing \"Liked\" to all of the fics in the loaded profile\n"
+              "This will also automatically assign \"Liked\" to all of the fics in the loaded profile\n"
               "Are you sure you want to continue?");
     auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
     auto noButton =  m.addButton("No", QMessageBox::AcceptRole);
