@@ -461,6 +461,11 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         for(int key: list.recommendations.keys())
         {
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
+            if(!holder->holder.fics.contains(key))
+            {
+                qDebug() << "probably an older database, skipping key: " << key;
+                continue;
+            }
             if(sourceFics.contains(key) && !task->return_sources())
                 continue;
             int adjustedVotes = list.recommendations[key]/(100);
