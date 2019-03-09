@@ -30,7 +30,7 @@ Rectangle {
     property bool havePagesAfter: false
     property bool displayAuthorName: true
     property bool authorFilterActive: false
-    property bool detailedGenreMode: false
+    property bool detailedGenreMode: true
     signal pageRequested(int page)
     signal backClicked()
     signal forwardClicked()

@@ -306,7 +306,16 @@ bool ReadDbFile(QString file, QString connectionName)
     {
         QTextStream in(&data);
         QString dbCode = in.readAll();
+        data.close();
         QStringList statements = dbCode.split(";");
+        QSqlDatabase db;
+        if(!connectionName.isEmpty())
+            db = QSqlDatabase::database(connectionName);
+        else
+            db = QSqlDatabase::database();
+
+        db.transaction();
+        QSqlQuery q(db);
         for(QString statement: statements)
         {
             statement = statement.replace(QRegExp("\\t"), " ");
@@ -315,16 +324,15 @@ bool ReadDbFile(QString file, QString connectionName)
 
             if(statement.trimmed().isEmpty() || statement.trimmed().left(2) == "--")
                 continue;
-            QSqlDatabase db;
-            if(!connectionName.isEmpty())
-                db = QSqlDatabase::database(connectionName);
-            else
-                db = QSqlDatabase::database();
+
             //bool isOpen = db.isOpen();
-            QSqlQuery q(db);
+
             q.prepare(statement.trimmed());
+            QLOG_INFO() << "Executing: " << statement;
             database::puresql::ExecAndCheck(q, reportSchemaErrors);
         }
+        db.commit();
+
     }
     else
         return false;

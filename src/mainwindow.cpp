@@ -1643,8 +1643,17 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.fandom = GetCurrentFandomID();
     filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
+    auto fixGenre = [](QStringList& genres) -> void{
+        for(auto& genre: genres)
+            genre = genre.at(0).toUpper() + genre.mid(1).toLower();
+    };
+
     filter.genreExclusion = valueIfChecked(ui->chkGenreMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsGenre->text(), "###"));
     filter.genreInclusion = valueIfChecked(ui->chkGenrePlus,core::StoryFilter::ProcessDelimited(ui->leContainsGenre->text(), "###"));
+    fixGenre(filter.genreExclusion);
+    fixGenre(filter.genreInclusion);
+
+
     filter.wordExclusion = valueIfChecked(ui->chkWordsMinus, core::StoryFilter::ProcessDelimited(ui->leNotContainsWords->text(), "###"));
     filter.wordInclusion = valueIfChecked(ui->chkWordsPlus, core::StoryFilter::ProcessDelimited(ui->leContainsWords->text(), "###"));
     filter.ignoreAlreadyTagged = ui->chkIgnoreTags->isChecked();
