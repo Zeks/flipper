@@ -2297,7 +2297,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     if(stats.noInfoCount > 0)
         ui->edtAnalysisResults->insertHtml(QString("No info in DB for: <font color=blue>%1</font><br>").arg(QString::number(stats.noInfoCount)));
     ui->edtAnalysisResults->insertHtml(QString("Total count of words: <font color=blue>%1</font><br>").arg(QString::number(stats.ficWordCount)));
-    ui->edtAnalysisResults->insertHtml(QString("Average words per chapter: <font color=blue>%1</font><br>").arg(QString::number(stats.averageWordsPerChapter)));
+    //ui->edtAnalysisResults->insertHtml(QString("Average words per chapter: <font color=blue>%1</font><br>").arg(QString::number(stats.averageWordsPerChapter)));
     ui->edtAnalysisResults->insertHtml(QString("Average words per fic: <font color=blue>%1</font><br>").arg(QString::number(stats.averageLength)));
     ui->edtAnalysisResults->insertHtml("<br>");
     ui->edtAnalysisResults->insertHtml(QString("First published fic: <font color=blue>%1</font><br>")
