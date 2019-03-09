@@ -7,7 +7,7 @@ Library{
 name: "UniversalModels"
 type:"staticlibrary"
 qbsSearchPaths: sourceDirectory + "/../../modules"
-Depends { name: "conditionals" }
+Depends { name: "localvariables" }
 Depends { name: "Qt.core"}
 Depends { name: "Qt.sql" }
 Depends { name: "Qt.widgets" }

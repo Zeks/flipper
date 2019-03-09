@@ -6,7 +6,6 @@ debug/*
 Makefile
 Makefile.*
 ui_*
-modules/*
 third_party/sqlite3/*
 fpmtmp/*
 deployment/*
@@ -17,3 +16,4 @@ Run/*.sqlite
 Run/bot_token*.ini
 Run/lib*.a
 Run/settings
+modules/modules/localvariables*

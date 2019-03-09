@@ -26,7 +26,7 @@ Module {
         }
 
         prepare: {
-            var protoc = product.moduleProperty('conditionals', 'protoc');
+            var protoc = product.moduleProperty('localvariables', 'protoc');
 
             // use of canonicalFilePath is discourage because it might break on symlinks
             var rootDir = File.canonicalFilePath(input.moduleProperty('grpc_generation', 'rootDir'))
@@ -40,7 +40,7 @@ Module {
             gprcArgs = gprcArgs.concat(["--proto_path=" + rootDir]);
             gprcArgs = gprcArgs.concat(["--proto_path=" + pbDependencyDir]);
             gprcArgs = gprcArgs.concat(["--grpc_out=" + generationDir]);
-            gprcArgs = gprcArgs.concat(["--plugin=protoc-gen-grpc=" + product.moduleProperty('conditionals', 'grpcPlugin') ]);
+            gprcArgs = gprcArgs.concat(["--plugin=protoc-gen-grpc=" + product.moduleProperty('localvariables', 'grpcPlugin') ]);
             gprcArgs = gprcArgs.concat([input.filePath]);
 
             var grpcCommand = new Command(protoc, gprcArgs);

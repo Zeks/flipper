@@ -3,10 +3,10 @@ import "../../Precompiled.qbs" as Precompiled
 
 Library{
     qbsSearchPaths: sourceDirectory + "/../../modules"
-    type: conditionals.dllProject == true ? "dynamiclibrary" : "staticlibrary"
+    type: localvariables.dllProject == true ? "dynamiclibrary" : "staticlibrary"
     Depends { name: "Qt.core"}
     Depends { name: "cpp" }
-    Depends { name: "conditionals" }
+    Depends { name: "localvariables" }
     Depends { name: "projecttype"}
     Depends { name: "Qt.sql"}
     Depends { name: "Qt.concurrent"}
@@ -18,7 +18,7 @@ Library{
         name: "Qt.gui"
         condition: projecttype.useGuiLib
     }
-    Precompiled{condition:conditionals.usePrecompiledHeader}
+    Precompiled{condition:localvariables.usePrecompiledHeader}
     Export{
         Depends { name: "cpp" }
         cpp.includePaths: [product.sourceDirectory + "/include"]

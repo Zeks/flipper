@@ -2,23 +2,23 @@ import qbs
 import qbs.Process
 
 Product{
-    Depends { name: "conditionals" }
+    Depends { name: "localvariables" }
     cpp.debugInformation: true
     cpp.cxxLanguageVersion: "c++17"
-    conditionals.debugAppend : qbs.buildVariant == "debug" ? "d" : ""
+    localvariables.debugAppend : qbs.buildVariant == "debug" ? "d" : ""
 
     
     cpp.libraryPaths:  {
         var path = []
         if(qbs.toolchain.contains("msvc"))
         {
-            path = conditionals.projectPath
+            path = localvariables.projectPath
             path+= qbs.buildVariant == "release" ? "/release" : "/debug"
         }
         else
         {
             var addition = qbs.buildVariant == "release" ? "/release" : "/debug";
-            path= path.concat(conditionals.projectPath + addition)
+            path= path.concat(localvariables.projectPath + addition)
             path= path.concat("/home/zekses/Downloads/grpc/libs/opt")
             //path= path.concat("/home/zekses/Downloads/flipper/Run")
             path= path.concat("/home/zekses/Downloads/grpc/third_party/protobuf/src/.libs")
@@ -26,7 +26,7 @@ Product{
         return path
     }
     destinationDirectory: {
-        var path = conditionals.projectPath
+        var path = localvariables.projectPath
         path += qbs.buildVariant == "release" ? "/release" : "/debug"
         return path
     }

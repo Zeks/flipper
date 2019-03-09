@@ -40,7 +40,7 @@ App{
 
     Depends { name: "projecttype" }
 
-    Precompiled{condition:conditionals.usePrecompiledHeader}
+    Precompiled{condition:localvariables.usePrecompiledHeader}
     cpp.minimumWindowsVersion: "6.0"
 
     cpp.defines: base.concat(["L_LOGGER_LIBRARY"])
@@ -154,13 +154,13 @@ App{
         else{
             libs = ["logger", "dl", "protobuf"]
         }
-        libs = libs.concat(conditionals.zlib)
-        libs = libs.concat(conditionals.ssl)
+        libs = libs.concat(localvariables.zlib)
+        libs = libs.concat(localvariables.ssl)
 
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(qbs.toolchain.contains("msvc"))
-            libs = libs.concat([conditionals.protobufName,"grpc", "grpc++", "gpr"])
+            libs = libs.concat([localvariables.protobufName,"grpc", "grpc++", "gpr"])
         else
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
@@ -168,10 +168,10 @@ App{
 
     Group{
         name:"grpc files"
-        proto_generation.rootDir: conditionals.projectPath + "/proto"
-        grpc_generation.rootDir: conditionals.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
-        grpc_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.rootDir: localvariables.projectPath + "/proto"
+        grpc_generation.rootDir: localvariables.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        grpc_generation.protobufDependencyDir: localvariables.projectPath + "../"
         proto_generation.toolchain : qbs.toolchain
         grpc_generation.toolchain : qbs.toolchain
         files: [
@@ -181,8 +181,8 @@ App{
     }
     Group{
         name:"proto files"
-        proto_generation.rootDir: conditionals.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: conditionals.projectPath + "../"
+        proto_generation.rootDir: localvariables.projectPath + "/proto"
+        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
             "proto/filter.proto",

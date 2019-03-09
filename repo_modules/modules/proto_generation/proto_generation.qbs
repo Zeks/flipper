@@ -26,7 +26,7 @@ Module {
         }
 
         prepare: {
-            var protoc = product.moduleProperty('conditionals', 'protoc');
+            var protoc = product.moduleProperty('localvariables', 'protoc');
 
             // use of canonicalFilePath is discourage because it might break on symlinks
 
