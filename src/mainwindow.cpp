@@ -203,7 +203,7 @@ bool MainWindow::Init()
     FillRecTagCombobox();
 
 
-    imgProvider.reset(new QRImageProvider);
+    imgProvider = new QRImageProvider;
     SetupFanficTable();
     //FillRecommenderListView();
     //CreatePageThreadWorker();
@@ -501,7 +501,7 @@ void MainWindow::SetupFanficTable()
 
     holder->SetData(env.fanfics);
     qwFics = new QQuickWidget();
-    qwFics->engine()->addImageProvider("qrImageProvider",imgProvider.data());
+    qwFics->engine()->addImageProvider("qrImageProvider",imgProvider);
     QHBoxLayout* lay = new QHBoxLayout;
     lay->addWidget(qwFics);
     ui->wdgFicviewPlaceholder->setLayout(lay);
