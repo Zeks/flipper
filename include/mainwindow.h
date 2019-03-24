@@ -299,7 +299,7 @@ private:
     QMenu fandomMenu;
     QMenu ignoreFandomMenu;
     QMenu ignoreFandomSlashFilterMenu;
-    QSharedPointer<QRImageProvider> imgProvider;
+    QRImageProvider* imgProvider = nullptr;
 
 
 public slots:
