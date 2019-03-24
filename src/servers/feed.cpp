@@ -112,6 +112,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
         }
         qDebug() << "saving moods";
         thread_boost::SaveData("ServerData","amd",iteratorProcessor.resultingMoodAuthorData);
+        calculator->holder.LoadData<core::rdt_author_mood_distribution>("ServerData");
         qDebug() << "finished saving moods";
     }
 
