@@ -80,6 +80,8 @@ DiagnosticSQLResult<bool> AssignTagToFandom(QString tag, int fandom_id, QSqlData
 DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
+DiagnosticSQLResult<bool> AssignScoreToFanfic(int chapter, int fic_id, QSqlDatabase db);
+
 DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
 DiagnosticSQLResult<bool> AssignQueuedToFanfic(int fic_id, QSqlDatabase db);
 
@@ -214,6 +216,8 @@ DiagnosticSQLResult<QHash<int, double>>  GetFicGenreData(QString genre, QString 
 DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetFullFicGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, QString> >GetGenreForFics(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, int>> GetScoresForFics(QSqlDatabase db);
+
 
 DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFics(QSqlDatabase db);

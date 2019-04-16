@@ -20,6 +20,7 @@ import QtQuick.Controls 2.4
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
 import QtCharts 2.0
+import QtGraphicalEffects 1.0
 
 import "Funcs.js" as Funcs
 Rectangle {
@@ -112,6 +113,20 @@ Rectangle {
         //        print("updated previndex: " + lvFics.previousIndex )
         //        console.log(lvFics)
         //        lvFics.children[activatedIndex].z = 10
+    }
+    function getColor(index) {
+        switch (index) {
+        case 4 :
+            return "blue"
+        case 3:
+            return "green"
+        case 2:
+            return "yellow";
+        case 1:
+            return "orange";
+        case 0:
+            return "red";
+        }
     }
 
     ColumnLayout {
@@ -470,7 +485,8 @@ Rectangle {
                 id: txtRecCount
                 width: recommendations > 0 ? 20 : 0
                 height: 24
-                text: { return recommendations}
+                text: { return recommendations + " Ratio: 1/" + Math.round(favourites/recommendations)}
+                //text: { return recommendations + " Faves: " + favourites}
                 visible: recommendations > 0
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 16
@@ -638,6 +654,30 @@ Rectangle {
                 }
             }
             Image {
+                id: imgStem
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Stem") !== -1  ? 1 : 0.5
+                source: tags.indexOf("Stem") !== -1 ? "qrc:/icons/icons/stem_green.png" : "qrc:/icons/icons/stem_gray.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Stem")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Stem") === -1)
+                            lvFics.tagAdded("Stem",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Stem",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
                 id: imgQueue
                 width: 20
                 height: 24
@@ -793,6 +833,40 @@ Rectangle {
         anchors.rightMargin: 10
         anchors.top: mainLayout.top
         anchors.topMargin: 0
+    }
+
+    Column {
+        spacing: 4
+        anchors.left: parent.right
+        ///anchors.rightMargin: 10
+        anchors.top: mainLayout.top
+        anchors.leftMargin: 5
+
+        Repeater {
+            model: 5
+
+            Image  {
+                id: rect
+                opacity: score >= index+1 ? 1 : 0.3
+                //radius: 5
+                width: 24; height: 24
+                source: {
+                    //console.log("score changed, new score", score)
+                    score > index ? "qrc:/icons/icons/star.png" : "qrc:/icons/icons/star_gray.png"
+                }
+                //color: "red"
+                //border.width: 1
+
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        lvFics.scoreAdjusted(indexOfThisDelegate, index + 1, score);
+
+                    }
+                }
+            }
+        }
     }
 }
 

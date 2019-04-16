@@ -320,6 +320,7 @@ public slots:
     void OnTagRemove(QVariant tag, QVariant row);
 
     void OnHeartDoubleClicked(QVariant);
+    void OnScoreAdjusted(QVariant, QVariant, QVariant);
     void OnNewQRSource(QVariant);
 
 

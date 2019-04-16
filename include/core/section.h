@@ -554,6 +554,7 @@ public:
     bool isEnglish = true;
     bool likedAuthor = false;
     int minSlashPass = 0;
+    int score = 0;
     bool purged = false;
     QStringList voteBreakdown;
     QStringList voteBreakdownCounts;

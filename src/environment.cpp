@@ -58,6 +58,8 @@ void CoreEnvironment::InitMetatypes()
 
 void CoreEnvironment::LoadData()
 {
+    ficScores= interfaces.fanfics->GetScoresForFics();
+
     TimedAction action("Full data load",[&](){
     QVector<core::Fic> newFanfics;
     if(filter.useThisFic != -1)
@@ -119,10 +121,13 @@ void CoreEnvironment::LoadData()
     }
     fanfics = newFanfics;
     currentLastFanficId = ficSource->lastFicId;
+    auto& ficScoresRef = ficScores;
     for(auto& fic : fanfics)
     {
         if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
             fic.likedAuthor = true;
+        if(ficScores.contains(fic.id))
+            fic.score = ficScores[fic.id];
     }
     });
     action.run();
@@ -228,6 +233,7 @@ bool CoreEnvironment::Init()
     auto positiveTags = settings.value("Tags/minorPositive").toString().split(",", QString::SkipEmptyParts);
     positiveTags += settings.value("Tags/majorPositive").toString().split(",", QString::SkipEmptyParts);
     likedAuthors = interfaces.tags->GetAuthorsForTags(positiveTags);
+
 
     return true;
 }

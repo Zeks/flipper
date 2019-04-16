@@ -50,7 +50,9 @@ bool NullPtrGuard(T item)
 
 #define BP1(X) {COMMAND(X)}
 #define BP2(X, Y) {COMMAND(X), COMMAND(Y)}
-//#define BP3(X, Y, Z) {{"X", X}, {"Y", Y},{"Z", Z}}
+#define BP3(X, Y, Z) {COMMAND(X), COMMAND(Y), COMMAND(Z)}
+#define BP4(X, Y, Z, W) {COMMAND(X), COMMAND(Y), COMMAND(Z), COMMAND(W)}
+
 //#define BP4(X, Y, Z, W) {{"X", X}, {"Y", Y},{"Z", Z},{"W", W}}
 
 static DiagnosticSQLResult<FicIdHash> GetGlobalIDHash(QSqlDatabase db, QString where)
@@ -261,6 +263,13 @@ DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDat
     QString qs = QString("update fanfics set at_chapter = :chapter where id = :fic_id");
     //return SqlContext<bool> (db, qs, {{"chapter", chapter},{"fic_id", fic_id}})();
     return SqlContext<bool> (db, qs, BP2(chapter,fic_id))();
+}
+DiagnosticSQLResult<bool> AssignScoreToFanfic(int score, int fic_id, QSqlDatabase db)
+{
+    QString qs = "INSERT INTO FicSCores(fic_id, score) values(:fic_id, :score) on conflict (fic_id) do update set score = :score where fic_id = :fic_id";
+    SqlContext<bool> ctx(db, qs, BP4(fic_id, score, score, fic_id));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
 }
 
 DiagnosticSQLResult<int> GetLastFandomID(QSqlDatabase db){
@@ -743,8 +752,10 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
                          "ffn_id, ao3_id,sb_id, sv_id, "
                          " last_favourites_update, last_favourites_checked, "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
-                         " from recommenders where website_type = :site "
-                         " and last_favourites_update <= :date_start and  last_favourites_update >= :date_end "
+                         " from recommenders where "
+                         " last_favourites_update <= :date_start "
+                         " and  last_favourites_update >= :date_end "
+                         " and website_type = :site "
                          "order by id %1");
     if(limit > 0)
         qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
@@ -753,9 +764,9 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
 
     qDebug() << "fething authors between " << dateEnd << " and " << dateStart;
     SqlContext<QList<core::AuthorPtr>> ctx(db, qs);
-    ctx.bindValue("site",website);
     ctx.bindValue("date_start",dateStart);
     ctx.bindValue("date_end",dateEnd);
+    ctx.bindValue("site",website);
     ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
                                                   "select count(*) from recommenders where website_type = :site",
                                                   [](QSqlQuery& q){
@@ -3090,6 +3101,14 @@ DiagnosticSQLResult<QHash<int, QString> >GetGenreForFics(QSqlDatabase db)
     SqlContext<QHash<int, QString>> ctx(db);
     QString qs = QString("select id, %1 from fanfics order by id").arg("genres");
     ctx.FetchSelectIntoHash(qs, "id", "genres");
+    return ctx.result;
+}
+
+DiagnosticSQLResult<QHash<int, int>> GetScoresForFics(QSqlDatabase db)
+{
+    SqlContext<QHash<int, int>> ctx(db);
+    QString qs = QString("select fic_id, score from ficscores order by fic_id asc");
+    ctx.FetchSelectIntoHash(qs, "fic_id", "score");
     return ctx.result;
 }
 

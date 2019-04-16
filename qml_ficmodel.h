@@ -56,7 +56,8 @@ public:
         BreakdownCountRole,
         LikedAuthorRole,
         PurgedRole,
-        EndRole = PurgedRole
+        ScoreRole,
+        EndRole = ScoreRole
 
     };
 

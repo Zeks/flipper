@@ -230,7 +230,7 @@ struct SqlContext
 
         qs = actualQuery;
         Prepare(qs);
-        BindValues();
+        //BindValues();
 
         if(!ExecAndCheck())
             return;

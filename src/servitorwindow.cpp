@@ -1171,7 +1171,6 @@ void ServitorWindow::on_pbUnpdateInterval_clicked()
     auto authors = authorInterface->GetAllAuthorsWithFavUpdateBetween("ffn",
                                                                       QDateTime::currentDateTime().addMonths(-1*ui->sbUpdateIntervalStart->value()),
                                                                       QDateTime::currentDateTime().addMonths(-1*ui->sbUpdateIntervalEnd->value())
-
                                                                       );
 
 

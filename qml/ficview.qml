@@ -261,6 +261,7 @@ Rectangle {
             signal authorToggled(var id, var toggled)
             signal refilterClicked()
             signal heartDoubleClicked(var id)
+            signal scoreAdjusted(var id, var value, var currentScore)
         }
     }
 

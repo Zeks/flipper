@@ -73,6 +73,7 @@ QStringList Tags::CreateDefaultTagList()
     temp += "Hide" ;
     temp += "Limbo" ;
     temp += "Wait" ;
+    temp += "Stem" ;
     temp += "Queue" ;
     temp += "Reading" ;
     temp += "Finished" ;

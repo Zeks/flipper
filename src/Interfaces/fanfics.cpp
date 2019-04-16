@@ -250,6 +250,11 @@ bool Fanfics::AssignChapter(int ficId, int chapter)
     return database::puresql::AssignChapterToFanfic(chapter, ficId, db).success;
 }
 
+bool Fanfics::AssignScore(int score, int ficId)
+{
+    return database::puresql::AssignScoreToFanfic(score, ficId, db).success;
+}
+
 bool Fanfics::AssignSlashForFic(int ficId, int source)
 {
     return database::puresql::AssignSlashToFanfic(ficId, source, db).success;
@@ -288,6 +293,11 @@ QHash<int, double> Fanfics::GetDoubleValueHashForFics(QString fieldName)
 QHash<int, QString> Fanfics::GetGenreForFics()
 {
     return database::puresql::GetGenreForFics(db).data;
+}
+
+QHash<int, int> Fanfics::GetScoresForFics()
+{
+    return database::puresql::GetScoresForFics(db).data;
 }
 
 QSet<int> Fanfics::ConvertFFNSourceFicsToDB(QString userToken)

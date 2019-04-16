@@ -466,6 +466,7 @@ void MainWindow::SetupTableAccess()
     ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
     ADD_INTEGER_GETSET(holder, 24, 0, likedAuthor);
     ADD_INTEGER_GETSET(holder, 25, 0, purged);
+    ADD_INTEGER_GETSET(holder, 26, 0, score);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -493,7 +494,7 @@ void MainWindow::SetupFanficTable()
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
                        << "recommendations" << "realGenres" << "author_id" << "minSlashLevel"
-                       << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged");
+                       << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -528,6 +529,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(chapterChanged(QVariant, QVariant)), this, SLOT(OnChapterUpdated(QVariant, QVariant)));
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(heartDoubleClicked(QVariant)), this, SLOT(OnHeartDoubleClicked(QVariant)));
+    connect(childObject, SIGNAL(scoreAdjusted(QVariant, QVariant, QVariant)), this, SLOT(OnScoreAdjusted(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(newQRSource(QVariant)), this, SLOT(OnNewQRSource(QVariant)));
     connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
@@ -1211,6 +1213,26 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
     }
 
 
+}
+
+void MainWindow::OnScoreAdjusted(QVariant row, QVariant newScore, QVariant oldScore)
+{
+    int rownum = row.toInt();
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    int actualScore = 0;
+    if(newScore == oldScore)
+    {
+        env.interfaces.fanfics->AssignScore(0, id);
+        actualScore = 0;
+    }
+    else
+    {
+        env.interfaces.fanfics->AssignScore(newScore.toInt(), id);
+        actualScore = newScore.toInt();
+    }
+
+    typetableModel->setData(typetableModel->index(rownum, 26), actualScore, Qt::DisplayRole);
+    typetableModel->updateAll();
 }
 
 void MainWindow::OnNewQRSource(QVariant row)

@@ -63,5 +63,9 @@
         <file>icons/heart_tag.png</file>
         <file>icons/heart_tag_gray.png</file>
         <file>icons/link.png</file>
+        <file>icons/stem_gray.png</file>
+        <file>icons/stem_green.png</file>
+        <file>icons/star.png</file>
+        <file>icons/star_gray.png</file>
     </qresource>
 </RCC>

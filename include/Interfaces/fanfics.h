@@ -86,6 +86,7 @@ class Fanfics : public IDBWebIDIndex {
     bool ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString, QString, QString)> func);
 
     bool AssignChapter(int, int);
+    bool AssignScore(int, int);
     bool AssignSlashForFic(int, int source);
     bool AssignQueuedForFic(int ficId);
     bool AssignIterationOfSlash(QString iteration);
@@ -94,6 +95,7 @@ class Fanfics : public IDBWebIDIndex {
     QHash<int, std::array<double, 22>> GetFullFicGenreData();
     QHash<int, double> GetDoubleValueHashForFics(QString fieldName);
     QHash<int, QString> GetGenreForFics();
+    QHash<int, int> GetScoresForFics();
     // this uses preloaded fics from static data
     // to return an ID list for recommendations creator
     QSet<int> ConvertFFNSourceFicsToDB(QString userToken);

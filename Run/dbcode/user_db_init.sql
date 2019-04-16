@@ -23,8 +23,15 @@ CREATE TABLE if not exists FicTags (
  tag varchar );
 CREATE INDEX if not exists I_FICTAGS_DBID ON FicTags (fic_id ASC);
 CREATE INDEX if not exists I_FICTAGS_FFNID ON FicTags (ffn_id ASC);
- -- tag table; 
-
+ 
+ -- ficscore table;
+CREATE TABLE if not exists FicScores (
+ fic_id integer unique,
+ score integer );
+CREATE INDEX if not exists I_FICSCORES_DBID ON FicTags (fic_id ASC);
+CREATE INDEX if not exists I_FICSCORES_SCORE ON FicTags (score ASC);
+ 
+ -- tag table;  
 CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT NULL);
 --INSERT INTO Tags(tag, id) values('Dead', 1);
 --INSERT INTO Tags(tag, id) values('Moar_pls', 2);
