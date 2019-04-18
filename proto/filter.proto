@@ -151,4 +151,5 @@ message Filter{
     bool descending_direction                   = 19;
     bool display_purged_fics                    = 20;
     string protocol_version                     = 21;
+    bool use_and_for_tags                       = 22;
 }

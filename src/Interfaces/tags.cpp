@@ -117,9 +117,9 @@ bool Tags::ImportFromFile(QString filename)
     return true;
 }
 
-QSet<int> Tags::GetAllTaggedFics(QStringList tags)
+QSet<int> Tags::GetAllTaggedFics(QStringList tags, bool useAND)
 {
-    return database::puresql::GetAllTaggedFics(tags, db).data;
+    return database::puresql::GetAllTaggedFics(tags, useAND, db).data;
 }
 
 QSet<int> Tags::GetAuthorsForTags(QStringList tags)

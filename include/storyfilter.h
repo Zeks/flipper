@@ -113,6 +113,7 @@ struct StoryFilter{
     bool listOpenMode= false;
     bool showRecSources = false;
     bool tagsAreUsedForAuthors = false;
+    bool tagsAreANDed = false;
     bool useRealGenres = false;
     bool descendingDirection = true;
     bool displayPurgedFics = false;

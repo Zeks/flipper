@@ -102,6 +102,11 @@ bool TagWidget::UseTagsForAuthors()
     return ui->chkUseTagsForAuthors->isChecked();
 }
 
+bool TagWidget::UseANDForTags()
+{
+    return ui->chkAndForTags->isChecked();
+}
+
 void TagWidget::ClearSelection()
 {
     InitEditFromTags(allTags);

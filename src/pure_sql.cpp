@@ -222,7 +222,7 @@ DiagnosticSQLResult<bool> AssignTagToFandom(QString tag, int fandom_id, QSqlData
 
 DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO FicTags(fic_id, tag) values(:fic_id, :tag)";
+    QString qs = "INSERT INTO FicTags(fic_id, tag, added) values(:fic_id, :tag, date('now'))";
     SqlContext<bool> ctx(db, qs, {{"tag", tag},{"fic_id", fic_id}});
     ctx.ExecAndCheck(true);
     //    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id");
@@ -2177,14 +2177,30 @@ DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSq
     return ctx.result;
 }
 
-DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, QSqlDatabase db)
+DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, bool useAND, QSqlDatabase db)
 {
-    QString qs = QString("select distinct fic_id from fictags ");
-    if(tags.size() > 0)
-        qs += QString(" where tag in ('%1')").arg(tags.join("','"));
-    SqlContext<QSet<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
-    return ctx.result;
+    if(!useAND)
+    {
+        QString qs = QString("select distinct fic_id from fictags ");
+        if(tags.size() > 0)
+            qs += QString(" where tag in ('%1')").arg(tags.join("','"));
+        SqlContext<QSet<int>> ctx(db, qs);
+        ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+        return ctx.result;
+    }
+    else {
+        QString qs = QString("select distinct fic_id from fictags ft where ");
+        QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '%1') ";
+        QStringList tokens;
+        for(auto tag : tags)
+        {
+            tokens.push_back(prototype.arg(tag));
+        }
+        qs += tokens.join(" and ");
+        SqlContext<QSet<int>> ctx(db, qs);
+        ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+        return ctx.result;
+    }
 }
 DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase db){
     QString qs = QString("select distinct author_id from ficauthors ");

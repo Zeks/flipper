@@ -89,6 +89,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
     ProtoSpace::Filter result;
     result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
+    result.set_use_and_for_tags(filter.tagsAreANDed);
     result.set_randomize_results(filter.randomizeResults);
     result.set_protocol_version(QString::number(1).toStdString());
     result.set_use_implied_genre(filter.useRealGenres);
@@ -307,6 +308,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.minRecommendations = filter.recommendations().min_recommendations();
     result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
     result.tagsAreUsedForAuthors = filter.tags_are_for_authors();
+    result.tagsAreANDed = filter.use_and_for_tags();
 
     result.ignoredFandomCount = userData.ignored_fandoms().fandom_ids_size();
     result.recommendationsCount = userData.recommendation_list().list_of_fics_size();
