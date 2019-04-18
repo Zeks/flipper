@@ -297,7 +297,8 @@ int CoreEnvironment::GetResultCount()
     QVector<int> recFics;
     //filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
     filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
-
+    ficScores= interfaces.fanfics->GetScoresForFics();
+    filter.scoresHash = ficScores;
     return ficSource->GetFicCount(filter);
 }
 void CoreEnvironment::UseAuthorTask(PageTaskPtr task)
