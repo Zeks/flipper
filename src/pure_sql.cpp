@@ -266,10 +266,17 @@ DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDat
 }
 DiagnosticSQLResult<bool> AssignScoreToFanfic(int score, int fic_id, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO FicSCores(fic_id, score) values(:fic_id, :score) on conflict (fic_id) do update set score = :score where fic_id = :fic_id";
-    SqlContext<bool> ctx(db, qs, BP4(fic_id, score, score, fic_id));
-    ctx.ExecAndCheck(true);
-    return ctx.result;
+    if(score > 0)
+    {
+        QString qs = "INSERT INTO FicSCores(fic_id, score) values(:fic_id, :score) on conflict (fic_id) do update set score = :score where fic_id = :fic_id";
+        SqlContext<bool> ctx(db, qs, BP4(fic_id, score, score, fic_id));
+        ctx.ExecAndCheck(true);
+        return ctx.result;
+    }
+    else {
+        QString qs = QString(" delete from FicScores where fic_id  = :fic_id");
+        return SqlContext<bool>(db, qs, BP1(fic_id))();
+    }
 }
 
 DiagnosticSQLResult<int> GetLastFandomID(QSqlDatabase db){
