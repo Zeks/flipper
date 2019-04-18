@@ -2246,6 +2246,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->cbSourceListLimiter->setCurrentIndex(0);
     ui->cbIDMode->setCurrentIndex(0);
     ui->leAuthorID->setText("");
+    ui->wdgTagsPlaceholder->ResetFilters();
 }
 
 void MainWindow::DetectGenreSearchState()
