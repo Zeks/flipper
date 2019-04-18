@@ -546,6 +546,12 @@ void MainWindow::SetupFanficTable()
 
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
+
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
+    windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
+
 }
 
 void MainWindow::OnDisplayNextPage()
@@ -1258,6 +1264,9 @@ void MainWindow::OnTagAddInTagWidget(QVariant tag, QVariant row)
     SetTag(rownum, tag.toString());
     QObject* windowObject= qwFics->rootObject();
     windowObject->setProperty("magnetTag", tag);
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    uiSettings.setValue("Settings/magneticTag", tag.toString());
 }
 
 void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)

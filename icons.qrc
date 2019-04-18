@@ -69,5 +69,8 @@
         <file>icons/star_gray.png</file>
         <file>icons/magnet.png</file>
         <file>icons/magnet_gray.png</file>
+        <file>icons/book_meh.png</file>
+        <file>icons/book_meh_gray.png</file>
+        <file>icons/book_meh_c1.png</file>
     </qresource>
 </RCC>

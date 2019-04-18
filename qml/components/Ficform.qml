@@ -551,6 +551,30 @@ Rectangle {
                 }
             }
             Image {
+                id: imgMeh
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf("Meh") !== -1  ? 1 : 0.5
+                source: tags.indexOf("Meh") !== -1 ? "qrc:/icons/icons/book_meh_c1.png" : "qrc:/icons/icons/book_meh_gray.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Meh")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Meh") === -1)
+                            lvFics.tagAdded("Meh",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Meh",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
                 id: imgLike
                 width: 20
                 height: 24
