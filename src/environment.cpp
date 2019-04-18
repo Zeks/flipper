@@ -109,6 +109,7 @@ void CoreEnvironment::LoadData()
                                                               filter.minRecommendations,
                                                               filter.sourcesLimiter,
                                                               filter.displayPurgedFics);
+            filter.scoresHash = ficScores;
 
             ficSource->FetchData(filter,
                                  &newFanfics);

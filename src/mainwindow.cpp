@@ -1634,6 +1634,30 @@ FilterErrors MainWindow::ValidateFilter()
     return result;
 }
 
+
+core::StoryFilter::ESortMode SortRecoder(int index){
+
+    switch(index){
+    case 0:
+        return core::StoryFilter::sm_wordcount;
+    case 1:
+        return core::StoryFilter::sm_favourites;
+    case 2:
+        return core::StoryFilter::sm_favrate;
+    case 3:
+        return core::StoryFilter::sm_updatedate;
+    case 4:
+        return core::StoryFilter::sm_publisdate;
+    case 5:
+        return core::StoryFilter::sm_reccount;
+    case 6:
+        return core::StoryFilter::sm_wcrcr;
+    case 7:
+        return core::StoryFilter::sm_scores;
+    default: return core::StoryFilter::sm_undefined;
+    }
+}
+
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode,
                                                         bool useAuthorLink,
                                                         QString listToUse,
@@ -1733,7 +1757,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.reviewBias = static_cast<core::StoryFilter::EReviewBiasMode>(ui->cbBiasFavor->currentIndex());
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
-    filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
+    filter.sortMode = SortRecoder(ui->cbSortMode->currentIndex());
+    //filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
     filter.protocolVersion = 1;
     if(ui->chkUseReclistMatches->isChecked())
         filter.minRecommendations =  ui->sbMinimumListMatches->value();
