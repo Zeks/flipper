@@ -108,6 +108,21 @@ void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
 }
 
+void cfInScores(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    auto* data= ThreadData::GetRecommendationData();
+
+    if(data->scoresList.contains(ficId))
+    {
+        //qDebug() << "fic in data: " << ficId;
+        sqlite3_result_int(ctx, 1);
+    }
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
+
 void cfInSourceFics(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int ficId = sqlite3_value_int(argv[0]);
@@ -135,6 +150,23 @@ void cfRecommendationsMatchCount(sqlite3_context* ctx, int , sqlite3_value** arg
         return;
     }
     auto& hash = data->recommendationList;
+    QHash<int, int>::iterator it = hash.find(ficId);
+    if(it == hash.end())
+        sqlite3_result_int(ctx, 0);
+    else
+        sqlite3_result_int(ctx, it.value());
+}
+void cfScoresMatchCount(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto* data= ThreadData::GetRecommendationData();
+    if(!data)
+    {
+        sqlite3_result_int(ctx, 0);
+        return;
+    }
+    auto& hash = data->scoresList;
     QHash<int, int>::iterator it = hash.find(ficId);
     if(it == hash.end())
         sqlite3_result_int(ctx, 0);
@@ -277,7 +309,9 @@ bool InstallCustomFunctions(QSqlDatabase db)
             sqlite3_create_function(db_handle, "cfInFicsForAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInFicsForAuthors, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInSourceFics", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInSourceFics, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInRecommendations", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInScores", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
             sqlite3_create_function(db_handle, "cfRecommendationsMatchCount", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatchCount, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfScoresMatchCount", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatchCount, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInAuthors, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInLikedAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInLikedAuthors, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);

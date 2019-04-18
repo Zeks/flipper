@@ -36,6 +36,7 @@ struct RecommendationsData{
     QSet<int> matchedAuthors;
     QHash<int, int> listData;
     QHash<int,int> recommendationList;
+    QHash<int,int> scoresList;
     QString token;
 };
 
@@ -68,3 +69,4 @@ using RecommendationsInfoAccessor = InfoAccessor<RecommendationsData>;
 using UserInfoAccessor = InfoAccessor<UserData>;
 BIND_TO_SELF_SINGLE(RecommendationsInfoAccessor);
 BIND_TO_SELF_SINGLE(UserInfoAccessor);
+

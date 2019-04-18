@@ -88,6 +88,7 @@ protected:
     //QString ProcessAuthor(StoryFilter);
     QString ProcessOtherFandomsMode(StoryFilter, bool renameToFID = true);
     QString ProcessSumRecs(StoryFilter, bool appendComma = true);
+    QString ProcessScores(StoryFilter, bool appendComma = true);
     QString ProcessTags(StoryFilter);
     QString ProcessAuthor(StoryFilter);
     QString ProcessFicID(StoryFilter);
