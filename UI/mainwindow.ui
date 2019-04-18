@@ -582,9 +582,6 @@
                   <widget class="QListView" name="lvIgnoredFandoms"/>
                  </item>
                  <item>
-                  <widget class="QTimeEdit" name="timeEdit"/>
-                 </item>
-                 <item>
                   <widget class="QComboBox" name="cbIgnoreFandomSelector">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">

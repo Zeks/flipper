@@ -1256,6 +1256,8 @@ void MainWindow::OnTagAddInTagWidget(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
     SetTag(rownum, tag.toString());
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("magnetTag", tag);
 }
 
 void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)

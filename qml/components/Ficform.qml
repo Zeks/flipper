@@ -821,6 +821,30 @@ Rectangle {
                     }
                 }
             }
+            Image {
+                id: imgMagnet
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf(mainWindow.magnetTag) !== -1  ? 1 : 0.5
+                source: tags.indexOf(mainWindow.magnetTag) !== -1 ? "qrc:/icons/icons/magnet.png" : "qrc:/icons/icons/magnet_gray.png"
+
+                MouseArea{
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    hoverEnabled: true
+                    ToolTip.text: qsTr("Currently: " + mainWindow.magnetTag)
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf(mainWindow.magnetTag) === -1)
+                            lvFics.tagAdded(mainWindow.magnetTag,indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted(mainWindow.magnetTag,indexOfThisDelegate)
+                    }
+                }
+            }
         }
     }
 
