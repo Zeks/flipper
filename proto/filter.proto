@@ -115,6 +115,7 @@ message Filter{
     sm_wcr_cr            = 7;
     sm_rev_to_fav        = 8;
     sm_genre_values      = 9;
+    sm_genre_scores      = 10;
    }
     enum RatingFilter{
         rt_t_m        = 0;
