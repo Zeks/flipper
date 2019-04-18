@@ -309,9 +309,9 @@ bool InstallCustomFunctions(QSqlDatabase db)
             sqlite3_create_function(db_handle, "cfInFicsForAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInFicsForAuthors, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInSourceFics", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInSourceFics, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInRecommendations", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfInScores", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInRecommendations, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfInScores", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInScores, NULL, NULL);
             sqlite3_create_function(db_handle, "cfRecommendationsMatchCount", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatchCount, NULL, NULL);
-            sqlite3_create_function(db_handle, "cfScoresMatchCount", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfRecommendationsMatchCount, NULL, NULL);
+            sqlite3_create_function(db_handle, "cfScoresMatchCount", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfScoresMatchCount, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInAuthors, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInLikedAuthors", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInLikedAuthors, NULL, NULL);
             sqlite3_create_function(db_handle, "cfInIgnoredFandoms", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &cfInIgnoredFandoms, NULL, NULL);

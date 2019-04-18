@@ -61,7 +61,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
         }
         if(useScoresOrdering)
         {
-            queryString += " , c";
+            queryString += " , cfScoresMatchCount(f.id) as scores ";
             queryString = queryString.arg(userToken);
         }
     }
