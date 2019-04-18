@@ -1294,6 +1294,11 @@
                        <string>WCRC-R</string>
                       </property>
                      </item>
+                     <item>
+                      <property name="text">
+                       <string>Scores</string>
+                      </property>
+                     </item>
                     </widget>
                    </item>
                    <item>

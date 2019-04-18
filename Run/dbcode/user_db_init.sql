@@ -21,15 +21,30 @@ CREATE TABLE if not exists FicTags (
  sb_id integer default -1,
  sv_id integer default -1,
  tag varchar );
+ alter table FicTags add column added datetime default 0;
 CREATE INDEX if not exists I_FICTAGS_DBID ON FicTags (fic_id ASC);
 CREATE INDEX if not exists I_FICTAGS_FFNID ON FicTags (ffn_id ASC);
+CREATE INDEX if not exists I_FICTAGS_TAG_ADDED ON FicTags (added ASC);
+update FicTags set added = date('now') where added is null;
  
  -- ficscore table;
 CREATE TABLE if not exists FicScores (
  fic_id integer unique,
  score integer );
+ alter table FicScores add column updated datetime default 0;
 CREATE INDEX if not exists I_FICSCORES_DBID ON FicTags (fic_id ASC);
 CREATE INDEX if not exists I_FICSCORES_SCORE ON FicTags (score ASC);
+
+CREATE TABLE if not exists FicSnoozes (
+ fic_id integer unique,
+ snooze_added datetime,
+ snoozed_at_chapter integer,
+ snoozed_till_chapter integer,
+ snoozed_until_finished );
+ 
+CREATE INDEX if not exists I_FICSNOOZES_DBID ON FicTags (fic_id ASC);
+CREATE INDEX if not exists I_FICSCORES_DATEADDED ON FicTags (snooze_added ASC);
+
  
  -- tag table;  
 CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT NULL);

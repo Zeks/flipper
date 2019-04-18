@@ -546,6 +546,12 @@ void MainWindow::SetupFanficTable()
 
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
+
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
+    windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
+
 }
 
 void MainWindow::OnDisplayNextPage()
@@ -1256,6 +1262,11 @@ void MainWindow::OnTagAddInTagWidget(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
     SetTag(rownum, tag.toString());
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("magnetTag", tag);
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    uiSettings.setValue("Settings/magneticTag", tag.toString());
 }
 
 void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)
@@ -1634,6 +1645,30 @@ FilterErrors MainWindow::ValidateFilter()
     return result;
 }
 
+
+core::StoryFilter::ESortMode SortRecoder(int index){
+
+    switch(index){
+    case 0:
+        return core::StoryFilter::sm_wordcount;
+    case 1:
+        return core::StoryFilter::sm_favourites;
+    case 2:
+        return core::StoryFilter::sm_favrate;
+    case 3:
+        return core::StoryFilter::sm_updatedate;
+    case 4:
+        return core::StoryFilter::sm_publisdate;
+    case 5:
+        return core::StoryFilter::sm_reccount;
+    case 6:
+        return core::StoryFilter::sm_wcrcr;
+    case 7:
+        return core::StoryFilter::sm_scores;
+    default: return core::StoryFilter::sm_undefined;
+    }
+}
+
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode,
                                                         bool useAuthorLink,
                                                         QString listToUse,
@@ -1685,6 +1720,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     //    /filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
+    filter.tagsAreANDed = ui->wdgTagsPlaceholder->UseANDForTags() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
     filter.rating = static_cast<core::StoryFilter::ERatingFilter>(ui->cbFicRating->currentIndex());
@@ -1733,7 +1769,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.reviewBias = static_cast<core::StoryFilter::EReviewBiasMode>(ui->cbBiasFavor->currentIndex());
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
-    filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
+    filter.sortMode = SortRecoder(ui->cbSortMode->currentIndex());
+    //filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
     filter.protocolVersion = 1;
     if(ui->chkUseReclistMatches->isChecked())
         filter.minRecommendations =  ui->sbMinimumListMatches->value();
@@ -2220,6 +2257,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->cbSourceListLimiter->setCurrentIndex(0);
     ui->cbIDMode->setCurrentIndex(0);
     ui->leAuthorID->setText("");
+    ui->wdgTagsPlaceholder->ResetFilters();
 }
 
 void MainWindow::DetectGenreSearchState()

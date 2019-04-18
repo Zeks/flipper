@@ -89,6 +89,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
     ProtoSpace::Filter result;
     result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
+    result.set_use_and_for_tags(filter.tagsAreANDed);
     result.set_randomize_results(filter.randomizeResults);
     result.set_protocol_version(QString::number(1).toStdString());
     result.set_use_implied_genre(filter.useRealGenres);
@@ -187,6 +188,11 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     {
         userData->mutable_recommendation_list()->add_list_of_fics(fic);
         userData->mutable_recommendation_list()->add_list_of_matches(filter.recsHash[fic]);
+    }
+    for(auto fic : filter.scoresHash.keys())
+    {
+        userData->mutable_scores_list()->add_list_of_fics(fic);
+        userData->mutable_scores_list()->add_list_of_scores(filter.scoresHash[fic]);
     }
     return result;
 }
@@ -302,11 +308,14 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.minRecommendations = filter.recommendations().min_recommendations();
     result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
     result.tagsAreUsedForAuthors = filter.tags_are_for_authors();
+    result.tagsAreANDed = filter.use_and_for_tags();
 
     result.ignoredFandomCount = userData.ignored_fandoms().fandom_ids_size();
     result.recommendationsCount = userData.recommendation_list().list_of_fics_size();
     for(int i = 0; i < userData.recommendation_list().list_of_fics_size(); i++)
         result.recsHash[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
+    for(int i = 0; i < userData.scores_list().list_of_fics_size(); i++)
+        result.scoresHash[userData.scores_list().list_of_fics(i)] = userData.scores_list().list_of_scores(i);
     for(int i = 0; i < userData.ignored_fandoms().fandom_ids_size(); i++)
         userThreadData->ignoredFandoms[userData.ignored_fandoms().fandom_ids(i)] = userData.ignored_fandoms().ignore_crossovers(i);
 

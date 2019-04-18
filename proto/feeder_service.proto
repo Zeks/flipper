@@ -33,10 +33,17 @@ message RecommendationListDataToken
     repeated int32 list_of_matches                  = 2;
 }
 
+message ScoreListDataToken
+{ 
+    repeated int32 list_of_fics                     = 1;
+    repeated int32 list_of_scores                   = 2;
+}
+
 message UserData{
     TagsToken user_tags                              = 1;
     IgnoredFandomsToken ignored_fandoms              = 2;
-    RecommendationListDataToken recommendation_list   = 3;
+    RecommendationListDataToken recommendation_list  = 3;
+    ScoreListDataToken scores_list                   = 4;
 }
 
 message SearchTask

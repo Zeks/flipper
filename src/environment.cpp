@@ -75,7 +75,7 @@ void CoreEnvironment::LoadData()
             userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
             if(filter.activeTags.size() > 0)
             {
-                userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+                userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags, filter.tagsAreANDed);
                 if(userData.ficIDsForActivetags.size() == 0)
                 {
                     QMessageBox::warning(nullptr, "Warning!", "There are no fics tagged with selected tag(s)\nAborting search.");
@@ -109,6 +109,7 @@ void CoreEnvironment::LoadData()
                                                               filter.minRecommendations,
                                                               filter.sourcesLimiter,
                                                               filter.displayPurgedFics);
+            filter.scoresHash = ficScores;
 
             ficSource->FetchData(filter,
                                  &newFanfics);
@@ -289,14 +290,15 @@ int CoreEnvironment::GetResultCount()
         UserData userData;
         userData.allTaggedFics = interfaces.tags->GetAllTaggedFics();
         if(filter.activeTags.size() > 0)
-            userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags);
+            userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(filter.activeTags, filter.tagsAreANDed);
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;
     }
     QVector<int> recFics;
     //filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
     filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
-
+    ficScores= interfaces.fanfics->GetScoresForFics();
+    filter.scoresHash = ficScores;
     return ficSource->GetFicCount(filter);
 }
 void CoreEnvironment::UseAuthorTask(PageTaskPtr task)

@@ -102,6 +102,11 @@ bool TagWidget::UseTagsForAuthors()
     return ui->chkUseTagsForAuthors->isChecked();
 }
 
+bool TagWidget::UseANDForTags()
+{
+    return ui->chkAndForTags->isChecked();
+}
+
 void TagWidget::ClearSelection()
 {
     InitEditFromTags(allTags);
@@ -110,6 +115,14 @@ void TagWidget::ClearSelection()
 bool TagWidget::DbIdsRequested()
 {
     return ui->cbTagEntitySelector->currentIndex() == 2;
+}
+
+void TagWidget::ResetFilters()
+{
+    ClearSelection();
+    ui->chkAndForTags->setChecked(false) ;
+    ui->chkUseTagsForAuthors->setChecked(false);
+    ui->chkTagIncludingCrosses->setChecked(false);
 }
 
 void TagWidget::on_pbAddTag_clicked()

@@ -57,6 +57,7 @@ struct StoryFilter{
         sm_wcrcr        = 7,
         sm_revtofav     = 8,
         sm_genrevalues  = 9,
+        sm_scores  = 10,
 
     };
     enum EReviewBiasMode{
@@ -112,6 +113,7 @@ struct StoryFilter{
     bool listOpenMode= false;
     bool showRecSources = false;
     bool tagsAreUsedForAuthors = false;
+    bool tagsAreANDed = false;
     bool useRealGenres = false;
     bool descendingDirection = true;
     bool displayPurgedFics = false;
@@ -166,6 +168,7 @@ struct StoryFilter{
 //    QSet<int> idsForActiveTags;
     QList<int> recFics;
     QHash<int, int> recsHash; // for use on the server
+    QHash<int, int> scoresHash; // for use on the server
     QString userToken;
 };
 }

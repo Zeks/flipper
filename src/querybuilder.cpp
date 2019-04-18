@@ -43,6 +43,8 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
     bool useRecommendationOrdering = useRecommendationFiltering && !filter.listOpenMode;
 
+    bool useScoresOrdering = filter.sortMode == StoryFilter::sm_scores;
+
     if(createLimits)
     {
         queryString = "ID, ";
@@ -57,6 +59,11 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             queryString += " , cfRecommendationsMatchCount(f.id) as sumrecs ";
             queryString = queryString.arg(userToken);
         }
+        if(useScoresOrdering)
+        {
+            queryString += " , cfScoresMatchCount(f.id) as scores ";
+            queryString = queryString.arg(userToken);
+        }
     }
 
     queryString+=" from vFanfics f " ;
@@ -68,36 +75,22 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
 
     //where+= CreateLimitQueryPart(filter);
 
-    if(!where.trimmed().isEmpty() || useRecommendationFiltering)
+    if(!where.trimmed().isEmpty() || useRecommendationFiltering || useScoresOrdering)
     {
         if(useRecommendationFiltering)
         {
 
-            if(!thinClientMode)
-            {
-                QString temp = " and id in ( select distinct fic_id as fid from RecommendationListData rt left join vfanficsslash ff  on ff.id = rt.fic_id  where"
-                               " rt.list_id = :list_id2  and rt.match_count >= :match_count";
-
-
-                if(!filter.showOriginsInLists)
-                    temp+=" and rt.is_origin = 0 ";
-                temp += where + " %1 " + CreateLimitQueryPart(filter) + ")";
-                if(useRecommendationOrdering)
-                    temp = temp.arg(" order by rt.match_count desc ");
-                else if(createLimits)
-                    temp = temp.arg(BuildSortMode(filter));
-                where = temp;
-            }
-            else
-            {
-                QString temp = " and cfInRecommendations(f.id) > 0 ";
-                where = temp + where;
-            }
+            QString temp = " and cfInRecommendations(f.id) > 0 ";
+            where = temp + where;
         }
-        else
+
+        if(useScoresOrdering)
         {
-            //where += BuildSortMode(filter) + CreateLimitQueryPart(filter);
+
+            QString temp = " and cfInScores(f.id) > 0 ";
+            where = temp + where;
         }
+
         QString randomizer = ProcessRandomization(filter, where);
 
         QRegularExpression rx("^\\s{0,10}(and|AND)");
@@ -121,11 +114,12 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             }
             queryString +=  " where " + randomizer;
         }
-        if(createLimits)
-            queryString += BuildSortMode(filter);
 
-        if(thinClientMode && createLimits)
+        if(createLimits)
+        {
+            queryString += BuildSortMode(filter);
             queryString += CreateLimitQueryPart(filter, false);
+        }
     }
     else
     {
@@ -151,6 +145,7 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
     //queryString+=ProcessSumFaves(filter);
     queryString+=ProcessFandoms(filter);
     queryString+=ProcessSumRecs(filter);
+    queryString+=ProcessScores(filter);
     queryString+=ProcessTags(filter);
     queryString+=ProcessUrl(filter);
     queryString+=ProcessGenreValues(filter);
@@ -248,25 +243,19 @@ QString DefaultQueryBuilder::ProcessOtherFandomsMode(StoryFilter filter, bool re
 //        " when (select (select max(average_faves_top_3) from fandoms)/(select max(average_faves_top_3) from fandoms fs where fs.fandom in (f.fandom1, f.fandom2) )) > 15 then 2 "
 //        " else 1 end))  as sumrecs, ";
 
-QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter, bool appendComma)
+QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter , bool )
 {
 
     QString result;
-    if(!thinClientMode)
-    {
-        QString currentRecTagValue = " (SELECT match_count FROM RecommendationListData rfs where rfs.fic_id = f.id and rfs.list_id = :list_id %1) as sumrecs";
-        if(appendComma)
-            currentRecTagValue+= ",";
-        currentRecTagValue+= " \n";
-        if(filter.showOriginsInLists)
-            currentRecTagValue=currentRecTagValue.arg("");
-        else
-            currentRecTagValue=currentRecTagValue.arg("and is_origin = 0");
-    }
-    else
-    {
-        result = QString(" cfRecommendationsMatchCount(f.id) as sumrecs, ").arg(userToken);
-    }
+    result = QString(" cfRecommendationsMatchCount(f.id) as sumrecs, ");
+
+    return result;
+}
+
+QString DefaultQueryBuilder::ProcessScores(StoryFilter, bool )
+{
+    QString result;
+    result = QString(" cfScoresMatchCount(f.id) as scores, ");
 
     return result;
 }
@@ -274,12 +263,7 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter filter, bool appendComma
 QString DefaultQueryBuilder::ProcessTags(StoryFilter)
 {
     QString result;
-    if(!thinClientMode)
-    {
-        result = " (SELECT  group_concat(tag, ' ')  FROM fictags where fic_id = f.id order by tag asc) as tags, \n";
-    }
-    else
-        result = " '' as tags , \n";
+    result = " '' as tags , \n";
     return result;
 }
 
@@ -365,28 +349,6 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
     QString queryString;
     QString slashField;
     QStringList excludeFields;
-    if(!thinClientMode)
-    {
-        if(!filter.slashFilter.slashFilterEnabled)
-            return queryString;
-        if(filter.slashFilter.slashFilterLevel == 0)
-            slashField = "keywords_result";
-        else if(filter.slashFilter.slashFilterLevel == 1)
-            slashField = "filter_pass_1";
-        else
-            slashField = "filter_pass_2";
-
-        if(filter.slashFilter.excludeSlash)
-            queryString += " and (  %1 = 0 ) ";
-        if(filter.slashFilter.includeSlash)
-            queryString += " and  %1 = 1  ";
-
-        if(filter.slashFilter.enableFandomExceptions && filter.slashFilter.excludeSlash)
-        {
-            queryString += " and not exists (select fandom_id from ignored_fandoms_slash_filter where fandom_id in (select fandom_id from ficfandoms ffd where ffd.fic_id = f.id )) ";
-        }
-    }
-    else
     {
         if(!filter.slashFilter.slashFilterEnabled)
             return queryString;
@@ -633,6 +595,8 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
             diffField = " favourites /(reviews + 1) desc";
         else if(filter.sortMode == StoryFilter::sm_genrevalues)
             diffField = " genrevalue desc";
+        else if(filter.sortMode == StoryFilter::sm_scores)
+            diffField = " scores desc";
     }
     else{
 
@@ -654,6 +618,8 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
             diffField = " favourites /(reviews + 1)";
         else if(filter.sortMode == StoryFilter::sm_genrevalues)
             diffField = " genrevalue";
+        else if(filter.sortMode == StoryFilter::sm_scores)
+            diffField = " scores ";
         diffField += filter.descendingDirection ? " DESC" : " ASC";
     }
 
@@ -761,7 +727,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
         return result;
     QStringList idList;
     QString part = "  and ID IN ( %1 ) ";
-    wherePart = " cfRecommendationsMatchCount(f.id) as sumrecs, 1 as junk from fanfics f where 1 = 1 " + wherePart;
+    wherePart = " cfRecommendationsMatchCount(f.id) as sumrecs, cfRecommendationsMatchCount(f.id) as scores,  1 as junk from fanfics f where 1 = 1 " + wherePart;
     wherePart = wherePart.arg(userToken);
     wherePart.replace("COLLATE NOCASE", "");
     wherePart+=" COLLATE NOCASE";
