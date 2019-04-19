@@ -300,6 +300,7 @@ private:
     QMenu ignoreFandomMenu;
     QMenu ignoreFandomSlashFilterMenu;
     QRImageProvider* imgProvider = nullptr;
+    QString primedTag;
 
 
 public slots:

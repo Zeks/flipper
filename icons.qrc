@@ -72,5 +72,10 @@
         <file>icons/book_meh.png</file>
         <file>icons/book_meh_gray.png</file>
         <file>icons/book_meh_c1.png</file>
+        <file>icons/book_meh_gray_21.png</file>
+        <file>icons/lock_green.png</file>
+        <file>icons/lock_white.png</file>
+        <file>icons/lock_yellow.png</file>
+        <file>icons/magnet_gray_bottom.png</file>
     </qresource>
 </RCC>

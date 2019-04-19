@@ -1296,7 +1296,7 @@
                      </item>
                      <item>
                       <property name="text">
-                       <string>Scores</string>
+                       <string>Your Score</string>
                       </property>
                      </item>
                     </widget>

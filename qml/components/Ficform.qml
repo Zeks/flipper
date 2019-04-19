@@ -526,54 +526,7 @@ Rectangle {
                 Layout.fillHeight: true
                 font.pixelSize: 16
             }
-            Image {
-                id: imgDiscard
-                width: 20
-                height: 24
-                sourceSize.height: 20
-                sourceSize.width: 20
-                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
-                source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
 
-                MouseArea{
-                    hoverEnabled: true
-                    ToolTip.delay: 1000
-                    ToolTip.visible: containsMouse
-                    ToolTip.text: qsTr("Tag: Hide")
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(tags.indexOf("Hide") === -1)
-                            lvFics.tagAdded("Hide",indexOfThisDelegate)
-                        else
-                            lvFics.tagDeleted("Hide",indexOfThisDelegate)
-                    }
-                }
-            }
-            Image {
-                id: imgMeh
-                width: 20
-                height: 24
-                sourceSize.height: 20
-                sourceSize.width: 20
-                opacity: tags.indexOf("Meh") !== -1  ? 1 : 0.5
-                source: tags.indexOf("Meh") !== -1 ? "qrc:/icons/icons/book_meh_c1.png" : "qrc:/icons/icons/book_meh_gray.png"
-
-                MouseArea{
-                    hoverEnabled: true
-                    ToolTip.delay: 1000
-                    ToolTip.visible: containsMouse
-                    ToolTip.text: qsTr("Tag: Meh")
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(tags.indexOf("Meh") === -1)
-                            lvFics.tagAdded("Meh",indexOfThisDelegate)
-                        else
-                            lvFics.tagDeleted("Meh",indexOfThisDelegate)
-                    }
-                }
-            }
             Image {
                 id: imgLike
                 width: 20
@@ -628,7 +581,6 @@ Rectangle {
                     }
                 }
             }
-
             Image {
                 id: imgDead
                 width: 20
@@ -653,6 +605,55 @@ Rectangle {
                     }
                 }
             }
+            Image {
+                id: imgDiscard
+                width: 20
+                height: 24
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
+                source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Hide")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Hide") === -1)
+                            lvFics.tagAdded("Hide",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Hide",indexOfThisDelegate)
+                    }
+                }
+            }
+            Image {
+                id: imgMeh
+                width: 20
+                height: 24
+                sourceSize.height: 24
+                sourceSize.width: 24
+                opacity: tags.indexOf("Meh") !== -1  ? 1 : 0.7
+                source: tags.indexOf("Meh") !== -1 ? "qrc:/icons/icons/lock_yellow.png" : "qrc:/icons/icons/lock_white.png"
+
+                MouseArea{
+                    hoverEnabled: true
+                    ToolTip.delay: 1000
+                    ToolTip.visible: containsMouse
+                    ToolTip.text: qsTr("Tag: Meh")
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(tags.indexOf("Meh") === -1)
+                            lvFics.tagAdded("Meh",indexOfThisDelegate)
+                        else
+                            lvFics.tagDeleted("Meh",indexOfThisDelegate)
+                    }
+                }
+            }
+
             Image {
                 id: imgWait
                 width: 20
@@ -852,7 +853,12 @@ Rectangle {
                 sourceSize.height: 20
                 sourceSize.width: 20
                 opacity: tags.indexOf(mainWindow.magnetTag) !== -1  ? 1 : 0.5
-                source: tags.indexOf(mainWindow.magnetTag) !== -1 ? "qrc:/icons/icons/magnet.png" : "qrc:/icons/icons/magnet_gray.png"
+                source: {
+                    //if(mainWindow.magnetTop)
+                        tags.indexOf(mainWindow.magnetTag) !== -1 ? "qrc:/icons/icons/magnet.png" : "qrc:/icons/icons/magnet_gray.png"
+//                    else
+//                        tags.indexOf(mainWindow.magnetTag) !== -1 ? "qrc:/icons/icons/magnet.png" : "qrc:/icons/icons/magnet_gray_bottom.png"
+                }
 
                 MouseArea{
                     ToolTip.delay: 1000
