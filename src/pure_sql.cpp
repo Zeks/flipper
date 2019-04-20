@@ -3640,9 +3640,9 @@ DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QS
 
 DiagnosticSQLResult<QHash<uint32_t, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db)
 {
-    QString query = " select * from AuthorMoodStatistics order "
+    QString query = " select * from AuthorMoodStatistics "
                     " where author_id in (select distinct recommender_id from recommendations) "
-                    " by author_id asc ";
+                    " order by author_id asc ";
 
     SqlContext<QHash<uint32_t, genre_stats::ListMoodData>> ctx(db, query);
     auto genreConverter = interfaces::GenreConverter::Instance();

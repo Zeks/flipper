@@ -458,6 +458,10 @@ create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUT
 CREATE INDEX if not exists  I_RecommendationLists_ID ON RecommendationLists (id asc);
 CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (NAME asc);
 CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists (created asc);
+alter table RecommendationLists add column sources varchar;
+alter table RecommendationLists add column use_weighting integer default 1;
+alter table RecommendationLists add column use_mood_adjustment integer default 1;
+
 
 -- data for fandoms present in the list;
 create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer default 0, 

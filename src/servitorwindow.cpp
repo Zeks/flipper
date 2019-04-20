@@ -55,6 +55,40 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QBarCategoryAxis>
 #include <QValueAxis>
 
+template <core::ERecDataType EnumType, typename ContainerType, typename InterfaceType>
+void LoadDataForCalc(InterfaceType interface, ContainerType& container, QString storageFolder, QString suffix = "")
+{
+    QDir dir(QDir::currentPath());
+    dir.mkdir("ServerData");
+
+    QString ptrStr = QString("0x%1").arg((quintptr)&container,
+                                         QT_POINTER_SIZE * 2, 16, QChar('0'));
+    QLOG_INFO() << "loading with suffix: " << suffix << " to: " << ptrStr;
+
+    QString fileBase;
+    if(suffix.isEmpty())
+        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase());
+    else
+        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase(suffix));
+
+    QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
+    if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists(storageFolder + "/" +
+                                                                                 fileBase
+                                                                                 + "_0.txt"))
+    {
+        thread_boost::LoadData(storageFolder,
+                               fileBase,
+                               container);
+    }
+    else
+    {
+        container = core::DataHolderInfo<EnumType>::loadFunc()(interface);
+        thread_boost::SaveData(storageFolder,
+                               fileBase,
+                               container);
+    }
+}
+
 inline QString CreateConnectString(QString ip,QString port)
 {
     QString server_address_proto("%1:%2");
@@ -666,12 +700,14 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     fanfics->db = db;
     authors->db = db;
 
-    An<core::RecCalculator> holder;
-    holder->LoadFavourites(authors);
+    LoadDataForCalc<core::rdt_favourites,
+            InputForGenresIteration2::FavType,
+            QSharedPointer<interfaces::Authors>>(authors, inputs.faves, "TempData");
+
     qDebug() << "Finished list load";
 
     QHash<int, QSet<int>> ficsToUse;
-    auto& faves  = holder->holder.faves;
+    auto& faves  = inputs.faves;
 
     for(int key : faves.keys())
     {
@@ -747,40 +783,6 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 //        });
 
 
-
-template <core::ERecDataType EnumType, typename ContainerType, typename InterfaceType>
-void LoadDataForCalc(InterfaceType interface, ContainerType& container, QString storageFolder, QString suffix = "")
-{
-    QDir dir(QDir::currentPath());
-    dir.mkdir("ServerData");
-
-    QString ptrStr = QString("0x%1").arg((quintptr)&container,
-                                         QT_POINTER_SIZE * 2, 16, QChar('0'));
-    QLOG_INFO() << "loading with suffix: " << suffix << " to: " << ptrStr;
-
-    QString fileBase;
-    if(suffix.isEmpty())
-        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase());
-    else
-        fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase(suffix));
-
-    QSettings settings("settings/settings_server.ini", QSettings::IniFormat);
-    if(settings.value("Settings/usestoreddata", false).toBool() && QFile::exists(storageFolder + "/" +
-                                                                                 fileBase
-                                                                                 + "_0.txt"))
-    {
-        thread_boost::LoadData(storageFolder,
-                               fileBase,
-                               container);
-    }
-    else
-    {
-        container = core::DataHolderInfo<EnumType>::loadFunc()(interface);
-        thread_boost::SaveData(storageFolder,
-                               fileBase,
-                               container);
-    }
-}
 
 template <core::ERecDataType EnumType, typename ContainerType>
 void SaveDataForCalc(ContainerType& container, QString storageFolder, QString suffix = "")
