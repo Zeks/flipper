@@ -1,10 +1,10 @@
 
 update fanfics set 
-keywords_result = null,
-keywords_yes = null,
-keywords_no = null,
-filter_pass_1 = null,
-filter_pass_2 = null;
+keywords_result = 0,
+keywords_yes = 0,
+keywords_no = 0,
+filter_pass_1 = 0,
+filter_pass_2 = 0;
 
 
 
