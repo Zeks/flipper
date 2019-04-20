@@ -1607,6 +1607,7 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
                                 "true_genre2_percent = 0,"
                                 "true_genre3 = '',"
                                 "true_genre3_percent = 0,"
+                                "max_genre_percent = 0, "
                                 "kept_genres = ''" );
     SqlContext<bool> cleanup(db, qsClenaup);
     cleanup();
@@ -1641,6 +1642,8 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
 
         }
         ctx.bindValue("max_genre_percent", fic.maxGenrePercent);
+//        if(fic.maxGenrePercent > 0)
+//            qDebug() << "Writing max_genre_percent: " << fic.maxGenrePercent;
         ctx.bindValue("kept_genres", fic.keptToken);
         ctx.bindValue("fic_id", fic.ficId);
         if(!ctx.ExecAndCheck())

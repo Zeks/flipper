@@ -663,7 +663,7 @@ QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreD
     }
 
 
-    for(auto fic : ficGenreDataList)
+    for(auto& fic : ficGenreDataList)
     {
         QStringList keptList;
         for(auto genre: fic.processedGenres)
@@ -676,7 +676,11 @@ QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreD
         {
             QString writtenGenre = genre.genres.join(",");
             if(genre.relevance > fic.maxGenrePercent && !writtenGenre.isEmpty())
+            {
+//                if(genre.relevance > 0)
+//                    qDebug() << "Filling max_genre_percent: " << genre.relevance;
                 fic.maxGenrePercent = genre.relevance;
+            }
         }
         fic.keptToken = keptList.join(",");
     }
