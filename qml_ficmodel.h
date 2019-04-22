@@ -57,7 +57,8 @@ public:
         LikedAuthorRole,
         PurgedRole,
         ScoreRole,
-        EndRole = ScoreRole
+        SnoozeExpiredRole,
+        EndRole = SnoozeExpiredRole
 
     };
 

@@ -322,6 +322,8 @@ public slots:
 
     void OnHeartDoubleClicked(QVariant);
     void OnScoreAdjusted(QVariant, QVariant, QVariant);
+    void OnSnoozeTypeChanged(QVariant, QVariant, QVariant);
+
     void OnNewQRSource(QVariant);
 
 

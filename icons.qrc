@@ -77,5 +77,7 @@
         <file>icons/lock_white.png</file>
         <file>icons/lock_yellow.png</file>
         <file>icons/magnet_gray_bottom.png</file>
+        <file>icons/bell.png</file>
+        <file>icons/bell_gray.png</file>
     </qresource>
 </RCC>

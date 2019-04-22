@@ -117,6 +117,7 @@ struct StoryFilter{
     bool useRealGenres = false;
     bool descendingDirection = true;
     bool displayPurgedFics = false;
+    bool displaySnoozedFics = false;
 
     SlashFilterState slashFilter;
 

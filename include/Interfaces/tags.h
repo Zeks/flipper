@@ -25,6 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 
 namespace interfaces {
+struct TagIDFetcherSettings{
+    QStringList tags;
+    bool useAND = false;
+    bool allowSnoozed = false;
+};
 class Tags{
 public:
     void LoadAlltags();
@@ -36,7 +41,7 @@ public:
     bool RemoveTagFromFic(int ficId, QString tag);
     bool ExportToFile(QString);
     bool ImportFromFile(QString);
-    QSet<int> GetAllTaggedFics(QStringList = QStringList(), bool useAND = false);
+    QSet<int> GetAllTaggedFics(TagIDFetcherSettings settings = {});
     QSet<int> GetAuthorsForTags(QStringList);
     QVector<core::IdPack> GetAllFicsThatDontHaveDBID();
     bool FillDBIDsForFics(QVector<core::IdPack>);

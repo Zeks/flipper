@@ -613,6 +613,7 @@ public:
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
     QHash<int, core::MatchedFics > GetMatchesForUsers(int sourceUser, QList<int> users);
     QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches data, QList<int> users);
+    QSet<int> GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data);
 
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
@@ -1164,6 +1165,42 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMa
     return result;
 }
 
+QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data)
+{
+    QSet<int> result;
+
+    grpc::ClientContext context;
+
+    ProtoSpace::SnoozeInfoRequest task;
+
+    QScopedPointer<ProtoSpace::SnoozeInfoResponse> response (new ProtoSpace::SnoozeInfoResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+    for(auto snoozeInfo : data)
+    {
+        auto snooze = task.add_snoozes();
+        snooze->set_fic_id(snoozeInfo.ficId);
+        snooze->set_chapter_added(snoozeInfo.snoozedAtChapter);
+        snooze->set_until_chapter(snoozeInfo.untilFinished);
+        snooze->set_until_finished(snoozeInfo.untilFinished);
+    }
+
+    grpc::Status status = stub_->GetExpiredSnoozes(&context, task, response.data());
+
+    ProcessStandardError(status);
+
+    if(!response->success())
+        return result;
+    for(auto i = 0; i < response->expired_snoozes_size(); i++)
+        result.insert(response->expired_snoozes(i));
+
+    return result;
+
+}
+
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
                              QString userToken,
                              int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
@@ -1258,6 +1295,13 @@ QHash<int, core::MatchedFics> FicSourceGRPC::GetMatchesForUsers(InputsForMatches
     if(!impl)
         return {};
     return impl->GetMatchesForUsers(data, users);
+}
+
+QSet<int> FicSourceGRPC::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data)
+{
+    if(!impl)
+        return {};
+    return impl->GetExpiredSnoozes(data);
 }
 ServerStatus FicSourceGRPC::GetStatus()
 {

@@ -108,6 +108,11 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             auto var = AdaptingTableModel::data(index.sibling(index.row(), 26), Qt::DisplayRole);
             return var;
         }
+        if(role == SnoozeExpiredRole)
+        {
+            auto var = AdaptingTableModel::data(index.sibling(index.row(), 27), Qt::DisplayRole);
+            return var;
+        }
 
         if(role == CurrentChapterRole)
             return QString("");
@@ -161,6 +166,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[LikedAuthorRole] = "likedAuthor";
     roles[PurgedRole] = "purged";
     roles[ScoreRole] = "score";
+    roles[SnoozeExpiredRole] = "snoozeExpired";
 
     return roles;
 }

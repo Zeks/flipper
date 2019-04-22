@@ -556,6 +556,7 @@ public:
     int minSlashPass = 0;
     int score = 0;
     bool purged = false;
+    bool snoozeExpired = false;
     QStringList voteBreakdown;
     QStringList voteBreakdownCounts;
 
@@ -843,7 +844,19 @@ struct MatchedFics{
     QList<int> matches;
 };
 
-
+struct SnoozeInfo{
+    int ficId = -1;
+    bool finished = false;
+    int atChapter = -1;
+};
+struct SnoozeTaskInfo{
+    int ficId = -1;
+    bool untilFinished = false;
+    int snoozedAtChapter = -1;
+    int snoozedTillChapter = -1;
+    bool expired = false;
+    QDateTime added;
+};
 }
 Q_DECLARE_METATYPE(core::AuthorPtr);
 

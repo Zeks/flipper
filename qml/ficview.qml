@@ -264,6 +264,7 @@ Rectangle {
             signal refilterClicked()
             signal heartDoubleClicked(var id)
             signal scoreAdjusted(var id, var value, var currentScore)
+            signal snoozeTypeChanged(var id, var value, var chapter)
         }
     }
 

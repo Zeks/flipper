@@ -129,6 +129,8 @@ public:
     void FillDBIDsForTags();
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);
 
+    void RefreshSnoozes();
+
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
     Interfaces interfaces;
 
