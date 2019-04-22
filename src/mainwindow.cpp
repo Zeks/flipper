@@ -1179,7 +1179,7 @@ void MainWindow::OnTagAdd(QVariant tag, QVariant row)
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
     SetTag(id, tag.toString());
 
-    if(tag.toString() == "Snoo zed")
+    if(tag.toString() == "Snoozed")
     {
         auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
         core::SnoozeTaskInfo info;
