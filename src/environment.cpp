@@ -61,8 +61,10 @@ void CoreEnvironment::LoadData()
     ficScores= interfaces.fanfics->GetScoresForFics();
 
     TimedAction action("Full data load",[&](){
-    QVector<core::Fic> newFanfics;
+    auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
 
+    QVector<core::Fic> newFanfics;
+    auto& filterRef = this->filter;
     interfaces::TagIDFetcherSettings tagFetcherSettings;
     tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
 
@@ -81,7 +83,7 @@ void CoreEnvironment::LoadData()
             {
                 tagFetcherSettings.tags = filter.activeTags;
                 tagFetcherSettings.useAND = filter.tagsAreANDed;
-                userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
+                userData.ficIDsForActivetags = interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
                 if(userData.ficIDsForActivetags.size() == 0)
                 {
                     QMessageBox::warning(nullptr, "Warning!", "There are no fics tagged with selected tag(s)\nAborting search.");
@@ -135,6 +137,8 @@ void CoreEnvironment::LoadData()
             fic.likedAuthor = true;
         if(ficScores.contains(fic.id))
             fic.score = ficScores[fic.id];
+        if(snoozeInfo.contains(fic.id))
+            fic.snoozeExpired = snoozeInfo[fic.id].expired;
     }
     });
     action.run();
@@ -302,7 +306,7 @@ int CoreEnvironment::GetResultCount()
         {
             tagFetcherSettings.tags = filter.activeTags;
             tagFetcherSettings.useAND = filter.tagsAreANDed;
-            userData.ficIDsForActivetags = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
+            userData.ficIDsForActivetags = interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
         }
         userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
         ficSource->userData = userData;

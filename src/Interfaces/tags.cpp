@@ -119,7 +119,12 @@ bool Tags::ImportFromFile(QString filename)
 
 QSet<int> Tags::GetAllTaggedFics(TagIDFetcherSettings settings)
 {
-    return database::puresql::GetAllTaggedFics(settings.tags, settings.useAND, settings.allowSnoozed, db).data;
+    return database::puresql::GetAllTaggedFics(settings.allowSnoozed, db).data;
+}
+
+QSet<int> Tags::GetFicsTaggedWith(TagIDFetcherSettings settings)
+{
+    return database::puresql::GetFicsTaggedWith(settings.tags, settings.useAND, settings.allowSnoozed, db).data;
 }
 
 QSet<int> Tags::GetAuthorsForTags(QStringList tags)

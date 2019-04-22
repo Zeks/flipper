@@ -33,7 +33,10 @@ Rectangle{
     }
     height: {
         var height = ficSheet.height
-        if(tags.indexOf("Snoozed") !== -1)
+        if(snoozeExpired)
+            return height;
+
+        if((tags.indexOf("Snoozed") !== -1) && mainWindow.displaySnoozed)
             height = height + snoozePart.height
         return height
     }
@@ -97,7 +100,9 @@ Rectangle{
 
         color: {
             var color;
-            color = purged == 0 ?  "#B0E0E6FF" : "#B0FFE6FF"
+            color = purged == 0 ?  "#e4f4f6FF" : "#B0FFE6FF"
+            if(snoozeExpired)
+                color = "#1100FF00"
             return color;
         }
         border.width: 2
@@ -977,15 +982,13 @@ Rectangle{
         anchors.right: ficSheet.right
         anchors.topMargin: 2
         //z:parent.z
-        visible: delegateItem.snoozed
+        visible: delegateItem.snoozed && !snoozeExpired
         border.width: 2
         border.color: Qt.rgba(0, 0, 1, 0.4)
 
         color: {
             var color;
-            color = purged == 0 ?  "#B0E0E6FF" : "#B0FFE6FF"
-            if(snoozeExpired)
-                color = "#00FF00FF"
+            color = purged == 0 ?  "#e4f4f6FF" : "#B0FFE6FF"
             return color;
         }
 
@@ -995,7 +998,6 @@ Rectangle{
                 width:5
             }
             Text {
-
                 id: lblSnooze
                 width: 40
                 height: 21
@@ -1019,7 +1021,7 @@ Rectangle{
                     var color;
                     color = purged == 0 ?  "#e4f4f6FF" : "#B0FFE6FF"
                     if(snoozeExpired)
-                        color = "#00FF00FF"
+                        color = "#5500FF00"
                     return color;
                 }
                 Text {
@@ -1073,7 +1075,7 @@ Rectangle{
                     color: "black"
                     text: chapters
                     onEditingFinished: {
-                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, chapters);
+                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, text);
                     }
                 }
             }

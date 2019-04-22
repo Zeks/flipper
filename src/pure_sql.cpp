@@ -2181,10 +2181,28 @@ DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSq
     return ctx.result;
 }
 
-DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, bool useAND, bool allowSnoozed, QSqlDatabase db)
+DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(bool allowSnoozed, QSqlDatabase db)
 {
-    if(allowSnoozed)
-        tags.removeAll("Snoozed");
+        QString qs = QString("select distinct fic_id from fictags ");
+        QStringList parts;
+
+        if(!allowSnoozed)
+            parts.push_back(" fic_id not in (select distinct fic_id from ficsnoozes where expired = 1) ");
+        if(allowSnoozed)
+            parts.push_back(" tag <> 'Snoozed'");
+
+        if(parts.size() > 0)
+        {
+            qs+= " where ";
+            qs+= parts.join(" and ");
+        }
+        qDebug() << "snooze query: "  << qs;
+        SqlContext<QSet<int>> ctx(db, qs);
+        ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+        return ctx.result;
+}
+
+DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, bool allowSnoozed, QSqlDatabase db){
 
     if(!useAND)
     {
@@ -2194,15 +2212,14 @@ DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, bool useAND, 
         if(tags.size() > 0)
             parts.push_back(QString("tag in ('%1')").arg(tags.join("','")));
 
-        if(!allowSnoozed)
-            parts.push_back("not tag = 'Snoozed' and (select expired from ficsnoozes fs where fs.fic_id = fic_id) = 0");
-
         if(parts.size() > 0)
         {
             qs+= " where ";
             qs+= parts.join(" and ");
         }
-
+        if(!allowSnoozed)
+            qs+= " and fic_id not in (select distinct fic_id from ficsnoozes where expired = 0) ";
+        qDebug() << "snooze tags query: "  << qs;
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
@@ -2218,16 +2235,16 @@ DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QStringList tags, bool useAND, 
             tokens.push_back(prototype.arg(tag));
         }
         qs += tokens.join(" and ");
-
         if(!allowSnoozed)
-            parts.push_back("not tag = 'Snoozed' and (select expired from ficsnoozes fs where fs.fic_id = fic_id) = 0");
-        qs += " and " + parts.join(" and ");
+            qs+= " and fic_id not in (select distinct fic_id from ficsnoozes where expired = 0) ";
 
+        //qs += " and " + parts.join(" and ");
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
     }
 }
+
 DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase db){
     QString qs = QString("select distinct author_id from ficauthors ");
     qs += QString(" where fic_id in (select distinct fic_id from fictags where tag in ('%1'))").arg(tags.join("','"));
@@ -2238,26 +2255,30 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase
 
 DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db)
 {
-    QString qs = "select id, complete, at_chapter from fanfics where cfInFicSelection(id) > 0";
+    QString qs = "select id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
     SqlContext<QHash<int, core::SnoozeInfo>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
+        qDebug() << " loading snooze data";
         core::SnoozeInfo info;
         info.ficId = q.value("id").toInt();
         info.finished = q.value("complete").toInt();
-        info.atChapter = q.value("at_chapter").toInt();
+        info.atChapter = q.value("chapters").toInt();
+        qDebug() << " ficid: " << info.ficId ;
+        qDebug() << " finished: " << info.finished;
+        qDebug() << " atChapter: " << info.atChapter;
         ctx.result.data[info.ficId] = info;
     });
     return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(QSqlDatabase db){
-    QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, snooze_expired, from ficsnoozes order by fic_id asc";
+    QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes order by fic_id asc";
     SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         core::SnoozeTaskInfo info;
         info.ficId =                q.value("fic_id").toInt();
         info.added =                q.value("snooze_added").toDateTime();
-        info.expired =              q.value("snooze_expired").toInt();
+        info.expired =              q.value("expired").toInt();
         info.untilFinished =        q.value("snoozed_until_finished").toInt();
         info.snoozedAtChapter=      q.value("snoozed_at_chapter").toInt();
         info.snoozedTillChapter =   q.value("snoozed_till_chapter").toInt();
@@ -2287,7 +2308,8 @@ DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo data,QSqlDatabase db){
                  " snoozed_at_chapter = :snoozed_at_chapter_, "
                  " snoozed_till_chapter = :snoozed_till_chapter_, "
                  " snoozed_until_finished = :snoozed_until_finished_,"
-                 " snooze_added = date('now')"
+                 " snooze_added = date('now'), "
+                 " expired = 0 "
                  " where fic_id = :fic_id_";
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("fic_id", data.ficId);

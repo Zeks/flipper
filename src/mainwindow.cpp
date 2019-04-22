@@ -981,7 +981,7 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
     tagFetcherSettings.tags = tags;
     tagFetcherSettings.allowSnoozed = true;
 
-    auto fics  = env.interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
+    auto fics  = env.interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
     auto ffnFics = env.GetFFNIds(fics);
     QString result;
     if(ui->wdgTagsPlaceholder->DbIdsRequested())
@@ -1185,9 +1185,11 @@ void MainWindow::OnTagAdd(QVariant tag, QVariant row)
         core::SnoozeTaskInfo info;
         info.ficId = id;
         info.untilFinished = 0;
-        info.snoozedTillChapter = currentChapter + 1;
-        info.snoozedAtChapter = currentChapter;
+        info.snoozedTillChapter = currentChapter;
+        info.snoozedAtChapter = currentChapter - 1;
         env.interfaces.fanfics->SnoozeFic(info);
+        QModelIndex index = typetableModel->index(rownum, 27);
+        typetableModel->setData(index,0,0);
     }
 
     typetableModel->setData(index,data,0);
@@ -1211,6 +1213,8 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
     if(tag.toString() == "Snoozed")
     {
         env.interfaces.fanfics->RemoveSnooze(id);
+        QModelIndex index = typetableModel->index(rownum, 27);
+        typetableModel->setData(index,0,0);
     }
 }
 
@@ -1290,7 +1294,7 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
     }
     else
     {
-        data.untilFinished = 0;
+        data.untilFinished = 1; // chapter or until finished
         data.snoozedAtChapter = currentChapter;
         data.snoozedTillChapter = chapter.toInt();
     }
@@ -2744,3 +2748,9 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
 
 
 
+
+void MainWindow::on_chkDisplaySnoozed_stateChanged(int checkState)
+{
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("displaySnoozed", checkState);
+}

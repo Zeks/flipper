@@ -762,7 +762,7 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
         return Status::OK;
     }
 
-    RequestContext reqContext("Snooze refersh", task->controls(), this);
+    RequestContext reqContext("Snooze refresh", task->controls(), this);
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
@@ -770,15 +770,23 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
     QHash<int, core::SnoozeTaskInfo> snoozes;
     PassTaskIntoSnoozes(task, snoozes);
 
+
+
     auto* userThreadData = ThreadData::GetUserData();
-    userThreadData->ficsForSelection.fromList(snoozes.keys());
+    for(auto snId : snoozes.keys())
+        userThreadData->ficsForSelection.insert(snId);
+    qDebug() << "Selection is: " << userThreadData->ficsForSelection;
 
     auto snoozeInfo = reqContext.dbContext.fanfics->GetSnoozeInfo();
     for(auto snoozeData : snoozeInfo)
     {
-        if(snoozeData.finished || snoozeData.atChapter > snoozes[snoozeData.ficId].snoozedTillChapter)
+        if(snoozeData.finished || (snoozeData.atChapter >= snoozes[snoozeData.ficId].snoozedTillChapter))
+        {
+            qDebug() << "adding expired snooze: " << snoozeData.ficId;
             response->add_expired_snoozes(snoozeData.ficId);
+        }
     }
+    response->set_success(true);
     return Status::OK;
 }
 

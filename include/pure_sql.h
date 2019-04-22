@@ -269,7 +269,8 @@ DiagnosticSQLResult<QVector<int>> GetAllUnprocessedLinkedAuthors(QSqlDatabase db
 DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
-DiagnosticSQLResult<QSet<int>> GetAllTaggedFics(QStringList tags, bool useAND, bool allowSnoozed, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>> GetAllTaggedFics(bool allowSnoozed, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, bool allowSnoozed, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>> GetAuthorsForTags(QStringList tags, QSqlDatabase db);
 
 

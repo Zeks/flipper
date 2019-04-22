@@ -1184,7 +1184,7 @@ QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> 
         auto snooze = task.add_snoozes();
         snooze->set_fic_id(snoozeInfo.ficId);
         snooze->set_chapter_added(snoozeInfo.snoozedAtChapter);
-        snooze->set_until_chapter(snoozeInfo.untilFinished);
+        snooze->set_until_chapter(snoozeInfo.snoozedTillChapter);
         snooze->set_until_finished(snoozeInfo.untilFinished);
     }
 
