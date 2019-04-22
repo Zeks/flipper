@@ -83,7 +83,7 @@ public:
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
     QHash<int, core::MatchedFics> GetMatchesForUsers(int sourceUser, QList<int> users);
     QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches, QList<int> users);
-
+    QSet<int> GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo>);
 
     ServerStatus GetStatus();
 

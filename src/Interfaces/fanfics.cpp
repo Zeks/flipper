@@ -225,6 +225,31 @@ QSet<int> Fanfics::GetFicIDsWithUnsetAuthors()
     return database::puresql::GetFicIDsWithUnsetAuthors(db).data;
 }
 
+QHash<int, core::SnoozeInfo> Fanfics::GetSnoozeInfo()
+{
+    return database::puresql::GetSnoozeInfo(db).data;
+}
+
+QHash<int, core::SnoozeTaskInfo> Fanfics::GetUserSnoozeInfo()
+{
+    return database::puresql::GetUserSnoozeInfo(db).data;
+}
+
+bool Fanfics::WriteExpiredSnoozes(QSet<int> data)
+{
+    return database::puresql::WriteExpiredSnoozes(data, db).success;
+}
+
+bool Fanfics::SnoozeFic(core::SnoozeTaskInfo data)
+{
+    return database::puresql::SnoozeFic(data, db).success;
+}
+
+bool Fanfics::RemoveSnooze(int ficId)
+{
+    return database::puresql::RemoveSnooze(ficId, db).success;
+}
+
 QVector<core::FicWeightPtr> Fanfics::GetAllFicsWithEnoughFavesForWeights(int faves)
 {
     return database::puresql::GetAllFicsWithEnoughFavesForWeights(faves, db).data;

@@ -31,19 +31,21 @@ update FicTags set added = date('now') where added is null;
 CREATE TABLE if not exists FicScores (
  fic_id integer unique,
  score integer );
- alter table FicScores add column updated datetime default 0;
+ alter table FicScores add column updated datetime;
 CREATE INDEX if not exists I_FICSCORES_DBID ON FicTags (fic_id ASC);
 CREATE INDEX if not exists I_FICSCORES_SCORE ON FicTags (score ASC);
 
 CREATE TABLE if not exists FicSnoozes (
  fic_id integer unique,
- snooze_added datetime,
+ snooze_added datetime default date('now'),
  snoozed_at_chapter integer,
  snoozed_till_chapter integer,
- snoozed_until_finished );
- 
+ snoozed_until_finished integer default 1,
+ snooze_expired integeger default 0);
+ alter table FicSnoozes add column expired integer default 0;
 CREATE INDEX if not exists I_FICSNOOZES_DBID ON FicTags (fic_id ASC);
-CREATE INDEX if not exists I_FICSCORES_DATEADDED ON FicTags (snooze_added ASC);
+CREATE INDEX if not exists I_FICSNOOZES_ADDED ON FicTags (snooze_added ASC);
+CREATE INDEX if not exists I_FICSNOOZES_EXPIRED ON FicTags (expired ASC);
 
  
  -- tag table;  

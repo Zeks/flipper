@@ -14,6 +14,7 @@ message ResponseInfo{
     bool has_usertoken_error     = 2;
     bool data_size_limit_reached = 3;
     bool token_in_use            = 4;
+    string error                 = 5;
 }
 
 message TagsToken{
@@ -251,15 +252,25 @@ message UserMatchResponse{
     ResponseInfo response_info      = 3;
 }
 
-// will need to synchronize fandoms on app start somehow
-// can't leave fandom information on user side
-// because I dont want users to parse anything
 
-// same thing for genres, probbaly better to receive the on launch
+message SnoozeInfo{
+    int32 fic_id                    = 1;
+    int32 chapter_added             = 2;
+    int32 until_chapter             = 3;
+    bool until_finished             = 4;
+    bool expired                    = 5;
+} 
+ 
+message SnoozeInfoRequest{
+    ControlInfo controls            = 1;
+    repeated SnoozeInfo snoozes     = 2; 
+}
 
-
-// RecommendationListsFandoms needs to be returned with recommendation list data
-// I want to be able to display this to users ideally
+message SnoozeInfoResponse{
+    bool success                    = 1;
+    repeated int32 expired_snoozes  = 2;
+    ResponseInfo response_info      = 3;
+}
 
 service Feeder { 
     rpc GetStatus(StatusRequest) returns (StatusResponse) {}
@@ -274,4 +285,17 @@ service Feeder {
     rpc GetAuthorsForFicList(AuthorsForFicsRequest) returns (AuthorsForFicsResponse) {}
     rpc GetAuthorsFromRecListContainingFic(AuthorsForFicInReclistRequest) returns (AuthorsForFicInReclistResponse) {}
     rpc GetUserMatches(UserMatchRequest) returns (UserMatchResponse) {}
+    rpc GetExpiredSnoozes(SnoozeInfoRequest) returns (SnoozeInfoResponse) {}
 }
+
+
+
+/* will need to synchronize fandoms on app start somehow
+ cant leave fandom information on user side
+ because I dont want users to parse anything
+
+ same thing for genres, probbaly better to receive the on launch
+
+
+ RecommendationListsFandoms needs to be returned with recommendation list data
+ I want to be able to display this to users ideally*/

@@ -28,6 +28,7 @@ struct UserData{
     //QSet<int> likedAuthors;
     QSet<int> ficIDsForActivetags;
     QSet<int> ficsForAuthorSearch;
+    QSet<int> ficsForSelection;
     QHash<int, bool> ignoredFandoms;
     QString token;
 };
@@ -69,4 +70,5 @@ using RecommendationsInfoAccessor = InfoAccessor<RecommendationsData>;
 using UserInfoAccessor = InfoAccessor<UserData>;
 BIND_TO_SELF_SINGLE(RecommendationsInfoAccessor);
 BIND_TO_SELF_SINGLE(UserInfoAccessor);
+
 

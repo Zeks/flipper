@@ -322,6 +322,8 @@ public slots:
 
     void OnHeartDoubleClicked(QVariant);
     void OnScoreAdjusted(QVariant, QVariant, QVariant);
+    void OnSnoozeTypeChanged(QVariant, QVariant, QVariant);
+
     void OnNewQRSource(QVariant);
 
 
@@ -472,6 +474,8 @@ private slots:
     void on_pbAnalyzeListOfFics_clicked();
 
     void on_pbRefreshRecList_clicked();
+
+    void on_chkDisplaySnoozed_stateChanged(int arg1);
 
 signals:
 

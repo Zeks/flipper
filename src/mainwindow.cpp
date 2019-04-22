@@ -467,6 +467,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 24, 0, likedAuthor);
     ADD_INTEGER_GETSET(holder, 25, 0, purged);
     ADD_INTEGER_GETSET(holder, 26, 0, score);
+    ADD_INTEGER_GETSET(holder, 27, 0, snoozeExpired);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -494,7 +495,8 @@ void MainWindow::SetupFanficTable()
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
                        << "recommendations" << "realGenres" << "author_id" << "minSlashLevel"
-                       << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score");
+                       << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
+                       << "snoozeExpired");
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -530,6 +532,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagAdded(QVariant, QVariant)), this, SLOT(OnTagAdd(QVariant,QVariant)));
     connect(childObject, SIGNAL(heartDoubleClicked(QVariant)), this, SLOT(OnHeartDoubleClicked(QVariant)));
     connect(childObject, SIGNAL(scoreAdjusted(QVariant, QVariant, QVariant)), this, SLOT(OnScoreAdjusted(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(snoozeTypeChanged(QVariant, QVariant, QVariant)), this, SLOT(OnSnoozeTypeChanged(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(newQRSource(QVariant)), this, SLOT(OnNewQRSource(QVariant)));
     connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
@@ -973,7 +976,12 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
         clipboard->setText("");
         return;
     }
-    auto fics  = env.interfaces.tags->GetAllTaggedFics(tags);
+
+    interfaces::TagIDFetcherSettings tagFetcherSettings;
+    tagFetcherSettings.tags = tags;
+    tagFetcherSettings.allowSnoozed = true;
+
+    auto fics  = env.interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
     auto ffnFics = env.GetFFNIds(fics);
     QString result;
     if(ui->wdgTagsPlaceholder->DbIdsRequested())
@@ -1076,6 +1084,8 @@ void MainWindow::ReadSettings()
         this->resize(uiSettings.value("Settings/appsize").toSize());
     if(!uiSettings.value("Settings/position").toPoint().isNull())
         this->move(uiSettings.value("Settings/position").toPoint());
+    if(uiSettings.value("Settings/maximized").toPoint().isNull())
+        this->showMaximized();
 }
 
 void MainWindow::WriteSettings()
@@ -1138,6 +1148,7 @@ void MainWindow::WriteSettings()
 
     settings.setValue("Settings/appsize", this->size());
     settings.setValue("Settings/position", this->pos());
+    settings.setValue("Settings/maximized", this->isMaximized());
     settings.sync();
 }
 
@@ -1168,8 +1179,23 @@ void MainWindow::OnTagAdd(QVariant tag, QVariant row)
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
     SetTag(id, tag.toString());
 
+    if(tag.toString() == "Snoozed")
+    {
+        auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
+        core::SnoozeTaskInfo info;
+        info.ficId = id;
+        info.untilFinished = 0;
+        info.snoozedTillChapter = currentChapter;
+        info.snoozedAtChapter = currentChapter - 1;
+        env.interfaces.fanfics->SnoozeFic(info);
+        QModelIndex index = typetableModel->index(rownum, 27);
+        typetableModel->setData(index,0,0);
+    }
+
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
+
+
 }
 
 void MainWindow::OnTagRemove(QVariant tag, QVariant row)
@@ -1184,6 +1210,12 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
 
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
+    if(tag.toString() == "Snoozed")
+    {
+        env.interfaces.fanfics->RemoveSnooze(id);
+        QModelIndex index = typetableModel->index(rownum, 27);
+        typetableModel->setData(index,0,0);
+    }
 }
 
 void MainWindow::OnHeartDoubleClicked(QVariant row)
@@ -1239,6 +1271,34 @@ void MainWindow::OnScoreAdjusted(QVariant row, QVariant newScore, QVariant oldSc
 
     typetableModel->setData(typetableModel->index(rownum, 26), actualScore, Qt::DisplayRole);
     typetableModel->updateAll();
+}
+
+void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapter)
+{
+    int rownum = row.toInt();
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
+    core::SnoozeTaskInfo data;
+    data.ficId = id;
+    if(type.toInt() == 0)
+    {
+        data.untilFinished = 0;
+        data.snoozedTillChapter = currentChapter + 1;
+        data.snoozedAtChapter = currentChapter;
+    }
+    else if(type.toInt() == 1)
+    {
+        data.untilFinished = 1;
+        data.snoozedAtChapter = currentChapter;
+        data.snoozedTillChapter = -1;
+    }
+    else
+    {
+        data.untilFinished = 1; // chapter or until finished
+        data.snoozedAtChapter = currentChapter;
+        data.snoozedTillChapter = chapter.toInt();
+    }
+    env.interfaces.fanfics->SnoozeFic(data);
 }
 
 void MainWindow::OnNewQRSource(QVariant row)
@@ -1799,6 +1859,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.website = "ffn"; // just ffn for now
     filter.mode = mode;
     filter.descendingDirection = ui->cbSortDirection->currentIndex() == 0;
+    filter.displaySnoozedFics = ui->chkDisplaySnoozed->isChecked();
 
     return filter;
 }
@@ -2687,3 +2748,9 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
 
 
 
+
+void MainWindow::on_chkDisplaySnoozed_stateChanged(int checkState)
+{
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("displaySnoozed", checkState);
+}

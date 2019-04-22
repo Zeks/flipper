@@ -118,6 +118,9 @@ public:
     Status GetUserMatches(ServerContext* context, const ProtoSpace::UserMatchRequest* task,
                        ProtoSpace::UserMatchResponse* response) override;
 
+    Status GetExpiredSnoozes(ServerContext* context, const ProtoSpace::SnoozeInfoRequest* task,
+                       ProtoSpace::SnoozeInfoResponse* response) override;
+
 
 
     QHash<QString, StatisticsToken> tokenData;

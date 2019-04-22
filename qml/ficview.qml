@@ -33,6 +33,8 @@ Rectangle {
     property bool displayAuthorName: true
     property bool authorFilterActive: false
     property bool detailedGenreMode: true
+    property bool displaySnoozed: true
+
     signal pageRequested(int page)
     signal backClicked()
     signal forwardClicked()
@@ -264,6 +266,7 @@ Rectangle {
             signal refilterClicked()
             signal heartDoubleClicked(var id)
             signal scoreAdjusted(var id, var value, var currentScore)
+            signal snoozeTypeChanged(var id, var value, var chapter)
         }
     }
 

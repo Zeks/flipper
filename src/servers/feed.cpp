@@ -297,6 +297,8 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
     }
     return Status::OK;
 }
+
+
 Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicCountTask* task,
                                   ProtoSpace::FicCountResponse* response)
 {
@@ -737,8 +739,56 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
     return Status::OK;
 }
 
+void PassTaskIntoSnoozes(const ProtoSpace::SnoozeInfoRequest *task,
+                         QHash<int, core::SnoozeTaskInfo>& snoozes){
+
+    for(int i = 0; i < task->snoozes_size(); i++)
+    {
+        auto ficId = task->snoozes(i).fic_id();
+        snoozes[ficId].ficId = ficId;
+        snoozes[ficId].untilFinished= task->snoozes(i).until_finished();
+        snoozes[ficId].snoozedAtChapter= task->snoozes(i).chapter_added();
+        snoozes[ficId].snoozedTillChapter = task->snoozes(i).until_chapter();
+    }
+
+}
+
+grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const ProtoSpace::SnoozeInfoRequest *task, ProtoSpace::SnoozeInfoResponse *response)
+{
+    if(task->snoozes_size() > 10000)
+    {
+        response->mutable_response_info()->set_data_size_limit_reached(true);
+        response->mutable_response_info()->set_error("You can only have 10000 active snoozes");
+        return Status::OK;
+    }
+
+    RequestContext reqContext("Snooze refresh", task->controls(), this);
+    if(!reqContext.Process(response->mutable_response_info()))
+        return Status::OK;
+
+    reqContext.dbContext.InitFanfics();
+    QHash<int, core::SnoozeTaskInfo> snoozes;
+    PassTaskIntoSnoozes(task, snoozes);
 
 
+
+    auto* userThreadData = ThreadData::GetUserData();
+    for(auto snId : snoozes.keys())
+        userThreadData->ficsForSelection.insert(snId);
+    qDebug() << "Selection is: " << userThreadData->ficsForSelection;
+
+    auto snoozeInfo = reqContext.dbContext.fanfics->GetSnoozeInfo();
+    for(auto snoozeData : snoozeInfo)
+    {
+        if(snoozeData.finished || (snoozeData.atChapter >= snoozes[snoozeData.ficId].snoozedTillChapter))
+        {
+            qDebug() << "adding expired snooze: " << snoozeData.ficId;
+            response->add_expired_snoozes(snoozeData.ficId);
+        }
+    }
+    response->set_success(true);
+    return Status::OK;
+}
 
 void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filter){
     StatisticsToken token;
