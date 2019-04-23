@@ -84,12 +84,12 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             where = temp + where;
         }
 
-        if(useScoresOrdering)
-        {
+//        if(useScoresOrdering)
+//        {
 
-            QString temp = " and cfInScores(f.id) > 0 ";
-            where = temp + where;
-        }
+//            QString temp = " and cfInScores(f.id) > 0 ";
+//            where = temp + where;
+//        }
 
         QString randomizer = ProcessRandomization(filter, where);
 
