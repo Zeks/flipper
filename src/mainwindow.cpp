@@ -2515,7 +2515,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
         return g1.value > g2.value;
     });
     QString fandomTemplate = "%1: <font color=blue>%2</font>";
-    for(int i = 0; i < 20; i++)
+    for(int i = 0; i < fandoms.size(); i++)
     {
         QString tmp = fandomTemplate;
         if(i >= fandoms.size())
@@ -2523,6 +2523,8 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
         tmp=tmp.arg(fandoms[i].name).arg(QString::number(fandoms[i].value));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
+    ui->edtAnalysisResults ->moveCursor (QTextCursor::Start) ;
+    ui->edtAnalysisResults ->ensureCursorVisible() ;
 }
 
 void MainWindow::AnalyzeCurrentFilter()
