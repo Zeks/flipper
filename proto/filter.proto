@@ -84,6 +84,7 @@ message ContentMatchFilter
     repeated string genre_inclusion     = 7;
     repeated string word_exclusion      = 8;
     repeated string word_inclusion      = 9;
+    int32 crossover_fandom              = 10;
 }
 
 message TagFilter{

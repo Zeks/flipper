@@ -654,13 +654,28 @@ QString DefaultQueryBuilder::ProcessNormalOrCrossover(StoryFilter filter, bool r
     QString queryString;
     if(filter.fandom == -1)
         return queryString;
-    //todo this can be optimized if I pass fandom id directly
-    queryString = " and ("
-                  "f.fandom1 = :fandom_id1 "
-                  "or f.fandom2 = :fandom_id2"
-                  ")";
-    if(!renameToFID)
-        queryString.replace(" fid ", " ff.id ");
+    if(filter.secondFandom == -1)
+    {
+        //todo this can be optimized if I pass fandom id directly
+        queryString = " and ("
+                      "f.fandom1 = :fandom_id1 "
+                      "or f.fandom2 = :fandom_id2"
+                      ")";
+        if(!renameToFID)
+            queryString.replace(" fid ", " ff.id ");
+    }
+    else {
+        queryString += " and ("
+                      "( f.fandom1 = :fandom_id1 "
+                      "and f.fandom2 = :fandom_id2) "
+                       " or "
+                       "( f.fandom2 = :fandom_id1_ "
+                       "and f.fandom1 = :fandom_id2_) "
+                      ")";
+        if(!renameToFID)
+            queryString.replace(" fid ", " ff.id ");
+
+    }
 
     return queryString;
 
@@ -807,10 +822,17 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
             }
         }
     }
-    if(filter.fandom != -1)
+    if(filter.fandom != -1 && filter.secondFandom == -1)
     {
         q->bindings.push_back({":fandom_id1",filter.fandom});
         q->bindings.push_back({":fandom_id2",filter.fandom});
+    }
+    if(filter.fandom != -1 && filter.secondFandom != -1)
+    {
+        q->bindings.push_back({":fandom_id1",filter.fandom});
+        q->bindings.push_back({":fandom_id2",filter.secondFandom});
+        q->bindings.push_back({":fandom_id1_",filter.fandom});
+        q->bindings.push_back({":fandom_id2_",filter.secondFandom});
     }
     if(!filter.wordInclusion.isEmpty())
     {

@@ -153,6 +153,7 @@ struct StoryFilter{
     EUseThisFicType useThisFicType = EUseThisFicType::utf_ffn_id;
 
     int fandom = -1;
+    int secondFandom = -1;
     QString website;
 
     QStringList genreExclusion;

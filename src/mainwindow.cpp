@@ -127,11 +127,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->cbNormals->lineEdit()->setClearButtonEnabled(true);
+    ui->cbCrossovers->lineEdit()->setClearButtonEnabled(true);
     ui->leContainsWords->setClearButtonEnabled(true);
     ui->leContainsGenre->setClearButtonEnabled(true);
     ui->leAuthorID->setClearButtonEnabled(true);
     ui->leNotContainsWords->setClearButtonEnabled(true);
     ui->leNotContainsGenre->setClearButtonEnabled(true);
+    ui->lblCrosses->hide();
+    ui->cbCrossovers->hide();
+    ui->pbFandomSwitch->hide();
+    //ui->horizontalSpacer_7->hide();
 
 }
 
@@ -172,6 +177,7 @@ bool MainWindow::Init()
 
     auto fandomList = env.interfaces.fandoms->GetFandomList(true);
     ui->cbNormals->setModel(new QStringListModel(fandomList));
+    ui->cbCrossovers->setModel(new QStringListModel(fandomList));
     ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
     ui->cbIgnoreFandomSlashFilter->setModel(new QStringListModel(fandomList));
 
@@ -235,6 +241,8 @@ bool MainWindow::Init()
         SetClientMode();
     ResetFilterUItoDefaults();
     ReadSettings();
+    if(!ui->cbCrossovers->currentText().isEmpty())
+        ui->chkCrossovers->setChecked(true);
     //    ui->spRecsFan->setStretchFactor(0, 0);
     //    ui->spRecsFan->setStretchFactor(1, 1);
     ui->spFanIgnFan->setCollapsible(0,0);
@@ -1019,11 +1027,14 @@ void MainWindow::ReadSettings()
     ui->cbRecGroup->setVisible(settings.value("Settings/showRecListSelector", false).toBool());
 
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
+    ui->cbCrossovers->setCurrentText(settings.value("Settings/crosses", "").toString());
+
 
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     ui->cbNormals->setCurrentText(uiSettings.value("Settings/normals", "").toString());
+    ui->cbCrossovers->setCurrentText(uiSettings.value("Settings/crosses", "").toString());
 
     ui->cbMaxWordCount->setCurrentText(uiSettings.value("Settings/maxWordCount", "").toString());
     ui->cbMinWordCount->setCurrentText(uiSettings.value("Settings/minWordCount", 100000).toString());
@@ -1103,6 +1114,10 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkAutomaticLike", ui->chkAutomaticLike->isChecked());
 
     settings.setValue("Settings/normals", GetCurrentFandomName());
+    if(ui->chkCrossovers->isChecked())
+        settings.setValue("Settings/crosses", GetCrossoverFandomName());
+    else
+        settings.setValue("Settings/crosses", "");
     settings.setValue("Settings/plusGenre", ui->leContainsGenre->text());
     settings.setValue("Settings/minusGenre", ui->leNotContainsGenre->text());
     settings.setValue("Settings/plusWords", ui->leContainsWords->text());
@@ -1157,10 +1172,20 @@ QString MainWindow::GetCurrentFandomName()
     return core::Fandom::ConvertName(ui->cbNormals->currentText());
 }
 
+QString MainWindow::GetCrossoverFandomName()
+{
+    return core::Fandom::ConvertName(ui->cbCrossovers->currentText());
+}
+
 int MainWindow::GetCurrentFandomID()
 {
     return env.interfaces.fandoms->GetIDForName(core::Fandom::ConvertName(ui->cbNormals->currentText()));
     //return core::Fandom::ConvertName(ui->cbNormals->currentText());
+}
+
+int MainWindow::GetCrossoverFandomID()
+{
+    return env.interfaces.fandoms->GetIDForName(core::Fandom::ConvertName(ui->cbCrossovers->currentText()));
 }
 
 void MainWindow::OnChapterUpdated(QVariant id, QVariant chapter)
@@ -1769,6 +1794,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureActive = ui->chkActive->isChecked();
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomID();
+    filter.secondFandom = GetCrossoverFandomID();
     filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
     auto fixGenre = [](QStringList& genres) -> void{
@@ -2029,6 +2055,7 @@ void MainWindow::OnFindSimilarClicked(QVariant url)
         return;
     ResetFilterUItoDefaults(false);
     ui->cbNormals->setCurrentText("");
+    ui->cbCrossovers->setCurrentText("");
     ui->leContainsGenre->setText("");
     ui->leNotContainsGenre->setText("");
     ui->leContainsWords->setText("");
@@ -2755,4 +2782,27 @@ void MainWindow::on_chkDisplaySnoozed_stateChanged(int checkState)
 {
     QObject* windowObject= qwFics->rootObject();
     windowObject->setProperty("displaySnoozed", checkState);
+}
+
+void MainWindow::on_chkCrossovers_stateChanged(int value)
+{
+    if(value)
+    {
+        ui->lblCrosses->show();
+        ui->cbCrossovers->show();
+        ui->pbFandomSwitch->show();
+    }
+    else
+    {
+        ui->lblCrosses->hide();
+        ui->cbCrossovers->hide();
+        ui->pbFandomSwitch->hide();
+    }
+}
+
+void MainWindow::on_pbFandomSwitch_clicked()
+{
+    QString temp = ui->cbCrossovers->currentText();
+    ui->cbCrossovers->setCurrentText(ui->cbNormals->currentText());
+    ui->cbNormals->setCurrentText(temp);
 }

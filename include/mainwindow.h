@@ -146,8 +146,11 @@ private:
     // a unified function to get the name of the current fandom
     // (without mentioning GUI element each time)
     QString GetCurrentFandomName();
+    QString GetCrossoverFandomName();
 
     int GetCurrentFandomID();
+    int GetCrossoverFandomID();
+
 
     // a wrapper over pagegetter to request pages for fandom parsing
     //bool RequestAndProcessPage(QString fandom, QDate lastFandomUpdatedate, QString url);
@@ -476,6 +479,10 @@ private slots:
     void on_pbRefreshRecList_clicked();
 
     void on_chkDisplaySnoozed_stateChanged(int arg1);
+
+    void on_chkCrossovers_stateChanged(int arg1);
+
+    void on_pbFandomSwitch_clicked();
 
 signals:
 

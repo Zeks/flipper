@@ -79,5 +79,6 @@
         <file>icons/magnet_gray_bottom.png</file>
         <file>icons/bell.png</file>
         <file>icons/bell_gray.png</file>
+        <file>icons/switch.png</file>
     </qresource>
 </RCC>

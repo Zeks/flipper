@@ -136,6 +136,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
     auto* contentFilter = result.mutable_content_filter();
     contentFilter->set_fandom(filter.fandom);
+    contentFilter->set_crossover_fandom(filter.secondFandom);
     contentFilter->set_include_crossovers(filter.includeCrossovers);
     contentFilter->set_crossovers_only(filter.crossoversOnly);
     contentFilter->set_other_fandoms_mode(filter.otherFandomsMode);
@@ -258,6 +259,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         result.usedRecommenders.push_back(filter.used_recommender_ids(i));
 
     result.fandom = filter.content_filter().fandom();
+    result.secondFandom = filter.content_filter().crossover_fandom();
     result.includeCrossovers = filter.content_filter().include_crossovers();
     result.crossoversOnly = filter.content_filter().crossovers_only();
     result.otherFandomsMode = filter.content_filter().other_fandoms_mode();
