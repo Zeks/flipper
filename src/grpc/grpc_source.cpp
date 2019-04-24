@@ -88,6 +88,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
     ProtoSpace::Filter result;
+    result.set_filter_version(1);
     result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
     result.set_use_and_for_tags(filter.tagsAreANDed);
     result.set_randomize_results(filter.randomizeResults);
@@ -259,7 +260,10 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         result.usedRecommenders.push_back(filter.used_recommender_ids(i));
 
     result.fandom = filter.content_filter().fandom();
-    result.secondFandom = filter.content_filter().crossover_fandom();
+    if(filter.filter_version() != 0)
+        result.secondFandom = filter.content_filter().crossover_fandom();
+    else
+        result.secondFandom = -1;
     result.includeCrossovers = filter.content_filter().include_crossovers();
     result.crossoversOnly = filter.content_filter().crossovers_only();
     result.otherFandomsMode = filter.content_filter().other_fandoms_mode();

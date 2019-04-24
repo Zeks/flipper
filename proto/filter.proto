@@ -153,4 +153,5 @@ message Filter{
     bool display_purged_fics                    = 20;
     string protocol_version                     = 21;
     bool use_and_for_tags                       = 22;
+    bool filter_version                         = 23; 
 }
