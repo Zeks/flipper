@@ -309,7 +309,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         result.slashFilter.fandomExceptions.push_back(filter.slash_filter().fandom_exceptions(i));
 
     result.listOpenMode = filter.recommendations().list_open_mode();
-    result.listForRecommendations = filter.recommendations().list_open_mode();
+    result.listForRecommendations = filter.recommendations().list_for_recommendations();
     result.useThisRecommenderOnly = filter.recommendations().use_this_recommender_only();
     result.minRecommendations = filter.recommendations().min_recommendations();
     result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
