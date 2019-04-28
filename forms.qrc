@@ -7,5 +7,6 @@
         <file>qml/components/TagCloud.qml</file>
         <file>qml/components/GenreTagList.qml</file>
         <file>qml/components/TagSection.qml</file>
+        <file>qml/components/NoteTooltip.qml</file>
     </qresource>
 </RCC>

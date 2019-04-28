@@ -466,8 +466,6 @@ Rectangle{
                             chartVotes.x = mappedPoint.x
                             chartVotes.y = mappedPoint.y
 
-                            //                        console.log("Displaying chart at: ", point.x)
-                            //                        console.log("Displaying chart at: ", point.y)
                             mainWindow.chartDisplay = true
 
                         }
@@ -937,9 +935,10 @@ Rectangle{
 
                         //source: "qrc:/icons/icons/pencil.png"
                         MouseArea{
-                            ToolTip.delay: 200
-                            ToolTip.visible: containsMouse
-                            ToolTip.text: tiNotes.text
+//                            ToolTip.delay: 200
+//                            ToolTip.visible: containsMouse
+//                            ToolTip.text: "<FONT COLOR=black>" + tiNotes.text + "</FONT>"
+                            id:maNotes
 
                             hoverEnabled: true
                             anchors.fill : parent
@@ -959,6 +958,30 @@ Rectangle{
                                     displayNotes = false
                                 }
                             }
+
+
+                            onEntered: {
+                                var point = imgNotes.mapToGlobal(maNotes.mouseX,maNotes.mouseY)
+                                var mappedPoint = mainWindow.mapFromGlobal(point.x,point.y)
+
+                                if(imgNotes.mapToItem(mainWindow,0,0).y > mainWindow.height/2)
+                                {
+                                    mappedPoint.y = mappedPoint.y - 300
+                                }
+                                noteTooltip.x = mappedPoint.x
+                                noteTooltip.y = mappedPoint.y
+                                noteTooltip.text = notes
+
+
+                                //console.log("Displaying tooltip at: ", svNoteTooltip.x, svNoteTooltip.y )
+                                mainWindow.displayNoteTooltip = true
+
+                            }
+                            onExited: {
+                                console.log("Hiding tooltip" )
+                                mainWindow.displayNoteTooltip = false
+                            }
+
                         }
                     }
 
@@ -1157,13 +1180,14 @@ Rectangle{
             anchors.fill: parent
             TextArea {
                 id: tiNotes
-                anchors.fill: parent
+                //anchors.fill: parent
                 placeholderText: qsTr("Type here")
                 text: notes
                 horizontalAlignment:  TextInput.AlignLeft
                 onEditingFinished: {
                     lvFics.notesEdited(indexOfThisDelegate, tiNotes.text)
                 }
+                wrapMode: TextEdit.WordWrap
             }
         }
 

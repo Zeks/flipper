@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
+
 import QtQuick 2.10
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
@@ -34,6 +35,7 @@ Rectangle {
     property bool authorFilterActive: false
     property bool detailedGenreMode: true
     property bool displaySnoozed: true
+    property bool displayNoteTooltip: false
 
     signal pageRequested(int page)
     signal backClicked()
@@ -74,16 +76,11 @@ Rectangle {
 
     ChartView {
         id: chartVotes
-         title: "Vote Distribution"
+        title: "Vote Distribution"
         antialiasing: true
         z: 100
         width:500
         height:300
-//        margins.top: 0
-//        margins.bottom: 0
-//        margins.left: 0
-//        margins.right: 0
-        //legend.visible: false
         visible: mainWindow.chartDisplay
         BarSeries {
             labelsVisible :false
@@ -96,6 +93,13 @@ Rectangle {
         }
     }
 
+    NoteTooltip{
+       id: noteTooltip
+       visible: mainWindow.displayNoteTooltip
+       width: 500
+       height:200
+       z: 100
+    }
 
     Rectangle{
         id:leadingLine
@@ -222,12 +226,12 @@ Rectangle {
         height:5
     }
     ScrollView {
-        highlightOnFocus: false
-        frameVisible: false
+        //highlightOnFocus: false
+        //frameVisible: false
         anchors.top: spacerBeforeListview.bottom
         width: parent.width
         anchors.bottom:  parent.bottom
-        verticalScrollBarPolicy: Qt.ScrollBarAsNeeded
+        //verticalScrollBarPolicy: Qt.ScrollBarAsNeeded
         ListView{
             cacheBuffer: 6000
             displayMarginBeginning: 50
