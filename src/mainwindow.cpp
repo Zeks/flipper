@@ -1935,6 +1935,9 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.descendingDirection = ui->cbSortDirection->currentIndex() == 0;
     filter.displaySnoozedFics = ui->chkDisplaySnoozed->isChecked();
 
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
+
     return filter;
 }
 
@@ -2821,15 +2824,6 @@ void MainWindow::on_pbAnalyzeListOfFics_clicked()
     }
     AnalyzeIdList(ficIDs);
 
-}
-
-
-
-
-void MainWindow::on_chkDisplaySnoozed_stateChanged(int checkState)
-{
-    QObject* windowObject= qwFics->rootObject();
-    windowObject->setProperty("displaySnoozed", checkState);
 }
 
 void MainWindow::on_chkCrossovers_stateChanged(int value)

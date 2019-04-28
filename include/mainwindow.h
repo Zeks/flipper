@@ -479,7 +479,7 @@ private slots:
 
     void on_pbRefreshRecList_clicked();
 
-    void on_chkDisplaySnoozed_stateChanged(int arg1);
+
 
     void on_chkCrossovers_stateChanged(int arg1);
 
