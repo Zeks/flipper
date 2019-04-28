@@ -35,7 +35,6 @@ import QtGraphicalEffects 1.0
             TextArea{
                 id: tiNotesTooltip
                 z: 120
-                anchors.fill: parent
                 visible: parent.visible
                 horizontalAlignment:  TextInput.AlignLeft
                 wrapMode: TextEdit.WordWrap
