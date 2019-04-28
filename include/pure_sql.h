@@ -276,11 +276,18 @@ DiagnosticSQLResult<QSet<int>> GetAuthorsForTags(QStringList tags, QSqlDatabase 
 
 // assumes that ficsForSelection are filled
 DiagnosticSQLResult<QHash<int, core::SnoozeInfo>> GetSnoozeInfo(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool limitedSelection = false, QSqlDatabase db = {});
+
+
 DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> ,QSqlDatabase db);
 DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo,QSqlDatabase db);
 DiagnosticSQLResult<bool> RemoveSnooze(int,QSqlDatabase db);
 
+DiagnosticSQLResult<bool> AddNoteToFic(int, QString, QSqlDatabase db);
+DiagnosticSQLResult<bool> RemoveNoteFromFic(int, QSqlDatabase db);
+
+
+DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection = false, QSqlDatabase db = {});
 
 
 
@@ -288,6 +295,11 @@ DiagnosticSQLResult<bool> RemoveSnooze(int,QSqlDatabase db);
 DiagnosticSQLResult<QVector<int>> GetAllFicsThatDontHaveDBID( QSqlDatabase db);
 DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase db);
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+
+DiagnosticSQLResult<bool> FetchSnoozesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+//DiagnosticSQLResult<bool> FetchNotesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+
+
 
 DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db);
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db);

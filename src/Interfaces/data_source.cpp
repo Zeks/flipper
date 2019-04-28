@@ -97,7 +97,7 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
-    result.chapters = QString::number(q.value("CHAPTERS").toInt() + 1);
+    result.chapters = QString::number(q.value("CHAPTERS").toInt());
     result.complete= q.value("COMPLETE").toInt();
     result.atChapter = q.value("AT_CHAPTER").toInt();
     result.recommendations= q.value("SUMRECS").toInt();

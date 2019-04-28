@@ -85,7 +85,6 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
         if(role == BreakdownRole)
         {
             auto var = AdaptingTableModel::data(index.sibling(index.row(), 22), Qt::DisplayRole);
-            //qDebug() << "breakdown: " << var;
             return var;
         }
         if(role == BreakdownCountRole)
@@ -113,7 +112,24 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             auto var = AdaptingTableModel::data(index.sibling(index.row(), 27), Qt::DisplayRole);
             return var;
         }
+        if(role == SnoozeModeRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 28), Qt::DisplayRole).toInt();
+        if(role == SnoozeLimitRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 29), Qt::DisplayRole).toInt();
+        if(role == SnoozeOriginRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 30), Qt::DisplayRole).toInt();
 
+
+        if(role == NotesRole)
+        {
+            auto var = AdaptingTableModel::data(index.sibling(index.row(), 31), Qt::DisplayRole);
+            return var;
+        }
+        if(role == QuotesRole)
+        {
+            auto var = AdaptingTableModel::data(index.sibling(index.row(), 32), Qt::DisplayRole);
+            return var;
+        }
         if(role == CurrentChapterRole)
             return QString("");
         {
@@ -167,6 +183,11 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[PurgedRole] = "purged";
     roles[ScoreRole] = "score";
     roles[SnoozeExpiredRole] = "snoozeExpired";
+    roles[SnoozeModeRole] = "snoozeMode";
+    roles[SnoozeLimitRole] = "snoozeLimit";
+    roles[SnoozeOriginRole] = "snoozeOrigin";
+    roles[NotesRole] = "notes";
+    roles[QuotesRole] = "quotes";
 
     return roles;
 }

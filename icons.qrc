@@ -80,7 +80,11 @@
         <file>icons/bell.png</file>
         <file>icons/bell_gray.png</file>
         <file>icons/switch.png</file>
-        <file>icons/pencil_medium.png</file>
         <file>icons/quote_1.png</file>
+        <file>icons/pencil.png</file>
+        <file>icons/pencil_gray.png</file>
+        <file>icons/save.png</file>
+        <file>icons/note_gray.png</file>
+        <file>icons/note.png</file>
     </qresource>
 </RCC>

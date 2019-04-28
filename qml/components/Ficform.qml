@@ -38,6 +38,9 @@ Rectangle{
 
         if((tags.indexOf("Snoozed") !== -1) && mainWindow.displaySnoozed)
             height = height + snoozePart.height
+        if(rectNotes.active)
+            height = height + 200
+
         return height
     }
     property string delTitle : title
@@ -45,6 +48,7 @@ Rectangle{
     //property string delFicId: ficId
     property int delRow : rownum
     property bool hasRealGenres : false
+    property bool displayNotes: false
     property int indexOfThisDelegate: index
     property bool snoozed: tags.indexOf("Snoozed") !== -1
     signal mouseClicked
@@ -105,8 +109,9 @@ Rectangle{
                 color = "#1100FF00"
             return color;
         }
-        border.width: 2
+
         radius: 0
+        border.width: 2
         border.color: Qt.rgba(0, 0, 1, 0.4)
 
         ToolButton {
@@ -346,39 +351,6 @@ Rectangle{
                     font.pixelSize: 12
                     visible: false
                 }
-
-                ComboBox {
-                    id: cbChapters
-                    height: 24
-                    model: chapters
-
-                    onActivated:  {
-                        lvFics.chapterChanged(index, ID)
-                    }
-                    onModelChanged: {currentIndex = atChapter}
-                    MouseArea {
-                        anchors.fill: parent
-                        propagateComposedEvents: true
-                        onWheel: {
-                            // do nothing
-                        }
-                        onPressed: {
-                            mouse.accepted = false
-                        }
-                    }
-                    visible: false
-                }
-
-                Text {
-                    id: txtOf
-                    height: 24
-                    text: "Of: " + String(parseInt(chapters) - 1)
-                    //text: "" + String(parseInt(chapters) - 1)
-                    verticalAlignment: Text.AlignVCenter
-
-                    font.pixelSize: 12
-                    visible: false
-                }
             }
             RowLayout{
                 Image {
@@ -510,6 +482,7 @@ Rectangle{
                     width: recommendations > 0 ? 20 : 0
                     height: 24
                     text: { return recommendations + " Ratio: 1/" + Math.round(favourites/recommendations)}
+                    //text: { return recommendations + " Ratio: 1/" + chapters}
                     //text: { return recommendations + " Faves: " + favourites}
                     visible: recommendations > 0
                     verticalAlignment: Text.AlignVCenter
@@ -870,11 +843,7 @@ Rectangle{
                         }
                     }
                 }
-                Image {
-                    id: imgSkip
-                    width: 20
-                    height: 24
-                }
+
                 Image {
                     id: imgMagnet
                     width: 20
@@ -901,6 +870,12 @@ Rectangle{
                         }
                     }
                 }
+
+                Image {
+                    id: imgSkip
+                    width: 20
+                    height: 24
+                }
                 Image {
                     id: imgSnooze
                     width: 20
@@ -924,6 +899,69 @@ Rectangle{
                                 lvFics.tagDeleted("Snoozed",indexOfThisDelegate)
                         }
                     }
+                }
+                Rectangle{
+                    id: rectNotes
+                    property bool active : false
+                    //border.width: active ? 2 : 0
+                    //border.color: Qt.rgba(0, 0, 1, 0.4)//radius: 5
+                    //border.color: Qt.rgba(0, 0, 1, 0.4)
+                    color: {
+                        var color;
+                        color = purged == 0 ?  "#e4f4f6FF" : "#B0FFE6FF"
+                        if(snoozeExpired)
+                            color = "#1100FF00"
+                        return color;
+                    }
+
+
+                    width:24
+                    height: 24
+
+                    Image {
+                        opacity: (notes || rectNotes.active)  ? 1 : 0.4
+                        //anchors.fill : parent
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        id: imgNotes
+                        width: 20
+                        height: 20
+                        sourceSize.height: 20
+                        sourceSize.width:20
+                        source: {
+                            if(rectNotes.active)
+                                return "qrc:/icons/icons/save.png"
+
+                            return notes ? "qrc:/icons/icons/note.png" : "qrc:/icons/icons/note_gray.png"
+                        }
+
+                        //source: "qrc:/icons/icons/pencil.png"
+                        MouseArea{
+                            ToolTip.delay: 200
+                            ToolTip.visible: containsMouse
+                            ToolTip.text: tiNotes.text
+
+                            hoverEnabled: true
+                            anchors.fill : parent
+                            propagateComposedEvents : true
+                            onClicked : {
+                                //                                console.log("Notes type: ", typeof notes);
+                                //                                console.log("Notes: ", notes);
+
+                                if(!rectNotes.active)
+                                {
+                                    rectNotes.active = true
+                                    displayNotes = true
+                                }
+                                else
+                                {
+                                    rectNotes.active = false
+                                    displayNotes = false
+                                }
+                            }
+                        }
+                    }
+
                 }
             }
         }
@@ -973,6 +1011,8 @@ Rectangle{
             }
         }
     }
+
+
 
     Rectangle{
         id: snoozePart
@@ -1029,7 +1069,14 @@ Rectangle{
                     height: 20
                     anchors.leftMargin: 3
                     textFormat: Text.RichText;
-                    text: "Next Chapter"
+                    text: {
+                        if(snoozeMode === 0)
+                            return "Next Chapter"
+                        if(snoozeMode === 1)
+                            return "Until Finished"
+                        if(snoozeMode === 2)
+                            return "Until Chapter"
+                    }
                     verticalAlignment: Text.AlignVCenter
                     font.pointSize: 12
                     font.family: "Verdana"
@@ -1040,21 +1087,23 @@ Rectangle{
                     anchors.fill : parent
                     propagateComposedEvents : true
                     onClicked : {
-                        if(lblSnoozeType.text === "Next Chapter")
+                        if(snoozeMode === 0)
                         {
-                            lblSnoozeType.text = "Until Finished"
+
                             lvFics.snoozeTypeChanged(indexOfThisDelegate, 1, -1);
+                            snoozeMode = 1;
                         }
-                        else if(lblSnoozeType.text === "Until Finished")
+                        else if(snoozeMode === 1)
                         {
-                            lblSnoozeType.text = "Until Chapter"
-                            lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, chapters + 1);
-                            //tiChapter.text = (chapters + 1).toString()
+
+                            lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, chapters+1);
+                            snoozeMode = 2;
                         }
-                        else if(lblSnoozeType.text === "Until Chapter")
+                        else if(snoozeMode === 2)
                         {
-                            lblSnoozeType.text = "Next Chapter"
+
                             lvFics.snoozeTypeChanged(indexOfThisDelegate, 0, -1);
+                            snoozeMode = 0;
                         }
                     }
                 }
@@ -1067,19 +1116,57 @@ Rectangle{
                 height:row.height - 5
                 visible: lblSnoozeType.text == "Until Chapter"
                 TextInput{
-                    id: tiChapter
+                    id: tiFicNotes
                     horizontalAlignment:  TextInput.AlignRight
                     font.pixelSize: mainWindow.textSize
                     anchors.fill: parent
                     visible: lblSnoozeType.text == "Until Chapter"
                     color: "black"
-                    text: chapters
+                    text: snoozeLimit === -1 ? chapters : snoozeLimit
                     onEditingFinished: {
-                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, text);
+                        console.log("Edited text is: ", text)
+                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, parseInt(text));
+                        snoozeLimit = parseInt(text)
                     }
                 }
             }
         }
+
+    }
+    Rectangle{
+        id: notesPart
+        width: 850
+        height:200
+
+        anchors.top: ficSheet.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+
+        radius: 5
+
+        border.width: 2
+        border.color: Qt.rgba(0, 0, 1, 0.4)
+
+        clip: true
+
+        color: "lightyellow"
+        visible: rectNotes.active
+
+        ScrollView{
+            id: areaView
+            anchors.fill: parent
+            TextArea {
+                id: tiNotes
+                anchors.fill: parent
+                placeholderText: qsTr("Type here")
+                text: notes
+                horizontalAlignment:  TextInput.AlignLeft
+                onEditingFinished: {
+                    lvFics.notesEdited(indexOfThisDelegate, tiNotes.text)
+                }
+            }
+        }
+
 
     }
 

@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/authors.h"
 #include "include/pure_sql.h"
 #include "include/transaction.h"
+#include "include/in_tag_accessor.h"
 #include <QVector>
 #include <QDebug>
 
@@ -230,9 +231,9 @@ QHash<int, core::SnoozeInfo> Fanfics::GetSnoozeInfo()
     return database::puresql::GetSnoozeInfo(db).data;
 }
 
-QHash<int, core::SnoozeTaskInfo> Fanfics::GetUserSnoozeInfo()
+QHash<int, core::SnoozeTaskInfo> Fanfics::GetUserSnoozeInfo(bool useLimitedSelection)
 {
-    return database::puresql::GetUserSnoozeInfo(db).data;
+    return database::puresql::GetUserSnoozeInfo(useLimitedSelection, db).data;
 }
 
 bool Fanfics::WriteExpiredSnoozes(QSet<int> data)
@@ -248,6 +249,73 @@ bool Fanfics::SnoozeFic(core::SnoozeTaskInfo data)
 bool Fanfics::RemoveSnooze(int ficId)
 {
     return database::puresql::RemoveSnooze(ficId, db).success;
+}
+
+void UploadFicIdsForSelection(QVector<core::Fic> * fics){
+    auto* userThreadData = ThreadData::GetUserData();
+    userThreadData->ficsForSelection.clear();
+    for(auto& fic : *fics)
+        userThreadData->ficsForSelection.insert(fic.id);
+}
+
+
+bool Fanfics::FetchSnoozesForFics(QVector<core::Fic> * fics)
+{
+    if(!fics)
+        return false;
+
+    UploadFicIdsForSelection(fics);
+
+    auto snoozes = GetUserSnoozeInfo(true);
+    for(auto& fic: *fics)
+    {
+        if(snoozes.contains(fic.id))
+        {
+            auto& snooze = snoozes[fic.id];
+            fic.chapterTillSnoozed = snooze.snoozedTillChapter;
+            fic.chapterSnoozed = snooze .snoozedAtChapter;
+            if(snooze.untilFinished)
+            {
+                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_til_finished;
+            }
+            else if((snooze.snoozedTillChapter - snooze.snoozedAtChapter) == 1)
+            {
+                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_next_chapter;
+            }
+            else
+                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_target_chapter;
+        }
+    }
+    return true;
+}
+
+bool Fanfics::FetchNotesForFics(QVector<core::Fic> * fics)
+{
+    if(!fics)
+        return false;
+
+    UploadFicIdsForSelection(fics);
+    auto notes = database::puresql::GetNotesForFics(true, db).data;
+
+    for(auto& fic: *fics)
+    {
+        if(notes.contains(fic.id))
+        {
+            fic.notes = notes[fic.id];
+        }
+    }
+
+    return true;
+}
+
+bool Fanfics::AddNoteToFic(int ficId, QString note)
+{
+    return database::puresql::AddNoteToFic(ficId,note, db).success;
+}
+
+bool Fanfics::RemoveNoteFromFic(int ficId)
+{
+    return database::puresql::RemoveNoteFromFic(ficId, db).success;
 }
 
 QVector<core::FicWeightPtr> Fanfics::GetAllFicsWithEnoughFavesForWeights(int faves)

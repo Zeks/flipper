@@ -237,8 +237,7 @@ bool MainWindow::Init()
     ui->edtRecsContents->setReadOnly(false);
     ui->wdgDetailedRecControl->hide();
     bool thinClient = settings.value("Settings/thinClient").toBool();
-    if(thinClient)
-        SetClientMode();
+    SetClientMode();
     ResetFilterUItoDefaults();
     ReadSettings();
     if(!ui->cbCrossovers->currentText().isEmpty())
@@ -330,6 +329,8 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     ReinitProgressbar(task->size);
 }
 
+int ConvertFicSnoozeModeToInt (core::Fic::EFicSnoozeMode type){return static_cast<int>(type);}
+void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = static_cast<core::Fic::EFicSnoozeMode>(value);}
 
 #define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
@@ -432,6 +433,24 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     } \
     ); \
 
+#define ADD_ENUM_GETSET(GETTER, SETTER, HOLDER,ROW,ROLE,PARAM)  \
+    HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
+    [] (const core::Fic* data) \
+{ \
+    if(data) \
+    return QVariant(GETTER(data->PARAM)); \
+    else \
+    return QVariant(); \
+    } \
+    ); \
+    HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
+    [] (core::Fic* data, QVariant value) \
+{ \
+    if(data) \
+    SETTER(data, value.toInt());    \
+    } \
+    ); \
+
 #define ADD_STRINGLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
     [] (const core::Fic* data) \
@@ -442,6 +461,9 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     return QVariant(); \
     } \
     ); \
+
+
+
 
 void MainWindow::SetupTableAccess()
 {
@@ -476,6 +498,11 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 25, 0, purged);
     ADD_INTEGER_GETSET(holder, 26, 0, score);
     ADD_INTEGER_GETSET(holder, 27, 0, snoozeExpired);
+    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, snoozeMode);
+    ADD_INTEGER_GETSET(holder, 29, 0, chapterTillSnoozed);
+    ADD_INTEGER_GETSET(holder, 30, 0, chapterSnoozed);
+    ADD_STRING_GETSET(holder, 31, 0, notes);
+    ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -504,7 +531,10 @@ void MainWindow::SetupFanficTable()
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
                        << "recommendations" << "realGenres" << "author_id" << "minSlashLevel"
                        << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
-                       << "snoozeExpired");
+                       << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
+                       << "notes" << "quotes");
+
+
 
     typetableInterface = QSharedPointer<TableDataInterface>(dynamic_cast<TableDataInterface*>(holder));
 
@@ -541,6 +571,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(heartDoubleClicked(QVariant)), this, SLOT(OnHeartDoubleClicked(QVariant)));
     connect(childObject, SIGNAL(scoreAdjusted(QVariant, QVariant, QVariant)), this, SLOT(OnScoreAdjusted(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(snoozeTypeChanged(QVariant, QVariant, QVariant)), this, SLOT(OnSnoozeTypeChanged(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(notesEdited(QVariant, QVariant)), this, SLOT(OnNotesEdited(QVariant, QVariant)));
     connect(childObject, SIGNAL(newQRSource(QVariant)), this, SLOT(OnNewQRSource(QVariant)));
     connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(tagDeleted(QVariant, QVariant)), this, SLOT(OnTagRemove(QVariant,QVariant)));
@@ -1210,8 +1241,8 @@ void MainWindow::OnTagAdd(QVariant tag, QVariant row)
         core::SnoozeTaskInfo info;
         info.ficId = id;
         info.untilFinished = 0;
-        info.snoozedTillChapter = currentChapter;
-        info.snoozedAtChapter = currentChapter - 1;
+        info.snoozedTillChapter = currentChapter+1;
+        info.snoozedAtChapter = currentChapter;
         env.interfaces.fanfics->SnoozeFic(info);
         QModelIndex index = typetableModel->index(rownum, 27);
         typetableModel->setData(index,0,0);
@@ -1322,8 +1353,25 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
         data.untilFinished = 1; // chapter or until finished
         data.snoozedAtChapter = currentChapter;
         data.snoozedTillChapter = chapter.toInt();
+        typetableModel->setData(typetableModel->index(rownum, 29), chapter.toInt(), Qt::DisplayRole);
     }
+
+    typetableModel->setData(typetableModel->index(rownum, 28), type.toInt(), Qt::DisplayRole);
+    typetableModel->updateAll();
     env.interfaces.fanfics->SnoozeFic(data);
+}
+
+void MainWindow::OnNotesEdited(QVariant row, QVariant note)
+{
+    int rownum = row.toInt();
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    if(note.toString().isEmpty())
+        env.interfaces.fanfics->RemoveNoteFromFic(id);
+    else
+        env.interfaces.fanfics->AddNoteToFic(id, note.toString());
+
+    typetableModel->setData(typetableModel->index(rownum, 31), note.toString(), Qt::DisplayRole);
+    typetableModel->updateAll();
 }
 
 void MainWindow::OnNewQRSource(QVariant row)

@@ -384,6 +384,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.recommendations = protoFic.recommendations();
     coreFic.wordCount = FS(protoFic.word_count());
     coreFic.chapters = FS(protoFic.chapters());
+    //qDebug() << "received chapters: " << coreFic.chapters ;
     coreFic.reviews = FS(protoFic.reviews());
     coreFic.favourites = FS(protoFic.favourites());
     coreFic.follows = FS(protoFic.follows());

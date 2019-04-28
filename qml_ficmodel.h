@@ -58,7 +58,12 @@ public:
         PurgedRole,
         ScoreRole,
         SnoozeExpiredRole,
-        EndRole = SnoozeExpiredRole
+        SnoozeModeRole,
+        SnoozeLimitRole,
+        SnoozeOriginRole,
+        NotesRole,
+        QuotesRole,
+        EndRole = QuotesRole
 
     };
 

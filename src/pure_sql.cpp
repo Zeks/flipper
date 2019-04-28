@@ -237,13 +237,15 @@ DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatab
     QString qs = "delete from FicTags where fic_id = :fic_id and tag = :tag";
     SqlContext<bool> ctx (db, qs, {{"tag", tag},{"fic_id", fic_id}});
     ctx();
-    ctx.ReplaceQuery("update fanfics set hidden = case "
-                     " when (select count(fic_id) from fictags where fic_id = :fic_id) > 0 then 1 "
-                     " else 0 end "
-                     " where id = :fic_id_");
-    ctx.bindValue("fic_id", fic_id);
-    ctx.bindValue("fic_id_", fic_id);
-    ctx.ExecAndCheck();
+
+    //TODO need to  fix this... probably
+//    ctx.ReplaceQuery("update fanfics set hidden = case "
+//                     " when (select count(fic_id) from fictags where fic_id = :fic_id) > 0 then 1 "
+//                     " else 0 end "
+//                     " where id = :fic_id_");
+//    ctx.bindValue("fic_id", fic_id);
+//    ctx.bindValue("fic_id_", fic_id);
+//    ctx.ExecAndCheck();
     return ctx.result;
 }
 
@@ -2271,8 +2273,14 @@ DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(QSqlDatabase db){
-    QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes order by fic_id asc";
+DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool limitedSelection, QSqlDatabase db){
+    QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
+
+    if(limitedSelection)
+        qs = qs.arg(" where cfInFicSelection(fic_id) > 0 ");
+    else
+        qs = qs.arg("");
+
     SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         core::SnoozeTaskInfo info;
@@ -2284,6 +2292,22 @@ DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(QSqlData
         info.snoozedTillChapter =   q.value("snoozed_till_chapter").toInt();
 
         ctx.result.data[info.ficId] = info;
+    });
+    return ctx.result;
+}
+
+
+DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection , QSqlDatabase db){
+    QString qs = "select * from ficnotes %1 order by fic_id asc";
+
+    if(limitedSelection)
+        qs = qs.arg(" where cfInFicSelection(fic_id) > 0 ");
+    else
+        qs = qs.arg("");
+
+    SqlContext<QHash<int, QString>> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data[q.value("fic_id").toInt()] = q.value("note_content").toString();
     });
     return ctx.result;
 }
@@ -2327,6 +2351,25 @@ DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo data,QSqlDatabase db){
 
 DiagnosticSQLResult<bool> RemoveSnooze(int fic_id,QSqlDatabase db){
     QString qs = QString("delete from FicSnoozes where fic_id = :fic_id");
+    return SqlContext<bool> (db, qs, BP1(fic_id))();
+}
+
+DiagnosticSQLResult<bool> AddNoteToFic(int fic_id, QString note, QSqlDatabase db)
+{
+    QString qs = "INSERT INTO ficnotes(fic_id, note_content) values(:fic_id, :note) "
+                 "on conflict (fic_id) do update set note_content = :note_ where fic_id = :fic_id_";
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("fic_id", fic_id);
+    ctx.bindValue("note", note);
+    ctx.bindValue("note_", note);
+    ctx.bindValue("fic_id_", fic_id);
+    ctx.ExecAndCheck();
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> RemoveNoteFromFic(int fic_id, QSqlDatabase db)
+{
+    QString qs = QString("delete from ficnotes where fic_id = :fic_id");
     return SqlContext<bool> (db, qs, BP1(fic_id))();
 }
 
@@ -2438,6 +2481,7 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
     }
     return ctx.result;
 }
+
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db)
 {
     QString qs = QString(" select * from recommendationlists where id = :id ");

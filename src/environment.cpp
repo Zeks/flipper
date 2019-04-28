@@ -61,21 +61,21 @@ void CoreEnvironment::LoadData()
     ficScores= interfaces.fanfics->GetScoresForFics();
 
     TimedAction action("Full data load",[&](){
-    auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
+        auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
 
-    QVector<core::Fic> newFanfics;
-    auto& filterRef = this->filter;
-    interfaces::TagIDFetcherSettings tagFetcherSettings;
-    tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
+        QVector<core::Fic> newFanfics;
+        auto& filterRef = this->filter;
+        interfaces::TagIDFetcherSettings tagFetcherSettings;
+        tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
 
-    if(filter.useThisFic != -1)
-    {
-        FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+        if(filter.useThisFic != -1)
+        {
+            FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
-        grpcSource->FetchFic(filter.useThisFic,
-                             &newFanfics);
-    }
-    else {
+            grpcSource->FetchFic(filter.useThisFic,
+                                 &newFanfics);
+        }
+        else {
 
             UserData userData;
             userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
@@ -121,25 +121,25 @@ void CoreEnvironment::LoadData()
 
             ficSource->FetchData(filter,
                                  &newFanfics);
-    }
-    if(thinClient)
-    {
+        }
         interfaces.fandoms->FetchFandomsForFics(&newFanfics);
+        interfaces.fanfics->FetchSnoozesForFics(&newFanfics);
+        interfaces.fanfics->FetchNotesForFics(&newFanfics);
         interfaces.tags->FetchTagsForFics(&newFanfics);
         interfaces.recs->FetchRecommendationsBreakdown(&newFanfics, filter.listForRecommendations);
-    }
-    fanfics = newFanfics;
-    currentLastFanficId = ficSource->lastFicId;
-    auto& ficScoresRef = ficScores;
-    for(auto& fic : fanfics)
-    {
-        if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
-            fic.likedAuthor = true;
-        if(ficScores.contains(fic.id))
-            fic.score = ficScores[fic.id];
-        if(snoozeInfo.contains(fic.id))
-            fic.snoozeExpired = snoozeInfo[fic.id].expired;
-    }
+
+        fanfics = newFanfics;
+        currentLastFanficId = ficSource->lastFicId;
+        auto& ficScoresRef = ficScores;
+        for(auto& fic : fanfics)
+        {
+            if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
+                fic.likedAuthor = true;
+            if(ficScores.contains(fic.id))
+                fic.score = ficScores[fic.id];
+            if(snoozeInfo.contains(fic.id))
+                fic.snoozeExpired = snoozeInfo[fic.id].expired;
+        }
     });
     action.run();
 }
@@ -175,48 +175,47 @@ bool CoreEnvironment::Init()
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Settings/serverPort", "3055").toString();
 
-    if(thinClient)
-    {
-        //interfaces.db->userToken
-        interfaces.userDb->userToken = interfaces.userDb->GetUserToken();
-        ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), interfaces.userDb->userToken,  160));
-        auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
-        ServerStatus status = grpcSource->GetStatus();
-        if(!status.isValid)
-        {
-            QString statusString = QString("The server is not responding%1");
-            if(!status.error.isEmpty())
-                statusString=statusString.arg("\nReason: " + status.error);
-            statusString+= "\nYou could try accessing it later or ping the maintainer at ficflipper@gmail.com";
-            QMessageBox::critical(nullptr, "Warning!", statusString);
-            return true;
-        }
-        if(status.protocolVersionMismatch)
-        {
-            QString statusString = QString("Your client version is out of date.\nSome (or all) features may not work.\nPlease get updated binary at https://github.com/Zeks/flipper");
-            QMessageBox::critical(nullptr, "Warning!", statusString);
-            return true;
-        }
-        if(status.messageRequired)
-            QMessageBox::information(nullptr, "Attention!", status.motd);
 
-        QVector<core::Fandom> fandoms;
-        grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);
-        if(fandoms.size() > 0)
-            interfaces.fandoms->UploadFandomsIntoDatabase(fandoms);
-        interfaces.fandoms->ReloadRecentFandoms();
-        auto recentFandoms = interfaces.fandoms->GetRecentFandoms();
-        if(recentFandoms.size() == 0)
-        {
-            interfaces.fandoms->PushFandomToTopOfRecent("Naruto");
-            interfaces.fandoms->PushFandomToTopOfRecent("RWBY");
-            interfaces.fandoms->PushFandomToTopOfRecent("Worm");
-            interfaces.fandoms->PushFandomToTopOfRecent("High School DxD");
-            interfaces.fandoms->PushFandomToTopOfRecent("Harry Potter");
-        }
+    //interfaces.db->userToken
+    interfaces.userDb->userToken = interfaces.userDb->GetUserToken();
+    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), interfaces.userDb->userToken,  160));
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    ServerStatus status = grpcSource->GetStatus();
+    if(!status.isValid)
+    {
+        QString statusString = QString("The server is not responding%1");
+        if(!status.error.isEmpty())
+            statusString=statusString.arg("\nReason: " + status.error);
+        statusString+= "\nYou could try accessing it later or ping the maintainer at ficflipper@gmail.com";
+        QMessageBox::critical(nullptr, "Warning!", statusString);
+        return true;
     }
-//    else
-//        ficSource.reset(new FicSourceDirect(interfaces.db));
+    if(status.protocolVersionMismatch)
+    {
+        QString statusString = QString("Your client version is out of date.\nSome (or all) features may not work.\nPlease get updated binary at https://github.com/Zeks/flipper");
+        QMessageBox::critical(nullptr, "Warning!", statusString);
+        return true;
+    }
+    if(status.messageRequired)
+        QMessageBox::information(nullptr, "Attention!", status.motd);
+
+    QVector<core::Fandom> fandoms;
+    grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);
+    if(fandoms.size() > 0)
+        interfaces.fandoms->UploadFandomsIntoDatabase(fandoms);
+    interfaces.fandoms->ReloadRecentFandoms();
+    auto recentFandoms = interfaces.fandoms->GetRecentFandoms();
+    if(recentFandoms.size() == 0)
+    {
+        interfaces.fandoms->PushFandomToTopOfRecent("Naruto");
+        interfaces.fandoms->PushFandomToTopOfRecent("RWBY");
+        interfaces.fandoms->PushFandomToTopOfRecent("Worm");
+        interfaces.fandoms->PushFandomToTopOfRecent("High School DxD");
+        interfaces.fandoms->PushFandomToTopOfRecent("Harry Potter");
+    }
+
+    //    else
+    //        ficSource.reset(new FicSourceDirect(interfaces.db));
 
     auto result = interfaces.tags->ReadUserTags();
 
@@ -253,10 +252,7 @@ void CoreEnvironment::InitInterfaces()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     QSharedPointer<database::IDBWrapper> userDBInterface;
-    if(thinClient)
-        userDBInterface = interfaces.userDb;
-    else
-        userDBInterface = interfaces.db;
+    userDBInterface = interfaces.userDb;
 
 
     interfaces.authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
@@ -283,8 +279,7 @@ void CoreEnvironment::InitInterfaces()
     interfaces.fanfics->db = userDBInterface->GetDatabase();
     interfaces.recs->db    = userDBInterface->GetDatabase();
     interfaces.fandoms->db = userDBInterface->GetDatabase();
-    if(thinClient)
-        interfaces.fandoms->isClient = true;
+    interfaces.fandoms->isClient = true;
     interfaces.tags->db    = userDBInterface->GetDatabase();
     interfaces.genres->db  = userDBInterface->GetDatabase();
 
@@ -295,22 +290,21 @@ void CoreEnvironment::InitInterfaces()
 int CoreEnvironment::GetResultCount()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    if(thinClient)
-    {
-        UserData userData;
 
-        interfaces::TagIDFetcherSettings tagFetcherSettings;
-        tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
-        userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
-        if(filter.activeTags.size() > 0)
-        {
-            tagFetcherSettings.tags = filter.activeTags;
-            tagFetcherSettings.useAND = filter.tagsAreANDed;
-            userData.ficIDsForActivetags = interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
-        }
-        userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
-        ficSource->userData = userData;
+    UserData userData;
+
+    interfaces::TagIDFetcherSettings tagFetcherSettings;
+    tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
+    userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
+    if(filter.activeTags.size() > 0)
+    {
+        tagFetcherSettings.tags = filter.activeTags;
+        tagFetcherSettings.useAND = filter.tagsAreANDed;
+        userData.ficIDsForActivetags = interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
     }
+    userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
+    ficSource->userData = userData;
+
     QVector<int> recFics;
     //filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
     filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
@@ -547,8 +541,8 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     bool result = grpcSource->GetRecommendationListFromServer(*list);
 
 
-//    QSet<int> sourceSet;
-//    sourceSet.reserve(sourceFics.size());
+    //    QSet<int> sourceSet;
+    //    sourceSet.reserve(sourceFics.size());
     for(auto id: pack)
         list->ficData.sourceFics.insert(id.db);
 

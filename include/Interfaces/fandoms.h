@@ -74,6 +74,7 @@ public:
     QHash<int, QString> GetFandomNamesForIDs(QList<int>);
     bool FetchFandomsForFics(QVector<core::Fic>*);
 
+
     bool RemoveFandomFromIgnoredList(QString name);
     bool RemoveFandomFromIgnoredList(int id);
 

@@ -524,7 +524,11 @@ public:
         efs_favourites = 1,
         efs_own_works = 2
     };
-
+    enum EFicSnoozeMode{
+        efsm_next_chapter = 0,
+        efsm_target_chapter= 1,
+        efsm_til_finished = 2
+    };
     class FicCalcStats
     {
     public:
@@ -555,8 +559,18 @@ public:
     bool likedAuthor = false;
     int minSlashPass = 0;
     int score = 0;
+    int chapterTillSnoozed = -1;
+    int chapterSnoozed = -1;
+
+
     bool purged = false;
+
     bool snoozeExpired = false;
+    EFicSnoozeMode snoozeMode = EFicSnoozeMode::efsm_next_chapter;
+
+
+    bool hasNotes = false;
+    bool hasQuotes = false;
     QStringList voteBreakdown;
     QStringList voteBreakdownCounts;
 
@@ -585,6 +599,8 @@ public:
     QDateTime updated;
     QString charactersFull;
     QStringList characters;
+    QString notes;
+    QStringList quotes;
     bool isValid =false;
     EFicSource ficSource = efs_search;
     QString authorName;

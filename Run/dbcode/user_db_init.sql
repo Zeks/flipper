@@ -126,6 +126,14 @@ CREATE INDEX if not exists I_FURL_URL ON fandomurls (url ASC);
 CREATE INDEX if not exists I_FURL_CUSTOM ON fandomurls (custom ASC);
 CREATE INDEX if not exists I_FURL_WEBSITE ON fandomurls (website ASC);
 
+
+create table if not exists ficnotes (
+fic_id integer PRIMARY KEY not null, 
+note_content varchar);
+
+CREATE INDEX if not exists I_FNQ_FIC_ID ON ficnotesquotes (fic_id ASC);
+
+
 -- per author stats for specific recommendation list, only in this file to support queries;
 CREATE TABLE if not exists RecommendationListAuthorStats (author_id INTEGER NOT NULL , fic_count INTEGER, match_count integer, match_ratio double, list_id integer,  PRIMARY KEY (list_id, author_id));
 CREATE INDEX if not exists  I_REC_STATS_LIST_ID ON RecommendationListAuthorStats (list_id ASC);
