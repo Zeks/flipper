@@ -974,7 +974,8 @@ Rectangle{
 
 
                                 //console.log("Displaying tooltip at: ", svNoteTooltip.x, svNoteTooltip.y )
-                                mainWindow.displayNoteTooltip = true
+                                if(notes)
+                                    mainWindow.displayNoteTooltip = true
 
                             }
                             onExited: {
