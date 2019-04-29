@@ -457,11 +457,11 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             for(auto genre : filter.genreInclusion)
             {
                 auto counter1 = ++counter;
-                genreResult.push_back(QString(" true_genre1  = :genreinc%1 and  true_genre1_percent/max_genre_percent > %2  ")
+                genreResult.push_back(QString(" true_genre1  like '%'||:genreinc%1||'%' and  true_genre1_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
-                genreResult.push_back(QString(" true_genre2  = :genreinc%1 and  true_genre2_percent/max_genre_percent > %2  ")
+                genreResult.push_back(QString(" true_genre2  like '%'||:genreinc%1||'%' and  true_genre2_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
-                genreResult.push_back(QString(" true_genre3  = :genreinc%1 and  true_genre3_percent/max_genre_percent > %2 ")
+                genreResult.push_back(QString(" true_genre3  like '%'||:genreinc%1||'%' and  true_genre3_percent/max_genre_percent > %2 ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
 
             }
@@ -484,11 +484,11 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
             for(auto genre : filter.genreExclusion)
             {
                 auto counter1 = ++counter;
-                genreResult.push_back(QString(" true_genre1  = :genreexc%1 and  true_genre1_percent/max_genre_percent > %2  ")
+                genreResult.push_back(QString(" true_genre1  like '%'||:genreexc%1||'%' and  true_genre1_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
-                genreResult.push_back(QString(" true_genre2  = :genreexc%1 and  true_genre2_percent/max_genre_percent > %2  ")
+                genreResult.push_back(QString(" true_genre2  like '%'||:genreexc%1||'%' and  true_genre2_percent/max_genre_percent > %2  ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
-                genreResult.push_back(QString(" true_genre3  = :genreexc%1 and  true_genre3_percent/max_genre_percent > %2 ")
+                genreResult.push_back(QString(" true_genre3  like '%'||:genreexc%1||'%' and  true_genre3_percent/max_genre_percent > %2 ")
                                       .arg(QString::number(counter1++)).arg(QString::number(limiter)));
             }
             if(genreResult.size() > 0)
