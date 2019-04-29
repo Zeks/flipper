@@ -1089,7 +1089,7 @@ void MainWindow::ReadSettings()
     ui->chkComplete->setChecked(uiSettings.value("Settings/completed", false).toBool());
     ui->chkShowSources->setChecked(uiSettings.value("Settings/chkShowSources", false).toBool());
     ui->chkSearchWithinList->setChecked(uiSettings.value("Settings/chkSearchWithinList", false).toBool());
-    ui->chkAutomaticLike->setChecked(uiSettings.value("Settings/chkAutomaticLike", false).toBool());
+    //ui->chkAutomaticLike->setChecked(uiSettings.value("Settings/chkAutomaticLike", false).toBool());
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
     ui->chkDisplayPurged->setChecked(uiSettings.value("Settings/chkDisplayPurged", false).toBool());
 
@@ -1144,7 +1144,7 @@ void MainWindow::WriteSettings()
 
     settings.setValue("Settings/sbMinimumFavourites", ui->sbMinimumFavourites->value());
     settings.setValue("Settings/chkFaveLimitActivated", ui->chkFaveLimitActivated->isChecked());
-    settings.setValue("Settings/chkAutomaticLike", ui->chkAutomaticLike->isChecked());
+    //settings.setValue("Settings/chkAutomaticLike", ui->chkAutomaticLike->isChecked());
 
     settings.setValue("Settings/normals", GetCurrentFandomName());
     if(ui->chkCrossovers->isChecked())
@@ -2325,6 +2325,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     ui->pbGetSourceLinks->setEnabled(true);
     ui->pbDeleteRecList->setEnabled(true);
     on_pbLoadDatabase_clicked();
+    ui->chkAutomaticLike->setChecked(false);
 }
 
 
