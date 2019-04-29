@@ -1219,9 +1219,17 @@ int MainWindow::GetCrossoverFandomID()
     return env.interfaces.fandoms->GetIDForName(core::Fandom::ConvertName(ui->cbCrossovers->currentText()));
 }
 
-void MainWindow::OnChapterUpdated(QVariant id, QVariant chapter)
+void MainWindow::OnChapterUpdated(QVariant row, QVariant chapter)
 {
-    env.interfaces.fanfics->AssignChapter(id.toInt(), chapter.toInt());
+    int rownum = row.toInt();
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+
+    env.interfaces.fanfics->AssignChapter(id, chapter.toInt());
+
+    auto index = typetableModel->index(rownum, 16);
+    typetableModel->setData(index,chapter,0);
+
+    typetableModel->updateAll();
 }
 
 

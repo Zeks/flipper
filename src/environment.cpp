@@ -125,6 +125,7 @@ void CoreEnvironment::LoadData()
         interfaces.fandoms->FetchFandomsForFics(&newFanfics);
         interfaces.fanfics->FetchSnoozesForFics(&newFanfics);
         interfaces.fanfics->FetchNotesForFics(&newFanfics);
+        interfaces.fanfics->FetchChaptersForFics(&newFanfics);
         interfaces.tags->FetchTagsForFics(&newFanfics);
         interfaces.recs->FetchRecommendationsBreakdown(&newFanfics, filter.listForRecommendations);
 

@@ -745,6 +745,37 @@ Rectangle{
                         }
                     }
                 }
+                Rectangle{
+                    id: rtiAtChapter
+                    color: "lightyellow"
+                    width: 38
+                    border.width: 2
+                    border.color: Qt.rgba(0, 0, 1, 0.4)
+                    radius: 5
+                    height:row.height - 5
+                    visible: tags.indexOf("Reading") !== -1
+                    TextInput{
+                        id: tiAtChapter
+                        horizontalAlignment:  TextInput.AlignRight
+                        font.pixelSize: mainWindow.textSize - 2
+                        //anchors.fill: parent
+                        anchors.bottom: parent.bottom
+//                        anchors.left: parent.left
+//                        anchors.leftMargin: 2
+//                        anchors.rightMargin: 2
+//                        anchors.topMargin: 2
+                        anchors.bottomMargin: -1
+                        anchors.rightMargin: 4
+
+                        width: 35
+                        color: "black"
+                        text: atChapter
+                        onEditingFinished: {
+                            console.log("Edited text is: ", text)
+                            lvFics.chapterChanged(indexOfThisDelegate, parseInt(text));
+                        }
+                    }
+                }
                 Image {
                     id: imgFinishedReading
                     width: 20

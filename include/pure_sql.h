@@ -79,7 +79,7 @@ DiagnosticSQLResult<bool> UpdateFandomStats(int fandomId, QSqlDatabase db);
 DiagnosticSQLResult<bool> AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers = false);
 DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db);
-DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db);
+DiagnosticSQLResult<bool> AssignChapterToFanfic(int fic_id, int chapter, QSqlDatabase db);
 DiagnosticSQLResult<bool> AssignScoreToFanfic(int chapter, int fic_id, QSqlDatabase db);
 
 DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db);
@@ -288,6 +288,7 @@ DiagnosticSQLResult<bool> RemoveNoteFromFic(int, QSqlDatabase db);
 
 
 DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection = false, QSqlDatabase db = {});
+DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelection = false, QSqlDatabase db = {});
 
 
 
@@ -297,6 +298,7 @@ DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase d
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 
 DiagnosticSQLResult<bool> FetchSnoozesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchReadingChaptersForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 //DiagnosticSQLResult<bool> FetchNotesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 
 

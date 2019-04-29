@@ -89,6 +89,7 @@ class Fanfics : public IDBWebIDIndex {
 
     bool FetchSnoozesForFics(QVector<core::Fic>*);
     bool FetchNotesForFics(QVector<core::Fic>*);
+    bool FetchChaptersForFics(QVector<core::Fic>*);
 
 
     bool AddNoteToFic(int ficId, QString note);

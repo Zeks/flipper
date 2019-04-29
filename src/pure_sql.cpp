@@ -261,11 +261,17 @@ DiagnosticSQLResult<bool> AssignQueuedToFanfic(int fic_id, QSqlDatabase db)
     return SqlContext<bool> (db, qs, {{"fic_id", fic_id}})();
 }
 
-DiagnosticSQLResult<bool> AssignChapterToFanfic(int chapter, int fic_id, QSqlDatabase db)
+DiagnosticSQLResult<bool> AssignChapterToFanfic(int fic_id, int chapter, QSqlDatabase db)
 {
-    QString qs = QString("update fanfics set at_chapter = :chapter where id = :fic_id");
-    //return SqlContext<bool> (db, qs, {{"chapter", chapter},{"fic_id", fic_id}})();
-    return SqlContext<bool> (db, qs, BP2(chapter,fic_id))();
+    QString qs = "INSERT INTO FicReadingTracker(fic_id, at_chapter) values(:fic_id, :at_chapter) "
+                 "on conflict (fic_id) do update set at_chapter = :at_chapter_ where fic_id = :fic_id_";
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("fic_id", fic_id);
+    ctx.bindValue("at_chapter", chapter);
+    ctx.bindValue("at_chapter_", chapter);
+    ctx.bindValue("fic_id_", fic_id);
+    ctx.ExecAndCheck(true);
+    return ctx.result;
 }
 DiagnosticSQLResult<bool> AssignScoreToFanfic(int score, int fic_id, QSqlDatabase db)
 {
@@ -2312,6 +2318,22 @@ DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection ,
     return ctx.result;
 }
 
+DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelection, QSqlDatabase db)
+{
+    QString qs = "select * from FicReadingTracker %1 order by fic_id asc";
+
+    if(limitedSelection)
+        qs = qs.arg(" where cfInFicSelection(fic_id) > 0 ");
+    else
+        qs = qs.arg("");
+
+    SqlContext<QHash<int, int>> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data[q.value("fic_id").toInt()] = q.value("at_chapter").toInt();
+    });
+    return ctx.result;
+}
+
 DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> data,QSqlDatabase db){
     QString qs = QString("update ficsnoozes set expired = 1 where fic_id = :fic_id");
     SqlContext<bool> ctx(db, qs);
@@ -2420,6 +2442,8 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
         fic.tags = tags[fic.id];
     return ctx.result;
 }
+
+
 template <typename T1, typename T2>
 inline double DivideAsDoubles(T1 arg1, T2 arg2){
     return static_cast<double>(arg1)/static_cast<double>(arg2);

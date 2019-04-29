@@ -308,6 +308,27 @@ bool Fanfics::FetchNotesForFics(QVector<core::Fic> * fics)
     return true;
 }
 
+bool Fanfics::FetchChaptersForFics(QVector<core::Fic> * fics)
+{
+    if(!fics)
+        return false;
+
+    UploadFicIdsForSelection(fics);
+    auto chapters = database::puresql::GetReadingChaptersForFics(true, db).data;
+
+    for(auto& fic: *fics)
+    {
+        if(chapters.contains(fic.id))
+        {
+            fic.atChapter = chapters[fic.id];
+        }
+        else
+            fic.atChapter = 0;
+    }
+
+    return true;
+}
+
 bool Fanfics::AddNoteToFic(int ficId, QString note)
 {
     return database::puresql::AddNoteToFic(ficId,note, db).success;
@@ -340,7 +361,7 @@ bool Fanfics::ProcessSlashFicsBasedOnWords( std::function<SlashPresence (QString
 
 bool Fanfics::AssignChapter(int ficId, int chapter)
 {
-    return database::puresql::AssignChapterToFanfic(chapter, ficId, db).success;
+    return database::puresql::AssignChapterToFanfic(ficId,chapter, db).success;
 }
 
 bool Fanfics::AssignScore(int score, int ficId)
