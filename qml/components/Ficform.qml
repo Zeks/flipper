@@ -33,10 +33,7 @@ Rectangle{
     }
     height: {
         var height = ficSheet.height
-        if(snoozeExpired)
-            return height;
-
-        if((tags.indexOf("Snoozed") !== -1) && mainWindow.displaySnoozed)
+        if(!snoozeExpired && tags.indexOf("Snoozed") !== -1)
             height = height + snoozePart.height
         if(rectNotes.active)
             height = height + 200
@@ -252,7 +249,11 @@ Rectangle{
                     width: 517
                     height: 21
                     textFormat: Text.RichText;
-                    text: " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
+                    text: {
+                        if(!tiAtChapter.visible)
+                            return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
+                        return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "/" + tiAtChapter.text + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
+                    }
                     verticalAlignment: Text.AlignVCenter
                     style: Text.Raised
                     font.pointSize: 16
@@ -721,61 +722,7 @@ Rectangle{
                         }
                     }
                 }
-                Image {
-                    id: imgReading
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Reading") !== -1 ? 0.8 : 0.5
-                    source: tags.indexOf("Reading") !== -1 ? "qrc:/icons/icons/open_book.png" : "qrc:/icons/icons/open_book_gray.png"
 
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Reading")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Reading") === -1)
-                                lvFics.tagAdded("Reading",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Reading",indexOfThisDelegate)
-                        }
-                    }
-                }
-                Rectangle{
-                    id: rtiAtChapter
-                    color: "lightyellow"
-                    width: 38
-                    border.width: 2
-                    border.color: Qt.rgba(0, 0, 1, 0.4)
-                    radius: 5
-                    height:row.height - 5
-                    visible: tags.indexOf("Reading") !== -1
-                    TextInput{
-                        id: tiAtChapter
-                        horizontalAlignment:  TextInput.AlignRight
-                        font.pixelSize: mainWindow.textSize - 2
-                        //anchors.fill: parent
-                        anchors.bottom: parent.bottom
-//                        anchors.left: parent.left
-//                        anchors.leftMargin: 2
-//                        anchors.rightMargin: 2
-//                        anchors.topMargin: 2
-                        anchors.bottomMargin: -1
-                        anchors.rightMargin: 4
-
-                        width: 35
-                        color: "black"
-                        text: atChapter
-                        onEditingFinished: {
-                            console.log("Edited text is: ", text)
-                            lvFics.chapterChanged(indexOfThisDelegate, parseInt(text));
-                        }
-                    }
-                }
                 Image {
                     id: imgFinishedReading
                     width: 20
@@ -1017,6 +964,56 @@ Rectangle{
                         }
                     }
 
+                }
+                Image {
+                    id: imgReading
+                    width: 20
+                    height: 24
+                    sourceSize.height: 20
+                    sourceSize.width: 20
+                    opacity: tags.indexOf("Reading") !== -1 ? 0.8 : 0.5
+                    source: tags.indexOf("Reading") !== -1 ? "qrc:/icons/icons/open_book.png" : "qrc:/icons/icons/open_book_gray.png"
+
+                    MouseArea{
+                        hoverEnabled: true
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: qsTr("Tag: Reading")
+                        anchors.fill : parent
+                        propagateComposedEvents : true
+                        onClicked : {
+                            if(tags.indexOf("Reading") === -1)
+                                lvFics.tagAdded("Reading",indexOfThisDelegate)
+                            else
+                                lvFics.tagDeleted("Reading",indexOfThisDelegate)
+                        }
+                    }
+                }
+                Rectangle{
+                    id: rtiAtChapter
+                    color: "lightyellow"
+                    width: 38
+                    border.width: 2
+                    border.color: Qt.rgba(0, 0, 1, 0.4)
+                    radius: 5
+                    height:row.height - 5
+                    visible: tags.indexOf("Reading") !== -1
+                    TextInput{
+                        id: tiAtChapter
+                        horizontalAlignment:  TextInput.AlignRight
+                        font.pixelSize: mainWindow.textSize - 2
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: -1
+                        anchors.rightMargin: 4
+
+                        width: 35
+                        color: "black"
+                        text: atChapter === 0 ? chapters : atChapter
+                        onEditingFinished: {
+                            console.log("Edited text is: ", text)
+                            lvFics.chapterChanged(indexOfThisDelegate, parseInt(text));
+                        }
+                    }
                 }
             }
         }

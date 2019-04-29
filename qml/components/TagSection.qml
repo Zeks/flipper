@@ -185,6 +185,30 @@ Rectangle{
         spacing: 2
         delegate: Rectangle{
             id:frame
+
+            Image {
+                id: imgMagnetGrab
+                width: 20
+                height: 20
+                visible: tagName !== "Genre"
+                z:120
+                anchors.right: frame.right
+                sourceSize.height: 20
+                sourceSize.width: 20
+                opacity: tags.indexOf(mainWindow.magnetTag) !== -1  ? 1 : 0.5
+                source: {
+                    return mainWindow.magnetTag === modelData ? "qrc:/icons/icons/magnet.png" : "qrc:/icons/icons/magnet_gray.png"
+                }
+
+                MouseArea{
+                    hoverEnabled: true
+                    anchors.fill : parent
+                    propagateComposedEvents : false
+                    onClicked : {
+                        mainWindow.magnetTag = modelData
+                    }
+                }
+            }
             rotation: root.parent.rotation === 180 ? 180 : 0
             color: {
                 var color
@@ -197,7 +221,6 @@ Rectangle{
                     else
                         color = "lightGray"
                 }
-                //print("Color is: " + color)
                 return color
             }
             z:2
@@ -213,7 +236,6 @@ Rectangle{
                 id: rrr
                 spacing: 4
                 width: root.width - 4 - 24
-                //anchors.leftMargin: 2
                 Rectangle{
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
@@ -256,12 +278,6 @@ Rectangle{
                         return img;
                     }
                 }
-                //                Rectangle{
-                //                    width: 40
-                //                    height: 15
-                //                    visible: true
-                //                }
-
                 Text{
                     id:tagText
                     text: {
@@ -282,6 +298,7 @@ Rectangle{
                     //z:1
                     //horizontalAlignment: Text.AlignHCenter
                 }
+
             }
             MouseArea{
                 anchors.fill: parent

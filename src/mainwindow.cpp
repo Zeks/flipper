@@ -1404,7 +1404,7 @@ void MainWindow::OnTagAddInTagWidget(QVariant tag, QVariant row)
     int rownum = row.toInt();
     SetTag(rownum, tag.toString());
 
-    primedTag = tag.toString();
+    //primedTag = tag.toString();
 
 
 }
@@ -1413,18 +1413,18 @@ void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
     UnsetTag(rownum, tag.toString());
-    if(primedTag == tag.toString())
-    {
-        QObject* windowObject= qwFics->rootObject();
-        windowObject->setProperty("magnetTag", tag);
+//    if(primedTag == tag.toString())
+//    {
+//        QObject* windowObject= qwFics->rootObject();
+//        windowObject->setProperty("magnetTag", tag);
 
-        QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
-        uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-        uiSettings.setValue("Settings/magneticTag", tag.toString());
-    }
-    else{
-        primedTag = "";
-    }
+//        QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+//        uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+//        uiSettings.setValue("Settings/magneticTag", tag.toString());
+//    }
+//    else{
+//        primedTag = "";
+//    }
 }
 
 
