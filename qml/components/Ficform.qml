@@ -191,7 +191,7 @@ Rectangle{
 
                             if(imgCopy.mapToItem(mainWindow,0,0).y > mainWindow.height/2)
                             {
-                                mappedPoint.y = mappedPoint.y - 300
+                                mappedPoint.y = mappedPoint.y - 200
                             }
                             imgQRCode.x = mappedPoint.x + 20
                             imgQRCode.y = mappedPoint.y
@@ -959,7 +959,7 @@ Rectangle{
 
                                 if(imgNotes.mapToItem(mainWindow,0,0).y > mainWindow.height/2)
                                 {
-                                    mappedPoint.y = mappedPoint.y - 300
+                                    mappedPoint.y = mappedPoint.y - 200
                                 }
                                 noteTooltip.x = mappedPoint.x
                                 noteTooltip.y = mappedPoint.y
