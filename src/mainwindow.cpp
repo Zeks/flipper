@@ -1130,6 +1130,12 @@ void MainWindow::ReadSettings()
         this->move(uiSettings.value("Settings/position").toPoint());
     if(uiSettings.value("Settings/maximized").toPoint().isNull())
         this->showMaximized();
+
+    if(ui->cbRecGroup->currentText().isEmpty())
+    {
+        ui->chkAutomaticLike->setChecked(true);
+        ui->chkUserOwnProfile->setChecked(true);
+    }
 }
 
 void MainWindow::WriteSettings()
