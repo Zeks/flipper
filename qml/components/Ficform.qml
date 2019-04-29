@@ -861,6 +861,12 @@ Rectangle{
                     height: 24
                 }
                 Image {
+                    id: imgSnoozePlaceholder
+                    width: 20
+                    height: 24
+                    visible: complete && !snoozeExpired
+                }
+                Image {
                     id: imgSnooze
                     width: 20
                     height: 24
@@ -868,6 +874,7 @@ Rectangle{
                     sourceSize.width: 20
                     opacity: tags.indexOf("Snoozed") !== -1  ? 1 : 0.5
                     source: tags.indexOf("Snoozed") !== -1 ? "qrc:/icons/icons/bell.png" : "qrc:/icons/icons/bell_gray.png"
+                    visible: !complete || snoozeExpired
 
                     MouseArea{
                         ToolTip.delay: 1000
