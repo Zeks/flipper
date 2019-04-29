@@ -37,15 +37,15 @@ CREATE INDEX if not exists I_FICSCORES_SCORE ON FicTags (score ASC);
 
 CREATE TABLE if not exists FicSnoozes (
  fic_id integer unique,
- snooze_added datetime default date('now'),
+ snooze_added datetime,
  snoozed_at_chapter integer,
  snoozed_till_chapter integer,
  snoozed_until_finished integer default 1,
  snooze_expired integeger default 0);
  alter table FicSnoozes add column expired integer default 0;
-CREATE INDEX if not exists I_FICSNOOZES_DBID ON FicTags (fic_id ASC);
-CREATE INDEX if not exists I_FICSNOOZES_ADDED ON FicTags (snooze_added ASC);
-CREATE INDEX if not exists I_FICSNOOZES_EXPIRED ON FicTags (expired ASC);
+CREATE INDEX if not exists I_FICSNOOZES_DBID ON FicSnoozes (fic_id ASC);
+CREATE INDEX if not exists I_FICSNOOZES_ADDED ON FicSnoozes (snooze_added ASC);
+CREATE INDEX if not exists I_FICSNOOZES_EXPIRED ON FicSnoozes (expired ASC);
 
  
  -- tag table;  

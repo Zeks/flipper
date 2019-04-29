@@ -835,10 +835,18 @@ Rectangle{
                         ToolTip.delay: 1000
                         ToolTip.visible: containsMouse
                         hoverEnabled: true
-                        ToolTip.text: qsTr("Currently: " + mainWindow.magnetTag)
+                        ToolTip.text: {
+                            if(!magnetTag)
+                                qsTr("Used to quickly assign a user defined tag. Select magnet in tag dropdown menu on a tag to link this tag to a magnet")
+                            else
+                                qsTr("Currently: " + mainWindow.magnetTag)
+                        }
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
+                            if(!magnetTag)
+                                return;
+
                             if(tags.indexOf(mainWindow.magnetTag) === -1)
                                 lvFics.tagAdded(mainWindow.magnetTag,indexOfThisDelegate)
                             else
@@ -864,8 +872,8 @@ Rectangle{
                     MouseArea{
                         ToolTip.delay: 1000
                         ToolTip.visible: containsMouse
+                        ToolTip.text: qsTr("Use this to remove fics from tag search results until they update")
                         hoverEnabled: true
-                        ToolTip.text: qsTr("Tag: Snoozed")
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
@@ -913,9 +921,9 @@ Rectangle{
 
                         //source: "qrc:/icons/icons/pencil.png"
                         MouseArea{
-//                            ToolTip.delay: 200
-//                            ToolTip.visible: containsMouse
-//                            ToolTip.text: "<FONT COLOR=black>" + tiNotes.text + "</FONT>"
+                            ToolTip.delay: 1000
+                            ToolTip.visible: containsMouse && !notes
+                            ToolTip.text: qsTr("Use this to add notes to fics: where you've stopped, reviews etc...")
                             id:maNotes
 
                             hoverEnabled: true
@@ -978,7 +986,7 @@ Rectangle{
                         hoverEnabled: true
                         ToolTip.delay: 1000
                         ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Reading")
+                        ToolTip.text: qsTr("Use this to tag fic as 'Reading' and set a chapter you're at.")
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {

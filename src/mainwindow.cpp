@@ -767,6 +767,8 @@ void MainWindow::OnCopyAllUrls()
             result += typetableModel->index(i, 2).data().toString() + "\n";
         }
         result += "https://www.fanfiction.net/s/" + typetableModel->index(i, 9).data().toString() + "\n";//\n
+        if(ui->chkInfoForLinks->isChecked())
+            result += "\n";
     }
     clipboard->setText(result);
 }
@@ -1174,7 +1176,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/biasValue", ui->leBiasValue->text());
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.setValue("Settings/chkShowSources", ui->chkShowSources->isChecked());
-    settings.setValue("Settings/chkSearchWithinList", ui->chkShowSources->isChecked());
+    settings.setValue("Settings/chkSearchWithinList", ui->chkSearchWithinList->isChecked());
 
     settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
     settings.setValue("Settings/chkDisplayPurged", ui->chkDisplayPurged->isChecked());
@@ -2841,6 +2843,7 @@ void MainWindow::on_chkCrossovers_stateChanged(int value)
         ui->lblCrosses->show();
         ui->cbCrossovers->show();
         ui->pbFandomSwitch->show();
+        SilentCall(ui->chkNonCrossovers)->setChecked(false);
     }
     else
     {
@@ -2855,4 +2858,33 @@ void MainWindow::on_pbFandomSwitch_clicked()
     QString temp = ui->cbCrossovers->currentText();
     ui->cbCrossovers->setCurrentText(ui->cbNormals->currentText());
     ui->cbNormals->setCurrentText(temp);
+}
+
+void MainWindow::on_chkNonCrossovers_stateChanged(int arg1)
+{
+    if(arg1)
+    {
+        SilentCall(ui->chkCrossovers)->setChecked(false);
+        ui->lblCrosses->hide();
+        ui->cbCrossovers->hide();
+        ui->pbFandomSwitch->hide();
+    }
+}
+
+void MainWindow::on_leAuthorID_editingFinished()
+{
+    on_pbLoadDatabase_clicked();
+}
+
+void MainWindow::on_chkInvertedSlashFilter_stateChanged(int arg1)
+{
+    if(arg1)
+        SilentCall(ui->chkOnlySlash)->setChecked(false);
+}
+
+void MainWindow::on_chkOnlySlash_stateChanged(int arg1)
+{
+    if(arg1)
+        SilentCall(ui->chkInvertedSlashFilter)->setChecked(false);
+
 }

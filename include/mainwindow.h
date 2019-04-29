@@ -485,6 +485,14 @@ private slots:
 
     void on_pbFandomSwitch_clicked();
 
+    void on_chkNonCrossovers_stateChanged(int arg1);
+
+    void on_leAuthorID_editingFinished();
+
+    void on_chkInvertedSlashFilter_stateChanged(int arg1);
+
+    void on_chkOnlySlash_stateChanged(int arg1);
+
 signals:
 
 

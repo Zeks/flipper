@@ -584,7 +584,8 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
             for(auto fic: list->ficData.sourceFics)
             {
                 //QLOG_INFO() << "liking fic: "  << fic;
-                interfaces.tags->SetTagForFic(fic, "Liked");
+                if(fic > 0)
+                    interfaces.tags->SetTagForFic(fic, "Liked");
             }
         }
     });
