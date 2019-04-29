@@ -177,7 +177,7 @@ Rectangle {
                 TextInput{
                     font.pixelSize: mainWindow.textSize
                     anchors.fill: parent
-                    text: mainWindow.currentPage
+                    text: parseInt(mainWindow.currentPage) + parseInt(1)
                     validator: IntValidator{}
                     horizontalAlignment: TextInput.AlignRight
                     onEditingFinished: {

@@ -605,7 +605,7 @@ void MainWindow::OnDisplayNextPage()
     if(env.sizeOfCurrentQuery <= env.filter.recordLimit * (env.pageOfCurrentQuery))
         windowObject->setProperty("havePagesAfter", false);
 
-    windowObject->setProperty("currentPage", env.pageOfCurrentQuery+1);
+    windowObject->setProperty("currentPage", env.pageOfCurrentQuery);
     LoadData();
     PlaceResults();
 }
@@ -619,7 +619,7 @@ void MainWindow::OnDisplayPreviousPage()
 
     if(env.pageOfCurrentQuery == 0)
         windowObject->setProperty("havePagesBefore", false);
-    windowObject->setProperty("currentPage", env.pageOfCurrentQuery+1);
+    windowObject->setProperty("currentPage", env.pageOfCurrentQuery);
     LoadData();
     PlaceResults();
 }
@@ -632,14 +632,14 @@ void MainWindow::OnDisplayExactPage(int page)
             || env.sizeOfCurrentQuery < (page - 1)*env.filter.recordLimit
             || (env.filter.recordPage+1) == page)
         return;
+    page--;
+    env.filter.recordPage = page;
+    env.pageOfCurrentQuery = page;
     QObject* windowObject= qwFics->rootObject();
     windowObject->setProperty("currentPage", page);
     windowObject->setProperty("havePagesAfter", env.sizeOfCurrentQuery > env.filter.recordLimit * page);
-    page--;
     windowObject->setProperty("havePagesBefore", page > 0);
 
-
-    env.filter.recordPage = page;
     LoadData();
     PlaceResults();
 }
@@ -683,7 +683,7 @@ void MainWindow::LoadData()
         QObject* windowObject= qwFics->rootObject();
         int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : env.filter.recordLimit;
         windowObject->setProperty("totalPages", env.filter.recordLimit > 0 ? (env.sizeOfCurrentQuery/currentActuaLimit) + 1 : 1);
-        windowObject->setProperty("currentPage", env.filter.recordLimit > 0 ? env.filter.recordPage+1 : 1);
+        windowObject->setProperty("currentPage", env.filter.recordLimit > 0 ? env.filter.recordPage : 0);
         windowObject->setProperty("havePagesBefore", false);
         windowObject->setProperty("havePagesAfter", env.filter.recordLimit > 0 && env.sizeOfCurrentQuery > env.filter.recordLimit);
 
