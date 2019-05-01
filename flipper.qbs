@@ -189,13 +189,22 @@ App{
     }
     //cpp.dynamicLibraries: ["zlib"]
     cpp.staticLibraries: {
-        var libs = ["UniversalModels", "logger", "quazip"]
+        //var libs = ["UniversalModels", "logger", "quazip"]
+        var libs = []
+        if(qbs.toolchain.contains("msvc"))
+            libs = ["logger"]
+        else{
+            libs = ["logger", "dl", "protobuf"]
+        }
         libs = libs.concat(localvariables.zlib)
         libs = libs.concat(localvariables.ssl)
+
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
-        if(localvariables.grpc)
+        if(qbs.toolchain.contains("msvc"))
             libs = libs.concat([localvariables.protobufName,"grpc", "grpc++", "gpr"])
+        else
+            libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }
 
