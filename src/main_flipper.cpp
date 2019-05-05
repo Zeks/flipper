@@ -48,7 +48,7 @@ void SetupLogger()
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    a.setApplicationName("ffnet sane search engine");
+    a.setApplicationName("Flipper");
     SetupLogger();
 
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
