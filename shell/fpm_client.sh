@@ -1,35 +1,4 @@
 #!/bin/bash
-function evil_git_dirty {
-	 expr `git diff --shortstat 2> /dev/null | wc -l`
-}
-
-function evil_git_num_untracked_files {
-  expr `git status --porcelain 2>/dev/null| grep "^??" | wc -l` 
-}
-
-if [ "$2" != "ignore"  ] && [ $(evil_git_num_untracked_files) -ne "0" ]
-then
-	echo "untracked uncommitted files"	
-	exit 1
-fi
-
-if [ "$2" != "ignore" ] && [ $(evil_git_dirty) -ne "0" ]
-then
-	echo "git index is dirty"	
-	exit 1 
-fi   
- 
-echo "success, git index is OK, going further"
-
-timeDiff=$(( `date +%s` - `stat -c %Y release/feed_server`))
-
-if [ $timeDiff -gt 600 ]
-then
-	echo 'File you are deploying is too old.'
-	exit 1
-fi
-
-
 
 
 #making folders
@@ -45,7 +14,7 @@ echo 'Deploying executables'
 chmod +x shell/deploy_client.sh 
 ./shell/deploy_client.sh 
 if [ $? -ne "0" ]
-then
+then 
 	exit 1
 fi
 
