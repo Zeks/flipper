@@ -90,11 +90,14 @@ int main(int argc, char *argv[])
     tasksDb = tasksInterface->InitDatabase("Tasks");
     tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
     ////////////////////////////////////
-
-
+    QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
+    auto userDb = userDbInterface->InitDatabase("UserDB");
+    userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
+    userDbInterface->EnsureUUIDForUserDatabase();
 
     ServitorWindow w;
     w.dbInterface = dbInterface;
+    w.env.interfaces.userDb = userDbInterface;
     w.env.interfaces.db = dbInterface;
     w.env.interfaces.pageCache= pageCacheInterface;
     w.env.interfaces.tasks = tasksInterface;
