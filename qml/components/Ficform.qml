@@ -23,6 +23,7 @@ import QtCharts 2.0
 import QtGraphicalEffects 1.0
 
 import "Funcs.js" as Funcs
+
 Rectangle{
     id: delegateItem
     width: 850
@@ -166,7 +167,6 @@ Rectangle{
             //        anchors.rightMargin: 69
             RowLayout {
                 id: rowTitle
-
                 Image {
                     id: imgCopy
                     width: 24
@@ -203,6 +203,8 @@ Rectangle{
                         }
                     }
                 }
+
+
                 Image {
                     id: imgFindSimilar
                     width: 24
@@ -522,337 +524,151 @@ Rectangle{
                     Layout.fillHeight: true
                     font.pixelSize: 16
                 }
-
-                Image {
+                QuickTagger{
                     id: imgLike
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: ((tags.indexOf("Disliked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Liked")  !== -1) ?  1 : 0.3
-                    source: tags.indexOf("Liked") !== -1 ? "qrc:/icons/icons/like_green.png" :  "qrc:/icons/icons/like.png"
+                    delegateTag: "Liked"
+                    also_delete_tag: "Disliked"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Liked")
+                    icon_colored: "qrc:/icons/icons/like_green.png"
+                    icon_gray: "qrc:/icons/icons/like.png"
+                    opacity_full: 1
+                    opacity_gray: 0.3
+                    custom_opacity: true
+                    custom_opacity_value: ((tags.indexOf("Disliked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Liked")  !== -1)  ?  opacity_full : opacity_gray
 
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Liked")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Liked") === -1)
-                            {
-                                lvFics.tagAdded("Liked",indexOfThisDelegate)
-                                lvFics.tagDeleted("Disliked",indexOfThisDelegate)
-                            }
-                            else
-                                lvFics.tagDeleted("Liked",indexOfThisDelegate)
-                        }
-                    }
                 }
-                Image {
+
+                QuickTagger{
                     id: imgDislike
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Disliked")  !== -1) ?  1 : 0.3
-                    source: tags.indexOf("Disliked") !== -1 ? "qrc:/icons/icons/dislike_red.png" :  "qrc:/icons/icons/dislike.png"
+                    delegateTag: "Disliked"
+                    also_delete_tag: "Liked"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Disliked")
+                    icon_colored: "qrc:/icons/icons/dislike_red.png"
+                    icon_gray: "qrc:/icons/icons/dislike.png"
+                    opacity_full: 1
+                    opacity_gray: 0.3
+                    custom_opacity: true
+                    custom_opacity_value: ((tags.indexOf("Liked") === -1 && tags.indexOf("Hide") === -1) || tags.indexOf("Disliked")  !== -1) ?  opacity_full : opacity_gray
 
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Disliked")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Disliked") === -1)
-                            {
-                                lvFics.tagAdded("Disliked",indexOfThisDelegate)
-                                lvFics.tagDeleted("Liked",indexOfThisDelegate)
-                            }
-                            else
-                                lvFics.tagDeleted("Disliked",indexOfThisDelegate)
-                        }
-                    }
                 }
-                Image {
+                QuickTagger{
                     id: imgDead
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity:  0.5
-                    source: tags.indexOf("Limbo") !== -1 ? "qrc:/icons/icons/ghost.png" : "qrc:/icons/icons/ghost_gray.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Limbo")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Limbo") === -1)
-                                lvFics.tagAdded("Limbo",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Limbo",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Limbo"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Limbo")
+                    icon_colored: "qrc:/icons/icons/ghost.png"
+                    icon_gray: "qrc:/icons/icons/ghost_gray.png"
+                    opacity_full: 0.5
+                    opacity_gray: 0.5
                 }
-                Image {
+
+                QuickTagger{
                     id: imgDiscard
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  1 : 0.3
-                    source: tags.indexOf("Hide") !== -1 ? "qrc:/icons/icons/trash_darker.png" :  "qrc:/icons/icons/trash.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Hide")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Hide") === -1)
-                                lvFics.tagAdded("Hide",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Hide",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Hide"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Hide")
+                    icon_colored: "qrc:/icons/icons/trash_darker.png"
+                    icon_gray: "qrc:/icons/icons/trash.png"
+                    opacity_full: 1
+                    opacity_gray: 0.3
+                    custom_opacity: true
+                    custom_opacity_value: ((tags.indexOf("Liked") === -1 && tags.indexOf("Disliked") === -1) || tags.indexOf("Hide")  !== -1) ?  opacity_full : opacity_gray
                 }
-                Image {
+
+                QuickTagger{
                     id: imgMeh
-                    width: 20
-                    height: 24
-                    sourceSize.height: 24
-                    sourceSize.width: 24
-                    opacity: tags.indexOf("Meh") !== -1  ? 1 : 0.7
-                    source: tags.indexOf("Meh") !== -1 ? "qrc:/icons/icons/lock_yellow.png" : "qrc:/icons/icons/lock_white.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Meh")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Meh") === -1)
-                                lvFics.tagAdded("Meh",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Meh",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Meh"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Meh")
+                    icon_colored: "qrc:/icons/icons/lock_yellow.png"
+                    icon_gray: "qrc:/icons/icons/lock_white.png"
+                    opacity_full: 1
+                    opacity_gray: 0.7
                 }
 
-                Image {
+                QuickTagger{
                     id: imgWait
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Wait") !== -1  ? 1 : 0.5
-                    source: tags.indexOf("Wait") !== -1 ? "qrc:/icons/icons/clock_green.png" : "qrc:/icons/icons/clock_gray.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Wait")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Wait") === -1)
-                                lvFics.tagAdded("Wait",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Wait",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Wait"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Wait")
+                    icon_colored: "qrc:/icons/icons/clock_green.png"
+                    icon_gray: "qrc:/icons/icons/clock_gray.png"
+                    opacity_full: 1
                 }
-                Image {
+                QuickTagger{
                     id: imgStem
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Stem") !== -1  ? 1 : 0.5
-                    source: tags.indexOf("Stem") !== -1 ? "qrc:/icons/icons/stem_green.png" : "qrc:/icons/icons/stem_gray.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Stem")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Stem") === -1)
-                                lvFics.tagAdded("Stem",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Stem",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Stem"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Stem")
+                    icon_colored: "qrc:/icons/icons/stem_green.png"
+                    icon_gray: "qrc:/icons/icons/stem_gray.png"
+                    opacity_full: 1
                 }
-                Image {
+                QuickTagger{
                     id: imgQueue
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Queue") !== -1 ? 0.8 : 0.5
-                    source: tags.indexOf("Queue") !== -1 ? "qrc:/icons/icons/book.png" : "qrc:/icons/icons/book_gray.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Queue")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Queue") === -1)
-                                lvFics.tagAdded("Queue",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Queue",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Queue"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Queue")
+                    icon_colored: "qrc:/icons/icons/book.png"
+                    icon_gray: "qrc:/icons/icons/book_gray.png"
+                    opacity_full: 0.8
                 }
-
-                Image {
+                QuickTagger{
                     id: imgFinishedReading
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Finished") !== -1 ? 0.8 : 0.5
-                    source: tags.indexOf("Finished") !== -1 ? "qrc:/icons/icons/ok.png" : "qrc:/icons/icons/ok_grayed.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Finished")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Finished") === -1)
-                                lvFics.tagAdded("Finished",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Finished",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Finished"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Finished")
+                    icon_colored: "qrc:/icons/icons/ok.png"
+                    icon_gray: "qrc:/icons/icons/ok_grayed.png"
+                    opacity_full: 0.8
                 }
-                Image {
+
+                QuickTagger{
                     id: imgGem
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Gems") !== -1 ? 0.8 : 0.5
-                    source: tags.indexOf("Gems") !== -1 ? "qrc:/icons/icons/gem_blue.png" : "qrc:/icons/icons/gem_gray.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Tag: Gems")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Gems") === -1)
-                                lvFics.tagAdded("Gems",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Gems",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Gems"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Gems")
+                    icon_colored: "qrc:/icons/icons/gem_blue.png"
+                    icon_gray: "qrc:/icons/icons/gem_gray.png"
+                    opacity_full: 0.8
                 }
-                Image {
+
+                QuickTagger{
                     id: imgLove
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Rec") !== -1  ? 1 : 0.5
-                    source: tags.indexOf("Rec") !== -1 ? "qrc:/icons/icons/heart_tag.png" : "qrc:/icons/icons/heart_tag_gray.png"
-
-                    MouseArea{
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        hoverEnabled: true
-                        ToolTip.text: qsTr("Tag: Rec")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Rec") === -1)
-                                lvFics.tagAdded("Rec",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Rec",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Rec"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Rec")
+                    icon_colored: "qrc:/icons/icons/heart_tag.png"
+                    icon_gray: "qrc:/icons/icons/heart_tag_gray.png"
+                    opacity_full: 1
                 }
-                Image {
+
+                QuickTagger{
                     id: imgSeries
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Series") !== -1  ? 1 : 0.5
-                    source: tags.indexOf("Series") !== -1 ? "qrc:/icons/icons/link.png" : "qrc:/icons/icons/link.png"
-
-                    MouseArea{
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        hoverEnabled: true
-                        ToolTip.text: qsTr("Tag: Series")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Series") === -1)
-                                lvFics.tagAdded("Series",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Series",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Series"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Series")
+                    icon_colored: "qrc:/icons/icons/link.png"
+                    icon_gray: "qrc:/icons/icons/link.png"
+                    opacity_full: 1
                 }
 
-                Image {
+                QuickTagger{
                     id: imgMagnet
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf(mainWindow.magnetTag) !== -1  ? 1 : 0.5
-                    source: {
-                        return tags.indexOf(mainWindow.magnetTag) !== -1 ? "qrc:/icons/icons/magnet.png" : "qrc:/icons/icons/magnet_gray.png"
+                    delegateTag: mainWindow.magnetTag
+                    delegateTags: tags
+                    opacity_full: 1
+                    tooltip:  {
+                        if(!magnetTag)
+                            qsTr("Used to quickly assign a user defined tag. Select magnet in tag dropdown menu on a tag to link this tag to a magnet")
+                        else
+                            qsTr("Currently: " + mainWindow.magnetTag)
                     }
-
-                    MouseArea{
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        hoverEnabled: true
-                        ToolTip.text: {
-                            if(!magnetTag)
-                                qsTr("Used to quickly assign a user defined tag. Select magnet in tag dropdown menu on a tag to link this tag to a magnet")
-                            else
-                                qsTr("Currently: " + mainWindow.magnetTag)
-                        }
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(!magnetTag)
-                                return;
-
-                            if(tags.indexOf(mainWindow.magnetTag) === -1)
-                                lvFics.tagAdded(mainWindow.magnetTag,indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted(mainWindow.magnetTag,indexOfThisDelegate)
-                        }
-                    }
+                    icon_colored: "qrc:/icons/icons/magnet.png"
+                    icon_gray: "qrc:/icons/icons/magnet_gray.png"
+                    clickable: magnetTag
                 }
 
                 Image {
@@ -866,144 +682,28 @@ Rectangle{
                     height: 24
                     visible: complete && !snoozeExpired
                 }
-                Image {
+                QuickTagger{
                     id: imgSnooze
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Snoozed") !== -1  ? 1 : 0.5
-                    source: tags.indexOf("Snoozed") !== -1 ? "qrc:/icons/icons/bell.png" : "qrc:/icons/icons/bell_gray.png"
+                    delegateTag: "Snoozed"
+                    delegateTags: tags
+                    tooltip: qsTr("Use this to remove fics from tag search results until they update")
+                    icon_colored: "qrc:/icons/icons/bell.png"
+                    icon_gray: "qrc:/icons/icons/bell_gray.png"
+                    opacity_full: 1
                     visible: !complete || snoozeExpired
-
-                    MouseArea{
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Use this to remove fics from tag search results until they update")
-                        hoverEnabled: true
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Snoozed") === -1)
-                                lvFics.tagAdded("Snoozed",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Snoozed",indexOfThisDelegate)
-                        }
-                    }
                 }
-                Rectangle{
+                NotesTagger{
                     id: rectNotes
-                    property bool active : false
-                    //border.width: active ? 2 : 0
-                    //border.color: Qt.rgba(0, 0, 1, 0.4)//radius: 5
-                    //border.color: Qt.rgba(0, 0, 1, 0.4)
-                    color: {
-                        var color;
-                        color = purged == 0 ?  "#e4f4f6FF" : "#B0FFE6FF"
-                        if(snoozeExpired)
-                            color = "#1100FF00"
-                        return color;
-                    }
-
-
-                    width:24
-                    height: 24
-
-                    Image {
-                        opacity: (notes || rectNotes.active)  ? 1 : 0.4
-                        //anchors.fill : parent
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        id: imgNotes
-                        width: 20
-                        height: 20
-                        sourceSize.height: 20
-                        sourceSize.width:20
-                        source: {
-                            if(rectNotes.active)
-                                return "qrc:/icons/icons/save.png"
-
-                            return notes ? "qrc:/icons/icons/note.png" : "qrc:/icons/icons/note_gray.png"
-                        }
-
-                        //source: "qrc:/icons/icons/pencil.png"
-                        MouseArea{
-                            ToolTip.delay: 1000
-                            ToolTip.visible: containsMouse && !notes
-                            ToolTip.text: qsTr("Use this to add notes to fics: where you've stopped, reviews etc...")
-                            id:maNotes
-
-                            hoverEnabled: true
-                            anchors.fill : parent
-                            propagateComposedEvents : true
-                            onClicked : {
-                                //                                console.log("Notes type: ", typeof notes);
-                                //                                console.log("Notes: ", notes);
-
-                                if(!rectNotes.active)
-                                {
-                                    rectNotes.active = true
-                                    displayNotes = true
-                                }
-                                else
-                                {
-                                    rectNotes.active = false
-                                    displayNotes = false
-                                }
-                            }
-
-
-                            onEntered: {
-                                var point = imgNotes.mapToGlobal(maNotes.mouseX,maNotes.mouseY)
-                                var mappedPoint = mainWindow.mapFromGlobal(point.x,point.y)
-
-                                if(imgNotes.mapToItem(mainWindow,0,0).y > mainWindow.height/2)
-                                {
-                                    mappedPoint.y = mappedPoint.y - 200
-                                }
-                                noteTooltip.x = mappedPoint.x
-                                noteTooltip.y = mappedPoint.y
-                                noteTooltip.text = notes
-
-
-                                //console.log("Displaying tooltip at: ", svNoteTooltip.x, svNoteTooltip.y )
-                                if(notes)
-                                    mainWindow.displayNoteTooltip = true
-
-                            }
-                            onExited: {
-                                console.log("Hiding tooltip" )
-                                mainWindow.displayNoteTooltip = false
-                            }
-
-                        }
-                    }
-
                 }
-                Image {
+                QuickTagger{
                     id: imgReading
-                    width: 20
-                    height: 24
-                    sourceSize.height: 20
-                    sourceSize.width: 20
-                    opacity: tags.indexOf("Reading") !== -1 ? 0.8 : 0.5
-                    source: tags.indexOf("Reading") !== -1 ? "qrc:/icons/icons/open_book.png" : "qrc:/icons/icons/open_book_gray.png"
-
-                    MouseArea{
-                        hoverEnabled: true
-                        ToolTip.delay: 1000
-                        ToolTip.visible: containsMouse
-                        ToolTip.text: qsTr("Use this to tag fic as 'Reading' and set a chapter you're at.")
-                        anchors.fill : parent
-                        propagateComposedEvents : true
-                        onClicked : {
-                            if(tags.indexOf("Reading") === -1)
-                                lvFics.tagAdded("Reading",indexOfThisDelegate)
-                            else
-                                lvFics.tagDeleted("Reading",indexOfThisDelegate)
-                        }
-                    }
+                    delegateTag: "Reading"
+                    delegateTags: tags
+                    tooltip: qsTr("Use this to tag fic as 'Reading' and set a chapter you're at.")
+                    icon_colored: "qrc:/icons/icons/open_book.png"
+                    icon_gray: "qrc:/icons/icons/open_book_gray.png"
                 }
+
                 Rectangle{
                     id: rtiAtChapter
                     color: "lightyellow"

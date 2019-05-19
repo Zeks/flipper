@@ -8,5 +8,7 @@
         <file>qml/components/GenreTagList.qml</file>
         <file>qml/components/TagSection.qml</file>
         <file>qml/components/NoteTooltip.qml</file>
+        <file>qml/components/QuickTagger.qml</file>
+        <file>qml/components/NotesTagger.qml</file>
     </qresource>
 </RCC>
