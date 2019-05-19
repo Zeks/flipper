@@ -175,6 +175,7 @@ void CommonRegex::Init()
     QString names = "((harry)|(hp)|(cedric)|(lv)|(lucius)|(lm)|(ss)|(snape)|(sev(erus){0,1})"
                     "|(draco)|(dm)|(sirius)|(sb)|(remus)|(rl)|(ron)|(rw)|(t[m]{0,1}r)|(voldemort)"
                     "|(voldie)|(fenrir))";
+    //QString shortenedNames = "((hp)|(lv)|(lm)|(ss)|(dm)|(sb)|(rl)|(rw)|(t[m]{0,1}r))";
     QString fixedNamesOnly = names + characterSeparator + names;
     QString fixedHpTerms = "(snarry)|(harrymort)|(drarry)";
     QString fixedHpFull = fixedHpTerms + "|(" + fixedNamesOnly + ")";
@@ -190,6 +191,7 @@ void CommonRegex::Init()
     fixedNamesOnly = names + characterSeparator + names;
     slashRegexPerFandom["Bleach"] = fixedNamesOnly;
     slashRegexPerFandom["Death Note"] = "(L/Light)|(Light/L)";
+    slashRegexPerFandom["Detective Conan/Case Closed"] ="KaiShin|ShinKai";
 
     characterSlashPerFandom["Naruto"] = "([\\[]Naruto\\sU[.][,]\\sSasuke\\sU[.][\\]])";
     characterSlashPerFandom["Naruto"] += "|([\\[]Kakashi\\sH[.][,]\\sIruka\\sU[.][\\]])";
@@ -197,8 +199,10 @@ void CommonRegex::Init()
     characterSlashPerFandom["Avengers"] = "(Iron\\sMan/Tony\\sS[.][,]\\sLoki[\\]])|(Thor[,]\\sLoki[\\]])";
     characterSlashPerFandom["Hobbit"] ="([\\[]Thorin[,]\\Bilbo\\sB[.][\\]])";
 
-    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a(\\s{0,1})){0,1}(slash|yaoi))|((\\s)jack\\sslash)|(fem[!]{1})|(naruko)|(\\sfem\\s)|(\\sfem-)|(fem(m){0,1}(e){0,1}slash)|(\\smentor\\s)"
-               "|(f/f)|Gen[.]";
+
+
+    notSlash = "((no[tn]{0,1}|isn[']t)(\\s|-){0,1}(a(\\s{0,1})){0,1}(slash|yaoi))|((\\s)jack\\sslash)|(fem\\w{0,}[!]{1})|(naruko)|(\\sfem\\s)|(\\sfem-)|(fem(m){0,1}(e){0,1}slash)|(\\smentor\\s)"
+               "|(f/f)|Gen[.]|Geass\\s{0,}[/\\\\|]\\s{0,}Harry";
 
     QString notSlashCharacterSpecialCase;
     notSlashCharacterSpecialCase+="|(naru(to){0,1}\\s{0,1}" + characterSeparator + "\\s{0,1}naru(to){0,1})";
@@ -320,6 +324,11 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
             match = rxHashSlashFandom[fandom].match(summary);
         }
         containsSlash = containsSlash || match.hasMatch();
+//        if(containsSlash)
+//        {
+//            qDebug() << rxHashSlashFandom[fandom].pattern();
+//            qDebug() << match.capturedTexts();
+//        }
         if(doLogging && match.hasMatch())
         {
             qDebug().noquote() << slashRegexPerFandom[fandom];
