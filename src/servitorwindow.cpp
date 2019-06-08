@@ -130,7 +130,8 @@ ServitorWindow::ServitorWindow(QWidget *parent) :
         ui->cbMoodSelector->addItem(moodList[i]);
 
     ui->cbMoodSelector->blockSignals(false);
-
+//    ui->tbrDiscords->setReadOnly(false);
+    //ui->tbrDiscords->set
     CreateChartViews();
 
 }
@@ -1382,12 +1383,12 @@ void ServitorWindow::on_pbFindSlashSummary_clicked()
 {
     CommonRegex rx;
     rx.Init();
-    auto result = rx.ContainsSlash("A year after his mother's death, Ichigo finds himself in a world that he knows doesn't exist and met four spirits. "
-                                   "Deciding to know what they truly are, he goes to his father who takes him to a shop. "
-                                   "Take a different road IchiHime fans. Dual Wield Zanpakuto! Resurreccion! "
-                                   "Quincy powers! OOC. New chapters every week or two. HIATUS",
+    auto result = rx.ContainsSlash("(feminine!Ulqi was the 'forgotten child'"
+                                   " of his family, thanks KaiShin to his prodigy like elder siblings and his little sisters' status as 'The Girl Who lived'."
+                                   " However, he was not going to let this stop him from becoming the best. With an indomitable will and the resolve to do"
+                                   " whatever he must, he will either ascended to the top, or die trying.",
                                    "[Ichigo K., Yoruichi S.] Rukia K., T. Harribel",
-                                   "Bleach");
+                                   "Detective Conan/Case Closed");
 }
 
 void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
@@ -2019,3 +2020,170 @@ void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
 {
     FillFicsForUser(ui->cbUserIDs->currentText());
 }
+
+//void ServitorWindow::on_pbExtractDiscords_clicked()
+//{
+//    QString path = "PageCache.sqlite";
+//    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
+//    pcdb.setDatabaseName(path);
+//    pcdb.open();
+
+//    QSqlQuery testQuery("select * from pagecache order by url desc", pcdb);
+//    ui->tbrDiscords->setOpenExternalLinks(true);
+//    int i = 0;
+//    while(testQuery.next())
+//    {
+//        i++;
+//        auto temp = QString::fromUtf8(qUncompress(testQuery.value("CONTENT").toByteArray()));
+//        if(temp.contains(QRegExp("5px.*(Discord).*(?=#xtab)")))
+//        {
+//            auto url = testQuery.value("URL").toString();
+//            ui->tbrDiscords->insertHtml("<a href=\"" + url + "\">" + url + " </a>");
+//            ui->tbrDiscords->insertHtml("<br>");
+//            qDebug() << url;
+//        }
+//        QApplication::processEvents();
+//        if(i%100==0)
+//            ui->tbrDiscords->insertHtml("<br>i is at: " + QString::number(i) + "<br>");
+//        if(stopDiscordProcessing)
+//            break;
+//    }
+
+//}
+
+//void ServitorWindow::on_pbExtractDiscords_clicked()
+//{
+//    QString path = "PageCache.sqlite";
+//    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
+//    pcdb.setDatabaseName(path);
+//    pcdb.open();
+
+//    QSqlQuery testQuery("select * from pagecache order by url desc", pcdb);
+//    ui->tbrDiscords->setOpenExternalLinks(true);
+//    int i = 0;
+//    while(testQuery.next())
+//    {
+//        i++;
+//        auto temp = QString::fromUtf8(qUncompress(testQuery.value("CONTENT").toByteArray()));
+//        QRegExp rxCapital("Discord");
+//        QRegExp rxSmol("discord");
+//        QRegExp rxPony("My\\sLittle\\sPony");
+
+//        QRegExp begin ("Send\\sPrivate\\sMessage");
+//        auto indexBegin = begin.indexIn(temp);
+
+//        QRegExp end ("xtab");
+//        auto indexEnd= end.indexIn(temp, indexBegin);
+//        if(indexBegin != -1 && indexEnd != -1){
+
+//            QString bio = temp.mid(indexBegin, temp.length() - indexBegin - (temp.length() - indexEnd));
+//            //qDebug() << bio;
+//            auto indexCapital = rxCapital.indexIn(bio);
+//            auto indexSmol = rxSmol.indexIn(bio);
+//            auto hasPony= temp.contains("My Little Pony");
+//            if(indexCapital !=-1 && indexSmol == -1 && !hasPony)
+//            {
+//                auto url = testQuery.value("URL").toString();
+//                qDebug() << url;
+//            }
+//        }
+
+//        QApplication::processEvents();
+//        if(i%100==0)
+//            ui->tbrDiscords->insertHtml("<br>i is at: " + QString::number(i) + "<br>");
+//        if(stopDiscordProcessing)
+//            break;
+//    }
+
+//}
+
+
+void ServitorWindow::on_pbExtractDiscords_clicked()
+{
+    QString path = "PageCache.sqlite";
+    QSqlDatabase pcdb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
+    pcdb.setDatabaseName(path);
+    pcdb.open();
+
+    QSqlQuery testQuery("select * from pagecache order by url desc", pcdb);
+    ui->tbrDiscords->setOpenExternalLinks(true);
+    int i = 0;
+    while(testQuery.next())
+    {
+        i++;
+        auto temp = QString::fromUtf8(qUncompress(testQuery.value("CONTENT").toByteArray()));
+        QRegularExpression rxCapital("[A-Za-z0-9]{6,7}(\\s|$|[.])");
+        QRegExp rxSmol("(discord|Discord)");
+        QRegExp rxPony("My\\sLittle\\sPony");
+
+        QRegExp begin ("Send\\sPrivate\\sMessage");
+        auto indexBegin = begin.indexIn(temp);
+
+        QRegExp end ("xtab");
+        auto indexEnd= end.indexIn(temp, indexBegin);
+        if(indexBegin != -1 && indexEnd != -1){
+
+            QString bio = temp.mid(indexBegin, temp.length() - indexBegin - (temp.length() - indexEnd));
+            //qDebug() << bio;
+            auto matchCapital = rxCapital.match(bio);
+            auto indexSmol = rxSmol.indexIn(bio);
+            auto hasPony= temp.contains("My Little Pony");
+            if(matchCapital.hasMatch() /*&& indexSmol == -1 && !hasPony*/)
+            {
+
+                    for(auto text: matchCapital.capturedTexts())
+                    {
+                        if(!text.contains("Private") && !text.trimmed().isEmpty())
+                        {
+                            qDebug() << text;
+                        }
+                    }
+
+                //qDebug() << "Entering match";
+//                qDebug() << "Caplength: " << matchCapital.capturedTexts().length();
+//                qDebug() << "Captext: " << matchCapital.capturedTexts();
+                bool found = false;
+                for(auto text: matchCapital.capturedTexts())
+                {
+
+                    QRegularExpression rxCapitalSearch("[A-Z0-9]");
+                    auto match = rxCapitalSearch.match(text);
+                    if(text.contains("Private") || text.trimmed().isEmpty())
+                        continue;
+                    qDebug() << match.capturedTexts();
+                    if(match.capturedTexts().length() >= 2)
+                    {
+                        found = true;
+                    }
+                    if(found)
+                    {
+                        auto url = testQuery.value("URL").toString();
+                        qDebug() << match.capturedTexts() << " " << url;
+                    }
+                }
+            }
+        }
+
+        QApplication::processEvents();
+        if(i%100==0)
+            ui->tbrDiscords->insertHtml("<br>i is at: " + QString::number(i) + "<br>");
+        if(stopDiscordProcessing)
+            break;
+    }
+
+}
+
+void ServitorWindow::on_pbStopDiscordProcessing_clicked()
+{
+    stopDiscordProcessing = true;
+}
+
+void ServitorWindow::on_pbTestDiscord_clicked()
+{
+    if(ui->tbrDiscords->toPlainText().contains(QRegExp(ui->leDiscordRegex->text())))
+        qDebug() << "valid";
+    else {
+        qDebug() << "invalid";
+    }
+}
+
