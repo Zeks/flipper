@@ -487,11 +487,11 @@ private slots:
 
     void on_chkNonCrossovers_stateChanged(int arg1);
 
-    void on_leAuthorID_editingFinished();
-
     void on_chkInvertedSlashFilter_stateChanged(int arg1);
 
     void on_chkOnlySlash_stateChanged(int arg1);
+
+    void on_leAuthorID_returnPressed();
 
 signals:
 

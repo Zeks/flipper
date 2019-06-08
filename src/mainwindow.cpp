@@ -2878,7 +2878,7 @@ void MainWindow::on_chkNonCrossovers_stateChanged(int arg1)
     }
 }
 
-void MainWindow::on_leAuthorID_editingFinished()
+void MainWindow::on_leAuthorID_returnPressed()
 {
     on_pbLoadDatabase_clicked();
 }
@@ -2895,3 +2895,5 @@ void MainWindow::on_chkOnlySlash_stateChanged(int arg1)
         SilentCall(ui->chkInvertedSlashFilter)->setChecked(false);
 
 }
+
+
