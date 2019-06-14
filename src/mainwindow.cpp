@@ -1092,7 +1092,8 @@ void MainWindow::ReadSettings()
     //ui->chkAutomaticLike->setChecked(uiSettings.value("Settings/chkAutomaticLike", false).toBool());
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
     ui->chkDisplayPurged->setChecked(uiSettings.value("Settings/chkDisplayPurged", false).toBool());
-
+    ui->chkEnableSlashFilter->setChecked(uiSettings.value("Settings/chkEnableSlashFilter", false).toBool());
+    //
 
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
@@ -1186,7 +1187,7 @@ void MainWindow::WriteSettings()
 
     settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
     settings.setValue("Settings/chkDisplayPurged", ui->chkDisplayPurged->isChecked());
-
+    settings.setValue("Settings/chkEnableSlashFilter", ui->chkEnableSlashFilter->isChecked());
 
     settings.setValue("Settings/cbGenrePresenceTypeInclude", ui->cbGenrePresenceTypeInclude->currentText());
     settings.setValue("Settings/cbRecsAlgo", ui->cbRecsAlgo->currentText());
@@ -2376,7 +2377,7 @@ void MainWindow::on_pbReapplyFilteringMode_clicked()
 void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
 {
     ui->chkRandomizeSelection->setChecked(false);
-    ui->chkEnableSlashFilter->setChecked(true);
+    //ui->chkEnableSlashFilter->setChecked(true);
     ui->chkEnableTagsFilter->setChecked(false);
     ui->chkIgnoreFandoms->setChecked(true);
     ui->chkComplete->setChecked(false);
