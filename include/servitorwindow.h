@@ -134,6 +134,7 @@ public:
     QHash<int, core::MatchedFics> matchesForUsers;
     QSharedPointer<FicSourceGRPC> grpcSource;
     InputForGenresIteration2 inputs;
+    bool stopDiscordProcessing = false;
 
 private slots:
     void on_pbLoadFic_clicked();
@@ -192,6 +193,12 @@ private slots:
     void on_cbMoodSource_currentIndexChanged(const QString &arg1);
 
     void on_cbUserIDs_currentIndexChanged(const QString &arg1);
+
+    void on_pbExtractDiscords_clicked();
+
+    void on_pbStopDiscordProcessing_clicked();
+
+    void on_pbTestDiscord_clicked();
 
 private:
     Ui::servitorWindow *ui;
