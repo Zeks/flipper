@@ -80,33 +80,44 @@ struct BastardizedCircularBuffer{
         if(data.size() == maxSize)
             data.pop_front();
 
-        while(currentIndex != 0)
-        {
-            data.pop_back();
-            currentIndex--;
-        }
+//        while(currentIndex != 0)
+//        {
+//            data.pop_back();
+//            currentIndex--;
+//        }
 
         data.push_back(value);
         currentIndex = 0;
     }
-    T GetNext(){
-        if(data.size() <= currentIndex + 1)
-            return T{};
 
-        currentIndex++;
-        return data[currentIndex];
+    T& AccessCurrent(){
+        if(data.size() <= (currentIndex) || (currentIndex) < 0)
+            return nullObject;
+
+        return data[(data.size()-1) - currentIndex];
     }
-    T GetPrevious(){
-        if(data.size() <= currentIndex - 1)
+
+    T GetNext(){
+        if(data.size() <= (currentIndex - 1) || (currentIndex - 1) < 0)
             return T{};
 
         currentIndex--;
-        return data[currentIndex];
+        return data[(data.size()-1) - currentIndex];
     }
+
+    T GetPrevious(){
+        if(data.size() <= (currentIndex + 1) || (currentIndex + 1) < 0)
+            return T{};
+
+        currentIndex++;
+        return data[(data.size()-1) - currentIndex];
+    }
+
     int Size() const{ return data.size();}
     int CurrentIndex() const {return currentIndex;}
 
     QList<T> data;
+    T nullObject;
     int currentIndex = 0; // index from head
     int maxSize;
 };

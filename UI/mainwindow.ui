@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1148</width>
-    <height>1125</height>
+    <width>1247</width>
+    <height>1128</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -563,9 +563,6 @@
                     <enum>QAbstractItemView::SelectRows</enum>
                    </property>
                   </widget>
-                 </item>
-                 <item>
-                  <widget class="QSpinBox" name="spinBox"/>
                  </item>
                 </layout>
                </widget>
@@ -2217,8 +2214,8 @@
              <rect>
               <x>178</x>
               <y>9</y>
-              <width>151</width>
-              <height>48</height>
+              <width>157</width>
+              <height>60</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_24">
@@ -2257,8 +2254,8 @@
              <rect>
               <x>10</x>
               <y>10</y>
-              <width>165</width>
-              <height>50</height>
+              <width>175</width>
+              <height>60</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_23">
@@ -2907,8 +2904,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1148</width>
-     <height>21</height>
+     <width>1247</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>

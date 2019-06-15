@@ -1850,6 +1850,30 @@ core::StoryFilter::ESortMode SortRecoder(int index){
     }
 }
 
+int SortRecoderToUi(core::StoryFilter::ESortMode index){
+
+    switch(index){
+    case core::StoryFilter::sm_wordcount:
+        return 0;
+    case core::StoryFilter::sm_favourites:
+        return 1;
+    case core::StoryFilter::sm_favrate:
+        return 2;
+    case core::StoryFilter::sm_updatedate:
+        return 3;
+    case core::StoryFilter::sm_publisdate:
+        return 4;
+    case core::StoryFilter::sm_reccount:
+        return 5;
+    case core::StoryFilter::sm_wcrcr:
+        return 6;
+    case core::StoryFilter::sm_scores:
+        return 7;
+    default: return 0;
+    }
+}
+
+
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode,
                                                         bool useAuthorLink,
                                                         QString listToUse,
@@ -1988,44 +2012,70 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         ui->wdgTagsPlaceholder->ClearSelection();
         ui->wdgTagsPlaceholder->SelectTags(filter.activeTags);
+
         if(filter.activeTags.size() > 0)
             ui->chkEnableTagsFilter->setChecked(true);
+        else
+            ui->chkEnableTagsFilter->setChecked(false);
 
         if(filter.tagsAreUsedForAuthors)
             ui->wdgTagsPlaceholder->SetTagsForAuthorsMode(true);
+        else
+            ui->wdgTagsPlaceholder->SetTagsForAuthorsMode(false);
 
         if(filter.tagsAreANDed)
             ui->wdgTagsPlaceholder->SetUseANDForTags(true);
+        else
+            ui->wdgTagsPlaceholder->SetUseANDForTags(false);
 
     }
 
     if(filter.allowNoGenre)
         ui->chkNoGenre->setChecked(true);
+    else
+        ui->chkNoGenre->setChecked(false);
 
     if(filter.showRecSources)
         ui->chkShowSources->setChecked(true);
+    else
+        ui->chkShowSources->setChecked(false);
 
     if(filter.allowUnfinished)
         ui->chkShowUnfinished->setChecked(true);
+    else
+        ui->chkShowUnfinished->setChecked(false);
 
     if(filter.ensureActive)
         ui->chkActive->setChecked(true);
+    else
+        ui->chkActive->setChecked(false);
 
     if(filter.ensureCompleted)
         ui->chkComplete->setChecked(true);
+    else
+        ui->chkComplete->setChecked(false);
 
     if(filter.fandom != -1)
         ui->cbNormals->setCurrentText(env.interfaces.fandoms->GetNameForID(filter.fandom));
+    else
+        ui->cbNormals->setCurrentText("");
+
     if(filter.secondFandom != -1)
         ui->cbCrossovers->setCurrentText(env.interfaces.fandoms->GetNameForID(filter.secondFandom));
+    else
+        ui->cbCrossovers->setCurrentText("");
 
     if(filter.otherFandomsMode)
         ui->chkOtherFandoms->setChecked(true);
+    else
+        ui->chkOtherFandoms->setChecked(false);
 
     // restoring genre exclusion
     {
         if(filter.genreExclusion.size() > 0)
             ui->chkGenreMinus->setChecked(true);
+        else
+            ui->chkGenreMinus->setChecked(false);
         ui->leNotContainsGenre->setText(filter.genreExclusion.join(" "));
 
     }
@@ -2033,6 +2083,8 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         if(filter.genreInclusion.size() > 0)
             ui->chkGenrePlus->setChecked(true);
+        else
+            ui->chkGenrePlus->setChecked(false);
         ui->leContainsGenre->setText(filter.genreInclusion.join(" "));
 
     }
@@ -2041,6 +2093,8 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         if(filter.wordExclusion.size() > 0)
             ui->chkWordsMinus->setChecked(true);
+        else
+            ui->chkWordsMinus->setChecked(false);
         ui->leNotContainsWords->setText(filter.wordExclusion.join(" "));
 
     }
@@ -2048,24 +2102,36 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         if(filter.wordInclusion.size() > 0)
             ui->chkWordsPlus->setChecked(true);
+        else
+            ui->chkWordsPlus->setChecked(false);
         ui->leContainsWords->setText(filter.wordInclusion.join(" "));
 
     }
 
     if(filter.ignoreAlreadyTagged)
         ui->chkIgnoreTags->setChecked(true);
+    else
+        ui->chkIgnoreTags->setChecked(false);
 
     if(filter.crossoversOnly)
         ui->chkCrossovers->setChecked(true);
+    else
+        ui->chkCrossovers->setChecked(false);
 
     if(!filter.includeCrossovers)
         ui->chkNonCrossovers->setChecked(true);
+    else
+        ui->chkNonCrossovers->setChecked(false);
 
-    if(!filter.ignoreFandoms)
+    if(filter.ignoreFandoms)
         ui->chkIgnoreFandoms->setChecked(true);
+    else
+        ui->chkIgnoreFandoms->setChecked(false);
 
-    if(!filter.useRealGenres)
+    if(filter.useRealGenres)
         ui->chkGenreUseImplied->setChecked(true);
+    else
+        ui->chkGenreUseImplied->setChecked(false);
 
 
     ui->cbGenrePresenceTypeInclude->setCurrentIndex(static_cast<int>(filter.genrePresenceForInclude));
@@ -2077,12 +2143,12 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
         ui->cbIDMode->setCurrentIndex(0);
         ui->leAuthorID->setText(QString::number(filter.useThisFic));
     }
-    if(filter.useThisAuthor != -1)
+    else if(filter.useThisAuthor != -1)
     {
         ui->cbIDMode->setCurrentIndex(1);
         ui->leAuthorID->setText(QString::number(filter.useThisAuthor));
     }
-    if(filter.usedRecommenders.size() > 0)
+    else if(filter.usedRecommenders.size() > 0)
     {
         ui->cbIDMode->setCurrentIndex(2);
         QStringList temp;
@@ -2091,6 +2157,10 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
             temp.push_back(QString::number(reccer));
         }
         ui->leAuthorID->setText(temp.join(","));
+    }
+    else {
+        ui->cbIDMode->setCurrentIndex(0);
+        ui->leAuthorID->setText("");
     }
 
 
@@ -2106,30 +2176,48 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         if(filter.slashFilter.slashFilterEnabled)
             ui->chkEnableSlashFilter->setChecked(true);
+        else
+            ui->chkEnableSlashFilter->setChecked(false);
 
         if(filter.slashFilter.applyLocalEnabled)
             ui->chkApplyLocalSlashFilter->setChecked(true);
+        else
+            ui->chkApplyLocalSlashFilter->setChecked(false);
 
         if(filter.slashFilter.excludeSlash)
             ui->chkInvertedSlashFilter->setChecked(true);
+        else
+            ui->chkInvertedSlashFilter->setChecked(false);
 
         if(filter.slashFilter.includeSlash)
             ui->chkOnlySlash->setChecked(true);
+        else
+            ui->chkOnlySlash->setChecked(false);
 
         if(filter.slashFilter.excludeSlashLocal)
             ui->chkInvertedSlashFilterLocal->setChecked(true);
+        else
+            ui->chkInvertedSlashFilterLocal->setChecked(false);
 
         if(filter.slashFilter.includeSlashLocal)
             ui->chkOnlySlashLocal->setChecked(true);
+        else
+            ui->chkOnlySlashLocal->setChecked(false);
 
         if(filter.slashFilter.enableFandomExceptions)
             ui->chkEnableSlashExceptions->setChecked(true);
+        else
+            ui->chkEnableSlashExceptions->setChecked(false);
 
         if(filter.slashFilter.onlyExactLevel)
             ui->chkShowExactFilterLevel->setChecked(true);
+        else
+            ui->chkShowExactFilterLevel->setChecked(false);
 
         if(filter.slashFilter.onlyMatureForSlash)
             ui->chkStrongMOnly->setChecked(true);
+        else
+            ui->chkStrongMOnly->setChecked(false);
 
         ui->cbSlashFilterAggressiveness->setCurrentIndex(filter.slashFilter.slashFilterLevel);
     }
@@ -2139,28 +2227,48 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
         ui->chkRandomizeSelection->setChecked(true);
         ui->sbMaxRandomFicCount->setValue(filter.maxFics);
     }
+    else {
+        ui->chkRandomizeSelection->setChecked(false);
+        ui->sbMaxRandomFicCount->setValue(100);
+    }
 
     if(filter.minFavourites != 0)
     {
         ui->chkFaveLimitActivated->setChecked(true);
         ui->sbMinimumFavourites->setValue(filter.minFavourites);
     }
+    else {
+        ui->chkFaveLimitActivated->setChecked(false);
+        ui->sbMinimumFavourites->setValue(filter.minFavourites);
+    }
 
     if(filter.maxWords != 0)
         ui->cbMaxWordCount->setCurrentText(QString::number(filter.maxWords));
+    else
+        ui->cbMaxWordCount->setCurrentText("");
 
     if(filter.minWords != 0)
         ui->cbMinWordCount->setCurrentText(QString::number(filter.minWords));
+    else
+        ui->cbMinWordCount->setCurrentText(QString::number(0));
 
 
     if(filter.randomizeResults)
         ui->chkRandomizeSelection->setChecked(true);
+    else
+        ui->chkRandomizeSelection->setChecked(false);
 
     if(filter.recentAndPopularFavRatio != -1)
         ui->sbFavrateValue->setValue(filter.recentAndPopularFavRatio);
+    else {
+        ui->sbFavrateValue->setValue(4);
+    }
 
     if(filter.recentCutoff.isValid())
         ui->dteFavRateCut->setDateTime(filter.recentCutoff);
+    else {
+        ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
+    }
 
 
     ui->cbBiasFavor->setCurrentIndex(static_cast<int>(filter.reviewBias));
@@ -2168,8 +2276,10 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
 
     if(std::abs(filter.reviewBiasRatio) > 0.01 )
         ui->leBiasValue->setText(QString::number(filter.reviewBiasRatio));
+    else
+        ui->leBiasValue->setText("2.5");
 
-    ui->cbSortMode->setCurrentIndex(filter.sortMode);
+    ui->cbSortMode->setCurrentIndex(SortRecoderToUi(filter.sortMode));
 
 
     if(filter.minRecommendations > 0)
@@ -2177,8 +2287,12 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
         ui->chkUseReclistMatches->setChecked(true);
         ui->sbMinimumListMatches->setValue(filter.minRecommendations);
     }
+    else {
+        ui->chkUseReclistMatches->setChecked(false);
+        ui->sbMinimumListMatches->setValue(0);
+    }
 
-    // restoring quert limit, restoing actual listview ui comes later
+    // restoring query limit, restoring actual listview ui comes later
     {
         if(filter.recordLimit > 0)
         {
@@ -2186,12 +2300,17 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
             ui->sbPageSize->setValue(filter.recordLimit);
         }
         else
+        {
+            ui->chkLimitPageSize->setChecked(false);
             ui->sbPageSize->setValue(100);
+        }
     }
     env.pageOfCurrentQuery = filter.recordPage;
 
     if(filter.listOpenMode)
         ui->chkSearchWithinList->setChecked(true);
+    else
+        ui->chkSearchWithinList->setChecked(false);
 
     if(filter.listForRecommendations != -1)
         ui->cbRecGroup->setCurrentText(env.interfaces.recs->GetListNameForId(filter.listForRecommendations));
@@ -2200,6 +2319,8 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
 
     if(filter.displayPurgedFics)
         ui->chkDisplayPurged->setChecked(true);
+    else
+        ui->chkDisplayPurged->setChecked(false);
 
     if(filter.descendingDirection)
         ui->cbSortDirection->setCurrentIndex(0);
@@ -2208,6 +2329,10 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
 
     if(filter.displaySnoozedFics)
         ui->chkDisplaySnoozed->setChecked(true);
+    else
+        ui->chkDisplaySnoozed->setChecked(false);
+
+
 }
 
 
@@ -3154,11 +3279,14 @@ void MainWindow::on_chkOnlySlash_stateChanged(int arg1)
 
 void MainWindow::on_pbPreviousResults_clicked()
 {
+    auto& currentFrame = env.searchHistory.AccessCurrent();
+    currentFrame.fanfics = holder->GetData();
+
     auto frame = env.searchHistory.GetPrevious();
 
     SetNextEnabled(true);
 
-    if(env.searchHistory.CurrentIndex() >= env.searchHistory.Size())
+    if(env.searchHistory.CurrentIndex() >= (env.searchHistory.Size()-1))
         SetPreviousEnabled(false);
 
     env.LoadHistoryFrame(frame);
@@ -3167,6 +3295,9 @@ void MainWindow::on_pbPreviousResults_clicked()
 
 void MainWindow::on_pbNextResults_clicked()
 {
+    auto& currentFrame = env.searchHistory.AccessCurrent();
+    currentFrame.fanfics = holder->GetData();
+
     auto frame = env.searchHistory.GetNext();
 
     SetPreviousEnabled(true);

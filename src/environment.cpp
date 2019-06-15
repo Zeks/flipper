@@ -167,7 +167,7 @@ void CoreEnvironment::LoadHistoryFrame(FilterFrame frame)
     currentQuery = frame.currentQuery;
 }
 
-CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(25)
+CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(250)
 {
     ReadSettings();
     rngGenerator.reset(new core::DefaultRNGgenerator);
