@@ -92,6 +92,7 @@ Rectangle{
             propagateComposedEvents : true
             onClicked : {
                 delegateItem.mouseClicked();
+                mainWindow.selectedIndex = indexOfThisDelegate
             }
         }
 
@@ -109,8 +110,8 @@ Rectangle{
         }
 
         radius: 0
-        border.width: 2
-        border.color: Qt.rgba(0, 0, 1, 0.4)
+        border.width: mainWindow.selectedIndex == indexOfThisDelegate ?  2 : 2
+        border.color: mainWindow.selectedIndex == indexOfThisDelegate ?  Qt.lighter("darkGreen") : Qt.rgba(0, 0, 1, 0.4)
 
         ToolButton {
             id: tbAddGenre
@@ -180,6 +181,7 @@ Rectangle{
                         propagateComposedEvents : true
                         hoverEnabled :true
                         onClicked : {
+                            mainWindow.selectedIndex = indexOfThisDelegate
                             lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
                         }
                         onEntered: {
@@ -218,6 +220,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
+                            mainWindow.selectedIndex = indexOfThisDelegate
                             lvFics.findSimilarClicked(url);
                         }
                     }
@@ -232,6 +235,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
+                            mainWindow.selectedIndex = indexOfThisDelegate
                             if(lvFics.authorFilterActive === false)
                             {
                                 lvFics.authorFilterActive = true;
@@ -262,7 +266,10 @@ Rectangle{
                     font.family: "Verdana"
                     font.bold: true
                     color: "red"
-                    onLinkActivated: Qt.openUrlExternally(link)
+                    onLinkActivated: {
+                        Qt.openUrlExternally(link)
+                        mainWindow.selectedIndex = indexOfThisDelegate
+                    }
                 }
             }
 
@@ -338,6 +345,7 @@ Rectangle{
                             anchors.fill : parent
                             propagateComposedEvents : true
                             onClicked : {
+                                mainWindow.selectedIndex = indexOfThisDelegate
                                 lvFics.fandomToggled(index);
                             }
                         }
@@ -371,6 +379,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
+                            mainWindow.selectedIndex = indexOfThisDelegate
                             if(lvFics.authorFilterActive === false)
                             {
                                 lvFics.authorFilterActive = true;
@@ -397,7 +406,11 @@ Rectangle{
                     font.pointSize: 12
                     font.family: "Verdana"
                     font.bold: false
-                    onLinkActivated: Qt.openUrlExternally(link)
+                    onLinkActivated: {
+                        mainWindow.selectedIndex = indexOfThisDelegate
+                        Qt.openUrlExternally(link)
+                    }
+
                 }
             }
             Item{
@@ -437,6 +450,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
+                            mainWindow.selectedIndex = indexOfThisDelegate
                             lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
                             console.log("Clicked heart icon")
                         }
@@ -725,6 +739,7 @@ Rectangle{
                         color: "black"
                         text: atChapter === 0 ? chapters : atChapter
                         onEditingFinished: {
+                            mainWindow.selectedIndex = indexOfThisDelegate
                             console.log("Edited text is: ", text)
                             lvFics.chapterChanged(indexOfThisDelegate, parseInt(text));
                         }
@@ -770,6 +785,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
+                            mainWindow.selectedIndex = indexOfThisDelegate
                             lvFics.scoreAdjusted(indexOfThisDelegate, index + 1, score);
 
                         }

@@ -67,6 +67,7 @@ struct FilterFrame{
     QVector<core::Fic> fanfics; // filtered fanfic data
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
+    int selectedIndex = -1;
 };
 
 

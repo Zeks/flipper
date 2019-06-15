@@ -53,6 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSortFilterProxyModel>
 #include <QQuickWidget>
 #include <QDebug>
+#include <QMetaObject>
 #include <QQuickView>
 #include <QQuickItem>
 #include <QTextCodec>
@@ -502,6 +503,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 30, 0, chapterSnoozed);
     ADD_STRING_GETSET(holder, 31, 0, notes);
     ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
+    ADD_STRINGLIST_GETTER(holder, 33, 0, selected);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -531,7 +533,7 @@ void MainWindow::SetupFanficTable()
                        << "recommendations" << "realGenres" << "author_id" << "minSlashLevel"
                        << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
                        << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
-                       << "notes" << "quotes");
+                       << "notes" << "quotes" << "selected");
 
 
 
@@ -683,6 +685,7 @@ void MainWindow::SaveCurrentQuery()
     QObject* windowObject= qwFics->rootObject();
     frame.havePagesBefore = windowObject->property("havePagesBefore").toBool();
     frame.havePagesAfter = windowObject->property("havePagesAfter").toBool();
+    frame.selectedIndex = windowObject->property("selectedIndex").toInt();
 
     env.searchHistory.Push(frame);
 }
@@ -3279,8 +3282,12 @@ void MainWindow::on_chkOnlySlash_stateChanged(int arg1)
 
 void MainWindow::on_pbPreviousResults_clicked()
 {
+
     auto& currentFrame = env.searchHistory.AccessCurrent();
     currentFrame.fanfics = holder->GetData();
+
+    QObject* windowObject= qwFics->rootObject();
+    currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
 
     auto frame = env.searchHistory.GetPrevious();
 
@@ -3291,12 +3298,18 @@ void MainWindow::on_pbPreviousResults_clicked()
 
     env.LoadHistoryFrame(frame);
     LoadFrameIntoUI(frame);
+
+    QMetaObject::invokeMethod(qwFics->rootObject(), "centerOnSelection", Qt::DirectConnection,
+                              Q_ARG(int, frame.selectedIndex));
 }
 
 void MainWindow::on_pbNextResults_clicked()
 {
     auto& currentFrame = env.searchHistory.AccessCurrent();
     currentFrame.fanfics = holder->GetData();
+
+    QObject* windowObject= qwFics->rootObject();
+    currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
 
     auto frame = env.searchHistory.GetNext();
 
@@ -3307,6 +3320,9 @@ void MainWindow::on_pbNextResults_clicked()
 
     env.LoadHistoryFrame(frame);
     LoadFrameIntoUI(frame);
+
+    QMetaObject::invokeMethod(qwFics->rootObject(), "centerOnSelection", Qt::DirectConnection,
+                              Q_ARG(int, frame.selectedIndex));
 }
 
 void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
@@ -3320,6 +3336,7 @@ void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
     windowObject->setProperty("currentPage", env.filter.recordLimit > 0 ? env.filter.recordPage : 0);
     windowObject->setProperty("havePagesBefore", frame.havePagesBefore);
     windowObject->setProperty("havePagesAfter", frame.havePagesAfter);
+    windowObject->setProperty("selectedIndex", frame.selectedIndex);
     windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
 
 }

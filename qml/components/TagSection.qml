@@ -100,6 +100,7 @@ Rectangle{
                 mainWindow.detailedGenreMode = !mainWindow.detailedGenreMode
             }
             onClicked: {
+                mainWindow.selectedIndex = indexOfThisDelegate
                 print("Current index: " + delegateItem.indexOfThisDelegate)
                 lvFics.currentIndex = delegateItem.indexOfThisDelegate
                 active = true
@@ -123,6 +124,7 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
+                    mainWindow.selectedIndex = indexOfThisDelegate
                     if(canAdd)
                     {
                         console.log(" height  is" );
@@ -205,6 +207,7 @@ Rectangle{
                     anchors.fill : parent
                     propagateComposedEvents : false
                     onClicked : {
+                        mainWindow.selectedIndex = indexOfThisDelegate
                         mainWindow.magnetTag = modelData
                     }
                 }
@@ -303,7 +306,7 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-
+                    mainWindow.selectedIndex = indexOfThisDelegate
                     if(!selectionMode)
                         return
 
