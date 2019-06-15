@@ -716,7 +716,8 @@ void MainWindow::LoadData()
     SaveCurrentQuery();
     if(env.searchHistory.Size() > 1)
         SetPreviousEnabled(true);
-
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("selectedIndex", -1);
     holder->SetData(env.fanfics);
     //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     //    childObject->setProperty("authorFilterActive", false);
