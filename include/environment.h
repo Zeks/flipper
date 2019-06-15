@@ -55,8 +55,8 @@ public:
 
 
 struct FilterFrame{
-    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
 
+    int selectedIndex = -1;
     int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
     int pageOfCurrentQuery = 0; // current page that the used search query is at
     int currentLastFanficId = -1;
@@ -67,7 +67,7 @@ struct FilterFrame{
     QVector<core::Fic> fanfics; // filtered fanfic data
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
-    int selectedIndex = -1;
+    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
 };
 
 

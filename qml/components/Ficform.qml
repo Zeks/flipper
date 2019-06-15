@@ -706,6 +706,7 @@ Rectangle{
                     opacity_full: 1
                     visible: !complete || snoozeExpired
                 }
+
                 NotesTagger{
                     id: rectNotes
                 }
@@ -948,6 +949,9 @@ Rectangle{
                     lvFics.notesEdited(indexOfThisDelegate, tiNotes.text)
                 }
                 wrapMode: TextEdit.WordWrap
+                onFocusChanged: {
+                    lvFics.notesEdited(indexOfThisDelegate, tiNotes.text)
+                }
             }
         }
 

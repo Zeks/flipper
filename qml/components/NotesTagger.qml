@@ -52,7 +52,6 @@ Rectangle{
             return notes ? "qrc:/icons/icons/note.png" : "qrc:/icons/icons/note_gray.png"
         }
 
-        //source: "qrc:/icons/icons/pencil.png"
         MouseArea{
             ToolTip.delay: 1000
             ToolTip.visible: containsMouse && !notes

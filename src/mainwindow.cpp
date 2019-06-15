@@ -583,7 +583,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
     connect(childObject, SIGNAL(authorToggled(QVariant, QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant,QVariant)));
-    //connect(childObject, SIGNAL(refilterClicked()), this, SLOT(on_pbLoadDatabase_clicked()));
+
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
 
@@ -1906,7 +1906,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureActive = ui->chkActive->isChecked();
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomID();
-    filter.secondFandom = GetCrossoverFandomID();
+    filter.secondFandom = ui->chkCrossovers->isChecked() ? GetCrossoverFandomID() : -1;
     filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
     auto fixGenre = [](QStringList& genres) -> void{
