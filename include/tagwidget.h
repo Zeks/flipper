@@ -41,13 +41,17 @@ public:
     QStringList GetAllTags();
     void SetAddDialogVisibility(bool);
     bool UseTagsForAuthors();
+    void SetTagsForAuthorsMode(bool);
     bool UseANDForTags();
+    void SetUseANDForTags(bool);
     void ClearSelection();
     bool DbIdsRequested();
     void ResetFilters();
+    void SelectTags(QStringList);
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
 private:
+
     Ui::TagWidget *ui;
     int currentId;
     QStringList selectedTags;

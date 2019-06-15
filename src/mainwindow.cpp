@@ -53,6 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSortFilterProxyModel>
 #include <QQuickWidget>
 #include <QDebug>
+#include <QMetaObject>
 #include <QQuickView>
 #include <QQuickItem>
 #include <QTextCodec>
@@ -136,8 +137,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lblCrosses->hide();
     ui->cbCrossovers->hide();
     ui->pbFandomSwitch->hide();
-    //ui->horizontalSpacer_7->hide();
 
+    SetPreviousEnabled(false);
+    SetNextEnabled(false);
 }
 
 bool MainWindow::Init()
@@ -154,17 +156,15 @@ bool MainWindow::Init()
     ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
     ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
                                       "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
-                                      "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
-    //    ui->pbUseProfile->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
-    //                                      "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
-    //                                      "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}");
+                                      "}");
 
-
+//    ui->pbPreviousResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
+//                                      "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
+//    ui->pbNextResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
+//                                      "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
 
     ui->wdgTagsPlaceholder->fandomsInterface = env.interfaces.fandoms;
     ui->wdgTagsPlaceholder->tagsInterface = env.interfaces.tags;
-    //    tagWidgetDynamic->fandomsInterface = env.interfaces.fandoms;
-    //    tagWidgetDynamic->tagsInterface = env.interfaces.tags;
 
     recentFandomsModel = new QStringListModel;
     ignoredFandomsModel = new QStringListModel;
@@ -503,6 +503,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 30, 0, chapterSnoozed);
     ADD_STRING_GETSET(holder, 31, 0, notes);
     ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
+    ADD_STRINGLIST_GETTER(holder, 33, 0, selected);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -532,7 +533,7 @@ void MainWindow::SetupFanficTable()
                        << "recommendations" << "realGenres" << "author_id" << "minSlashLevel"
                        << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
                        << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
-                       << "notes" << "quotes");
+                       << "notes" << "quotes" << "selected");
 
 
 
@@ -582,7 +583,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
     connect(childObject, SIGNAL(authorToggled(QVariant, QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant,QVariant)));
-    //connect(childObject, SIGNAL(refilterClicked()), this, SLOT(on_pbLoadDatabase_clicked()));
+
     QObject* windowObject= qwFics->rootObject();
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
 
@@ -671,6 +672,24 @@ WebPage MainWindow::RequestPage(QString pageUrl, ECacheMode cacheMode, bool auto
     return env::RequestPage(pageUrl, cacheMode, autoSaveToDB);
 }
 
+void MainWindow::SaveCurrentQuery()
+{
+    FilterFrame frame;
+    frame.filter = env.filter;
+    frame.fanfics = env.fanfics;
+    frame.currentQuery = env.currentQuery;
+    frame.pageOfCurrentQuery = env.pageOfCurrentQuery;
+    frame.sizeOfCurrentQuery = env.sizeOfCurrentQuery;
+    frame.currentLastFanficId = env.currentLastFanficId;
+
+    QObject* windowObject= qwFics->rootObject();
+    frame.havePagesBefore = windowObject->property("havePagesBefore").toBool();
+    frame.havePagesAfter = windowObject->property("havePagesAfter").toBool();
+    frame.selectedIndex = windowObject->property("selectedIndex").toInt();
+
+    env.searchHistory.Push(frame);
+}
+
 
 void MainWindow::LoadData()
 {
@@ -693,6 +712,10 @@ void MainWindow::LoadData()
     //ui->edtResults->setUpdatesEnabled(false);
 
     env.LoadData();
+
+    SaveCurrentQuery();
+    if(env.searchHistory.Size() > 1)
+        SetPreviousEnabled(true);
 
     holder->SetData(env.fanfics);
     //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
@@ -1422,18 +1445,18 @@ void MainWindow::OnTagRemoveInTagWidget(QVariant tag, QVariant row)
 {
     int rownum = row.toInt();
     UnsetTag(rownum, tag.toString());
-//    if(primedTag == tag.toString())
-//    {
-//        QObject* windowObject= qwFics->rootObject();
-//        windowObject->setProperty("magnetTag", tag);
+    //    if(primedTag == tag.toString())
+    //    {
+    //        QObject* windowObject= qwFics->rootObject();
+    //        windowObject->setProperty("magnetTag", tag);
 
-//        QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
-//        uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-//        uiSettings.setValue("Settings/magneticTag", tag.toString());
-//    }
-//    else{
-//        primedTag = "";
-//    }
+    //        QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    //        uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    //        uiSettings.setValue("Settings/magneticTag", tag.toString());
+    //    }
+    //    else{
+    //        primedTag = "";
+    //    }
 }
 
 
@@ -1830,6 +1853,30 @@ core::StoryFilter::ESortMode SortRecoder(int index){
     }
 }
 
+int SortRecoderToUi(core::StoryFilter::ESortMode index){
+
+    switch(index){
+    case core::StoryFilter::sm_wordcount:
+        return 0;
+    case core::StoryFilter::sm_favourites:
+        return 1;
+    case core::StoryFilter::sm_favrate:
+        return 2;
+    case core::StoryFilter::sm_updatedate:
+        return 3;
+    case core::StoryFilter::sm_publisdate:
+        return 4;
+    case core::StoryFilter::sm_reccount:
+        return 5;
+    case core::StoryFilter::sm_wcrcr:
+        return 6;
+    case core::StoryFilter::sm_scores:
+        return 7;
+    default: return 0;
+    }
+}
+
+
 core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilterMode mode,
                                                         bool useAuthorLink,
                                                         QString listToUse,
@@ -1859,7 +1906,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureActive = ui->chkActive->isChecked();
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomID();
-    filter.secondFandom = GetCrossoverFandomID();
+    filter.secondFandom = ui->chkCrossovers->isChecked() ? GetCrossoverFandomID() : -1;
     filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
     auto fixGenre = [](QStringList& genres) -> void{
@@ -1956,6 +2003,339 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
 
     return filter;
+}
+
+void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
+{
+    ResetFilterUItoDefaults();
+
+    if(!filter.isValid)
+        return;
+    // restoring selected tags
+    {
+        ui->wdgTagsPlaceholder->ClearSelection();
+        ui->wdgTagsPlaceholder->SelectTags(filter.activeTags);
+
+        if(filter.activeTags.size() > 0)
+            ui->chkEnableTagsFilter->setChecked(true);
+        else
+            ui->chkEnableTagsFilter->setChecked(false);
+
+        if(filter.tagsAreUsedForAuthors)
+            ui->wdgTagsPlaceholder->SetTagsForAuthorsMode(true);
+        else
+            ui->wdgTagsPlaceholder->SetTagsForAuthorsMode(false);
+
+        if(filter.tagsAreANDed)
+            ui->wdgTagsPlaceholder->SetUseANDForTags(true);
+        else
+            ui->wdgTagsPlaceholder->SetUseANDForTags(false);
+
+    }
+
+    if(filter.allowNoGenre)
+        ui->chkNoGenre->setChecked(true);
+    else
+        ui->chkNoGenre->setChecked(false);
+
+    if(filter.showRecSources)
+        ui->chkShowSources->setChecked(true);
+    else
+        ui->chkShowSources->setChecked(false);
+
+    if(filter.allowUnfinished)
+        ui->chkShowUnfinished->setChecked(true);
+    else
+        ui->chkShowUnfinished->setChecked(false);
+
+    if(filter.ensureActive)
+        ui->chkActive->setChecked(true);
+    else
+        ui->chkActive->setChecked(false);
+
+    if(filter.ensureCompleted)
+        ui->chkComplete->setChecked(true);
+    else
+        ui->chkComplete->setChecked(false);
+
+    if(filter.fandom != -1)
+        ui->cbNormals->setCurrentText(env.interfaces.fandoms->GetNameForID(filter.fandom));
+    else
+        ui->cbNormals->setCurrentText("");
+
+    if(filter.secondFandom != -1)
+        ui->cbCrossovers->setCurrentText(env.interfaces.fandoms->GetNameForID(filter.secondFandom));
+    else
+        ui->cbCrossovers->setCurrentText("");
+
+    if(filter.otherFandomsMode)
+        ui->chkOtherFandoms->setChecked(true);
+    else
+        ui->chkOtherFandoms->setChecked(false);
+
+    // restoring genre exclusion
+    {
+        if(filter.genreExclusion.size() > 0)
+            ui->chkGenreMinus->setChecked(true);
+        else
+            ui->chkGenreMinus->setChecked(false);
+        ui->leNotContainsGenre->setText(filter.genreExclusion.join(" "));
+
+    }
+    // restoring genre inclusion
+    {
+        if(filter.genreInclusion.size() > 0)
+            ui->chkGenrePlus->setChecked(true);
+        else
+            ui->chkGenrePlus->setChecked(false);
+        ui->leContainsGenre->setText(filter.genreInclusion.join(" "));
+
+    }
+
+    // restoring word exclusion
+    {
+        if(filter.wordExclusion.size() > 0)
+            ui->chkWordsMinus->setChecked(true);
+        else
+            ui->chkWordsMinus->setChecked(false);
+        ui->leNotContainsWords->setText(filter.wordExclusion.join(" "));
+
+    }
+    // restoring word inclusion
+    {
+        if(filter.wordInclusion.size() > 0)
+            ui->chkWordsPlus->setChecked(true);
+        else
+            ui->chkWordsPlus->setChecked(false);
+        ui->leContainsWords->setText(filter.wordInclusion.join(" "));
+
+    }
+
+    if(filter.ignoreAlreadyTagged)
+        ui->chkIgnoreTags->setChecked(true);
+    else
+        ui->chkIgnoreTags->setChecked(false);
+
+    if(filter.crossoversOnly)
+        ui->chkCrossovers->setChecked(true);
+    else
+        ui->chkCrossovers->setChecked(false);
+
+    if(!filter.includeCrossovers)
+        ui->chkNonCrossovers->setChecked(true);
+    else
+        ui->chkNonCrossovers->setChecked(false);
+
+    if(filter.ignoreFandoms)
+        ui->chkIgnoreFandoms->setChecked(true);
+    else
+        ui->chkIgnoreFandoms->setChecked(false);
+
+    if(filter.useRealGenres)
+        ui->chkGenreUseImplied->setChecked(true);
+    else
+        ui->chkGenreUseImplied->setChecked(false);
+
+
+    ui->cbGenrePresenceTypeInclude->setCurrentIndex(static_cast<int>(filter.genrePresenceForInclude));
+    ui->cbFicRating->setCurrentIndex(static_cast<int>(filter.rating));
+
+
+    if(filter.useThisFic != -1)
+    {
+        ui->cbIDMode->setCurrentIndex(0);
+        ui->leAuthorID->setText(QString::number(filter.useThisFic));
+    }
+    else if(filter.useThisAuthor != -1)
+    {
+        ui->cbIDMode->setCurrentIndex(1);
+        ui->leAuthorID->setText(QString::number(filter.useThisAuthor));
+    }
+    else if(filter.usedRecommenders.size() > 0)
+    {
+        ui->cbIDMode->setCurrentIndex(2);
+        QStringList temp;
+        for(auto reccer : filter.usedRecommenders)
+        {
+            temp.push_back(QString::number(reccer));
+        }
+        ui->leAuthorID->setText(temp.join(","));
+    }
+    else {
+        ui->cbIDMode->setCurrentIndex(0);
+        ui->leAuthorID->setText("");
+    }
+
+
+    switch(filter.genrePresenceForExclude){
+    case core::StoryFilter::gp_none:  ui->cbGenrePresenceTypeExclude->setCurrentText("None"); break;
+    case core::StoryFilter::gp_minimal:  ui->cbGenrePresenceTypeExclude->setCurrentText("Minimal"); break;
+    case core::StoryFilter::gp_medium:  ui->cbGenrePresenceTypeExclude->setCurrentText("Medium"); break;
+    case core::StoryFilter::gp_considerable:  ui->cbGenrePresenceTypeExclude->setCurrentText("Considerable"); break;
+    }
+
+
+    // restoring slash filter
+    {
+        if(filter.slashFilter.slashFilterEnabled)
+            ui->chkEnableSlashFilter->setChecked(true);
+        else
+            ui->chkEnableSlashFilter->setChecked(false);
+
+        if(filter.slashFilter.applyLocalEnabled)
+            ui->chkApplyLocalSlashFilter->setChecked(true);
+        else
+            ui->chkApplyLocalSlashFilter->setChecked(false);
+
+        if(filter.slashFilter.excludeSlash)
+            ui->chkInvertedSlashFilter->setChecked(true);
+        else
+            ui->chkInvertedSlashFilter->setChecked(false);
+
+        if(filter.slashFilter.includeSlash)
+            ui->chkOnlySlash->setChecked(true);
+        else
+            ui->chkOnlySlash->setChecked(false);
+
+        if(filter.slashFilter.excludeSlashLocal)
+            ui->chkInvertedSlashFilterLocal->setChecked(true);
+        else
+            ui->chkInvertedSlashFilterLocal->setChecked(false);
+
+        if(filter.slashFilter.includeSlashLocal)
+            ui->chkOnlySlashLocal->setChecked(true);
+        else
+            ui->chkOnlySlashLocal->setChecked(false);
+
+        if(filter.slashFilter.enableFandomExceptions)
+            ui->chkEnableSlashExceptions->setChecked(true);
+        else
+            ui->chkEnableSlashExceptions->setChecked(false);
+
+        if(filter.slashFilter.onlyExactLevel)
+            ui->chkShowExactFilterLevel->setChecked(true);
+        else
+            ui->chkShowExactFilterLevel->setChecked(false);
+
+        if(filter.slashFilter.onlyMatureForSlash)
+            ui->chkStrongMOnly->setChecked(true);
+        else
+            ui->chkStrongMOnly->setChecked(false);
+
+        ui->cbSlashFilterAggressiveness->setCurrentIndex(filter.slashFilter.slashFilterLevel);
+    }
+
+    if(filter.maxFics != 0)
+    {
+        ui->chkRandomizeSelection->setChecked(true);
+        ui->sbMaxRandomFicCount->setValue(filter.maxFics);
+    }
+    else {
+        ui->chkRandomizeSelection->setChecked(false);
+        ui->sbMaxRandomFicCount->setValue(6);
+    }
+
+    if(filter.minFavourites != 0)
+    {
+        ui->chkFaveLimitActivated->setChecked(true);
+        ui->sbMinimumFavourites->setValue(filter.minFavourites);
+    }
+    else {
+        ui->chkFaveLimitActivated->setChecked(false);
+        ui->sbMinimumFavourites->setValue(filter.minFavourites);
+    }
+
+    if(filter.maxWords != 0)
+        ui->cbMaxWordCount->setCurrentText(QString::number(filter.maxWords));
+    else
+        ui->cbMaxWordCount->setCurrentText("");
+
+    if(filter.minWords != 0)
+        ui->cbMinWordCount->setCurrentText(QString::number(filter.minWords));
+    else
+        ui->cbMinWordCount->setCurrentText(QString::number(0));
+
+
+    if(filter.randomizeResults)
+        ui->chkRandomizeSelection->setChecked(true);
+    else
+        ui->chkRandomizeSelection->setChecked(false);
+
+    if(filter.recentAndPopularFavRatio != -1)
+        ui->sbFavrateValue->setValue(filter.recentAndPopularFavRatio);
+    else {
+        ui->sbFavrateValue->setValue(4);
+    }
+
+    if(filter.recentCutoff.isValid())
+        ui->dteFavRateCut->setDateTime(filter.recentCutoff);
+    else {
+        ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
+    }
+
+
+    ui->cbBiasFavor->setCurrentIndex(static_cast<int>(filter.reviewBias));
+    ui->cbBiasOperator->setCurrentIndex(static_cast<int>(filter.biasOperator));
+
+    if(std::abs(filter.reviewBiasRatio) > 0.01 )
+        ui->leBiasValue->setText(QString::number(filter.reviewBiasRatio));
+    else
+        ui->leBiasValue->setText("2.5");
+
+    ui->cbSortMode->setCurrentIndex(SortRecoderToUi(filter.sortMode));
+
+
+    if(filter.minRecommendations > 0)
+    {
+        ui->chkUseReclistMatches->setChecked(true);
+        ui->sbMinimumListMatches->setValue(filter.minRecommendations);
+    }
+    else {
+        ui->chkUseReclistMatches->setChecked(false);
+        ui->sbMinimumListMatches->setValue(0);
+    }
+
+    // restoring query limit, restoring actual listview ui comes later
+    {
+        if(filter.recordLimit > 0)
+        {
+            ui->chkLimitPageSize->setChecked(true);
+            ui->sbPageSize->setValue(filter.recordLimit);
+        }
+        else
+        {
+            ui->chkLimitPageSize->setChecked(false);
+            ui->sbPageSize->setValue(100);
+        }
+    }
+    env.pageOfCurrentQuery = filter.recordPage;
+
+    if(filter.listOpenMode)
+        ui->chkSearchWithinList->setChecked(true);
+    else
+        ui->chkSearchWithinList->setChecked(false);
+
+    if(filter.listForRecommendations != -1)
+        ui->cbRecGroup->setCurrentText(env.interfaces.recs->GetListNameForId(filter.listForRecommendations));
+
+    ui->cbSourceListLimiter->setCurrentIndex(static_cast<int>(filter.sourcesLimiter));
+
+    if(filter.displayPurgedFics)
+        ui->chkDisplayPurged->setChecked(true);
+    else
+        ui->chkDisplayPurged->setChecked(false);
+
+    if(filter.descendingDirection)
+        ui->cbSortDirection->setCurrentIndex(0);
+    else
+        ui->cbSortDirection->setCurrentIndex(1);
+
+    if(filter.displaySnoozedFics)
+        ui->chkDisplaySnoozed->setChecked(true);
+    else
+        ui->chkDisplaySnoozed->setChecked(false);
+
+
 }
 
 
@@ -2252,6 +2632,7 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
 
     return params;
 }
+
 
 
 bool MainWindow::CreateRecommendationList(QSharedPointer<core::RecommendationList> params,
@@ -2897,4 +3278,93 @@ void MainWindow::on_chkOnlySlash_stateChanged(int arg1)
 
 }
 
+
+
+void MainWindow::on_pbPreviousResults_clicked()
+{
+
+    auto& currentFrame = env.searchHistory.AccessCurrent();
+    currentFrame.fanfics = holder->GetData();
+
+    QObject* windowObject= qwFics->rootObject();
+    currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
+
+    auto frame = env.searchHistory.GetPrevious();
+
+    SetNextEnabled(true);
+
+    if(env.searchHistory.CurrentIndex() >= (env.searchHistory.Size()-1))
+        SetPreviousEnabled(false);
+
+    env.LoadHistoryFrame(frame);
+    LoadFrameIntoUI(frame);
+
+    QMetaObject::invokeMethod(qwFics->rootObject(), "centerOnSelection", Qt::DirectConnection,
+                              Q_ARG(int, frame.selectedIndex));
+}
+
+void MainWindow::on_pbNextResults_clicked()
+{
+    auto& currentFrame = env.searchHistory.AccessCurrent();
+    currentFrame.fanfics = holder->GetData();
+
+    QObject* windowObject= qwFics->rootObject();
+    currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
+
+    auto frame = env.searchHistory.GetNext();
+
+    SetPreviousEnabled(true);
+
+    if(env.searchHistory.CurrentIndex() == 0)
+        SetNextEnabled(false);
+
+    env.LoadHistoryFrame(frame);
+    LoadFrameIntoUI(frame);
+
+    QMetaObject::invokeMethod(qwFics->rootObject(), "centerOnSelection", Qt::DirectConnection,
+                              Q_ARG(int, frame.selectedIndex));
+}
+
+void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
+{
+    holder->SetData(env.fanfics);
+    ProcessStoryFilterIntoGUI(frame.filter);
+
+    QObject* windowObject= qwFics->rootObject();
+    int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : env.filter.recordLimit;
+    windowObject->setProperty("totalPages", env.filter.recordLimit > 0 ? (env.sizeOfCurrentQuery/currentActuaLimit) + 1 : 1);
+    windowObject->setProperty("currentPage", env.filter.recordLimit > 0 ? env.filter.recordPage : 0);
+    windowObject->setProperty("havePagesBefore", frame.havePagesBefore);
+    windowObject->setProperty("havePagesAfter", frame.havePagesAfter);
+    windowObject->setProperty("selectedIndex", frame.selectedIndex);
+    windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
+
+}
+
+void MainWindow::SetPreviousEnabled(bool value)
+{
+    if(value){
+        ui->pbPreviousResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
+                                          "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
+        ui->pbPreviousResults->setEnabled(true);
+    }
+    else{
+        ui->pbPreviousResults->setStyleSheet("");
+        ui->pbPreviousResults->setEnabled(false);
+    }
+}
+
+void MainWindow::SetNextEnabled(bool value)
+{
+
+    if(value){
+        ui->pbNextResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
+                                          "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
+        ui->pbNextResults->setEnabled(true);
+    }
+    else{
+        ui->pbNextResults->setStyleSheet("");
+        ui->pbNextResults->setEnabled(false);
+    }
+}
 

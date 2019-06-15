@@ -564,8 +564,9 @@ public:
 
 
     bool purged = false;
-
     bool snoozeExpired = false;
+    bool selected = false;
+
     EFicSnoozeMode snoozeMode = EFicSnoozeMode::efsm_next_chapter;
 
 

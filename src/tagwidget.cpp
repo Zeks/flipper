@@ -102,9 +102,19 @@ bool TagWidget::UseTagsForAuthors()
     return ui->chkUseTagsForAuthors->isChecked();
 }
 
+void TagWidget::SetTagsForAuthorsMode(bool value)
+{
+    ui->chkUseTagsForAuthors->setChecked(value);
+}
+
 bool TagWidget::UseANDForTags()
 {
     return ui->chkAndForTags->isChecked();
+}
+
+void TagWidget::SetUseANDForTags(bool value)
+{
+    ui->chkAndForTags->setChecked(value);
 }
 
 void TagWidget::ClearSelection()
@@ -124,6 +134,8 @@ void TagWidget::ResetFilters()
     ui->chkUseTagsForAuthors->setChecked(false);
     ui->chkTagIncludingCrosses->setChecked(false);
 }
+
+
 
 void TagWidget::on_pbAddTag_clicked()
 {
@@ -166,6 +178,18 @@ void TagWidget::on_pbDeleteTag_clicked()
 void TagWidget::on_leTag_returnPressed()
 {
     emit tagAdded(ui->leTag->text());
+}
+
+void TagWidget::SelectTags(QStringList tags)
+{
+    QString text = ui->edtTags->toHtml();
+    for(auto tag: tags)
+    {
+        text=text.replace("<a href=\"0 " + tag + " \"><span style=\" text-decoration: underline; color:#0000ff;\">",
+                    "<a href=\"1 " + tag + " \"><span style=\" text-decoration: underline; color:#006400;\">");
+        selectedTags.push_back(tag);
+    }
+    ui->edtTags->setHtml(text);
 }
 
 void TagWidget::OnTagClicked(const QUrl& url)

@@ -63,13 +63,14 @@ public:
         SnoozeOriginRole,
         NotesRole,
         QuotesRole,
-        EndRole = QuotesRole
+        SelectedRole,
+        EndRole = SelectedRole
 
     };
 
     QVariant data(const QModelIndex & index, int role) const;
 
-    FicModel(QObject *parent = 0);
+    FicModel(QObject *parent = nullptr);
     QHash<int, QByteArray> roleNames() const;
     Q_INVOKABLE QVariantMap get(int idx) const;
 

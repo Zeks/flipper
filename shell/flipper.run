@@ -1,0 +1,15 @@
+#!/bin/sh
+
+
+dirname=`dirname $0`
+tmp="${dirname#?}"
+
+if [ "${dirname%$tmp}" != "/" ]; then
+dirname=$PWD/$dirname
+fi
+
+export LD_LIBRARY_PATH=$dirname:$dirname/libs:$LD_LIBRARY_PATH
+export QML_IMPORT_PATH=$dirname/libs/qml
+export QML2_IMPORT_PATH=$dirname/libs/qml
+export QT_QPA_PLATFORM_PLUGIN_PATH=$dirname/libs/plugins/platforms
+./flipper

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1148</width>
-    <height>1125</height>
+    <width>1247</width>
+    <height>1128</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -2214,8 +2214,8 @@
              <rect>
               <x>178</x>
               <y>9</y>
-              <width>151</width>
-              <height>48</height>
+              <width>157</width>
+              <height>60</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_24">
@@ -2254,8 +2254,8 @@
              <rect>
               <x>10</x>
               <y>10</y>
-              <width>165</width>
-              <height>50</height>
+              <width>175</width>
+              <height>60</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_23">
@@ -2400,43 +2400,65 @@
            <bool>false</bool>
           </property>
           <layout class="QGridLayout" name="gridLayout_15">
-           <property name="leftMargin">
-            <number>2</number>
-           </property>
-           <property name="topMargin">
-            <number>2</number>
-           </property>
-           <property name="rightMargin">
-            <number>2</number>
-           </property>
-           <property name="bottomMargin">
-            <number>2</number>
-           </property>
-           <item row="0" column="0" colspan="4">
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <item>
-              <widget class="QPushButton" name="pbLoadDatabase">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>30</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>Applies a search on a fandom selected above with teh options below. If no fandom is selected, it displays everything it can.</string>
-               </property>
-               <property name="text">
-                <string>Search</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
+           <item row="0" column="0" colspan="3">
+            <widget class="QPushButton" name="pbLoadDatabase">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Applies a search on a fandom selected above with teh options below. If no fandom is selected, it displays everything it can.</string>
+             </property>
+             <property name="text">
+              <string>Search</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QPushButton" name="pbPreviousResults">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>&lt;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QPushButton" name="pbNextResults">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="1" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_28">
@@ -2469,34 +2491,7 @@
              </item>
             </layout>
            </item>
-           <item row="1" column="3">
-            <layout class="QHBoxLayout" name="horizontalLayout_14">
-             <item>
-              <widget class="QCheckBox" name="chkLimitPageSize">
-               <property name="toolTip">
-                <string>Unchecked value defaults to 5000</string>
-               </property>
-               <property name="text">
-                <string>Page Size</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="sbPageSize">
-               <property name="maximum">
-                <number>5000</number>
-               </property>
-               <property name="value">
-                <number>100</number>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="1" column="2">
+           <item row="1" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_24">
              <item>
               <widget class="QCheckBox" name="chkRandomizeSelection">
@@ -2530,6 +2525,33 @@
                </property>
                <property name="value">
                 <number>6</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="1" column="2" colspan="3">
+            <layout class="QHBoxLayout" name="horizontalLayout_14">
+             <item>
+              <widget class="QCheckBox" name="chkLimitPageSize">
+               <property name="toolTip">
+                <string>Unchecked value defaults to 5000</string>
+               </property>
+               <property name="text">
+                <string>Page Size</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="sbPageSize">
+               <property name="maximum">
+                <number>5000</number>
+               </property>
+               <property name="value">
+                <number>100</number>
                </property>
               </widget>
              </item>
@@ -2882,8 +2904,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1148</width>
-     <height>21</height>
+     <width>1247</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>

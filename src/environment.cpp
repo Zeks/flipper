@@ -145,7 +145,29 @@ void CoreEnvironment::LoadData()
     action.run();
 }
 
-CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj)
+//struct FilterFrame{
+//    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
+
+//    int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
+//    int pageOfCurrentQuery = 0; // current page that the used search query is at
+//    int currentLastFanficId = -1;
+
+//    QVector<core::Fic> fanfics; // filtered fanfic data
+
+//    QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
+//};
+
+void CoreEnvironment::LoadHistoryFrame(FilterFrame frame)
+{
+    filter = frame.filter;
+    fanfics = frame.fanfics;
+    sizeOfCurrentQuery = frame.sizeOfCurrentQuery;
+    pageOfCurrentQuery = frame.pageOfCurrentQuery;
+    currentLastFanficId = frame.currentLastFanficId;
+    currentQuery = frame.currentQuery;
+}
+
+CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(250)
 {
     ReadSettings();
     rngGenerator.reset(new core::DefaultRNGgenerator);

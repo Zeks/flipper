@@ -64,6 +64,7 @@ Rectangle{
             anchors.fill : parent
             propagateComposedEvents : true
             onClicked : {
+                mainWindow.selectedIndex = indexOfThisDelegate
                 if(!clickable)
                     return;
                 if(delegateTags.indexOf(delegateTag) === -1)
