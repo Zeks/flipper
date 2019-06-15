@@ -2229,7 +2229,7 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     }
     else {
         ui->chkRandomizeSelection->setChecked(false);
-        ui->sbMaxRandomFicCount->setValue(100);
+        ui->sbMaxRandomFicCount->setValue(6);
     }
 
     if(filter.minFavourites != 0)
