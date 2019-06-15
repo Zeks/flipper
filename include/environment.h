@@ -32,6 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagegetter.h"
 #include "querybuilder.h"
 
+#include <QQueue>
+
 namespace interfaces{
 class Fandoms;
 class Fanfics;
@@ -47,7 +49,66 @@ class FicSource;
 class ClientInterface
 {
 public:
+};
 
+
+
+
+struct FilterFrame{
+    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
+
+    int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
+    int pageOfCurrentQuery = 0; // current page that the used search query is at
+    int currentLastFanficId = -1;
+
+    bool havePagesBefore = false;
+    bool havePagesAfter = false;
+
+    QVector<core::Fic> fanfics; // filtered fanfic data
+
+    QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
+};
+
+
+
+template <typename T>
+struct BastardizedCircularBuffer{
+    BastardizedCircularBuffer(int maxSize){
+        this->maxSize = maxSize;
+    }
+    void Push(T value){
+        if(data.size() == maxSize)
+            data.pop_front();
+
+        while(currentIndex != 0)
+        {
+            data.pop_back();
+            currentIndex--;
+        }
+
+        data.push_back(value);
+        currentIndex = 0;
+    }
+    T GetNext(){
+        if(data.size() <= currentIndex + 1)
+            return T{};
+
+        currentIndex++;
+        return data[currentIndex];
+    }
+    T GetPrevious(){
+        if(data.size() <= currentIndex - 1)
+            return T{};
+
+        currentIndex--;
+        return data[currentIndex];
+    }
+    int Size() const{ return data.size();}
+    int CurrentIndex() const {return currentIndex;}
+
+    QList<T> data;
+    int currentIndex = 0; // index from head
+    int maxSize;
 };
 
 class CoreEnvironment : public QObject
@@ -83,6 +144,7 @@ public:
     // and between differnt interfaces themselves
     void InitInterfaces();
     void LoadData();
+    void LoadHistoryFrame(FilterFrame);
     int GetResultCount();
 
     void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
@@ -131,8 +193,8 @@ public:
 
     void RefreshSnoozes();
 
-    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
     Interfaces interfaces;
+    core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
 
     int sizeOfCurrentQuery = 0; // "would be" size of the used search query if LIMIT  was not applied
     int pageOfCurrentQuery = 0; // current page that the used search query is at
@@ -148,6 +210,8 @@ public:
     QSet<int> likedAuthors;
     QHash<int, int> ficScores;
     bool thinClient = true;
+
+    BastardizedCircularBuffer<FilterFrame> searchHistory;
 
 
     // in case of non-gui applications these will just fire without an effect and its correct

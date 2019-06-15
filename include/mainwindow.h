@@ -161,6 +161,8 @@ private:
     // todo probably could be dropped, will need to check
     WebPage RequestPage(QString,  ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 
+
+    void SaveCurrentQuery();
     // use to actually query the search results from the database into fanfic list
     // placing results into the inetrface happens in PlaceResults
     void LoadData();
@@ -216,9 +218,6 @@ private:
     void UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater);
 
 
-
-
-
     // creates a recommendation list from passed params
     int BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
 
@@ -227,6 +226,7 @@ private:
                                                 bool useAuthorLink = false,
                                                 QString listToUse = QString(),
                                                 bool performFilterValidation = true);
+    void ProcessStoryFilterIntoGUI(core::StoryFilter filter);
 
     FilterErrors ValidateFilter();
 
@@ -258,6 +258,10 @@ private:
                                   bool automaticLike,
                                   bool ownProfile);
     QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool ownRecs);
+
+    void LoadFrameIntoUI(const FilterFrame& frame);
+    void SetPreviousEnabled(bool value);
+    void SetNextEnabled(bool value);
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
@@ -492,6 +496,10 @@ private slots:
     void on_chkOnlySlash_stateChanged(int arg1);
 
     void on_leAuthorID_returnPressed();
+
+    void on_pbPreviousResults_clicked();
+
+    void on_pbNextResults_clicked();
 
 signals:
 

@@ -133,7 +133,7 @@ struct StoryFilter{
     int minRecommendations = 0;
     int listForRecommendations = -1;
 
-    int recentAndPopularFavRatio;
+    int recentAndPopularFavRatio = -1;
     int ignoredFandomCount = 0;
     int recommendationsCount = 0;
     int activeTagsCount = 0;
