@@ -1050,7 +1050,10 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
     QModelIndex index = typetableModel->index(rownum, 0);
     auto data = index.data(static_cast<int>(FicModel::AuthorIdRole)).toInt();
     if(active.toBool())
+    {
+        ui->chkRandomizeSelection->setChecked(false);
         ui->leAuthorID->setText(QString::number(data));
+    }
     else
         ui->leAuthorID->setText("");
     ui->cbIDMode->setCurrentIndex(1);
