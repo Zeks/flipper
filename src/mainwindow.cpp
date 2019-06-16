@@ -686,7 +686,9 @@ void MainWindow::SaveCurrentQuery()
     frame.havePagesBefore = windowObject->property("havePagesBefore").toBool();
     frame.havePagesAfter = windowObject->property("havePagesAfter").toBool();
     frame.selectedIndex = windowObject->property("selectedIndex").toInt();
-    //frame.selectedIndex = windowObject->property("selectedIndex").toInt();
+
+    SetNextEnabled(false);
+
     env.searchHistory.Push(frame);
 }
 
