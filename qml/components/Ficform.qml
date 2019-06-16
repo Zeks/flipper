@@ -60,6 +60,12 @@ Rectangle{
         else
             lvFics.tagDeletedInTagWidget(tag,rownum)
     }
+
+    function actOnAFic(ficIndex) {
+        //console.log("acting on a fic")
+        mainWindow.selectedIndex = ficIndex
+        mainWindow.actionTakenSinceNavigation = true
+    }
     function tagListActivated(activatedIndex) {
         //        print("activation")
         //        if(lvFics.previousIndex !== -1)
@@ -91,8 +97,16 @@ Rectangle{
             anchors.fill : parent
             propagateComposedEvents : true
             onClicked : {
-                delegateItem.mouseClicked();
+
+                if(mainWindow.selectedIndex == indexOfThisDelegate){
+                    mainWindow.actionTakenSinceNavigation = !mainWindow.actionTakenSinceNavigation
+                }
+                else
+                    mainWindow.actionTakenSinceNavigation = false
                 mainWindow.selectedIndex = indexOfThisDelegate
+                delegateItem.mouseClicked();
+                // deliberately not using act function here to allow manual selection where it is needed
+
             }
         }
 
@@ -110,8 +124,8 @@ Rectangle{
         }
 
         radius: 0
-        border.width: mainWindow.selectedIndex == indexOfThisDelegate ?  2 : 2
-        border.color: mainWindow.selectedIndex == indexOfThisDelegate ?  Qt.lighter("darkGreen") : Qt.rgba(0, 0, 1, 0.4)
+        border.width: !mainWindow.actionTakenSinceNavigation && (mainWindow.selectedIndex == indexOfThisDelegate) ?  2 : 2
+        border.color: !mainWindow.actionTakenSinceNavigation && (mainWindow.selectedIndex == indexOfThisDelegate) ?  Qt.lighter("darkGreen") : Qt.rgba(0, 0, 1, 0.4)
 
         ToolButton {
             id: tbAddGenre
@@ -181,7 +195,7 @@ Rectangle{
                         propagateComposedEvents : true
                         hoverEnabled :true
                         onClicked : {
-                            mainWindow.selectedIndex = indexOfThisDelegate
+                            actOnAFic(indexOfThisDelegate)
                             lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
                         }
                         onEntered: {
@@ -220,7 +234,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            mainWindow.selectedIndex = indexOfThisDelegate
+                            actOnAFic(indexOfThisDelegate)
                             lvFics.findSimilarClicked(url);
                         }
                     }
@@ -235,7 +249,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            mainWindow.selectedIndex = indexOfThisDelegate
+                            actOnAFic(indexOfThisDelegate)
                             if(lvFics.authorFilterActive === false)
                             {
                                 lvFics.authorFilterActive = true;
@@ -268,7 +282,7 @@ Rectangle{
                     color: "red"
                     onLinkActivated: {
                         Qt.openUrlExternally(link)
-                        mainWindow.selectedIndex = indexOfThisDelegate
+                        actOnAFic(indexOfThisDelegate)
                     }
                 }
             }
@@ -345,7 +359,7 @@ Rectangle{
                             anchors.fill : parent
                             propagateComposedEvents : true
                             onClicked : {
-                                mainWindow.selectedIndex = indexOfThisDelegate
+                                actOnAFic(indexOfThisDelegate)
                                 lvFics.fandomToggled(index);
                             }
                         }
@@ -379,7 +393,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            mainWindow.selectedIndex = indexOfThisDelegate
+                            actOnAFic(indexOfThisDelegate)
                             if(lvFics.authorFilterActive === false)
                             {
                                 lvFics.authorFilterActive = true;
@@ -407,7 +421,7 @@ Rectangle{
                     font.family: "Verdana"
                     font.bold: false
                     onLinkActivated: {
-                        mainWindow.selectedIndex = indexOfThisDelegate
+                        actOnAFic(indexOfThisDelegate)
                         Qt.openUrlExternally(link)
                     }
 
@@ -450,7 +464,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            mainWindow.selectedIndex = indexOfThisDelegate
+                            actOnAFic(indexOfThisDelegate)
                             lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
                             console.log("Clicked heart icon")
                         }
@@ -740,7 +754,7 @@ Rectangle{
                         color: "black"
                         text: atChapter === 0 ? chapters : atChapter
                         onEditingFinished: {
-                            mainWindow.selectedIndex = indexOfThisDelegate
+                            actOnAFic(indexOfThisDelegate)
                             console.log("Edited text is: ", text)
                             lvFics.chapterChanged(indexOfThisDelegate, parseInt(text));
                         }
@@ -786,7 +800,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            mainWindow.selectedIndex = indexOfThisDelegate
+                            actOnAFic(indexOfThisDelegate)
                             lvFics.scoreAdjusted(indexOfThisDelegate, index + 1, score);
 
                         }

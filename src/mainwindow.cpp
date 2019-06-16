@@ -686,7 +686,7 @@ void MainWindow::SaveCurrentQuery()
     frame.havePagesBefore = windowObject->property("havePagesBefore").toBool();
     frame.havePagesAfter = windowObject->property("havePagesAfter").toBool();
     frame.selectedIndex = windowObject->property("selectedIndex").toInt();
-
+    //frame.selectedIndex = windowObject->property("selectedIndex").toInt();
     env.searchHistory.Push(frame);
 }
 
@@ -3289,6 +3289,7 @@ void MainWindow::on_pbPreviousResults_clicked()
 
     QObject* windowObject= qwFics->rootObject();
     currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
+    windowObject->setProperty("actionTakenSinceNavigation", false);
 
     auto frame = env.searchHistory.GetPrevious();
 
@@ -3301,7 +3302,9 @@ void MainWindow::on_pbPreviousResults_clicked()
     LoadFrameIntoUI(frame);
 
     QMetaObject::invokeMethod(qwFics->rootObject(), "centerOnSelection", Qt::DirectConnection,
-                              Q_ARG(int, frame.selectedIndex));
+                              Q_ARG(QVariant, frame.selectedIndex));
+
+
 }
 
 void MainWindow::on_pbNextResults_clicked()
@@ -3311,6 +3314,7 @@ void MainWindow::on_pbNextResults_clicked()
 
     QObject* windowObject= qwFics->rootObject();
     currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
+    windowObject->setProperty("actionTakenSinceNavigation", false);
 
     auto frame = env.searchHistory.GetNext();
 
@@ -3323,7 +3327,7 @@ void MainWindow::on_pbNextResults_clicked()
     LoadFrameIntoUI(frame);
 
     QMetaObject::invokeMethod(qwFics->rootObject(), "centerOnSelection", Qt::DirectConnection,
-                              Q_ARG(int, frame.selectedIndex));
+                              Q_ARG(QVariant, frame.selectedIndex));
 }
 
 void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
@@ -3331,13 +3335,13 @@ void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
     holder->SetData(env.fanfics);
     ProcessStoryFilterIntoGUI(frame.filter);
 
-    QObject* windowObject= qwFics->rootObject();
     int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : env.filter.recordLimit;
+    QObject* windowObject= qwFics->rootObject();
+    windowObject->setProperty("selectedIndex", frame.selectedIndex);
     windowObject->setProperty("totalPages", env.filter.recordLimit > 0 ? (env.sizeOfCurrentQuery/currentActuaLimit) + 1 : 1);
     windowObject->setProperty("currentPage", env.filter.recordLimit > 0 ? env.filter.recordPage : 0);
     windowObject->setProperty("havePagesBefore", frame.havePagesBefore);
     windowObject->setProperty("havePagesAfter", frame.havePagesAfter);
-    windowObject->setProperty("selectedIndex", frame.selectedIndex);
     windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
 
 }

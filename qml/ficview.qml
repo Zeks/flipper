@@ -30,6 +30,9 @@ Rectangle {
     property string totalPages: "0"
     property string magnetTag
     property bool magnetTop: true
+
+    property bool actionTakenSinceNavigation: false
+
     property color leadingColor:  "#fceaef"
 
     property bool havePagesBefore: false
@@ -56,6 +59,7 @@ Rectangle {
     property string chartValueCountRare
     property string chartValueCountUnique
     function centerOnSelection(index) {
+        console.log("centering on: ", index)
        lvFics.positionViewAtIndex(index, ListView.Center);
     }
     Image {

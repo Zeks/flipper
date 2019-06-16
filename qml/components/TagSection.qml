@@ -33,6 +33,10 @@ Rectangle{
     property bool selectionMode: false
     property bool canAdd: false
     property string tagSelectorColor: '#ABB6D3'
+    function actOnAFic(ficIndex) {
+        mainWindow.selectedIndex = ficIndex
+        mainWindow.actionTakenSinceNavigation = true
+    }
     function deactivate(index) {
         console.log("deactivating" + tagName);
         root.active = false
@@ -100,7 +104,7 @@ Rectangle{
                 mainWindow.detailedGenreMode = !mainWindow.detailedGenreMode
             }
             onClicked: {
-                mainWindow.selectedIndex = indexOfThisDelegate
+                actOnAFic(indexOfThisDelegate)
                 print("Current index: " + delegateItem.indexOfThisDelegate)
                 lvFics.currentIndex = delegateItem.indexOfThisDelegate
                 active = true
@@ -124,7 +128,7 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    mainWindow.selectedIndex = indexOfThisDelegate
+                    actOnAFic(indexOfThisDelegate)
                     if(canAdd)
                     {
                         console.log(" height  is" );
@@ -207,7 +211,7 @@ Rectangle{
                     anchors.fill : parent
                     propagateComposedEvents : false
                     onClicked : {
-                        mainWindow.selectedIndex = indexOfThisDelegate
+                        actOnAFic(indexOfThisDelegate)
                         mainWindow.magnetTag = modelData
                     }
                 }
@@ -306,7 +310,7 @@ Rectangle{
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    mainWindow.selectedIndex = indexOfThisDelegate
+                    actOnAFic(indexOfThisDelegate)
                     if(!selectionMode)
                         return
 
