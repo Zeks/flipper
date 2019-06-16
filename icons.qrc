@@ -86,5 +86,7 @@
         <file>icons/save.png</file>
         <file>icons/note_gray.png</file>
         <file>icons/note.png</file>
+        <file>icons/target_blue.png</file>
+        <file>icons/target_grey.png</file>
     </qresource>
 </RCC>

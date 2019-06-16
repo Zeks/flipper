@@ -38,9 +38,10 @@ Rectangle{
     property var delegateTags
     property string delegateTag
     property string also_delete_tag
-    function actOnAFic(ficIndex) {
-        console.log("acting on a fic")
+    function actOnAFic(ficIndex, ficUrl) {
+        //console.log("acting on a fic")
         mainWindow.selectedIndex = ficIndex
+        mainWindow.selectedUrl = ficUrl
         mainWindow.actionTakenSinceNavigation = true
     }
     Image {
@@ -68,7 +69,7 @@ Rectangle{
             anchors.fill : parent
             propagateComposedEvents : true
             onClicked : {
-                actOnAFic(indexOfThisDelegate)
+                actOnAFic(indexOfThisDelegate, url)
                 if(!clickable)
                     return;
                 if(delegateTags.indexOf(delegateTag) === -1)

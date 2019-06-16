@@ -63,6 +63,7 @@ struct FilterFrame{
 
     bool havePagesBefore = false;
     bool havePagesAfter = false;
+    bool authorFilterActive = false;
 
     QVector<core::Fic> fanfics; // filtered fanfic data
 

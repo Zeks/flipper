@@ -25,6 +25,7 @@ Rectangle {
     id:mainWindow
     property int textSize: 22
     property int selectedIndex: -1
+    property string selectedUrl
 
     property string currentPage: "0"
     property string totalPages: "0"
@@ -131,6 +132,26 @@ Rectangle {
         width: parent.width
         RowLayout{
             id:row
+            Image {
+                id: imgTarget
+                anchors.bottomMargin: 3
+                width: mainWindow.textSize
+                height: mainWindow.textSize
+                sourceSize.height: mainWindow.textSize
+                sourceSize.width: mainWindow.textSize
+                visible: true
+                source: mainWindow.selectedIndex == -1 ? "qrc:/icons/icons/target_grey.png" : "qrc:/icons/icons/target_blue.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        if(mainWindow.selectedIndex == -1)
+                            return
+                        mainWindow.actionTakenSinceNavigation = false
+                        mainWindow.centerOnSelection(mainWindow.selectedIndex);
+                    }
+                }
+            }
             Image {
                 id: imgBack
                 anchors.bottomMargin: 3

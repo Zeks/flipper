@@ -61,9 +61,10 @@ Rectangle{
             lvFics.tagDeletedInTagWidget(tag,rownum)
     }
 
-    function actOnAFic(ficIndex) {
+    function actOnAFic(ficIndex, ficUrl) {
         //console.log("acting on a fic")
         mainWindow.selectedIndex = ficIndex
+        mainWindow.selectedUrl = ficUrl
         mainWindow.actionTakenSinceNavigation = true
     }
     function tagListActivated(activatedIndex) {
@@ -104,6 +105,7 @@ Rectangle{
                 else
                     mainWindow.actionTakenSinceNavigation = false
                 mainWindow.selectedIndex = indexOfThisDelegate
+                mainWindow.selectedUrl = url
                 delegateItem.mouseClicked();
                 // deliberately not using act function here to allow manual selection where it is needed
 
@@ -195,7 +197,7 @@ Rectangle{
                         propagateComposedEvents : true
                         hoverEnabled :true
                         onClicked : {
-                            actOnAFic(indexOfThisDelegate)
+                            actOnAFic(indexOfThisDelegate, url)
                             lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
                         }
                         onEntered: {
@@ -234,7 +236,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            actOnAFic(indexOfThisDelegate)
+                            actOnAFic(indexOfThisDelegate, url)
                             lvFics.findSimilarClicked(url);
                         }
                     }
@@ -249,7 +251,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            actOnAFic(indexOfThisDelegate)
+                            actOnAFic(indexOfThisDelegate, url)
                             if(lvFics.authorFilterActive === false)
                             {
                                 lvFics.authorFilterActive = true;
@@ -282,7 +284,7 @@ Rectangle{
                     color: "red"
                     onLinkActivated: {
                         Qt.openUrlExternally(link)
-                        actOnAFic(indexOfThisDelegate)
+                        actOnAFic(indexOfThisDelegate, url)
                     }
                 }
             }
@@ -359,7 +361,7 @@ Rectangle{
                             anchors.fill : parent
                             propagateComposedEvents : true
                             onClicked : {
-                                actOnAFic(indexOfThisDelegate)
+                                actOnAFic(indexOfThisDelegate, url)
                                 lvFics.fandomToggled(index);
                             }
                         }
@@ -393,7 +395,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            actOnAFic(indexOfThisDelegate)
+                            actOnAFic(indexOfThisDelegate, url)
                             if(lvFics.authorFilterActive === false)
                             {
                                 lvFics.authorFilterActive = true;
@@ -421,7 +423,7 @@ Rectangle{
                     font.family: "Verdana"
                     font.bold: false
                     onLinkActivated: {
-                        actOnAFic(indexOfThisDelegate)
+                        actOnAFic(indexOfThisDelegate, url)
                         Qt.openUrlExternally(link)
                     }
 
@@ -464,7 +466,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            actOnAFic(indexOfThisDelegate)
+                            actOnAFic(indexOfThisDelegate, url)
                             lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
                             console.log("Clicked heart icon")
                         }
@@ -754,7 +756,7 @@ Rectangle{
                         color: "black"
                         text: atChapter === 0 ? chapters : atChapter
                         onEditingFinished: {
-                            actOnAFic(indexOfThisDelegate)
+                            actOnAFic(indexOfThisDelegate, url)
                             console.log("Edited text is: ", text)
                             lvFics.chapterChanged(indexOfThisDelegate, parseInt(text));
                         }
@@ -800,7 +802,7 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         onClicked : {
-                            actOnAFic(indexOfThisDelegate)
+                            actOnAFic(indexOfThisDelegate, url)
                             lvFics.scoreAdjusted(indexOfThisDelegate, index + 1, score);
 
                         }

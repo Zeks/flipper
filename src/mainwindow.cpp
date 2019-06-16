@@ -685,7 +685,10 @@ void MainWindow::SaveCurrentQuery()
     QObject* windowObject= qwFics->rootObject();
     frame.havePagesBefore = windowObject->property("havePagesBefore").toBool();
     frame.havePagesAfter = windowObject->property("havePagesAfter").toBool();
-    frame.selectedIndex = windowObject->property("selectedIndex").toInt();
+    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    frame.authorFilterActive = childObject->property("authorFilterActive").toBool();
+
+    //frame.selectedIndex = windowObject->property("selectedIndex").toInt();
 
     SetNextEnabled(false);
 
@@ -713,13 +716,42 @@ void MainWindow::LoadData()
     //ui->edtResults->clear();
     //ui->edtResults->setUpdatesEnabled(false);
 
+    QObject* windowObject= qwFics->rootObject();
+    auto& currentFrame = env.searchHistory.AccessCurrent();
+    currentFrame.selectedIndex = windowObject->property("selectedIndex").toInt();
+    currentFrame.fanfics = holder->GetData();
+
     env.LoadData();
 
+
+
+
+
     SaveCurrentQuery();
+
     if(env.searchHistory.Size() > 1)
         SetPreviousEnabled(true);
-    QObject* windowObject= qwFics->rootObject();
+
+
     windowObject->setProperty("selectedIndex", -1);
+
+    auto url = windowObject->property("selectedUrl").toString();
+    int counter = 0;
+    int modelIndex = -1;
+    for(auto& fic : env.fanfics)
+    {
+        if(fic.url("ffn") == url)
+        {
+            modelIndex = counter;
+            break;
+        }
+        counter++;
+    }
+
+    windowObject->setProperty("selectedIndex", modelIndex);
+
+
+
     holder->SetData(env.fanfics);
     //    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     //    childObject->setProperty("authorFilterActive", false);
@@ -3278,7 +3310,6 @@ void MainWindow::on_chkOnlySlash_stateChanged(int arg1)
 {
     if(arg1)
         SilentCall(ui->chkInvertedSlashFilter)->setChecked(false);
-
 }
 
 
@@ -3345,6 +3376,8 @@ void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
     windowObject->setProperty("havePagesBefore", frame.havePagesBefore);
     windowObject->setProperty("havePagesAfter", frame.havePagesAfter);
     windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
+    QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
+    childObject->setProperty("authorFilterActive", frame.authorFilterActive);
 
 }
 
