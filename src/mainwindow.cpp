@@ -3371,6 +3371,11 @@ void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
     int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : env.filter.recordLimit;
     QObject* windowObject= qwFics->rootObject();
     windowObject->setProperty("selectedIndex", frame.selectedIndex);
+    if(frame.selectedIndex != -1)
+    {
+        auto url = env.fanfics[frame.selectedIndex].url("ffn");
+        windowObject->setProperty("selectedUrl", url);
+    }
     windowObject->setProperty("totalPages", env.filter.recordLimit > 0 ? (env.sizeOfCurrentQuery/currentActuaLimit) + 1 : 1);
     windowObject->setProperty("currentPage", env.filter.recordLimit > 0 ? env.filter.recordPage : 0);
     windowObject->setProperty("havePagesBefore", frame.havePagesBefore);
