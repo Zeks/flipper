@@ -357,7 +357,7 @@ public slots:
     // invoked on "Search" click
     void on_pbLoadDatabase_clicked();
     void LoadAutomaticSettingsForRecListSources(int size);
-    QList<QSharedPointer<core::Fic> > LoadFavourteLinksFromFFNProfile(QString);
+    QSet<QString> LoadFavourteIdsFromFFNProfile(QString);
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
     void OnQMLAuthorToggled(QVariant, QVariant active);

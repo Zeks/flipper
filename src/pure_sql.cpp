@@ -2081,7 +2081,7 @@ DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
     SqlContext<QHash<int, bool> > ctx(db);
     ctx.FetchSelectFunctor(qs, [](QHash<int, bool>& data, QSqlQuery& q){
         data[q.value("fandom_id").toInt()] = q.value("including_crossovers").toBool();
-    });
+    }, true);
     return ctx.result;
 }
 

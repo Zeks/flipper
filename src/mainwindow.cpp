@@ -138,6 +138,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cbCrossovers->hide();
     ui->pbFandomSwitch->hide();
 
+    ui->pbProfileCompare->setVisible(false);
+    ui->leFFNProfileLeft->setVisible(false);
+    ui->leFFNProfileRight->setVisible(false);
+
     SetPreviousEnabled(false);
     SetNextEnabled(false);
 }
@@ -995,9 +999,9 @@ void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
     }
 }
 
-QList<QSharedPointer<core::Fic>> MainWindow::LoadFavourteLinksFromFFNProfile(QString url)
+QSet<QString> MainWindow::LoadFavourteIdsFromFFNProfile(QString url)
 {
-    QList<QSharedPointer<core::Fic>> result;
+    QSet<QString> result;
     //need to make sure it *is* FFN url
     //https://www.fanfiction.net/u/3697775/Rumour-of-an-Alchemist
     QRegularExpression rx("https://www.fanfiction.net/u/(\\d)+");
@@ -1007,14 +1011,7 @@ QList<QSharedPointer<core::Fic>> MainWindow::LoadFavourteLinksFromFFNProfile(QSt
         QMessageBox::warning(nullptr, "Warning!", "URL is not an FFN author url\nNeeeds to be a https://www.fanfiction.net/u/NUMERIC_ID");
         return result;
     }
-    result = env.LoadAuthorFics(url);
-    auto end = result.end();
-    auto it = std::remove_if(result.begin(), result.end(), [](QSharedPointer<core::Fic> f){
-            return f->ficSource == core::Fic::efs_own_works;
-});
-    if(it != end)
-        result.erase(it, end);
-
+    result = env.LoadAuthorFicIdsForRecCreation(url);
     return result;
 }
 
@@ -2880,7 +2877,10 @@ void MainWindow::DetectSlashSearchState()
 
 void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leUrl)
 {
-    auto fics = LoadFavourteLinksFromFFNProfile(leUrl->text());
+    auto fics = LoadFavourteIdsFromFFNProfile(leUrl->text());
+    pbMain->setValue(0);
+    //pbMain->hide();
+    QCoreApplication::processEvents();
     if(fics.size() == 0)
         return;
 
@@ -2893,16 +2893,16 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
     font.setPixelSize(14);
 
     edit->setFont(font);
-    std::sort(fics.begin(), fics.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-        return f1->author->name < f2->author->name;
-    });
+//    std::sort(fics.begin(), fics.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+//        return f1->author->name < f2->author->name;
+//    });
 
     for(auto fic: fics)
     {
-        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
-        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
-        edit->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
-        edit->insertHtml("<br>");
+//        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
+//        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
+//        edit->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+        edit->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
     }
 }
 
@@ -3095,7 +3095,7 @@ void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
 void MainWindow::on_pbUseProfile_clicked()
 {
     ui->edtRecsContents->clear();
-    LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl);
+    //LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl);
     on_pbRecsLoadFFNProfileIntoSource_clicked();
     if(ui->edtRecsContents->toPlainText().trimmed().size() == 0)
         return;
@@ -3190,33 +3190,34 @@ void MainWindow::on_pbProfileCompare_clicked()
 
     ui->edtAnalysisResults->setFont(font);
 
-    QList<QSharedPointer<core::Fic> > result;
+    QStringList result;
 
-    auto ficsLeft = LoadFavourteLinksFromFFNProfile(ui->leFFNProfileLeft->text());
-    auto ficsRight = LoadFavourteLinksFromFFNProfile(ui->leFFNProfileRight->text());
+    QStringList ficsLeft = LoadFavourteIdsFromFFNProfile(ui->leFFNProfileLeft->text()).toList();
+    QStringList ficsRight = LoadFavourteIdsFromFFNProfile(ui->leFFNProfileRight->text()).toList();
     if(ficsLeft.size() == 0 || ficsRight.size() == 0)
     {
         QMessageBox::warning(nullptr, "Warning!", "One of the lists is empty or ould not be acquired");
         return;
     }
 
-    std::sort(ficsLeft.begin(), ficsLeft.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-        return f1->ffn_id < f2->ffn_id;
+    std::sort(ficsLeft.begin(), ficsLeft.end(), [](QString f1, QString f2){
+        return f1 < f2;
+    });
+    std::sort(ficsRight.begin(), ficsRight.end(), [](QString f1, QString f2){
+        return f1 < f2;
     });
 
-    std::sort(ficsRight.begin(), ficsRight.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-        return f1->ffn_id < f2->ffn_id;
-    });
+
 
     std::set_intersection(ficsLeft.begin(), ficsLeft.end(),
                           ficsRight.begin(), ficsRight.end(),
-                          std::back_inserter(result), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-        return f1->ffn_id < f2->ffn_id;
+                          std::back_inserter(result), [](QString f1, QString f2){
+        return f1 < f2;
     });
 
-    std::sort(result.begin(), result.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-        return f1->author->name < f2->author->name;
-    });
+//    std::sort(result.begin(), result.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+//        return f1->author->name < f2->author->name;
+//    });
 
     ui->edtAnalysisResults->insertHtml(QString("First user has %1 favourites.").arg(QString::number(ficsLeft.size())));
     ui->edtAnalysisResults->insertHtml("<br>");
@@ -3224,12 +3225,16 @@ void MainWindow::on_pbProfileCompare_clicked()
     ui->edtAnalysisResults->insertHtml("<br>");
     ui->edtAnalysisResults->insertHtml(QString("They have %1 favourites in common.").arg(QString::number(result.size())));
     ui->edtAnalysisResults->insertHtml("<br>");
+    // here I need to query for information on story ids from the database
+    // then query data for fics I have no information on
+
+
     for(auto fic: result)
     {
-        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
-        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
-        ui->edtAnalysisResults->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
-        ui->edtAnalysisResults->insertHtml("<br>");
+//        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
+//        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
+//        ui->edtAnalysisResults->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+        ui->edtAnalysisResults->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
     }
 }
 

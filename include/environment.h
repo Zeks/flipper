@@ -198,6 +198,7 @@ public:
     void Log(QString);
 
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
+    QSet<QString> LoadAuthorFicIdsForRecCreation(QString url);
     QList<QSharedPointer<core::Fic>>  LoadAuthorFics(QString url);
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);

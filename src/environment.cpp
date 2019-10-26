@@ -852,7 +852,82 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
     return author;
 }
 
-QList<QSharedPointer<core::Fic>> CoreEnvironment::LoadAuthorFics(QString url)
+QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url)
+{
+    auto result = LoadAuthorFics(url);
+    QSet<QString> urlResult;
+    for(auto fic : result)
+    {
+        if(fic->ficSource != core::Fic::efs_own_works)
+            urlResult.insert(QString::number(fic->ffn_id));
+    }
+
+    if(result.size() < 500)
+        return urlResult;
+    QMessageBox::information(nullptr, "Attention!", "Due to fanfiction.net still not fixing their favourites page displaying only 500 entries."
+                                             "Your profile will have to be parsed from m.fanfiction.net page.\n"
+                                             "Please grab a cup of coffee or smth after you press OK to close this window and wait a bit.");
+
+    // first we need to create an m. link
+    url = url.remove("https://www.");
+    url = url.prepend("https://m.");
+    url = url.append("/?a=fs");
+    QString prototype = url;
+    // we need to grab the initial page and figure out the exact amount of pages we need to parse
+
+    WebPage page;
+    TimedAction fetchAction("Author initial mobile page fetch", [&](){
+        page = env::RequestPage(prototype.trimmed(),  ECacheMode::dont_use_cache);
+    });
+    fetchAction.run(false);
+
+    QString content;
+    QRegularExpression rx("p[=](\\d+)['][>]Last[<][/]a[>]");
+    auto match = rx.match(page.content);
+    if(!match.hasMatch())
+    {
+        // failed to grab the last record, exiting with info from just basic page
+        return urlResult;
+    }
+    int amountOfPagesToGrab = match.captured(1).toInt();
+
+    // generating all of the urls that will need to be grabbed
+    QStringList mobileUrls;
+    // 26th page onwards can't be reached without m.
+    const int startOfUnreachablePart = 26;
+    for(int i = startOfUnreachablePart; i <= amountOfPagesToGrab; i++)
+        mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
+
+    QList<QString> mobileStories;
+    QRegularExpression rxStoryId("/s/(\\d+)/1");
+    emit requestProgressbar(amountOfPagesToGrab - 25);
+    int counter = 1;
+    for(auto mobileUrl : mobileUrls)
+    {
+        WebPage page;
+        TimedAction fetchAction("Author mobile page fetch", [&](){
+            page = env::RequestPage(mobileUrl.trimmed(),  ECacheMode::dont_use_cache);
+        });
+        fetchAction.run(false);
+        // need to fetch only story ids for now
+        // this should be enough to create the rec list
+
+        QRegularExpressionMatchIterator iterator = rxStoryId.globalMatch(page.content);
+        while (iterator.hasNext()) {
+             QRegularExpressionMatch match = iterator.next();
+             QString word = match.captured(1);
+             urlResult << word;
+         }
+        counter++;
+        emit updateCounter(counter);
+        if(page.source != EPageSource::cache)
+            QThread::msleep(500);
+        QCoreApplication::processEvents();
+    }
+    return urlResult;
+}
+
+QList<QSharedPointer<core::Fic> > CoreEnvironment::LoadAuthorFics(QString url)
 {
     QStringList result;
     WebPage page;
@@ -866,6 +941,7 @@ QList<QSharedPointer<core::Fic>> CoreEnvironment::LoadAuthorFics(QString url)
     parser.authorName = name;
     parser.ProcessPage(page.url, page.content);
     emit updateInfo(parser.diagnostics.join(""));
+
     return parser.processedStuff;
 }
 

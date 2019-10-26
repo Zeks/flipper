@@ -142,6 +142,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         //result.crossover= q.value("CROSSOVER").toInt();
         //result.fandom= q.value("FANDOM").toString();
         result.generated= q.value("GENERATION_DATE").toDateTime();
+        result.source = EPageSource::cache;
         result.type = static_cast<EPageType>(q.value("PAGE_TYPE").toInt());
     }
     return result;
