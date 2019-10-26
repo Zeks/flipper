@@ -52,7 +52,9 @@ auto fetchFunc =  [](auto& container, QDataStream& in)->void{
 
     int key;
     if constexpr(is_hash<ContainerType>::value)
-    in >> key;
+    {
+        in >> key;
+    }
 
     if constexpr(is_roaring<ContainerValueType>::value)
     {
@@ -96,7 +98,8 @@ auto valueFetcher){
     auto resultHolder = resultCreator();
     QString fileName = QString("%1_%2.txt").arg(nameBase).arg(QString::number(file));
     QFile data(fileName);
-    if (data.open(QFile::ReadOnly)) {
+    if (data.open(QFile::ReadOnly))
+    {
         QDataStream in(&data);
         int size;
         in >> size;

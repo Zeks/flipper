@@ -137,12 +137,6 @@ CREATE INDEX if not exists  I_FGI_PK  ON FIC_GENRE_ITERATIONS (fic_id ASC);
  alter table algopasses add column pass_3 boolean default false;
  alter table algopasses add column pass_4 boolean default false;
  alter table algopasses add column pass_5 boolean default false;
- --alter table slashpasses add column pass_6 integer default 0;
- --alter table slashpasses add column pass_7 integer default 0;
- --alter table slashpasses add column pass_8 integer default 0;
- --alter table slashpasses add column pass_9 integer default 0;
- --alter table slashpasses add column pass_10 integer default 0;
--- alter table slashpasses add column pass_XD integer default 0;
  
  CREATE INDEX if not exists I_SP_FID ON algopasses (fic_id ASC);
  CREATE INDEX if not exists I_SP_YES_KEY ON algopasses (keywords_yes ASC);
