@@ -166,7 +166,7 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
     QMap<int, QList<int>> authorsByMatches;
     for(auto author : filteredAuthors)
         authorsByMatches[allAuthors[author].matches].push_back(allAuthors[author].id);
-    QLOG_INFO() << "authorsByMatches: " << authorsByMatches;
+    //QLOG_INFO() << "authorsByMatches: " << authorsByMatches;
     // then we go through matches calculating averages and checking that conditions are satisfied
 
     // this will tell us where cutoff happened
