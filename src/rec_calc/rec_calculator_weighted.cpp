@@ -91,6 +91,12 @@ std::function<AuthorWeightingResult(AuthorResult&, int, int)> RecCalculatorImplW
 }
 
 void RecCalculatorImplWeighted::CalcWeightingParams(){
+    QLOG_INFO() << "inputs to weighting:";
+    QLOG_INFO() << "matchsum:" << matchSum;
+    QLOG_INFO() << "inputs.faves.size():" << inputs.faves.size();
+    QLOG_INFO() << "ratioSum:" << ratioSum;
+    QLOG_INFO() << "filteredAuthors.size():" << filteredAuthors.size();
+
     int matchMedian = matchSum/inputs.faves.size();
     ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(filteredAuthors.size());
 
@@ -131,6 +137,11 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     });
     sigma2Dist = ratioSigma2 - filteredAuthors.begin();
     qDebug() << "distance to sigma15 is: " << sigma2Dist;
+
+    QLOG_INFO() << "outputs from weighting:";
+    QLOG_INFO() << "quad:" << quad;
+    QLOG_INFO() << "sigma2Dist:" << sigma2Dist;
+    QLOG_INFO() << "ratioMedian:" << ratioMedian;
 }
 
 AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches){
@@ -165,6 +176,15 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
         result.authorType = AuthorWeightingResult::EAuthorType::common;
     }
     return result;
+}
+
+void RecCalculatorImplWeighted::AdjustRatioForAutomaticParams()
+{
+    if(!params->isAutomatic)
+        return;
+    ratioSum = 0;
+    for(auto author : filteredAuthors)
+        ratioSum+=allAuthors[author].ratio;
 }
 
 }

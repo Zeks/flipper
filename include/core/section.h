@@ -843,8 +843,9 @@ public:
     QString tagToUse;
     int minimumMatch = -1;
     int alwaysPickAt = -2;
-    double pickRatio = -1;
+    int maxUnmatchedPerMatch = -1;
     int userFFNId = -1;
+    bool isAutomatic = true;
     bool useWeighting = false;
     bool useMoodAdjustment = false;
     QSet<int> ignoredFandoms;

@@ -462,7 +462,7 @@ void CoreEnvironment::ProcessListIntoRecommendations(QString list)
         QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
         params->name = in.readLine().split("#").at(1);
         params->minimumMatch= in.readLine().split("#").at(1).toInt();
-        params->pickRatio = in.readLine().split("#").at(1).toDouble();
+        params->maxUnmatchedPerMatch = in.readLine().split("#").at(1).toDouble();
         params->alwaysPickAt = in.readLine().split("#").at(1).toInt();
         interfaces.recs->LoadListIntoDatabase(params);
         database::Transaction transaction(db);
@@ -665,7 +665,7 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
 
 
         if( stats->matchesWithReference >= params->alwaysPickAt
-                || (stats->matchRatio <= params->pickRatio && stats->matchesWithReference >= params->minimumMatch) )
+                || (stats->matchRatio <= params->maxUnmatchedPerMatch && stats->matchesWithReference >= params->minimumMatch) )
         {
             alLCounter++;
             auto author = interfaces.authors->GetById(authorId);
@@ -765,7 +765,7 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     params->minimumMatch = 1;
     params->name = "similar";
     params->tagToUse = "generictag";
-    params->pickRatio = 9999999999;
+    params->maxUnmatchedPerMatch = 9999999999;
     interfaces.tags->SetTagForFic(id, "generictag");
     BuildRecommendations(params, {id}, false, !authorsLoaded);
     interfaces.tags->DeleteTag("generictag");

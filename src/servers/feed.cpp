@@ -412,12 +412,13 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     //reqContext.dbContext.InitAuthors();
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+    params->isAutomatic = task->is_automatic_params();
     params->name =  proto_converters::FS(task->list_name());
     params->minimumMatch = task->min_fics_to_match();
     params->userFFNId = task->users_ffn_profile_id();
     if(params->userFFNId != -1)
         params->userFFNId  = reqContext.dbContext.authors->GetRecommenderIDByFFNId(params->userFFNId);
-    params->pickRatio = task->max_unmatched_to_one_matched();
+    params->maxUnmatchedPerMatch = task->max_unmatched_to_one_matched();
     params->alwaysPickAt = task->always_pick_at();
     params->useWeighting = task->use_weighting();
     params->useMoodAdjustment = task->use_mood_filtering();
@@ -430,7 +431,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
         params->majorNegativeVotes.insert(task->user_data().negative_feedback().strongnegatives(i));
 
-
+    QLOG_INFO() << "Dumping received list creation params:";
     params->Log();
 
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
@@ -480,7 +481,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                     !params->likedAuthors.contains(holder->holder.fics[key]->authorId))
             {
                 bool axisGenre = false;;
-                qDebug() << "attempting to purge fic: " << key;
+                //qDebug() << "attempting to purge fic: " << key;
                 QHash<int, QList<genre_stats::GenreBit>>& ref = holder->holder.genreComposites;
                 QList<genre_stats::GenreBit>& refList = ref[key];
                 double maxValue = 0.;
@@ -493,7 +494,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
                 for(auto genreBit: refList)
                 {
-                    qDebug() << "genres: " << genreBit.genres << " relevance: " << genreBit.relevance;
+                    //qDebug() << "genres: " << genreBit.genres << " relevance: " << genreBit.relevance;
                     if(genreBit.relevance/maxValue > 0.45)
                     {
                         for(auto actualGenre : genreBit.genres)
@@ -540,7 +541,14 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 continue;
             (*targetList->mutable_match_report())[key] = list.matchReport[key];
         }
+        response->mutable_list()->mutable_used_params()->set_is_automatic(params->isAutomatic);
+        response->mutable_list()->mutable_used_params()->set_min_fics_to_match(params->minimumMatch);
+        response->mutable_list()->mutable_used_params()->set_max_unmatched_to_one_matched(params->maxUnmatchedPerMatch);
+        response->mutable_list()->mutable_used_params()->set_always_pick_at(params->alwaysPickAt);
+        response->mutable_list()->mutable_used_params()->set_use_weighting(params->useWeighting);
+        response->mutable_list()->mutable_used_params()->set_use_mood_filtering(params->useMoodAdjustment);
     });
+
     dataPassAction.run();
     QLOG_INFO() << "Byte size will be: " << response->ByteSize();
     return Status::OK;

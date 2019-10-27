@@ -24,8 +24,8 @@ namespace core {
 
 static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<RecommendationList> params)
 {
-    bool firstPass =  author.ratio <= params->pickRatio && author.matches > 0;
-    author.usedRatio = params->pickRatio;
+    bool firstPass =  author.ratio <= params->maxUnmatchedPerMatch && author.matches > 0;
+    author.usedRatio = params->maxUnmatchedPerMatch;
     author.usedSize= params->minimumMatch;
 
     if(!firstPass)
@@ -35,13 +35,13 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
     if(author.listDiff.touchyDifference.has_value())
     {
         auto authorcoef = author.listDiff.touchyDifference.value();
-        if((cleanRatio > params->pickRatio) && authorcoef  >= 0.4)
+        if((cleanRatio > params->maxUnmatchedPerMatch) && authorcoef  >= 0.4)
         {
             qDebug() << "skipping author: " << author.id << "with coef: "  << authorcoef  << " and ratio: " <<  cleanRatio;
             author.ratio = 999999;
         }
     }
-    bool secondPass = author.ratio <= params->pickRatio && author.matches > 0;;
+    bool secondPass = author.ratio <= params->maxUnmatchedPerMatch && author.matches > 0;;
     return secondPass;
 };
 

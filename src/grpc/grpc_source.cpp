@@ -602,7 +602,7 @@ public:
           deadline(deadline)
     {
             grpc::ChannelArguments args;
-            args.SetMaxReceiveMessageSize(10000000);
+            args.SetMaxReceiveMessageSize(100000000);
             auto customChannel = grpc::CreateCustomChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials(), args);
             stub_ = ProtoSpace::Feeder::NewStub(customChannel);
     }
@@ -891,8 +891,9 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     task.set_list_name(proto_converters::TS(recList.name));
     task.set_always_pick_at(recList.alwaysPickAt);
     task.set_return_sources(true);
+    task.set_is_automatic_params(recList.isAutomatic);
     task.set_min_fics_to_match(recList.minimumMatch);
-    task.set_max_unmatched_to_one_matched(static_cast<int>(recList.pickRatio));
+    task.set_max_unmatched_to_one_matched(static_cast<int>(recList.maxUnmatchedPerMatch));
     task.set_use_weighting(recList.useWeighting);
     task.set_use_mood_filtering(recList.useMoodAdjustment);
     task.set_users_ffn_profile_id(recList.userFFNId);
@@ -955,6 +956,14 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
                             response->list().breakdowns(i).counts_unique(),
                             response->list().breakdowns(i).votes_unique());
     }
+    // need to fill the params for the list as they were adjusted on the server
+    recList.isAutomatic = response->list().used_params().is_automatic();
+    recList.minimumMatch = response->list().used_params().min_fics_to_match();
+    recList.maxUnmatchedPerMatch = response->list().used_params().max_unmatched_to_one_matched();
+    recList.alwaysPickAt = response->list().used_params().always_pick_at();
+    recList.useWeighting = response->list().used_params().use_weighting();
+    recList.useMoodAdjustment = response->list().used_params().use_mood_filtering();
+
     return true;
 }
 void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)

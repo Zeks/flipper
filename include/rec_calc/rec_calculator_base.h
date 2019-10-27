@@ -81,6 +81,8 @@ public:
     void CollectFicMatchQuality();
     void Filter(QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
                 QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> actions);
+
+
     virtual void CollectVotes();
 
     virtual void CalcWeightingParams() = 0;
@@ -90,6 +92,9 @@ public:
 
     virtual std::optional<double> GetNeutralDiffForLists(uint32_t){return {};}
     virtual std::optional<double> GetTouchyDiffForLists(uint32_t){return {};}
+
+    virtual void AutoAdjustRecommendationParamsAndFilter();
+    virtual void AdjustRatioForAutomaticParams();
 
     int matchSum = 0;
     RecInputVectors inputs;
@@ -110,7 +115,7 @@ static auto matchesFilter = [](AuthorResult& author, QSharedPointer<Recommendati
 };
 static auto ratioFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params)
 {
-    return author.ratio <= params->pickRatio && author.matches > 0;
+    return author.ratio <= params->maxUnmatchedPerMatch && author.matches > 0;
 };
 static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author)
 {

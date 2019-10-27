@@ -129,6 +129,7 @@ message RecommendationListData{
     // no conflict & harassment possibilities here
     repeated int32 author_ids                   = 7;
     repeated int32 purged                       = 8;
+    RecommendationListParams used_params         = 9;
 }
 message NegativeTagsToken{
     repeated int32 basicNegatives       = 1;
@@ -139,6 +140,15 @@ message RecListUserData{
     IgnoredFandomsToken ignored_fandoms = 1;
     NegativeTagsToken negative_feedback = 2;
     repeated int32 liked_authors        = 3;
+}
+
+message RecommendationListParams{
+    bool is_automatic                   = 1;
+    int32 min_fics_to_match             = 2;
+    int32 max_unmatched_to_one_matched  = 3;
+    int32 always_pick_at                = 4;
+    bool use_weighting                  = 5;
+    bool use_mood_filtering             = 6;
 }
 
 message RecommendationListCreationRequest{
@@ -153,12 +163,13 @@ message RecommendationListCreationRequest{
     RecListUserData user_data           = 9;
     int32 users_ffn_profile_id          = 10;
     bool use_mood_filtering             = 11;
+    bool is_automatic_params            = 12;
 }
 
 message RecommendationListCreationResponse{
     string list_token           = 1;
     RecommendationListData list = 2;
-    ResponseInfo response_info   = 3;
+    ResponseInfo response_info  = 3;
 }
 
 message RecommendationListFetchRequest{

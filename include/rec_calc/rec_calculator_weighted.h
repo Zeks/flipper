@@ -42,10 +42,10 @@ double sqrt_coef(double ratio, double median, double sigma, int base, int scaler
 class RecCalculatorImplWeighted : public RecCalculatorImplBase{
 public:
     RecCalculatorImplWeighted(RecInputVectors input): RecCalculatorImplBase(input){}
-    virtual FilterListType GetFilterList();
-    virtual ActionListType GetActionList();
-    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc();
-    void CalcWeightingParams();
+    virtual FilterListType GetFilterList() override;
+    virtual ActionListType GetActionList() override;
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override;
+    void CalcWeightingParams() override;
     AuthorWeightingResult CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches);
 
     double ratioSum = 0;
@@ -56,6 +56,10 @@ public:
     int counter17Sigma = 0;
 
 
+
+    // RecCalculatorImplBase interface
+public:
+    void AdjustRatioForAutomaticParams() override;
 };
 
 

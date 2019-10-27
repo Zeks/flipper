@@ -1741,7 +1741,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
-    params->pickRatio = 9999;
+    params->maxUnmatchedPerMatch = 9999;
     params->alwaysPickAt = 1;
     params->name = "#similarfics";
     QString storedList = ui->cbRecGroup->currentText();
@@ -2598,7 +2598,7 @@ void MainWindow::on_chkRecsAutomaticSettings_toggled(bool checked)
         ui->leRecsAlwaysPickAt->setEnabled(false);
         ui->leRecsPickRatio->setEnabled(false);
         ui->leRecsMinimumMatches->setEnabled(false);
-        LoadAutomaticSettingsForRecListSources(ui->edtRecsContents->toPlainText().split("\n").size());
+        //LoadAutomaticSettingsForRecListSources(ui->edtRecsContents->toPlainText().split("\n").size());
     }
     else
     {
@@ -2656,8 +2656,10 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
         return QSharedPointer<core::RecommendationList>();
     }
-    params->minimumMatch = ui->leRecsMinimumMatches->text().toInt();
-    params->pickRatio = ui->leRecsPickRatio->text().toInt();
+    params->isAutomatic = ui->chkRecsAutomaticSettings->isChecked();
+
+    params->minimumMatch = params->isAutomatic  ? 1 : ui->leRecsMinimumMatches->text().toInt();
+    params->maxUnmatchedPerMatch = ui->leRecsPickRatio->text().toInt();
     params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
     params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
     params->useMoodAdjustment = ui->chkFilterGenres->isChecked();

@@ -31,6 +31,13 @@ void RecCalculatorImplBase::Calc(){
         Filter(filters, actions);
     });
     filtering.run();
+
+    TimedAction resultAdjustment("adjusting results",[&](){
+        AutoAdjustRecommendationParamsAndFilter();
+        AdjustRatioForAutomaticParams();
+    });
+    resultAdjustment.run();
+
     TimedAction weighting("weighting",[&](){
         CalcWeightingParams();
     });
@@ -47,10 +54,15 @@ void RecCalculatorImplBase::Calc(){
         CollectVotes();
     });
     collecting.run();
+
+
+
+
     TimedAction report("writing match report",[&](){
         for(auto& author: filteredAuthors)
             result.matchReport[allAuthors[author].matches]++;
     });
+
     report.run();
 }
 
@@ -137,6 +149,79 @@ void RecCalculatorImplBase::CollectVotes()
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
+}
+
+void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
+{
+    // if the options were supplied manually, we just return what we got
+    if(!params->isAutomatic)
+        return;
+    // else we try to adjust minimum mathes so that a set of conditionsa re met
+    // 1) for the average of 3 numbers we take a differnece between it and the middle one
+    //    divide by the middle one and check to see if it's >0.05
+    // 2) only apply this if average of 3 is > 70
+
+
+    // first we need to prepare the dataset
+    QMap<int, QList<int>> authorsByMatches;
+    for(auto author : filteredAuthors)
+        authorsByMatches[allAuthors[author].matches].push_back(allAuthors[author].id);
+    QLOG_INFO() << "authorsByMatches: " << authorsByMatches;
+    // then we go through matches calculating averages and checking that conditions are satisfied
+
+    // this will tell us where cutoff happened
+    // if it's 2, then we need to take a look if we need to _relax_ settings, not tighten them
+    int stoppingIndex = -1;
+    QList<int> matches = authorsByMatches.keys();
+    QLOG_INFO() << "Keys used: " << matches;
+    QLOG_INFO() << "matches count is: " << matches.count();
+    if(matches.size() > 3)
+    {
+        for(int i = 0; i < matches.count() - 2; i ++){
+            QLOG_INFO() << "starting processing of: " << i;
+            int firstCount = authorsByMatches[matches[i]].count();
+            int secondCount = authorsByMatches[matches[i+1]].count();
+            int thirdCount = authorsByMatches[matches[i+2]].count();
+            QLOG_INFO() << firstCount << secondCount << thirdCount;
+            double average = static_cast<double>(firstCount + secondCount + thirdCount)/3.;
+            //QLOG_INFO() << "average is: " << average;
+            if(i == 0 && average < 70)
+            {
+                stoppingIndex = 0;
+                break;
+            }
+            double relative = std::abs((static_cast<double>(secondCount) - average)/static_cast<double>(secondCount));
+            QLOG_INFO() << "relative is: " << relative;
+            //QLOG_INFO() << " first condition: " << (thirdCount - firstCount)/2. << " second condition: " <<  secondCount/5.;
+            if(relative > 0.05 && (std::abs(firstCount - thirdCount)) < 30 && stoppingIndex < 0)
+            {
+                QLOG_INFO() << "relative bigger than threshhold, stopping: " << relative;
+                stoppingIndex = i;
+
+            }
+        }
+    }
+    stoppingIndex = stoppingIndex < 0 ? 0 : stoppingIndex;
+    QLOG_INFO() << "Adjustment stopped at: " << stoppingIndex;
+    //QHash<int, AuthorResult> result;
+    QList<int> result;
+    params->minimumMatch = matches[stoppingIndex];
+    for(auto matchCount : matches){
+        if(matchCount < params->minimumMatch)
+        {
+            //QLOG_INFO() << "discarding match count: " << matchCount;
+            continue;
+        }
+        //QLOG_INFO() << "adding authors for match count: " << matchCount << " amount:" << authorsByMatches[matchCount].size();
+        result += authorsByMatches[matchCount];
+
+    }
+    filteredAuthors = result;
+}
+
+void RecCalculatorImplBase::AdjustRatioForAutomaticParams()
+{
+    // intentionally does nothing
 }
 
 Roaring RecCalculatorImplBase::BuildIgnoreList()
@@ -393,6 +478,7 @@ void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSh
 
     });
 }
+
 
 
 

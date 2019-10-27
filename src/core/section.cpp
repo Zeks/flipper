@@ -195,11 +195,12 @@ void core::RecommendationList::Log()
 
     qDebug() << "List id: " << id ;
     qDebug() << "name: " << name ;
+    qDebug() << "automaic: " << isAutomatic;
     qDebug() << "ficCount: " << ficCount ;
     qDebug() << "tagToUse: " << tagToUse ;
     qDebug() << "minimumMatch: " << minimumMatch ;
     qDebug() << "alwaysPickAt: " << alwaysPickAt ;
-    qDebug() << "pickRatio: " << pickRatio ;
+    qDebug() << "pickRatio: " << maxUnmatchedPerMatch ;
     qDebug() << "created: " << created ;
 }
 

@@ -957,7 +957,7 @@ DiagnosticSQLResult<QList<QSharedPointer<core::RecommendationList>>> GetAvailabl
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         list->alwaysPickAt = q.value("always_pick_at").toInt();
         list->minimumMatch = q.value("minimum").toInt();
-        list->pickRatio= q.value("pick_ratio").toDouble();
+        list->maxUnmatchedPerMatch= q.value("pick_ratio").toDouble();
         list->id= q.value("id").toInt();
         list->name= q.value("name").toString();
         list->ficCount= q.value("fic_count").toInt();
@@ -975,7 +975,7 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         list->alwaysPickAt = q.value("always_pick_at").toInt();
         list->minimumMatch = q.value("minimum").toInt();
-        list->pickRatio= q.value("pick_ratio").toDouble();
+        list->maxUnmatchedPerMatch= q.value("pick_ratio").toDouble();
         list->id= q.value("id").toInt();
         list->name= q.value("name").toString();
         list->ficCount= q.value("fic_count").toInt();
@@ -993,7 +993,7 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         list->alwaysPickAt = q.value("always_pick_at").toInt();
         list->minimumMatch = q.value("minimum").toInt();
-        list->pickRatio= q.value("pick_ratio").toDouble();
+        list->maxUnmatchedPerMatch= q.value("pick_ratio").toDouble();
         list->id= q.value("id").toInt();
         list->name= q.value("name").toString();
         list->ficCount= q.value("fic_count").toInt();
@@ -1213,7 +1213,7 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
                  " sources = :sources where name = :name");
     ctx.ReplaceQuery(qs);
     ctx.bindValue("minimum",list->minimumMatch);
-    ctx.bindValue("pick_ratio",list->pickRatio);
+    ctx.bindValue("pick_ratio",list->maxUnmatchedPerMatch);
     ctx.bindValue("always_pick_at",list->alwaysPickAt);
     ctx.bindValue("created",creationTimestamp);
     ctx.bindValue("use_weighting",list->useWeighting);
@@ -1467,13 +1467,13 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db)
 DiagnosticSQLResult<QSet<int> > GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid, QSqlDatabase db)
 {
     QLOG_INFO() << "always: " << params->alwaysPickAt;
-    QLOG_INFO() << "ratio: " << params->pickRatio;
+    QLOG_INFO() << "ratio: " << params->maxUnmatchedPerMatch;
     QLOG_INFO() << "min: " << params->minimumMatch;
     QLOG_INFO() << "///////////FIRST FETCH////////";
     SqlContext<QSet<int>> ctx(db);
     ctx.bindValue("uid1", uid);
     ctx.bindValue("uid2", uid);
-    ctx.bindValue("ratio", params->pickRatio);
+    ctx.bindValue("ratio", params->maxUnmatchedPerMatch);
     ctx.bindValue("min", params->minimumMatch);
     ctx.bindValue("always_pick_at", params->alwaysPickAt);
     //qDebug() << "feature avail: " << db.driver()->hasFeature(QSqlDriver::NamedPlaceholders);
@@ -2515,7 +2515,7 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecL
         ctx.result.data = QSharedPointer<core::RecommendationList>{new core::RecommendationList};
         ctx.result.data->id = q.value("id").toInt();
         ctx.result.data->name = q.value("name").toString();
-        ctx.result.data->pickRatio = q.value("pick_ratio").toDouble();
+        ctx.result.data->maxUnmatchedPerMatch = q.value("pick_ratio").toDouble();
         ctx.result.data->alwaysPickAt = q.value("always_pick_at").toInt();
         ctx.result.data->minimumMatch = q.value("minimum").toInt();
         ctx.result.data->useWeighting = q.value("use_weighting").toInt();
