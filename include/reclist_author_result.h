@@ -25,8 +25,11 @@ struct AuthorMatchBreakdown{
 };
 struct AuthorResult{
     int id;
-    int matches;
-    double ratio;
+    int matches = 0;
+    int negativeMatches = 0;
+    double ratio = 0;
+    double negativeRatio = 0;
+    double negativeToPositiveMatches = 0;
     int size;
     uint64_t sizeAfterIgnore = 0;
     double distance = 0;

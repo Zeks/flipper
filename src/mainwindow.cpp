@@ -2706,6 +2706,14 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     auto params = CreateReclistParamsFromUI(ownProfile);
     if(!params)
         return;
+
+
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    QStringList negativeTags = settings.value("Tags/majorNegative", "").toString().split(",");
+    auto majorNegativeFics = env.GetFicsForTags(negativeTags);
+    params->majorNegativeVotes = majorNegativeFics;
+
     if(ui->cbRecsSource->currentIndex() == 0)
     {
 

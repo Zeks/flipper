@@ -428,7 +428,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         params->likedAuthors.insert(task->user_data().liked_authors(i));
     for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
         params->minorNegativeVotes.insert(task->user_data().negative_feedback().basicnegatives(i));
-    for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
+    for(auto i = 0; i< task->user_data().negative_feedback().strongnegatives_size(); i++)
         params->majorNegativeVotes.insert(task->user_data().negative_feedback().strongnegatives(i));
 
     QLOG_INFO() << "Dumping received list creation params:";
@@ -476,6 +476,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             int adjustedVotes = list.recommendations[key]/(baseVotes);
             if(adjustedVotes < 1)
                 adjustedVotes = 1;
+            // purging based on mood
             if((params->useMoodAdjustment && (list.recommendations[key]/(baseVotes*list.pureMatches[key])) < 1) &&
                     list.decentMatches[key] == 0 &&
                     !params->likedAuthors.contains(holder->holder.fics[key]->authorId))

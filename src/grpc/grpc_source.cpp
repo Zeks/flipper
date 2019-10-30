@@ -905,6 +905,9 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     for(auto authorId: recList.likedAuthors)
         userData->add_liked_authors(authorId);
 
+    for(auto vote: recList.majorNegativeVotes)
+        userData->mutable_negative_feedback()->add_strongnegatives(vote);
+
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));

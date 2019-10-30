@@ -43,20 +43,12 @@ void RecCalculatorImplBase::Calc(){
     });
     weighting.run();
 
-    // not very satisfied with the results
-    //    TimedAction authorMatchQuality("Fetching match qualities for authors",[&](){
-    //        CollectFicMatchQuality();
-    //    });
-    //    authorMatchQuality.run();
-
+    CalculateNegativeToPositiveRatio();
 
     TimedAction collecting("collecting votes ",[&](){
         CollectVotes();
     });
     collecting.run();
-
-
-
 
     TimedAction report("writing match report",[&](){
         for(auto& author: filteredAuthors)
@@ -64,6 +56,7 @@ void RecCalculatorImplBase::Calc(){
     });
 
     report.run();
+    ReportNegativeResults();
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -145,6 +138,26 @@ void RecCalculatorImplBase::CollectVotes()
                 vote = votesBase*coef;
             }
             vote = vote * matchCountSimilarityCoef;
+            if(doTrashCounting &&  ownMajorNegatives.cardinality() > startOfTrashCounting){
+                if(allAuthors[author].negativeToPositiveMatches > (averageNegativeToPositiveMatches*2))
+                {
+                    double originalVote = vote;
+                    vote = vote / (1 + (allAuthors[author].negativeToPositiveMatches - averageNegativeToPositiveMatches));
+                    if(allAuthors[author].negativeToPositiveMatches > averageNegativeToPositiveMatches*2)
+                        QLOG_INFO() << "reducing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
+                }
+                else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/2.)){
+                    double originalVote = vote;
+                    vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors[author].negativeToPositiveMatches)*3);
+                    QLOG_INFO() << "increasing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
+                }
+                else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.))
+                    vote = vote * (1 + ((averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.) - allAuthors[author].negativeToPositiveMatches));
+
+//                else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches))
+//                    vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors[author].negativeToPositiveMatches));
+            }
+
             result.recommendations[fic]+= vote;
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
@@ -324,6 +337,11 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             //                QLOG_INFO() << "this leaves unignored: " << unignoredSize;
             temp = temp & it.value();
             author.matches = temp.cardinality();
+
+            Roaring negative = ownMajorNegatives;
+            negative = negative & it.value();
+            author.negativeMatches = negative.cardinality();
+
             author.sizeAfterIgnore = unignoredSize;
             if(ignores.cardinality() == 0)
                 author.sizeAfterIgnore = author.size;
@@ -466,6 +484,7 @@ void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSh
 
     std::for_each(allAuthors.begin(), allAuthors.end(), [this, filters, actions, params,thisPtr](AuthorResult& author){
         author.ratio = author.matches != 0 ? static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches) : 999999;
+        author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.size) : 999999;
         author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
         bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
                 return filter(author, params) == 0;
@@ -477,6 +496,51 @@ void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSh
         });
 
     });
+}
+
+void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
+{
+    for(auto author : filteredAuthors){
+        double ratioForAuthor = static_cast<double>(allAuthors[author].negativeMatches)/static_cast<double>(allAuthors[author].matches);
+        averageNegativeToPositiveMatches += ratioForAuthor;
+        allAuthors[author].negativeToPositiveMatches = ratioForAuthor;
+    }
+    averageNegativeToPositiveMatches /=filteredAuthors.size();
+    QLOG_INFO() << " average ratio division result: " << averageNegativeToPositiveMatches;
+}
+
+void RecCalculatorImplBase::ReportNegativeResults()
+{
+
+    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
+        return allAuthors[id1].ratio < allAuthors[id2].ratio;
+    });
+    int limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
+    QLOG_INFO() << "RATIO REPORT";
+    for(int i = 0; i < limit; i++){
+        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
+                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
+                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
+        << endl
+                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
+                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
+
+    }
+
+    QLOG_INFO() << "MATCH REPORT";
+    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
+        return allAuthors[id1].matches > allAuthors[id2].matches;
+    });
+    limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
+    for(int i = 0; i < limit; i++){
+        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
+                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
+                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
+        << endl
+                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
+                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
+
+    }
 }
 
 

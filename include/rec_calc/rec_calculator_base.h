@@ -82,6 +82,8 @@ public:
     void Filter(QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
                 QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> actions);
 
+    void CalculateNegativeToPositiveRatio();
+    void ReportNegativeResults();
 
     virtual void CollectVotes();
 
@@ -104,8 +106,12 @@ public:
     QHash<int, AuthorResult> allAuthors;
     int maximumMatches = 0;
     int prevMaximumMatches = 0;
+    double averageNegativeToPositiveMatches = 0;
+    int startOfTrashCounting = 200;
+    bool doTrashCounting = true;
     QList<int> filteredAuthors;
     Roaring ownFavourites;
+    Roaring ownMajorNegatives;
     RecommendationListResult result;
 
     int votesBase = 1;

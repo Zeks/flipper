@@ -991,6 +991,16 @@ QSet<int> CoreEnvironment::GetAuthorsContainingFicFromRecList(int fic, QString r
     return resultingAuthors;
 }
 
+QSet<int> CoreEnvironment::GetFicsForTags(QStringList tags)
+{
+    interfaces::TagIDFetcherSettings tagFetcherSettings;
+    tagFetcherSettings.tags = tags;
+    tagFetcherSettings.allowSnoozed = true;
+
+    auto fics  = interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
+    return fics;
+}
+
 void CoreEnvironment::RefreshSnoozes()
 {
     auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();

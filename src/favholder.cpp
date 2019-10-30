@@ -93,6 +93,9 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
         calculator.reset(new RecCalculatorImplDefault({holder.faves, holder.fics, holder.authorMoodDistributions}));
     calculator->fetchedFics = fetchedFics;
     calculator->params = params;
+    for(auto fic : params->majorNegativeVotes)
+        calculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));
+    QLOG_INFO() << "Received negative votes: " << params->majorNegativeVotes.size();
     TimedAction action("Reclist Creation",[&](){
         calculator->Calc();
     });

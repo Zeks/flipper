@@ -37,7 +37,7 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
         auto authorcoef = author.listDiff.touchyDifference.value();
         if((cleanRatio > params->maxUnmatchedPerMatch) && authorcoef  >= 0.4)
         {
-            qDebug() << "skipping author: " << author.id << "with coef: "  << authorcoef  << " and ratio: " <<  cleanRatio;
+            //qDebug() << "skipping author: " << author.id << "with coef: "  << authorcoef  << " and ratio: " <<  cleanRatio;
             author.ratio = 999999;
         }
     }
