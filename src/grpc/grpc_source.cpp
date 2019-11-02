@@ -880,7 +880,10 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* ffn = task.mutable_id_packs();
+    auto* data = task.mutable_data();
+    auto* ffn = data->mutable_id_packs();
+    auto* params = data->mutable_general_params();
+
     //std::sort(std::begin(recList.ficData.fics), std::end(recList.ficData.fics));
     //qDebug() << "Source fics  for list: ";
     for(auto fic: recList.ficData.fics)
@@ -888,16 +891,16 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
         //qDebug() << fic;
         ffn->add_ffn_ids(fic);
     }
-    task.set_list_name(proto_converters::TS(recList.name));
-    task.set_always_pick_at(recList.alwaysPickAt);
-    task.set_return_sources(true);
-    task.set_is_automatic_params(recList.isAutomatic);
-    task.set_min_fics_to_match(recList.minimumMatch);
-    task.set_max_unmatched_to_one_matched(static_cast<int>(recList.maxUnmatchedPerMatch));
-    task.set_use_weighting(recList.useWeighting);
-    task.set_use_mood_filtering(recList.useMoodAdjustment);
-    task.set_users_ffn_profile_id(recList.userFFNId);
-    auto userData = task.mutable_user_data();
+    data->set_list_name(proto_converters::TS(recList.name));
+    params->set_always_pick_at(recList.alwaysPickAt);
+    params->set_is_automatic(recList.isAutomatic);
+    params->set_min_fics_to_match(recList.minimumMatch);
+    params->set_max_unmatched_to_one_matched(static_cast<int>(recList.maxUnmatchedPerMatch));
+    params->set_use_weighting(recList.useWeighting);
+    params->set_use_mood_filtering(recList.useMoodAdjustment);
+    params->set_users_ffn_profile_id(recList.userFFNId);
+
+    auto userData = data->mutable_user_data();
     auto ignores = userData->mutable_ignored_fandoms();
     for(auto ignore: recList.ignoredFandoms)
         ignores->add_fandom_ids(ignore);
@@ -1377,15 +1380,15 @@ bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseIn
 
 bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request,  ProtoSpace::ResponseInfo* info)
 {
-    if(request->list_name().size() > 100)
+    if(request->data().list_name().size() > 100)
         return false;
-    if(request->min_fics_to_match() <= 0 || request->min_fics_to_match() > 10000)
+    if(request->data().general_params().min_fics_to_match() <= 0 || request->data().general_params().min_fics_to_match() > 10000)
         return false;
-    if(request->max_unmatched_to_one_matched() <= 0)
+    if(request->data().general_params().max_unmatched_to_one_matched() <= 0)
         return false;
-    if(request->always_pick_at() < 1)
+    if(request->data().general_params().always_pick_at() < 1)
         return false;
-    if(!VerifyIDPack(request->id_packs(), info))
+    if(!VerifyIDPack(request->data().id_packs(), info))
         return false;
     return true;
 }
@@ -1419,4 +1422,5 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserDa
 
     return true;
 }
+
 

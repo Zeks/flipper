@@ -85,21 +85,9 @@ message FicCountResponse{
 }
 
 
-
-
 message RecommendationListCreationRequest{
-    ControlInfo controls                = 1;
-    string list_name                    = 2;
-    int32 min_fics_to_match             = 3;
-    int32 max_unmatched_to_one_matched  = 4;
-    int32 always_pick_at                = 5;
-    SiteIDPack id_packs                 = 6;
-    bool return_sources                 = 7;
-    bool use_weighting                  = 8;
-    RecListUserData user_data           = 9;
-    int32 users_ffn_profile_id          = 10;
-    bool use_mood_filtering             = 11;
-    bool is_automatic_params            = 12;
+    ControlInfo controls                        = 1;
+    RecommendationListRequestData data          = 2;
 }
 
 message RecommendationListCreationResponse{

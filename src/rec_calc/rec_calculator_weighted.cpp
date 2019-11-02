@@ -175,6 +175,7 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
     {
         result.authorType = AuthorWeightingResult::EAuthorType::common;
     }
+    author.authorMatchCloseness = result.authorType;
     return result;
 }
 

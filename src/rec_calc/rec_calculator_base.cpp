@@ -57,6 +57,7 @@ void RecCalculatorImplBase::Calc(){
 
     report.run();
     ReportNegativeResults();
+    FillFilteredAuthorsForFics();
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -329,7 +330,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 //                QLOG_INFO() << "ficl list size is: " << it.value().cardinality();
                 //                QLOG_INFO() << "of those ignored are: " << ignoredTemp.cardinality();
             }
-            author.size = it.value().cardinality();
+            author.fullListSize = it.value().cardinality();
             Roaring temp = ownFavourites;
             // first we need to remove ignored fics
             auto unignoredSize = it.value().xor_cardinality(ignoredTemp);
@@ -344,7 +345,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
 
             author.sizeAfterIgnore = unignoredSize;
             if(ignores.cardinality() == 0)
-                author.sizeAfterIgnore = author.size;
+                author.sizeAfterIgnore = author.fullListSize;
             if(maximumMatches < author.matches)
             {
                 prevMaximumMatches = maximumMatches;
@@ -484,13 +485,14 @@ void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSh
 
     std::for_each(allAuthors.begin(), allAuthors.end(), [this, filters, actions, params,thisPtr](AuthorResult& author){
         author.ratio = author.matches != 0 ? static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches) : 999999;
-        author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.size) : 999999;
+        author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : 999999;
         author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
         bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
                 return filter(author, params) == 0;
     });
         if(fail)
             return;
+
         std::for_each(actions.begin(), actions.end(), [thisPtr, &author](decltype(actions)::value_type action){
             action(thisPtr, author);
         });
@@ -563,6 +565,19 @@ void RecCalculatorImplBase::ReportNegativeResults()
                 << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
                 << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
 
+    }
+}
+
+void RecCalculatorImplBase::FillFilteredAuthorsForFics()
+{
+
+    for(auto ficId : result.recommendations.keys())
+    {
+        for(auto author : filteredAuthors)
+        {
+            if(inputs.faves[author].contains(ficId))
+                authorsForFics[ficId].push_back(author);
+        }
     }
 }
 

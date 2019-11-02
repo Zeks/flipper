@@ -84,6 +84,7 @@ public:
 
     void CalculateNegativeToPositiveRatio();
     void ReportNegativeResults();
+    void FillFilteredAuthorsForFics();
 
     virtual void CollectVotes();
 
@@ -113,6 +114,7 @@ public:
     Roaring ownFavourites;
     Roaring ownMajorNegatives;
     RecommendationListResult result;
+    QHash<uint32_t, QVector<uint32_t>> authorsForFics;
 
     int votesBase = 1;
 };

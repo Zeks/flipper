@@ -100,6 +100,9 @@ public:
     Status RecommendationListCreation(ServerContext* context, const ProtoSpace::RecommendationListCreationRequest* task,
                                       ProtoSpace::RecommendationListCreationResponse* response) override;
 
+    Status DiagnosticRecommendationListCreation(ServerContext* context, const ProtoSpace::DiagnosticRecommendationListCreationRequest* task,
+                                      ProtoSpace::DiagnosticRecommendationListCreationResponse* response) override;
+
 
     Status GetDBFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
                        ProtoSpace::FicIdResponse* response) override;

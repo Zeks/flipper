@@ -95,6 +95,7 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserDa
 bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseInfo* info);
 bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request, ProtoSpace::ResponseInfo *info);
 
+
 namespace proto_converters
 {
 

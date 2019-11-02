@@ -23,21 +23,7 @@ struct AuthorMatchBreakdown{
     bool priority2 = false;
     bool priority3 = false;
 };
-struct AuthorResult{
-    int id;
-    int matches = 0;
-    int negativeMatches = 0;
-    double ratio = 0;
-    double negativeRatio = 0;
-    double negativeToPositiveMatches = 0;
-    int size;
-    uint64_t sizeAfterIgnore = 0;
-    double distance = 0;
-    double usedRatio = 0;
-    int usedSize= 0;
-    AuthorMatchBreakdown breakdown;
-    ListMoodDifference listDiff;
-};
+
 struct AuthorWeightingResult
 {
     enum class EAuthorType{
@@ -59,10 +45,31 @@ struct AuthorWeightingResult
     EAuthorType authorType;
 };
 
+struct AuthorResult{
+    uint64_t sizeAfterIgnore = 0;
+
+    int id;
+    int matches = 0;
+    int negativeMatches = 0;
+    int fullListSize;
+    int usedMinimumMatrch= 0;
+
+    double ratio = 0;
+    double negativeRatio = 0;
+    double negativeToPositiveMatches = 0;
+    double distance = 0;
+    double usedRatio = 0;
+
+    AuthorWeightingResult::AuthorWeightingResult::EAuthorType authorMatchCloseness = AuthorWeightingResult::EAuthorType::common;
+    AuthorMatchBreakdown breakdown;
+    ListMoodDifference listDiff;
+};
+
 inline uint qHash(AuthorWeightingResult::EAuthorType key, uint seed)
  {
      return ::qHash(static_cast<uint>(key), seed);
  }
+
 struct MatchBreakdown{
   uint32_t ficId = -1;
   QHash<AuthorWeightingResult::EAuthorType, int> authorTypes;

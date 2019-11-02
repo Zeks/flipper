@@ -6,14 +6,12 @@ package ProtoSpace;
 
 
 
+
+
+
 message DiagnosticRecommendationListCreationRequest{
     ControlInfo controls                        = 1;
-    string list_name                            = 2;
-    RecommendationListParams generalParams      = 3;
-    SiteIDPack id_packs                         = 4;
-    RecListUserData user_data                   = 5;
-   
-
+    RecommendationListRequestData data          = 2;
 }
 
 message AuthorParamsForRecommendationList{
