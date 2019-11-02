@@ -143,13 +143,13 @@ void RecCalculatorImplBase::CollectVotes()
                 {
                     double originalVote = vote;
                     vote = vote / (1 + (allAuthors[author].negativeToPositiveMatches - averageNegativeToPositiveMatches));
-                    if(allAuthors[author].negativeToPositiveMatches > averageNegativeToPositiveMatches*2)
-                        QLOG_INFO() << "reducing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
+                    //if(allAuthors[author].negativeToPositiveMatches > averageNegativeToPositiveMatches*2)
+                        //QLOG_INFO() << "reducing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
                 else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/2.)){
                     double originalVote = vote;
                     vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors[author].negativeToPositiveMatches)*3);
-                    QLOG_INFO() << "increasing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
+                    //QLOG_INFO() << "increasing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
                 else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.))
                     vote = vote * (1 + ((averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.) - allAuthors[author].negativeToPositiveMatches));
@@ -515,6 +515,7 @@ void RecCalculatorImplBase::ReportNegativeResults()
     std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
         return allAuthors[id1].ratio < allAuthors[id2].ratio;
     });
+
     int limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
     QLOG_INFO() << "RATIO REPORT";
     for(int i = 0; i < limit; i++){
@@ -530,6 +531,28 @@ void RecCalculatorImplBase::ReportNegativeResults()
     QLOG_INFO() << "MATCH REPORT";
     std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
         return allAuthors[id1].matches > allAuthors[id2].matches;
+    });
+    limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
+    for(int i = 0; i < limit; i++){
+        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
+                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
+                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
+        << endl
+                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
+                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
+
+    }
+
+    QLOG_INFO() << "NEGATIVE REPORT";
+    QList<int> zeroAuthors;
+    for(auto author : filteredAuthors)
+    {
+        if(allAuthors[author].negativeMatches == 0)
+            zeroAuthors.push_back(author);
+    }
+
+    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
+        return allAuthors[id1].negativeMatches < allAuthors[id2].negativeMatches ;
     });
     limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
     for(int i = 0; i < limit; i++){
