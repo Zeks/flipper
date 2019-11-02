@@ -1,0 +1,64 @@
+syntax = "proto3";
+import "server_base_structs.proto";
+import "recommendations.proto";
+
+package ProtoSpace;
+
+
+
+message DiagnosticRecommendationListCreationRequest{
+    ControlInfo controls                        = 1;
+    string list_name                            = 2;
+    RecommendationListParams generalParams      = 3;
+    SiteIDPack id_packs                         = 4;
+    RecListUserData user_data                   = 5;
+   
+
+}
+
+message AuthorParamsForRecommendationList{
+    int32 author_id                             = 1;
+    int32 full_list_size                        = 2;
+    int32 total_matches                         = 3;
+    int32 negative_matches                      = 4;
+    
+    // common, uncommon, rare, unique
+    int32 match_category                        = 5; 
+    int32 list_size_without_ignores             = 6;
+    double ratio_differnce_on_neutral_mood      = 7;
+    double ratio_differnce_on_touchy_mood       = 8;
+}
+
+
+message AuthorsForFic{
+    int32 fic_id             = 1;
+    repeated int32 author_id = 2;
+}
+
+message DiagnosticRecommendationListData{
+    bool list_ready                                                            = 1;
+    string list_name                                                           = 2;
+    
+    // fic_id -> list of author ids
+    repeated AuthorsForFic matches                                             = 3; 
+                                   
+    double quadratic_deviation                                                 = 4;
+    double median_value                                                        = 5;
+    int32 distance_to_double_sigma                                             = 6;
+                                   
+                                                                               
+    map<int32, int32> match_report                                             = 7;
+    repeated int32 purged                                                      = 8;
+    
+
+    repeated AuthorParamsForRecommendationList author_params                   = 9;
+    RecommendationListParams used_params                                       = 10;
+}
+
+
+
+message DiagnosticRecommendationListCreationResponse{
+    string list_token           = 1;
+    RecommendationListData list = 2;
+    ResponseInfo response_info  = 3;
+}

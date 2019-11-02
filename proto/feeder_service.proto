@@ -3,29 +3,16 @@ import "fanfic.proto";
 import "fandom.proto";
 import "filter.proto";
 import "favlist.proto";
+import "recommendations.proto";
+import "diagnostic_recommendations.proto";
+import "server_base_structs.proto";
 
 package ProtoSpace;
 
-message ControlInfo{
-    string user_token       = 1;
-}
-message ResponseInfo{
-    bool is_valid                = 1;
-    bool has_usertoken_error     = 2;
-    bool data_size_limit_reached = 3;
-    bool token_in_use            = 4;
-    string error                 = 5;
-}
 
 message TagsToken{
     repeated int32 all_tags       = 1;
     repeated int32 searched_tags  = 2;
-}
-
-
-message IgnoredFandomsToken{
-    repeated int32 fandom_ids           = 1;
-    repeated bool  ignore_crossovers    = 2;
 }
 
 message RecommendationListDataToken
@@ -98,58 +85,7 @@ message FicCountResponse{
 }
 
 
-message SiteIDPack{
-    repeated int32 db_ids =  1;
-    repeated int32 ffn_ids = 2;
-    repeated int32 ao3_ids = 3;
-    repeated int32 sb_ids  = 4;
-    repeated int32 sv_ids  = 5;
-}
-message RecommendationBreakdown{
-    int32 id              = 1;
-    int32 counts_common   = 2;
-    int32 counts_uncommon = 3;
-    int32 counts_rare     = 4;
-    int32 counts_unique   = 5;
-    int32 votes_common    = 6;
-    int32 votes_uncommon  = 7;
-    int32 votes_rare      = 8;
-    int32 votes_unique    = 9;
-}
-message RecommendationListData{
-    bool list_ready                             = 1;
-    string list_name                            = 2;
-    repeated int32 fic_ids                      = 3;
-    repeated int32 fic_matches                  = 4;
-                                                
-    map<int32, int32> match_report              = 5;
-    repeated RecommendationBreakdown breakdowns = 6;
 
-    // these are internal ids
-    // no conflict & harassment possibilities here
-    repeated int32 author_ids                   = 7;
-    repeated int32 purged                       = 8;
-    RecommendationListParams used_params         = 9;
-}
-message NegativeTagsToken{
-    repeated int32 basicNegatives       = 1;
-    repeated int32 strongNegatives      = 2;
-}
-
-message RecListUserData{
-    IgnoredFandomsToken ignored_fandoms = 1;
-    NegativeTagsToken negative_feedback = 2;
-    repeated int32 liked_authors        = 3;
-}
-
-message RecommendationListParams{
-    bool is_automatic                   = 1;
-    int32 min_fics_to_match             = 2;
-    int32 max_unmatched_to_one_matched  = 3;
-    int32 always_pick_at                = 4;
-    bool use_weighting                  = 5;
-    bool use_mood_filtering             = 6;
-}
 
 message RecommendationListCreationRequest{
     ControlInfo controls                = 1;
@@ -171,6 +107,7 @@ message RecommendationListCreationResponse{
     RecommendationListData list = 2;
     ResponseInfo response_info  = 3;
 }
+
 
 message RecommendationListFetchRequest{
     ControlInfo controls                = 1;
@@ -290,6 +227,7 @@ service Feeder {
     rpc GetFicCount(FicCountTask) returns (FicCountResponse) {}
     rpc SyncFandomList(SyncFandomListTask) returns (SyncFandomListResponse) {}
     rpc RecommendationListCreation(RecommendationListCreationRequest) returns (RecommendationListCreationResponse) {}
+    rpc DiagnosticRecommendationListCreation(DiagnosticRecommendationListCreationRequest) returns (DiagnosticRecommendationListCreationResponse) {}
     rpc GetDBFicIDS(FicIdRequest) returns (FicIdResponse) {}
     rpc GetFFNFicIDS(FicIdRequest) returns (FicIdResponse) {}
     rpc GetFavListDetails(FavListDetailsRequest) returns (FavListDetailsResponse) {}

@@ -208,6 +208,9 @@ App{
             "proto/fanfic.proto",
             "proto/fandom.proto",
             "proto/favlist.proto",
+            "proto/diagnostic_recommendations.proto",
+            "proto/recommendations.proto",
+            "proto/server_base_structs.proto",
         ]
         fileTags: ["proto"]
     }
