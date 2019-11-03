@@ -73,6 +73,11 @@ create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUT
 alter table RecommendationLists add column sources varchar;
 alter table RecommendationLists add column use_weighting integer default 1;
 alter table RecommendationLists add column use_mood_adjustment integer default 1;
+alter table RecommendationLists add column has_aux_data integer default 0;
+alter table RecommendationLists add column quadratic_deviation real;
+alter table RecommendationLists add column ratio_median real;
+alter table RecommendationLists add column distance_to_double_sigma integer default -1;
+
 
 CREATE INDEX if not exists  I_RecommendationLists_ID ON RecommendationLists (id asc);
 CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (NAME asc);
@@ -164,3 +169,23 @@ CREATE TABLE if not exists FicAuthors (
 CREATE INDEX if not exists I_FICAUTHORS_FIC_ID ON FicAuthors (fic_id ASC);
 CREATE INDEX if not exists I_FICAUTHORS_AUTHOR_ID ON FicAuthors (author_id ASC);
 
+-- recommeders for fics in diagnostic table;
+CREATE TABLE if not exists RecommendersForFicAndList (
+ list_id integer PRIMARY KEY default -1,
+ fic_id integer default -1,
+ author_id integer default -1);
+CREATE INDEX if not exists I_RECOMMENDERS_FOR_FIC_AND_LIST ON RecommendersForFicAndList (list_id ASC);
+
+-- author params for diagnostic reclist;
+CREATE TABLE if not exists AuthorParamsForRecList (
+ list_id integer  default -1,
+ author_id integer  default -1,
+ full_list_size integer default -1,
+ total_matches integer default -1,
+ negative_matches integer default -1,
+ match_category integer default -1,
+ list_size_without_ignores integer default -1,
+ ratio_difference_on_neutral_mood real,
+ ratio_difference_on_touchy_mood real,
+ PRIMARY KEY (list_id, author_id));
+CREATE INDEX if not exists I_AUTHOR_PARAMS_FOR_RECLIST ON AuthorParamsForRecList (list_id, author_id ASC);
