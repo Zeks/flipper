@@ -3628,7 +3628,7 @@ DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int list_id,
     DiagnosticSQLResult<bool> result;
     result.success = false;
     {
-        QString qs = QString("delete from RecommendersForFicAndList where list_id = :list_id");
+        QString qs = QString("delete from AuthorParamsForRecList where list_id = :list_id");
         SqlContext<bool>(db, qs,BP1(list_id))();
     }
     {

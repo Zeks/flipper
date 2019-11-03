@@ -171,10 +171,10 @@ CREATE INDEX if not exists I_FICAUTHORS_AUTHOR_ID ON FicAuthors (author_id ASC);
 
 -- recommeders for fics in diagnostic table;
 CREATE TABLE if not exists RecommendersForFicAndList (
- list_id integer PRIMARY KEY default -1,
+ list_id integer default -1,
  fic_id integer default -1,
- author_id integer default -1);
-CREATE INDEX if not exists I_RECOMMENDERS_FOR_FIC_AND_LIST ON RecommendersForFicAndList (list_id ASC);
+ author_id integer default -1, PRIMARY KEY (list_id, fic_id, author_id));
+CREATE INDEX if not exists I_RECOMMENDERS_FOR_FIC_AND_LIST_KEYS_LIST_FIC ON RecommendersForFicAndList (fic_id ASC, list_id ASC);
 
 -- author params for diagnostic reclist;
 CREATE TABLE if not exists AuthorParamsForRecList (

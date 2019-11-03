@@ -128,6 +128,7 @@ public:
     Roaring ownMajorNegatives;
     RecommendationListResult result;
     QHash<uint32_t, QVector<uint32_t>> authorsForFics;
+    bool needsDiagnosticData = false;
 
     int votesBase = 1;
 };

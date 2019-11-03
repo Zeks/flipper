@@ -2729,6 +2729,7 @@ void MainWindow::on_pbDiagnosticList_clicked()
     QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
     if(sourceFics.size() == 0)
         return;
+
     env.BuildDiagnosticsForRecList(params, sourceFics);
 }
 

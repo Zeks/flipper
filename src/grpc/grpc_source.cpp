@@ -1015,15 +1015,17 @@ core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationLi
         author.id = response->list().author_params(authorCounter).author_id();
         author.fullListSize = response->list().author_params(authorCounter).full_list_size();
         author.matches = response->list().author_params(authorCounter).total_matches();
-        author.negativeMatches = response->list().author_params(authorCounter).author_id();
+        author.negativeMatches = response->list().author_params(authorCounter).negative_matches();
         author.authorMatchCloseness = static_cast<core::AuthorWeightingResult::EAuthorType>( response->list().author_params(authorCounter).match_category());
         author.sizeAfterIgnore = response->list().author_params(authorCounter).list_size_without_ignores();
         author.listDiff.touchyDifference = response->list().author_params(authorCounter).ratio_difference_on_touchy_mood();
         author.listDiff.neutralDifference = response->list().author_params(authorCounter).ratio_difference_on_neutral_mood();
+        result.authorData.push_back(author);
     }
     result.quad = response->list().quadratic_deviation();
     result.ratioMedian = response->list().ratio_median();
     result.sigma2Dist = response->list().distance_to_double_sigma();
+    result.isValid = true;
 
     return result;
 }

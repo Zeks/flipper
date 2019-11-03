@@ -112,11 +112,14 @@ DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationLis
     QSharedPointer<RecCalculatorImplWeighted> actualCalculator(new RecCalculatorImplMoodAdjusted({holder.faves, holder.fics, holder.authorMoodDistributions}, moodData));
     actualCalculator->fetchedFics = fetchedFics;
     actualCalculator->params = params;
+    actualCalculator->needsDiagnosticData = true;
+
     for(auto fic : params->majorNegativeVotes)
         actualCalculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));
 
     TimedAction action("Reclist Creation",[&](){
         actualCalculator->Calc();
+        QLOG_INFO() << "Param calc finished";
     });
     action.run();
     actualCalculator->result.authors = actualCalculator->filteredAuthors;

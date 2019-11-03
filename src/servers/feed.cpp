@@ -467,7 +467,7 @@ grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerCon
         targetList->set_quadratic_deviation(list.quad);
         targetList->set_ratio_median(list.ratioMedian);
         targetList->set_distance_to_double_sigma(list.sigma2Dist);
-
+        QLOG_INFO() << "passing authors for fics into data structures: " << list.authorsForFics.keys().size();
         auto keys = list.authorsForFics.keys();
         for(auto fic : keys){
             auto* newMatch = targetList->add_matches();
@@ -475,7 +475,7 @@ grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerCon
             for(auto author : list.authorsForFics[fic])
                 newMatch->add_author_id(author);
         }
-
+        QLOG_INFO() << "passing author stats into data: " << list.authorData.size();
         for(auto author : list.authorData)
         {
             auto* authorData  = targetList->add_author_params();
@@ -489,6 +489,7 @@ grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerCon
             authorData->set_ratio_difference_on_touchy_mood(author.listDiff.touchyDifference.value_or(0));
         }
     });
+    dataPassAction.run();
 
 
     return Status::OK;

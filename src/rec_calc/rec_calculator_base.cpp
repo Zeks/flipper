@@ -57,7 +57,8 @@ void RecCalculatorImplBase::Calc(){
 
     report.run();
     ReportNegativeResults();
-    FillFilteredAuthorsForFics();
+    if(needsDiagnosticData)
+        FillFilteredAuthorsForFics();
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -487,6 +488,7 @@ void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSh
         author.ratio = author.matches != 0 ? static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches) : 999999;
         author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : 999999;
         author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
+        author.listDiff.neutralDifference = GetNeutralDiffForLists(author.id);
         bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
                 return filter(author, params) == 0;
     });
@@ -570,15 +572,56 @@ void RecCalculatorImplBase::ReportNegativeResults()
 
 void RecCalculatorImplBase::FillFilteredAuthorsForFics()
 {
-
-    for(auto ficId : result.recommendations.keys())
+    QLOG_INFO() << "Filling authors for fics: " << result.recommendations.keys().size();
+    int counter = 0;
+    // probably need to prefill roaring per fic so that I don't search
+    QHash<uint32_t, Roaring> ficsRoarings;
+    QLOG_INFO() << "Filling fic roarings";
+    for(auto author : filteredAuthors)
     {
-        for(auto author : filteredAuthors)
-        {
-            if(inputs.faves[author].contains(ficId))
-                authorsForFics[ficId].push_back(author);
-        }
+        if(counter%10000)
+            QLOG_INFO() << counter;
+        for(auto fic: inputs.faves[author])
+            ficsRoarings[fic].add(author);
+        if(counter%10000)
+            QLOG_INFO() << "roarings size is: " << ficsRoarings.size();
+        counter++;
     }
+    counter = 0;
+
+    Roaring filterAuthorsRoar;
+    for(auto author : filteredAuthors)
+        filterAuthorsRoar.add(author);
+
+    QLOG_INFO()  << "Authors roar size is: " << filterAuthorsRoar.cardinality();
+
+    QLOG_INFO() << "Filling actual author data";
+    for(auto ficId : result.recommendations.keys()){
+        if(counter%10000 == 0)
+            QLOG_INFO() << "At counter:" << counter;
+
+        auto& ficRoaring = ficsRoarings[ficId];
+        //QLOG_INFO() << "Fic roaring size is:" << ficRoaring.cardinality();
+
+        Roaring temp = filterAuthorsRoar;
+        //QLOG_INFO() << "Author roaring size is:" << ficRoaring.cardinality();
+
+        temp = temp & ficRoaring;
+        //QLOG_INFO() << "Result size is:" << temp.cardinality();
+        if(temp.cardinality() == 0)
+            continue;
+
+        if(!authorsForFics.contains(ficId))
+            authorsForFics[ficId].reserve(1000);
+        for(auto author : temp){
+            authorsForFics[ficId].push_back(author);
+        }
+        counter++;
+//        if(counter > 10)
+//            break;
+    }
+    //QLOG_INFO() << "data at exit is: " << authorsForFics;
+    QLOG_INFO() << "Finished filling authors for fics";
 }
 
 

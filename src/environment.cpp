@@ -708,6 +708,7 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
 int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> list,
                                                     QVector<int> sourceFics)
 {
+    list->id = interfaces.recs->GetListIdForName(list->name);
     qDebug() << "At start list id is: " << list->id;
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     list->ficData.fics = sourceFics;

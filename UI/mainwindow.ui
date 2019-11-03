@@ -267,13 +267,6 @@
                           </item>
                          </layout>
                         </item>
-                        <item row="2" column="2">
-                         <widget class="QPushButton" name="pbDiagnosticList">
-                          <property name="text">
-                           <string>Get Diagnostics</string>
-                          </property>
-                         </widget>
-                        </item>
                         <item row="0" column="2">
                          <layout class="QHBoxLayout" name="horizontalLayout_19">
                           <item>
@@ -424,6 +417,13 @@
                           </property>
                           <property name="text">
                            <string>6</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="2">
+                         <widget class="QPushButton" name="pbDiagnosticList">
+                          <property name="text">
+                           <string>Get Diagnostics</string>
                           </property>
                          </widget>
                         </item>
@@ -593,13 +593,6 @@
                   <widget class="QLabel" name="label_26">
                    <property name="text">
                     <string>Recent Fandom Searches</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QSlider" name="verticalSlider">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
                    </property>
                   </widget>
                  </item>
