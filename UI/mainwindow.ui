@@ -242,35 +242,37 @@
                       </item>
                       <item row="0" column="2">
                        <layout class="QGridLayout" name="gridLayout_10">
-                        <item row="0" column="0">
-                         <layout class="QHBoxLayout" name="horizontalLayout_13">
+                        <item row="2" column="0">
+                         <layout class="QHBoxLayout" name="horizontalLayout_4">
                           <item>
-                           <widget class="QLabel" name="label_23">
+                           <widget class="QLabel" name="label_12">
                             <property name="text">
-                             <string>Minimum Matches:</string>
+                             <string>Algo:</string>
                             </property>
                            </widget>
                           </item>
                           <item>
-                           <widget class="QLineEdit" name="leRecsMinimumMatches">
-                            <property name="enabled">
-                             <bool>false</bool>
-                            </property>
-                            <property name="maximumSize">
-                             <size>
-                              <width>70</width>
-                              <height>16777215</height>
-                             </size>
-                            </property>
-                            <property name="inputMask">
-                             <string>9999</string>
-                            </property>
-                            <property name="text">
-                             <string>6</string>
-                            </property>
+                           <widget class="QComboBox" name="cbRecsAlgo">
+                            <item>
+                             <property name="text">
+                              <string>Weighted</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
+                              <string>Unweighted</string>
+                             </property>
+                            </item>
                            </widget>
                           </item>
                          </layout>
+                        </item>
+                        <item row="2" column="2">
+                         <widget class="QPushButton" name="pbDiagnosticList">
+                          <property name="text">
+                           <string>Get Diagnostics</string>
+                          </property>
+                         </widget>
                         </item>
                         <item row="0" column="2">
                          <layout class="QHBoxLayout" name="horizontalLayout_19">
@@ -302,27 +304,45 @@
                           </item>
                          </layout>
                         </item>
-                        <item row="1" column="0">
-                         <layout class="QHBoxLayout" name="horizontalLayout_4">
+                        <item row="2" column="1">
+                         <widget class="QCheckBox" name="chkFilterGenres">
+                          <property name="toolTip">
+                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Purges fics from your reclist when they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          </property>
+                          <property name="text">
+                           <string>Use Genre Filter</string>
+                          </property>
+                          <property name="checked">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="0">
+                         <layout class="QHBoxLayout" name="horizontalLayout_13">
                           <item>
-                           <widget class="QLabel" name="label_12">
+                           <widget class="QLabel" name="label_23">
                             <property name="text">
-                             <string>Algo:</string>
+                             <string>Minimum Matches:</string>
                             </property>
                            </widget>
                           </item>
                           <item>
-                           <widget class="QComboBox" name="cbRecsAlgo">
-                            <item>
-                             <property name="text">
-                              <string>Weighted</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Unweighted</string>
-                             </property>
-                            </item>
+                           <widget class="QLineEdit" name="leRecsMinimumMatches">
+                            <property name="enabled">
+                             <bool>false</bool>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>70</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="inputMask">
+                             <string>9999</string>
+                            </property>
+                            <property name="text">
+                             <string>6</string>
+                            </property>
                            </widget>
                           </item>
                          </layout>
@@ -357,16 +377,53 @@
                           </item>
                          </layout>
                         </item>
+                        <item row="1" column="0">
+                         <widget class="QWidget" name="widget_11" native="true">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <layout class="QGridLayout" name="gridLayout_27">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_29">
+                             <property name="text">
+                              <string>Maximum Negative  Matches:</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
                         <item row="1" column="1">
-                         <widget class="QCheckBox" name="chkFilterGenres">
-                          <property name="toolTip">
-                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Purges fics from your reclist when they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <widget class="QLineEdit" name="leRecsMaximumNegativeMatches">
+                          <property name="enabled">
+                           <bool>false</bool>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>70</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <property name="inputMask">
+                           <string>9999</string>
                           </property>
                           <property name="text">
-                           <string>Use Genre Filter</string>
-                          </property>
-                          <property name="checked">
-                           <bool>true</bool>
+                           <string>6</string>
                           </property>
                          </widget>
                         </item>
@@ -536,6 +593,13 @@
                   <widget class="QLabel" name="label_26">
                    <property name="text">
                     <string>Recent Fandom Searches</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSlider" name="verticalSlider">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
                    </property>
                   </widget>
                  </item>

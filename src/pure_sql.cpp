@@ -1209,6 +1209,8 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
 
     qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, "
                  " always_pick_at = :always_pick_at,  created = :created,"
+                 "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
+                 "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data,"
                  "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,"
                  " sources = :sources where name = :name");
     ctx.ReplaceQuery(qs);
@@ -1216,6 +1218,10 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.bindValue("pick_ratio",list->maxUnmatchedPerMatch);
     ctx.bindValue("always_pick_at",list->alwaysPickAt);
     ctx.bindValue("created",creationTimestamp);
+    ctx.bindValue("quadratic_deviation",list->quadraticDeviation);
+    ctx.bindValue("ratio_median",list->ratioMedian);
+    ctx.bindValue("distance_to_double_sigma",list->sigma2Distance);
+    ctx.bindValue("has_aux_data",list->hasAuxDataFilled);
     ctx.bindValue("use_weighting",list->useWeighting);
     ctx.bindValue("use_mood_adjustment",list->useMoodAdjustment);
     QStringList authors;
@@ -3585,6 +3591,77 @@ DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase
     return SqlContext<bool>(db, qs)();
 }
 
+DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int list_id, QHash<uint32_t, QVector<uint32_t> > relations, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+    {
+        QString qs = QString("delete from RecommendersForFicAndList where list_id = :list_id");
+        SqlContext<bool>(db, qs,BP1(list_id))();
+    }
+
+    {
+        QString qs = QString("insert into RecommendersForFicAndList(list_id, fic_id, author_id) values(:list_id, :fic_id, :author_id)");
+        SqlContext<bool>ctx (db, qs);
+        ctx.bindValue("list_id", list_id);
+        auto fics = relations.keys();
+        std::sort(fics.begin(), fics.end());
+        for(auto& fic : fics){
+            ctx.bindValue("fic_id", fic);
+            for(auto& author : relations[fic]){
+                ctx.bindValue("author_id", author);
+                ctx();
+                if(!ctx.result.success){
+                    result = ctx.result;
+                    return result;
+                }
+            }
+        }
+    }
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int list_id,
+                                                            QVector<core::AuthorResult> authors,
+                                                     QSqlDatabase db){
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+    {
+        QString qs = QString("delete from RecommendersForFicAndList where list_id = :list_id");
+        SqlContext<bool>(db, qs,BP1(list_id))();
+    }
+    {
+        QString qs = QString("insert into AuthorParamsForRecList"
+                             "(list_id, author_id, full_list_size, total_matches, negative_matches, match_category, "
+                             "list_size_without_ignores, ratio_difference_on_neutral_mood, ratio_difference_on_touchy_mood) "
+                             "values(:list_id, :author_id, :full_list_size, :total_matches, :negative_matches, :match_category,"
+                             ":list_size_without_ignores, :ratio_difference_on_neutral_mood, :ratio_difference_on_touchy_mood)");
+        SqlContext<bool> ctx(db, qs);
+        ctx.bindValue("list_id", list_id);
+        for(auto& author : authors){
+            ctx.bindValue("author_id", author.id);
+            ctx.bindValue("full_list_size", author.fullListSize);
+            ctx.bindValue("total_matches", author.matches);
+            ctx.bindValue("negative_matches", author.negativeMatches);
+            ctx.bindValue("match_category", static_cast<int>(author.authorMatchCloseness));
+            ctx.bindValue("list_size_without_ignores", author.sizeAfterIgnore);
+            ctx.bindValue("ratio_difference_on_neutral_mood", author.listDiff.neutralDifference.value_or(-1));
+            ctx.bindValue("ratio_difference_on_touchy_mood", author.listDiff.touchyDifference.value_or(-1));
+            ctx();
+            if(!ctx.result.success){
+                result = ctx.result;
+                return result;
+            }
+        }
+
+    }
+    result.success = true;
+    return result;
+}
+
+
+
 DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
 {
     thread_local QHash<QString, int> result;
@@ -3965,6 +4042,7 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
 
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
+
 
 
 

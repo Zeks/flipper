@@ -257,6 +257,10 @@ private:
                                   QVector<int> sources,
                                   bool automaticLike,
                                   bool ownProfile);
+
+    bool CreateDiagnosticRecommendationList(QSharedPointer<core::RecommendationList> params,
+                                  QVector<int> sources);
+
     QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool ownRecs);
 
     void LoadFrameIntoUI(const FilterFrame& frame);
@@ -500,6 +504,8 @@ private slots:
     void on_pbPreviousResults_clicked();
 
     void on_pbNextResults_clicked();
+
+    void on_pbDiagnosticList_clicked();
 
 signals:
 

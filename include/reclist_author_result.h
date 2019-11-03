@@ -1,6 +1,7 @@
 #pragma once
 #include <QHash>
 #include <QSet>
+#include <QVector>
 #include <optional>
 //#include "include/rec_calc/rec_calculator_base.h"
 
@@ -46,7 +47,7 @@ struct AuthorWeightingResult
 };
 
 struct AuthorResult{
-    uint64_t sizeAfterIgnore = 0;
+    uint32_t sizeAfterIgnore = 0;
 
     int id;
     int matches = 0;
@@ -64,6 +65,19 @@ struct AuthorResult{
     AuthorMatchBreakdown breakdown;
     ListMoodDifference listDiff;
 };
+
+
+struct DiagnosticsForReclist{
+    bool isValid = false;
+
+    int sigma2Dist = 0;
+    double ratioMedian = 0;
+    double quad = 0;
+
+    QHash<uint32_t, QVector<uint32_t>> authorsForFics;
+    QVector<AuthorResult> authorData;
+};
+
 
 inline uint qHash(AuthorWeightingResult::EAuthorType key, uint seed)
  {

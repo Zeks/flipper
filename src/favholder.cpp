@@ -105,6 +105,34 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
     return calculator->result;
 }
 
+DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationList(QHash<uint32_t, FicWeightPtr> fetchedFics, QSharedPointer<RecommendationList> params, genre_stats::GenreMoodData moodData)
+{
+    DiagnosticRecommendationListResult result;
+
+    QSharedPointer<RecCalculatorImplWeighted> actualCalculator(new RecCalculatorImplMoodAdjusted({holder.faves, holder.fics, holder.authorMoodDistributions}, moodData));
+    actualCalculator->fetchedFics = fetchedFics;
+    actualCalculator->params = params;
+    for(auto fic : params->majorNegativeVotes)
+        actualCalculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));
+
+    TimedAction action("Reclist Creation",[&](){
+        actualCalculator->Calc();
+    });
+    action.run();
+    actualCalculator->result.authors = actualCalculator->filteredAuthors;
+    result.recs = actualCalculator->result;
+    result.quad = actualCalculator->quad;
+    result.ratioMedian = actualCalculator->ratioMedian;
+    result.sigma2Dist = actualCalculator->sigma2Dist;
+    //result.authorData = actualCalculator->
+    for(auto author : actualCalculator->filteredAuthors){
+        result.authorData.push_back(actualCalculator->allAuthors[author]);
+    }
+    result.authorsForFics = actualCalculator->authorsForFics;
+
+    return result;
+}
+
 MatchedFics RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
 {
     QLOG_INFO() << "Creating calculator";

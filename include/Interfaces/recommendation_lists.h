@@ -100,6 +100,9 @@ public:
     void FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId);
     QSharedPointer<core::RecommendationList> FetchParamsForRecList(QString name);
 
+    bool WriteFicRecommenderRelationsForRecList(int listId, QHash<uint32_t,QVector<uint32_t>>);
+    bool WriteAuthorStatsForRecList(int listId,QVector<core::AuthorResult>);
+
 
     QList<core::RecPtr> lists;
 

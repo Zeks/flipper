@@ -530,5 +530,15 @@ QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecL
     return database::puresql::FetchParamsForRecList(id, db).data;
 }
 
+bool RecommendationLists::WriteFicRecommenderRelationsForRecList(int listId, QHash<uint32_t, QVector<uint32_t> > data)
+{
+    return database::puresql::WriteFicRecommenderRelationsForRecList(listId,data, db).success;
+}
+
+bool RecommendationLists::WriteAuthorStatsForRecList(int listId, QVector<core::AuthorResult> data)
+{
+    return database::puresql::WriteAuthorStatsForRecList(listId,data, db).success;
+}
+
 
 }

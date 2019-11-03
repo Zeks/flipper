@@ -10,6 +10,7 @@
 #include "core/section.h"
 #include "core/fic_genre_data.h"
 #include "include/storyfilter.h"
+#include "include/reclist_author_result.h"
 #include "regex_utils.h"
 #include "transaction.h"
 #include "sqlcontext.h"
@@ -231,6 +232,15 @@ DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase
 DiagnosticSQLResult<bool> WipeAuthorStatisticsRecords(QSqlDatabase db);
 DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db);
 DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField, QSqlDatabase db);
+
+DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int listId,
+                                                            QHash<uint32_t,QVector<uint32_t>>,
+                                                            QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int listId,
+                                                            QVector<core::AuthorResult>,
+                                                            QSqlDatabase db);
+
+
 
 
 

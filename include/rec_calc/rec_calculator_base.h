@@ -40,6 +40,19 @@ struct RecommendationListResult{
     QList<int> authors;
 };
 
+struct DiagnosticRecommendationListResult{
+    bool isValid = false;
+    RecommendationListResult recs;
+    QHash<uint32_t, QVector<uint32_t>> authorsForFics;
+    QVector<AuthorResult> authorData;
+
+    double ratioMedian = 0;
+    double quad = 0;
+    int sigma2Dist = 0;
+};
+
+
+
 
 struct UserMatchesInput{
     Roaring userFavourites;

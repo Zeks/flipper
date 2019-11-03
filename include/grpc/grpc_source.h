@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "include/storyfilter.h"
 #include "include/Interfaces/data_source.h"
+#include "include/rec_calc/rec_calculator_base.h"
 #include "reclist_author_result.h"
 
 #include <QSharedPointer>
@@ -75,6 +76,8 @@ public:
     void FetchFic(int ficId, QVector<core::Fic>*fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
+
+    core::DiagnosticsForReclist GetDiagnosticsForRecListFromServer(core::RecommendationList recList);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
     bool GetFFNIDsForFics(QVector<core::IdPack>*);

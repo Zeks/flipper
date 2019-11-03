@@ -190,7 +190,7 @@ void core::Fic::FicCalcStats::Log()
     qDebug() << "DaysRunning:" << daysRunning;
 }
 
-void core::RecommendationList::Log()
+void core::RecommendationList:: Log()
 {
 
     qDebug() << "List id: " << id ;
@@ -199,6 +199,7 @@ void core::RecommendationList::Log()
     qDebug() << "ficCount: " << ficCount ;
     qDebug() << "tagToUse: " << tagToUse ;
     qDebug() << "minimumMatch: " << minimumMatch ;
+    qDebug() << "maximumNegativeMatches: " << maximumNegativeMatches;
     qDebug() << "alwaysPickAt: " << alwaysPickAt ;
     qDebug() << "pickRatio: " << maxUnmatchedPerMatch ;
     qDebug() << "created: " << created ;

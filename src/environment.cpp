@@ -705,6 +705,57 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
     return result;
 }
 
+int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> list,
+                                                    QVector<int> sourceFics)
+{
+    qDebug() << "At start list id is: " << list->id;
+    FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    list->ficData.fics = sourceFics;
+
+    database::Transaction transaction(interfaces.recs->db);
+    list->id = interfaces.recs->GetListIdForName(list->name);
+    qDebug() << "Fetched name for list is: " << list->name;
+
+    QVector<core::IdPack> pack;
+    pack.resize(sourceFics.size());
+    int i = 0;
+    for(auto source: sourceFics)
+    {
+        pack[i].ffn = source;
+        i++;
+    }
+    grpcSource->GetInternalIDsForFics(&pack);
+
+    list->likedAuthors = likedAuthors;
+    auto result = grpcSource->GetDiagnosticsForRecListFromServer(*list);
+    list->quadraticDeviation = result.quad;
+    list->ratioMedian = result.ratioMedian;
+    list->sigma2Distance = result.sigma2Dist;
+    list->hasAuxDataFilled = true;
+
+
+
+
+    if(!result.isValid)
+    {
+        QLOG_ERROR() << "diagnostics creation failed";
+        return -1;
+    }
+
+    TimedAction action("Diagnostics write: ",[&](){
+        qDebug() << "Deleting list: " << list->id;
+        interfaces.recs->WriteAuthorStatsForRecList(list->id, result.authorData);
+        interfaces.recs->WriteFicRecommenderRelationsForRecList(list->id, result.authorsForFics);
+        interfaces.recs->LoadListIntoDatabase(list);
+        interfaces.recs->SetCurrentRecommendationList(list->id);
+    });
+    action.run();
+    transaction.finalize();
+    qDebug() << "finished building diagnostics for reclist";
+    return list->id;
+
+}
+
 bool CoreEnvironment::ResumeUnfinishedTasks()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
@@ -999,6 +1050,15 @@ QSet<int> CoreEnvironment::GetFicsForTags(QStringList tags)
 
     auto fics  = interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
     return fics;
+}
+
+QSet<int> CoreEnvironment::GetFicsForNegativeTags()
+{
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    QStringList negativeTags = settings.value("Tags/majorNegative", "").toString().split(",");
+    auto majorNegativeFics = GetFicsForTags(negativeTags);
+    return majorNegativeFics;
 }
 
 void CoreEnvironment::RefreshSnoozes()

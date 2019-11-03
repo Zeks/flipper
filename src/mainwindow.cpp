@@ -2660,6 +2660,7 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
 
     params->minimumMatch = params->isAutomatic  ? 1 : ui->leRecsMinimumMatches->text().toInt();
     params->maxUnmatchedPerMatch = ui->leRecsPickRatio->text().toInt();
+    params->maximumNegativeMatches = ui->leRecsMaximumNegativeMatches->text().toInt();
     params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
     params->useWeighting = ui->cbRecsAlgo->currentText() == "Weighted";
     params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
@@ -2695,9 +2696,46 @@ bool MainWindow::CreateRecommendationList(QSharedPointer<core::RecommendationLis
     return success;
 }
 
+bool MainWindow::CreateDiagnosticRecommendationList(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics)
+{
+    if(!params)
+        return false;
+
+    bool success = false;
+    TimedAction action("Diagnostic list creation: ",[&](){
+        TaskProgressGuard guard(this);
+        auto result = env.BuildRecommendations(params, sourceFics, true, false);
+        if(result == -1)
+        {
+            QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
+                                                        "Try using more source fics, or loosen the restrictions");
+            success = false;
+        }
+        success = true;
+    });
+    action.run();
+    return success;
+}
+
+
+void MainWindow::on_pbDiagnosticList_clicked()
+{
+    auto params = CreateReclistParamsFromUI(true);
+    if(!params)
+        return;
+
+    params->majorNegativeVotes = env.GetFicsForNegativeTags();
+
+    QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    if(sourceFics.size() == 0)
+        return;
+    env.BuildDiagnosticsForRecList(params, sourceFics);
+}
+
+
+
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
-
     bool ownProfile = ui->chkUserOwnProfile->isChecked();
     bool autoLike = ui->chkAutomaticLike->isChecked() ;
     if(ownProfile && !DisplayOwnProfilePrompt())
@@ -2707,12 +2745,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     if(!params)
         return;
 
-
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    QStringList negativeTags = settings.value("Tags/majorNegative", "").toString().split(",");
-    auto majorNegativeFics = env.GetFicsForTags(negativeTags);
-    params->majorNegativeVotes = majorNegativeFics;
+    params->majorNegativeVotes = env.GetFicsForNegativeTags();
 
     if(ui->cbRecsSource->currentIndex() == 0)
     {
@@ -3430,4 +3463,5 @@ void MainWindow::SetNextEnabled(bool value)
         ui->pbNextResults->setEnabled(false);
     }
 }
+
 

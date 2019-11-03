@@ -440,23 +440,56 @@ const static auto ficPackReader = [](RequestContext& reqContext, const auto& tas
     return result;
 };
 
-grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerContext *context, const ProtoSpace::DiagnosticRecommendationListCreationRequest *task, ProtoSpace::DiagnosticRecommendationListCreationResponse *response)
+grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerContext *context,
+                                                                 const ProtoSpace::DiagnosticRecommendationListCreationRequest *task,
+                                                                 ProtoSpace::DiagnosticRecommendationListCreationResponse *response)
 {
-//    Q_UNUSED(context);
-//    RequestContext reqContext("Diagnostic Reclist Creation",task->controls(), this);
-//    if(!reqContext.Process(response->mutable_response_info()))
-//        return Status::OK;
+    Q_UNUSED(context);
+    RequestContext reqContext("Diagnostic Reclist Creation",task->controls(), this);
+    if(!reqContext.Process(response->mutable_response_info()))
+        return Status::OK;
 
-//    reqContext.dbContext.InitFanfics();
+    reqContext.dbContext.InitFanfics();
 
-//    if(task->id_packs().ffn_ids_size() == 0)
-//        return Status::OK;
+    if(task->data().id_packs().ffn_ids_size() == 0)
+        return Status::OK;
 
-//    An<core::RecCalculator> recCalculator;
+    An<core::RecCalculator> recCalculator;
 
-//    auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
-//    auto ficResult = ficPackReader(reqContext, task);
-//    auto moodData = CalcMoodDistributionForFicList(ficResult.fetchedFics.keys(), recCalculator->holder.genreComposites);
+    auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
+    auto ficResult = ficPackReader(reqContext, task);
+    auto moodData = CalcMoodDistributionForFicList(ficResult.fetchedFics.keys(), recCalculator->holder.genreComposites);
+
+    auto list = recCalculator->GetDiagnosticRecommendationList(ficResult.fetchedFics, recommendationsCreationParams, moodData);
+    TimedAction dataPassAction("Passing data: ",[&](){
+        auto* targetList = response->mutable_list();
+
+        targetList->set_quadratic_deviation(list.quad);
+        targetList->set_ratio_median(list.ratioMedian);
+        targetList->set_distance_to_double_sigma(list.sigma2Dist);
+
+        auto keys = list.authorsForFics.keys();
+        for(auto fic : keys){
+            auto* newMatch = targetList->add_matches();
+            newMatch->set_fic_id(fic);
+            for(auto author : list.authorsForFics[fic])
+                newMatch->add_author_id(author);
+        }
+
+        for(auto author : list.authorData)
+        {
+            auto* authorData  = targetList->add_author_params();
+            authorData->set_author_id(author.id);
+            authorData->set_total_matches(author.matches);
+            authorData->set_full_list_size(author.fullListSize);
+            authorData->set_match_category(static_cast<int>(author.authorMatchCloseness));
+            authorData->set_negative_matches(author.negativeMatches);
+            authorData->set_list_size_without_ignores(author.sizeAfterIgnore);
+            authorData->set_ratio_difference_on_neutral_mood(author.listDiff.neutralDifference.value_or(0));
+            authorData->set_ratio_difference_on_touchy_mood(author.listDiff.touchyDifference.value_or(0));
+        }
+    });
+
 
     return Status::OK;
 }
@@ -1047,3 +1080,4 @@ void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicL
     for(size_t i = 1; i < dataResult.result.sizeRatios.size(); i++)
         result.sizeFactors[i] = dataResult.result.sizeRatios[i];
 }
+

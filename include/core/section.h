@@ -837,17 +837,26 @@ class RecommendationList : public DBEntity{
 public:
     static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
     void Log();
-    int id = -1;
-    int ficCount =-1;
-    QString name;
-    QString tagToUse;
-    int minimumMatch = -1;
-    int alwaysPickAt = -2;
-    int maxUnmatchedPerMatch = -1;
-    int userFFNId = -1;
     bool isAutomatic = true;
     bool useWeighting = false;
     bool useMoodAdjustment = false;
+    bool hasAuxDataFilled = false;
+
+    int id = -1;
+    int ficCount =-1;
+    int minimumMatch = -1;
+    int maximumNegativeMatches = -1;
+    int alwaysPickAt = -2;
+    int maxUnmatchedPerMatch = -1;
+    int userFFNId = -1;
+    int sigma2Distance = -1;
+
+    double quadraticDeviation = -1;
+    double ratioMedian = -1;
+
+    QString name;
+    QString tagToUse;
+
     QSet<int> ignoredFandoms;
     QSet<int> likedAuthors;
     QSet<int> minorNegativeVotes;
@@ -855,6 +864,7 @@ public:
     QDateTime created;
     RecommendationListFicData ficData;
 };
+
 
 struct MatchedFics{
     int ratio = 0;

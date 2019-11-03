@@ -614,6 +614,7 @@ public:
     int GetFicCount(core::StoryFilter filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
+    core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList);
     void ProcessStandardError(grpc::Status status);
     core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
@@ -872,14 +873,7 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
     return true;
 }
 
-bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList& recList)
-{
-    grpc::ClientContext context;
-    ProtoSpace::RecommendationListCreationRequest task;
-    QScopedPointer<ProtoSpace::RecommendationListCreationResponse> response (new ProtoSpace::RecommendationListCreationResponse);
-    std::chrono::system_clock::time_point deadline =
-            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
-    context.set_deadline(deadline);
+static const auto paramToTaskFiller = [](auto& task, core::RecommendationList& recList){
     auto* data = task.mutable_data();
     auto* ffn = data->mutable_id_packs();
     auto* params = data->mutable_general_params();
@@ -904,13 +898,77 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     auto ignores = userData->mutable_ignored_fandoms();
     for(auto ignore: recList.ignoredFandoms)
         ignores->add_fandom_ids(ignore);
-    auto likedAuthors = userData->mutable_liked_authors();
+    //auto likedAuthors = userData->mutable_liked_authors();
     for(auto authorId: recList.likedAuthors)
         userData->add_liked_authors(authorId);
 
     for(auto vote: recList.majorNegativeVotes)
         userData->mutable_negative_feedback()->add_strongnegatives(vote);
 
+};
+
+
+static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationListData& response, core::RecommendationList& recList){
+
+    recList.ficData.fics.clear();
+    recList.ficData.fics.reserve(response.fic_ids_size());
+    recList.ficData.purges.reserve(response.fic_ids_size());
+    recList.ficData.matchCounts.reserve(response.fic_ids_size());
+
+    for(int i = 0; i < response.fic_ids_size(); i++)
+    {
+        recList.ficData.fics.push_back(response.fic_ids(i));
+        recList.ficData.matchCounts.push_back(response.fic_matches(i));
+        recList.ficData.purges.push_back(response.purged(i));
+    }
+
+    for(int i = 0; i < response.author_ids_size(); i++)
+        recList.ficData.authorIds.push_back(response.author_ids(i));
+
+    auto it = response.match_report().begin();
+    while(it != response.match_report().end())
+    {
+        recList.ficData.matchReport[it->first] = it->second;
+        ++it;
+    }
+    using core::AuthorWeightingResult;
+    for(int i = 0; i < response.breakdowns_size(); i++)
+    {
+        auto ficid= response.breakdowns(i).id();
+        recList.ficData.breakdowns[ficid].ficId = ficid;
+        auto&  breakdown = recList.ficData.breakdowns[response.breakdowns(i).id()];
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
+                            response.breakdowns(i).counts_common(),
+                            response.breakdowns(i).votes_common());
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::uncommon,
+                            response.breakdowns(i).counts_uncommon(),
+                            response.breakdowns(i).votes_uncommon());
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
+                            response.breakdowns(i).counts_rare(),
+                            response.breakdowns(i).votes_rare());
+        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::unique,
+                            response.breakdowns(i).counts_unique(),
+                            response.breakdowns(i).votes_unique());
+    }
+    // need to fill the params for the list as they were adjusted on the server
+    recList.isAutomatic = response.used_params().is_automatic();
+    recList.minimumMatch = response.used_params().min_fics_to_match();
+    recList.maxUnmatchedPerMatch = response.used_params().max_unmatched_to_one_matched();
+    recList.alwaysPickAt = response.used_params().always_pick_at();
+    recList.useWeighting = response.used_params().use_weighting();
+    recList.useMoodAdjustment = response.used_params().use_mood_filtering();
+
+};
+
+bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList& recList)
+{
+    grpc::ClientContext context;
+    ProtoSpace::RecommendationListCreationRequest task;
+    QScopedPointer<ProtoSpace::RecommendationListCreationResponse> response (new ProtoSpace::RecommendationListCreationResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+    context.set_deadline(deadline);
+    paramToTaskFiller(task, recList);
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
@@ -922,56 +980,55 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     if(!response->list().list_ready())
         return false;
 
-    recList.ficData.fics.clear();
-    recList.ficData.fics.reserve(response->list().fic_ids_size());
-    recList.ficData.purges.reserve(response->list().fic_ids_size());
-    recList.ficData.matchCounts.reserve(response->list().fic_ids_size());
-
-    for(int i = 0; i < response->list().fic_ids_size(); i++)
-    {
-        recList.ficData.fics.push_back(response->list().fic_ids(i));
-        recList.ficData.matchCounts.push_back(response->list().fic_matches(i));
-        recList.ficData.purges.push_back(response->list().purged(i));
-    }
-
-    for(int i = 0; i < response->list().author_ids_size(); i++)
-        recList.ficData.authorIds.push_back(response->list().author_ids(i));
-
-    auto it = response->list().match_report().begin();
-    while(it != response->list().match_report().end())
-    {
-        recList.ficData.matchReport[it->first] = it->second;
-        ++it;
-    }
-    using core::AuthorWeightingResult;
-    for(int i = 0; i < response->list().breakdowns_size(); i++)
-    {
-        auto ficid= response->list().breakdowns(i).id();
-        recList.ficData.breakdowns[ficid].ficId = ficid;
-        auto&  breakdown = recList.ficData.breakdowns[response->list().breakdowns(i).id()];
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
-                            response->list().breakdowns(i).counts_common(),
-                            response->list().breakdowns(i).votes_common());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::uncommon,
-                            response->list().breakdowns(i).counts_uncommon(),
-                            response->list().breakdowns(i).votes_uncommon());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
-                            response->list().breakdowns(i).counts_rare(),
-                            response->list().breakdowns(i).votes_rare());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::unique,
-                            response->list().breakdowns(i).counts_unique(),
-                            response->list().breakdowns(i).votes_unique());
-    }
-    // need to fill the params for the list as they were adjusted on the server
-    recList.isAutomatic = response->list().used_params().is_automatic();
-    recList.minimumMatch = response->list().used_params().min_fics_to_match();
-    recList.maxUnmatchedPerMatch = response->list().used_params().max_unmatched_to_one_matched();
-    recList.alwaysPickAt = response->list().used_params().always_pick_at();
-    recList.useWeighting = response->list().used_params().use_weighting();
-    recList.useMoodAdjustment = response->list().used_params().use_mood_filtering();
-
+    basicRecListFiller(response->list(), recList);
     return true;
 }
+
+
+core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList)
+{
+    core::DiagnosticsForReclist result;
+
+    grpc::ClientContext context;
+    ProtoSpace::DiagnosticRecommendationListCreationRequest task;
+    QScopedPointer<ProtoSpace::DiagnosticRecommendationListCreationResponse> response (new ProtoSpace::DiagnosticRecommendationListCreationResponse);
+    std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
+
+    context.set_deadline(deadline);
+    paramToTaskFiller(task, recList);
+
+    auto* controls = task.mutable_controls();
+    controls->set_user_token(proto_converters::TS(userToken));
+
+    grpc::Status status = stub_->DiagnosticRecommendationListCreation(&context, task, response.data());
+
+    ProcessStandardError(status);
+    //DumpToLog("Test Dump", response.data());
+
+    for(int ficCounter = 0; ficCounter < response->list().matches_size(); ficCounter++)
+        for(int authorCounter = 0; authorCounter < response->list().matches(ficCounter).author_id_size(); authorCounter++)
+            result.authorsForFics[response->list().matches(ficCounter).fic_id()].push_back(response->list().matches(ficCounter).author_id(authorCounter));
+
+    for(int authorCounter = 0; authorCounter < response->list().author_params_size(); authorCounter++){
+        core::AuthorResult author;
+        author.id = response->list().author_params(authorCounter).author_id();
+        author.fullListSize = response->list().author_params(authorCounter).full_list_size();
+        author.matches = response->list().author_params(authorCounter).total_matches();
+        author.negativeMatches = response->list().author_params(authorCounter).author_id();
+        author.authorMatchCloseness = static_cast<core::AuthorWeightingResult::EAuthorType>( response->list().author_params(authorCounter).match_category());
+        author.sizeAfterIgnore = response->list().author_params(authorCounter).list_size_without_ignores();
+        author.listDiff.touchyDifference = response->list().author_params(authorCounter).ratio_difference_on_touchy_mood();
+        author.listDiff.neutralDifference = response->list().author_params(authorCounter).ratio_difference_on_neutral_mood();
+    }
+    result.quad = response->list().quadratic_deviation();
+    result.ratioMedian = response->list().ratio_median();
+    result.sigma2Dist = response->list().distance_to_double_sigma();
+
+    return result;
+}
+
+
 void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
 {
     error.clear();
@@ -1262,6 +1319,13 @@ bool FicSourceGRPC::GetFandomListFromServer(int lastFandomID, QVector<core::Fand
     if(!impl)
         return false;
     return impl->GetFandomListFromServer(lastFandomID, fandoms);
+}
+
+core::DiagnosticsForReclist FicSourceGRPC::GetDiagnosticsForRecListFromServer(core::RecommendationList recList)
+{
+    if(!impl)
+        return {};
+    return impl->GetDiagnosticsForRecommendationListFromServer(recList);
 }
 
 bool FicSourceGRPC::GetRecommendationListFromServer(core::RecommendationList &recList)
