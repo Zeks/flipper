@@ -1064,31 +1064,34 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 
 
-DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId,
-                                                                         QSqlDatabase db,
-                                                                         int minMatchCount,
-                                                                         core::StoryFilter::ESourceListLimiter limiter, bool displayPurged)
+DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::ReclistFilter filter, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id, match_count from RecommendationListData where list_id = :list_id");
-    if(minMatchCount != 0)
-        qs += " and match_count > :match_count";
+    QString qs = QString("select fic_id, %1 from RecommendationListData where list_id = :list_id");
+    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = qs.arg(pointsField);
 
-    if(limiter == core::StoryFilter::sll_above_average)
+
+    if(filter.minMatchCount != 0)
+    {
+        qs += QString(" and %1 > :match_count").arg(pointsField);
+    }
+
+    if(filter.limiter == core::StoryFilter::sll_above_average)
         qs+=" and (votes_uncommon > 0 or votes_rare > 0 or votes_unique> 0)";
-    else if(limiter == core::StoryFilter::sll_very_close)
+    else if(filter.limiter == core::StoryFilter::sll_very_close)
         qs+=" and (votes_rare > 0 or votes_unique > 0)";
-    if(limiter == core::StoryFilter::sll_exceptional)
+    if(filter.limiter == core::StoryFilter::sll_exceptional)
         qs+=" and (votes_unique > 0)";
 
-    if(!displayPurged)
+    if(!filter.displayPurged)
         qs+=" and (purged = 0)";
 
     SqlContext<QHash<int,int>> ctx(db, qs);
-    ctx.bindValue("list_id",listId);
-    if(minMatchCount != 0)
-        ctx.bindValue("match_count",minMatchCount);
+    ctx.bindValue("list_id",filter.listId);
+    if(filter.minMatchCount != 0)
+        ctx.bindValue("match_count",filter.minMatchCount);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        ctx.result.data[q.value("fic_id").toInt()] = q.value("match_count").toInt();
+        ctx.result.data[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
     });
     return ctx.result;
 }
@@ -3767,11 +3770,11 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
 DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
                                              QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin, "
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count,no_trash_score, is_origin, "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
                          "value_common, value_uncommon, value_rare, value_unique, purged) "
-                         "values(:listId, :ficId, :matchCount, :is_origin,"
+                         "values(:listId, :ficId, :matchCount, :no_trash_score :is_origin,"
                          ":breakdown_available,"
                          ":votes_common, :votes_uncommon, :votes_rare, :votes_unique, "
                          ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)");
@@ -3789,6 +3792,7 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
         ctx.bindValue("ficId", ficId);
         ctx.bindValue("purged", list->ficData.purges.at(i));
         ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
+        ctx.bindValue("no_trash_score", list->ficData.noTrashScores.at(i));
         bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
         //QLOG_INFO() << "Writing fic: " << ficId << " isOrigin: " << isOrigin;
         ctx.bindValue("is_origin", isOrigin);

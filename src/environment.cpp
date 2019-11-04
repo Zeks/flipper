@@ -111,12 +111,17 @@ void CoreEnvironment::LoadData()
             //userData.likedAuthors = likedAuthors;
             ficSource->userData = userData;
 
+            core::StoryFilter::EScoreType scoreType = filter.sortMode != core::StoryFilter::sm_minimize_dislikes ? core::StoryFilter::st_points : core::StoryFilter::st_minimal_dislikes;
 
             QVector<int> recFics;
-            filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(),
-                                                              filter.minRecommendations,
-                                                              filter.sourcesLimiter,
-                                                              filter.displayPurgedFics);
+            core::ReclistFilter reclistFilter;
+            reclistFilter.listId = interfaces.recs->GetCurrentRecommendationList();
+            reclistFilter.minMatchCount = filter.minRecommendations;
+            reclistFilter.limiter = filter.sourcesLimiter;
+            reclistFilter.scoreType = scoreType;
+            reclistFilter.displayPurged = filter.displayPurgedFics;
+
+            filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
             filter.scoresHash = ficScores;
 
             ficSource->FetchData(filter,
@@ -330,7 +335,15 @@ int CoreEnvironment::GetResultCount()
 
     QVector<int> recFics;
     //filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
-    filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations, filter.sourcesLimiter);
+    core::StoryFilter::EScoreType scoreType = filter.sortMode != core::StoryFilter::sm_minimize_dislikes ? core::StoryFilter::st_points : core::StoryFilter::st_minimal_dislikes;
+
+    core::ReclistFilter reclistFilter;
+    reclistFilter.listId = interfaces.recs->GetCurrentRecommendationList();
+    reclistFilter.minMatchCount = filter.minRecommendations;
+    reclistFilter.limiter = filter.sourcesLimiter;
+    reclistFilter.scoreType = scoreType;
+    filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
+
     ficScores= interfaces.fanfics->GetScoresForFics();
     filter.scoresHash = ficScores;
     return ficSource->GetFicCount(filter);

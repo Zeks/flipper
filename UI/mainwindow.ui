@@ -1359,6 +1359,11 @@
                        <string>Your Score</string>
                       </property>
                      </item>
+                     <item>
+                      <property name="text">
+                       <string>Minimize Dislikes</string>
+                      </property>
+                     </item>
                     </widget>
                    </item>
                    <item>

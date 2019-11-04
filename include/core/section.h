@@ -827,6 +827,7 @@ struct RecommendationListFicData
     QVector<int> fics;
     QVector<int> purges;
     QVector<int> matchCounts;
+    QVector<double> noTrashScores;
     QVector<int> authorIds;
     QHash<int, int> matchReport;
     QHash<int, core::MatchBreakdown> breakdowns;

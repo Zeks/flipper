@@ -914,12 +914,14 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
     recList.ficData.fics.reserve(response.fic_ids_size());
     recList.ficData.purges.reserve(response.fic_ids_size());
     recList.ficData.matchCounts.reserve(response.fic_ids_size());
+    recList.ficData.noTrashScores.reserve(response.fic_ids_size());
 
     for(int i = 0; i < response.fic_ids_size(); i++)
     {
         recList.ficData.fics.push_back(response.fic_ids(i));
         recList.ficData.matchCounts.push_back(response.fic_matches(i));
         recList.ficData.purges.push_back(response.purged(i));
+        recList.ficData.noTrashScores.push_back(response.no_trash_score(i));
     }
 
     for(int i = 0; i < response.author_ids_size(); i++)

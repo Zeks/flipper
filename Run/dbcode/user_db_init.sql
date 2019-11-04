@@ -109,6 +109,7 @@ list_id integer,
   alter table RecommendationListData add column value_rare integer default 0;
   alter table RecommendationListData add column value_unique integer default 0;
   alter table RecommendationListData add column purged integer default 0;
+  alter table RecommendationListData add column no_trash_score real;
   
   alter table RecommendationListData add column breakdown_available integer default 0;
 

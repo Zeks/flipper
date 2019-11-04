@@ -7,6 +7,8 @@
 
 
 namespace core{
+
+
 struct ListMoodDifference{
     std::optional<double> neutralDifference = 0.;
     std::optional<double> touchyDifference = 0.;

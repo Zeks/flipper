@@ -44,15 +44,16 @@ message RecommendationListData{
     string list_name                            = 2;
     repeated int32 fic_ids                      = 3;
     repeated int32 fic_matches                  = 4;
+    repeated double no_trash_score             = 5;
                                                 
-    map<int32, int32> match_report              = 5;
-    repeated RecommendationBreakdown breakdowns = 6;
+    map<int32, int32> match_report              = 6;
+    repeated RecommendationBreakdown breakdowns = 7;
 
     // these are internal ids
     // no conflict & harassment possibilities here
-    repeated int32 author_ids                   = 7;
-    repeated int32 purged                       = 8;
-    RecommendationListParams used_params         = 9;
+    repeated int32 author_ids                   = 8;
+    repeated int32 purged                       = 9;
+    RecommendationListParams used_params        = 10;
 }
 
 

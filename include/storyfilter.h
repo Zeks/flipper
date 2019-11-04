@@ -37,6 +37,8 @@ struct SlashFilterState
     bool onlyMatureForSlash;
 };
 namespace core{
+
+
 struct StoryFilter{
     void Log();
 
@@ -45,19 +47,25 @@ struct StoryFilter{
             return str.split(delimiter);
         return str.split(" ");
     }
+    enum EScoreType
+    {
+        st_points = 0,
+        st_minimal_dislikes = 1,
+    };
     enum ESortMode
     {
-        sm_undefined    = 0,
-        sm_wordcount    = 1,
-        sm_favourites   = 2,
-        sm_favrate      = 3,
-        sm_updatedate   = 4,
-        sm_publisdate   = 5,
-        sm_reccount     = 6,
-        sm_wcrcr        = 7,
-        sm_revtofav     = 8,
-        sm_genrevalues  = 9,
-        sm_scores  = 10,
+        sm_undefined         = 0,
+        sm_wordcount         = 1,
+        sm_favourites        = 2,
+        sm_favrate           = 3,
+        sm_updatedate        = 4,
+        sm_publisdate        = 5,
+        sm_reccount          = 6,
+        sm_wcrcr             = 7,
+        sm_revtofav          = 8,
+        sm_genrevalues       = 9,
+        sm_scores            = 10,
+        sm_minimize_dislikes = 11,
 
     };
     enum EReviewBiasMode{
@@ -173,5 +181,14 @@ struct StoryFilter{
     QHash<int, int> scoresHash; // for use on the server
     QString userToken;
 };
+
+struct ReclistFilter{
+    int listId;
+    int minMatchCount = 0;
+    core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all;
+    core::StoryFilter::EScoreType scoreType = core::StoryFilter::st_points;
+    bool displayPurged = false;
+};
+
 }
 

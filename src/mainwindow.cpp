@@ -1884,6 +1884,8 @@ core::StoryFilter::ESortMode SortRecoder(int index){
         return core::StoryFilter::sm_wcrcr;
     case 7:
         return core::StoryFilter::sm_scores;
+    case 8:
+        return core::StoryFilter::sm_minimize_dislikes;
     default: return core::StoryFilter::sm_undefined;
     }
 }
@@ -1907,6 +1909,8 @@ int SortRecoderToUi(core::StoryFilter::ESortMode index){
         return 6;
     case core::StoryFilter::sm_scores:
         return 7;
+    case core::StoryFilter::sm_minimize_dislikes:
+        return 8;
     default: return 0;
     }
 }

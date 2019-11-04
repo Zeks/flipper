@@ -587,6 +587,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 targetList->add_purged(0);
             }
             targetList->add_fic_matches(adjustedVotes);
+            targetList->add_no_trash_score(list.noTrashScore[key]);
 
             targetList->add_fic_ids(key);
             //targetList->add_fic_matches(list.recommendations[key]/100);

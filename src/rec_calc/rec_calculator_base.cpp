@@ -115,6 +115,7 @@ void RecCalculatorImplBase::CollectVotes()
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this](int author){
         for(auto fic: inputs.faves[author])
         {
+            result.sumNegativeMatches[fic] += allAuthors[author].negativeMatches;
             auto weighting = weightingFunc(allAuthors[author],authorSize, maxValue );
             double matchCountSimilarityCoef = weighting.GetCoefficient();
 
@@ -164,6 +165,12 @@ void RecCalculatorImplBase::CollectVotes()
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
+
+    for(auto& breakdownKey : result.pureMatches.keys())
+    {
+        auto normalizer = 1 + 0.1*std::max(4-result.pureMatches[breakdownKey], 0);
+        result.noTrashScore[breakdownKey] = 100*(1 - normalizer*(static_cast<double>(result.sumNegativeMatches[breakdownKey])/static_cast<double>(result.pureMatches[breakdownKey])));
+    }
 }
 
 void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
