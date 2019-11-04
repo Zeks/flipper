@@ -97,6 +97,11 @@ void RecCalculatorImplBase::CollectVotes()
     int maxValue = 0;
     int maxId = -1;
 
+    int negativeSum = 0;
+    for(auto author: filteredAuthors)
+        negativeSum+=allAuthors[author].negativeMatches;
+    negativeAverage = negativeSum/filteredAuthors.size();
+
     auto it = result.recommendations.begin();
     while(it != result.recommendations.end())
     {
@@ -111,13 +116,17 @@ void RecCalculatorImplBase::CollectVotes()
     qDebug() << "Max pure votes: " << maxValue;
     qDebug() << "Max id: " << maxId;
     result.recommendations.clear();
+    int negativeMatchCutoff = negativeAverage/3;
 
-    std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this](int author){
+    std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this, negativeMatchCutoff](int author){
         for(auto fic: inputs.faves[author])
         {
-            result.sumNegativeMatches[fic] += allAuthors[author].negativeMatches;
+            result.sumNegativeMatchesForFic[fic] += allAuthors[author].negativeMatches;
             auto weighting = weightingFunc(allAuthors[author],authorSize, maxValue );
             double matchCountSimilarityCoef = weighting.GetCoefficient();
+            if(allAuthors[author].negativeMatches <= negativeMatchCutoff)
+                result.sumNegativeVotesForFic[fic]++;
+
 
             double vote = votesBase;
 
@@ -166,11 +175,14 @@ void RecCalculatorImplBase::CollectVotes()
         }
     });
 
-    for(auto& breakdownKey : result.pureMatches.keys())
-    {
-        auto normalizer = 1 + 0.1*std::max(4-result.pureMatches[breakdownKey], 0);
-        result.noTrashScore[breakdownKey] = 100*(1 - normalizer*(static_cast<double>(result.sumNegativeMatches[breakdownKey])/static_cast<double>(result.pureMatches[breakdownKey])));
-    }
+
+
+
+    //for(auto& breakdownKey : result.pureMatches.keys())
+    //{
+//        auto normalizer = 1 + 0.1*std::max(4-result.pureMatches[breakdownKey], 0);
+//        result.noTrashScore[breakdownKey] = 100*normalizer*(static_cast<double>(result.sumNegativeMatches[breakdownKey])/static_cast<double>(result.pureMatches[breakdownKey]));
+    //}
 }
 
 void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
@@ -308,6 +320,8 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     for(auto bit : sourceFics)
         ownFavourites.add(bit);
     qDebug() << "finished creating roaring";
+    QLOG_INFO() << "user's FFN id: " << params->userFFNId;
+    ownProfileId = params->userFFNId;
     int minMatches;
     minMatches =  params->minimumMatch;
     maximumMatches = minMatches;
@@ -317,7 +331,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         {
             if(params->userFFNId == it.key())
             {
-                QLOG_INFO() << "Skipping user's own list: " << params->userFFNId ;
+                QLOG_INFO() << "Skipping user's own list: " << params->userFFNId;
                 it++;
                 continue;
             }

@@ -893,6 +893,7 @@ static const auto paramToTaskFiller = [](auto& task, core::RecommendationList& r
     params->set_use_weighting(recList.useWeighting);
     params->set_use_mood_filtering(recList.useMoodAdjustment);
     params->set_users_ffn_profile_id(recList.userFFNId);
+    QLOG_INFO() << "passing user id to server: " << recList.userFFNId;
 
     auto userData = data->mutable_user_data();
     auto ignores = userData->mutable_ignored_fandoms();

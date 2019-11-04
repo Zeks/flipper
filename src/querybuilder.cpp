@@ -39,7 +39,9 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     query = NewQuery();
 
     queryString.clear();
-    bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.listOpenMode;
+    bool scoreSorting = filter.sortMode == StoryFilter::sm_reccount  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
+
+    bool useRecommendationFiltering = scoreSorting || filter.listOpenMode;
     useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
     bool useRecommendationOrdering = useRecommendationFiltering && !filter.listOpenMode;
 
@@ -574,7 +576,7 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
 {
     QString diffField;
-
+    bool scoreSorting = filter.sortMode == StoryFilter::sm_reccount  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
     if(filter.protocolVersion == 0)
     {
         if(filter.sortMode == StoryFilter::sm_wordcount)
@@ -587,7 +589,7 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
             diffField = " updated DESC";
         else if(filter.sortMode == StoryFilter::sm_publisdate)
             diffField = " published DESC";
-        else if(filter.sortMode == StoryFilter::sm_reccount)
+        else if(scoreSorting)
             diffField = " sumrecs desc";
         else if(filter.sortMode == StoryFilter::sm_favrate)
             diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
@@ -610,7 +612,7 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
             diffField = " updated";
         else if(filter.sortMode == StoryFilter::sm_publisdate)
             diffField = " published";
-        else if(filter.sortMode == StoryFilter::sm_reccount)
+        else if(scoreSorting)
             diffField = " sumrecs";
         else if(filter.sortMode == StoryFilter::sm_favrate)
             diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";

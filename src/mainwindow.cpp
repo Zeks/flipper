@@ -613,6 +613,7 @@ void MainWindow::OnDisplayNextPage()
     windowObject->setProperty("currentPage", env.pageOfCurrentQuery);
     LoadData();
     PlaceResults();
+    AnalyzeCurrentFilter();
 }
 
 void MainWindow::OnDisplayPreviousPage()
@@ -627,6 +628,7 @@ void MainWindow::OnDisplayPreviousPage()
     windowObject->setProperty("currentPage", env.pageOfCurrentQuery);
     LoadData();
     PlaceResults();
+    AnalyzeCurrentFilter();
 }
 
 void MainWindow::OnDisplayExactPage(int page)
@@ -2724,7 +2726,7 @@ bool MainWindow::CreateDiagnosticRecommendationList(QSharedPointer<core::Recomme
 
 void MainWindow::on_pbDiagnosticList_clicked()
 {
-    auto params = CreateReclistParamsFromUI(true);
+    auto params = CreateReclistParamsFromUI(false);
     if(!params)
         return;
 

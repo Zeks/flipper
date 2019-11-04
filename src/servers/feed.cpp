@@ -395,7 +395,8 @@ const static auto basicRecommendationsParamReader = [](RequestContext& reqContex
     params->isAutomatic = task->data().general_params().is_automatic();
     params->name =  proto_converters::FS(task->data().list_name());
     params->minimumMatch = task->data().general_params().min_fics_to_match();
-    params->userFFNId = task->data().user_data().users_ffn_profile_id();
+    params->userFFNId = task->data().general_params().users_ffn_profile_id();
+    QLOG_INFO() << "Read user's FFN id: " << params->userFFNId;
     if(params->userFFNId != -1)
         params->userFFNId  = reqContext.dbContext.authors->GetRecommenderIDByFFNId(params->userFFNId);
     params->maxUnmatchedPerMatch = task->data().general_params().max_unmatched_to_one_matched();
@@ -530,6 +531,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     TimedAction dataPassAction("Passing data: ",[&](){
         auto* targetList = response->mutable_list();
+        QLOG_INFO() << "Notrash is of size: " <<  list.noTrashScore.size();
         targetList->set_list_name(proto_converters::TS(recommendationsCreationParams->name));
         targetList->set_list_ready(true);
         QLOG_INFO() << "setting list ready to true";
@@ -587,7 +589,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 targetList->add_purged(0);
             }
             targetList->add_fic_matches(adjustedVotes);
-            targetList->add_no_trash_score(list.noTrashScore[key]);
+            targetList->add_no_trash_score(list.sumNegativeVotesForFic[key]);
 
             targetList->add_fic_ids(key);
             //targetList->add_fic_matches(list.recommendations[key]/100);

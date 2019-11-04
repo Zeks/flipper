@@ -37,7 +37,8 @@ struct RecommendationListResult{
     QHash<uint32_t, MatchBreakdown> breakdowns;
     QHash<int, int> pureMatches;
     QHash<int, int> decentMatches;
-    QHash<int, int> sumNegativeMatches;
+    QHash<int, int> sumNegativeMatchesForFic;
+    QHash<int, int> sumNegativeVotesForFic;
     QHash<int, double> noTrashScore;
     QList<int> authors;
 };
@@ -114,7 +115,9 @@ public:
     virtual void AutoAdjustRecommendationParamsAndFilter();
     virtual void AdjustRatioForAutomaticParams();
 
+    int ownProfileId = -1;
     int matchSum = 0;
+    int negativeAverage = 0;
     RecInputVectors inputs;
     QSharedPointer<RecommendationList> params;
     //QList<int> matchedAuthors;
@@ -141,6 +144,14 @@ static auto ratioFilter = [](AuthorResult& author, QSharedPointer<Recommendation
 {
     return author.ratio <= params->maxUnmatchedPerMatch && author.matches > 0;
 };
+
+static auto negativeFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> )
+{
+    bool filterResult = (static_cast<double>(author.negativeMatches)/author.matches >= 2 || static_cast<double>(author.sizeAfterIgnore)/author.negativeMatches < 15)
+            && static_cast<double>(author.negativeMatches)/author.matches >= 1.5 ;
+    return !filterResult;
+};
+
 static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author)
 {
     ptr->filteredAuthors.push_back(author.id);
@@ -152,7 +163,7 @@ class RecCalculatorImplDefault: public RecCalculatorImplBase{
 public:
     RecCalculatorImplDefault(RecInputVectors input): RecCalculatorImplBase(input){}
     virtual FilterListType GetFilterList(){
-        return {matchesFilter, ratioFilter};
+        return {matchesFilter, ratioFilter, negativeFilter};
     }
     virtual ActionListType GetActionList(){
         return {authorAccumulator};

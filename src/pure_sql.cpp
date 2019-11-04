@@ -3770,11 +3770,11 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
 DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
                                              QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count,no_trash_score, is_origin, "
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, no_trash_score, is_origin, "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
                          "value_common, value_uncommon, value_rare, value_unique, purged) "
-                         "values(:listId, :ficId, :matchCount, :no_trash_score :is_origin,"
+                         "values(:listId, :ficId, :matchCount, :no_trash_score, :is_origin,"
                          ":breakdown_available,"
                          ":votes_common, :votes_uncommon, :votes_rare, :votes_unique, "
                          ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)");

@@ -46,7 +46,7 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
 };
 
 RecCalculatorImplWeighted::FilterListType RecCalculatorImplMoodAdjusted::GetFilterList(){
-    return {matchesFilter, ratioFilterMoodAdjusted};
+    return {matchesFilter, ratioFilterMoodAdjusted, negativeFilter};
 }
 
 RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors input, genre_stats::GenreMoodData moodData):
