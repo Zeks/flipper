@@ -2,9 +2,8 @@
 
 
 #making folders
-deployfolder="flipper_deploy"
+deployfolder="deployment"
 rm -rf $deployfolder 
-rm -rf fpmtmp
 mkdir $deployfolder
 mkdir $deployfolder/libs
 
@@ -50,10 +49,6 @@ mkdir $dirname/fpmtmp
 echo 'creating rpm'
 echo $unpackpath
 packageName="feeder"
-#fpm -s dir -t deb -n $packageName -v $ident --workdir ~/m_client --verbose --debug --deb-compression gz -C $unpackpath 
-#mv deployment flipper_deploy
-tar -czvf flipper.tar.gz flipper_deploy
-mv -f flipper.tar.gz ~/releases
-
+fpm -s dir -t deb -n $packageName -v $ident --workdir ~/m_client --verbose --debug --deb-compression gz -C $unpackpath 
 
 
