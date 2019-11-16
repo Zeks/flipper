@@ -1075,6 +1075,14 @@ QSet<int> CoreEnvironment::GetFicsForNegativeTags()
     return majorNegativeFics;
 }
 
+void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics)
+{
+    interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.listId);
+    if(fanfics.size() <= 100){
+        interfaces.recs->FetchRecommendationScoreForFics(&fanfics, filter);
+    }
+}
+
 void CoreEnvironment::RefreshSnoozes()
 {
     auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();

@@ -519,6 +519,18 @@ void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics
     database::puresql::FetchRecommendationsBreakdown(fics, listId, db);
 }
 
+void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fics, core::ReclistFilter filter)
+{
+    QHash<int, int> scores;
+    for(auto fic: *fics)
+        scores[fic.id] = 0;
+
+    database::puresql::FetchRecommendationScoreForFics(scores, filter, db);
+    for(auto& fic: *fics){
+        fic.recommendations = scores[fic.id];
+    }
+}
+
 QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecList(QString name)
 {
     auto id = GetListIdForName(name);

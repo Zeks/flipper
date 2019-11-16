@@ -2515,6 +2515,30 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
     return ctx.result;
 }
 
+
+DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& scores, core::ReclistFilter filter, QSqlDatabase db)
+{
+    // need to create a list of ids to query for
+    QStringList ids;
+    for(auto fic: scores.keys())
+        ids.push_back(QString::number(fic));
+    QString qs = QString("select fic_id, %1 from RecommendationListData where list_id = :list_id and fic_id in (%2)" );
+    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = qs.arg(pointsField);
+    qs = qs.arg(ids.join(","));
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("list_id", filter.listId);
+
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        scores[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
+    });
+    return ctx.result;
+
+
+}
+
+
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db)
 {
     QString qs = QString(" select * from recommendationlists where id = :id ");

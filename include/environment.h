@@ -210,6 +210,7 @@ public:
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);
     QSet<int> GetFicsForTags(QStringList);
     QSet<int> GetFicsForNegativeTags();
+    void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics);
 
 
     void RefreshSnoozes();

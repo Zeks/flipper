@@ -3140,7 +3140,16 @@ void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.sync();
-    env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
+    auto listId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
+    env.interfaces.recs->SetCurrentRecommendationList(listId);
+    if(env.fanfics.size() > 0 && listId != -1){
+        core::ReclistFilter filter;
+        filter.listId = listId;
+        filter.scoreType = SortRecoder(ui->cbSortMode->currentIndex()) ==  core::StoryFilter::sm_minimize_dislikes ?
+                    core::StoryFilter::st_minimal_dislikes : core::StoryFilter::st_points;
+        env.LoadNewScoreValuesForFanfics(filter, env.fanfics);
+        holder->SetData(env.fanfics);
+    }
 }
 
 void MainWindow::on_pbUseProfile_clicked()

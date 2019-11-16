@@ -316,6 +316,8 @@ DiagnosticSQLResult<bool> FetchReadingChaptersForFics(QVector<core::Fic> * fics,
 
 
 DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int> &scores, core::ReclistFilter, QSqlDatabase db);
+
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db);
 
 

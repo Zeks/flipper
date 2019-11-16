@@ -95,6 +95,8 @@ public:
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);
     void FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId);
+    void FetchRecommendationScoreForFics(QVector<core::Fic> * fics, core::ReclistFilter filter);
+
     QSharedPointer<core::RecommendationList> FetchParamsForRecList(QString name);
 
     bool WriteFicRecommenderRelationsForRecList(int listId, QHash<uint32_t,QVector<uint32_t>>);
