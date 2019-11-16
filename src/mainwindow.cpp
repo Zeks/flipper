@@ -2892,6 +2892,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->cbIDMode->setCurrentIndex(0);
     ui->leAuthorID->setText("");
     ui->wdgTagsPlaceholder->ResetFilters();
+    ui->cbSortDirection->setCurrentIndex(0);
 }
 
 void MainWindow::DetectGenreSearchState()
