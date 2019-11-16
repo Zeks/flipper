@@ -1743,13 +1743,21 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
     params->maxUnmatchedPerMatch = 9999;
+    params->maximumNegativeMatches = ui->leRecsMaximumNegativeMatches->text().toInt();
     params->alwaysPickAt = 1;
     params->name = "#similarfics";
+    params->userFFNId = env.interfaces.recs->GetUserProfile();
+    //params->majorNegativeVotes = env.GetFicsForNegativeTags();
+
     QString storedList = ui->cbRecGroup->currentText();
     auto storedLists = env.interfaces.recs->GetAllRecommendationListNames(true);
     QVector<int> sourceFics;
     sourceFics.push_back(id);
+    auto ids = env.interfaces.fandoms->GetIgnoredFandomsIDs();
+    for(auto fandom: ids.keys())
+        params->ignoredFandoms.insert(fandom);
 
+    //params->Log();
     auto result = env.BuildRecommendations(params, sourceFics, false, false);
     Q_UNUSED(result)
 
@@ -2662,6 +2670,7 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         return QSharedPointer<core::RecommendationList>();
     }
     params->isAutomatic = ui->chkRecsAutomaticSettings->isChecked();
+    params->doTrashCounting = ui->chkUseDislikes->isChecked();
 
     params->minimumMatch = params->isAutomatic  ? 1 : ui->leRecsMinimumMatches->text().toInt();
     params->maxUnmatchedPerMatch = ui->leRecsPickRatio->text().toInt();

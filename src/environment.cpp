@@ -575,6 +575,8 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     grpcSource->GetInternalIDsForFics(&pack);
 
     list->likedAuthors = likedAuthors;
+    //QLOG_INFO() << "Logging list params: ";
+    list->Log();
     bool result = grpcSource->GetRecommendationListFromServer(*list);
 
 

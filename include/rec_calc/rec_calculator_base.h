@@ -145,8 +145,10 @@ static auto ratioFilter = [](AuthorResult& author, QSharedPointer<Recommendation
     return author.ratio <= params->maxUnmatchedPerMatch && author.matches > 0;
 };
 
-static auto negativeFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> )
+static auto negativeFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> list )
 {
+    if(!list->doTrashCounting)
+        return true;
     bool filterResult = (static_cast<double>(author.negativeMatches)/author.matches >= 2 || static_cast<double>(author.sizeAfterIgnore)/author.negativeMatches < 15)
             && static_cast<double>(author.negativeMatches)/author.matches >= 1.5 ;
     return !filterResult;

@@ -393,6 +393,7 @@ genre_stats::GenreMoodData CalcMoodDistributionForFicList(QList<uint32_t> ficLis
 const static auto basicRecommendationsParamReader = [](RequestContext& reqContext, const auto& task) -> QSharedPointer<core::RecommendationList> {
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->isAutomatic = task->data().general_params().is_automatic();
+    params->doTrashCounting = task->data().general_params().do_trash_counting();
     params->name =  proto_converters::FS(task->data().list_name());
     params->minimumMatch = task->data().general_params().min_fics_to_match();
     params->userFFNId = task->data().general_params().users_ffn_profile_id();
@@ -520,7 +521,11 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
 
     auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
+
     auto ficResult = ficPackReader(reqContext, task);
+    //recommendationsCreationParams->ficData.sourceFics = ficResult.sourceFics;
+    //QLOG_INFO() << "Received source fics: " << ficResult.sourceFics.toList();
+    //recommendationsCreationParams->Log();
 
     An<core::RecCalculator> recCalculator;
     auto moodData = CalcMoodDistributionForFicList(ficResult.fetchedFics.keys(), recCalculator->holder.genreComposites);

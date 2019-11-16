@@ -527,6 +527,7 @@ void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
 {
     for(auto author : filteredAuthors){
         double ratioForAuthor = static_cast<double>(allAuthors[author].negativeMatches)/static_cast<double>(allAuthors[author].matches);
+        //QLOG_INFO() << "Negative matches: " << static_cast<double>(allAuthors[author].negativeMatches) << "Positive matches: " << static_cast<double>(allAuthors[author].matches);
         averageNegativeToPositiveMatches += ratioForAuthor;
         allAuthors[author].negativeToPositiveMatches = ratioForAuthor;
     }

@@ -28,6 +28,7 @@ message RecommendationListParams{
     bool use_weighting                  = 5;
     bool use_mood_filtering             = 6;
     int32 users_ffn_profile_id          = 7;
+    bool do_trash_counting              = 8;
 }
 
 

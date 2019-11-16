@@ -199,7 +199,11 @@ void core::RecommendationList:: Log()
 
     qDebug() << "List id: " << id ;
     qDebug() << "name: " << name ;
-    qDebug() << "automaic: " << isAutomatic;
+    qDebug() << "automatic: " << isAutomatic;
+    qDebug() << "useWeighting: " << useWeighting;
+    qDebug() << "useMoodAdjustment: " << useMoodAdjustment;
+    qDebug() << "hasAuxDataFilled: " << hasAuxDataFilled;
+    qDebug() << "maxUnmatchedPerMatch: " << maxUnmatchedPerMatch;
     qDebug() << "ficCount: " << ficCount ;
     qDebug() << "tagToUse: " << tagToUse ;
     qDebug() << "minimumMatch: " << minimumMatch ;
@@ -207,6 +211,7 @@ void core::RecommendationList:: Log()
     qDebug() << "alwaysPickAt: " << alwaysPickAt ;
     qDebug() << "pickRatio: " << maxUnmatchedPerMatch ;
     qDebug() << "created: " << created ;
+    //qDebug() << "source fics: " << ficData.sourceFics;
 }
 
 void core::AuthorStats::Serialize(QDataStream &out)

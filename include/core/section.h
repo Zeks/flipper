@@ -845,6 +845,7 @@ public:
     bool useWeighting = false;
     bool useMoodAdjustment = false;
     bool hasAuxDataFilled = false;
+    bool doTrashCounting = false;
 
     int id = -1;
     int ficCount =-1;

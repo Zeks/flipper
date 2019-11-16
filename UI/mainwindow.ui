@@ -392,16 +392,26 @@
                             <number>0</number>
                            </property>
                            <item row="0" column="0">
-                            <widget class="QLabel" name="label_29">
+                            <widget class="QCheckBox" name="chkUseDislikes">
                              <property name="text">
-                              <string>Maximum Negative  Matches:</string>
+                              <string>Use Dislikes</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
                              </property>
                             </widget>
                            </item>
                           </layout>
                          </widget>
                         </item>
-                        <item row="1" column="1">
+                        <item row="2" column="2">
+                         <widget class="QPushButton" name="pbDiagnosticList">
+                          <property name="text">
+                           <string>Get Diagnostics</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="2">
                          <widget class="QLineEdit" name="leRecsMaximumNegativeMatches">
                           <property name="enabled">
                            <bool>false</bool>
@@ -420,10 +430,10 @@
                           </property>
                          </widget>
                         </item>
-                        <item row="1" column="2">
-                         <widget class="QPushButton" name="pbDiagnosticList">
+                        <item row="1" column="1">
+                         <widget class="QLabel" name="label_29">
                           <property name="text">
-                           <string>Get Diagnostics</string>
+                           <string>Maximum Negative  Matches:</string>
                           </property>
                          </widget>
                         </item>
