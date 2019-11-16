@@ -1087,7 +1087,7 @@ DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::Re
         qs+=" and (purged = 0)";
 
     SqlContext<QHash<int,int>> ctx(db, qs);
-    ctx.bindValue("list_id",filter.listId);
+    ctx.bindValue("list_id",filter.mainListId);
     if(filter.minMatchCount != 0)
         ctx.bindValue("match_count",filter.minMatchCount);
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -2511,6 +2511,8 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
         fic.voteBreakdownCounts = breakdownCounts[fic.id];
         if(purgedFics.contains(fic.id))
             fic.purged = true;
+        else
+            fic.purged = false;
     }
     return ctx.result;
 }
@@ -2528,7 +2530,7 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
     qs = qs.arg(ids.join(","));
 
     SqlContext<bool> ctx(db, qs);
-    ctx.bindValue("list_id", filter.listId);
+    ctx.bindValue("list_id", filter.mainListId);
 
     ctx.ForEachInSelect([&](QSqlQuery& q){
         scores[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
@@ -2538,6 +2540,46 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
 
 }
 
+DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter, QSqlDatabase db)
+{
+    QStringList ficIds;
+
+    QHash<int, int> indices;
+    int i = 0;
+    for(auto fic: *fics)
+    {
+        ficIds.push_back(QString::number(fic.id));
+        indices[fic.id] = i;
+        i++;
+    }
+    QStringList listIds;
+    listIds << QString::number(filter.mainListId);
+    if(filter.secondListId != -1)
+        listIds << QString::number(filter.secondListId);
+
+
+    QString qs = QString("select fic_id, list_id, %1, position from RecommendationListData where list_id in (%2) and fic_id in (%3)" );
+    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = qs.arg(pointsField);
+    qs = qs.arg(listIds.join(","));
+    qs = qs.arg(ficIds.join(","));
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        int ficId = q.value("fic_id").toInt();
+        auto& fic = (*fics)[indices[ficId]];
+        if(q.value("list_id").toInt() == filter.mainListId)
+        {
+            fic.recommendationsMainList = q.value(pointsField).toInt();
+            fic.placeInMainList = q.value("position").toInt();
+        }
+        else{
+            fic.recommendationsSecondList = q.value(pointsField).toInt();
+            fic.placeInSecondList = q.value("position").toInt();
+        }
+    });
+    return ctx.result;
+}
 
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db)
 {
@@ -3820,7 +3862,7 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
         return scores[fic1] > scores[fic2] ;
     });
     for(int i = 0; i < list->ficData.fics.size(); i++){
-        positions[ficsCopy[i]] = i;
+        positions[ficsCopy[i]] = i+1;
     }
 
     for(int i = 0; i < list->ficData.fics.size(); i++)
@@ -4087,15 +4129,6 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
 
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
-
-
-
-
-
-
-
-
-
 
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
 //{

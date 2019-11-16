@@ -240,7 +240,6 @@ bool MainWindow::Init()
     //ui->edtResults->setOpenExternalLinks(true);
     ui->edtRecsContents->setReadOnly(false);
     ui->wdgDetailedRecControl->hide();
-    bool thinClient = settings.value("Settings/thinClient").toBool();
     SetClientMode();
     ResetFilterUItoDefaults();
     ReadSettings();
@@ -352,7 +351,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     if(data) \
     data->PARAM = value.toString(); \
     } \
-    );
+    )
 
 
 #define ADD_STRING_NUMBER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
@@ -380,7 +379,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     if(data) \
     data->PARAM = value.toString(); \
     } \
-    ); \
+    ) \
 
 
 #define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
@@ -399,7 +398,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     if(data) \
     data->PARAM = value.toDateTime(); \
     } \
-    ); \
+    ) \
 
 #define ADD_STRING_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
@@ -417,7 +416,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     if(data) \
     data->PARAM = QString::number(value.toInt()); \
     } \
-    ); \
+    ) \
 
 #define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
@@ -435,7 +434,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     if(data) \
     data->PARAM = value.toInt(); \
     } \
-    ); \
+    ) \
 
 #define ADD_ENUM_GETSET(GETTER, SETTER, HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
@@ -453,7 +452,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     if(data) \
     SETTER(data, value.toInt());    \
     } \
-    ); \
+    ) \
 
 #define ADD_STRINGLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
@@ -464,7 +463,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     else \
     return QVariant(); \
     } \
-    ); \
+    ) \
 
 
 
@@ -492,7 +491,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
     ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
     ADD_INTEGER_GETSET(holder, 17, 0, id);
-    ADD_INTEGER_GETSET(holder, 18, 0, recommendations);
+    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsMainList);
     ADD_STRING_GETSET(holder, 19, 0, realGenreString);
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
     ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
@@ -508,6 +507,9 @@ void MainWindow::SetupTableAccess()
     ADD_STRING_GETSET(holder, 31, 0, notes);
     ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
     ADD_STRINGLIST_GETTER(holder, 33, 0, selected);
+    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsSecondList);
+    ADD_INTEGER_GETSET(holder, 35, 0, placeInMainList);
+    ADD_INTEGER_GETSET(holder, 36, 0, placeInSecondList);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -534,10 +536,11 @@ void MainWindow::SetupFanficTable()
                        << "genre" << "characters" << "rated" << "published"
                        << "updated" << "url" << "tags" << "wordCount" << "favourites"
                        << "reviews" << "chapters" << "complete" << "atChapter" << "ID"
-                       << "recommendations" << "realGenres" << "author_id" << "minSlashLevel"
+                       << "recommendationsMain" << "realGenres" << "author_id" << "minSlashLevel"
                        << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
                        << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
-                       << "notes" << "quotes" << "selected");
+                       << "notes" << "quotes" << "selected" << "recommendationsSecond"
+                       << "placeMain" << "placeSecond");
 
 
 
@@ -563,6 +566,8 @@ void MainWindow::SetupFanficTable()
                                               settings.value("Settings/urlCopyIconVisible", true).toBool());
     qwFics->rootContext()->setContextProperty("displayAuthorNameInList",
                                               settings.value("Settings/displayAuthorName", true).toBool());
+    qwFics->rootContext()->setContextProperty("displayListDifferenceInList",
+                                              settings.value("Settings/displaySecondReclist", false).toBool());
     qwFics->rootContext()->setContextProperty("scanIconVisible",
                                               settings.value("Settings/scanIconVisible", true).toBool());
     qwFics->rootContext()->setContextProperty("main", this);
@@ -612,8 +617,10 @@ void MainWindow::OnDisplayNextPage()
 
     windowObject->setProperty("currentPage", env.pageOfCurrentQuery);
     LoadData();
+    FetchScoresForFics();
     PlaceResults();
     AnalyzeCurrentFilter();
+
 }
 
 void MainWindow::OnDisplayPreviousPage()
@@ -627,6 +634,7 @@ void MainWindow::OnDisplayPreviousPage()
         windowObject->setProperty("havePagesBefore", false);
     windowObject->setProperty("currentPage", env.pageOfCurrentQuery);
     LoadData();
+    FetchScoresForFics();
     PlaceResults();
     AnalyzeCurrentFilter();
 }
@@ -648,6 +656,7 @@ void MainWindow::OnDisplayExactPage(int page)
     windowObject->setProperty("havePagesBefore", page > 0);
 
     LoadData();
+    FetchScoresForFics();
     PlaceResults();
 }
 
@@ -728,7 +737,7 @@ void MainWindow::LoadData()
     currentFrame.fanfics = holder->GetData();
 
     env.LoadData();
-
+    FetchScoresForFics();
 
 
 
@@ -786,7 +795,7 @@ void MainWindow::ProcessTagsIntoGui()
 
 }
 
-void MainWindow::SetTag(int id, QString tag, bool silent)
+void MainWindow::SetTag(int id, QString tag, bool)
 {
     env.interfaces.tags->SetTagForFic(id, tag);
     tagList = env.interfaces.tags->ReadUserTags();
@@ -798,7 +807,7 @@ void MainWindow::UnsetTag(int id, QString tag)
     tagList = env.interfaces.tags->ReadUserTags();
 }
 
-void MainWindow::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)> updater)
+void MainWindow::UpdateAllAuthorsWith(std::function<void(QSharedPointer<core::Author>, WebPage)>)
 {
     TaskProgressGuard guard(this);
     env.filter.mode = core::StoryFilter::filtering_in_recommendations;
@@ -1112,13 +1121,6 @@ void MainWindow::ReadSettings()
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    //ui->wdgCustomActions->setVisible(settings.value("Settings/showCustomActions", false).toBool());
-    //ui->chkGroupFandoms->setVisible(settings.value("Settings/showListCreation", false).toBool());
-    //ui->chkInfoForLinks->setVisible(settings.value("Settings/showListCreation", false).toBool());
-
-
-    ui->cbRecGroup->setVisible(settings.value("Settings/showRecListSelector", false).toBool());
-
     ui->cbNormals->setCurrentText(settings.value("Settings/normals", "").toString());
     ui->cbCrossovers->setCurrentText(settings.value("Settings/crosses", "").toString());
 
@@ -1180,6 +1182,8 @@ void MainWindow::ReadSettings()
     ui->cbIDMode->setCurrentText(uiSettings.value("Settings/cbIDMode", "").toString());
     ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
     ui->cbSortDirection->setCurrentText(uiSettings.value("Settings/cbSortDirection", "").toString());
+    ui->cbRecGroupSecond->setVisible(settings.value("Settings/displaySecondReclist", false).toBool());
+
 
 
     DetectGenreSearchState();
@@ -1242,6 +1246,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/biasOperator", ui->cbBiasOperator->currentText());
     settings.setValue("Settings/biasValue", ui->leBiasValue->text());
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
+    settings.setValue("Settings/currentListSecond", ui->cbRecGroupSecond->currentText());
     settings.setValue("Settings/chkShowSources", ui->chkShowSources->isChecked());
     settings.setValue("Settings/chkSearchWithinList", ui->chkSearchWithinList->isChecked());
 
@@ -1517,7 +1522,7 @@ bool MainWindow::AskYesNoQuestion(QString value)
     m.setText(value);
     auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
     auto noButton =  m.addButton("Cancel", QMessageBox::AcceptRole);
-    Q_UNUSED(noButton);
+    Q_UNUSED(noButton)
     m.exec();
     if(m.clickedButton() != yesButton)
         return false;
@@ -1575,15 +1580,6 @@ void MainWindow::on_chkRandomizeSelection_clicked(bool checked)
     int maxFicCountValue = ficLimitActive ? ui->sbMaxRandomFicCount->value()  : 0;
     if(checked && (maxFicCountValue < 1 || maxFicCountValue >50))
         ui->sbMaxRandomFicCount->setValue(settings.value("Settings/defaultRandomFicCount", 6).toInt());
-}
-
-
-void MainWindow::on_cbSortMode_currentTextChanged(const QString &)
-{
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    if(ui->cbSortMode->currentText() == "Rec Count")
-        ui->cbRecGroup->setVisible(settings.value("Settings/showRecListSelector", false).toBool());
 }
 
 void MainWindow::on_pbExpandPlusGenre_clicked()
@@ -1688,6 +1684,7 @@ void MainWindow::FillRecTagCombobox()
 {
     auto lists = env.interfaces.recs->GetAllRecommendationListNames();
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+    SilentCall(ui->cbRecGroupSecond)->setModel(new QStringListModel(lists));
     if(lists.size() > 0)
     {
         ui->pbDeleteRecList->setEnabled(true);
@@ -1699,10 +1696,12 @@ void MainWindow::FillRecTagCombobox()
         ui->pbGetSourceLinks->setEnabled(false);
     }
 
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
     auto storedRecList = settings.value("Settings/currentList").toString();
+    auto storedSecondRecList = settings.value("Settings/currentListSecond").toString();
     qDebug() << QDir::currentPath();
     ui->cbRecGroup->setCurrentText(storedRecList);
+    ui->cbRecGroupSecond->setCurrentText(storedSecondRecList);
     auto listId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     env.interfaces.recs->SetCurrentRecommendationList(listId);
 }
@@ -1752,7 +1751,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     sourceFics.push_back(id);
 
     auto result = env.BuildRecommendations(params, sourceFics, false, false);
-    Q_UNUSED(result);
+    Q_UNUSED(result)
 
     auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
@@ -1923,7 +1922,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
                                                         QString listToUse,
                                                         bool performFilterValidation)
 {
-
+    Q_UNUSED(useAuthorLink)
     auto valueIfChecked = [](QCheckBox* box, auto value){
         if(box->isChecked())
             return value;
@@ -2422,7 +2421,7 @@ void MainWindow::on_pbReinitFandoms_clicked()
     m.setText(diagnostics);
     auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
     auto noButton =  m.addButton("Cancel", QMessageBox::AcceptRole);
-    Q_UNUSED(noButton);
+    Q_UNUSED(noButton)
     m.exec();
     if(m.clickedButton() != yesButton)
         return;
@@ -2631,7 +2630,7 @@ bool DisplayOwnProfilePrompt()
               "Are you sure you want to continue?");
     auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
     auto noButton =  m.addButton("No", QMessageBox::AcceptRole);
-    Q_UNUSED(noButton);
+    Q_UNUSED(noButton)
     m.exec();
     if(m.clickedButton() != yesButton)
         return false;
@@ -2792,6 +2791,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
 
     auto lists = env.interfaces.recs->GetAllRecommendationListNames(true);
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+    SilentCall(ui->cbRecGroupSecond)->setModel(new QStringListModel(lists));
     ui->cbRecGroup->setCurrentText(params->name);
     ui->cbSortMode->setCurrentText("Rec Count");
     env.interfaces.recs->SetCurrentRecommendationList(env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
@@ -3134,23 +3134,42 @@ void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
     }
 }
 
-void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
+
+void MainWindow::FetchScoresForFics()
 {
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
-    settings.sync();
-    auto listId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
-    env.interfaces.recs->SetCurrentRecommendationList(listId);
-    if(env.fanfics.size() > 0 && listId != -1){
+    auto mainListId = env.interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
+    auto secondListId = env.interfaces.recs->GetListIdForName(ui->cbRecGroupSecond->currentText());
+    env.interfaces.recs->SetCurrentRecommendationList(mainListId);
+    if(env.fanfics.size() > 0 && mainListId != -1){
         core::ReclistFilter filter;
-        filter.listId = listId;
+        filter.mainListId = mainListId;
+        filter.secondListId = secondListId;
         filter.scoreType = SortRecoder(ui->cbSortMode->currentIndex()) ==  core::StoryFilter::sm_minimize_dislikes ?
                     core::StoryFilter::st_minimal_dislikes : core::StoryFilter::st_points;
         env.LoadNewScoreValuesForFanfics(filter, env.fanfics);
         holder->SetData(env.fanfics);
     }
 }
+
+void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
+    settings.sync();
+    FetchScoresForFics();
+}
+
+void MainWindow::on_cbRecGroupSecond_currentIndexChanged(const QString &arg1)
+{
+    Q_UNUSED(arg1)
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    settings.setValue("Settings/currentListSecond", ui->cbRecGroupSecond->currentText());
+    settings.sync();
+    FetchScoresForFics();
+}
+
 
 void MainWindow::on_pbUseProfile_clicked()
 {
@@ -3213,7 +3232,7 @@ void MainWindow::on_pbDeleteRecList_clicked()
     m.setText(diagnostics);
     auto deleteTask =  m.addButton("Yes",QMessageBox::AcceptRole);
     auto noTask =      m.addButton("No",QMessageBox::AcceptRole);
-    Q_UNUSED(noTask);
+    Q_UNUSED(noTask)
     m.exec();
     if(m.clickedButton() == deleteTask)
     {
@@ -3298,12 +3317,12 @@ void MainWindow::on_pbProfileCompare_clicked()
     }
 }
 
-void MainWindow::on_chkGenreUseImplied_stateChanged(int )
+void MainWindow::on_chkGenreUseImplied_stateChanged(int)
 {
     DetectGenreSearchState();
 }
 
-void MainWindow::on_cbSlashFilterAggressiveness_currentIndexChanged(int index)
+void MainWindow::on_cbSlashFilterAggressiveness_currentIndexChanged(int)
 {
     DetectSlashSearchState();
 }
@@ -3480,5 +3499,7 @@ void MainWindow::SetNextEnabled(bool value)
         ui->pbNextResults->setEnabled(false);
     }
 }
+
+
 
 

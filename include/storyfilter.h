@@ -183,7 +183,8 @@ struct StoryFilter{
 };
 
 struct ReclistFilter{
-    int listId;
+    int mainListId = -1;
+    int secondListId = -1;
     int minMatchCount = 0;
     core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all;
     core::StoryFilter::EScoreType scoreType = core::StoryFilter::st_points;

@@ -448,12 +448,12 @@ Rectangle{
 
                 Image {
                     id: imgRecommendations
-                    width: recommendations > 0 ? 20 : 0
+                    width: recommendationsMain > 0 ? 20 : 0
                     height: 24
                     sourceSize.height: 24
                     sourceSize.width: 24
                     property bool chartVisible: false
-                    visible: recommendations > 0
+                    visible: recommendationsMain > 0
                     source: {
                         if(likedAuthor > 0)
                             return "qrc:/icons/icons/heart_half.png"
@@ -507,19 +507,59 @@ Rectangle{
                         }
                     }
                 }
-
                 Text {
                     id: txtRecCount
-                    width: recommendations > 0 ? 20 : 0
+                    width: recommendationsMain > 0 ? 20 : 0
                     height: 24
-                    text: { return recommendations + " Ratio: 1/" + Math.round(favourites/recommendations)}
+                    text: {
+                        if(lvFics.displayListDifference && recommendationsSecond != 0)
+                            return recommendationsMain + "/" + recommendationsSecond
+                        return recommendationsMain
+                    }
                     //text: { return recommendations + " Ratio: 1/" + chapters}
                     //text: { return recommendations + " Faves: " + favourites}
-                    visible: recommendations > 0
+                    visible: recommendationsMain > 0
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 16
                 }
-
+                Text {
+                    id: txtPositionDiff
+                    visible: lvFics.displayListDifference && (placeMain - placeSecond) != 0
+                    width: recommendationsMain > 0 ? 20 : 0
+                    height: 24
+                    text: {
+                        var str = ""
+                        if(placeMain - placeSecond >= 0)
+                            str+="-";
+                        else if(placeMain - placeSecond < 0)
+                            str+="+";
+                        str+=Math.abs(placeMain - placeSecond);
+                        if(placeSecond === 0)
+                            return "new";
+                        return str
+                    }
+                    verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 16
+                    color: {
+                        var color = Qt.lighter("darkRed")
+                        if(placeMain - placeSecond > 0)
+                         color = Qt.lighter("darkRed")
+                        else
+                         color = Qt.lighter("darkGreen")
+                        if(placeSecond === 0)
+                            color = Qt.lighter("darkGreen")
+                        return color;
+                    }
+                }
+                Text {
+                    id: txtRatio
+                    width: recommendationsMain > 0 ? 20 : 0
+                    height: 24
+                    text: { return " Ratio: 1/" + Math.round(favourites/recommendationsMain)}
+                    visible: recommendationsMain > 0
+                    verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 16
+                }
                 Text {
                     id: txtWords
                     width: 70

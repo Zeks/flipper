@@ -15,9 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#ifndef QML_FICMODEL_H
-#define QML_FICMODEL_H
-
+#pragma once
 #include "UniversalModels/include/AdaptingTableModel.h"
 #include <QQmlExtensionPlugin>
 
@@ -47,7 +45,7 @@ public:
         RatedRole,
         AtChapterRole,
         RownumRole,
-        RecommendationsRole,
+        RecommendationsMainRole,
         RealGenreRole,
         FicIdRole,
         AuthorIdRole,
@@ -64,7 +62,10 @@ public:
         NotesRole,
         QuotesRole,
         SelectedRole,
-        EndRole = SelectedRole
+        RecommendationsSecondRole,
+        PlaceInMainList,
+        PlaceInSecondList,
+        EndRole = PlaceInSecondList
 
     };
 
@@ -78,19 +79,4 @@ public:
     // QAbstractItemModel interface
 
 };
-//class MyModelPlugin : public QQmlExtensionPlugin
-//{
-//    Q_OBJECT
-//    Q_PLUGIN_METADATA(IID "org.qt-project.QmlExtension.FicModel" FILE "ficmodel.json")
-//public:
-//    void registerTypes(const char *uri)
-//    {
-//        qmlRegisterType<FicModel>(uri, 1, 0,
-//                "FicModel");
-//    }
-//};
-
-
-#endif // QML_FICMODEL_H
-
 

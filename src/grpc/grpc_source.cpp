@@ -381,7 +381,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.atChapter = GetChapterForFic(coreFic.id);
 
     coreFic.complete = protoFic.complete();
-    coreFic.recommendations = protoFic.recommendations();
+    coreFic.recommendationsMainList = protoFic.recommendations();
     coreFic.wordCount = FS(protoFic.word_count());
     coreFic.chapters = FS(protoFic.chapters());
     //qDebug() << "received chapters: " << coreFic.chapters ;
@@ -454,7 +454,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 
     protoFic->set_chapters(TS(coreFic.chapters));
     protoFic->set_complete(coreFic.complete);
-    protoFic->set_recommendations(coreFic.recommendations);
+    protoFic->set_recommendations(coreFic.recommendationsMainList);
 
     protoFic->set_word_count(TS(coreFic.wordCount));
     protoFic->set_reviews(TS(coreFic.reviews));

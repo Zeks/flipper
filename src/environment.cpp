@@ -115,7 +115,7 @@ void CoreEnvironment::LoadData()
 
             QVector<int> recFics;
             core::ReclistFilter reclistFilter;
-            reclistFilter.listId = interfaces.recs->GetCurrentRecommendationList();
+            reclistFilter.mainListId = interfaces.recs->GetCurrentRecommendationList();
             reclistFilter.minMatchCount = filter.minRecommendations;
             reclistFilter.limiter = filter.sourcesLimiter;
             reclistFilter.scoreType = scoreType;
@@ -199,6 +199,7 @@ bool CoreEnvironment::Init()
     InitMetatypes();
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
 
     auto ip = settings.value("Settings/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Settings/serverPort", "3055").toString();
@@ -249,7 +250,7 @@ bool CoreEnvironment::Init()
 
     ficSource->AddFicFilter(QSharedPointer<FicFilter>(new FicFilterSlash));
 
-    auto storedRecList = settings.value("Settings/currentList").toString();
+    auto storedRecList = uiSettings.value("Settings/currentList").toString();
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(storedRecList));
     interfaces.fandoms->Load();
     interfaces.recs->LoadAvailableRecommendationLists();
@@ -338,7 +339,7 @@ int CoreEnvironment::GetResultCount()
     core::StoryFilter::EScoreType scoreType = filter.sortMode != core::StoryFilter::sm_minimize_dislikes ? core::StoryFilter::st_points : core::StoryFilter::st_minimal_dislikes;
 
     core::ReclistFilter reclistFilter;
-    reclistFilter.listId = interfaces.recs->GetCurrentRecommendationList();
+    reclistFilter.mainListId = interfaces.recs->GetCurrentRecommendationList();
     reclistFilter.minMatchCount = filter.minRecommendations;
     reclistFilter.limiter = filter.sourcesLimiter;
     reclistFilter.scoreType = scoreType;
@@ -1077,9 +1078,9 @@ QSet<int> CoreEnvironment::GetFicsForNegativeTags()
 
 void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics)
 {
-    interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.listId);
+    interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.mainListId);
     if(fanfics.size() <= 100){
-        interfaces.recs->FetchRecommendationScoreForFics(&fanfics, filter);
+        interfaces.recs->LoadPlaceAndRecommendationsData(&fanfics, filter);
     }
 }
 

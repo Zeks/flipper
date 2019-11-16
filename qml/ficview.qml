@@ -38,7 +38,6 @@ Rectangle {
 
     property bool havePagesBefore: false
     property bool havePagesAfter: false
-    property bool displayAuthorName: true
     property bool authorFilterActive: false
     property bool detailedGenreMode: true
     property bool displaySnoozed: true
@@ -275,6 +274,7 @@ Rectangle {
             property bool showScanIcon: scanIconVisible
             property bool authorFilterActive: false
             property bool displayAuthorName : displayAuthorNameInList
+            property bool displayListDifference: displayListDifferenceInList
 
             spacing: 5
             clip:true

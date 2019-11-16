@@ -170,7 +170,11 @@ void core::Fic::Log()
     qDebug() << "StatSection:" << statSection;
     qDebug() << "Tags:" << tags;
     qDebug() << "Language:" << language;
-    qDebug() << "Summary:" << summary;
+
+    qDebug() << "Recommendations main:" << recommendationsMainList;
+    qDebug() << "Recommendations second:" << recommendationsSecondList;
+    qDebug() << "Place main:" << placeInMainList;
+    qDebug() << "Place second:" << placeInSecondList;
     LogWebIds();
     calcStats.Log();
     qDebug() << "//////////////////////////////////////";

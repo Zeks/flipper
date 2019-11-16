@@ -205,13 +205,13 @@ QVector<int> RecommendationLists::GetAllSourceFicIDs(int listId)
 QHash<int, int> RecommendationLists::GetAllFicsHash(core::ReclistFilter filter)
 {
     QHash<int, int> result;
-    if(!EnsureList(filter.listId))
+    if(!EnsureList(filter.mainListId))
         return result;
 
 //    if(!grpcCacheForLists.contains({listId, minMatchCount}))
 //    {
         result = database::puresql::GetRelevanceScoresInFilteredReclist(filter ,db).data;
-        grpcCacheForLists[{filter.listId, filter.minMatchCount}] = result;
+        grpcCacheForLists[{filter.mainListId, filter.minMatchCount}] = result;
 //    }
 //    else
 //        result = grpcCacheForLists[{listId, minMatchCount}];
@@ -527,8 +527,13 @@ void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fi
 
     database::puresql::FetchRecommendationScoreForFics(scores, filter, db);
     for(auto& fic: *fics){
-        fic.recommendations = scores[fic.id];
+        fic.recommendationsMainList = scores[fic.id];
     }
+}
+
+void RecommendationLists::LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter)
+{
+    database::puresql::LoadPlaceAndRecommendationsData(fics, filter, db);
 }
 
 QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecList(QString name)

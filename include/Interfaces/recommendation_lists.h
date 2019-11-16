@@ -96,6 +96,7 @@ public:
     void SetCurrentRecommendationList(int value);
     void FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId);
     void FetchRecommendationScoreForFics(QVector<core::Fic> * fics, core::ReclistFilter filter);
+    void LoadPlaceAndRecommendationsData(QVector<core::Fic> * fics, core::ReclistFilter);
 
     QSharedPointer<core::RecommendationList> FetchParamsForRecList(QString name);
 

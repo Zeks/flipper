@@ -646,7 +646,10 @@ public:
     int sb_id = -1;
     int sv_id = -1;
     QString urlFFN;
-    int recommendations = 0;
+    int recommendationsMainList = 0;
+    int recommendationsSecondList = 0;
+    int placeInMainList = 0;
+    int placeInSecondList = 0;
     QString webSite = "ffn";
 
     UpdateMode updateMode = UpdateMode::none;

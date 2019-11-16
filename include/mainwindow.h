@@ -266,6 +266,7 @@ private:
     void LoadFrameIntoUI(const FilterFrame& frame);
     void SetPreviousEnabled(bool value);
     void SetNextEnabled(bool value);
+    void FetchScoresForFics();
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
@@ -373,8 +374,7 @@ private slots:
 
     // used to make sure that the amount of random fics requested later will be correct
     void on_chkRandomizeSelection_clicked(bool checked);
-    // used to toggle visibility of recommendation list selector for sorting
-    void on_cbSortMode_currentTextChanged(const QString &arg1);
+
 
     // each of those functions calls an expanded editor for the corresponding line edit
     // -------------------------------------
@@ -506,6 +506,8 @@ private slots:
     void on_pbNextResults_clicked();
 
     void on_pbDiagnosticList_clicked();
+
+    void on_cbRecGroupSecond_currentIndexChanged(const QString &arg1);
 
 signals:
 
