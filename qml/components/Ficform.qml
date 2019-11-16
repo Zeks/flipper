@@ -273,7 +273,7 @@ Rectangle{
                     textFormat: Text.RichText;
                     text: {
                         if(!tiAtChapter.visible)
-                            return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
+                            return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + placeMain + "."  + title + "</a></body></html>"
                         return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "/" + tiAtChapter.text + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
                     }
                     verticalAlignment: Text.AlignVCenter
@@ -524,10 +524,11 @@ Rectangle{
                 }
                 Text {
                     id: txtPositionDiff
-                    visible: lvFics.displayListDifference && (placeMain - placeSecond) != 0
+                    visible: lvFics.displayListDifference && (placeMain - placeSecond) != 0 && placeSecond != 0
                     width: recommendationsMain > 0 ? 20 : 0
                     height: 24
                     text: {
+                        return "O:" + placeSecond
                         var str = ""
                         if(placeMain - placeSecond >= 0)
                             str+="-";
