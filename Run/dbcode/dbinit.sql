@@ -461,7 +461,18 @@ CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists
 alter table RecommendationLists add column sources varchar;
 alter table RecommendationLists add column use_weighting integer default 1;
 alter table RecommendationLists add column use_mood_adjustment integer default 1;
+alter table RecommendationLists add column has_aux_data integer default 0;
+alter table RecommendationLists add column quadratic_deviation real;
+alter table RecommendationLists add column ratio_median real;
+alter table RecommendationLists add column distance_to_double_sigma integer default -1;
 
+
+-- recommeders for fics in diagnostic table;
+CREATE TABLE if not exists RecommendersForFicAndList (
+ list_id integer default -1,
+ fic_id integer default -1,
+ author_id integer default -1, PRIMARY KEY (list_id, fic_id, author_id));
+CREATE INDEX if not exists I_RECOMMENDERS_FOR_FIC_AND_LIST_KEYS_LIST_FIC ON RecommendersForFicAndList (fic_id ASC, list_id ASC);
 
 -- data for fandoms present in the list;
 create table if not exists RecommendationListsFandoms(list_id INTEGER default 0, fandom_id VARCHAR default 0, is_original_fandom integer default 0, 
@@ -474,6 +485,7 @@ CREATE INDEX if not exists  I_RecommendationListsFandoms_IS_ORIGINAL_FANDOM ON R
 
 -- data for recommendation lists;
 CREATE TABLE if not exists RecommendationListData(fic_id INTEGER NOT NULL, list_id integer, is_origin integer default 0, match_count integer default 0, PRIMARY KEY (fic_id asc, list_id asc));
+alter table RecommendationListData add column no_trash_score real;
 CREATE INDEX if not exists  I_LIST_TAGS_PK ON RecommendationListData (list_id asc, fic_id asc, match_count asc);
 CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC);
 CREATE INDEX if not exists  I_IS_ORIGIN ON RecommendationListData (is_origin ASC);
