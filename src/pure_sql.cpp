@@ -3794,11 +3794,11 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
 DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
                                              QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, no_trash_score, is_origin, "
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, position, match_count, no_trash_score, is_origin, "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
                          "value_common, value_uncommon, value_rare, value_unique, purged) "
-                         "values(:listId, :ficId, :matchCount, :no_trash_score, :is_origin,"
+                         "values(:listId, :ficId, :position, :matchCount, :no_trash_score, :is_origin,"
                          ":breakdown_available,"
                          ":votes_common, :votes_uncommon, :votes_rare, :votes_unique, "
                          ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)");
@@ -3808,13 +3808,29 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
 
     qDebug() << "Creating new vote breakdown records for list with id: " << list->id;
     ctx.bindValue("listId", list->id);
+    int position = 0;
+    // first we need to fill the hash of scores per fic
+    QHash<int, int> scores;
+    QHash<int, int> positions;
+    QVector ficsCopy = list->ficData.fics;
+    for(int i = 0; i < list->ficData.fics.size(); i++)
+        scores[list->ficData.fics[i]] = list->ficData.matchCounts[i];
+
+    std::sort(ficsCopy.begin(), ficsCopy.end(), [&](const int& fic1, const int& fic2){
+        return scores[fic1] > scores[fic2] ;
+    });
+    for(int i = 0; i < list->ficData.fics.size(); i++){
+        positions[ficsCopy[i]] = i;
+    }
+
     for(int i = 0; i < list->ficData.fics.size(); i++)
     {
-
+        position++;
         int ficId = list->ficData.fics.at(i);
 
         ctx.bindValue("ficId", ficId);
-        ctx.bindValue("purged", list->ficData.purges.at(i));
+        ctx.bindValue("position", positions[ficId]);
+
         ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
         ctx.bindValue("no_trash_score", list->ficData.noTrashScores.at(i));
         bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
@@ -3831,6 +3847,7 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
         ctx.bindValue("value_uncommon", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::uncommon]);
         ctx.bindValue("value_rare", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::rare]);
         ctx.bindValue("value_unique", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::unique]);
+        ctx.bindValue("purged", list->ficData.purges.at(i));
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;

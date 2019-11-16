@@ -465,6 +465,7 @@ alter table RecommendationLists add column has_aux_data integer default 0;
 alter table RecommendationLists add column quadratic_deviation real;
 alter table RecommendationLists add column ratio_median real;
 alter table RecommendationLists add column distance_to_double_sigma integer default -1;
+;
 
 
 -- recommeders for fics in diagnostic table;
@@ -484,8 +485,27 @@ CREATE INDEX if not exists  I_RecommendationListsFandoms_fic_count ON Recommenda
 CREATE INDEX if not exists  I_RecommendationListsFandoms_IS_ORIGINAL_FANDOM ON RecommendationListsFandoms (is_original_fandom asc);
 
 -- data for recommendation lists;
-CREATE TABLE if not exists RecommendationListData(fic_id INTEGER NOT NULL, list_id integer, is_origin integer default 0, match_count integer default 0, PRIMARY KEY (fic_id asc, list_id asc));
-alter table RecommendationListData add column no_trash_score real;
+CREATE TABLE if not exists RecommendationListData(
+fic_id INTEGER NOT NULL, 
+list_id integer,
+ is_origin integer default 0, 
+ match_count integer default 0,
+ PRIMARY KEY (fic_id asc, list_id asc));
+  alter table RecommendationListData add column votes_common integer default 0;
+  alter table RecommendationListData add column votes_uncommon integer default 0;
+  alter table RecommendationListData add column votes_rare integer default 0;
+  alter table RecommendationListData add column votes_unique integer default 0;
+  
+  alter table RecommendationListData add column value_common integer default 0;
+  alter table RecommendationListData add column value_uncommon integer default 0;
+  alter table RecommendationListData add column value_rare integer default 0;
+  alter table RecommendationListData add column value_unique integer default 0;
+  alter table RecommendationListData add column purged integer default 0;
+  alter table RecommendationListData add column no_trash_score real;
+  
+  alter table RecommendationListData add column breakdown_available integer default 0;
+  alter table RecommendationListData add column position integer;
+
 CREATE INDEX if not exists  I_LIST_TAGS_PK ON RecommendationListData (list_id asc, fic_id asc, match_count asc);
 CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC);
 CREATE INDEX if not exists  I_IS_ORIGIN ON RecommendationListData (is_origin ASC);

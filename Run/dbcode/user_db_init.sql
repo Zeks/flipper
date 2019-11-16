@@ -79,6 +79,7 @@ alter table RecommendationLists add column ratio_median real;
 alter table RecommendationLists add column distance_to_double_sigma integer default -1;
 
 
+
 CREATE INDEX if not exists  I_RecommendationLists_ID ON RecommendationLists (id asc);
 CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (NAME asc);
 CREATE INDEX if not exists  I_RecommendationLists_created ON RecommendationLists (created asc);
@@ -112,6 +113,7 @@ list_id integer,
   alter table RecommendationListData add column no_trash_score real;
   
   alter table RecommendationListData add column breakdown_available integer default 0;
+  alter table RecommendationListData add column position integer;
 
 CREATE INDEX if not exists  I_LIST_TAGS_PK ON RecommendationListData (list_id asc, fic_id asc, match_count asc);
 CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC);
