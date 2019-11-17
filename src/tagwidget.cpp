@@ -133,6 +133,7 @@ void TagWidget::ResetFilters()
     ui->chkAndForTags->setChecked(false) ;
     ui->chkUseTagsForAuthors->setChecked(false);
     ui->chkTagIncludingCrosses->setChecked(false);
+    selectedTags.clear();
 }
 
 
