@@ -2453,89 +2453,149 @@
            <attribute name="title">
             <string>Settings</string>
            </attribute>
-           <layout class="QGridLayout" name="gridLayout_28">
-            <item row="0" column="0">
-             <layout class="QVBoxLayout" name="verticalLayout_2">
+           <layout class="QGridLayout" name="gridLayout_30">
+            <item row="5" column="0" colspan="2">
+             <widget class="QCheckBox" name="chkDisplayComma">
+              <property name="text">
+               <string>Display comma in wordcount</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0" colspan="2">
+             <widget class="QCheckBox" name="chkDisplayDetectedGenre">
+              <property name="text">
+               <string>Display detected genre</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0" colspan="2">
+             <widget class="QCheckBox" name="chkDisplaySecondList">
+              <property name="text">
+               <string>Display second recommentation list</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0" colspan="2">
+             <widget class="QCheckBox" name="chkDisplayAuthorName">
+              <property name="text">
+               <string>Display author name in list</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" colspan="2">
+             <layout class="QHBoxLayout" name="horizontalLayout_20">
               <item>
-               <widget class="QCheckBox" name="chkDisplayAuthorName">
+               <widget class="QLabel" name="label_18">
                 <property name="text">
-                 <string>Display author name in list</string>
+                 <string>Your FFN ID:</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="chkDisplaySecondList">
+               <widget class="QLineEdit" name="leUserFFNId"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbVerifyUserFFNId">
                 <property name="text">
-                 <string>Display second recommentation list</string>
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="../icons.qrc">
+                  <normaloff>:/icons/icons/ok.png</normaloff>:/icons/icons/ok.png</iconset>
                 </property>
                </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="chkDisplayComma">
-                <property name="text">
-                 <string>Display comma in wordcount</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="chkDisplayDetectedGenre">
-                <property name="text">
-                 <string>Display detected genre</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_3">
-                <item>
-                 <widget class="QLabel" name="label_17">
-                  <property name="text">
-                   <string>Display ID in:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="cbFicIDDisplayMode">
-                  <item>
-                   <property name="text">
-                    <string>Recommendation list</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Displayed list</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <spacer name="verticalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
               </item>
              </layout>
             </item>
-            <item row="0" column="1">
+            <item row="2" column="0">
+             <layout class="QGridLayout" name="gridLayout_28">
+              <item row="1" column="1">
+               <widget class="QComboBox" name="cbFicIDDisplayMode">
+                <property name="minimumSize">
+                 <size>
+                  <width>125</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Recommendation list</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Displayed list</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_17">
+                <property name="text">
+                 <string>Display fic ID in:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_21">
+                <property name="text">
+                 <string>Load on startup:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="cbStartupLoadSelection">
+                <item>
+                 <property name="text">
+                  <string>Nothing</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Current reclist</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Random selection</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="5" column="2">
              <spacer name="horizontalSpacer_7">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>
-                <width>550</width>
+                <width>505</width>
                 <height>20</height>
                </size>
               </property>
              </spacer>
+            </item>
+            <item row="8" column="1">
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>13</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="lblUserFFNIdStatus">
+              <property name="text">
+               <string>TextLabel</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

@@ -995,6 +995,19 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url)
     return urlResult;
 }
 
+bool CoreEnvironment::TestAuthorID(QString id)
+{
+    QString url = "https://www.fanfiction.net/u/" + id;
+    WebPage page;
+    TimedAction fetchAction("Author page fetch", [&](){
+        page = env::RequestPage(url.trimmed(),  ECacheMode::use_cache);
+    });
+    fetchAction.run(false);
+    if(!page.content.contains("Anime"))
+        return false;
+    return true;
+}
+
 QList<QSharedPointer<core::Fic> > CoreEnvironment::LoadAuthorFics(QString url)
 {
     QStringList result;

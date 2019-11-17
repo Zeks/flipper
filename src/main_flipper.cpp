@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
         return 0;
     w.InitConnections();
     w.show();
-    w.DisplayRandomFicsForCurrent();
+    w.DisplayInitialFicSelection();
     w.StartTaskTimer();
 
     return a.exec();

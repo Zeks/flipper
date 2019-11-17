@@ -250,7 +250,11 @@ bool MainWindow::Init()
     ui->wdgSlashFandomExceptions->hide();
     ui->chkEnableSlashExceptions->hide();
 
-
+    auto userFFNId = env.interfaces.recs->GetUserProfile();
+    if(userFFNId > 0){
+        ui->leUserFFNId->setText(QString::number(userFFNId));
+        on_pbVerifyUserFFNId_clicked();
+    }
 
     return true;
 }
@@ -1186,6 +1190,7 @@ void MainWindow::ReadSettings()
     ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
     ui->cbSortDirection->setCurrentText(uiSettings.value("Settings/cbSortDirection", "").toString());
     ui->cbRecGroupSecond->setVisible(settings.value("Settings/displaySecondReclist", false).toBool());
+    ui->cbStartupLoadSelection->setCurrentIndex(uiSettings.value("Settings/startupLoadMode", false).toBool());
 
 
 
@@ -1564,6 +1569,19 @@ void MainWindow::SetFailureStatus()
     px = px.scaled(24, 24);
     actionProgress->ui->lblCurrentStatusIcon->setPixmap(px);
     actionProgress->ui->lblCurrentStatus->setText("Error!");
+}
+
+void MainWindow::DisplayInitialFicSelection()
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    if(settings.value("Settings/startupLoadMode", 2).toInt() == 0)
+    {
+        //nothing
+    }
+    if(settings.value("Settings/startupLoadMode", 2).toInt() == 1)
+        on_pbLoadDatabase_clicked();
+    if(settings.value("Settings/startupLoadMode", 2).toInt() == 2)
+        DisplayRandomFicsForCurrentFilter();
 }
 
 
@@ -3163,7 +3181,7 @@ void MainWindow::FetchScoresForFics()
     }
 }
 
-void MainWindow::DisplayRandomFicsForCurrent()
+void MainWindow::DisplayRandomFicsForCurrentFilter()
 {
     env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     env.filter.randomizeResults = true;
@@ -3574,3 +3592,37 @@ void MainWindow::on_cbFicIDDisplayMode_currentIndexChanged(const QString &)
     holder->SetData(env.fanfics);
 }
 
+
+void MainWindow::on_pbVerifyUserFFNId_clicked()
+{
+    auto userID = ui->leUserFFNId->text();
+    QRegularExpression rx("(\\d)+");
+    auto match = rx.match(userID);
+    if(!match.hasMatch())
+    {
+        ui->lblUserFFNIdStatus->setVisible(true);
+        ui->lblUserFFNIdStatus->setText("<font color=\"Red\">Not a valid number.</font>");
+        return;
+    }
+    auto validUser = env.TestAuthorID(userID);
+    if(!validUser){
+        ui->lblUserFFNIdStatus->setVisible(true);
+        ui->lblUserFFNIdStatus->setText("<font color=\"Red\">Not a valid FFN user.</font>");
+        return;
+    }
+    ui->lblUserFFNIdStatus->setVisible(true);
+    ui->lblUserFFNIdStatus->setText("<font color=\"darkGreen\">Valid FFN user.</font>");
+    env.interfaces.recs->SetUserProfile(userID.toInt());
+}
+
+void MainWindow::on_cbStartupLoadSelection_currentIndexChanged(const QString &arg1)
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setValue("Settings/startupLoadMode", ui->cbStartupLoadSelection->currentIndex());
+    settings.sync();
+}
+
+void MainWindow::on_leUserFFNId_editingFinished()
+{
+    on_pbVerifyUserFFNId_clicked();
+}

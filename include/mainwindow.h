@@ -126,7 +126,8 @@ public:
     void SetFinishedStatus();
     // used to indicate failure of the performed action to the user
     void SetFailureStatus();
-    void DisplayRandomFicsForCurrent();
+    void DisplayInitialFicSelection();
+    void DisplayRandomFicsForCurrentFilter();
 
     CoreEnvironment env;
 
@@ -520,6 +521,12 @@ private slots:
     void on_cbFicIDDisplayMode_currentIndexChanged(const QString &arg1);
 
     void on_chkDisplayDetectedGenre_stateChanged(int arg1);
+
+    void on_pbVerifyUserFFNId_clicked();
+
+    void on_cbStartupLoadSelection_currentIndexChanged(const QString &arg1);
+
+    void on_leUserFFNId_editingFinished();
 
 signals:
 
