@@ -1204,11 +1204,6 @@ void MainWindow::ReadSettings()
     if(uiSettings.value("Settings/maximized").toPoint().isNull())
         this->showMaximized();
 
-    if(ui->cbRecGroup->currentText().isEmpty())
-    {
-        ui->chkAutomaticLike->setChecked(true);
-        ui->chkUserOwnProfile->setChecked(true);
-    }
 }
 
 void MainWindow::WriteSettings()
@@ -2772,10 +2767,8 @@ void MainWindow::on_pbDiagnosticList_clicked()
 
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
-    bool ownProfile = ui->chkUserOwnProfile->isChecked();
-    bool autoLike = ui->chkAutomaticLike->isChecked() ;
-    if(ownProfile && !DisplayOwnProfilePrompt())
-        return;
+    bool ownProfile = false;
+    bool autoLike = false ;
 
     auto params = CreateReclistParamsFromUI(ownProfile);
     if(!params)
@@ -2828,7 +2821,7 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
     ui->pbGetSourceLinks->setEnabled(true);
     ui->pbDeleteRecList->setEnabled(true);
     on_pbLoadDatabase_clicked();
-    ui->chkAutomaticLike->setChecked(false);
+    //ui->chkAutomaticLike->setChecked(false);
 }
 
 
@@ -3615,7 +3608,7 @@ void MainWindow::on_pbVerifyUserFFNId_clicked()
     env.interfaces.recs->SetUserProfile(userID.toInt());
 }
 
-void MainWindow::on_cbStartupLoadSelection_currentIndexChanged(const QString &arg1)
+void MainWindow::on_cbStartupLoadSelection_currentIndexChanged(const QString &)
 {
     QSettings settings("settings/ui.ini", QSettings::IniFormat);
     settings.setValue("Settings/startupLoadMode", ui->cbStartupLoadSelection->currentIndex());
