@@ -51,6 +51,9 @@ int main(int argc, char *argv[])
     a.setApplicationName("Flipper");
     SetupLogger();
 
+
+    QSharedPointer<CoreEnvironment> coreEnvironment(new CoreEnvironment());
+
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
@@ -110,11 +113,15 @@ int main(int argc, char *argv[])
     tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
     QLOG_INFO() << "finished db";
 
+
+
+
     MainWindow w;
-    w.env.interfaces.db = dbInterface;
-    w.env.interfaces.userDb = userDbInterface;
-    w.env.interfaces.pageCache= pageCacheInterface;
-    w.env.interfaces.tasks = tasksInterface;
+    w.env = coreEnvironment;
+    w.env->interfaces.db = dbInterface;
+    w.env->interfaces.userDb = userDbInterface;
+    w.env->interfaces.pageCache= pageCacheInterface;
+    w.env->interfaces.tasks = tasksInterface;
     w.InitInterfaces();
     if(!w.Init())
         return 0;

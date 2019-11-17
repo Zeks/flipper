@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "include/servitorwindow.h"
+#include "include/ui/servitorwindow.h"
 #include "include/Interfaces/genres.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"

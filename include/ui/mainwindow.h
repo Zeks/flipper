@@ -129,7 +129,7 @@ public:
     void DisplayInitialFicSelection();
     void DisplayRandomFicsForCurrentFilter();
 
-    CoreEnvironment env;
+    QSharedPointer<CoreEnvironment> env;
 
 private:
 
