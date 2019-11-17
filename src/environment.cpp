@@ -64,7 +64,6 @@ void CoreEnvironment::LoadData()
         auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
 
         QVector<core::Fic> newFanfics;
-        auto& filterRef = this->filter;
         interfaces::TagIDFetcherSettings tagFetcherSettings;
         tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
 
@@ -136,7 +135,6 @@ void CoreEnvironment::LoadData()
 
         fanfics = newFanfics;
         currentLastFanficId = ficSource->lastFicId;
-        auto& ficScoresRef = ficScores;
         for(auto& fic : fanfics)
         {
             if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
@@ -659,7 +657,7 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
     interfaces.authors->LoadAuthors("ffn");
     interfaces.recs->Clear();
     //fanficsInterface->ClearIndex()
-    QList<int> allAuthors = interfaces.authors->GetAllAuthorIds();;
+    QList<int> allAuthors = interfaces.authors->GetAllAuthorIds();
     std::sort(std::begin(allAuthors),std::end(allAuthors));
     qDebug() << "count of author ids: " << allAuthors.size();
     QList<int> filteredAuthors;
@@ -833,7 +831,7 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     params->minimumMatch = 1;
     params->name = "similar";
     params->tagToUse = "generictag";
-    params->maxUnmatchedPerMatch = 9999999999;
+    params->maxUnmatchedPerMatch = 9999;
     interfaces.tags->SetTagForFic(id, "generictag");
     BuildRecommendations(params, {id}, false, !authorsLoaded);
     interfaces.tags->DeleteTag("generictag");
@@ -913,7 +911,7 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
             recommendations.push_back({section, author});
         interfaces.fanfics->AddRecommendations(recommendations);
         auto result =interfaces.fanfics->FlushDataQueues();
-        Q_UNUSED(result);
+        Q_UNUSED(result)
         interfaces.fandoms->RecalculateFandomStats(fandoms.values());
     }
     transaction.finalize();
