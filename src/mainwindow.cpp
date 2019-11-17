@@ -162,11 +162,6 @@ bool MainWindow::Init()
                                       "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}"
                                       "}");
 
-//    ui->pbPreviousResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
-//                                      "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
-//    ui->pbNextResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
-//                                      "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
-
     ui->wdgTagsPlaceholder->fandomsInterface = env.interfaces.fandoms;
     ui->wdgTagsPlaceholder->tagsInterface = env.interfaces.tags;
 
@@ -174,8 +169,6 @@ bool MainWindow::Init()
     ignoredFandomsModel = new QStringListModel;
     ignoredFandomsSlashFilterModel= new QStringListModel;
     recommendersModel= new QStringListModel;
-
-
 
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -3158,6 +3151,19 @@ void MainWindow::FetchScoresForFics()
         env.LoadNewScoreValuesForFanfics(filter, env.fanfics);
         holder->SetData(env.fanfics);
     }
+}
+
+void MainWindow::DisplayRandomFicsForCurrent()
+{
+    env.filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
+    env.filter.randomizeResults = true;
+    env.filter.maxFics = ui->sbMaxRandomFicCount->value();
+    if(env.filter.isValid)
+    {
+        LoadData();
+        PlaceResults();
+    }
+    AnalyzeCurrentFilter();
 }
 
 void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)

@@ -126,7 +126,7 @@ public:
     void SetFinishedStatus();
     // used to indicate failure of the performed action to the user
     void SetFailureStatus();
-
+    void DisplayRandomFicsForCurrent();
 
     CoreEnvironment env;
 
@@ -267,6 +267,7 @@ private:
     void SetPreviousEnabled(bool value);
     void SetNextEnabled(bool value);
     void FetchScoresForFics();
+
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
