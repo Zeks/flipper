@@ -512,8 +512,6 @@ Rectangle{
                     width: recommendationsMain > 0 ? 20 : 0
                     height: 24
                     text: {
-                        if(lvFics.displayListDifference && recommendationsSecond != 0)
-                            return recommendationsMain + "/" + recommendationsSecond
                         return recommendationsMain
                     }
                     //text: { return recommendations + " Ratio: 1/" + chapters}
@@ -528,7 +526,11 @@ Rectangle{
                     width: recommendationsMain > 0 ? 20 : 0
                     height: 24
                     text: {
-                        return "O:" + placeSecond
+
+                        if(lvFics.displayListDifference && recommendationsSecond != 0)
+                            return "O:" + placeSecond + "(" + recommendationsSecond + ")"
+
+
                         var str = ""
                         if(placeMain - placeSecond >= 0)
                             str+="-";
