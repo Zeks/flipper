@@ -38,12 +38,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/timeutils.h"
 #include "include/in_tag_accessor.h"
 #include "include/url_utils.h"
+#include "include/Interfaces/interface_sqlite.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QTextCodec>
 #include <QSettings>
 #include <QMessageBox>
 #include <QFile>
+#include <QLineEdit>
+#include <QLabel>
 #include <QCoreApplication>
 
 
@@ -174,6 +177,10 @@ CoreEnvironment::CoreEnvironment(QObject *obj): QObject(obj), searchHistory(250)
 {
     ReadSettings();
     rngGenerator.reset(new core::DefaultRNGgenerator);
+    interfaces.userDb.reset (new database::SqliteInterface());
+    interfaces.tasks.reset (new database::SqliteInterface());
+    interfaces.pageCache.reset (new database::SqliteInterface());
+    interfaces.db.reset (new database::SqliteInterface());
 }
 
 void CoreEnvironment::ReadSettings()
@@ -314,6 +321,13 @@ void CoreEnvironment::InitInterfaces()
 
 }
 
+void CoreEnvironment::InstantiateClientDatabases(QString folder)
+{
+    interfaces.userDb->InitAndUpdateDatabaseForFile(folder, "UserDB", "dbcode/user_db_init.sql", "", true);
+    interfaces.tasks->InitAndUpdateDatabaseForFile(folder, "Tasks", "dbcode/tasksinit.sql", "Tasks", false);
+    interfaces.pageCache->InitAndUpdateDatabaseForFile(folder, "PageCache", "dbcode/pagecacheinit.sql", "PageCache", false);
+}
+
 int CoreEnvironment::GetResultCount()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
@@ -425,6 +439,7 @@ void CoreEnvironment::LoadAllLinkedAuthorsMultiFromCache()
                                        interfaces.authors);
     reprocessor.ReprocessAllAuthorsStats();
 }
+
 
 
 
@@ -720,7 +735,7 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
 }
 
 int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> list,
-                                                    QVector<int> sourceFics)
+                                                QVector<int> sourceFics)
 {
     list->id = interfaces.recs->GetListIdForName(list->name);
     qDebug() << "At start list id is: " << list->id;
@@ -931,8 +946,8 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url)
     if(result.size() < 500)
         return urlResult;
     QMessageBox::information(nullptr, "Attention!", "Due to fanfiction.net still not fixing their favourites page displaying only 500 entries."
-                                             "Your profile will have to be parsed from m.fanfiction.net page.\n"
-                                             "Please grab a cup of coffee or smth after you press OK to close this window and wait a bit.");
+                                                    "Your profile will have to be parsed from m.fanfiction.net page.\n"
+                                                    "Please grab a cup of coffee or smth after you press OK to close this window and wait a bit.");
 
     // first we need to create an m. link
     url = url.remove("https://www.");
@@ -980,10 +995,10 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url)
 
         QRegularExpressionMatchIterator iterator = rxStoryId.globalMatch(page.content);
         while (iterator.hasNext()) {
-             QRegularExpressionMatch match = iterator.next();
-             QString word = match.captured(1);
-             urlResult << word;
-         }
+            QRegularExpressionMatch match = iterator.next();
+            QString word = match.captured(1);
+            urlResult << word;
+        }
         counter++;
         emit updateCounter(counter);
         if(page.source != EPageSource::cache)
@@ -1003,6 +1018,28 @@ bool CoreEnvironment::TestAuthorID(QString id)
     fetchAction.run(false);
     if(!page.content.contains("Anime"))
         return false;
+    return true;
+}
+
+bool CoreEnvironment::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
+{
+    auto userID = input->text();
+    QRegularExpression rx("(\\d)+");
+    auto match = rx.match(userID);
+    if(!match.hasMatch())
+    {
+        lblStatus->setVisible(true);
+        lblStatus->setText("<font color=\"Red\">Not a valid number.</font>");
+        return false;
+    }
+    auto validUser = TestAuthorID(userID);
+    if(!validUser){
+        lblStatus->setVisible(true);
+        lblStatus->setText("<font color=\"Red\">Not a valid FFN user.</font>");
+        return false;
+    }
+    lblStatus->setVisible(true);
+    lblStatus->setText("<font color=\"darkGreen\">Valid FFN user.</font>");
     return true;
 }
 

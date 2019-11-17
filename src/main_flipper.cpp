@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "ui/mainwindow.h"
+#include "ui/initialsetupdialog.h"
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "include/sqlitefunctions.h"
@@ -25,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QDir>
 #include <QDebug>
 #include <QSettings>
+#include <QTextCodec>
 void SetupLogger()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
@@ -51,77 +53,29 @@ int main(int argc, char *argv[])
     a.setApplicationName("Flipper");
     SetupLogger();
 
-
     QSharedPointer<CoreEnvironment> coreEnvironment(new CoreEnvironment());
-
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    int threads =  sqlite3_threadsafe();
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    if(settings.value("Settings/doBackups", true).toBool())
-        dbInterface->BackupDatabase("CrawlerDB");
     qDebug() << "current appPath is: " << QDir::currentPath();
 
-    bool mainDBIsCrawler= settings.value("Settings/thinClient").toBool();
-    QSqlDatabase mainDb, userDb;
-    if(mainDBIsCrawler)
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    if(!uiSettings.value("Settings/initialInitComplete", false).toBool())
     {
-//        QLOG_INFO() << "Init CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-        QLOG_INFO() << "Init UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", false);
-        userDbInterface->EnsureUUIDForUserDatabase();
+        InitialSetupDialog setupDialog;
+        setupDialog.setWindowModality(Qt::ApplicationModal);
+        setupDialog.env = coreEnvironment;
+        setupDialog.exec();
     }
     else
     {
-//        QLOG_INFO() << "Init CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", false);
-        QLOG_INFO() << "Init UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", true);
-        userDbInterface->EnsureUUIDForUserDatabase();
+        coreEnvironment->InstantiateClientDatabases(uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString());
+        coreEnvironment->InitInterfaces();
+        coreEnvironment->Init();
     }
-    auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
-
-//    QLOG_INFO() << "reading CrawlerDB";
-//    dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
-    QLOG_INFO() << "reading UserDB";
-    userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
-    QLOG_INFO() << "reading PageCache";
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
-    if(mainDBIsCrawler)
-    {
-//        QLOG_INFO() << "reinit CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-        QLOG_INFO() << "reinit UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", false);
-        userDbInterface->EnsureUUIDForUserDatabase();
-    }
-    else
-    {
-//        QLOG_INFO() << "reinit CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", false);
-        QLOG_INFO() << "reinit UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", true);
-        userDbInterface->EnsureUUIDForUserDatabase();
-    }
-    QSqlDatabase tasksDb;
-    QLOG_INFO() << "Init Tasks";
-    tasksDb = tasksInterface->InitDatabase("Tasks");
-    QLOG_INFO() << "reading Tasks";
-    tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
-    QLOG_INFO() << "finished db";
-
 
 
 
     MainWindow w;
     w.env = coreEnvironment;
-    w.env->interfaces.db = dbInterface;
-    w.env->interfaces.userDb = userDbInterface;
-    w.env->interfaces.pageCache= pageCacheInterface;
-    w.env->interfaces.tasks = tasksInterface;
     w.InitInterfaces();
     if(!w.Init())
         return 0;

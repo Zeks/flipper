@@ -22,8 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDriver>
 #include <QFile>
 #include <QDebug>
+#include <QUuid>
 #include <QSettings>
 #include <QTextStream>
+#include <QCoreApplication>
 #include <third_party/quazip/quazip.h>
 #include <third_party/quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
@@ -579,6 +581,36 @@ QSqlDatabase InitDatabase2(QString file, QString name, bool setDefault)
     qDebug() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
 
+    return db;
+}
+
+QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
+                                          QString file,
+                                          QString sqlFile,
+                                          QString connectionName,
+                                          bool setDefault)
+{
+    QSqlDatabase db;
+    if(setDefault)
+        db = QSqlDatabase::addDatabase("QSQLITE");
+    else
+        db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+    QString filename  = folder + "/" + file + ".sqlite";
+    db.setDatabaseName(filename);
+    bool isOpen = db.open();
+
+    InstallCustomFunctions(db);
+
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    bool devBuild = settings.value("Settings/devBuild", false).toBool();
+    QString sqliteFolder = QCoreApplication::applicationDirPath();
+    if(devBuild)
+        sqliteFolder = folder;
+
+    ReadDbFile(sqliteFolder + "/" + sqlFile, setDefault ? "" : connectionName);
+    bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
+    qDebug() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;
     return db;
 }
 

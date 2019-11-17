@@ -561,7 +561,7 @@ void MainWindow::SetupFanficTable()
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     qwFics->rootContext()->setContextProperty("urlCopyIconVisible",
                                               settings.value("Settings/urlCopyIconVisible", true).toBool());
@@ -673,7 +673,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::InitInterfaces()
 {
-    env->thinClient = true;
     env->InitInterfaces();
 }
 
@@ -1190,7 +1189,7 @@ void MainWindow::ReadSettings()
     ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
     ui->cbSortDirection->setCurrentText(uiSettings.value("Settings/cbSortDirection", "").toString());
     ui->cbRecGroupSecond->setVisible(settings.value("Settings/displaySecondReclist", false).toBool());
-    ui->cbStartupLoadSelection->setCurrentIndex(uiSettings.value("Settings/startupLoadMode", false).toBool());
+    ui->cbStartupLoadSelection->setCurrentIndex(uiSettings.value("Settings/startupLoadMode", 1).toInt());
 
 
 
@@ -2967,15 +2966,9 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
     font.setPixelSize(14);
 
     edit->setFont(font);
-//    std::sort(fics.begin(), fics.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-//        return f1->author->name < f2->author->name;
-//    });
 
     for(auto fic: fics)
     {
-//        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
-//        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
-//        edit->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
         edit->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
     }
 }
@@ -3588,24 +3581,8 @@ void MainWindow::on_cbFicIDDisplayMode_currentIndexChanged(const QString &)
 
 void MainWindow::on_pbVerifyUserFFNId_clicked()
 {
-    auto userID = ui->leUserFFNId->text();
-    QRegularExpression rx("(\\d)+");
-    auto match = rx.match(userID);
-    if(!match.hasMatch())
-    {
-        ui->lblUserFFNIdStatus->setVisible(true);
-        ui->lblUserFFNIdStatus->setText("<font color=\"Red\">Not a valid number.</font>");
-        return;
-    }
-    auto validUser = env->TestAuthorID(userID);
-    if(!validUser){
-        ui->lblUserFFNIdStatus->setVisible(true);
-        ui->lblUserFFNIdStatus->setText("<font color=\"Red\">Not a valid FFN user.</font>");
-        return;
-    }
-    ui->lblUserFFNIdStatus->setVisible(true);
-    ui->lblUserFFNIdStatus->setText("<font color=\"darkGreen\">Valid FFN user.</font>");
-    env->interfaces.recs->SetUserProfile(userID.toInt());
+    if(env->TestAuthorID(ui->leUserFFNId, ui->lblUserFFNIdStatus))
+        env->interfaces.recs->SetUserProfile(ui->leUserFFNId->text().toInt());
 }
 
 void MainWindow::on_cbStartupLoadSelection_currentIndexChanged(const QString &)
@@ -3619,3 +3596,4 @@ void MainWindow::on_leUserFFNId_editingFinished()
 {
     on_pbVerifyUserFFNId_clicked();
 }
+

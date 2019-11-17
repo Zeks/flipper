@@ -1,22 +1,31 @@
 #ifndef INITIALSETUPDIALOG_H
 #define INITIALSETUPDIALOG_H
 
-#include <QWidget>
+#include <QDialog>
 #include "include/environment.h"
 
 namespace Ui {
 class InitialSetupDialog;
 }
 
-class InitialSetupDialog : public QWidget
+class InitialSetupDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit InitialSetupDialog(QWidget *parent = nullptr);
+    explicit InitialSetupDialog(QDialog *parent = nullptr);
     ~InitialSetupDialog();
-
+    void VerifyUserID();
+    bool CreateRecommendations();
     QSharedPointer<CoreEnvironment> env;
+    bool authorTestSuccessfull = false;
+private slots:
+    void on_pbVerifyUserFFNId_clicked();
+
+    void on_pbSelectDatabaseFile_clicked();
+
+    void on_pbPerformInit_clicked();
+
 private:
     Ui::InitialSetupDialog *ui;
 

@@ -84,6 +84,16 @@ QSqlDatabase SqliteInterface::InitDatabase2(QString fileName, QString connection
     return db;
 }
 
+QSqlDatabase SqliteInterface::InitAndUpdateDatabaseForFile(QString folder,
+                                                           QString file,
+                                                           QString sqlFile,
+                                                           QString connectionName,
+                                                           bool setDefault)
+{
+    db = sqlite::InitAndUpdateDatabaseForFile(folder,file,  sqlFile, connectionName, setDefault);
+    return db;
+}
+
 QSqlDatabase SqliteInterface::InitNamedDatabase(QString dbName, QString fileName, bool setDefault)
 {
     db = sqlite::InitNamedDatabase(dbName, fileName, setDefault);

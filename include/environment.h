@@ -52,7 +52,8 @@ public:
 };
 
 
-
+class QLineEdit;
+class QLabel;
 
 struct FilterFrame{
 
@@ -156,6 +157,7 @@ public:
     // used to set up connections between database and interfaces
     // and between differnt interfaces themselves
     void InitInterfaces();
+    void InstantiateClientDatabases(QString);
     void LoadData();
     void LoadHistoryFrame(FilterFrame);
     int GetResultCount();
@@ -163,6 +165,8 @@ public:
     void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
     void LoadAllLinkedAuthors(ECacheMode cacheMode);
     void LoadAllLinkedAuthorsMultiFromCache();
+
+
     void UseAuthorTask(PageTaskPtr task);
     void UseFandomTask(PageTaskPtr task);
     PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
@@ -204,6 +208,7 @@ public:
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
     QSet<QString> LoadAuthorFicIdsForRecCreation(QString url);
     bool TestAuthorID(QString id);
+    bool TestAuthorID(QLineEdit*, QLabel*);
 
     QList<QSharedPointer<core::Fic>>  LoadAuthorFics(QString url);
 
@@ -213,6 +218,8 @@ public:
     QSet<int> GetFicsForTags(QStringList);
     QSet<int> GetFicsForNegativeTags();
     void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics);
+
+
 
 
     void RefreshSnoozes();
@@ -233,7 +240,6 @@ public:
     QString userToken;
     QSet<int> likedAuthors;
     QHash<int, int> ficScores;
-    bool thinClient = true;
 
     BastardizedCircularBuffer<FilterFrame> searchHistory;
 

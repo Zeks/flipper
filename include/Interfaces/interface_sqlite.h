@@ -34,8 +34,17 @@ public:
     QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db = QSqlDatabase());
     bool BackupDatabase(QString dbname);
     bool ReadDbFile(QString file, QString connectionName);
+
     QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false);
     virtual QSqlDatabase InitDatabase2(QString fileName, QString connectionName, bool setDefault = false);
+
+
+    QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
+                                              QString file,
+                                              QString sqlFile,
+                                              QString connectionName,
+                                              bool setDefault = false);
+
     virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false);
     bool EnsureUUIDForUserDatabase();
     virtual QString GetUserToken();
