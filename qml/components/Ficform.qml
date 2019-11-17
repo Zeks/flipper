@@ -272,9 +272,11 @@ Rectangle{
                     height: 21
                     textFormat: Text.RichText;
                     text: {
-                        if(!tiAtChapter.visible)
-                            return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + placeMain + "."  + title + "</a></body></html>"
-                        return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "/" + tiAtChapter.text + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
+                        var usedUrl = "http://www.fanfiction.net/s/" + url
+                        if(tiAtChapter.visible)
+                            usedUrl += "/" + tiAtChapter.text
+                        var displayedId = lvFics.idDisplayMode ? indexOfThisDelegate : placeMain;
+                        return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"" + usedUrl +"\">" + displayedId + "."  + title + "</a></body></html>"
                     }
                     verticalAlignment: Text.AlignVCenter
                     style: Text.Raised

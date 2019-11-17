@@ -353,7 +353,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 { \
     if(data){ \
     QString temp;\
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);\
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);\
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));\
     if(settings.value("Settings/commasInWordcount", false).toBool()){\
     QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));\
@@ -553,12 +553,22 @@ void MainWindow::SetupFanficTable()
     env.interfaces.tags->LoadAlltags();
     tagList = env.interfaces.tags->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
+
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
     qwFics->rootContext()->setContextProperty("urlCopyIconVisible",
                                               settings.value("Settings/urlCopyIconVisible", true).toBool());
     qwFics->rootContext()->setContextProperty("displayAuthorNameInList",
-                                              settings.value("Settings/displayAuthorName", true).toBool());
+                                              uiSettings.value("Settings/displayAuthorName", true).toBool());
+    qwFics->rootContext()->setContextProperty("detailedGenreModeInList",
+                                              uiSettings.value("Settings/displayDetectedGenre", true).toBool());
+    qwFics->rootContext()->setContextProperty("idDisplayModeInList",
+                                              uiSettings.value("Settings/idDisplayMode", true).toBool());
+
+
     qwFics->rootContext()->setContextProperty("displayListDifferenceInList",
                                               settings.value("Settings/displaySecondReclist", false).toBool());
     qwFics->rootContext()->setContextProperty("scanIconVisible",
@@ -591,10 +601,6 @@ void MainWindow::SetupFanficTable()
 
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
-
-    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
-    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-
     windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
 
 }
@@ -1148,7 +1154,11 @@ void MainWindow::ReadSettings()
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
     ui->chkDisplayPurged->setChecked(uiSettings.value("Settings/chkDisplayPurged", false).toBool());
     ui->chkEnableSlashFilter->setChecked(uiSettings.value("Settings/chkEnableSlashFilter", false).toBool());
-    //
+    SilentCall(ui->chkDisplayAuthorName)->setChecked(uiSettings.value("Settings/displayAuthorName", false).toBool());
+    SilentCall(ui->chkDisplaySecondList)->setChecked(uiSettings.value("Settings/displaySecondReclist", false).toBool());
+    SilentCall(ui->chkDisplayComma)->setChecked(uiSettings.value("Settings/commasInWordcount", false).toBool());
+    SilentCall(ui->chkDisplayDetectedGenre)->setChecked(uiSettings.value("Settings/displayDetectedGenre", false).toBool());
+    SilentCall(ui->cbFicIDDisplayMode)->setCurrentIndex(uiSettings.value("Settings/idDisplayMode", "0").toInt());
 
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
@@ -3517,4 +3527,50 @@ void MainWindow::SetNextEnabled(bool value)
 
 
 
+
+
+void MainWindow::on_chkDisplayAuthorName_stateChanged(int)
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setValue("Settings/displayAuthorName", ui->chkDisplayAuthorName->isChecked());
+    settings.sync();
+    qwFics->rootContext()->setContextProperty("displayAuthorNameInList", ui->chkDisplayAuthorName->isChecked());
+    holder->SetData(env.fanfics);
+}
+
+void MainWindow::on_chkDisplaySecondList_stateChanged(int)
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setValue("Settings/displaySecondReclist", ui->chkDisplaySecondList->isChecked());
+    settings.sync();
+    qwFics->rootContext()->setContextProperty("displayListDifferenceInList", ui->chkDisplaySecondList->isChecked());
+    ui->cbRecGroupSecond->setVisible(ui->chkDisplaySecondList->isChecked());
+    holder->SetData(env.fanfics);
+}
+
+void MainWindow::on_chkDisplayComma_stateChanged(int)
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setValue("Settings/commasInWordcount", ui->chkDisplayComma->isChecked());
+    settings.sync();
+    holder->SetData(env.fanfics);
+}
+
+void MainWindow::on_chkDisplayDetectedGenre_stateChanged(int )
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setValue("Settings/displayDetectedGenre", ui->chkDisplayDetectedGenre->isChecked());
+    settings.sync();
+    qwFics->rootContext()->setContextProperty("detailedGenreModeInList",ui->chkDisplayDetectedGenre->isChecked());
+    holder->SetData(env.fanfics);
+}
+
+void MainWindow::on_cbFicIDDisplayMode_currentIndexChanged(const QString &)
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setValue("Settings/idDisplayMode", ui->cbFicIDDisplayMode->currentIndex());
+    settings.sync();
+    qwFics->rootContext()->setContextProperty("idDisplayModeInList", ui->cbFicIDDisplayMode->currentIndex());
+    holder->SetData(env.fanfics);
+}
 

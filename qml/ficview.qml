@@ -39,7 +39,7 @@ Rectangle {
     property bool havePagesBefore: false
     property bool havePagesAfter: false
     property bool authorFilterActive: false
-    property bool detailedGenreMode: true
+
     property bool displaySnoozed: true
     property bool displayNoteTooltip: false
 
@@ -275,6 +275,8 @@ Rectangle {
             property bool authorFilterActive: false
             property bool displayAuthorName : displayAuthorNameInList
             property bool displayListDifference: displayListDifferenceInList
+            property bool idDisplayMode: idDisplayModeInList
+            property bool detailedGenreMode: detailedGenreModeInList
 
             spacing: 5
             clip:true

@@ -510,6 +510,17 @@ private slots:
 
     void on_cbRecGroupSecond_currentIndexChanged(const QString &arg1);
 
+    void on_chkDisplayAuthorName_stateChanged(int arg1);
+
+    void on_chkDisplaySecondList_stateChanged(int arg1);
+
+    void on_chkDisplayComma_stateChanged(int arg1);
+
+
+    void on_cbFicIDDisplayMode_currentIndexChanged(const QString &arg1);
+
+    void on_chkDisplayDetectedGenre_stateChanged(int arg1);
+
 signals:
 
 

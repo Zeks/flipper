@@ -103,7 +103,7 @@ Rectangle{
         MouseArea{
             anchors.fill: parent
             onDoubleClicked: {
-                mainWindow.detailedGenreMode = !mainWindow.detailedGenreMode
+                lvFics.detailedGenreMode = !lvFics.detailedGenreMode
             }
             onClicked: {
                 actOnAFic(indexOfThisDelegate, url)
@@ -269,7 +269,7 @@ Rectangle{
                     anchors.bottom: rrr.bottom
                     id:genreRelevance
                     visible: {
-                        if(!mainWindow.detailedGenreMode || !delegateItem.hasRealGenres)
+                        if(!lvFics.detailedGenreMode || !delegateItem.hasRealGenres)
                             return false;
                         return tagName === "Genre";
                     }
@@ -293,7 +293,7 @@ Rectangle{
                         var realText;
                         if(tagName === "Genre")
                         {
-                            if(mainWindow.detailedGenreMode && delegateItem.hasRealGenres)
+                            if(lvFics.detailedGenreMode && delegateItem.hasRealGenres)
                                 realText = modelData.substring(3)
                             else
                                 realText = modelData

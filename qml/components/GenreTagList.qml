@@ -32,7 +32,7 @@ Item {
             else
                 delegateItem.hasRealGenres = false
             //console.log(realGenre, " Length: ", realGenre.length , " Has real genres: ", delegateItem.hasRealGenres)
-            if(mainWindow.detailedGenreMode && delegateItem.hasRealGenres)
+            if(lvFics.detailedGenreMode && delegateItem.hasRealGenres)
                 return realGenre
             else
                 return genre
