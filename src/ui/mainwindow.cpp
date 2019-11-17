@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
-#include "mainwindow.h"
+#include "include/ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "GlobalHeaders/SingletonHolder.h"
 #include "GlobalHeaders/simplesettings.h"
@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/pagetask_interface.h"
-#include "actionprogress.h"
+#include "ui/actionprogress.h"
 #include "ui_actionprogress.h"
 #include "pagetask.h"
 #include "timeutils.h"

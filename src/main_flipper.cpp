@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "mainwindow.h"
+#include "ui/mainwindow.h"
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "include/sqlitefunctions.h"

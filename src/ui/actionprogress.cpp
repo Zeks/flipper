@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "actionprogress.h"
+#include "ui/actionprogress.h"
 #include "ui_actionprogress.h"
 
 ActionProgress::ActionProgress(QWidget *parent) :
