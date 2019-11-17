@@ -47,6 +47,7 @@ App{
         sourceDirectory,
         sourceDirectory + "/../",
         sourceDirectory + "/include",
+        sourceDirectory + "/proto",
         sourceDirectory + "/libs",
         sourceDirectory + "/third_party/zlib",
         sourceDirectory + "/libs/Logger/include",
@@ -204,13 +205,14 @@ App{
         proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
-            "proto/filter.proto",
-            "proto/fanfic.proto",
-            "proto/fandom.proto",
-            "proto/favlist.proto",
-            "proto/diagnostic_recommendations.proto",
-            "proto/recommendations.proto",
-            "proto/server_base_structs.proto",
+            "proto/search/filter.proto",
+            "proto/search/fanfic.proto",
+            "proto/search/fandom.proto",
+            "proto/statistics/favlist.proto",
+            "proto/recommendations/diagnostic_recommendations.proto",
+            "proto/recommendations/recommendations.proto",
+            "proto/server_base_structs.proto"
+
         ]
         fileTags: ["proto"]
     }

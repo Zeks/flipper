@@ -20,9 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/fandoms.h"
 #include "include/tokenkeeper.h"
 #include "include/servers/token_processing.h"
-#include "proto/filter.pb.h"
-#include "proto/fanfic.pb.h"
-#include "proto/fandom.pb.h"
+#include "proto/search/filter.pb.h"
+#include "proto/search/fanfic.pb.h"
+#include "proto/search/fandom.pb.h"
 #include "proto/feeder_service.pb.h"
 #include "proto/feeder_service.grpc.pb.h"
 #include <memory>
