@@ -144,6 +144,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     SetPreviousEnabled(false);
     SetNextEnabled(false);
+
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    int currentLaunches = settings.value("Settings/launches", 0).toInt() + 1;
+    settings.setValue("Settings/launches", currentLaunches);
+
+    if(currentLaunches > 4 && !settings.value("Settings/patreonSuppressed", false).toBool())
+        ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
 }
 
 bool MainWindow::Init()
@@ -3597,3 +3604,10 @@ void MainWindow::on_leUserFFNId_editingFinished()
     on_pbVerifyUserFFNId_clicked();
 }
 
+
+void MainWindow::on_chkStopPatreon_stateChanged(int)
+{
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
+    settings.setValue("Settings/patreonSuppressed", ui->chkStopPatreon->isChecked());
+    settings.sync();
+}

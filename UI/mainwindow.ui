@@ -2580,6 +2580,48 @@
             </item>
            </layout>
           </widget>
+          <widget class="QWidget" name="tabPatreon">
+           <attribute name="title">
+            <string>Patreon</string>
+           </attribute>
+           <widget class="QLabel" name="label_31">
+            <property name="geometry">
+             <rect>
+              <x>9</x>
+              <y>9</y>
+              <width>601</width>
+              <height>121</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>10</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Flipper is a free open source application and is going to that way.&lt;/p&gt;&lt;p&gt;But if you want you want to support it's development and hosting you can do it on its &lt;a href=&quot;https://www.patreon.com/zekses&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Patreon&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Alternatively, spreading people's awareness that it's a thing will also help considerably.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;If you have questions or suggestions you can ask them on &lt;a href=&quot;https://discord.gg/AdDvX5H&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Discord&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="openExternalLinks">
+             <bool>true</bool>
+            </property>
+           </widget>
+           <widget class="QCheckBox" name="chkStopPatreon">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>140</y>
+              <width>301</width>
+              <height>17</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Do not color Patreon tab next time</string>
+            </property>
+           </widget>
+          </widget>
          </widget>
         </item>
         <item row="3" column="0">

@@ -528,6 +528,8 @@ private slots:
 
     void on_leUserFFNId_editingFinished();
 
+    void on_chkStopPatreon_stateChanged(int arg1);
+
 signals:
 
 
