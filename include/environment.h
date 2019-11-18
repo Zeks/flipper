@@ -85,7 +85,7 @@ struct BastardizedCircularBuffer{
 
 //        while(currentIndex != 0)
 //        {
-//            data.pop_back();
+//            data.pop_();
 //            currentIndex--;
 //        }
 
@@ -142,6 +142,7 @@ public:
         QSharedPointer<interfaces::RecommendationLists> recs;
         QSharedPointer<database::IDBWrapper> db;
         QSharedPointer<database::IDBWrapper> userDb;
+        QSharedPointer<database::IDBWrapper> backupDb;
         QSharedPointer<database::IDBWrapper> pageCache;
         QSharedPointer<database::IDBWrapper> tasks;
     };
@@ -218,6 +219,8 @@ public:
     QSet<int> GetFicsForTags(QStringList);
     QSet<int> GetFicsForNegativeTags();
     void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics);
+    void BackupUserDatabase();
+
 
 
 

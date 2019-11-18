@@ -4130,6 +4130,95 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
 
+DiagnosticSQLResult<bool> PassScoresToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "score", "updated"};
+    QString insertQS = QString("insert into FicScores(fic_id, score , updated) values(:fic_id, :score , :updated)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicScores", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassSnoozesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "snooze_added", "snoozed_at_chapter",
+                           "snoozed_till_chapter", "snoozed_until_finished", "expired"};
+    QString insertQS = QString("insert into FicSnoozes(fic_id, snooze_added, snoozed_at_chapter, snoozed_till_chapter,snoozed_until_finished,expired) "
+                               " values(:fic_id, :snooze_added, :snoozed_at_chapter, :snoozed_till_chapter,:snoozed_until_finished,:expired)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicSnoozes", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassFicTagsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag", "added"};
+    QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id,sv_id,tag, added) "
+                               " values(:fic_id, :ffn_id, :ao3_id, :sb_id,:sv_id,:tag, :added)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicTags", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassFicNotesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "note_content", "updated"};
+    QString insertQS = QString("insert into ficnotes(fic_id, note_content , updated) values(:fic_id, :note_content , :updated)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from ficnotes", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassTagSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"id", "tag"};
+    QString insertQS = QString("insert into Tags(id, tag) values(:id, :tag)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from Tags", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fandom", "seq_num"};
+    QString insertQS = QString("insert into recent_fandoms(fandom, seq_num) values(:fandom, :seq_num)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from recent_fandoms", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fandom_id", "including_crossovers"};
+    QString insertQS = QString("insert into ignored_fandoms(fandom_id, including_crossovers) values(:fandom_id, :including_crossovers)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from ignored_fandoms", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    {
+        QString qs = QString("delete from user_settings");
+        SqlContext<bool> (dbTarget, qs)();
+    }
+    QStringList keyList = {"name", "value"};
+    QString insertQS = QString("insert into user_settings(name, value) values(:name, :value)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from user_settings", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+DiagnosticSQLResult<bool> PassReadingDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "at_chapter"};
+    QString insertQS = QString("insert into FicReadingTracker(fic_id, at_chapter) values(:name, :at_chapter)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicReadingTracker", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
+
+
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
 //{
 //    QString qs = QString("insert into RecommendationListAuthorStats(list_id, author_id, match_count) values(:listId, :ficId, :matchCount)");

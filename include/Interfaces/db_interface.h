@@ -45,6 +45,17 @@ public:
                                                       bool setDefault = false) = 0;
     virtual bool EnsureUUIDForUserDatabase() = 0;
     virtual QString GetUserToken() = 0;
+
+    virtual bool PassScoresToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassSnoozesToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassFicTagsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassFicNotesToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassTagSetToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassRecentFandomsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassClientDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassReadingDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+
     QSqlDatabase GetDatabase() {return db;}
     QString userToken;
 protected:

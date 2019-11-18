@@ -73,16 +73,17 @@ int main(int argc, char *argv[])
     }
     else
     {
+
         coreEnvironment->InstantiateClientDatabases(uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString());
         coreEnvironment->InitInterfaces();
         coreEnvironment->Init();
+        coreEnvironment->BackupUserDatabase();
     }
 
 
 
     MainWindow w;
     w.env = coreEnvironment;
-    w.InitInterfaces();
     if(!w.Init())
         return 0;
     w.InitConnections();

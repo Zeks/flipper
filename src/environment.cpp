@@ -1145,6 +1145,34 @@ void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, Q
     }
 }
 
+void CoreEnvironment::BackupUserDatabase()
+{
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
+    QDir dbDir (uiSettings.value("Settings/dbPath").toString());
+    QDir backupDir (uiSettings.value("Settings/dbPath").toString() + "/backups");
+    backupDir.mkpath(backupDir.path());
+
+    QString backupFileName = "UserDB_" + QDateTime::currentDateTime().toString("yyMMdd") ;
+
+    if(QFileInfo::exists(backupDir.path() + backupFileName + ".sqlite"))
+        return;
+    interfaces.backupDb.reset (new database::SqliteInterface());
+    auto backupDb = interfaces.backupDb->InitAndUpdateDatabaseForFile(backupDir.path(), backupFileName, QDir::currentPath() + "/dbcode/user_db_init.sql", backupFileName, false);
+    database::Transaction transaction(backupDb);
+    interfaces.userDb->PassScoresToAnotherDatabase(backupDb);
+    interfaces.userDb->PassTagSetToAnotherDatabase(backupDb);
+    interfaces.userDb->PassFicTagsToAnotherDatabase(backupDb);
+    interfaces.userDb->PassSnoozesToAnotherDatabase(backupDb);
+    interfaces.userDb->PassFicNotesToAnotherDatabase(backupDb);
+    interfaces.userDb->PassClientDataToAnotherDatabase(backupDb);
+    interfaces.userDb->PassRecentFandomsToAnotherDatabase(backupDb);
+    interfaces.userDb->PassReadingDataToAnotherDatabase(backupDb);
+    interfaces.userDb->PassIgnoredFandomsToAnotherDatabase(backupDb);
+    transaction.finalize();
+}
+
 void CoreEnvironment::RefreshSnoozes()
 {
     auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();

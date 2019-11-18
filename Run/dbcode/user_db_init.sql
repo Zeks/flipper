@@ -40,8 +40,7 @@ CREATE TABLE if not exists FicSnoozes (
  snooze_added datetime,
  snoozed_at_chapter integer,
  snoozed_till_chapter integer,
- snoozed_until_finished integer default 1,
- snooze_expired integeger default 0);
+ snoozed_until_finished integer default 1);
  alter table FicSnoozes add column expired integer default 0;
 CREATE INDEX if not exists I_FICSNOOZES_DBID ON FicSnoozes (fic_id ASC);
 CREATE INDEX if not exists I_FICSNOOZES_ADDED ON FicSnoozes (snooze_added ASC);
@@ -138,6 +137,7 @@ CREATE INDEX if not exists I_FURL_WEBSITE ON fandomurls (website ASC);
 create table if not exists ficnotes (
 fic_id integer PRIMARY KEY not null, 
 note_content varchar);
+alter table ficnotes add column updated datetime;
 
 CREATE INDEX if not exists I_FNQ_FIC_ID ON ficnotesquotes (fic_id ASC);
 
