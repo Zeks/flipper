@@ -58,12 +58,18 @@ int main(int argc, char *argv[])
 
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    if(!uiSettings.value("Settings/initialInitComplete", false).toBool())
+
+    QString databaseFolderPath = uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString();
+    bool hasDBFile = QFileInfo::exists(databaseFolderPath + "/" + "UserDB.sqlite");
+    if(!hasDBFile || !uiSettings.value("Settings/initialInitComplete", false).toBool())
     {
         InitialSetupDialog setupDialog;
+        setupDialog.setWindowTitle("Welcome!");
         setupDialog.setWindowModality(Qt::ApplicationModal);
         setupDialog.env = coreEnvironment;
         setupDialog.exec();
+        if(!setupDialog.initComplete)
+            return 0;
     }
     else
     {

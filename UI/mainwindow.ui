@@ -2494,18 +2494,18 @@
                <widget class="QComboBox" name="cbFicIDDisplayMode">
                 <property name="minimumSize">
                  <size>
-                  <width>125</width>
+                  <width>180</width>
                   <height>0</height>
                  </size>
                 </property>
                 <item>
                  <property name="text">
-                  <string>Recommendation list</string>
+                  <string>Position in recommendation list</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>Displayed list</string>
+                  <string>Position in displayed list</string>
                  </property>
                 </item>
                </widget>
@@ -2513,7 +2513,7 @@
               <item row="1" column="0">
                <widget class="QLabel" name="label_17">
                 <property name="text">
-                 <string>Display fic ID in:</string>
+                 <string>Displayed fic ID is:</string>
                 </property>
                </widget>
               </item>

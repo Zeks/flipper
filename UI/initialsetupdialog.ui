@@ -124,6 +124,9 @@
          <height>24</height>
         </size>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Favourites from your profile are used to create recommendations.&lt;/p&gt;&lt;p&gt;If you don't have a profile on FFN - leave this empty.&lt;/p&gt;&lt;p&gt;You will be able to create recommendations later form a list of URLs with &amp;quot;New Recommendation List&amp;quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -142,6 +145,9 @@
          <width>24</width>
          <height>24</height>
         </size>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Flipper stores all of your data locally:&lt;/p&gt;&lt;p&gt;Fics you've liked/disliked and other tags.&lt;/p&gt;&lt;p&gt;Contents of your recommendations list(s).&lt;/p&gt;&lt;p&gt;Your FFN ID.&lt;/p&gt;&lt;p&gt;Etc...&lt;/p&gt;&lt;p&gt;To avoid accidentally deleting this information on reinstalls, it's better to choose a folder outside the one that contains flipper executable.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string/>
@@ -163,6 +169,11 @@
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
      </property>
      <property name="text">
       <string>Status: </string>

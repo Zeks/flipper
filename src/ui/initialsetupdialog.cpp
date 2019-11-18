@@ -8,17 +8,44 @@
 #include <QSettings>
 #include <QMessageBox>
 #include <QTextCodec>
+#include <QProxyStyle>
+#include <QStandardPaths>
+
+
+class ImmediateTooltipProxyStyle : public QProxyStyle
+{
+public:
+    using QProxyStyle::QProxyStyle;
+
+    int styleHint(StyleHint hint, const QStyleOption* option = nullptr, const QWidget* widget = nullptr, QStyleHintReturn* returnData = nullptr) const override
+    {
+        if (hint == QStyle::SH_ToolTip_WakeUpDelay)
+        {
+            return 0;
+        }
+
+        return QProxyStyle::styleHint(hint, option, widget, returnData);
+    }
+};
 
 InitialSetupDialog::InitialSetupDialog(QDialog *parent) :
     QDialog(parent),
     ui(new Ui::InitialSetupDialog)
 {
     ui->setupUi(this);
-    ui->leDBFileLocation->setText(QCoreApplication::applicationDirPath());
-    QString info = "Since it's the first time flipper has been launched, let's do some initial setup\n"
+    QDir dir;
+    dir.mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+    ui->leDBFileLocation->setText( QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+    QString info = "Since it's the first time Flipper has been launched, let's do some initial setup\n"
             "If you have used Flipper previously, don't forget to point it to your database folder.";
     ui->lblInfo->setText(info);
+    ui->lblStatus->setVisible(false);
+    ui->lblStatus->setWordWrap(true);
+    ui->lblFileInfo->setStyle(new ImmediateTooltipProxyStyle());
+    ui->lblListInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->pbInitializationStatus->setVisible(false);
+    ui->leUserFFNId->setPlaceholderText(QString("Favourites from this profile will be used to create recommendations. If you don't have a profile on FFN, leave it empty"));
+    ui->leDBFileLocation->setPlaceholderText(QString("Flipper keeps recommendations and tags there"));
 }
 
 InitialSetupDialog::~InitialSetupDialog()
@@ -30,6 +57,7 @@ void InitialSetupDialog::VerifyUserID()
 {
     auto userID = ui->leUserFFNId->text();
     ui->lblStatus->setText("<font color=\"darkBlue\">Status: Verifying user ID.</font>");
+    ui->lblStatus->setVisible(true);
 
     QCoreApplication::processEvents();
     authorTestSuccessfull =  env->TestAuthorID(ui->leUserFFNId, ui->lblStatus);
@@ -39,10 +67,11 @@ void InitialSetupDialog::VerifyUserID()
 bool InitialSetupDialog::CreateRecommendations()
 {
     ui->lblStatus->setText("<font color=\"darkBlue\">Status: Creating recommendation list, this may take a while.</font>");
+    ui->lblStatus->setVisible(true);
     QCoreApplication::processEvents();
 
     QString url = "https://www.fanfiction.net/u/" + ui->leUserFFNId->text();
-    auto sourceFicsSet = env->LoadAuthorFicIdsForRecCreation(url);
+    auto sourceFicsSet = env->LoadAuthorFicIdsForRecCreation(url, ui->lblStatus);
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 6;
@@ -81,6 +110,7 @@ void InitialSetupDialog::on_pbSelectDatabaseFile_clicked()
 
 void InitialSetupDialog::on_pbPerformInit_clicked()
 {
+    ui->lblStatus->setVisible(true);
     if(!authorTestSuccessfull)
     {
         if(!ui->leUserFFNId->text().isEmpty())
@@ -100,6 +130,20 @@ void InitialSetupDialog::on_pbPerformInit_clicked()
     }
 
     QDir dir(ui->leDBFileLocation->text());
+    if(!dir.exists())
+    {
+        ui->lblStatus->setText("<font color=\"red\">Status: Folder for data is not valid.</font>");
+        QMessageBox::StandardButton reply;
+          reply = QMessageBox::question(this, "Warning", "You haven't provided a valid folder to store user data.\n"
+                                                         "If you continue, it will be written to the folder with flipper's executable.\n"
+                                                         "Do you want to continue?",
+                                        QMessageBox::Yes|QMessageBox::No);
+          if (reply == QMessageBox::No)
+              return;
+    }
+
+
+
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
@@ -111,12 +155,15 @@ void InitialSetupDialog::on_pbPerformInit_clicked()
     // first I need to actually set up the databases and init accessors
     ui->lblStatus->setText("<font color=\"darkBlue\">Status: Initializing database.</font>");
     QCoreApplication::processEvents();
+
     env->InstantiateClientDatabases(uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString());
     ui->lblStatus->setText("<font color=\"darkBlue\">Status: Fetching initial data from server.</font>");
     QCoreApplication::processEvents();
+
     env->InitInterfaces();
     ui->lblStatus->setText("<font color=\"darkBlue\">Status: Instantiating environment.</font>");
     QCoreApplication::processEvents();
+
     env->Init();
 
     env->interfaces.recs->SetUserProfile(ui->leUserFFNId->text().toInt());
@@ -135,5 +182,6 @@ void InitialSetupDialog::on_pbPerformInit_clicked()
     }
     uiSettings.setValue("Settings/initialInitComplete", true);
     uiSettings.sync();
+    initComplete = true;
     hide();
 }

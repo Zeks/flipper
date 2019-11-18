@@ -323,9 +323,9 @@ void CoreEnvironment::InitInterfaces()
 
 void CoreEnvironment::InstantiateClientDatabases(QString folder)
 {
-    interfaces.userDb->InitAndUpdateDatabaseForFile(folder, "UserDB", "dbcode/user_db_init.sql", "", true);
-    interfaces.tasks->InitAndUpdateDatabaseForFile(folder, "Tasks", "dbcode/tasksinit.sql", "Tasks", false);
-    interfaces.pageCache->InitAndUpdateDatabaseForFile(folder, "PageCache", "dbcode/pagecacheinit.sql", "PageCache", false);
+    interfaces.userDb->InitAndUpdateDatabaseForFile(folder, "UserDB", QDir::currentPath() + "/dbcode/user_db_init.sql", "", true);
+    interfaces.tasks->InitAndUpdateDatabaseForFile(folder, "Tasks", QDir::currentPath()  + "/dbcode/tasksinit.sql", "Tasks", false);
+    interfaces.pageCache->InitAndUpdateDatabaseForFile(folder, "PageCache", QDir::currentPath()  + "/dbcode/pagecacheinit.sql", "PageCache", false);
 }
 
 int CoreEnvironment::GetResultCount()
@@ -933,7 +933,7 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
     return author;
 }
 
-QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url)
+QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLabel* infoTarget)
 {
     auto result = LoadAuthorFics(url);
     QSet<QString> urlResult;
@@ -945,9 +945,20 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url)
 
     if(result.size() < 500)
         return urlResult;
-    QMessageBox::information(nullptr, "Attention!", "Due to fanfiction.net still not fixing their favourites page displaying only 500 entries."
-                                                    "Your profile will have to be parsed from m.fanfiction.net page.\n"
-                                                    "Please grab a cup of coffee or smth after you press OK to close this window and wait a bit.");
+
+    QString infoString = "Due to fanfiction.net still not fixing their favourites page displaying only 500 entries.\n"
+                         "Your profile will have to be parsed from m.fanfiction.net page.\n";
+   QString coffeePart = "Please grab a cup of coffee or smth after you press OK to close this window and wait a bit.";
+
+    QString templateString = "<font color=\"darkBlue\">Status: %1</font>";
+    if(!infoTarget)
+        QMessageBox::information(nullptr, "Attention!", infoString + coffeePart);
+    else
+    {
+        coffeePart = "Please grab a cup of coffee or smth and wait a bit.";
+        infoTarget->setText(templateString.arg(infoString + coffeePart));
+        QCoreApplication::processEvents();
+    }
 
     // first we need to create an m. link
     url = url.remove("https://www.");
@@ -1029,13 +1040,13 @@ bool CoreEnvironment::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
     if(!match.hasMatch())
     {
         lblStatus->setVisible(true);
-        lblStatus->setText("<font color=\"Red\">Not a valid number.</font>");
+        lblStatus->setText("<font color=\"Red\">Provided user ID is not a valid number.</font>");
         return false;
     }
     auto validUser = TestAuthorID(userID);
     if(!validUser){
         lblStatus->setVisible(true);
-        lblStatus->setText("<font color=\"Red\">Not a valid FFN user.</font>");
+        lblStatus->setText("<font color=\"Red\">Provided user ID is not a valid FFN user.</font>");
         return false;
     }
     lblStatus->setVisible(true);

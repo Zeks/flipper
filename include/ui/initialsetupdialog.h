@@ -19,6 +19,7 @@ public:
     bool CreateRecommendations();
     QSharedPointer<CoreEnvironment> env;
     bool authorTestSuccessfull = false;
+    bool initComplete = false;
 private slots:
     void on_pbVerifyUserFFNId_clicked();
 

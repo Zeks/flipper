@@ -603,12 +603,7 @@ QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
-    bool devBuild = settings.value("Settings/devBuild", false).toBool();
-    QString sqliteFolder = QCoreApplication::applicationDirPath();
-    if(devBuild)
-        sqliteFolder = folder;
-
-    ReadDbFile(sqliteFolder + "/" + sqlFile, setDefault ? "" : connectionName);
+    ReadDbFile(sqlFile, setDefault ? "" : connectionName);
     bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
     qDebug() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;
     return db;
