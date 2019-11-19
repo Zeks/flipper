@@ -33,8 +33,7 @@ InitialSetupDialog::InitialSetupDialog(QDialog *parent) :
     ui(new Ui::InitialSetupDialog)
 {
     ui->setupUi(this);
-    QDir dir;
-    dir.mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+
     ui->leDBFileLocation->setText( QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
     QString info = "Since it's the first time Flipper has been launched, let's do some initial setup\n"
             "If you have used Flipper previously, don't forget to point it to your database folder.";

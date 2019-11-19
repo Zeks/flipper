@@ -1574,14 +1574,35 @@ void MainWindow::SetFailureStatus()
 
 void MainWindow::DisplayInitialFicSelection()
 {
+    if(defaultRecommendationsQueued)
+    {
+        env->CreateDefaultRecommendationsForCurrentUser();
+        auto lists = env->interfaces.recs->GetAllRecommendationListNames(true);
+        if(lists.size() > 0)
+        {
+            SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
+            SilentCall(ui->cbRecGroupSecond)->setModel(new QStringListModel(lists));
+            ui->cbRecGroup->setCurrentText("Recommendations");
+            ui->cbSortMode->setCurrentText("Rec Count");
+            env->interfaces.recs->SetCurrentRecommendationList(env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
+            ui->pbGetSourceLinks->setEnabled(true);
+            ui->pbDeleteRecList->setEnabled(true);
+        }
+    }
     QSettings settings("settings/ui.ini", QSettings::IniFormat);
     if(settings.value("Settings/startupLoadMode", 2).toInt() == 0)
     {
         //nothing
     }
-    if(settings.value("Settings/startupLoadMode", 2).toInt() == 1)
+    bool hasAnyRecommendationList = ui->cbRecGroup->count() > 0;
+    if(!hasAnyRecommendationList){
+        ui->cbSortMode->setCurrentIndex(2);
         on_pbLoadDatabase_clicked();
-    if(settings.value("Settings/startupLoadMode", 2).toInt() == 2)
+    }
+
+    if(hasAnyRecommendationList && settings.value("Settings/startupLoadMode", 2).toInt() == 1)
+        on_pbLoadDatabase_clicked();
+    if(hasAnyRecommendationList && settings.value("Settings/startupLoadMode", 2).toInt() == 2)
         DisplayRandomFicsForCurrentFilter();
 }
 
@@ -3185,6 +3206,11 @@ void MainWindow::DisplayRandomFicsForCurrentFilter()
         PlaceResults();
     }
     AnalyzeCurrentFilter();
+}
+
+void MainWindow::QueueDefaultRecommendations()
+{
+    defaultRecommendationsQueued = true;
 }
 
 void MainWindow::on_cbRecGroup_currentTextChanged(const QString &)

@@ -128,6 +128,7 @@ public:
     void SetFailureStatus();
     void DisplayInitialFicSelection();
     void DisplayRandomFicsForCurrentFilter();
+    void QueueDefaultRecommendations();
 
     QSharedPointer<CoreEnvironment> env;
 
@@ -315,6 +316,7 @@ private:
     QMenu ignoreFandomSlashFilterMenu;
     QRImageProvider* imgProvider = nullptr;
     QString primedTag;
+    bool defaultRecommendationsQueued = false;
 
 
 public slots:

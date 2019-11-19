@@ -207,7 +207,9 @@ public:
     void Log(QString);
 
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
-    QSet<QString> LoadAuthorFicIdsForRecCreation(QString url, QLabel* infoTarget = nullptr);
+    QSet<QString> LoadAuthorFicIdsForRecCreation(QString url,
+                                                 QLabel* infoTarget = nullptr,
+                                                 bool silent = false);
     bool TestAuthorID(QString id);
     bool TestAuthorID(QLineEdit*, QLabel*);
 
@@ -220,9 +222,7 @@ public:
     QSet<int> GetFicsForNegativeTags();
     void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics);
     void BackupUserDatabase();
-
-
-
+    int CreateDefaultRecommendationsForCurrentUser();
 
 
     void RefreshSnoozes();

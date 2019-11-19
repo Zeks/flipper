@@ -55,7 +55,6 @@ public:
     bool PassReadingDataToAnotherDatabase(QSqlDatabase dbTarget);
     bool PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget);
 
-
     virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false);
     bool EnsureUUIDForUserDatabase();
     virtual QString GetUserToken();

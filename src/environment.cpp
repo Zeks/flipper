@@ -933,7 +933,7 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
     return author;
 }
 
-QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLabel* infoTarget)
+QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLabel* infoTarget, bool silent)
 {
     auto result = LoadAuthorFics(url);
     QSet<QString> urlResult;
@@ -951,13 +951,16 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
    QString coffeePart = "Please grab a cup of coffee or smth after you press OK to close this window and wait a bit.";
 
     QString templateString = "<font color=\"darkBlue\">Status: %1</font>";
-    if(!infoTarget)
-        QMessageBox::information(nullptr, "Attention!", infoString + coffeePart);
-    else
+    if(!silent)
     {
-        coffeePart = "Please grab a cup of coffee or smth and wait a bit.";
-        infoTarget->setText(templateString.arg(infoString + coffeePart));
-        QCoreApplication::processEvents();
+        if(!infoTarget)
+            QMessageBox::information(nullptr, "Attention!", infoString + coffeePart);
+        else
+        {
+            coffeePart = "Please grab a cup of coffee or smth and wait a bit.";
+            infoTarget->setText(templateString.arg(infoString + coffeePart));
+            QCoreApplication::processEvents();
+        }
     }
 
     // first we need to create an m. link
@@ -1156,8 +1159,10 @@ void CoreEnvironment::BackupUserDatabase()
 
     QString backupFileName = "UserDB_" + QDateTime::currentDateTime().toString("yyMMdd") ;
 
-    if(QFileInfo::exists(backupDir.path() + backupFileName + ".sqlite"))
+    QString backupFullFile = backupDir.path() + "/" + backupFileName + ".sqlite";
+    if(QFileInfo::exists(backupFullFile))
         return;
+
     interfaces.backupDb.reset (new database::SqliteInterface());
     auto backupDb = interfaces.backupDb->InitAndUpdateDatabaseForFile(backupDir.path(), backupFileName, QDir::currentPath() + "/dbcode/user_db_init.sql", backupFileName, false);
     database::Transaction transaction(backupDb);
@@ -1171,6 +1176,33 @@ void CoreEnvironment::BackupUserDatabase()
     interfaces.userDb->PassReadingDataToAnotherDatabase(backupDb);
     interfaces.userDb->PassIgnoredFandomsToAnotherDatabase(backupDb);
     transaction.finalize();
+}
+
+int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
+{
+    auto user = interfaces.recs->GetUserProfile();
+    if(user < 1)
+        return -1;
+
+    QString url = "https://www.fanfiction.net/u/" + QString::number(interfaces.recs->GetUserProfile());
+    auto sourceFicsSet = LoadAuthorFicIdsForRecCreation(url, nullptr, true);
+
+    QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+    params->minimumMatch = 6;
+    params->maxUnmatchedPerMatch = 50;
+    params->maximumNegativeMatches = -1;
+    params->alwaysPickAt = 9999;
+    params->isAutomatic = true;
+    params->useWeighting = true;
+    params->useMoodAdjustment = true;
+    params->name = "Recommendations";
+    params->userFFNId = interfaces.recs->GetUserProfile();
+    QVector<int> sourceFics;
+    for(auto fic : sourceFicsSet)
+        sourceFics.push_back(fic.toInt());
+
+    auto result = BuildRecommendations(params, sourceFics, false, false);
+    return result;
 }
 
 void CoreEnvironment::RefreshSnoozes()

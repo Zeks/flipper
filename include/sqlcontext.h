@@ -245,6 +245,25 @@ struct SqlContext
         } while(q.next());
     }
 
+    template <typename ValueType>
+    void FetchLargeSelectIntoListWithoutSize(QString fieldName, QString actualQuery,
+                                  std::function<ValueType(QSqlQuery&)> func = std::function<ValueType(QSqlQuery&)>())
+    {
+        qs = actualQuery;
+        Prepare(qs);
+
+        if(!ExecAndCheck())
+            return;
+        if(!CheckDataAvailability())
+            return;
+
+        do{
+            if(!func)
+                result.data += q.value(fieldName).template value<typename ResultType::value_type>();
+            else
+                result.data += func(q);
+        } while(q.next());
+    }
 
     void FetchSelectIntoHash(QString actualQuery, QString idFieldName, QString valueFieldName)
     {

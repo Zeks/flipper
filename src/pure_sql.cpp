@@ -4218,6 +4218,22 @@ DiagnosticSQLResult<bool> PassReadingDataToAnotherDatabase(QSqlDatabase dbSource
     return ctx();
 }
 
+DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase db)
+{
+    DiagnosticSQLResult<DBVerificationResult> result;
+    QString qs = "pragma quick_check;";
+    SqlContext<QStringList> ctx(db);
+    ctx.FetchLargeSelectIntoListWithoutSize<QString>("quick_check", qs);
+    if(ctx.result.data.size() == 0 || ctx.result.data.at(0) != "ok")
+    {
+        result.success = false;
+        result.data.data = ctx.result.data;
+    }
+    else
+        result.success = true;
+    return result;
+}
+
 
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
 //{
