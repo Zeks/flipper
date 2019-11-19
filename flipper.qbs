@@ -58,6 +58,8 @@ App{
 
     files: [
         "UI/initialsetupdialog.ui",
+        "include/backups.h",
+        "src/backups.cpp",
         "src/ui/initialsetupdialog.cpp",
         "include/ui/initialsetupdialog.h",
         "forms.qrc",
