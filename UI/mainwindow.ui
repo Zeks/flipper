@@ -170,9 +170,16 @@
                           <number>0</number>
                          </property>
                          <item>
+                          <widget class="QLabel" name="label_12">
+                           <property name="text">
+                            <string>Mode:</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
                           <widget class="QRadioButton" name="rbSimpleMode">
                            <property name="text">
-                            <string>Simple Mode</string>
+                            <string>Simple</string>
                            </property>
                            <attribute name="buttonGroup">
                             <string notr="true">buttonGroup</string>
@@ -182,7 +189,7 @@
                          <item>
                           <widget class="QRadioButton" name="rbAdvancedMode">
                            <property name="text">
-                            <string>Advanced Mode</string>
+                            <string>Advanced</string>
                            </property>
                            <attribute name="buttonGroup">
                             <string notr="true">buttonGroup</string>
@@ -196,16 +203,23 @@
                            </property>
                            <property name="sizeHint" stdset="0">
                             <size>
-                             <width>234</width>
+                             <width>262</width>
                              <height>20</height>
                             </size>
                            </property>
                           </spacer>
                          </item>
                          <item>
+                          <widget class="QLabel" name="label_15">
+                           <property name="text">
+                            <string>Source:</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
                           <widget class="QRadioButton" name="rbProfileMode">
                            <property name="text">
-                            <string>From FFN Profile</string>
+                            <string>FFN Profile</string>
                            </property>
                            <attribute name="buttonGroup">
                             <string notr="true">buttonGroup_2</string>
@@ -215,7 +229,7 @@
                          <item>
                           <widget class="QRadioButton" name="rbUrlMode">
                            <property name="text">
-                            <string>From Urls</string>
+                            <string>List of Urls</string>
                            </property>
                            <attribute name="buttonGroup">
                             <string notr="true">buttonGroup_2</string>
@@ -225,7 +239,7 @@
                          <item>
                           <widget class="QRadioButton" name="rbSelectedTagsMode">
                            <property name="text">
-                            <string>From Selected Tags</string>
+                            <string>Selected Tags</string>
                            </property>
                            <attribute name="buttonGroup">
                             <string notr="true">buttonGroup_2</string>
@@ -272,7 +286,7 @@
                             </sizepolicy>
                            </property>
                            <property name="placeholderText">
-                            <string>Numeric ID of the FFN Profile</string>
+                            <string>Just the number</string>
                            </property>
                           </widget>
                          </item>
@@ -577,17 +591,7 @@
                               <property name="bottomMargin">
                                <number>0</number>
                               </property>
-                              <item row="1" column="0" colspan="3">
-                               <widget class="QTextBrowser" name="edtRecsContents">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-                                  <horstretch>0</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                               </widget>
-                              </item>
-                              <item row="2" column="0">
+                              <item row="3" column="0">
                                <widget class="QPushButton" name="pbRecsLoadFFNProfileIntoSource">
                                 <property name="minimumSize">
                                  <size>
@@ -620,10 +624,10 @@
                                 </property>
                                </widget>
                               </item>
-                              <item row="2" column="1" colspan="2">
+                              <item row="3" column="1" colspan="2">
                                <widget class="QLineEdit" name="leFFNProfileInputForUrls">
                                 <property name="placeholderText">
-                                 <string>ID of the FFN Profile</string>
+                                 <string>ID of your FFN Profile</string>
                                 </property>
                                </widget>
                               </item>
@@ -639,6 +643,16 @@
                                  </size>
                                 </property>
                                </spacer>
+                              </item>
+                              <item row="1" column="0" colspan="3">
+                               <widget class="QTextBrowser" name="edtRecsContents">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                               </widget>
                               </item>
                              </layout>
                             </widget>
