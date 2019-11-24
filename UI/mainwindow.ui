@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1114</width>
-    <height>1172</height>
+    <height>1503</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -81,22 +81,61 @@
               </property>
               <widget class="QWidget" name="wdgRecs" native="true">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
                <layout class="QGridLayout" name="gridLayout_16">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>6</number>
+                </property>
                 <item row="0" column="0">
                  <widget class="QWidget" name="wdgRecsCreator" native="true">
                   <layout class="QVBoxLayout" name="verticalLayout_8">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
                    <item>
                     <widget class="QPushButton" name="pbNewRecommendationList">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <weight>75</weight>
+                       <bold>true</bold>
+                      </font>
+                     </property>
                      <property name="text">
                       <string>New Recommendation List</string>
                      </property>
                      <property name="checkable">
-                      <bool>true</bool>
+                      <bool>false</bool>
                      </property>
                     </widget>
                    </item>
@@ -109,29 +148,23 @@
                       </size>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_9">
-                      <property name="leftMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="bottomMargin">
-                       <number>0</number>
-                      </property>
                       <item>
                        <widget class="QWidget" name="wdgReclistModeSelector" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
                         <layout class="QHBoxLayout" name="horizontalLayout_4">
                          <property name="leftMargin">
-                          <number>9</number>
+                          <number>0</number>
                          </property>
                          <property name="topMargin">
                           <number>0</number>
                          </property>
                          <property name="rightMargin">
-                          <number>9</number>
+                          <number>0</number>
                          </property>
                          <property name="bottomMargin">
                           <number>0</number>
@@ -163,7 +196,7 @@
                            </property>
                            <property name="sizeHint" stdset="0">
                             <size>
-                             <width>198</width>
+                             <width>234</width>
                              <height>20</height>
                             </size>
                            </property>
@@ -206,13 +239,13 @@
                        <widget class="QWidget" name="wdgProfileSelector" native="true">
                         <layout class="QHBoxLayout" name="horizontalLayout_3">
                          <property name="leftMargin">
-                          <number>9</number>
+                          <number>0</number>
                          </property>
                          <property name="topMargin">
                           <number>0</number>
                          </property>
                          <property name="rightMargin">
-                          <number>9</number>
+                          <number>0</number>
                          </property>
                          <property name="bottomMargin">
                           <number>0</number>
@@ -239,7 +272,7 @@
                             </sizepolicy>
                            </property>
                            <property name="placeholderText">
-                            <string>ID of the FFN Profile</string>
+                            <string>Numeric ID of the FFN Profile</string>
                            </property>
                           </widget>
                          </item>
@@ -260,292 +293,369 @@
                        </widget>
                       </item>
                       <item>
-                       <widget class="QSplitter" name="splitter">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <widget class="QWidget" name="wdgAdvancedControls" native="true">
-                         <layout class="QVBoxLayout" name="verticalLayout_2">
-                          <item>
-                           <widget class="QLabel" name="label_34">
-                            <property name="text">
-                             <string>Advanced Controls</string>
-                            </property>
-                            <property name="alignment">
-                             <set>Qt::AlignCenter</set>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QCheckBox" name="chkRecsAutomaticSettings">
-                            <property name="text">
-                             <string>Automatic Margins</string>
-                            </property>
-                            <property name="checked">
-                             <bool>true</bool>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <layout class="QGridLayout" name="gridLayout_14">
-                            <item row="0" column="0">
-                             <widget class="QLabel" name="label_23">
-                              <property name="text">
-                               <string>Minimum Matches:</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="0" column="1">
-                             <widget class="QLineEdit" name="leRecsMinimumMatches">
-                              <property name="enabled">
-                               <bool>false</bool>
-                              </property>
-                              <property name="maximumSize">
-                               <size>
-                                <width>70</width>
-                                <height>16777215</height>
-                               </size>
-                              </property>
-                              <property name="inputMask">
-                               <string>9999</string>
-                              </property>
-                              <property name="text">
-                               <string>6</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="1" column="0">
-                             <widget class="QLabel" name="label_24">
-                              <property name="text">
-                               <string>Max pick ratio:</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="1" column="1">
-                             <widget class="QLineEdit" name="leRecsPickRatio">
-                              <property name="enabled">
-                               <bool>false</bool>
-                              </property>
-                              <property name="maximumSize">
-                               <size>
-                                <width>70</width>
-                                <height>16777215</height>
-                               </size>
-                              </property>
-                              <property name="inputMask">
-                               <string>9999</string>
-                              </property>
-                              <property name="text">
-                               <string>50</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="2" column="0">
-                             <widget class="QCheckBox" name="chkUseAwaysPickAt">
-                              <property name="text">
-                               <string>Always pick at:</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="2" column="1">
-                             <widget class="QLineEdit" name="leRecsAlwaysPickAt">
-                              <property name="enabled">
-                               <bool>false</bool>
-                              </property>
-                              <property name="maximumSize">
-                               <size>
-                                <width>70</width>
-                                <height>16777215</height>
-                               </size>
-                              </property>
-                              <property name="inputMask">
-                               <string>9999</string>
-                              </property>
-                              <property name="text">
-                               <string>50</string>
-                              </property>
-                             </widget>
-                            </item>
-                           </layout>
-                          </item>
-                          <item>
-                           <widget class="QLabel" name="label_12">
-                            <property name="text">
-                             <string>Algorithm tuners:</string>
-                            </property>
-                            <property name="alignment">
-                             <set>Qt::AlignCenter</set>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QCheckBox" name="chkAdjustOnListSimilarity">
-                            <property name="text">
-                             <string>Adjust scores on list similarity</string>
-                            </property>
-                            <property name="checked">
-                             <bool>true</bool>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QCheckBox" name="chkFilterGenres">
-                            <property name="toolTip">
-                             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Purges fics from your reclist when they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                            </property>
-                            <property name="text">
-                             <string>Adjust scores on genre similarity</string>
-                            </property>
-                            <property name="checked">
-                             <bool>true</bool>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QCheckBox" name="chkUseDislikes">
-                            <property name="text">
-                             <string>Adjust scores on disliked fics count</string>
-                            </property>
-                            <property name="checked">
-                             <bool>false</bool>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QCheckBox" name="chkOtherPerson">
-                            <property name="text">
-                             <string>Recommendations are for someone else</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <spacer name="verticalSpacer_3">
-                            <property name="orientation">
-                             <enum>Qt::Vertical</enum>
-                            </property>
-                            <property name="sizeHint" stdset="0">
-                             <size>
-                              <width>20</width>
-                              <height>40</height>
-                             </size>
-                            </property>
-                           </spacer>
-                          </item>
-                         </layout>
-                        </widget>
-                        <widget class="QWidget" name="wdgUrlList" native="true">
-                         <layout class="QGridLayout" name="gridLayout_10">
-                          <property name="leftMargin">
-                           <number>0</number>
+                       <layout class="QHBoxLayout" name="horizontalLayout_15">
+                        <item>
+                         <widget class="QWidget" name="wdgAdvancedControls" native="true">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
                           </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item row="1" column="0" colspan="2">
-                           <spacer name="horizontalSpacer_11">
-                            <property name="orientation">
-                             <enum>Qt::Horizontal</enum>
-                            </property>
-                            <property name="sizeHint" stdset="0">
-                             <size>
-                              <width>40</width>
-                              <height>20</height>
-                             </size>
-                            </property>
-                           </spacer>
-                          </item>
-                          <item row="0" column="0" colspan="2">
-                           <widget class="QWidget" name="wdgUrlPart" native="true">
-                            <property name="minimumSize">
-                             <size>
-                              <width>0</width>
-                              <height>120</height>
-                             </size>
-                            </property>
-                            <layout class="QGridLayout" name="gridLayout_19">
-                             <property name="leftMargin">
-                              <number>0</number>
+                          <layout class="QGridLayout" name="gridLayout_20">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="1" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkRecsAutomaticSettings">
+                             <property name="text">
+                              <string>Automatic Margins</string>
                              </property>
-                             <property name="topMargin">
-                              <number>0</number>
+                             <property name="checked">
+                              <bool>true</bool>
                              </property>
-                             <property name="rightMargin">
-                              <number>0</number>
-                             </property>
-                             <property name="bottomMargin">
-                              <number>0</number>
+                            </widget>
+                           </item>
+                           <item row="2" column="0" colspan="2">
+                            <layout class="QGridLayout" name="gridLayout_14">
+                             <property name="sizeConstraint">
+                              <enum>QLayout::SetMaximumSize</enum>
                              </property>
                              <item row="0" column="0">
-                              <spacer name="horizontalSpacer_8">
-                               <property name="orientation">
-                                <enum>Qt::Horizontal</enum>
+                              <widget class="QLabel" name="label_23">
+                               <property name="text">
+                                <string>Minimum Matches:</string>
                                </property>
-                               <property name="sizeHint" stdset="0">
-                                <size>
-                                 <width>159</width>
-                                 <height>20</height>
-                                </size>
-                               </property>
-                              </spacer>
+                              </widget>
                              </item>
                              <item row="0" column="1">
-                              <widget class="QLabel" name="label_33">
+                              <widget class="QLineEdit" name="leRecsMinimumMatches">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>70</width>
+                                 <height>16777215</height>
+                                </size>
+                               </property>
+                               <property name="inputMask">
+                                <string>9999</string>
+                               </property>
                                <property name="text">
-                                <string>Enter Fic URLs below</string>
+                                <string>6</string>
                                </property>
                               </widget>
                              </item>
-                             <item row="0" column="2">
-                              <spacer name="horizontalSpacer_9">
-                               <property name="orientation">
-                                <enum>Qt::Horizontal</enum>
+                             <item row="1" column="0">
+                              <widget class="QLabel" name="label_24">
+                               <property name="text">
+                                <string>Max pick ratio:</string>
                                </property>
-                               <property name="sizeHint" stdset="0">
+                              </widget>
+                             </item>
+                             <item row="1" column="1">
+                              <widget class="QLineEdit" name="leRecsPickRatio">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="maximumSize">
                                 <size>
-                                 <width>158</width>
-                                 <height>20</height>
+                                 <width>70</width>
+                                 <height>16777215</height>
                                 </size>
                                </property>
-                              </spacer>
-                             </item>
-                             <item row="1" column="0" colspan="3">
-                              <widget class="QTextBrowser" name="edtRecsContents"/>
+                               <property name="inputMask">
+                                <string>9999</string>
+                               </property>
+                               <property name="text">
+                                <string>50</string>
+                               </property>
+                              </widget>
                              </item>
                              <item row="2" column="0">
-                              <widget class="QPushButton" name="pbRecsLoadFFNProfileIntoSource">
-                               <property name="minimumSize">
-                                <size>
-                                 <width>90</width>
-                                 <height>0</height>
-                                </size>
+                              <widget class="QCheckBox" name="chkUseAwaysPickAt">
+                               <property name="enabled">
+                                <bool>false</bool>
                                </property>
                                <property name="text">
-                                <string>Load From FFN Faves</string>
+                                <string>Always pick at:</string>
                                </property>
                               </widget>
                              </item>
-                             <item row="2" column="1" colspan="2">
-                              <widget class="QLineEdit" name="leFFNProfileInputForUrls">
-                               <property name="placeholderText">
-                                <string>ID of the FFN Profile</string>
+                             <item row="2" column="1">
+                              <widget class="QLineEdit" name="leRecsAlwaysPickAt">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>70</width>
+                                 <height>16777215</height>
+                                </size>
+                               </property>
+                               <property name="inputMask">
+                                <string>9999</string>
+                               </property>
+                               <property name="text">
+                                <string>50</string>
                                </property>
                               </widget>
                              </item>
                             </layout>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </widget>
+                           </item>
+                           <item row="3" column="2">
+                            <spacer name="horizontalSpacer_3">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="4" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkAdjustOnListSimilarity">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Adjust scores on list similarity</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="5" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkFilterGenres">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="toolTip">
+                              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Purges fics from your reclist when they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                             </property>
+                             <property name="text">
+                              <string>Adjust scores on genre similarity</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="6" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkUseDislikes">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Adjust scores on disliked fics count</string>
+                             </property>
+                             <property name="checked">
+                              <bool>false</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="7" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkOtherPerson">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Recommendations are for someone else</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="8" column="1">
+                            <spacer name="verticalSpacer_3">
+                             <property name="orientation">
+                              <enum>Qt::Vertical</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>20</width>
+                               <height>89</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="0" column="0" colspan="2">
+                            <widget class="QLabel" name="lblAdvancedControls">
+                             <property name="text">
+                              <string>Advanced Controls</string>
+                             </property>
+                             <property name="alignment">
+                              <set>Qt::AlignCenter</set>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="3" column="0" colspan="2">
+                            <widget class="QLabel" name="lblAlgoTuners">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Algorithm tuners:</string>
+                             </property>
+                             <property name="alignment">
+                              <set>Qt::AlignCenter</set>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QWidget" name="wdgUrlList" native="true">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="styleSheet">
+                           <string notr="true"/>
+                          </property>
+                          <layout class="QGridLayout" name="gridLayout_10">
+                           <property name="leftMargin">
+                            <number>1</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>1</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>1</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>1</number>
+                           </property>
+                           <item row="0" column="0" colspan="2">
+                            <widget class="QWidget" name="wdgUrlPart" native="true">
+                             <property name="minimumSize">
+                              <size>
+                               <width>0</width>
+                               <height>120</height>
+                              </size>
+                             </property>
+                             <layout class="QGridLayout" name="gridLayout_19">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="1" column="0" colspan="3">
+                               <widget class="QTextBrowser" name="edtRecsContents">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="0">
+                               <widget class="QPushButton" name="pbRecsLoadFFNProfileIntoSource">
+                                <property name="minimumSize">
+                                 <size>
+                                  <width>90</width>
+                                  <height>0</height>
+                                 </size>
+                                </property>
+                                <property name="text">
+                                 <string>Load From FFN Faves</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="0">
+                               <spacer name="horizontalSpacer_8">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>159</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QLabel" name="label_33">
+                                <property name="text">
+                                 <string>Enter Fic URLs below</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="1" colspan="2">
+                               <widget class="QLineEdit" name="leFFNProfileInputForUrls">
+                                <property name="placeholderText">
+                                 <string>ID of the FFN Profile</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="2">
+                               <spacer name="horizontalSpacer_9">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>158</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item>
                        <widget class="QWidget" name="widget_13" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
                         <property name="minimumSize">
                          <size>
                           <width>0</width>
@@ -557,13 +667,13 @@
                           <number>6</number>
                          </property>
                          <property name="leftMargin">
-                          <number>9</number>
+                          <number>0</number>
                          </property>
                          <property name="topMargin">
                           <number>0</number>
                          </property>
                          <property name="rightMargin">
-                          <number>9</number>
+                          <number>0</number>
                          </property>
                          <property name="bottomMargin">
                           <number>0</number>
@@ -606,6 +716,13 @@
                       </item>
                       <item>
                        <widget class="QLabel" name="lblCreationStatus">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                          <weight>75</weight>
+                          <bold>true</bold>
+                         </font>
+                        </property>
                         <property name="text">
                          <string>TextLabel</string>
                         </property>
@@ -619,6 +736,12 @@
                       </item>
                       <item>
                        <widget class="QPushButton" name="pbDiagnosticList">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                          <horstretch>4</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
                         <property name="text">
                          <string>Get Diagnostics</string>
                         </property>
@@ -998,7 +1121,7 @@
            </size>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_10">
            <property name="maximumSize">
@@ -2721,6 +2844,12 @@
                <width>0</width>
                <height>30</height>
               </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
              </property>
              <property name="toolTip">
               <string>Applies a search on a fandom selected above with teh options below. If no fandom is selected, it displays everything it can.</string>

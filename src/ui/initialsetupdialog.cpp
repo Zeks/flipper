@@ -80,6 +80,7 @@ bool InitialSetupDialog::CreateRecommendations()
     params->useWeighting = true;
     params->useMoodAdjustment = true;
     params->name = "Recommendations";
+    params->assignLikedToSources = true;
     params->userFFNId = env->interfaces.recs->GetUserProfile();
     QVector<int> sourceFics;
     for(auto fic : sourceFicsSet)

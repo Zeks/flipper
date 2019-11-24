@@ -106,6 +106,7 @@ public:
    QWidget* advancedSettings = nullptr;
    QWidget* urlOuter= nullptr;
    QWidget* urlInner = nullptr;
+   QWidget* main = nullptr;
 };
 
 class MainWindow : public QMainWindow
@@ -269,7 +270,7 @@ private:
     void ResetFilterUItoDefaults(bool resetTagged = true);
     void DetectGenreSearchState();
     void DetectSlashSearchState();
-    void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit);
+    void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit, QLabel *infoLabel = nullptr);
     QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
     QVector<int> PickFicIDsFromString(QString);
     void AnalyzeIdList(QVector<int>);
@@ -290,9 +291,14 @@ private:
     void CreateRecommendationListForCurrentMode();
     void PrepareUIToDisplayNewRecommendationList(QString name);
 
-    QVector<int> PickSourcesForEnteredProfile();
-    QVector<int> PickSourcesFromEditor();
-    QVector<int> PickSourcesFromTags();
+    struct FicSourceResult{
+        QVector<int> sources;
+        QString error;
+    };
+
+    FicSourceResult PickSourcesForEnteredProfile(QLineEdit* edit);
+    FicSourceResult PickSourcesFromEditor();
+    FicSourceResult PickSourcesFromTags();
 
 
 //    QHash<int, int> CreateListOfNotSlashFics();
@@ -343,6 +349,10 @@ private:
     bool defaultRecommendationsQueued = false;
     ReclistCreationUIHelper reclistUIHelper;
     QString lastCreatedListName;
+    QString styleSheetForAccept;
+    QString styleSheetForReclistMenu;
+    QString styleSheetForReclistCreation;
+    bool reclistCreationShown = false;
 
 public slots:
     //broken and needs refactoring anyway
@@ -391,7 +401,7 @@ public slots:
     // invoked on "Search" click
     void on_pbLoadDatabase_clicked();
     void LoadAutomaticSettingsForRecListSources(int size);
-    QSet<QString> LoadFavourteIdsFromFFNProfile(QString);
+    QSet<QString> LoadFavourteIdsFromFFNProfile(QString, QLabel *infoLabel = nullptr);
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
     void OnQMLAuthorToggled(QVariant, QVariant active);

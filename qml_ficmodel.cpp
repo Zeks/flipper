@@ -208,7 +208,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[RecommendationsSecondRole] = "recommendationsSecond";
     roles[PlaceInMainList] = "placeMain";
     roles[PlaceInSecondList] = "placeSecond";
-    roles[PlaceOnFirstPedestal] = "placeOnMainPedestal";
+    roles[PlaceOnFirstPedestal] = "placeOnFirstPedestal";
     roles[PlaceOnSecondPedestal] = "placeOnSecondPedestal";
 
     return roles;

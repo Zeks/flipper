@@ -146,6 +146,43 @@ MainWindow::MainWindow(QWidget *parent) :
     reclistUIHelper.advancedSettings = ui->wdgAdvancedControls;
     reclistUIHelper.urlOuter = ui->wdgUrlList;
     reclistUIHelper.urlInner = ui->wdgUrlPart;
+    reclistUIHelper.main = this;
+
+    ui->rbSimpleMode->setChecked(true);
+    ui->rbProfileMode->setChecked(true);
+    reclistUIHelper.SetupVisibilityForElements();
+    ui->wdgRecsCreatorInner->hide();
+    ui->wdgUrlList->hide();
+    ui->pbDiagnosticList->hide();
+
+    ui->lblCreationStatus->hide();
+
+    QPalette pal = palette();
+    pal.setColor(QPalette::Background, QColor("#f0f0f0FF"));
+    ui->wdgRecsCreatorInner->setAutoFillBackground(true);
+    ui->wdgRecsCreatorInner->setPalette(pal);
+
+    pal.setColor(QPalette::Background, QColor("#f0ddddFF"));
+    ui->lblAlgoTuners->setPalette(pal);
+    ui->lblAlgoTuners->setAutoFillBackground(true);
+    ui->lblAdvancedControls->setPalette(pal);
+    ui->lblAdvancedControls->setAutoFillBackground(true);
+
+//    ui->wdgAdvancedControls->setPalette(pal);
+//    ui->wdgAdvancedControls->setAutoFillBackground(true);
+
+
+    styleSheetForReclistMenu = "QPushButton{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(239,225,179, 128), stop:1 rgba(224,179,110, 128))}"
+                               "QPushButton:hover{background-color: #e0c56e; border: 1px solid black;border-radius: 5px;}"
+                               "}";
+
+    styleSheetForAccept = "QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
+                          "QPushButton:hover {background-color: #9cf27b; border: 1px solid black;border-radius: 5px;}}";
+    styleSheetForReclistCreation =  styleSheetForAccept;
+
+
+    ui->pbNewRecommendationList->setStyleSheet(styleSheetForReclistMenu);
+    ui->pbRecsCreateListFromSources->setStyleSheet(styleSheetForReclistCreation);
 
     SetPreviousEnabled(false);
     SetNextEnabled(false);
@@ -1025,7 +1062,7 @@ void MainWindow::LoadAutomaticSettingsForRecListSources(int size)
     }
 }
 
-QSet<QString> MainWindow::LoadFavourteIdsFromFFNProfile(QString url)
+QSet<QString> MainWindow::LoadFavourteIdsFromFFNProfile(QString url, QLabel* infoLabel)
 {
     QSet<QString> result;
     //need to make sure it *is* FFN url
@@ -1037,7 +1074,7 @@ QSet<QString> MainWindow::LoadFavourteIdsFromFFNProfile(QString url)
         QMessageBox::warning(nullptr, "Warning!", "URL is not an FFN author url\nNeeeds to be a https://www.fanfiction.net/u/NUMERIC_ID");
         return result;
     }
-    result = env->LoadAuthorFicIdsForRecCreation(url);
+    result = env->LoadAuthorFicIdsForRecCreation(url, infoLabel);
     return result;
 }
 
@@ -1745,6 +1782,10 @@ void MainWindow::FillRecTagCombobox()
     auto lists = env->interfaces.recs->GetAllRecommendationListNames();
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
     SilentCall(ui->cbRecGroupSecond)->setModel(new QStringListModel(lists));
+    auto newModel = lists;
+    newModel.prepend("");
+    SilentCall(ui->cbNewListName)->setModel(new QStringListModel(newModel));
+
     if(lists.size() > 0)
     {
         ui->pbDeleteRecList->setEnabled(true);
@@ -1862,8 +1903,8 @@ void MainWindow::on_pbOpenRecommendations_clicked()
 void MainWindow::OpenRecommendationList(QString listName)
 {
     env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_whole_list,
-                                           false,
-                                           listName);
+                                            false,
+                                            listName);
     if(env->filter.isValid)
     {
         env->filter.sortMode = core::StoryFilter::sm_reccount;
@@ -2700,7 +2741,7 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI()
 
     params->minimumMatch = params->isAutomatic  ? 1 : ui->leRecsMinimumMatches->text().toInt();
     params->maxUnmatchedPerMatch = ui->leRecsPickRatio->text().toInt();
-    params->alwaysPickAt = ui->leRecsAlwaysPickAt->text().toInt();
+    params->alwaysPickAt = ui->chkUseAwaysPickAt->isChecked() ?  ui->leRecsAlwaysPickAt->text().toInt(): 9999;
     params->useWeighting = ui->chkAdjustOnListSimilarity->isChecked();
     params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
     params->useDislikes = ui->chkUseDislikes->isChecked();
@@ -2799,21 +2840,21 @@ void FetchFFNIdForOtherUserIntoParams(QSharedPointer<core::RecommendationList> p
 void MainWindow::CreateRecommendationListForCurrentMode()
 {
     // step 1: get sources
-    QVector<int> sources;
+    MainWindow::FicSourceResult sources;
     ui->lblCreationStatus->setText("<font color=\"darkBlue\">Loading sources.</font>");
     QCoreApplication::processEvents();
 
 
     if(ui->rbProfileMode->isChecked())
-        sources = PickSourcesForEnteredProfile();
+        sources = PickSourcesForEnteredProfile(ui->leRecsFFNUrl);
     else if(ui->rbUrlMode->isChecked())
         sources = PickSourcesFromEditor();
     else
         sources = PickSourcesFromTags();
 
-    if(!sources.size())
+    if(!sources.error.isEmpty())
     {
-        ui->lblCreationStatus->setText("<font color=\"darkRed\">No fics to use as sources.</font>");
+        ui->lblCreationStatus->setText(sources.error);
         return;
     }
 
@@ -2823,7 +2864,8 @@ void MainWindow::CreateRecommendationListForCurrentMode()
     // step 2: get parameters
     auto ownFFNId = env->interfaces.recs->GetUserProfile();
     auto params = CreateReclistParamsFromUI();
-    FetchFFNIdForOtherUserIntoParams(params, ownFFNId, ui->leRecsFFNUrl, ui->leFFNProfileInputForUrls);
+    if(ui->chkOtherPerson->isChecked())
+        FetchFFNIdForOtherUserIntoParams(params, ownFFNId, ui->leRecsFFNUrl, ui->leFFNProfileInputForUrls);
     if(!params)
     {
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Couldn't create params for recommendations.</font>");
@@ -2838,7 +2880,7 @@ void MainWindow::CreateRecommendationListForCurrentMode()
     ui->lblCreationStatus->setText("<font color=\"darkBlue\">Creating recommendations.</font>");
     QCoreApplication::processEvents();
 
-    bool result = CreateRecommendationList(params, sources);
+    bool result = CreateRecommendationList(params, sources.sources);
     if(!result)
     {
         QString report = "<font color=\"darkRed\">Could not create a list with these parameters.%1</font>";
@@ -2854,6 +2896,7 @@ void MainWindow::CreateRecommendationListForCurrentMode()
         return;
     }
     lastCreatedListName = params->name;
+    ui->lblCreationStatus->setText("<font color=\"darkGreen\">Finished.</font>");
 }
 
 void MainWindow::PrepareUIToDisplayNewRecommendationList(QString name)
@@ -2874,39 +2917,45 @@ void MainWindow::PrepareUIToDisplayNewRecommendationList(QString name)
     ui->pbDeleteRecList->setEnabled(true);
 }
 
-QVector<int> MainWindow::PickSourcesForEnteredProfile()
+MainWindow::FicSourceResult MainWindow::PickSourcesForEnteredProfile(QLineEdit *edit)
 {
-    QVector<int> result;
-    if(env->TestAuthorID(ui->leFFNProfileInputForUrls, ui->lblCreationStatus))
-        LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leFFNProfileInputForUrls);
-    result = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    MainWindow::FicSourceResult result;
+    if(env->TestAuthorID(edit, ui->lblCreationStatus))
+    {
+        LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, edit, ui->lblCreationStatus);
+        result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    }
+    else
+       result.error = "<font color=\"darkRed\">Not a valid FFN user ID.</font>";
     return result;
 
 }
 
-QVector<int> MainWindow::PickSourcesFromEditor()
+MainWindow::FicSourceResult MainWindow::PickSourcesFromEditor()
 {
-    QVector<int> result;
-    result = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    MainWindow::FicSourceResult result;
+    result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    if(result.sources.size() == 0)
+        result.error = "<font color=\"darkRed\">No valid URLs in the editor.</font>";
     return result;
 }
 
-QVector<int> MainWindow::PickSourcesFromTags()
+MainWindow::FicSourceResult MainWindow::PickSourcesFromTags()
 {
-    QVector<int> result;
+    MainWindow::FicSourceResult result;
 
     ui->wdgTagsPlaceholder->on_pbUrlsForTags_clicked();
     QClipboard *clipboard = QApplication::clipboard();
     ui->edtRecsContents->clear();
     QString text = clipboard->text();
-    if(text.trimmed().isEmpty())
+
+    if(!text.trimmed().isEmpty())
     {
-        QMessageBox::warning(nullptr, "Attention!", "Failed to load urls from tags\n"
-                                                    "Are you sure you have already assigned fics to the selected tags?");
-        return result;
+        ui->edtRecsContents->setText(clipboard->text());
+        result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
     }
-    ui->edtRecsContents->setText(clipboard->text());
-    result = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    else
+       result.error = "<font color=\"darkRed\">No tags selected or no fics assigned to those tags.</font>";
 
     return result;
 }
@@ -2915,6 +2964,12 @@ QVector<int> MainWindow::PickSourcesFromTags()
 
 void MainWindow::on_pbRecsCreateListFromSources_clicked()
 {
+    if(ui->cbNewListName->currentText().trimmed().isEmpty())
+    {
+        ui->lblCreationStatus->show();
+        ui->lblCreationStatus->setText("<font color=\"darkRed\">Please select a name for your list.</font>");
+        return;
+    }
     CreateRecommendationListForCurrentMode();
     if(lastCreatedListName.isEmpty())
         return;
@@ -3048,9 +3103,16 @@ void MainWindow::DetectSlashSearchState()
     }
 }
 
-void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leUrl)
+void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leUrl, QLabel* infoLabel)
 {
-    auto fics = LoadFavourteIdsFromFFNProfile(leUrl->text());
+    bool intUrl = false;
+    leUrl->text().toInt(&intUrl);
+    QString url = leUrl->text();
+    if(intUrl)
+        url = "https://www.fanfiction.net/u/" + url;
+
+
+    auto fics = LoadFavourteIdsFromFFNProfile(url, infoLabel);
     pbMain->setValue(0);
     //pbMain->hide();
     QCoreApplication::processEvents();
@@ -3408,9 +3470,9 @@ void MainWindow::on_pbProfileCompare_clicked()
         return f1 < f2;
     });
 
-//    std::sort(result.begin(), result.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
-//        return f1->author->name < f2->author->name;
-//    });
+    //    std::sort(result.begin(), result.end(), [](QSharedPointer<core::Fic> f1, QSharedPointer<core::Fic> f2){
+    //        return f1->author->name < f2->author->name;
+    //    });
 
     ui->edtAnalysisResults->insertHtml(QString("First user has %1 favourites.").arg(QString::number(ficsLeft.size())));
     ui->edtAnalysisResults->insertHtml("<br>");
@@ -3424,9 +3486,9 @@ void MainWindow::on_pbProfileCompare_clicked()
 
     for(auto fic: result)
     {
-//        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
-//        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
-//        ui->edtAnalysisResults->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
+        //        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
+        //        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
+        //        ui->edtAnalysisResults->insertHtml(fic->author->name + "<br>" +  fic->title + "<br>" + toInsert.arg(url) + "<br>");
         ui->edtAnalysisResults->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
     }
 }
@@ -3591,7 +3653,7 @@ void MainWindow::SetPreviousEnabled(bool value)
 {
     if(value){
         ui->pbPreviousResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
-                                          "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
+                                             "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
         ui->pbPreviousResults->setEnabled(true);
     }
     else{
@@ -3605,7 +3667,7 @@ void MainWindow::SetNextEnabled(bool value)
 
     if(value){
         ui->pbNextResults->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(231,212,249, 128), stop:1 rgba(207,190,224, 128))}"
-                                          "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
+                                         "QPushButton:hover {background-color: #dbbff6; border: 1px solid black;border-radius: 5px;}}");
         ui->pbNextResults->setEnabled(true);
     }
     else{
@@ -3694,43 +3756,63 @@ void MainWindow::on_rbSimpleMode_clicked()
 {
     reclistUIHelper.simpleMode = true;
     reclistUIHelper.SetupVisibilityForElements();
+    QCoreApplication::processEvents();
+//    ui->wdgRecsCreator->resize(10, 10);
+//    ui->wdgRecsCreator->adjustSize();
+//    ui->wdgRecs->resize(10, 10);
+//    ui->wdgRecs->adjustSize();
+    ui->spRecsFan->setSizes({0,1000});
 }
 
 void MainWindow::on_rbAdvancedMode_clicked()
 {
     reclistUIHelper.simpleMode = false;
     reclistUIHelper.SetupVisibilityForElements();
+    QCoreApplication::processEvents();
+    ui->spRecsFan->setSizes({0,1000});
 }
 
 void MainWindow::on_rbProfileMode_clicked()
 {
     reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_profile;
     reclistUIHelper.SetupVisibilityForElements();
+    QCoreApplication::processEvents();
+    ui->spRecsFan->setSizes({0,1000});
 }
 
 void MainWindow::on_rbUrlMode_clicked()
 {
     reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_urls;
     reclistUIHelper.SetupVisibilityForElements();
+    QCoreApplication::processEvents();
+    ui->spRecsFan->setSizes({0,1000});
 }
 
 void MainWindow::on_rbSelectedTagsMode_clicked()
 {
     reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_tags;
     reclistUIHelper.SetupVisibilityForElements();
+    QCoreApplication::processEvents();
+    ui->spRecsFan->setSizes({0,1000});
 }
 
 void MainWindow::on_pbNewRecommendationList_clicked()
 {
-    reclistUIHelper.SetupVisibilityForElements();
-    if(ui->pbNewRecommendationList->isChecked()){
-        ui->pbNewRecommendationList->setText("Hide");
+    if(!reclistCreationShown){
         reclistUIHelper.SetupVisibilityForElements();
+        ui->pbNewRecommendationList->setText("Hide");
+        ui->pbNewRecommendationList->setPalette(this->style()->standardPalette());
+        ui->pbNewRecommendationList->setStyleSheet(styleSheetForReclistMenu);
         ui->wdgRecsCreatorInner->show();
+        reclistCreationShown = true;
     }
     else{
         ui->pbNewRecommendationList->setText("New Recommendation List");
+        ui->pbNewRecommendationList->setStyleSheet(styleSheetForReclistMenu);
         ui->wdgRecsCreatorInner->hide();
+        QCoreApplication::processEvents();
+        ui->spRecsFan->setSizes({0,1000});
+        reclistCreationShown = false;
     }
 }
 
@@ -3756,12 +3838,13 @@ void MainWindow::on_chkRecsAutomaticSettings_toggled(bool checked)
         ui->leRecsPickRatio->setEnabled(false);
         ui->leRecsMinimumMatches->setEnabled(false);
         ui->leRecsAlwaysPickAt->setEnabled(false);
-
+        ui->chkUseAwaysPickAt->setEnabled(false);
     }
     else
     {
         ui->leRecsPickRatio->setEnabled(true);
         ui->leRecsMinimumMatches->setEnabled(true);
+        ui->chkUseAwaysPickAt->setEnabled(true);
         if(ui->chkUseAwaysPickAt->isChecked())
             ui->leRecsAlwaysPickAt->setEnabled(true);
         else
@@ -3778,23 +3861,57 @@ void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 {
     if(env->TestAuthorID(ui->leFFNProfileInputForUrls, ui->lblCreationStatus))
         LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leFFNProfileInputForUrls);
+    else
+        ui->lblCreationStatus->setText("<font color=\"darkRed\">Not a valid FFN user ID.</font>");
 }
 
 void ReclistCreationUIHelper::SetupVisibilityForElements()
 {
+    main->setUpdatesEnabled(false);
     if(simpleMode)
+    {
         advancedSettings->hide();
+        if(sourcesMode != sm_urls)
+        {
+            urlOuter->hide();
+            urlInner->hide();
+            urlOuter->setAutoFillBackground(true);
+            urlOuter->setPalette(advancedSettings->palette());
+        }
+        else{
+            urlOuter->show();
+            urlInner->show();
+
+            auto palette = advancedSettings->palette();
+            palette.setColor(QPalette::Background, QColor("#f0ddddFF"));
+            urlOuter->setAutoFillBackground(true);
+            urlOuter->setPalette(palette);
+        }
+    }
     else
     {
         advancedSettings->show();
         urlOuter->show();
         if(sourcesMode != sm_urls)
+        {
             urlInner->hide();
-        else
+            urlOuter->setAutoFillBackground(true);
+            urlOuter->setPalette(advancedSettings->palette());
+        }
+        else{
             urlInner->show();
+            auto palette = advancedSettings->palette();
+            palette.setColor(QPalette::Background, QColor("#f0ddddFF"));
+            urlOuter->setAutoFillBackground(true);
+            urlOuter->setPalette(palette);
+        }
     }
     if(sourcesMode == sm_profile)
         profileInput->show();
     else
+    {
+        profileInput->show();
         profileInput->hide();
+    }
+    main->setUpdatesEnabled(true);
 }
