@@ -2558,7 +2558,7 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fi
         listIds << QString::number(filter.secondListId);
 
 
-    QString qs = QString("select fic_id, list_id, %1, position from RecommendationListData where list_id in (%2) and fic_id in (%3)" );
+    QString qs = QString("select fic_id, list_id, %1, position, pedestal from RecommendationListData where list_id in (%2) and fic_id in (%3)" );
     QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
     qs = qs.arg(pointsField);
     qs = qs.arg(listIds.join(","));
@@ -2572,10 +2572,12 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fi
         {
             fic.recommendationsMainList = q.value(pointsField).toInt();
             fic.placeInMainList = q.value("position").toInt();
+            fic.placeOnSecondPedestal = q.value("pedestal").toInt();
         }
         else{
             fic.recommendationsSecondList = q.value(pointsField).toInt();
             fic.placeInSecondList = q.value("position").toInt();
+            fic.placeOnSecondPedestal= q.value("pedestal").toInt();
         }
     });
     return ctx.result;
@@ -3832,15 +3834,52 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
 
 //alter table RecommendationListData add column breakdown_available integer default 0;
 
+static QHash<int, int> RecastFicScoresIntoPedestalSet(const core::RecommendationListFicData& ficData){
+    int position = 1;
+    QSet<int> scoresSet;
+    QList<int> scoresList;
+    QHash<int, int> scorePositions;
+    QVector ficsCopy = ficData.fics;
+    for(int i = 0; i < ficData.fics.size(); i++)
+        scoresSet.insert(ficData.matchCounts[i]);
+
+    scoresList = scoresSet.toList();
+    std::sort(scoresList.begin(), scoresList.end());
+    std::reverse(scoresList.begin(), scoresList.end());
+
+    for(int i = 0; i < scoresList.size(); i++)
+        scorePositions[scoresList.at(i)]=position++;
+    return scorePositions;
+}
+
+static QHash<int, int> CreateFicPositions(const core::RecommendationListFicData& ficData){
+
+    // first we need to fill the hash of scores per fic
+    QHash<int, int> scores;
+    QHash<int, int> positions;
+    QVector ficsCopy = ficData.fics;
+    for(int i = 0; i < ficData.fics.size(); i++)
+        scores[ficData.fics[i]] = ficData.matchCounts[i];
+
+    std::sort(ficsCopy.begin(), ficsCopy.end(), [&](const int& fic1, const int& fic2){
+        return scores[fic1] > scores[fic2] ;
+    });
+    for(int i = 0; i < ficData.fics.size(); i++){
+        positions[ficsCopy[i]] = i+1;
+    }
+    return positions;
+}
+
 
 DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
                                              QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, position, match_count, no_trash_score, is_origin, "
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, position, pedestal, "
+                         "match_count, no_trash_score, is_origin, "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
                          "value_common, value_uncommon, value_rare, value_unique, purged) "
-                         "values(:listId, :ficId, :position, :matchCount, :no_trash_score, :is_origin,"
+                         "values(:listId, :ficId, :position, :pedestal, :matchCount, :no_trash_score, :is_origin,"
                          ":breakdown_available,"
                          ":votes_common, :votes_uncommon, :votes_rare, :votes_unique, "
                          ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)");
@@ -3850,28 +3889,17 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
 
     qDebug() << "Creating new vote breakdown records for list with id: " << list->id;
     ctx.bindValue("listId", list->id);
-    int position = 0;
-    // first we need to fill the hash of scores per fic
-    QHash<int, int> scores;
-    QHash<int, int> positions;
-    QVector ficsCopy = list->ficData.fics;
-    for(int i = 0; i < list->ficData.fics.size(); i++)
-        scores[list->ficData.fics[i]] = list->ficData.matchCounts[i];
-
-    std::sort(ficsCopy.begin(), ficsCopy.end(), [&](const int& fic1, const int& fic2){
-        return scores[fic1] > scores[fic2] ;
-    });
-    for(int i = 0; i < list->ficData.fics.size(); i++){
-        positions[ficsCopy[i]] = i+1;
-    }
+    auto scorePedestalPositions = RecastFicScoresIntoPedestalSet(list->ficData);
+    auto ficPositionsInList = CreateFicPositions(list->ficData);
 
     for(int i = 0; i < list->ficData.fics.size(); i++)
     {
-        position++;
+
         int ficId = list->ficData.fics.at(i);
 
         ctx.bindValue("ficId", ficId);
-        ctx.bindValue("position", positions[ficId]);
+        ctx.bindValue("position", ficPositionsInList[ficId]);
+        ctx.bindValue("pedestal", scorePedestalPositions[list->ficData.matchCounts.at(i)]);
 
         ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
         ctx.bindValue("no_trash_score", list->ficData.noTrashScores.at(i));
@@ -4282,5 +4310,6 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
 //    }
 //    return true;
 //}
+
 
 

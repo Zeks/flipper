@@ -65,7 +65,9 @@ public:
         RecommendationsSecondRole,
         PlaceInMainList,
         PlaceInSecondList,
-        EndRole = PlaceInSecondList
+        PlaceOnFirstPedestal,
+        PlaceOnSecondPedestal,
+        EndRole = PlaceOnSecondPedestal
 
     };
 

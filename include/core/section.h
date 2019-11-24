@@ -650,6 +650,8 @@ public:
     int recommendationsSecondList = 0;
     int placeInMainList = 0;
     int placeInSecondList = 0;
+    int placeOnMainPedestal= 0;
+    int placeOnSecondPedestal = 0;
     QString webSite = "ffn";
 
     UpdateMode updateMode = UpdateMode::none;

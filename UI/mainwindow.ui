@@ -931,7 +931,7 @@
            </size>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>4</number>
           </property>
           <widget class="QWidget" name="tab_10">
            <property name="maximumSize">
@@ -2500,12 +2500,17 @@
                 </property>
                 <item>
                  <property name="text">
-                  <string>Position in recommendation list</string>
+                  <string>Position in recommendation list </string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
                   <string>Position in displayed list</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Pedestal position (non-unique)</string>
                  </property>
                 </item>
                </widget>

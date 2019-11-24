@@ -113,6 +113,7 @@ list_id integer,
   
   alter table RecommendationListData add column breakdown_available integer default 0;
   alter table RecommendationListData add column position integer;
+  alter table RecommendationListData add column pedestal integer;
 
 CREATE INDEX if not exists  I_LIST_TAGS_PK ON RecommendationListData (list_id asc, fic_id asc, match_count asc);
 CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC);

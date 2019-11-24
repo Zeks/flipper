@@ -514,6 +514,8 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 34, 0, recommendationsSecondList);
     ADD_INTEGER_GETSET(holder, 35, 0, placeInMainList);
     ADD_INTEGER_GETSET(holder, 36, 0, placeInSecondList);
+    ADD_INTEGER_GETSET(holder, 37, 0, placeOnFirstPedestal);
+    ADD_INTEGER_GETSET(holder, 38, 0, placeOnSecondPedestal);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -544,7 +546,7 @@ void MainWindow::SetupFanficTable()
                        << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
                        << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
                        << "notes" << "quotes" << "selected" << "recommendationsSecond"
-                       << "placeMain" << "placeSecond");
+                       << "placeMain" << "placeSecond" << "placeOnFirstPedestal" << "placeOnSecondPedestal");
 
 
 
@@ -581,7 +583,7 @@ void MainWindow::SetupFanficTable()
 
 
     qwFics->rootContext()->setContextProperty("displayListDifferenceInList",
-                                              settings.value("Settings/displaySecondReclist", false).toBool());
+                                              uiSettings.value("Settings/displaySecondReclist", false).toBool());
     qwFics->rootContext()->setContextProperty("scanIconVisible",
                                               settings.value("Settings/scanIconVisible", true).toBool());
     qwFics->rootContext()->setContextProperty("main", this);

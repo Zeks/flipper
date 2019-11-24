@@ -61,6 +61,27 @@ Rectangle{
             lvFics.tagDeletedInTagWidget(tag,rownum)
     }
 
+    function getDiffAndSecondIndex(displayMode,
+                                   positionInFirstList, positionInSecondList,
+                                   placeOnFirstPedestal, placeOnSecondPedestal){
+        var diff = 0;
+        var secondIndex = 0;
+
+        if(displayMode === 0){
+            diff = positionInFirstList - positionInSecondList;
+            secondIndex = positionInSecondList;
+        }
+        else if (displayMode === 1){
+            // intentionally empty
+        }
+        else{
+            diff = placeOnFirstPedestal - placeOnSecondPedestal;
+            secondIndex = placeOnSecondPedestal;
+        }
+        return [diff, secondIndex]
+    }
+
+
     function actOnAFic(ficIndex, ficUrl) {
         //console.log("acting on a fic")
         mainWindow.selectedIndex = ficIndex
@@ -275,7 +296,14 @@ Rectangle{
                         var usedUrl = "http://www.fanfiction.net/s/" + url
                         if(tiAtChapter.visible)
                             usedUrl += "/" + tiAtChapter.text
-                        var displayedId = lvFics.idDisplayMode ? indexOfThisDelegate : placeMain;
+                        var displayedId = -1;
+                        if(lvFics.idDisplayMode === 0)
+                            displayedId = placeMain;
+                        else if (lvFics.idDisplayMode === 1)
+                            displayedId = indexOfThisDelegate;
+                        else
+                            displayedId = placeOnFirstPedestal;
+
                         return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"" + usedUrl +"\">" + displayedId + "."  + title + "</a></body></html>"
                     }
                     verticalAlignment: Text.AlignVCenter
@@ -524,34 +552,46 @@ Rectangle{
                 }
                 Text {
                     id: txtPositionDiff
-                    visible: lvFics.displayListDifference && (placeMain - placeSecond) != 0 && placeSecond != 0
+                    visible: {
+                        var values = getDiffAndSecondIndex(lvFics.idDisplayMode, placeMain,placeSecond, placeOnFirstPedestal,placeOnSecondPedestal);
+                        var diff = values[0];
+                        var secondIndex = values[1];
+
+                        lvFics.displayListDifference && diff !== 0 && secondIndex !== 0
+                    }
                     width: recommendationsMain > 0 ? 20 : 0
                     height: 24
                     text: {
+                        var values = getDiffAndSecondIndex(lvFics.idDisplayMode, placeMain,placeSecond, placeOnFirstPedestal,placeOnSecondPedestal);
+                        var diff = values[0];
+                        var secondIndex = values[1];
 
                         if(lvFics.displayListDifference && recommendationsSecond != 0)
-                            return "O:" + placeSecond + "(" + recommendationsSecond + ")"
-
+                            return "O:" + secondIndex + "(" + recommendationsSecond + ")"
 
                         var str = ""
-                        if(placeMain - placeSecond >= 0)
+                        if(diff >= 0)
                             str+="-";
-                        else if(placeMain - placeSecond < 0)
+                        else if(diff < 0)
                             str+="+";
-                        str+=Math.abs(placeMain - placeSecond);
-                        if(placeSecond === 0)
+                        str+=Math.abs(diff);
+                        if(secondIndex === 0)
                             return "new";
                         return str
                     }
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 16
                     color: {
+                        var values = getDiffAndSecondIndex(lvFics.idDisplayMode, placeMain,placeSecond, placeOnFirstPedestal,placeOnSecondPedestal);
+                        var diff = values[0];
+                        var secondIndex = values[1];
+
                         var color = Qt.lighter("darkRed")
-                        if(placeMain - placeSecond > 0)
+                        if(diff > 0)
                          color = Qt.lighter("darkRed")
                         else
                          color = Qt.lighter("darkGreen")
-                        if(placeSecond === 0)
+                        if(secondIndex === 0)
                             color = Qt.lighter("darkGreen")
                         return color;
                     }
