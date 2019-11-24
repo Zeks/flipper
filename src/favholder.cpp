@@ -92,7 +92,7 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
     else
         calculator.reset(new RecCalculatorImplDefault({holder.faves, holder.fics, holder.authorMoodDistributions}));
     calculator->fetchedFics = fetchedFics;
-    calculator->doTrashCounting = params->doTrashCounting;
+    calculator->doTrashCounting = params->useDislikes;
     calculator->params = params;
     for(auto fic : params->majorNegativeVotes)
         calculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));

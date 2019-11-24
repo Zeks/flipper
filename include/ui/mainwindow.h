@@ -88,6 +88,26 @@ struct FilterErrors{
 
 
 
+class ReclistCreationUIHelper
+{
+public:
+    enum ESourcesMode{
+        sm_profile = 0,
+        sm_urls = 1,
+        sm_tags = 2,
+    };
+    bool simpleMode = true;
+    ESourcesMode sourcesMode = sm_profile;
+
+    void SetupVisibilityForElements();
+
+
+   QWidget* profileInput = nullptr;
+   QWidget* advancedSettings = nullptr;
+   QWidget* urlOuter= nullptr;
+   QWidget* urlInner = nullptr;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -256,19 +276,23 @@ private:
     void AnalyzeCurrentFilter();
 
     bool CreateRecommendationList(QSharedPointer<core::RecommendationList> params,
-                                  QVector<int> sources,
-                                  bool automaticLike,
-                                  bool ownProfile);
+                                  QVector<int> sources);
 
     bool CreateDiagnosticRecommendationList(QSharedPointer<core::RecommendationList> params,
                                   QVector<int> sources);
 
-    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool ownRecs);
+    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI();
 
     void LoadFrameIntoUI(const FilterFrame& frame);
     void SetPreviousEnabled(bool value);
     void SetNextEnabled(bool value);
     void FetchScoresForFics();
+    void CreateRecommendationListForCurrentMode();
+    void PrepareUIToDisplayNewRecommendationList(QString name);
+
+    QVector<int> PickSourcesForEnteredProfile();
+    QVector<int> PickSourcesFromEditor();
+    QVector<int> PickSourcesFromTags();
 
 
 //    QHash<int, int> CreateListOfNotSlashFics();
@@ -317,7 +341,8 @@ private:
     QRImageProvider* imgProvider = nullptr;
     QString primedTag;
     bool defaultRecommendationsQueued = false;
-
+    ReclistCreationUIHelper reclistUIHelper;
+    QString lastCreatedListName;
 
 public slots:
     //broken and needs refactoring anyway
@@ -463,8 +488,6 @@ private slots:
 
     void on_pbUseProfile_clicked();
 
-    void on_pbMore_clicked();
-
     void on_pbCreateHTML_clicked();
 
 
@@ -531,6 +554,26 @@ private slots:
     void on_leUserFFNId_editingFinished();
 
     void on_chkStopPatreon_stateChanged(int arg1);
+
+    void on_rbSimpleMode_clicked();
+
+    void on_rbAdvancedMode_clicked();
+
+    void on_rbProfileMode_clicked();
+
+    void on_rbUrlMode_clicked();
+
+    void on_rbSelectedTagsMode_clicked();
+
+    void on_pbNewRecommendationList_clicked();
+
+    void on_leFFNProfileInputForUrls_returnPressed();
+
+
+    void on_chkUseAwaysPickAt_stateChanged(int arg1);
+
+
+    void on_pbValidateUserID_clicked();
 
 signals:
 

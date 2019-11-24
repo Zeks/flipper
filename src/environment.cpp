@@ -560,22 +560,20 @@ QVector<int> CoreEnvironment::GetSourceFicsFromFile(QString filename)
     return sourceList;
 }
 
-int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> list,
-                                                     QVector<int> sourceFics,
-                                                     bool automaticLike)
+int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params,QVector<int> sourceFics)
 {
 
-    qDebug() << "At start list id is: " << list->id;
+    qDebug() << "At start list id is: " << params->id;
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
 
 
-    list->ficData.fics = sourceFics;
+    params->ficData.fics = sourceFics;
 
 
 
     database::Transaction transaction(interfaces.recs->db);
-    list->id = interfaces.recs->GetListIdForName(list->name);
-    qDebug() << "Fetched name for list is: " << list->name;
+    params->id = interfaces.recs->GetListIdForName(params->name);
+    qDebug() << "Fetched name for list is: " << params->name;
 
     QVector<core::IdPack> pack;
     pack.resize(sourceFics.size());
@@ -587,16 +585,16 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     }
     grpcSource->GetInternalIDsForFics(&pack);
 
-    list->likedAuthors = likedAuthors;
+    params->likedAuthors = likedAuthors;
     //QLOG_INFO() << "Logging list params: ";
-    list->Log();
-    bool result = grpcSource->GetRecommendationListFromServer(*list);
+    params->Log();
+    bool result = grpcSource->GetRecommendationListFromServer(*params);
 
 
     //    QSet<int> sourceSet;
     //    sourceSet.reserve(sourceFics.size());
     for(auto id: pack)
-        list->ficData.sourceFics.insert(id.db);
+        params->ficData.sourceFics.insert(id.db);
 
 
 
@@ -605,7 +603,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         QLOG_ERROR() << "list creation failed";
         return -1;
     }
-    if(list->ficData.fics.size() == 0)
+    if(params->ficData.fics.size() == 0)
     {
         return -1;
     }
@@ -613,26 +611,26 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
 
 
-        qDebug() << "Deleting list: " << list->id;
-        interfaces.recs->DeleteList(list->id);
+        qDebug() << "Deleting list: " << params->id;
+        interfaces.recs->DeleteList(params->id);
 
-        interfaces.recs->LoadListIntoDatabase(list);
+        interfaces.recs->LoadListIntoDatabase(params);
         //qDebug() << list->ficData.fics;
-        interfaces.recs->LoadListFromServerIntoDatabase(list);
+        interfaces.recs->LoadListFromServerIntoDatabase(params);
 
-        interfaces.recs->UpdateFicCountInDatabase(list->id);
-        interfaces.recs->SetCurrentRecommendationList(list->id);
+        interfaces.recs->UpdateFicCountInDatabase(params->id);
+        interfaces.recs->SetCurrentRecommendationList(params->id);
         emit resetEditorText();
-        auto keys = list->ficData.matchReport.keys();
+        auto keys = params->ficData.matchReport.keys();
         std::sort(keys.begin(), keys.end());
         emit updateInfo( QString("Matches: ") + QString("Times Found:") + "<br>");
         for(auto key: keys)
             emit updateInfo(QString::number(key).leftJustified(11, ' ').replace(" ", "&nbsp;")
-                            + " " + QString::number(list->ficData.matchReport[key]) + "<br>");
-        if(automaticLike)
+                            + " " + QString::number(params->ficData.matchReport[key]) + "<br>");
+        if(params->assignLikedToSources)
         {
             QLOG_INFO() << "autolike is enabled";
-            for(auto fic: list->ficData.sourceFics)
+            for(auto fic: params->ficData.sourceFics)
             {
                 //QLOG_INFO() << "liking fic: "  << fic;
                 if(fic > 0)
@@ -642,7 +640,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     });
     action.run();
     transaction.finalize();
-    return list->id;
+    return params->id;
 }
 
 core::FicSectionStats CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)
@@ -727,7 +725,7 @@ int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationLis
     int result = -1;
     if(settings.value("Settings/thinClient").toBool())
     {
-        result =  BuildRecommendationsServerFetch(params,sourceFics, automaticLike);
+        result =  BuildRecommendationsServerFetch(params,sourceFics);
     }
     else
         result = BuildRecommendationsLocalVersion(params, clearAuthors);
@@ -1190,7 +1188,6 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 6;
     params->maxUnmatchedPerMatch = 50;
-    params->maximumNegativeMatches = -1;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
     params->useWeighting = true;

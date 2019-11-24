@@ -888,7 +888,7 @@ static const auto paramToTaskFiller = [](auto& task, core::RecommendationList& r
     data->set_list_name(proto_converters::TS(recList.name));
     params->set_always_pick_at(recList.alwaysPickAt);
     params->set_is_automatic(recList.isAutomatic);
-    params->set_do_trash_counting(recList.doTrashCounting);
+    params->set_do_trash_counting(recList.useDislikes);
     params->set_min_fics_to_match(recList.minimumMatch);
     params->set_max_unmatched_to_one_matched(static_cast<int>(recList.maxUnmatchedPerMatch));
     params->set_use_weighting(recList.useWeighting);
@@ -956,7 +956,7 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
     }
     // need to fill the params for the list as they were adjusted on the server
     recList.isAutomatic = response.used_params().is_automatic();
-    recList.doTrashCounting = response.used_params().do_trash_counting();
+    recList.useDislikes = response.used_params().do_trash_counting();
     recList.minimumMatch = response.used_params().min_fics_to_match();
     recList.maxUnmatchedPerMatch = response.used_params().max_unmatched_to_one_matched();
     recList.alwaysPickAt = response.used_params().always_pick_at();

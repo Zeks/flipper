@@ -650,7 +650,7 @@ public:
     int recommendationsSecondList = 0;
     int placeInMainList = 0;
     int placeInSecondList = 0;
-    int placeOnMainPedestal= 0;
+    int placeOnFirstPedestal= 0;
     int placeOnSecondPedestal = 0;
     QString webSite = "ffn";
 
@@ -847,12 +847,12 @@ public:
     bool useWeighting = false;
     bool useMoodAdjustment = false;
     bool hasAuxDataFilled = false;
-    bool doTrashCounting = false;
+    bool useDislikes = false;
+    bool assignLikedToSources = false;
 
     int id = -1;
     int ficCount =-1;
     int minimumMatch = -1;
-    int maximumNegativeMatches = -1;
     int alwaysPickAt = -2;
     int maxUnmatchedPerMatch = -1;
     int userFFNId = -1;
@@ -870,6 +870,8 @@ public:
     QSet<int> majorNegativeVotes;
     QDateTime created;
     RecommendationListFicData ficData;
+
+    QStringList errors;
 };
 
 

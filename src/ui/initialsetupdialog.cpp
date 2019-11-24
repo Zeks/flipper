@@ -75,7 +75,6 @@ bool InitialSetupDialog::CreateRecommendations()
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 6;
     params->maxUnmatchedPerMatch = 50;
-    params->maximumNegativeMatches = -1;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
     params->useWeighting = true;
