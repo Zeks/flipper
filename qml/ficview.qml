@@ -275,7 +275,7 @@ Rectangle {
             property bool authorFilterActive: false
             property bool displayAuthorName : displayAuthorNameInList
             property bool displayListDifference: displayListDifferenceInList
-            property bool idDisplayMode: idDisplayModeInList
+            property int idDisplayMode: idDisplayModeInList
             property bool detailedGenreMode: detailedGenreModeInList
 
             spacing: 5

@@ -620,7 +620,7 @@ void MainWindow::SetupFanficTable()
     qwFics->rootContext()->setContextProperty("detailedGenreModeInList",
                                               uiSettings.value("Settings/displayDetectedGenre", true).toBool());
     qwFics->rootContext()->setContextProperty("idDisplayModeInList",
-                                              uiSettings.value("Settings/idDisplayMode", true).toBool());
+                                              uiSettings.value("Settings/idDisplayMode", 0).toInt());
 
 
     qwFics->rootContext()->setContextProperty("displayListDifferenceInList",
