@@ -1214,7 +1214,8 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
                  " always_pick_at = :always_pick_at,  created = :created,"
                  "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
                  "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data,"
-                 "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,use_dislikes = :use_dislikes,"
+                 "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,"
+                 "  use_dislikes = :use_dislikes, use_dead_fic_ignore = :use_dead_fic_ignore,"
                  " sources = :sources where name = :name");
     ctx.ReplaceQuery(qs);
     ctx.bindValue("minimum",list->minimumMatch);
@@ -1229,6 +1230,7 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.bindValue("use_weighting",list->useWeighting);
     ctx.bindValue("use_mood_adjustment",list->useMoodAdjustment);
     ctx.bindValue("use_dislikes",list->useDislikes);
+    ctx.bindValue("use_dead_fic_ignore",list->useDeadFicIgnore);
     QStringList authors;
     for(auto id : list->ficData.authorIds)
         authors.push_back(QString::number(id));
@@ -2600,6 +2602,7 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecL
         ctx.result.data->useWeighting = q.value("use_weighting").toBool();
         ctx.result.data->useMoodAdjustment= q.value("use_mood_adjustment").toBool();
         ctx.result.data->useDislikes = q.value("use_dislikes").toBool();
+        ctx.result.data->useDeadFicIgnore= q.value("use_dead_fic_ignore").toBool();
         ctx.result.data->isAutomatic = q.value("is_automatic").toBool();
     });
     return ctx.result;

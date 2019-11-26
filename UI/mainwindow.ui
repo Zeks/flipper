@@ -182,7 +182,7 @@
                             <string>Simple</string>
                            </property>
                            <attribute name="buttonGroup">
-                            <string notr="true">buttonGroup</string>
+                            <string notr="true">bgRecsMode</string>
                            </attribute>
                           </widget>
                          </item>
@@ -192,7 +192,7 @@
                             <string>Advanced</string>
                            </property>
                            <attribute name="buttonGroup">
-                            <string notr="true">buttonGroup</string>
+                            <string notr="true">bgRecsMode</string>
                            </attribute>
                           </widget>
                          </item>
@@ -222,7 +222,7 @@
                             <string>FFN Profile</string>
                            </property>
                            <attribute name="buttonGroup">
-                            <string notr="true">buttonGroup_2</string>
+                            <string notr="true">bgRecsSource</string>
                            </attribute>
                           </widget>
                          </item>
@@ -232,7 +232,7 @@
                             <string>List of Urls</string>
                            </property>
                            <attribute name="buttonGroup">
-                            <string notr="true">buttonGroup_2</string>
+                            <string notr="true">bgRecsSource</string>
                            </attribute>
                           </widget>
                          </item>
@@ -242,7 +242,7 @@
                             <string>Selected Tags</string>
                            </property>
                            <attribute name="buttonGroup">
-                            <string notr="true">buttonGroup_2</string>
+                            <string notr="true">bgRecsSource</string>
                            </attribute>
                           </widget>
                          </item>
@@ -329,13 +329,35 @@
                            <property name="bottomMargin">
                             <number>0</number>
                            </property>
-                           <item row="1" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkRecsAutomaticSettings">
+                           <item row="3" column="0" colspan="2">
+                            <widget class="QLabel" name="lblAlgoTuners">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="text">
-                              <string>Automatic Margins</string>
+                              <string>Algorithm tuners:</string>
+                             </property>
+                             <property name="alignment">
+                              <set>Qt::AlignCenter</set>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="7" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkUseDislikes">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Adjust scores on disliked fics count</string>
                              </property>
                              <property name="checked">
-                              <bool>true</bool>
+                              <bool>false</bool>
                              </property>
                             </widget>
                            </item>
@@ -427,18 +449,15 @@
                              </item>
                             </layout>
                            </item>
-                           <item row="3" column="2">
-                            <spacer name="horizontalSpacer_3">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
+                           <item row="1" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkRecsAutomaticSettings">
+                             <property name="text">
+                              <string>Automatic Margins</string>
                              </property>
-                             <property name="sizeHint" stdset="0">
-                              <size>
-                               <width>40</width>
-                               <height>20</height>
-                              </size>
+                             <property name="checked">
+                              <bool>true</bool>
                              </property>
-                            </spacer>
+                            </widget>
                            </item>
                            <item row="4" column="0" colspan="2">
                             <widget class="QCheckBox" name="chkAdjustOnListSimilarity">
@@ -455,6 +474,42 @@
                               <bool>true</bool>
                              </property>
                             </widget>
+                           </item>
+                           <item row="8" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkOtherPerson">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Recommendations are for someone else</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="0" colspan="2">
+                            <widget class="QLabel" name="lblAdvancedControls">
+                             <property name="text">
+                              <string>Advanced Controls</string>
+                             </property>
+                             <property name="alignment">
+                              <set>Qt::AlignCenter</set>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="9" column="1">
+                            <spacer name="verticalSpacer_3">
+                             <property name="orientation">
+                              <enum>Qt::Vertical</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>20</width>
+                               <height>89</height>
+                              </size>
+                             </property>
+                            </spacer>
                            </item>
                            <item row="5" column="0" colspan="2">
                             <widget class="QCheckBox" name="chkFilterGenres">
@@ -475,71 +530,26 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="6" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkUseDislikes">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="text">
-                              <string>Adjust scores on disliked fics count</string>
-                             </property>
-                             <property name="checked">
-                              <bool>false</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="7" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkOtherPerson">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="text">
-                              <string>Recommendations are for someone else</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="8" column="1">
-                            <spacer name="verticalSpacer_3">
+                           <item row="3" column="2">
+                            <spacer name="horizontalSpacer_3">
                              <property name="orientation">
-                              <enum>Qt::Vertical</enum>
+                              <enum>Qt::Horizontal</enum>
                              </property>
                              <property name="sizeHint" stdset="0">
                               <size>
-                               <width>20</width>
-                               <height>89</height>
+                               <width>40</width>
+                               <height>20</height>
                               </size>
                              </property>
                             </spacer>
                            </item>
-                           <item row="0" column="0" colspan="2">
-                            <widget class="QLabel" name="lblAdvancedControls">
+                           <item row="6" column="0">
+                            <widget class="QCheckBox" name="chkIgnoreMarkedDeadFics">
                              <property name="text">
-                              <string>Advanced Controls</string>
+                              <string>Ignore marked dead fics</string>
                              </property>
-                             <property name="alignment">
-                              <set>Qt::AlignCenter</set>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="3" column="0" colspan="2">
-                            <widget class="QLabel" name="lblAlgoTuners">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="text">
-                              <string>Algorithm tuners:</string>
-                             </property>
-                             <property name="alignment">
-                              <set>Qt::AlignCenter</set>
+                             <property name="checked">
+                              <bool>true</bool>
                              </property>
                             </widget>
                            </item>
@@ -3408,7 +3418,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup"/>
+  <buttongroup name="bgRecsMode"/>
+  <buttongroup name="bgRecsSource"/>
  </buttongroups>
 </ui>

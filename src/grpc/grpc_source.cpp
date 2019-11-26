@@ -888,7 +888,8 @@ static const auto paramToTaskFiller = [](auto& task, core::RecommendationList& r
     data->set_list_name(proto_converters::TS(recList.name));
     params->set_always_pick_at(recList.alwaysPickAt);
     params->set_is_automatic(recList.isAutomatic);
-    params->set_do_trash_counting(recList.useDislikes);
+    params->set_use_dislikes(recList.useDislikes);
+    params->set_use_dead_fic_ignore(recList.useDeadFicIgnore);
     params->set_min_fics_to_match(recList.minimumMatch);
     params->set_max_unmatched_to_one_matched(static_cast<int>(recList.maxUnmatchedPerMatch));
     params->set_use_weighting(recList.useWeighting);
@@ -906,6 +907,8 @@ static const auto paramToTaskFiller = [](auto& task, core::RecommendationList& r
 
     for(auto vote: recList.majorNegativeVotes)
         userData->mutable_negative_feedback()->add_strongnegatives(vote);
+    for(auto fic: recList.ignoredDeadFics)
+        userData->add_ignored_fics(fic);
 
 };
 
@@ -956,7 +959,8 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
     }
     // need to fill the params for the list as they were adjusted on the server
     recList.isAutomatic = response.used_params().is_automatic();
-    recList.useDislikes = response.used_params().do_trash_counting();
+    recList.useDislikes = response.used_params().use_dislikes();
+    recList.useDeadFicIgnore= response.used_params().use_dead_fic_ignore();
     recList.minimumMatch = response.used_params().min_fics_to_match();
     recList.maxUnmatchedPerMatch = response.used_params().max_unmatched_to_one_matched();
     recList.alwaysPickAt = response.used_params().always_pick_at();

@@ -393,7 +393,8 @@ genre_stats::GenreMoodData CalcMoodDistributionForFicList(QList<uint32_t> ficLis
 const static auto basicRecommendationsParamReader = [](RequestContext& reqContext, const auto& task) -> QSharedPointer<core::RecommendationList> {
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->isAutomatic = task->data().general_params().is_automatic();
-    params->useDislikes = task->data().general_params().do_trash_counting();
+    params->useDislikes = task->data().general_params().use_dislikes();
+    params->useDeadFicIgnore= task->data().general_params().use_dead_fic_ignore();
     params->name =  proto_converters::FS(task->data().list_name());
     params->minimumMatch = task->data().general_params().min_fics_to_match();
     params->userFFNId = task->data().general_params().users_ffn_profile_id();
@@ -406,12 +407,15 @@ const static auto basicRecommendationsParamReader = [](RequestContext& reqContex
     params->useMoodAdjustment = task->data().general_params().use_mood_filtering();
     for(auto i = 0; i< task->data().user_data().ignored_fandoms().fandom_ids_size(); i++)
         params->ignoredFandoms.insert(task->data().user_data().ignored_fandoms().fandom_ids(i));
+    for(auto i = 0; i< task->data().user_data().ignored_fics_size(); i++)
+        params->ignoredDeadFics.insert(task->data().user_data().ignored_fics(i));
     for(auto i = 0; i< task->data().user_data().liked_authors_size(); i++)
         params->likedAuthors.insert(task->data().user_data().liked_authors(i));
     for(auto i = 0; i< task->data().user_data().negative_feedback().basicnegatives_size(); i++)
         params->minorNegativeVotes.insert(task->data().user_data().negative_feedback().basicnegatives(i));
     for(auto i = 0; i< task->data().user_data().negative_feedback().strongnegatives_size(); i++)
         params->majorNegativeVotes.insert(task->data().user_data().negative_feedback().strongnegatives(i));
+
 
     QLOG_INFO() << "Dumping received list creation params:";
     params->Log();
@@ -625,7 +629,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         response->mutable_list()->mutable_used_params()->set_always_pick_at(recommendationsCreationParams->alwaysPickAt);
         response->mutable_list()->mutable_used_params()->set_use_weighting(recommendationsCreationParams->useWeighting);
         response->mutable_list()->mutable_used_params()->set_use_mood_filtering(recommendationsCreationParams->useMoodAdjustment);
-        response->mutable_list()->mutable_used_params()->set_do_trash_counting(recommendationsCreationParams->useDislikes);
+        response->mutable_list()->mutable_used_params()->set_use_dislikes(recommendationsCreationParams->useDislikes);
+        response->mutable_list()->mutable_used_params()->set_use_dead_fic_ignore(recommendationsCreationParams->useDeadFicIgnore);
     });
 
     dataPassAction.run();

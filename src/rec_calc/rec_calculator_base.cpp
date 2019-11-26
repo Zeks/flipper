@@ -263,6 +263,8 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
     Roaring ignores;
     //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
     QLOG_INFO() << "Building ignore list";
+    QLOG_INFO() << "Ignored fics size:" << params->ignoredDeadFics.size();
+
     TimedAction ignoresCreation("Building ignores",[&](){
         for(auto fic: inputs.fics)
         {
@@ -271,6 +273,12 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
 
             int count = 0;
             bool inIgnored = false;
+            if(params->ficData.sourceFics.contains(fic->id))
+                continue;
+
+            if(params->ignoredDeadFics.contains(fic->id))
+                inIgnored = true;
+
             for(auto fandom: fic->fandoms)
             {
                 if(fandom != -1)
@@ -294,26 +302,11 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     allAuthors.reserve(inputs.faves.size());
     Roaring ignores;
     //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
-    TimedAction ignoresCreation("Building ignores",[&](){
-        for(auto fic: inputs.fics)
-        {
-            int count = 0;
-            bool inIgnored = false;
-            for(auto fandom: fic->fandoms)
-            {
-                if(fandom != -1)
-                    count++;
-                if(params->ignoredFandoms.contains(fandom) && fandom > 1)
-                    inIgnored = true;
-            }
-            if(/*count == 1 && */inIgnored)
-                ignores.add(fic->id);
 
-        }
+    TimedAction ignoresCreation("Building ignores",[&](){
+        ignores = BuildIgnoreList();
     });
     ignoresCreation.run();
-    QLOG_INFO() << "fanfic ignore list is of size: " << ignores.cardinality();
-
 
     auto sourceFics = QSet<uint32_t>::fromList(fetchedFics.keys());
 

@@ -1242,9 +1242,48 @@ void MainWindow::ReadSettings()
     ui->cbIDMode->setCurrentText(uiSettings.value("Settings/cbIDMode", "").toString());
     ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
     ui->cbSortDirection->setCurrentText(uiSettings.value("Settings/cbSortDirection", "").toString());
-    ui->cbRecGroupSecond->setVisible(settings.value("Settings/displaySecondReclist", false).toBool());
+    ui->cbRecGroupSecond->setVisible(uiSettings.value("Settings/displaySecondReclist", false).toBool());
     ui->cbStartupLoadSelection->setCurrentIndex(uiSettings.value("Settings/startupLoadMode", 1).toInt());
 
+
+
+    ui->leRecsMinimumMatches->setText(uiSettings.value("Settings/minMatches", "6").toString());
+    ui->leRecsPickRatio->setText(uiSettings.value("Settings/pickRatio", "50").toString());
+    ui->leRecsAlwaysPickAt->setText(uiSettings.value("Settings/alwaysPickAt", "9999").toString());
+
+    ui->chkOtherPerson->setChecked(uiSettings.value("Settings/chkOtherPerson", false).toBool());
+    ui->chkUseDislikes->setChecked(uiSettings.value("Settings/chkUseDislikes", false).toBool());
+    ui->chkIgnoreMarkedDeadFics->setChecked(uiSettings.value("Settings/chkIgnoreMarkedDeadFics", false).toBool());
+    ui->chkFilterGenres->setChecked(uiSettings.value("Settings/chkFilterGenres", false).toBool());
+    ui->chkAdjustOnListSimilarity->setChecked(uiSettings.value("Settings/chkAdjustOnListSimilarity", false).toBool());
+    ui->chkUseAwaysPickAt->setChecked(uiSettings.value("Settings/chkUseAwaysPickAt", false).toBool());
+    ui->chkRecsAutomaticSettings->setChecked(uiSettings.value("Settings/chkRecsAutomaticSettings", false).toBool());
+    auto creationMode = uiSettings.value("Settings/creationMode", 0).toInt();
+    if(creationMode == 0)
+    {
+        reclistUIHelper.simpleMode = true;
+        ui->rbSimpleMode->setChecked(true);
+    }
+    else{
+        ui->rbAdvancedMode->setChecked(true);
+        reclistUIHelper.simpleMode = false;
+    }
+
+    auto creationSource = uiSettings.value("Settings/creationSource", 0).toInt();
+    if(creationSource == 0)
+    {
+        ui->rbProfileMode->setChecked(true);
+        reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_profile;
+    }
+    else if(creationSource == 1){
+        ui->rbUrlMode->setChecked(true);
+        reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_urls;
+    }
+    else{
+        ui->rbSelectedTagsMode->setChecked(true);
+        reclistUIHelper.sourcesMode = ReclistCreationUIHelper::sm_tags;
+    }
+    reclistUIHelper.SetupVisibilityForElements();
 
 
     DetectGenreSearchState();
@@ -1329,6 +1368,31 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/appsize", this->size());
     settings.setValue("Settings/position", this->pos());
     settings.setValue("Settings/maximized", this->isMaximized());
+
+
+    if(ui->bgRecsMode->checkedButton() == ui->rbSimpleMode)
+        settings.setValue("Settings/creationMode", 0);
+    else
+        settings.setValue("Settings/creationMode", 1);
+
+
+    if(ui->bgRecsSource->checkedButton() == ui->rbProfileMode)
+        settings.setValue("Settings/creationSource", 0);
+    else if(ui->bgRecsSource->checkedButton() == ui->rbUrlMode)
+        settings.setValue("Settings/creationSource", 1);
+    else
+        settings.setValue("Settings/creationSource", 2);
+
+    settings.setValue("Settings/chkRecsAutomaticSettings", ui->chkRecsAutomaticSettings->isChecked());
+    settings.setValue("Settings/minMatches", ui->leRecsMinimumMatches->text());
+    settings.setValue("Settings/pickRatio", ui->leRecsPickRatio->text());
+    settings.setValue("Settings/alwaysPickAt", ui->leRecsAlwaysPickAt->text());
+    settings.setValue("Settings/chkUseAwaysPickAt", ui->chkUseAwaysPickAt->isChecked());
+    settings.setValue("Settings/chkAdjustOnListSimilarity", ui->chkAdjustOnListSimilarity->isChecked());
+    settings.setValue("Settings/chkFilterGenres", ui->chkFilterGenres->isChecked());
+    settings.setValue("Settings/chkIgnoreMarkedDeadFics", ui->chkIgnoreMarkedDeadFics->isChecked());
+    settings.setValue("Settings/chkUseDislikes", ui->chkUseDislikes->isChecked());
+    settings.setValue("Settings/chkOtherPerson", ui->chkOtherPerson->isChecked());
     settings.sync();
 }
 
@@ -2732,16 +2796,31 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
     params->isAutomatic = ui->chkRecsAutomaticSettings->isChecked();
 
     params->minimumMatch = params->isAutomatic  ? 1 : ui->leRecsMinimumMatches->text().toInt();
-    params->maxUnmatchedPerMatch = ui->leRecsPickRatio->text().toInt();
+    params->maxUnmatchedPerMatch = params->isAutomatic  ? 50 : ui->leRecsPickRatio->text().toInt();
     params->alwaysPickAt = ui->chkUseAwaysPickAt->isChecked() ?  ui->leRecsAlwaysPickAt->text().toInt(): 9999;
-    params->useWeighting = ui->chkAdjustOnListSimilarity->isChecked();
-    params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
-    params->useDislikes = ui->chkUseDislikes->isChecked();
+    if(params->isAutomatic)
+    {
+        params->alwaysPickAt = 9999;
+        params->useWeighting = true;
+        params->useMoodAdjustment = true;
+        params->useDislikes = false;
+        params->useDeadFicIgnore= false;
+    }
+    else
+    {
+        params->useWeighting = ui->chkAdjustOnListSimilarity->isChecked();
+        params->useMoodAdjustment = ui->chkFilterGenres->isChecked();
+        params->useDislikes = ui->chkUseDislikes->isChecked();
+        params->useDeadFicIgnore= ui->chkIgnoreMarkedDeadFics->isChecked();
+    }
 
     auto ids = env->interfaces.fandoms->GetIgnoredFandomsIDs();
     for(auto fandom: ids.keys())
         params->ignoredFandoms.insert(fandom);
-    params->majorNegativeVotes = env->GetFicsForNegativeTags();
+    if(ui->chkIgnoreMarkedDeadFics->isChecked())
+        params->ignoredDeadFics = env->GetIgnoredDeadFics();
+    if(ui->chkUseDislikes->isChecked())
+        params->majorNegativeVotes = env->GetFicsForNegativeTags();
 
     return params;
 }
@@ -3749,6 +3828,7 @@ void MainWindow::on_chkStopPatreon_stateChanged(int)
 void MainWindow::on_rbSimpleMode_clicked()
 {
     reclistUIHelper.simpleMode = true;
+    ui->chkRecsAutomaticSettings->setChecked(true);
     reclistUIHelper.SetupVisibilityForElements();
     QCoreApplication::processEvents();
 //    ui->wdgRecsCreator->resize(10, 10);

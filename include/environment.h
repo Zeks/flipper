@@ -221,6 +221,7 @@ public:
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);
     QSet<int> GetFicsForTags(QStringList);
     QSet<int> GetFicsForNegativeTags();
+    QSet<int> GetIgnoredDeadFics();
     void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics);
     void BackupUserDatabase();
     int CreateDefaultRecommendationsForCurrentUser();

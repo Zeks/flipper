@@ -1139,6 +1139,11 @@ QSet<int> CoreEnvironment::GetFicsForNegativeTags()
     return majorNegativeFics;
 }
 
+QSet<int> CoreEnvironment::GetIgnoredDeadFics()
+{
+    return GetFicsForTags({"Limbo"});
+}
+
 void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics)
 {
     interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.mainListId);

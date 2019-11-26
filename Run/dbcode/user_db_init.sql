@@ -80,6 +80,7 @@ alter table RecommendationLists add column use_weighting integer default 1;
 alter table RecommendationLists add column use_mood_adjustment integer default 1;
 alter table RecommendationLists add column is_automatic integer default 0;
 alter table RecommendationLists add column use_dislikes integer default 0;
+alter table RecommendationLists add column use_dead_fic_ignore integer default 0;
 alter table RecommendationLists add column has_aux_data integer default 0;
 alter table RecommendationLists add column quadratic_deviation real;
 alter table RecommendationLists add column ratio_median real;

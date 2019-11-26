@@ -849,6 +849,7 @@ public:
     bool useMoodAdjustment = false;
     bool hasAuxDataFilled = false;
     bool useDislikes = false;
+    bool useDeadFicIgnore= false;
     bool assignLikedToSources = false;
 
     int id = -1;
@@ -866,6 +867,7 @@ public:
     QString tagToUse;
 
     QSet<int> ignoredFandoms;
+    QSet<int> ignoredDeadFics;
     QSet<int> likedAuthors;
     QSet<int> minorNegativeVotes;
     QSet<int> majorNegativeVotes;

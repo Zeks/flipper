@@ -201,6 +201,8 @@ void core::RecommendationList:: Log()
     qDebug() << "name: " << name ;
     qDebug() << "automatic: " << isAutomatic;
     qDebug() << "useWeighting: " << useWeighting;
+    qDebug() << "useDislikes: " << useDislikes;
+    qDebug() << "useDeadFicIgnore: " << useDeadFicIgnore;
     qDebug() << "useMoodAdjustment: " << useMoodAdjustment;
     qDebug() << "hasAuxDataFilled: " << hasAuxDataFilled;
     qDebug() << "maxUnmatchedPerMatch: " << maxUnmatchedPerMatch;
@@ -219,6 +221,7 @@ void core::RecommendationList::PassSetupParamsInto(RecommendationList &other)
     other.useWeighting = useWeighting;
     other.useMoodAdjustment = useMoodAdjustment;
     other.useDislikes = useDislikes;
+    other.useDeadFicIgnore= useDeadFicIgnore;
     other.minimumMatch = minimumMatch;
     other.alwaysPickAt = alwaysPickAt;
     other.maxUnmatchedPerMatch = maxUnmatchedPerMatch;
