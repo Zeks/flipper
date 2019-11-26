@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
         setupDialog.env = coreEnvironment;
         setupDialog.exec();
         if(!setupDialog.initComplete)
-            return 0;
+            return 2;
     }
     else
     {

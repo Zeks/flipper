@@ -1210,15 +1210,16 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     qDebug() << "Created new list with id: " << list->id;
     ctx.result.data = list->id > 0;
 
-    qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, "
+    qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, is_automatic = :is_automatic, "
                  " always_pick_at = :always_pick_at,  created = :created,"
                  "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
                  "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data,"
-                 "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,"
+                 "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,use_dislikes = :use_dislikes,"
                  " sources = :sources where name = :name");
     ctx.ReplaceQuery(qs);
     ctx.bindValue("minimum",list->minimumMatch);
     ctx.bindValue("pick_ratio",list->maxUnmatchedPerMatch);
+    ctx.bindValue("is_automatic",list->isAutomatic);
     ctx.bindValue("always_pick_at",list->alwaysPickAt);
     ctx.bindValue("created",creationTimestamp);
     ctx.bindValue("quadratic_deviation",list->quadraticDeviation);
@@ -1227,6 +1228,7 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.bindValue("has_aux_data",list->hasAuxDataFilled);
     ctx.bindValue("use_weighting",list->useWeighting);
     ctx.bindValue("use_mood_adjustment",list->useMoodAdjustment);
+    ctx.bindValue("use_dislikes",list->useDislikes);
     QStringList authors;
     for(auto id : list->ficData.authorIds)
         authors.push_back(QString::number(id));
@@ -2592,11 +2594,13 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecL
         ctx.result.data = QSharedPointer<core::RecommendationList>{new core::RecommendationList};
         ctx.result.data->id = q.value("id").toInt();
         ctx.result.data->name = q.value("name").toString();
-        ctx.result.data->maxUnmatchedPerMatch = q.value("pick_ratio").toDouble();
+        ctx.result.data->maxUnmatchedPerMatch = q.value("pick_ratio").toInt();
         ctx.result.data->alwaysPickAt = q.value("always_pick_at").toInt();
         ctx.result.data->minimumMatch = q.value("minimum").toInt();
-        ctx.result.data->useWeighting = q.value("use_weighting").toInt();
-        ctx.result.data->useMoodAdjustment= q.value("use_mood_adjustment").toInt();
+        ctx.result.data->useWeighting = q.value("use_weighting").toBool();
+        ctx.result.data->useMoodAdjustment= q.value("use_mood_adjustment").toBool();
+        ctx.result.data->useDislikes = q.value("use_dislikes").toBool();
+        ctx.result.data->isAutomatic = q.value("is_automatic").toBool();
     });
     return ctx.result;
 }

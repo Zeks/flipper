@@ -164,6 +164,8 @@ void InitialSetupDialog::on_pbPerformInit_clicked()
     QCoreApplication::processEvents();
 
     env->Init();
+    if(!env->status.isValid)
+        QApplication::exit(1);
 
     env->interfaces.recs->SetUserProfile(ui->leUserFFNId->text().toInt());
     if(authorTestSuccessfull)

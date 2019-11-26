@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/author_cache_reprocessor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
+#include "grpc/grpc_source.h"
 
 #include <QQueue>
 
@@ -243,7 +244,7 @@ public:
     QString userToken;
     QSet<int> likedAuthors;
     QHash<int, int> ficScores;
-
+    ServerStatus status;
     BastardizedCircularBuffer<FilterFrame> searchHistory;
 
 

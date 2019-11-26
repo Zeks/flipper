@@ -282,7 +282,7 @@ private:
     bool CreateDiagnosticRecommendationList(QSharedPointer<core::RecommendationList> params,
                                   QVector<int> sources);
 
-    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI();
+    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool silent = false);
 
     void LoadFrameIntoUI(const FilterFrame& frame);
     void SetPreviousEnabled(bool value);

@@ -625,6 +625,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         response->mutable_list()->mutable_used_params()->set_always_pick_at(recommendationsCreationParams->alwaysPickAt);
         response->mutable_list()->mutable_used_params()->set_use_weighting(recommendationsCreationParams->useWeighting);
         response->mutable_list()->mutable_used_params()->set_use_mood_filtering(recommendationsCreationParams->useMoodAdjustment);
+        response->mutable_list()->mutable_used_params()->set_do_trash_counting(recommendationsCreationParams->useDislikes);
     });
 
     dataPassAction.run();

@@ -48,6 +48,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QLineEdit>
 #include <QLabel>
 #include <QCoreApplication>
+#include <QCryptographicHash>
 
 
 void CoreEnvironment::InitMetatypes()
@@ -214,7 +215,7 @@ bool CoreEnvironment::Init()
     interfaces.userDb->userToken = interfaces.userDb->GetUserToken();
     ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), interfaces.userDb->userToken,  160));
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
-    ServerStatus status = grpcSource->GetStatus();
+    status = grpcSource->GetStatus();
     if(!status.isValid)
     {
         QString statusString = QString("The server is not responding%1");
@@ -226,12 +227,12 @@ bool CoreEnvironment::Init()
     }
     if(status.protocolVersionMismatch)
     {
-        QString statusString = QString("Your client version is out of date.\nSome (or all) features may not work.\nPlease get updated binary at https://github.com/Zeks/flipper");
+        QString statusString = QString("Your client version is out of date.\nSome (or all) features may not work.\nPlease get updated binary at https://github.com/Zeks/flipper/releases");
         QMessageBox::critical(nullptr, "Warning!", statusString);
         return true;
     }
     if(status.messageRequired)
-        QMessageBox::information(nullptr, "Attention!", status.motd);
+       QMessageBox::information(nullptr, "Attention!", status.motd);
 
     QVector<core::Fandom> fandoms;
     grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);

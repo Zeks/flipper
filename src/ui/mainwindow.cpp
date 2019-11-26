@@ -199,9 +199,6 @@ bool MainWindow::Init()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
-    if(!env->Init())
-        return false;
-
     this->setWindowTitle("Flipper");
     this->setAttribute(Qt::WA_QuitOnClose);
 
@@ -1628,6 +1625,9 @@ void MainWindow::SetFailureStatus()
 
 void MainWindow::DisplayInitialFicSelection()
 {
+    if(!env->status.isValid)
+        return;
+
     if(defaultRecommendationsQueued)
     {
         env->CreateDefaultRecommendationsForCurrentUser();
@@ -1872,15 +1872,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 
 void MainWindow::SetClientMode()
 {
-    //ui->widget_4->hide();
-    //ui->wdgAdminActions->hide();
-    //    ui->chkHeartProfile->setChecked(false);
-    //    ui->chkHeartProfile->setVisible(false);
-    //    ui->tabWidget->removeTab(2);
-    //    ui->tabWidget->removeTab(1);
     ui->chkLimitPageSize->setChecked(true);
-    //ui->chkLimitPageSize->setEnabled(false);
-
 }
 
 void MainWindow::on_pbOpenRecommendations_clicked()
@@ -2727,12 +2719,12 @@ bool DisplayOwnProfilePrompt()
     return true;
 }
 
-QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(){
+QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(bool silent){
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->name = ui->cbNewListName->currentText();
     params->userFFNId = env->interfaces.recs->GetUserProfile();
 
-    if(params->name.trimmed().isEmpty())
+    if(!silent && params->name.trimmed().isEmpty())
     {
         QMessageBox::warning(nullptr, "Warning!", "Please name your list.");
         return QSharedPointer<core::RecommendationList>();
@@ -2982,7 +2974,17 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
 
 void MainWindow::on_pbRefreshRecList_clicked()
 {
+    QMessageBox::StandardButton reply;
+     reply = QMessageBox::question(this, "Warning!", "This will recreate this recommendations list to pull new fics from the server. Do you want  to recreate?",
+                                   QMessageBox::Yes|QMessageBox::No);
+     if (reply != QMessageBox::Yes)
+         return;
+
+    auto defaultParams = CreateReclistParamsFromUI(true);
     auto params = env->interfaces.recs->FetchParamsForRecList(ui->cbRecGroup->currentText());
+    params->PassSetupParamsInto(*defaultParams);
+    params = defaultParams;
+
     if(!params)
     {
         QMessageBox::warning(nullptr, "Attention!", "Failed to read params for reclist refresh");
@@ -2990,20 +2992,12 @@ void MainWindow::on_pbRefreshRecList_clicked()
     }
     auto listId = env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     auto sources = env->GetListSourceFFNIds(listId);
-    QString result;
-    for(auto source: sources)
-        result+="https://www.fanfiction.net/s/" + QString::number(source)  + "\n";
-
-    ui->edtRecsContents->clear();
-
-    if(result.trimmed().isEmpty())
-    {
-        QMessageBox::warning(nullptr, "Attention!", "Failed to read source fics for reclist refresh");
+    if(!sources.size()){
+        QMessageBox::warning(nullptr, "Warning!", "Could not recreate recommendation list because sources were empty in the database.");
         return;
     }
-    ui->edtRecsContents->setText(result);
-    QVector<int> sourceFics = PickFicIDsFromTextBrowser(ui->edtRecsContents);
-    CreateRecommendationList(params, sourceFics);
+    if(!CreateRecommendationList(params, sources))
+        return;
 
     ResetFilterUItoDefaults();
     ui->cbSortMode->setCurrentText("Rec Count");

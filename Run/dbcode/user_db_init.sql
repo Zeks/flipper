@@ -68,10 +68,18 @@ CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT N
 --CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicTags (fic_id ASC);
  
 -- a list of all recommendaton lists with their names and statistics;
-create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUTOINCREMENT default 1, name VARCHAR unique NOT NULL, minimum integer NOT NULL default 1, pick_ratio double not null default 1, always_pick_at integer not null default 9999, fic_count integer default 0,  created DATETIME);
+create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUTOINCREMENT default 1, 
+name VARCHAR unique NOT NULL, 
+minimum integer NOT NULL default 1,
+pick_ratio double not null default 1, 
+always_pick_at integer not null default 9999, 
+fic_count integer default 0,  
+created DATETIME);
 alter table RecommendationLists add column sources varchar;
 alter table RecommendationLists add column use_weighting integer default 1;
 alter table RecommendationLists add column use_mood_adjustment integer default 1;
+alter table RecommendationLists add column is_automatic integer default 0;
+alter table RecommendationLists add column use_dislikes integer default 0;
 alter table RecommendationLists add column has_aux_data integer default 0;
 alter table RecommendationLists add column quadratic_deviation real;
 alter table RecommendationLists add column ratio_median real;

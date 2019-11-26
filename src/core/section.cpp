@@ -213,6 +213,18 @@ void core::RecommendationList:: Log()
     //qDebug() << "source fics: " << ficData.sourceFics;
 }
 
+void core::RecommendationList::PassSetupParamsInto(RecommendationList &other)
+{
+    other.isAutomatic = isAutomatic;
+    other.useWeighting = useWeighting;
+    other.useMoodAdjustment = useMoodAdjustment;
+    other.useDislikes = useDislikes;
+    other.minimumMatch = minimumMatch;
+    other.alwaysPickAt = alwaysPickAt;
+    other.maxUnmatchedPerMatch = maxUnmatchedPerMatch;
+    other.name = name;
+}
+
 void core::AuthorStats::Serialize(QDataStream &out)
 {
     out << pageCreated;
