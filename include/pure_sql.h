@@ -288,7 +288,7 @@ DiagnosticSQLResult<QSet<int>> GetAuthorsForTags(QStringList tags, QSqlDatabase 
 
 // assumes that ficsForSelection are filled
 DiagnosticSQLResult<QHash<int, core::SnoozeInfo>> GetSnoozeInfo(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool limitedSelection = false, QSqlDatabase db = {});
+DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired = true, bool limitedSelection = false, QSqlDatabase db = {});
 
 
 DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> ,QSqlDatabase db);

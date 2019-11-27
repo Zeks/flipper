@@ -1210,7 +1210,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
 
 void CoreEnvironment::RefreshSnoozes()
 {
-    auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
+    auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo(false);
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     auto expiredSnoozes = grpcSource->GetExpiredSnoozes(snoozeInfo);
     interfaces.fanfics->WriteExpiredSnoozes(expiredSnoozes);

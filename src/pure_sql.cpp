@@ -2276,29 +2276,38 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase
 
 DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db)
 {
-    QString qs = "select id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
+    QString qs = "select id, ffn_id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
     SqlContext<QHash<int, core::SnoozeInfo>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        qDebug() << " loading snooze data";
+        //qDebug() << " loading snooze data:";
         core::SnoozeInfo info;
         info.ficId = q.value("id").toInt();
         info.finished = q.value("complete").toInt();
         info.atChapter = q.value("chapters").toInt();
-        qDebug() << " ficid: " << info.ficId ;
-        qDebug() << " finished: " << info.finished;
-        qDebug() << " atChapter: " << info.atChapter;
+        //qDebug() << " snoozed ficid: " << info.ficId ;
+        //qDebug() << " snoozed fic ffn id: " << q.value("ffn_id").toInt();
+        //qDebug() << " finished: " << info.finished;
+        //qDebug() << " atChapter: " << info.atChapter;
+        //qDebug() << "///////////////";
         ctx.result.data[info.ficId] = info;
     });
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool limitedSelection, QSqlDatabase db){
+DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
     QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
 
+    QStringList filters;
+
     if(limitedSelection)
-        qs = qs.arg(" where cfInFicSelection(fic_id) > 0 ");
-    else
-        qs = qs.arg("");
+        filters.push_back(" cfInFicSelection(fic_id) > 0 ");
+
+    if(!fetchExpired)
+        filters.push_back(" expired <> 0 ");
+
+    qs=qs.arg(QString(" where ") + filters.join(" and "));
+
+
 
     SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
