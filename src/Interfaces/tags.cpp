@@ -144,6 +144,11 @@ QVector<core::IdPack> Tags::GetAllFicsThatDontHaveDBID()
     return pack;
 }
 
+QHash<QString, int> Tags::GetTagSizes(QStringList tags)
+{
+    return database::puresql::GetTagSizes(tags, db).data;
+}
+
 bool Tags::FillDBIDsForFics(QVector<core::IdPack> pack)
 {
     return database::puresql::FillDBIDsForFics(pack, db).success;
@@ -152,6 +157,11 @@ bool Tags::FillDBIDsForFics(QVector<core::IdPack> pack)
 bool Tags::FetchTagsForFics(QVector<core::Fic> * fics)
 {
     return database::puresql::FetchTagsForFics(fics, db).success;
+}
+
+bool Tags::RemoveTagsFromEveryFic(QStringList tags)
+{
+    return database::puresql::RemoveTagsFromEveryFic(tags, db).data;
 }
 
 }

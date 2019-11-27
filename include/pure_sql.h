@@ -284,6 +284,8 @@ DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSql
 DiagnosticSQLResult<QSet<int>> GetAllTaggedFics(QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>> GetAuthorsForTags(QStringList tags, QSqlDatabase db);
+DiagnosticSQLResult<QHash<QString, int>> GetTagSizes(QStringList tags, QSqlDatabase db);
+DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase db);
 
 
 // assumes that ficsForSelection are filled

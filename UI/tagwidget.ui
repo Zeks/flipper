@@ -42,6 +42,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="pbPurgeSelectedTags">
+       <property name="text">
+        <string>Purge Selected Tags</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLineEdit" name="leTag"/>
      </item>
      <item>
@@ -149,6 +156,13 @@
    </item>
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QCheckBox" name="chkDisplayTagSize">
+       <property name="text">
+        <string>Display Tag Sizes</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QCheckBox" name="chkAndForTags">
        <property name="text">

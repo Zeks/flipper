@@ -2254,6 +2254,40 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase
     return ctx.result;
 }
 
+DiagnosticSQLResult<QHash<QString, int> > GetTagSizes(QStringList tags, QSqlDatabase db)
+{
+    QString qs = "select tag, count(tag) as count_tags from fictags %1 group by tag ";
+    if(tags.size() > 0)
+        qs = qs.arg("where tag in ('" + tags.join("','") + "')");
+    else
+        qs = qs.arg("");
+
+    SqlContext<QHash<QString, int>> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        //qDebug() << " loading snooze data:";
+        core::SnoozeInfo info;
+        info.ficId = q.value("id").toInt();
+        ctx.result.data.insert(q.value("tag").toString(),q.value("count_tags").toInt());
+    });
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    if(tags.size() == 0)
+    {
+        result.success = true;
+        return result;
+    }
+
+    QString qs = QString("delete from fictags where tag in (%1)");
+    qs = qs.arg("'" + tags.join("','") + "'");
+    return SqlContext<bool> (db, qs)();
+}
+
+
+
 DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db)
 {
     QString qs = "select id, ffn_id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
@@ -4267,6 +4301,8 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
         result.success = true;
     return result;
 }
+
+
 
 
 //DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)

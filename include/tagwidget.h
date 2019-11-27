@@ -15,8 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#ifndef TAGWIDGET_H
-#define TAGWIDGET_H
+#pragma once
 
 #include <QWidget>
 namespace interfaces{
@@ -82,6 +81,8 @@ public slots:
 private slots:
     void on_pbAssignTagToFandom_clicked();
 
+    void on_chkDisplayTagSize_stateChanged(int arg1);
+    void on_pbPurgeSelectedTags_clicked();
 };
 
-#endif // TAGWIDGET_H
+

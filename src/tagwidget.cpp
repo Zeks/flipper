@@ -53,18 +53,32 @@ TagWidget::~TagWidget()
 void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
 {
     currentId = id;
-//    allTags.clear();
-//    selectedTags.clear();
+    QHash<QString, int> tagSizes;
+    QStringList tagList;
+    for(auto pair : tags)
+        tagList.push_back(pair.second);
+    if(ui->chkDisplayTagSize->isChecked())
+        tagSizes = tagsInterface->GetTagSizes(tagList);
+
+
     ui->edtTags->clear();
     for(auto tag: tags)
     {
         QString toInsert ;
-        if(tag.first == "1")
-            toInsert = ("<a href=\"" + tag.first + " "  + tag.second + " \" style=\"color:darkgreen\" >" + tag.second + "</a>    ");
+        QString label;
+        if(ui->chkDisplayTagSize->isChecked())
+            label = tag.second + "(" + QString::number(tagSizes[tag.second]) +  ")";
         else
-            toInsert = ("<a href=\""  + tag.first + " " + tag.second + " \">" + tag.second + "</a>    ");
+            label = tag.second;
+
+        if(tag.first == "1")
+            toInsert = ("<a href=\"" + tag.first + " "  + tag.second + " \" style=\"color:darkgreen\" >" + label + "</a>    ");
+        else
+            toInsert = ("<a href=\""  + tag.first + " " + tag.second + " \">" + label + "</a>    ");
         allTags.push_back(tag.second);
         ui->edtTags->insertHtml(toInsert);
+//        if(ui->chkDisplayTagSize->isChecked())
+//            ui->edtTags->insertHtml("<br>");
     }
     ui->cbAssignTag->setModel(new QStringListModel(allTags));
     ui->cbFandom->setModel(new QStringListModel(fandomsInterface->GetFandomList()));
@@ -72,11 +86,23 @@ void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
 
 void TagWidget::InitEditFromTags(QStringList tags)
 {
+    QHash<QString, int> tagSizes;
+    if(ui->chkDisplayTagSize)
+        tagSizes = tagsInterface->GetTagSizes(tags);
+
     ui->edtTags->clear();
     for(auto tag: tags)
     {
-        auto toInsert = ("<a href=\"0 " + tag + " \">" + tag + "</a>    ");
+        QString label;
+        if(ui->chkDisplayTagSize->isChecked())
+            label = tag + "(" + QString::number(tagSizes[tag]) +  ")";
+        else
+            label = tag;
+
+        auto toInsert = ("<a href=\"0 " + tag + " \">" + label + "</a>    ");
         ui->edtTags->insertHtml(toInsert);
+//        if(ui->chkDisplayTagSize->isChecked())
+//            ui->edtTags->insertHtml("<br>");
     }
 }
 
@@ -296,4 +322,22 @@ void TagWidget::on_pbAssignTagToFandom_clicked()
 void TagWidget::on_pbUrlsForTags_clicked()
 {
     emit createUrlsForTags(ui->cbTagEntitySelector->currentIndex() == 1);
+}
+
+void TagWidget::on_chkDisplayTagSize_stateChanged(int)
+{
+    InitEditFromTags(allTags);
+    SelectTags(selectedTags);
+}
+
+void TagWidget::on_pbPurgeSelectedTags_clicked()
+{
+    QMessageBox::StandardButton reply;
+     reply = QMessageBox::question(this, "Warning!", "This will remove selected tags from every fic. Do you want to continue?",
+                                   QMessageBox::Yes|QMessageBox::No);
+     if (reply != QMessageBox::Yes)
+         return;
+     tagsInterface->RemoveTagsFromEveryFic(GetSelectedTags());
+     InitEditFromTags(allTags);
+     SelectTags(selectedTags);
 }
