@@ -86,21 +86,13 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             where = temp + where;
         }
 
-//        if(useScoresOrdering)
-//        {
-
-//            QString temp = " and cfInScores(f.id) > 0 ";
-//            where = temp + where;
-//        }
-
         QString randomizer = ProcessRandomization(filter, where);
 
         QRegularExpression rx("^\\s{0,10}(and|AND)");
-        //^\\s{0,10}(and|AND)
         auto match = rx.match(where);
         if(match.hasMatch())
         {
-            qDebug() << "FOUND MATCH";
+            //qDebug() << "FOUND MATCH";
             where = where.mid(match.captured().length());
         }
 
@@ -111,7 +103,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             auto match = rx.match(randomizer);
             if(match.hasMatch())
             {
-                qDebug() << "FOUND MATCH";
+                //qDebug() << "FOUND MATCH";
                 randomizer = randomizer.mid(match.captured().length());
             }
             queryString +=  " where " + randomizer;
@@ -135,7 +127,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     queryString.replace(" fid ", " f.id ");
     queryString.replace(" fid)", " f.id)");
     queryString.replace("(fid", "(f.id");
-    qDebug().noquote() << query->str;
+    qDebug().noquote() << "Created query is:" << query->str;
 
 
     return query;
@@ -226,7 +218,7 @@ QString DefaultQueryBuilder::ProcessOtherFandomsMode(StoryFilter filter, bool re
     QString queryString;
     if(filter.otherFandomsMode)
     {
-        queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) > 0").arg(userToken);
+        queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) > 0");
     }
     //        queryString += " and not exists ("
     //                       "select fandom_id from ficfandoms where fic_id = f.id and fandom_id in "
@@ -1003,13 +995,13 @@ QString TagFilteringClient::GetString(StoryFilter filter)
     else
     {
         if(filter.mode == core::StoryFilter::filtering_in_fics && filter.activeTagsCount > 0)
-            queryString += QString(" and cfInActiveTags(f.id) = 1 ").arg(userToken);
+            queryString += QString(" and cfInActiveTags(f.id) = 1 ");
         else
         {
             if(filter.ignoreAlreadyTagged || filter.allTagsCount == 0)
                 queryString += QString("");
             else
-                queryString += QString(" and cfInTags(f.id) < 1 ").arg(userToken);
+                queryString += QString(" and cfInTags(f.id) < 1 ");
         }
     }
 
@@ -1056,7 +1048,7 @@ QString FandomIgnoreClient::GetString(StoryFilter filter)
     QString queryString;
     {
         if(filter.ignoreFandoms && filter.ignoredFandomCount > 0)
-            queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) < 1").arg(userToken);
+            queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) < 1");
         else
             queryString += QString("");
     }

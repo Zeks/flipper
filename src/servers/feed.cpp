@@ -225,7 +225,7 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(task->id() < 1)
         return Status::OK;
 
@@ -511,7 +511,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
 
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyRecommendationsRequest(task, response->mutable_response_info()))
     {
         SetRecommedationDataError(response->mutable_response_info());
@@ -648,7 +648,7 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->ids(), response->mutable_response_info()))
         return Status::OK;
 
@@ -680,7 +680,7 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->ids(), response->mutable_response_info()))
         return Status::OK;
 
@@ -717,7 +717,7 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->id_packs(), response->mutable_response_info()))
         return Status::OK;
 
@@ -780,7 +780,7 @@ grpc::Status FeederService::GetAuthorsForFicList(grpc::ServerContext *context, c
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->id_packs(), response->mutable_response_info()))
         return Status::OK;
 
@@ -812,7 +812,7 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(task->fic_id() < 1)
         return Status::OK;
 
@@ -997,7 +997,7 @@ QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken,
     //DatabaseContext dbContext;
     QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface,rngData));
     FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
-    QLOG_INFO() << "Initializing fic source mode";
+    QLOG_TRACE() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);
     //QLOG_INFO() << "Initialized fic source mode";
     return ficSource;

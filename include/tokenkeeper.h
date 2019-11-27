@@ -32,7 +32,7 @@ class TokenKeeper{
 public:
     QSharedPointer<UserToken<T>> GetToken(QString token){
         {
-            QLOG_INFO() << "Acquiring safety token";
+            //QLOG_INFO() << "Acquiring safety token";
             QReadLocker locker(&lock);
             if(tokensInUse.contains(token))
             {
@@ -41,19 +41,19 @@ public:
             }
         }
         {
-            QLOG_INFO() << "Token not in use, creating a new one";
+            //QLOG_INFO() << "Token not in use, creating a new one";
             QWriteLocker locker(&lock);
             tokensInUse.insert(token);
             return QSharedPointer<UserToken<T>>(new UserToken<T>(token));
         }
     }
     void ReleaseToken(QString token) {
-        QLOG_INFO() << "Releasing safety token";
+        //QLOG_INFO() << "Releasing safety token";
         QWriteLocker locker(&lock);
         tokensInUse.remove(token);
     }
     void LockToken(QString token) {
-        QLOG_INFO() << "Locking safety token";
+        //QLOG_INFO() << "Locking safety token";
         QWriteLocker locker(&lock);
         tokensInUse.insert(token);
     }

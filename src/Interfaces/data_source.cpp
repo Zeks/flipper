@@ -32,7 +32,7 @@ FicSourceDirect::FicSourceDirect(QSharedPointer<database::IDBWrapper> dbInterfac
     rng->rngData = rngData;
     queryBuilder.portableDBInterface = dbInterface;
     countQueryBuilder.portableDBInterface = dbInterface;
-    QLOG_INFO() << "RNG INIT";
+    QLOG_TRACE() << "RNG INIT";
     queryBuilder.SetIdRNGgenerator(rng.release());
     countQueryBuilder.rng = queryBuilder.rng;
 }
@@ -147,13 +147,13 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
 {
     if(!data)
         return;
-    QLOG_INFO() << "Starting to build query";
+    QLOG_TRACE() << "Starting to build query";
 
     auto q = BuildQuery(searchfilter);
-    QLOG_INFO() << "Build query: success";
+    QLOG_TRACE() << "Build query: success";
     q.setForwardOnly(true);
     q.exec();
-    QLOG_INFO() << "Exec query: success";
+    QLOG_TRACE() << "Exec query: success";
     if(q.lastError().isValid())
     {
         qDebug() << " ";
@@ -179,7 +179,7 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
     QLOG_INFO_PURE() << "EXECUTED QUERY:" << q.lastQuery();
     if(data->size() > 0)
         lastFicId = (*data)[data->size() - 1].id;
-    QLOG_INFO_PURE() << "loaded fics:" << counter;
+    QLOG_TRACE_PURE() << "loaded fics:" << counter;
 }
 
 FicFilterSlash::FicFilterSlash()

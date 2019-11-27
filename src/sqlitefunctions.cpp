@@ -311,7 +311,7 @@ void cfGetSecondFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
 
 bool InstallCustomFunctions(QSqlDatabase db)
 {
-    QLOG_INFO() << "Installing custom sqlite functions";
+    //QLOG_INFO() << "Installing custom sqlite functions";
     QVariant v = db.driver()->handle();
     if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
     {
@@ -337,7 +337,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
             sqlite3_create_function(db_handle, "cfInFicSelection", 1, SQLITE_UTF8 , nullptr, &cfInFicSelection, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 , nullptr, &cfGetFirstFandom, nullptr, nullptr);
 
-            QLOG_INFO() << "Installed funcs succesfully";
+            //QLOG_INFO() << "Installed funcs succesfully";
             return true;
         }
     }

@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 bool VerifyUserToken(QString userToken, ProtoSpace::ResponseInfo* info)
 {
-    QLOG_INFO() << "Verifying user token";
+    //QLOG_INFO() << "Verifying user token";
     QRegularExpression rx("{[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}}");
     if(userToken.length() != 38)
         return false;
