@@ -302,6 +302,8 @@ Rectangle {
             signal refilterClicked()
             signal heartDoubleClicked(var id)
             signal scoreAdjusted(var id, var value, var currentScore)
+            signal addSnooze(var id)
+            signal removeSnooze(var id)
             signal snoozeTypeChanged(var id, var value, var chapter)
             signal notesEdited(var id, var value)
         }

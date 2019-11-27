@@ -67,8 +67,8 @@ public:
         PlaceInSecondList,
         PlaceOnFirstPedestal,
         PlaceOnSecondPedestal,
-        EndRole = PlaceOnSecondPedestal
-
+        FicIsSnoozed,
+        EndRole = FicIsSnoozed,
     };
 
     QVariant data(const QModelIndex & index, int role) const;

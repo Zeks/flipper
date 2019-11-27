@@ -554,6 +554,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 36, 0, placeInSecondList);
     ADD_INTEGER_GETSET(holder, 37, 0, placeOnFirstPedestal);
     ADD_INTEGER_GETSET(holder, 38, 0, placeOnSecondPedestal);
+    ADD_INTEGER_GETSET(holder, 39, 0, ficIsSnoozed);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -584,7 +585,8 @@ void MainWindow::SetupFanficTable()
                        << "roleBreakdown" << "roleBreakdownCount" << "likedAuthor" << "purged" << "score"
                        << "snoozeExpired" << "snoozeMode" << "snoozeLimit" << "snoozeOrigin"
                        << "notes" << "quotes" << "selected" << "recommendationsSecond"
-                       << "placeMain" << "placeSecond" << "placeOnFirstPedestal" << "placeOnSecondPedestal");
+                       << "placeMain" << "placeSecond" << "placeOnFirstPedestal" << "placeOnSecondPedestal"
+                       << "ficIsSnoozed" );
 
 
 
@@ -635,6 +637,8 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(heartDoubleClicked(QVariant)), this, SLOT(OnHeartDoubleClicked(QVariant)));
     connect(childObject, SIGNAL(scoreAdjusted(QVariant, QVariant, QVariant)), this, SLOT(OnScoreAdjusted(QVariant, QVariant, QVariant)));
     connect(childObject, SIGNAL(snoozeTypeChanged(QVariant, QVariant, QVariant)), this, SLOT(OnSnoozeTypeChanged(QVariant, QVariant, QVariant)));
+    connect(childObject, SIGNAL(addSnooze(QVariant)), this, SLOT(OnSnoozeAdded(QVariant)));
+    connect(childObject, SIGNAL(removeSnooze(QVariant)), this, SLOT(OnSnoozeRemoved(QVariant)));
     connect(childObject, SIGNAL(notesEdited(QVariant, QVariant)), this, SLOT(OnNotesEdited(QVariant, QVariant)));
     connect(childObject, SIGNAL(newQRSource(QVariant)), this, SLOT(OnNewQRSource(QVariant)));
     connect(childObject, SIGNAL(tagAddedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagAddInTagWidget(QVariant,QVariant)));
@@ -1441,23 +1445,8 @@ void MainWindow::OnTagAdd(QVariant tag, QVariant row)
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
     SetTag(id, tag.toString());
 
-    if(tag.toString() == "Snoozed")
-    {
-        auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
-        core::SnoozeTaskInfo info;
-        info.ficId = id;
-        info.untilFinished = 0;
-        info.snoozedTillChapter = currentChapter+1;
-        info.snoozedAtChapter = currentChapter;
-        env->interfaces.fanfics->SnoozeFic(info);
-        QModelIndex index = typetableModel->index(rownum, 27);
-        typetableModel->setData(index,0,0);
-    }
-
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
-
-
 }
 
 void MainWindow::OnTagRemove(QVariant tag, QVariant row)
@@ -1472,12 +1461,6 @@ void MainWindow::OnTagRemove(QVariant tag, QVariant row)
 
     typetableModel->setData(index,data,0);
     typetableModel->updateAll();
-    if(tag.toString() == "Snoozed")
-    {
-        env->interfaces.fanfics->RemoveSnooze(id);
-        QModelIndex index = typetableModel->index(rownum, 27);
-        typetableModel->setData(index,0,0);
-    }
 }
 
 void MainWindow::OnHeartDoubleClicked(QVariant row)
@@ -1556,7 +1539,7 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
     }
     else
     {
-        data.untilFinished = 1; // chapter or until finished
+        data.untilFinished = 0; // chapter or until finished
         data.snoozedAtChapter = currentChapter;
         data.snoozedTillChapter = chapter.toInt();
         typetableModel->setData(typetableModel->index(rownum, 29), chapter.toInt(), Qt::DisplayRole);
@@ -1565,6 +1548,43 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
     typetableModel->setData(typetableModel->index(rownum, 28), type.toInt(), Qt::DisplayRole);
     typetableModel->updateAll();
     env->interfaces.fanfics->SnoozeFic(data);
+}
+
+//ADD_INTEGER_GETSET(holder, 27, 0, snoozeExpired);
+//ADD_INTEGER_GETSET(holder, 29, 0, chapterTillSnoozed);
+//ADD_INTEGER_GETSET(holder, 30, 0, chapterSnoozed);
+//ADD_INTEGER_GETSET(holder, 39, 0, ficIsSnoozed);
+
+void MainWindow::OnSnoozeAdded(QVariant row)
+{
+    int rownum = row.toInt();
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+
+    auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
+    core::SnoozeTaskInfo info;
+    info.ficId = id;
+    info.untilFinished = 0;
+    info.snoozedTillChapter = currentChapter+1;
+    info.snoozedAtChapter = currentChapter;
+    env->interfaces.fanfics->SnoozeFic(info);
+
+    QModelIndex index = typetableModel->index(rownum, 27);
+    typetableModel->setData(index,0,0);
+    typetableModel->setData(index.sibling(index.row(), 29),currentChapter+1,0);
+    typetableModel->setData(index.sibling(index.row(), 30),currentChapter,0);
+    typetableModel->setData(index.sibling(index.row(), 39),true,0);
+    typetableModel->updateAll();
+}
+
+void MainWindow::OnSnoozeRemoved(QVariant row)
+{
+    int rownum = row.toInt();
+    auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
+    env->interfaces.fanfics->RemoveSnooze(id);
+    QModelIndex index = typetableModel->index(rownum, 27);
+    typetableModel->setData(index.sibling(index.row(), 39),false,0);
+    typetableModel->setData(index,0,0);
+    typetableModel->updateAll();
 }
 
 void MainWindow::OnNotesEdited(QVariant row, QVariant note)

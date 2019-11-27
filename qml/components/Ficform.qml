@@ -34,7 +34,7 @@ Rectangle{
     }
     height: {
         var height = ficSheet.height
-        if(!snoozeExpired && tags.indexOf("Snoozed") !== -1)
+        if(!snoozeExpired && ficIsSnoozed)
             height = height + snoozePart.height
         if(rectNotes.active)
             height = height + 200
@@ -48,7 +48,6 @@ Rectangle{
     property bool hasRealGenres : false
     property bool displayNotes: false
     property int indexOfThisDelegate: index
-    property bool snoozed: tags.indexOf("Snoozed") !== -1
     signal mouseClicked
     clip: false
 
@@ -797,10 +796,8 @@ Rectangle{
                     height: 24
                     visible: complete && !snoozeExpired
                 }
-                QuickTagger{
+                SnoozeToggle{
                     id: imgSnooze
-                    delegateTag: "Snoozed"
-                    delegateTags: tags
                     tooltip: qsTr("Use this to remove fics from tag search results until they update")
                     icon_colored: "qrc:/icons/icons/bell.png"
                     icon_gray: "qrc:/icons/icons/bell_gray.png"
@@ -907,7 +904,7 @@ Rectangle{
         anchors.right: ficSheet.right
         anchors.topMargin: 2
         //z:parent.z
-        visible: delegateItem.snoozed && !snoozeExpired
+        visible: ficIsSnoozed && !snoozeExpired
         border.width: 2
         border.color: Qt.rgba(0, 0, 1, 0.4)
 
@@ -958,9 +955,10 @@ Rectangle{
                         if(snoozeMode === 0)
                             return "Next Chapter"
                         if(snoozeMode === 1)
-                            return "Until Finished"
-                        if(snoozeMode === 2)
                             return "Until Chapter"
+                        if(snoozeMode === 2)
+                            return "Until Finished"
+
                     }
                     verticalAlignment: Text.AlignVCenter
                     font.pointSize: 12
@@ -999,18 +997,18 @@ Rectangle{
                 color: "lightyellow"
                 width: 60
                 height:row.height - 5
-                visible: lblSnoozeType.text == "Until Chapter"
+                visible: snoozeMode === 1
                 TextInput{
                     id: tiFicNotes
                     horizontalAlignment:  TextInput.AlignRight
                     font.pixelSize: mainWindow.textSize
                     anchors.fill: parent
-                    visible: lblSnoozeType.text == "Until Chapter"
+                    visible: snoozeMode === 1
                     color: "black"
-                    text: snoozeLimit === -1 ? chapters : snoozeLimit
+                    text: snoozeLimit === -1 ? chapters + 1 : snoozeLimit
                     onEditingFinished: {
                         console.log("Edited text is: ", text)
-                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, parseInt(text));
+                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 1, parseInt(text));
                         snoozeLimit = parseInt(text)
                     }
                 }

@@ -95,6 +95,18 @@ void cfInFicsForAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
         sqlite3_result_int(ctx, 0);
 }
 
+void cfInSnoozes(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto* data = ThreadData::GetUserData();
+
+    if(data->allSnoozedFics.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
 
 void cfInRecommendations(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
@@ -325,6 +337,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
 
             sqlite3_create_function(db_handle, "cfInTags", 1, SQLITE_UTF8 , nullptr, &cfInTags, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInFicsForAuthors", 1, SQLITE_UTF8 , nullptr, &cfInFicsForAuthors, nullptr, nullptr);
+            sqlite3_create_function(db_handle, "cfInSnoozes", 1, SQLITE_UTF8 , nullptr, &cfInSnoozes, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInSourceFics", 1, SQLITE_UTF8 , nullptr, &cfInSourceFics, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInRecommendations", 1, SQLITE_UTF8 , nullptr, &cfInRecommendations, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInScores", 1, SQLITE_UTF8 , nullptr, &cfInScores, nullptr, nullptr);

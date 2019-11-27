@@ -82,6 +82,15 @@ void CoreEnvironment::LoadData()
 
             UserData userData;
             userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
+            // need to add non expired snoozes to tags if snooze show mode isn't selected
+            for(auto snoozedFic : snoozeInfo){
+                if(!snoozedFic.expired)
+                    userData.allSnoozedFics.insert(snoozedFic.ficId);
+                else
+                    continue;
+            }
+
+
             if(filter.activeTags.size() > 0)
             {
                 tagFetcherSettings.tags = filter.activeTags;
@@ -146,7 +155,19 @@ void CoreEnvironment::LoadData()
             if(ficScores.contains(fic.id))
                 fic.score = ficScores[fic.id];
             if(snoozeInfo.contains(fic.id))
-                fic.snoozeExpired = snoozeInfo[fic.id].expired;
+            {
+                auto info = snoozeInfo[fic.id];
+                fic.snoozeExpired = info.expired;
+                fic.chapterTillSnoozed = info.snoozedTillChapter;
+                if(info.snoozedTillChapter - info.snoozedAtChapter == 1)
+                    fic.snoozeMode = core::Fic::efsm_next_chapter;
+                else if(info.untilFinished)
+                    fic.snoozeMode = core::Fic::efsm_til_finished;
+                else
+                    fic.snoozeMode = core::Fic::efsm_target_chapter;
+                fic.chapterSnoozed = info.snoozedAtChapter;
+                fic.ficIsSnoozed = true;
+            }
         }
     });
     action.run();
@@ -338,6 +359,13 @@ int CoreEnvironment::GetResultCount()
     interfaces::TagIDFetcherSettings tagFetcherSettings;
     tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
     userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
+
+    auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
+    for(auto snoozedFic : snoozeInfo){
+        if(!snoozedFic.expired)
+            userData.allSnoozedFics.insert(snoozedFic.ficId);
+    }
+
     if(filter.activeTags.size() > 0)
     {
         tagFetcherSettings.tags = filter.activeTags;

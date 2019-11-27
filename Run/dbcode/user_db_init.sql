@@ -26,6 +26,8 @@ CREATE INDEX if not exists I_FICTAGS_DBID ON FicTags (fic_id ASC);
 CREATE INDEX if not exists I_FICTAGS_FFNID ON FicTags (ffn_id ASC);
 CREATE INDEX if not exists I_FICTAGS_TAG_ADDED ON FicTags (added ASC);
 update FicTags set added = date('now') where added is null;
+delete from  FicTags where tag = 'Snoozed';
+ 
  
  -- ficscore table;
 CREATE TABLE if not exists FicScores (

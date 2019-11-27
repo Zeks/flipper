@@ -559,6 +559,7 @@ public:
     bool likedAuthor = false;
     int minSlashPass = 0;
     int score = 0;
+    bool ficIsSnoozed = false;
     int chapterTillSnoozed = -1;
     int chapterSnoozed = -1;
 

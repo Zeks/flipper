@@ -170,6 +170,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessAuthor(filter);
     queryString+= ProcessFicID(filter);
     queryString+= ProcessRecommenders(filter);
+    queryString+= ProcessSnoozes(filter);
     queryString+= tagFilterBuilder->GetString(filter);
     queryString+= ignoredFandomsBuilder->GetString(filter);
     //queryString+= ProcessFandomIgnore(filter);
@@ -291,16 +292,22 @@ QString DefaultQueryBuilder::ProcessRecommenders(StoryFilter filter)
     QString result;
     if(filter.usedRecommenders.size() == 0)
         return result;
-    //    QStringList authorList;
-    //    for(auto author : filter.usedRecommenders)
-    //        authorList.push_back(QString::number(author));
 
-    //    result = QString(" and exists (select distinct fic_id from recommendations where recommender_id in (%1) and fic_id = f.id) ")
-    //            .arg("'"+ authorList.join("','") +"'");
     result = " and cfInFicsForAuthors(f.id) > 0 ";
     return result;
 
 }
+
+QString DefaultQueryBuilder::ProcessSnoozes(StoryFilter filter)
+{
+    QString result;
+    if(filter.displaySnoozedFics)
+        return result;
+
+    result = " and cfInSnoozes(f.id) < 1 ";
+    return result;
+}
+
 QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
 {
     QString currentTagValue = " f.ffn_id as url, ";

@@ -876,6 +876,7 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
     {
         if(snoozeData.finished || (snoozeData.atChapter >= snoozes[snoozeData.ficId].snoozedTillChapter))
         {
+            qDebug() << "is finished: " << snoozeData.finished << " at chapter: " << snoozeData.atChapter << " etsting against user: " << snoozes[snoozeData.ficId].snoozedTillChapter;
             qDebug() << "adding expired snooze: " << snoozeData.ficId;
             response->add_expired_snoozes(snoozeData.ficId);
         }

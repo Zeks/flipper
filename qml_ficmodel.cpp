@@ -145,6 +145,8 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 37), Qt::DisplayRole).toInt();
         if(role == PlaceOnSecondPedestal)
             return AdaptingTableModel::data(index.sibling(index.row(), 38), Qt::DisplayRole).toInt();
+        if(role == FicIsSnoozed)
+            return AdaptingTableModel::data(index.sibling(index.row(), 39), Qt::DisplayRole).toBool();
 
         if(role == CurrentChapterRole)
             return QString("");
@@ -210,6 +212,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[PlaceInSecondList] = "placeSecond";
     roles[PlaceOnFirstPedestal] = "placeOnFirstPedestal";
     roles[PlaceOnSecondPedestal] = "placeOnSecondPedestal";
+    roles[FicIsSnoozed] = "ficIsSnoozed";
 
     return roles;
 }

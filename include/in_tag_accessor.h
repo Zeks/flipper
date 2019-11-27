@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "GlobalHeaders/SingletonHolder.h"
 struct UserData{
     QSet<int> allTaggedFics;
+    QSet<int> allSnoozedFics;
     QSet<int> usedAuthors;
     //QSet<int> likedAuthors;
     QSet<int> ficIDsForActivetags;

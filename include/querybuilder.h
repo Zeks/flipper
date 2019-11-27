@@ -93,6 +93,7 @@ protected:
     QString ProcessAuthor(StoryFilter);
     QString ProcessFicID(StoryFilter);
     QString ProcessRecommenders(StoryFilter);
+    QString ProcessSnoozes(StoryFilter);
     QString ProcessUrl(StoryFilter);
     QString ProcessGenreValues(StoryFilter);
     QString ProcessWordcount(StoryFilter);

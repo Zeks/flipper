@@ -146,6 +146,7 @@ struct StoryFilter{
     int recommendationsCount = 0;
     int activeTagsCount = 0;
     int allTagsCount = 0;
+    int allSnoozeCount = 0;
     int useThisAuthor = -1;
     int useThisFic = -1;
     int protocolVersion = 0;

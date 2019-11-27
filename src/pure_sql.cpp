@@ -2202,28 +2202,15 @@ DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSq
     return ctx.result;
 }
 
-DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(bool allowSnoozed, QSqlDatabase db)
+DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QSqlDatabase db)
 {
         QString qs = QString("select distinct fic_id from fictags ");
-        QStringList parts;
-
-        if(!allowSnoozed)
-            parts.push_back(" fic_id not in (select distinct fic_id from ficsnoozes where expired = 1) ");
-        if(allowSnoozed)
-            parts.push_back(" tag <> 'Snoozed'");
-
-        if(parts.size() > 0)
-        {
-            qs+= " where ";
-            qs+= parts.join(" and ");
-        }
-        qDebug() << "snooze query: "  << qs;
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
 }
 
-DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, bool allowSnoozed, QSqlDatabase db){
+DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, QSqlDatabase db){
 
     if(!useAND)
     {
@@ -2238,9 +2225,6 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
             qs+= " where ";
             qs+= parts.join(" and ");
         }
-        if(!allowSnoozed)
-            qs+= " and fic_id not in (select distinct fic_id from ficsnoozes where expired = 0) ";
-        qDebug() << "snooze tags query: "  << qs;
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
@@ -2256,10 +2240,6 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
             tokens.push_back(prototype.arg(tag));
         }
         qs += tokens.join(" and ");
-        if(!allowSnoozed)
-            qs+= " and fic_id not in (select distinct fic_id from ficsnoozes where expired = 0) ";
-
-        //qs += " and " + parts.join(" and ");
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
@@ -2305,8 +2285,12 @@ DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fet
     if(!fetchExpired)
         filters.push_back(" expired <> 0 ");
 
-    qs=qs.arg(QString(" where ") + filters.join(" and "));
+    if(filters.size() > 0)
+        qs=qs.arg(QString(" where ") + filters.join(" and "));
+    else
+        qs=qs.arg("");
 
+    QLOG_INFO() <<  "snooze query: " << qs;
 
 
     SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);
@@ -2314,7 +2298,7 @@ DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fet
         core::SnoozeTaskInfo info;
         info.ficId =                q.value("fic_id").toInt();
         info.added =                q.value("snooze_added").toDateTime();
-        info.expired =              q.value("expired").toInt();
+        info.expired =              q.value("expired").toBool();
         info.untilFinished =        q.value("snoozed_until_finished").toInt();
         info.snoozedAtChapter=      q.value("snoozed_at_chapter").toInt();
         info.snoozedTillChapter =   q.value("snoozed_till_chapter").toInt();
@@ -2382,10 +2366,16 @@ DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo data,QSqlDatabase db){
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("fic_id", data.ficId);
     ctx.bindValue("snoozed_at_chapter", data.snoozedAtChapter);
-    ctx.bindValue("snoozed_till_chapter", data.snoozedTillChapter);
+    if(!data.untilFinished)
+        ctx.bindValue("snoozed_till_chapter", data.snoozedTillChapter);
+    else
+        ctx.bindValue("snoozed_till_chapter", -1);
     ctx.bindValue("snoozed_until_finished", data.untilFinished);
     ctx.bindValue("snoozed_at_chapter_", data.snoozedAtChapter);
-    ctx.bindValue("snoozed_till_chapter_", data.snoozedTillChapter);
+    if(!data.untilFinished)
+        ctx.bindValue("snoozed_till_chapter_", data.snoozedTillChapter);
+    else
+        ctx.bindValue("snoozed_till_chapter_", -1);
     ctx.bindValue("snoozed_until_finished_", data.untilFinished);
     ctx.bindValue("fic_id_", data.ficId);
     ctx.bindValue("fic_id", data.ficId);

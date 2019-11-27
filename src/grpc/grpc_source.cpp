@@ -91,6 +91,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     result.set_filter_version(1);
     result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
     result.set_use_and_for_tags(filter.tagsAreANDed);
+    result.set_display_snoozed(filter.displaySnoozedFics);
     result.set_randomize_results(filter.randomizeResults);
     result.set_protocol_version(QString::number(1).toStdString());
     result.set_use_implied_genre(filter.useRealGenres);
@@ -290,11 +291,18 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     for(int i = 0; i < userData.user_tags().all_tags_size(); i++)
         userThreadData->allTaggedFics.insert(userData.user_tags().all_tags(i));
 
+
+    userThreadData->allSnoozedFics.reserve(userData.user_tags().all_tags_size());
+    for(int i = 0; i < userData.snoozes_size(); i++)
+        userThreadData->allSnoozedFics.insert(userData.snoozes(i));
+    QLOG_INFO() << "passed snooze size:" << userData.snoozes_size();
+
     userThreadData->ficIDsForActivetags.reserve(userData.user_tags().searched_tags_size());
     for(int i = 0; i < userData.user_tags().searched_tags_size(); i++)
         userThreadData->ficIDsForActivetags.insert(userData.user_tags().searched_tags(i));
     result.activeTagsCount = userThreadData->ficIDsForActivetags.size();
     result.allTagsCount = userThreadData->allTaggedFics.size();
+    result.allSnoozeCount = userThreadData->allSnoozedFics.size();
 
 
     result.slashFilter.slashFilterEnabled = filter.slash_filter().use_slash_filter();
@@ -314,6 +322,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.minRecommendations = filter.recommendations().min_recommendations();
     result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
     result.tagsAreUsedForAuthors = filter.tags_are_for_authors();
+    result.displaySnoozedFics= filter.display_snoozed();
     result.tagsAreANDed = filter.use_and_for_tags();
 
     result.ignoredFandomCount = userData.ignored_fandoms().fandom_ids_size();
@@ -758,6 +767,8 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
         tags->add_all_tags(tag);
     for(auto tag : this->userData.ficIDsForActivetags)
         tags->add_searched_tags(tag);
+    for(auto snooze : this->userData.allSnoozedFics)
+        userData->add_snoozes(snooze);
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
     for(auto key: this->userData.ignoredFandoms.keys())
@@ -830,6 +841,8 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
         tags->add_all_tags(tag);
     for(auto tag : this->userData.ficIDsForActivetags)
         tags->add_searched_tags(tag);
+    for(auto snooze : this->userData.allSnoozedFics)
+        userData->add_snoozes(snooze);
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
     for(auto key: this->userData.ignoredFandoms.keys())
