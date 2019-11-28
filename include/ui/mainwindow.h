@@ -474,6 +474,7 @@ private slots:
     void OnWarningRequested(QString value);
     void OnFillDBIdsForTags();
     void OnTagReloadRequested();
+    void OnClearLikedAuthorsRequested();
 
     void on_chkRecsAutomaticSettings_toggled(bool checked);
 
@@ -577,6 +578,8 @@ private slots:
 
     void onCopyDbUIDToClipboard(const QString&);
     void on_pbExpandIEntityds_clicked();
+
+    void on_chkLikedAuthors_stateChanged(int arg1);
 
 signals:
 

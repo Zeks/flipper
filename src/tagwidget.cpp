@@ -219,6 +219,11 @@ void TagWidget::SelectTags(QStringList tags)
     ui->edtTags->setHtml(text);
 }
 
+void TagWidget::ClearAuthorsForTags()
+{
+    ui->chkUseTagsForAuthors->setChecked(false);
+}
+
 void TagWidget::OnTagClicked(const QUrl& url)
 {
     QStringList temp = url.toString().split(" ");
@@ -340,4 +345,10 @@ void TagWidget::on_pbPurgeSelectedTags_clicked()
      tagsInterface->RemoveTagsFromEveryFic(GetSelectedTags());
      InitEditFromTags(allTags);
      SelectTags(selectedTags);
+}
+
+void TagWidget::on_chkUseTagsForAuthors_stateChanged(int arg1)
+{
+    if(ui->chkUseTagsForAuthors->isChecked())
+        emit clearLikedAuthors();
 }

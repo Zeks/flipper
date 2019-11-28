@@ -47,6 +47,7 @@ public:
     bool DbIdsRequested();
     void ResetFilters();
     void SelectTags(QStringList);
+    void ClearAuthorsForTags();
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
 private:
@@ -65,6 +66,7 @@ signals:
     void refilter();
     void dbIDRequest();
     void tagReloadRequested();
+    void clearLikedAuthors();
     void createUrlsForTags(bool);
 
 
@@ -83,6 +85,7 @@ private slots:
 
     void on_chkDisplayTagSize_stateChanged(int arg1);
     void on_pbPurgeSelectedTags_clicked();
+    void on_chkUseTagsForAuthors_stateChanged(int arg1);
 };
 
 

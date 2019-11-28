@@ -379,6 +379,7 @@ void MainWindow::InitConnections()
     });
     connect(ui->wdgTagsPlaceholder, &TagWidget::dbIDRequest, this, &MainWindow::OnFillDBIdsForTags);
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagReloadRequested, this, &MainWindow::OnTagReloadRequested);
+    connect(ui->wdgTagsPlaceholder, &TagWidget::clearLikedAuthors, this, &MainWindow::OnClearLikedAuthorsRequested);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     //! todo currently null
     connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
@@ -2153,6 +2154,10 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
     if(ui->chkEnableTagsFilter->isChecked())
         filter.activeTags = tags;
+
+    if(ui->chkLikedAuthors->isChecked())
+        filter.activeTags = QStringList{"Liked", "Rec", "Gems"};
+
     filter.showRecSources = ui->chkShowSources->isChecked();
     qDebug() << "Active tags: " << filter.activeTags;
     filter.allowNoGenre = ui->chkNoGenre->isChecked();
@@ -2182,7 +2187,9 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //chkNonCrossovers
     filter.ignoreFandoms= ui->chkIgnoreFandoms->isChecked();
     //    /filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
-    filter.tagsAreUsedForAuthors = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
+    bool tagWidgetAuthorsSelected = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
+    bool likedAuthorsCheckSelected = ui->chkLikedAuthors->isChecked();
+    filter.tagsAreUsedForAuthors = tagWidgetAuthorsSelected || likedAuthorsCheckSelected;
     filter.tagsAreANDed = ui->wdgTagsPlaceholder->UseANDForTags() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
@@ -2778,6 +2785,11 @@ void MainWindow::OnTagReloadRequested()
     ProcessTagsIntoGui();
     tagList = env->interfaces.tags->ReadUserTags();
     qwFics->rootContext()->setContextProperty("tagModel", tagList);
+}
+
+void MainWindow::OnClearLikedAuthorsRequested()
+{
+    ui->chkLikedAuthors->setChecked(false);
 }
 
 
@@ -4009,3 +4021,9 @@ void ReclistCreationUIHelper::SetupVisibilityForElements()
 
 
 
+
+void MainWindow::on_chkLikedAuthors_stateChanged(int)
+{
+    if(ui->chkLikedAuthors->isChecked())
+        ui->wdgTagsPlaceholder->ClearAuthorsForTags();
+}

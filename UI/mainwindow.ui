@@ -817,6 +817,12 @@
                     </property>
                     <item>
                      <widget class="QLabel" name="label_26">
+                      <property name="font">
+                       <font>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                       </font>
+                      </property>
                       <property name="text">
                        <string>Recent Fandom Searches</string>
                       </property>
@@ -908,12 +914,18 @@
                     </property>
                     <item row="0" column="0">
                      <widget class="QLabel" name="label_27">
+                      <property name="font">
+                       <font>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                       </font>
+                      </property>
                       <property name="text">
                        <string>Ignored Fandoms</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="0" column="1">
+                    <item row="0" column="3">
                      <widget class="QLabel" name="lblIgnoredFandomsInfo">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
@@ -938,6 +950,22 @@
                       </property>
                       <property name="scaledContents">
                        <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="2">
+                     <widget class="QCheckBox" name="chkOtherFandoms">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked will only search in ignored fandoms&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string>Reverse ignores</string>
                       </property>
                      </widget>
                     </item>
@@ -1536,6 +1564,26 @@
                  </item>
                  <item row="0" column="3" rowspan="2">
                   <layout class="QGridLayout" name="gridLayout_2">
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="chkEnableSlashFilter">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enables slash filter. Note that in addition to disabling it, you can set &amp;quot;Only slash&amp;quot; in respective tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>Slash Filter</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="3">
+                    <widget class="QCheckBox" name="chkEnableTagsFilter">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enables Tags filter. Currently selected tags can be seen in &amp;quot;Tags&amp;quot; tab&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>Tags Filter</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="1" column="1">
                     <widget class="QCheckBox" name="chkIgnoreTags">
                      <property name="sizePolicy">
@@ -1555,37 +1603,40 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="3">
-                    <widget class="QCheckBox" name="chkEnableTagsFilter">
+                   <item row="0" column="0">
+                    <widget class="QCheckBox" name="chkIgnoreFandoms">
                      <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enables Tags filter. Currently selected tags can be seen in &amp;quot;Tags&amp;quot; tab&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enables fandom ignore. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                      <property name="text">
-                      <string>Tags Filter</string>
+                      <string>Fandom Ignore</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
                    <item row="1" column="3">
-                    <widget class="QCheckBox" name="chkOtherFandoms">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked will only search in ignored fandoms&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
+                    <widget class="QCheckBox" name="chkDisplaySnoozed">
                      <property name="text">
-                      <string>Search In Ignored</string>
+                      <string>Snoozed</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
-                    <widget class="QCheckBox" name="chkEnableSlashFilter">
+                   <item row="1" column="0">
+                    <widget class="QCheckBox" name="chkShowUnfinished">
                      <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enables slash filter. Note that in addition to disabling it, you can set &amp;quot;Only slash&amp;quot; in respective tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Unticking this will hide fics left unfinished for over a year from recommendations and searches&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                      <property name="text">
-                      <string>Slash Filter</string>
+                      <string>Dead fics</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
+                   <item row="4" column="0">
                     <widget class="QCheckBox" name="chkActive">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
@@ -1601,7 +1652,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="3">
+                   <item row="4" column="1">
                     <widget class="QCheckBox" name="chkComplete">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
@@ -1617,36 +1668,10 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="0">
-                    <widget class="QCheckBox" name="chkIgnoreFandoms">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enables fandom ignore. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
+                   <item row="4" column="3">
+                    <widget class="QCheckBox" name="chkLikedAuthors">
                      <property name="text">
-                      <string>Fandom Ignore</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QCheckBox" name="chkShowUnfinished">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Unticking this will hide unfinished fics from recommendations and searches&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string>Unfinished</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
-                    <widget class="QCheckBox" name="chkDisplaySnoozed">
-                     <property name="text">
-                      <string>Snoozed</string>
+                      <string>Liked Authors</string>
                      </property>
                     </widget>
                    </item>
