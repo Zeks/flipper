@@ -197,6 +197,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
+    ui->lblGenreInfo->setStyle(new ImmediateTooltipProxyStyle());
+    ui->chkUseReclistMatches->setStyle(new ImmediateTooltipProxyStyle());
+
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/devBuild", false).toBool())
@@ -1764,7 +1767,7 @@ void MainWindow::DisplayInitialFicSelection()
             SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
             SilentCall(ui->cbRecGroupSecond)->setModel(new QStringListModel(lists));
             ui->cbRecGroup->setCurrentText("Recommendations");
-            ui->cbSortMode->setCurrentText("Rec Count");
+            ui->cbSortMode->setCurrentText("Metascore");
             env->interfaces.recs->SetCurrentRecommendationList(env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
             ui->pbGetSourceLinks->setEnabled(true);
             ui->pbDeleteRecList->setEnabled(true);
@@ -1992,7 +1995,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     auto lists = env->interfaces.recs->GetAllRecommendationListNames(true);
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
     ui->cbRecGroup->setCurrentText(params->name);
-    ui->cbSortMode->setCurrentText("Rec Count");
+    ui->cbSortMode->setCurrentText("Metascore");
     env->interfaces.recs->SetCurrentRecommendationList(env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
     on_pbLoadDatabase_clicked();
 }
@@ -2057,7 +2060,7 @@ FilterErrors MainWindow::ValidateFilter()
         result.AddError("Generic word searches will only be possible after DB is upgraded");
     }
     bool listNotSelected = ui->cbRecGroup->currentText().trimmed().isEmpty();
-    if(listNotSelected && ui->cbSortMode->currentText() == "Rec Count")
+    if(listNotSelected && ui->cbSortMode->currentText() == "Metascore")
     {
         result.AddError("Sorting on recommendation count only makes sense, ");
         result.AddError("if a recommendation list is selected");
@@ -2067,7 +2070,7 @@ FilterErrors MainWindow::ValidateFilter()
     auto currentListId = env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText());
     core::RecPtr list = env->interfaces.recs->GetList(currentListId);
     bool emptyList = !list || list->ficCount == 0;
-    if(emptyList && (ui->cbSortMode->currentText() == "Rec Count"
+    if(emptyList && (ui->cbSortMode->currentText() == "Metascore"
                      || ui->chkSearchWithinList->isChecked()
                      || (ui->chkUseReclistMatches->isChecked() && ui->sbMinimumListMatches->value() > 0)))
     {
@@ -2992,7 +2995,7 @@ void MainWindow::PrepareUIToDisplayNewRecommendationList(QString name)
 {
     ResetFilterUItoDefaults();
     ui->wdgTagsPlaceholder->ClearSelection();
-    ui->cbSortMode->setCurrentText("Rec Count");
+    ui->cbSortMode->setCurrentText("Metascore");
     ui->cbSortDirection->setCurrentText("DESC");
 
 
@@ -3000,7 +3003,7 @@ void MainWindow::PrepareUIToDisplayNewRecommendationList(QString name)
     SilentCall(ui->cbRecGroup)->setModel(new QStringListModel(lists));
     SilentCall(ui->cbRecGroupSecond)->setModel(new QStringListModel(lists));
     ui->cbRecGroup->setCurrentText(name);
-    ui->cbSortMode->setCurrentText("Rec Count");
+    ui->cbSortMode->setCurrentText("Metascore");
     env->interfaces.recs->SetCurrentRecommendationList(env->interfaces.recs->GetListIdForName(ui->cbRecGroup->currentText()));
     ui->pbGetSourceLinks->setEnabled(true);
     ui->pbDeleteRecList->setEnabled(true);
@@ -3097,7 +3100,7 @@ void MainWindow::on_pbRefreshRecList_clicked()
         return;
 
     ResetFilterUItoDefaults();
-    ui->cbSortMode->setCurrentText("Rec Count");
+    ui->cbSortMode->setCurrentText("Metascore");
     ui->cbSortDirection->setCurrentText("DESC");
 
     on_pbLoadDatabase_clicked();
@@ -3392,7 +3395,7 @@ void MainWindow::on_cbCurrentFilteringMode_currentTextChanged(const QString &)
         ResetFilterUItoDefaults();
         ui->chkRandomizeSelection->setChecked(true);
         ui->sbMaxRandomFicCount->setValue(6);
-        ui->cbSortMode->setCurrentText("Rec Count");
+        ui->cbSortMode->setCurrentText("Metascore");
         ui->chkSearchWithinList->setChecked(true);
         ui->sbMinimumListMatches->setValue(1);
         ui->chkUseReclistMatches->setChecked(true);

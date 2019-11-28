@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1114</width>
-    <height>1288</height>
+    <width>1144</width>
+    <height>1359</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -1299,6 +1299,16 @@
                 <layout class="QGridLayout" name="gridLayout_11">
                  <item row="1" column="1">
                   <layout class="QGridLayout" name="gridLayout_9">
+                   <item row="0" column="0">
+                    <widget class="QCheckBox" name="chkUseReclistMatches">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This is the score next to the heart on the fic display. It is calculated based on the amount of people with tastes similar to yours that have a fic in their favourite lists and how similar are their favourites to yours. This is NOT even closely a one to one score. A score of 900 doesn't mean 900 people liked it. It all heavily depends on list similarity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>Metascore</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="1" column="1">
                     <widget class="QSpinBox" name="sbMinimumFavourites">
                      <property name="sizePolicy">
@@ -1338,13 +1348,6 @@
                     <widget class="QSpinBox" name="sbMinimumListMatches">
                      <property name="maximum">
                       <number>10000</number>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="0">
-                    <widget class="QCheckBox" name="chkUseReclistMatches">
-                     <property name="text">
-                      <string>Reclist Matches</string>
                      </property>
                     </widget>
                    </item>
@@ -1456,7 +1459,7 @@
                       </sizepolicy>
                      </property>
                      <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows you to select fic sorting criteria.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Wordcount &lt;/span&gt;lists larger fics first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Favourites&lt;/span&gt; displays stuff with the max amount of faves first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fav Rate &lt;/span&gt;only shows stuff that's been started during the last year and sorts it by faves to time running ratio.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Update Date &lt;/span&gt;is your usual &amp;quot;last updated first come&amp;quot; filter.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Rec count &lt;/span&gt;is the amount of times taht fic appears in your recommendation lists.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;WCRC-R&lt;/span&gt; is WordCount/ReviewCount ratio&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Biased WCRC-R&lt;/span&gt; will filter out everything with Review/Favourite ratio greater than 2 out of WCRC-R&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Crap WCRC-R&lt;/span&gt; will filter out everything with Review/Favourite ratio lower than 2 out of WCRC-R&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows you to select fic sorting criteria.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Wordcount &lt;/span&gt;lists larger fics first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Favourites&lt;/span&gt; displays stuff with the max amount of faves first.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fav Rate &lt;/span&gt;only shows stuff that's been started during the last year and sorts it by faves to time running ratio.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Update Date &lt;/span&gt;sorts on updated date.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Publish Date &lt;/span&gt;sorts on published date.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Metascore &lt;/span&gt;sorts on the fics metascore.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;WCRC-R&lt;/span&gt; is WordCount/ReviewCount ratio&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Your score  &lt;/span&gt;sorts on your scores.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                      <property name="currentText">
                       <string>Wordcount</string>
@@ -1488,7 +1491,7 @@
                      </item>
                      <item>
                       <property name="text">
-                       <string>Rec Count</string>
+                       <string>Metascore</string>
                       </property>
                      </item>
                      <item>
@@ -1877,6 +1880,34 @@
                <property name="bottomMargin">
                 <number>0</number>
                </property>
+               <item>
+                <widget class="QLabel" name="lblGenreInfo">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flipper uses an automatic genre detection system on fanfics, for which it has enough statistics. &amp;quot;Implied genre&amp;quot; is an autodetected one and quite often is different from what the author set on a fic. The system can also often tell how much the genre is relevant on a fic. You can tell that the genre is implied if there is an icon next to it. The bigger it is, the more relevant the genre is.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="pixmap">
+                  <pixmap resource="../icons.qrc">:/icons/icons/question1.png</pixmap>
+                 </property>
+                 <property name="scaledContents">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
                <item>
                 <widget class="QCheckBox" name="chkGenreUseImplied">
                  <property name="toolTip">
@@ -3529,7 +3560,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1114</width>
+     <width>1144</width>
      <height>21</height>
     </rect>
    </property>
