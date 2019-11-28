@@ -576,6 +576,8 @@ private slots:
     void on_pbValidateUserID_clicked();
 
     void onCopyDbUIDToClipboard(const QString&);
+    void on_pbExpandIEntityds_clicked();
+
 signals:
 
 

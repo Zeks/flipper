@@ -1142,9 +1142,13 @@ void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
     {
         ui->chkRandomizeSelection->setChecked(false);
         ui->leAuthorID->setText(QString::number(data));
+        ui->chkIdSearch->setChecked(true);
     }
     else
+    {
+        ui->chkIdSearch->setChecked(false);
         ui->leAuthorID->setText("");
+    }
     ui->cbIDMode->setCurrentIndex(1);
     env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
     //env->filter.useThisAuthor = data;
@@ -1270,6 +1274,7 @@ void MainWindow::ReadSettings()
     ui->cbSourceListLimiter->setCurrentText(uiSettings.value("Settings/cbSourceListLimiter", "All").toString());
 
     ui->chkStrongMOnly->setChecked(uiSettings.value("Settings/chkStrongMOnly", false).toBool());
+    ui->chkIdSearch->setChecked(uiSettings.value("Settings/chkIdSearch", false).toBool());
     ui->cbSlashFilterAggressiveness->setCurrentText(uiSettings.value("Settings/cbSlashFilterAggressiveness", "").toString());
     ui->cbIDMode->setCurrentText(uiSettings.value("Settings/cbIDMode", "").toString());
     ui->leAuthorID->setText(uiSettings.value("Settings/leAuthorID", "").toString());
@@ -1360,6 +1365,7 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkGenreMinus", ui->chkGenreMinus->isChecked());
     settings.setValue("Settings/chkWordsPlus", ui->chkWordsPlus->isChecked());
     settings.setValue("Settings/chkWordsMinus", ui->chkWordsMinus->isChecked());
+    settings.setValue("Settings/chkIdSearch", ui->chkIdSearch->isChecked());
 
     settings.setValue("Settings/active", ui->chkActive->isChecked());
     settings.setValue("Settings/showUnfinished", ui->chkShowUnfinished->isChecked());
@@ -1508,6 +1514,7 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
     else
     {
         ui->leAuthorID->setText(authorList.join(","));
+        ui->chkIdSearch->setChecked(true);
 
         ui->chkRandomizeSelection->setChecked(false);
         ui->cbIDMode->setCurrentIndex(2);
@@ -1812,6 +1819,12 @@ void MainWindow::on_pbExpandPlusWords_clicked()
 void MainWindow::on_pbExpandMinusWords_clicked()
 {
     currentExpandedEdit = ui->leNotContainsWords;
+    CallExpandedWidget();
+}
+
+void MainWindow::on_pbExpandIEntityds_clicked()
+{
+    currentExpandedEdit = ui->leAuthorID;
     CallExpandedWidget();
 }
 
@@ -2163,11 +2176,11 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
     filter.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(ui->cbGenrePresenceTypeInclude->currentIndex());
     filter.rating = static_cast<core::StoryFilter::ERatingFilter>(ui->cbFicRating->currentIndex());
-    if(ui->cbIDMode->currentIndex() == 0 && !ui->leAuthorID->text().isEmpty())
+    if(ui->cbIDMode->currentIndex() == 0 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
         filter.useThisFic = ui->leAuthorID->text().toInt();
-    if(ui->cbIDMode->currentIndex() == 1 && !ui->leAuthorID->text().isEmpty())
+    if(ui->cbIDMode->currentIndex() == 1 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
         filter.useThisAuthor = ui->leAuthorID->text().toInt();
-    if(ui->cbIDMode->currentIndex() == 2 && !ui->leAuthorID->text().isEmpty())
+    if(ui->cbIDMode->currentIndex() == 2 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
     {
         for(auto id : ui->leAuthorID->text().split(",", QString::SkipEmptyParts))
             filter.usedRecommenders.push_back(id.toInt());
@@ -2375,11 +2388,13 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         ui->cbIDMode->setCurrentIndex(0);
         ui->leAuthorID->setText(QString::number(filter.useThisFic));
+        ui->chkIdSearch->setChecked(true);
     }
     else if(filter.useThisAuthor != -1)
     {
         ui->cbIDMode->setCurrentIndex(1);
         ui->leAuthorID->setText(QString::number(filter.useThisAuthor));
+        ui->chkIdSearch->setChecked(true);
     }
     else if(filter.usedRecommenders.size() > 0)
     {
@@ -2390,10 +2405,12 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
             temp.push_back(QString::number(reccer));
         }
         ui->leAuthorID->setText(temp.join(","));
+        ui->chkIdSearch->setChecked(true);
     }
     else {
         ui->cbIDMode->setCurrentIndex(0);
         ui->leAuthorID->setText("");
+        ui->chkIdSearch->setChecked(false);
     }
 
 
@@ -3134,6 +3151,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->cbSourceListLimiter->setCurrentIndex(0);
     ui->cbIDMode->setCurrentIndex(0);
     ui->leAuthorID->setText("");
+    ui->chkIdSearch->setChecked(false);
     ui->wdgTagsPlaceholder->ResetFilters();
     ui->cbSortDirection->setCurrentIndex(0);
 }
@@ -3614,6 +3632,7 @@ void MainWindow::on_chkNonCrossovers_stateChanged(int arg1)
 
 void MainWindow::on_leAuthorID_returnPressed()
 {
+    ui->chkIdSearch->setChecked(true);
     on_pbLoadDatabase_clicked();
 }
 
@@ -3976,4 +3995,6 @@ void ReclistCreationUIHelper::SetupVisibilityForElements()
     }
     main->setUpdatesEnabled(true);
 }
+
+
 
