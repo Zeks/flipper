@@ -188,15 +188,19 @@ MainWindow::MainWindow(QWidget *parent) :
     SetPreviousEnabled(false);
     SetNextEnabled(false);
 
-    QSettings settings("settings/ui.ini", QSettings::IniFormat);
-    int currentLaunches = settings.value("Settings/launches", 0).toInt() + 1;
-    settings.setValue("Settings/launches", currentLaunches);
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    int currentLaunches = uiSettings.value("Settings/launches", 0).toInt() + 1;
+    uiSettings.setValue("Settings/launches", currentLaunches);
 
-    if(currentLaunches > 4 && !settings.value("Settings/patreonSuppressed", false).toBool())
+    if(currentLaunches > 4 && !uiSettings.value("Settings/patreonSuppressed", false).toBool())
         ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
 
     ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
+
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    if(!settings.value("Settings/devBuild", false).toBool())
+        ui->cbSortMode->removeItem(8);
 }
 
 bool MainWindow::Init(bool scheduleSlashFilterOn)
