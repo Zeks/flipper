@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/pagetask_interface.h"
+#include "include/ImmediateTooltipStyle.h"
 #include "ui/actionprogress.h"
 #include "ui_actionprogress.h"
 #include "pagetask.h"
@@ -193,6 +194,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     if(currentLaunches > 4 && !settings.value("Settings/patreonSuppressed", false).toBool())
         ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
+
+    ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
+    ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
 }
 
 bool MainWindow::Init(bool scheduleSlashFilterOn)
