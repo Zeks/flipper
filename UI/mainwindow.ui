@@ -837,7 +837,7 @@
                        </size>
                       </property>
                       <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Th&lt;span style=&quot; font-size:10pt;&quot;&gt;ese are just recent searches. You can search on other fandoms by typing them into the combobox below.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Th&lt;span style=&quot; font-size:10pt;&quot;&gt;ese are just recent searches so that relevant fandoms can be accessed quickly. You can search on all other fandoms by typing them into the combobox next to &amp;quot;Searched Fandom&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="text">
                        <string/>
@@ -928,7 +928,7 @@
                        </size>
                       </property>
                       <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you want to change the ignore mode (crossovers or not) remove the fandom via right click and re-add it with new settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you want to change the ignore mode (crossovers or not) remove the fandom via right click and re-add it with new settings. To quickly select the fandom you want to ignore: click on the fandom section of the displayed fic. More than one click cycles fandoms.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="text">
                        <string/>
