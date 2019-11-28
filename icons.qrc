@@ -89,5 +89,6 @@
         <file>icons/target_blue.png</file>
         <file>icons/target_grey.png</file>
         <file>icons/question1.png</file>
+        <file>icons/shuffle_2x.png</file>
     </qresource>
 </RCC>

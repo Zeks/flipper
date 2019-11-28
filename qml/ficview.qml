@@ -46,6 +46,7 @@ Rectangle {
     signal pageRequested(int page)
     signal backClicked()
     signal forwardClicked()
+    signal shuffleClicked()
 
     property bool chartDisplay: false
     property bool qrDisplay: false
@@ -187,20 +188,37 @@ Rectangle {
                     }
                 }
             }
+            Image {
+                id: imgShuffle
+                anchors.bottomMargin: 3
+                width: mainWindow.textSize
+                height: mainWindow.textSize
+                sourceSize.height: mainWindow.textSize
+                sourceSize.width: mainWindow.textSize
+                visible: true
+                source: "qrc:/icons/icons/shuffle_2x.png"
+                MouseArea{
+                    anchors.fill : parent
+                    propagateComposedEvents : true
+                    onClicked : {
+                        mainWindow.shuffleClicked();
+                    }
+                }
+            }
             Label {
                 id:info
                 font.pixelSize: mainWindow.textSize
                 text: "At page:"
-//                anchors.bottom: row.bottom
-//                anchors.bottomMargin: 2
+                anchors.bottom: row.bottom
+                anchors.bottomMargin: 2
             }
             Rectangle{
                 color: "lightyellow"
 
-//                anchors.top: row.top
-//                anchors.topMargin: 2
-//                anchors.bottom: row.bottom
-//                anchors.bottomMargin: 3
+                anchors.top: row.top
+                anchors.topMargin: 2
+                anchors.bottom: row.bottom
+                anchors.bottomMargin: 3
                 width: 80
                 height:row.height - 5
                 TextInput{

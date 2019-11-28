@@ -398,6 +398,9 @@ public slots:
     void OnDoFormattedList();
     // queries and displays next page for the current query
     void OnDisplayNextPage();
+
+    void OnShuffleDisplayedData();
+
     // queries and displays pervious page for the current query
     void OnDisplayPreviousPage();
     // queries and displays exact page for the current query

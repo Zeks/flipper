@@ -675,6 +675,7 @@ void MainWindow::SetupFanficTable()
     connect(windowObject, SIGNAL(backClicked()), this, SLOT(OnDisplayPreviousPage()));
 
     connect(windowObject, SIGNAL(forwardClicked()), this, SLOT(OnDisplayNextPage()));
+    connect(windowObject, SIGNAL(shuffleClicked()), this, SLOT(OnShuffleDisplayedData()));
     connect(windowObject, SIGNAL(pageRequested(int)), this, SLOT(OnDisplayExactPage(int)));
     windowObject->setProperty("magnetTag", uiSettings.value("Settings/magneticTag").toString());
 
@@ -695,6 +696,13 @@ void MainWindow::OnDisplayNextPage()
     PlaceResults();
     AnalyzeCurrentFilter();
 
+}
+
+void MainWindow::OnShuffleDisplayedData()
+{
+    auto rng = std::default_random_engine {};
+    std::shuffle(std::begin(env->fanfics), std::end(env->fanfics), rng);
+    holder->SetData(env->fanfics);
 }
 
 void MainWindow::OnDisplayPreviousPage()
