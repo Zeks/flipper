@@ -2440,8 +2440,8 @@ DiagnosticSQLResult<bool> RemoveSnooze(int fic_id,QSqlDatabase db){
 
 DiagnosticSQLResult<bool> AddNoteToFic(int fic_id, QString note, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO ficnotes(fic_id, note_content) values(:fic_id, :note) "
-                 "on conflict (fic_id) do update set note_content = :note_ where fic_id = :fic_id_";
+    QString qs = "INSERT INTO ficnotes(fic_id, note_content, updated) values(:fic_id, :note, date('now')) "
+                 "on conflict (fic_id) do update set note_content = :note_, updated = date('now') where fic_id = :fic_id_";
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("fic_id", fic_id);
     ctx.bindValue("note", note);
