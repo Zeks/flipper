@@ -125,7 +125,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
     //initalizes widgets
-    bool Init();
+    bool Init(bool scheduleSlashOn = false);
 
 
     ~MainWindow();

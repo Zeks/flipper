@@ -754,7 +754,7 @@ public:
         urls.append(url);
     }
     void SetName(QString name){this->name = ConvertName(name);}
-    QString GetName() const {return this->name;}
+    QString GetName() const;
     int id = -1;
     int idInRecentFandoms = -1;
     int ficCount = 0;

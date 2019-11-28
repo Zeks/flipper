@@ -259,19 +259,21 @@ bool CoreEnvironment::Init()
     grpcSource->GetFandomListFromServer(interfaces.fandoms->GetLastFandomID(), &fandoms);
     if(fandoms.size() > 0)
         interfaces.fandoms->UploadFandomsIntoDatabase(fandoms);
+    interfaces.fandoms->Load();
+    interfaces.fandoms->FillFandomList(true);
     interfaces.fandoms->ReloadRecentFandoms();
     auto recentFandoms = interfaces.fandoms->GetRecentFandoms();
     if(recentFandoms.size() == 0)
     {
-        interfaces.fandoms->PushFandomToTopOfRecent("Naruto");
-        interfaces.fandoms->PushFandomToTopOfRecent("RWBY");
-        interfaces.fandoms->PushFandomToTopOfRecent("Worm");
-        interfaces.fandoms->PushFandomToTopOfRecent("High School DxD");
-        interfaces.fandoms->PushFandomToTopOfRecent("Harry Potter");
+        if(!interfaces.fandoms.isNull())
+        {
+            interfaces.fandoms->PushFandomToTopOfRecent("Naruto");
+            interfaces.fandoms->PushFandomToTopOfRecent("RWBY");
+            interfaces.fandoms->PushFandomToTopOfRecent("Worm");
+            interfaces.fandoms->PushFandomToTopOfRecent("High School DxD");
+            interfaces.fandoms->PushFandomToTopOfRecent("Harry Potter");
+        }
     }
-
-    //    else
-    //        ficSource.reset(new FicSourceDirect(interfaces.db));
 
     auto result = interfaces.tags->ReadUserTags();
 
@@ -279,9 +281,9 @@ bool CoreEnvironment::Init()
 
     auto storedRecList = uiSettings.value("Settings/currentList").toString();
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(storedRecList));
-    interfaces.fandoms->Load();
+    //interfaces.fandoms->Load();
     interfaces.recs->LoadAvailableRecommendationLists();
-    interfaces.fandoms->FillFandomList(true);
+    //interfaces.fandoms->FillFandomList(true);
 
     auto fics = interfaces.fanfics->GetFicIDsWithUnsetAuthors();
     if(fics.size() > 0)

@@ -195,7 +195,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
 }
 
-bool MainWindow::Init()
+bool MainWindow::Init(bool scheduleSlashFilterOn)
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
 
@@ -300,6 +300,8 @@ bool MainWindow::Init()
         ui->leUserFFNId->setText(QString::number(userFFNId));
         on_pbVerifyUserFFNId_clicked();
     }
+    if(scheduleSlashFilterOn)
+        ui->chkEnableSlashFilter->setChecked(true);
 
     return true;
 }

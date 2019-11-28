@@ -42,7 +42,8 @@ InitialSetupDialog::InitialSetupDialog(QDialog *parent) :
     ui->lblStatus->setWordWrap(true);
     ui->lblFileInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->lblListInfo->setStyle(new ImmediateTooltipProxyStyle());
-    ui->pbInitializationStatus->setVisible(false);
+    ui->lblSlashInfo->setStyle(new ImmediateTooltipProxyStyle());
+
     ui->leUserFFNId->setPlaceholderText(QString("Favourites from this profile will be used to create recommendations. If you don't have a profile on FFN, leave it empty"));
     ui->leDBFileLocation->setPlaceholderText(QString("Flipper keeps recommendations and tags there"));
 }
@@ -110,6 +111,7 @@ void InitialSetupDialog::on_pbSelectDatabaseFile_clicked()
 void InitialSetupDialog::on_pbPerformInit_clicked()
 {
     ui->lblStatus->setVisible(true);
+    readsSlash = ui->rbReadSlashYes->isChecked();
     if(!authorTestSuccessfull)
     {
         if(!ui->leUserFFNId->text().isEmpty())

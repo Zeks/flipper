@@ -338,3 +338,8 @@ void core::FicSectionStats::Deserialize(QDataStream &in)
     in >>  lastPublished;
 }
 
+
+QString core::Fandom::GetName() const
+{
+    return this->name;
+}

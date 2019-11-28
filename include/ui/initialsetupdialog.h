@@ -20,6 +20,7 @@ public:
     QSharedPointer<CoreEnvironment> env;
     bool authorTestSuccessfull = false;
     bool initComplete = false;
+    bool readsSlash = false;
 private slots:
     void on_pbVerifyUserFFNId_clicked();
 

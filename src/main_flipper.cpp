@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
 
 
     MainWindow w;
+    bool scheduleSlashFilter = false;
     if(!hasDBFile || !uiSettings.value("Settings/initialInitComplete", false).toBool())
     {
         InitialSetupDialog setupDialog;
@@ -102,6 +103,7 @@ int main(int argc, char *argv[])
         setupDialog.exec();
         if(!setupDialog.initComplete)
             return 2;
+        scheduleSlashFilter = !setupDialog.readsSlash;
     }
     else
     {
@@ -119,7 +121,7 @@ int main(int argc, char *argv[])
 
 
     w.env = coreEnvironment;
-    if(!w.Init())
+    if(!w.Init(scheduleSlashFilter))
         return 0;
     w.InitConnections();
     w.show();
