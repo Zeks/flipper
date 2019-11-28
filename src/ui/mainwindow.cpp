@@ -137,7 +137,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lblCrosses->hide();
     ui->cbCrossovers->hide();
     ui->pbFandomSwitch->hide();
-
+    ui->chkIgnoreMarkedDeadFics->hide();
     ui->pbProfileCompare->setVisible(false);
     ui->leFFNProfileLeft->setVisible(false);
     ui->leFFNProfileRight->setVisible(false);
@@ -1511,7 +1511,7 @@ void MainWindow::OnHeartDoubleClicked(QVariant row)
 
         ui->chkRandomizeSelection->setChecked(false);
         ui->cbIDMode->setCurrentIndex(2);
-
+        ui->wdgTagsPlaceholder->ResetFilters();
         env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_fics);
         env->filter.recordPage = 0;
         env->pageOfCurrentQuery = 0;

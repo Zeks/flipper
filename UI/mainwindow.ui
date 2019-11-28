@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1114</width>
-    <height>1256</height>
+    <height>1277</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -549,7 +549,7 @@
                               <string>Ignore marked dead fics</string>
                              </property>
                              <property name="checked">
-                              <bool>true</bool>
+                              <bool>false</bool>
                              </property>
                             </widget>
                            </item>
