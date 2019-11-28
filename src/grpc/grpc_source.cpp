@@ -324,6 +324,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.tagsAreUsedForAuthors = filter.tags_are_for_authors();
     result.displaySnoozedFics= filter.display_snoozed();
     result.tagsAreANDed = filter.use_and_for_tags();
+    for(int i =0; i < filter.tag_filter().active_tags_size(); i++)
+        result.activeTags.push_back(QString::fromStdString(filter.tag_filter().active_tags(i)));
 
     result.ignoredFandomCount = userData.ignored_fandoms().fandom_ids_size();
     result.recommendationsCount = userData.recommendation_list().list_of_fics_size();
@@ -765,6 +767,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
 
     for(auto tag : this->userData.allTaggedFics)
         tags->add_all_tags(tag);
+
     for(auto tag : this->userData.ficIDsForActivetags)
         tags->add_searched_tags(tag);
     for(auto snooze : this->userData.allSnoozedFics)
@@ -776,6 +779,10 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
         ignoredFandoms->add_fandom_ids(key);
         ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
     }
+
+    auto tagData = task.mutable_filter()->mutable_tag_filter();
+    for(auto tag: filter.activeTags)
+        tagData->add_active_tags(tag.toStdString());
 
     grpc::Status status = stub_->Search(&context, task, response.data());
 

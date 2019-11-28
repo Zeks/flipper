@@ -30,6 +30,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         where += bind.key + bind.value.toString().left(30);
     where += "Minrecs: " + QString::number(filter.minRecommendations);
     where += "Rated: " + QString::number(filter.rating);
+    where += "Active tags: " + filter.activeTags.join(",");
     where += "Displaying purged:" + QString::number(filter.displayPurgedFics);
     {
         // locking to make sure it's not modified when we search
