@@ -54,7 +54,7 @@ void SetupLogger()
 
 
 
-
+typedef database::puresql::DiagnosticSQLResult<database::puresql::DBVerificationResult> VerificationResult;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -85,13 +85,18 @@ int main(int argc, char *argv[])
     bool backupRestored = false;
     if(databaseFolderPath.length() > 0)
     {
-        auto verificationResult = VerifyDatabase(currentDatabaseFile);
-        bool validDbFile  = verificationResult.success;
+
+        VerificationResult verificationResult;
+        if(hasDBFile)
+            verificationResult = VerifyDatabase(currentDatabaseFile);
+        bool validDbFile  = hasDBFile && verificationResult.success;
         if(!validDbFile)
         {
             backupRestored = ProcessBackupForInvalidDbFile(databaseFolderPath, "UserDB", verificationResult.data.data);
             if(!backupRestored)
                 hasDBFile = false;
+            else
+                hasDBFile =true;
 
         }
     }

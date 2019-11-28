@@ -1234,6 +1234,10 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     for(auto fic : sourceFicsSet)
         sourceFics.push_back(fic.toInt());
 
+    auto ids = interfaces.fandoms->GetIgnoredFandomsIDs();
+    for(auto fandom: ids.keys())
+        params->ignoredFandoms.insert(fandom);
+
     auto result = BuildRecommendations(params, sourceFics, false, false);
     return result;
 }
