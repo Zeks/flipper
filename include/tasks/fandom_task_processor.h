@@ -25,15 +25,18 @@ struct FandomParseTask{
     FandomParseTask(QStringList parts,
                     QDate stopAt,
                     ECacheMode cacheMode,
+                    int delay,
                     int pageRetries = 3){
         this->stopAt = stopAt;
         this->cacheMode = cacheMode;
         this->pageRetries = pageRetries;
+        this->delay = delay;
         this->parts = parts;
     }
     QString fandom;
     QStringList parts;
     int pageRetries = 3;
+    int delay = 500;
     QDate stopAt;
     ECacheMode cacheMode = ECacheMode::dont_use_cache;
 

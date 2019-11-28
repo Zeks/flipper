@@ -53,6 +53,7 @@ class PageManager
     void SetAutomaticCacheForCurrentDate(bool);
     void WipeOldCache();
     void WipeAllCache();
+    int timeout = 500;
     QScopedPointer<PageGetterPrivate> d;
 };
 
@@ -67,18 +68,19 @@ public:
     QDate GrabMinUpdate(QString text);
     void SetAutomaticCache(QDate);
     void SetAutomaticCacheForCurrentDate(bool);
-    int timeout = 500;
+
     std::atomic<bool> working;
     QDate automaticCache;
     bool automaticCacheForCurrentDate = true;
 public slots:
-    void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate);
+    void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate, int delay);
     void FandomTask(FandomParseTask);
     void ProcessBunchOfFandomUrls(QStringList urls,
                                   QDate stopAt,
                                   ECacheMode cacheMode,
-                                  QStringList& failedPages);
-    void TaskList(QStringList urls, ECacheMode cacheMode);
+                                  QStringList& failedPages,
+                                  int delay);
+    void TaskList(QStringList urls, ECacheMode cacheMode, int delay);
 signals:
     void pageResult(PageResult);
 };

@@ -60,7 +60,7 @@ public slots:
 signals:
     // page task when iterating through favourites pages
     // contains urls from a SUBtask
-    void pageTaskList(QStringList, ECacheMode);
+    void pageTaskList(QStringList, ECacheMode, int delay);
     void requestProgressbar(int);
     void updateCounter(int);
     void updateInfo(QString);

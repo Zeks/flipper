@@ -328,7 +328,12 @@ void PageThreadWorker::timerEvent(QTimerEvent *)
     //qDebug() << "worker is alive";
 }
 
-void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate)
+void PageThreadWorker::Task(QString url,
+                            QString lastUrl,
+                            QDate updateLimit,
+                            ECacheMode cacheMode,
+                            bool ignoreUpdateDate,
+                            int delay)
 {
     FuncCleanup f([&](){working = false;});
     //qDebug() << updateLimit;
@@ -367,7 +372,7 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
         if(!result.isFromCache)
         {
             //qDebug() << "thread will sleep for " << timeout;
-            QThread::msleep(timeout);
+            QThread::msleep(delay);
         }
         nextUrl = GetNext(result.content);
         counter++;
@@ -381,8 +386,8 @@ void PageThreadWorker::Task(QString url, QString lastUrl,  QDate updateLimit, EC
 void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
                                                 QDate stopAt,
                                                 ECacheMode cacheMode,
-                                                QStringList& failedPages
-                                                )
+                                                QStringList& failedPages,
+                                                int delay)
 {
     WebPage result;
     QScopedPointer<PageManager> pager(new PageManager);
@@ -419,7 +424,7 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
         if(updateLimitReached)
             break;
         if(!result.isFromCache)
-            QThread::msleep(timeout);
+            QThread::msleep(delay);
         counter++;
     }
 }
@@ -434,10 +439,10 @@ void PageThreadWorker::FandomTask(FandomParseTask task)
     pager->WipeOldCache();
     WebPage result;
     QStringList failedPages;
-    ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages);
+    ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages, task.delay);
     QStringList voidPages;
     qDebug() << "reacquiring urls: " << failedPages;
-    ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages);
+    ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages, task.delay);
     for(auto page : voidPages)
     {
         WebPage failedPage;
@@ -451,7 +456,7 @@ void PageThreadWorker::FandomTask(FandomParseTask task)
     qDebug() << "leaving fandom task";
 }
 
-void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
+void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int delay)
 {
     FuncCleanup f([&](){working = false;});
     // kinda have to split pagecache db from service db I guess
@@ -485,7 +490,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode)
         if(!result.isFromCache)
         {
             //qDebug() << "thread will sleep for " << timeout;
-            QThread::msleep(timeout);
+            QThread::msleep(delay);
         }
     }
     emit pageResult({WebPage(), true});

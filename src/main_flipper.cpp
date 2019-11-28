@@ -74,9 +74,13 @@ int main(int argc, char *argv[])
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
     QString databaseFolderPath = uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString();
     QString currentDatabaseFile = databaseFolderPath + "/" + "UserDB.sqlite";
     bool hasDBFile = QFileInfo::exists(currentDatabaseFile);
+    An<PageManager>()->timeout = settings.value("Settings/pageFetchTimeout", 2000).toInt();
 
     bool backupRestored = false;
     if(databaseFolderPath.length() > 0)

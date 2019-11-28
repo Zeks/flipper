@@ -156,7 +156,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
 
         pageQueue.data.clear();
         pageQueue.data.reserve(cast->authors.size());
-        emit pageTaskList(cast->authors, subtask->parent.toStrongRef()->cacheMode);
+        emit pageTaskList(cast->authors, subtask->parent.toStrongRef()->cacheMode, task->delay);
 
         WebPage webPage;
         QSet<QString> fandomsSet;

@@ -1290,7 +1290,7 @@ void MainWindow::ReadSettings()
 
     ui->chkOtherPerson->setChecked(uiSettings.value("Settings/chkOtherPerson", false).toBool());
     ui->chkUseDislikes->setChecked(uiSettings.value("Settings/chkUseDislikes", false).toBool());
-    ui->chkIgnoreMarkedDeadFics->setChecked(uiSettings.value("Settings/chkIgnoreMarkedDeadFics", false).toBool());
+    //ui->chkIgnoreMarkedDeadFics->setChecked(uiSettings.value("Settings/chkIgnoreMarkedDeadFics", false).toBool());
     ui->chkFilterGenres->setChecked(uiSettings.value("Settings/chkFilterGenres", false).toBool());
     ui->chkAdjustOnListSimilarity->setChecked(uiSettings.value("Settings/chkAdjustOnListSimilarity", false).toBool());
     ui->chkUseAwaysPickAt->setChecked(uiSettings.value("Settings/chkUseAwaysPickAt", false).toBool());
