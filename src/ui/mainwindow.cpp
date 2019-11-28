@@ -232,6 +232,24 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     pbMain->setTextVisible(false);
 
     lblCurrentOperation = new QLabel;
+    lblUserIdStatic= new QLabel;
+    lblUserIdStatic->setText("Your id is:");
+    lblUserIdActive= new QLabel;
+    lblUserIdActive->setText("<a href=\"" + env->interfaces.userDb->GetUserToken() + "\">"+ env->interfaces.userDb->GetUserToken() +"</a>");
+    lblUserIdActive->setTextFormat(Qt::RichText);
+    lblUserIdActive->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    connect(lblUserIdActive, &QLabel::linkActivated, this, &MainWindow::onCopyDbUIDToClipboard);
+
+    ui->statusBar->addPermanentWidget(lblUserIdStatic,0);
+    ui->statusBar->addPermanentWidget(lblUserIdActive,0);
+    if(!env->status.lastDBUpdate.isEmpty())
+    {
+        lblDBUpdate = new QLabel;
+        QString dbUpdateText = "Fic DB last updated: %1";
+        lblDBUpdate->setText(dbUpdateText.arg(env->status.lastDBUpdate));
+        ui->statusBar->addPermanentWidget(lblDBUpdate,0);
+    }
+
     ui->statusBar->addPermanentWidget(lblCurrentOperation,1);
     ui->statusBar->addPermanentWidget(actionProgress,0);
 
@@ -648,7 +666,7 @@ void MainWindow::SetupFanficTable()
     connect(childObject, SIGNAL(tagDeletedInTagWidget(QVariant, QVariant)), this, SLOT(OnTagRemoveInTagWidget(QVariant,QVariant)));
     connect(childObject, SIGNAL(urlCopyClicked(QString)), this, SLOT(OnCopyFicUrl(QString)));
     connect(childObject, SIGNAL(findSimilarClicked(QVariant)), this, SLOT(OnFindSimilarClicked(QVariant)));
-    connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
+    //connect(childObject, SIGNAL(recommenderCopyClicked(QString)), this, SLOT(OnOpenRecommenderLinks(QString)));
     connect(childObject, SIGNAL(refilter()), this, SLOT(OnQMLRefilter()));
     connect(childObject, SIGNAL(fandomToggled(QVariant)), this, SLOT(OnQMLFandomToggled(QVariant)));
     connect(childObject, SIGNAL(authorToggled(QVariant, QVariant)), this, SLOT(OnQMLAuthorToggled(QVariant,QVariant)));
@@ -1912,11 +1930,6 @@ core::AuthorPtr MainWindow::LoadAuthor(QString url)
     return env->LoadAuthor(url, QSqlDatabase::database());
 }
 
-void MainWindow::on_chkTrackedFandom_toggled(bool checked)
-{
-    env->interfaces.fandoms->SetTracked(GetCurrentFandomName(),checked);
-}
-
 ECacheMode MainWindow::GetCurrentCacheMode() const
 {
     return ECacheMode::dont_use_cache;
@@ -1959,23 +1972,6 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 void MainWindow::SetClientMode()
 {
     ui->chkLimitPageSize->setChecked(true);
-}
-
-void MainWindow::on_pbOpenRecommendations_clicked()
-{
-    TaskProgressGuard guard(this);
-    env->filter = ProcessGUIIntoStoryFilter(core::StoryFilter::filtering_in_recommendations, true);
-    if(env->filter.isValid)
-    {
-        auto startRecLoad = std::chrono::high_resolution_clock::now();
-        LoadData();
-        auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
-
-        qDebug() << "Loaded recs in: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
-        ui->edtResults->setUpdatesEnabled(true);
-        ui->edtResults->setReadOnly(true);
-        holder->SetData(env->fanfics);
-    }
 }
 
 void MainWindow::OpenRecommendationList(QString listName)
@@ -2564,13 +2560,6 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
 
 }
 
-
-void MainWindow::on_pbReprocessAuthors_clicked()
-{
-    TaskProgressGuard guard(this);
-    env->ProcessListIntoRecommendations("lists/source.txt");
-}
-
 void MainWindow::OnCopyFavUrls()
 {
     TaskProgressGuard guard(this);
@@ -2586,36 +2575,10 @@ void MainWindow::OnCopyFavUrls()
     clipboard->setText(result);
 }
 
-
-
-
 void MainWindow::on_chkRandomizeSelection_toggled(bool checked)
 {
     //ui->chkRandomizeSelection->setEnabled(checked);
     ui->sbMaxRandomFicCount->setEnabled(checked);
-}
-
-void MainWindow::on_pbReinitFandoms_clicked()
-{
-    QString diagnostics;
-    diagnostics+= "This operation will now reload fandom index pages.\n";
-    diagnostics+= "It is only necessary if you need to add a new fandom.\n";
-    diagnostics+= "Do you want to continue?\n";
-
-    QMessageBox m;
-    m.setIcon(QMessageBox::Warning);
-    m.setText(diagnostics);
-    auto yesButton =  m.addButton("Yes", QMessageBox::AcceptRole);
-    auto noButton =  m.addButton("Cancel", QMessageBox::AcceptRole);
-    Q_UNUSED(noButton)
-    m.exec();
-    if(m.clickedButton() != yesButton)
-        return;
-
-    UpdateFandomTask task;
-    task.ffn = true;
-    UpdateFandomList(task);
-    env->interfaces.fandoms->Clear();
 }
 
 void MainWindow::OnOpenLogUrl(const QUrl & url)
@@ -2684,7 +2647,7 @@ void MainWindow::OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos)
     ignoreFandomSlashFilterMenu.popup(ui->lvExcludedFandomsSlashFilter->mapToGlobal(pos));
 }
 
-void MainWindow::on_pbFormattedList_clicked()
+void MainWindow::GenerateFormattedList()
 {
     if(ui->chkGroupFandoms->isChecked())
         OnDoFormattedListByFandoms();
@@ -2694,7 +2657,7 @@ void MainWindow::on_pbFormattedList_clicked()
 
 void MainWindow::on_pbCreateHTML_clicked()
 {
-    on_pbFormattedList_clicked();
+    GenerateFormattedList();
     QString partialfileName = ui->cbRecGroup->currentText() + "_page_" + QString::number(env->pageOfCurrentQuery) + ".html";
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
                                                     "FicLists/" + partialfileName,
@@ -3462,18 +3425,6 @@ void MainWindow::on_cbRecGroupSecond_currentIndexChanged(const QString &arg1)
     FetchScoresForFics();
 }
 
-
-void MainWindow::on_pbUseProfile_clicked()
-{
-    ui->edtRecsContents->clear();
-    //LoadFFNProfileIntoTextBrowser(ui->edtRecsContents, ui->leRecsFFNUrl);
-    on_pbRecsLoadFFNProfileIntoSource_clicked();
-    if(ui->edtRecsContents->toPlainText().trimmed().size() == 0)
-        return;
-    ResetFilterUItoDefaults();
-    on_pbRecsCreateListFromSources_clicked();
-}
-
 void MainWindow::on_sbMinimumListMatches_valueChanged(int value)
 {
     if(value > 0)
@@ -3953,6 +3904,12 @@ void MainWindow::on_pbValidateUserID_clicked()
     env->TestAuthorID(ui->leRecsFFNUrl, ui->lblCreationStatus);
 }
 
+void MainWindow::onCopyDbUIDToClipboard(const QString& text)
+{
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(text);
+}
+
 void MainWindow::on_pbRecsLoadFFNProfileIntoSource_clicked()
 {
     if(env->TestAuthorID(ui->leFFNProfileInputForUrls, ui->lblCreationStatus))
@@ -4011,3 +3968,4 @@ void ReclistCreationUIHelper::SetupVisibilityForElements()
     }
     main->setUpdatesEnabled(true);
 }
+

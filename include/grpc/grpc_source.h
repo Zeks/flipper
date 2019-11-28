@@ -50,13 +50,13 @@ struct ServerStatus
     ServerStatus(bool isValid,
                  bool dbAttached,
                  bool messageRequired,
-                 QDateTime lastDBUpdate,
+                 QString lastDBUpdate,
                  QString motd):isValid(isValid), dbAttached(dbAttached), messageRequired(messageRequired), lastDBUpdate(lastDBUpdate),motd(motd) {}
     bool isValid = false;
     bool dbAttached = false;
     bool messageRequired = false;
     bool protocolVersionMismatch = false;
-    QDateTime lastDBUpdate;
+    QString lastDBUpdate;
     QString motd;
     QString error;
 };

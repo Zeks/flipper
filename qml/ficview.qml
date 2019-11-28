@@ -191,16 +191,16 @@ Rectangle {
                 id:info
                 font.pixelSize: mainWindow.textSize
                 text: "At page:"
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 2
+//                anchors.bottom: row.bottom
+//                anchors.bottomMargin: 2
             }
             Rectangle{
                 color: "lightyellow"
 
-                anchors.top: row.top
-                anchors.topMargin: 2
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 3
+//                anchors.top: row.top
+//                anchors.topMargin: 2
+//                anchors.bottom: row.bottom
+//                anchors.bottomMargin: 3
                 width: 80
                 height:row.height - 5
                 TextInput{
@@ -217,15 +217,15 @@ Rectangle {
             Label {
                 text: "of:"
                 font.pixelSize: mainWindow.textSize
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 2
+//                anchors.bottom: row.bottom
+//                anchors.bottomMargin: 2
             }
             Label {
                 id:total
                 font.pixelSize: mainWindow.textSize
                 text: mainWindow.totalPages
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 2
+//                anchors.bottom: row.bottom
+//                anchors.bottomMargin: 2
             }
 
             Item {

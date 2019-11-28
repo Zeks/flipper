@@ -366,7 +366,7 @@ bool ReadDbFile(QString file, QString connectionName)
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     auto reportSchemaErrors = settings.value("Settings/reportSchemaErrors", false).toBool();
 
-    qDebug() << "Reading init file: " << file;
+    QLOG_INFO() << "Reading init file: " << file;
     if (data.open(QFile::ReadOnly))
     {
         QTextStream in(&data);
@@ -393,7 +393,7 @@ bool ReadDbFile(QString file, QString connectionName)
             //bool isOpen = db.isOpen();
 
             q.prepare(statement.trimmed());
-            QLOG_INFO() << "Executing: " << statement;
+            QLOG_TRACE() << "Executing: " << statement;
             database::puresql::ExecAndCheck(q, reportSchemaErrors);
         }
         db.commit();
@@ -533,7 +533,7 @@ QSqlDatabase InitDatabase(QString name, bool setDefault)
         db = QSqlDatabase::addDatabase("QSQLITE", name);
     db.setDatabaseName(path + ".sqlite");
     bool isOpen = db.open();
-    qDebug() << "Database status: " << name << ", open : " << isOpen;
+    QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
 
     return db;
@@ -575,7 +575,7 @@ QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault
         db = QSqlDatabase::addDatabase("QSQLITE", dbName);
     db.setDatabaseName(filename + ".sqlite");
     bool isOpen = db.open();
-    qDebug() << "Database status: " << dbName << ", open : " << isOpen;
+    QLOG_INFO() << "Database status: " << dbName << ", open : " << isOpen;
     InstallCustomFunctions(db);
 
     return db;
@@ -591,7 +591,7 @@ QSqlDatabase InitDatabase2(QString file, QString name, bool setDefault)
         db = QSqlDatabase::addDatabase("QSQLITE", name);
     db.setDatabaseName(file + ".sqlite");
     bool isOpen = db.open();
-    qDebug() << "Database status: " << name << ", open : " << isOpen;
+    QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
 
     return db;
@@ -618,7 +618,7 @@ QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ReadDbFile(sqlFile, setDefault ? "" : connectionName);
     bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
-    qDebug() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;
+    QLOG_INFO() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;
     return db;
 }
 

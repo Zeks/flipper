@@ -339,6 +339,9 @@ private:
 
     QQuickWidget* qwFics = nullptr; // a widget that holds qml fic search results
     QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
+    QLabel* lblUserIdStatic = nullptr; // a copyable user id
+    QLabel* lblUserIdActive = nullptr; // a copyable user id
+    QLabel* lblDBUpdate = nullptr; // a copyable user id
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
     ActionProgress* actionProgress = nullptr;
     QMenu fandomMenu;
@@ -429,16 +432,7 @@ private slots:
     // and set the tracked tick for the fandom to the value from the database
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
 
-
-    // used to toggle the tracked status for fandom on the checkbox state change
-    void on_chkTrackedFandom_toggled(bool checked);
-    // used to open the recommendation for the author that is already in the databse
-    // (and is selected in the author list)
-    void on_pbOpenRecommendations_clicked();
     void OpenRecommendationList(QString);
-
-    // misnamed. currently used to build recommedation lists from sources.txt
-    void on_pbReprocessAuthors_clicked();
 
     // used to put urls for all authors in the current list into the clipboard
     void OnCopyFavUrls();
@@ -446,13 +440,6 @@ private slots:
 
     // used to toggle the UI elements dealing with fic randomization
     void on_chkRandomizeSelection_toggled(bool checked);
-
-    // used to trigger the reinit of fandoms on ffn
-    void on_pbReinitFandoms_clicked();
-
-
-
-
 
     void OnRemoveFandomFromRecentList();
     void OnRemoveFandomFromIgnoredList();
@@ -470,7 +457,7 @@ private slots:
 
     void OnWipeCache();
 
-    void on_pbFormattedList_clicked();
+    void GenerateFormattedList();
     void OnFindSimilarClicked(QVariant);
 
     void on_pbIgnoreFandom_clicked();
@@ -497,8 +484,6 @@ private slots:
     void on_cbCurrentFilteringMode_currentTextChanged(const QString &arg1);
 
     void on_cbRecGroup_currentTextChanged(const QString &arg1);
-
-    void on_pbUseProfile_clicked();
 
     void on_pbCreateHTML_clicked();
 
@@ -587,6 +572,7 @@ private slots:
 
     void on_pbValidateUserID_clicked();
 
+    void onCopyDbUIDToClipboard(const QString&);
 signals:
 
 

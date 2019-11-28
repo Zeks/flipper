@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pure_sql.h"
 #include "include/db_fixers.h"
 #include "include/backups.h"
+#include "logger/QsLog.h"
 
 #include <QApplication>
 #include <QDir>
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
     dir.setPath(backupPath);
 
     QSharedPointer<CoreEnvironment> coreEnvironment(new CoreEnvironment());
-    qDebug() << "current appPath is: " << QDir::currentPath();
+    QLOG_INFO() << "current appPath is: " << QDir::currentPath();
 
 
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);

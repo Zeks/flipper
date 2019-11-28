@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagegetter.h"
 #include "include/transaction.h"
 #include "GlobalHeaders/run_once.h"
+#include "logger/QsLog.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -76,7 +77,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     // not much point doing otherwise if the page is super fresh
     auto temp = GetPageFromDB(url);
     if(temp.isValid)
-        qDebug() << "Version from cache was generated: " << temp.generated;
+        QLOG_INFO() << "Version from cache was generated: " << temp.generated;
     if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
     {
         result = temp;

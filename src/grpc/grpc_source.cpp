@@ -666,7 +666,7 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     serverStatus.isValid = true;
     serverStatus.dbAttached = response->database_attached();
     QString dbUpdate = proto_converters::FS(response->last_database_update());
-    serverStatus.lastDBUpdate = QDateTime::fromString("yyyyMMdd hhmm");
+    serverStatus.lastDBUpdate = QString::fromStdString(response->last_database_update());
     serverStatus.motd = proto_converters::FS(response->message_of_the_day());
     serverStatus.messageRequired = response->need_to_show_motd();
     int ownProtocolVersion = QString(STRINGIFY(PROTOCOL_VERSION)).toInt();

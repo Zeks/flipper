@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "transaction.h"
+#include "logger/QsLog.h"
 #include <QReadLocker>
 #include <QWriteLocker>
 #include <QDebug>
@@ -39,7 +40,7 @@ database::Transaction::~Transaction()
 {
     if(isOpen)
     {
-        qDebug() << "deleting transaction";
+        QLOG_TRACE() << "deleting transaction";
         db.rollback();
         QWriteLocker locker(&lock);
         transactionSet.remove(db.connectionName());
@@ -60,7 +61,7 @@ bool database::Transaction::cancel()
         return false;
     if(!db.rollback())
         return false;
-    qDebug() << "cancelling transaction";
+    QLOG_ERROR() << "cancelling transaction";
     transactionSet.remove(db.connectionName());
     isOpen = false;
     return true;
@@ -74,7 +75,7 @@ bool database::Transaction::finalize()
         return false;
     if(!db.commit())
         return false;
-    qDebug() << "finalizing transaction";
+    QLOG_TRACE() << "finalizing transaction";
     transactionSet.remove(db.connectionName());
     isOpen = false;
     return true;

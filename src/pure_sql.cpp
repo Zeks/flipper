@@ -1417,10 +1417,29 @@ DiagnosticSQLResult<bool> UpdateAuthorFavouritesUpdateDate(int authorId, QDateTi
 
 DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
 {
+    DiagnosticSQLResult<QStringList> result;
+    QSet<QString> tags;
+    {
     QString qs = QString("Select tag from tags");
     SqlContext<QStringList> ctx(db);
     ctx.FetchLargeSelectIntoList<QString>("tag", qs);
-    return ctx.result;
+    if(!ctx.result.success)
+        return ctx.result;
+    tags = ctx.result.data.toSet();
+    }
+    {
+    QString qs = QString("select distinct tag from fictags");
+    SqlContext<QStringList> ctx(db);
+    ctx.FetchLargeSelectIntoList<QString>("tag", qs);
+    if(!ctx.result.success)
+        return ctx.result;
+    tags += ctx.result.data.toSet();
+    }
+    result.data = tags.toList();
+    std::sort(result.data.begin(), result.data.end());
+    result.success = true;
+    return result;
+
 }
 
 DiagnosticSQLResult<bool>  PushTaglistIntoDatabase(QStringList tagList, QSqlDatabase db)
@@ -2264,9 +2283,6 @@ DiagnosticSQLResult<QHash<QString, int> > GetTagSizes(QStringList tags, QSqlData
 
     SqlContext<QHash<QString, int>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        //qDebug() << " loading snooze data:";
-        core::SnoozeInfo info;
-        info.ficId = q.value("id").toInt();
         ctx.result.data.insert(q.value("tag").toString(),q.value("count_tags").toInt());
     });
     return ctx.result;
@@ -2324,7 +2340,7 @@ DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fet
     else
         qs=qs.arg("");
 
-    QLOG_INFO() <<  "snooze query: " << qs;
+    QLOG_TRACE() <<  "snooze query: " << qs;
 
 
     SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);

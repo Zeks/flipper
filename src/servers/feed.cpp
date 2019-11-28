@@ -137,6 +137,7 @@ Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::Status
     bool attached = settings.value("Settings/DBAttached", true).toBool();
     response->set_message_of_the_day(motd.toStdString());
     response->set_database_attached(attached);
+    response->set_last_database_update(settings.value("Settings/lastDBUpdate", "").toString().toStdString());
     response->set_need_to_show_motd(settings.value("Settings/motdRequired", false).toBool());
     auto protocolVersion = QString(STRINGIFY(PROTOCOL_VERSION)).toInt();
     QLOG_INFO() << "Passing protocol version: " << protocolVersion;
