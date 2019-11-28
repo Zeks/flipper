@@ -49,6 +49,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QLabel>
 #include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QStandardPaths>
 
 
 void CoreEnvironment::InitMetatypes()
@@ -1187,8 +1188,9 @@ void CoreEnvironment::BackupUserDatabase()
     QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
+    qDebug() << uiSettings.value("Settings/dbPath").toString();
     QDir dbDir (uiSettings.value("Settings/dbPath").toString());
-    QDir backupDir (uiSettings.value("Settings/dbPath").toString() + "/backups");
+    QDir backupDir (QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups");
     backupDir.mkpath(backupDir.path());
 
     QString backupFileName = "UserDB_" + QDateTime::currentDateTime().toString("yyMMdd") ;
