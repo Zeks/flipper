@@ -701,7 +701,16 @@ Rectangle{
                     opacity_full: 1
                     opacity_gray: 0.7
                 }
-
+                QuickTagger{
+                    id: imgSpoiler
+                    delegateTag: "Spoiler"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Spoiler")
+                    icon_colored: "qrc:/icons/icons/spoilers.png"
+                    icon_gray: "qrc:/icons/icons/spoilers_gray.png"
+                    opacity_full: 1
+                    opacity_gray: 0.7
+                }
                 QuickTagger{
                     id: imgWait
                     delegateTag: "Wait"
