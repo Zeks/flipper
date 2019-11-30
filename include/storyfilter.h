@@ -149,7 +149,8 @@ struct StoryFilter{
     int allSnoozeCount = 0;
     int useThisAuthor = -1;
     int useThisFic = -1;
-    int protocolVersion = 0;
+    int protocolMajorVersion = 2;
+    int protocolMinorVersion = 0;
     QList<int> usedRecommenders;
     ESortMode sortMode;
     EReviewBiasMode reviewBias;

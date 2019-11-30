@@ -576,53 +576,28 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
 {
     QString diffField;
     bool scoreSorting = filter.sortMode == StoryFilter::sm_reccount  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
-    if(filter.protocolVersion == 0)
-    {
-        if(filter.sortMode == StoryFilter::sm_wordcount)
-            diffField = " WORDCOUNT DESC";
-        if(filter.sortMode == StoryFilter::sm_wcrcr)
-            diffField = " (wcr ) asc";
-        else if(filter.sortMode == StoryFilter::sm_favourites)
-            diffField = " FAVOURITES DESC";
-        else if(filter.sortMode == StoryFilter::sm_updatedate)
-            diffField = " updated DESC";
-        else if(filter.sortMode == StoryFilter::sm_publisdate)
-            diffField = " published DESC";
-        else if(scoreSorting)
-            diffField = " sumrecs desc";
-        else if(filter.sortMode == StoryFilter::sm_favrate)
-            diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
-        else if(filter.sortMode == StoryFilter::sm_revtofav)
-            diffField = " favourites /(reviews + 1) desc";
-        else if(filter.sortMode == StoryFilter::sm_genrevalues)
-            diffField = " genrevalue desc";
-        else if(filter.sortMode == StoryFilter::sm_scores)
-            diffField = " scores desc";
-    }
-    else{
 
-        if(filter.sortMode == StoryFilter::sm_wordcount)
-            diffField = " WORDCOUNT";
-        if(filter.sortMode == StoryFilter::sm_wcrcr)
-            diffField = " (wcr )";
-        else if(filter.sortMode == StoryFilter::sm_favourites)
-            diffField = " FAVOURITES";
-        else if(filter.sortMode == StoryFilter::sm_updatedate)
-            diffField = " updated";
-        else if(filter.sortMode == StoryFilter::sm_publisdate)
-            diffField = " published";
-        else if(scoreSorting)
-            diffField = " sumrecs";
-        else if(filter.sortMode == StoryFilter::sm_favrate)
-            diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
-        else if(filter.sortMode == StoryFilter::sm_revtofav)
-            diffField = " favourites /(reviews + 1)";
-        else if(filter.sortMode == StoryFilter::sm_genrevalues)
-            diffField = " genrevalue";
-        else if(filter.sortMode == StoryFilter::sm_scores)
-            diffField = " scores ";
-        diffField += filter.descendingDirection ? " DESC" : " ASC";
-    }
+    if(filter.sortMode == StoryFilter::sm_wordcount)
+        diffField = " WORDCOUNT";
+    if(filter.sortMode == StoryFilter::sm_wcrcr)
+        diffField = " (wcr )";
+    else if(filter.sortMode == StoryFilter::sm_favourites)
+        diffField = " FAVOURITES";
+    else if(filter.sortMode == StoryFilter::sm_updatedate)
+        diffField = " updated";
+    else if(filter.sortMode == StoryFilter::sm_publisdate)
+        diffField = " published";
+    else if(scoreSorting)
+        diffField = " sumrecs";
+    else if(filter.sortMode == StoryFilter::sm_favrate)
+        diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
+    else if(filter.sortMode == StoryFilter::sm_revtofav)
+        diffField = " favourites /(reviews + 1)";
+    else if(filter.sortMode == StoryFilter::sm_genrevalues)
+        diffField = " genrevalue";
+    else if(filter.sortMode == StoryFilter::sm_scores)
+        diffField = " scores ";
+    diffField += filter.descendingDirection ? " DESC" : " ASC";
 
     return diffField;
 }
