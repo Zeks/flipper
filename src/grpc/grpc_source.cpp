@@ -765,6 +765,8 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
+    controls->mutable_protocol_version()->set_major(filter.protocolMajorVersion);
+    controls->mutable_protocol_version()->set_minor(filter.protocolMinorVersion);
 
 
     auto* tags = userData->mutable_user_tags();
