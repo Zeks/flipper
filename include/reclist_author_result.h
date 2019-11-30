@@ -51,11 +51,11 @@ struct AuthorWeightingResult
 struct AuthorResult{
     uint32_t sizeAfterIgnore = 0;
 
-    int id;
-    int matches = 0;
-    int negativeMatches = 0;
-    int fullListSize;
-    int usedMinimumMatrch= 0;
+    uint32_t id;
+    uint32_t matches = 0;
+    uint32_t negativeMatches = 0;
+    uint32_t fullListSize;
+    uint32_t usedMinimumMatrch= 0;
 
     double ratio = 0;
     double negativeRatio = 0;

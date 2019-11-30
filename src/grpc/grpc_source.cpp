@@ -85,17 +85,10 @@ std::string DTS(const QDateTime & date)
 ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
                                         ProtoSpace::UserData* userData)
 {
-    // ignore fandoms intentionally not passed because likely use case can be done locally
-
     ProtoSpace::Filter result;
-    result.set_filter_version(1);
-    result.set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
-    result.set_use_and_for_tags(filter.tagsAreANDed);
-    result.set_display_snoozed(filter.displaySnoozedFics);
-    result.set_randomize_results(filter.randomizeResults);
-    result.set_protocol_version(QString::number(1).toStdString());
-    result.set_use_implied_genre(filter.useRealGenres);
-    result.set_descending_direction(filter.descendingDirection);
+
+    ProtoSpace::Filter::ESortDirection sortDirection = static_cast<ProtoSpace::Filter::ESortDirection>(static_cast<int>(filter.descendingDirection));
+    result.set_sort_direction(sortDirection);
 
     auto* basicFilters = result.mutable_basic_filters();
     basicFilters->set_website(filter.website.toStdString());
@@ -106,21 +99,19 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     basicFilters->set_max_fics(filter.maxFics);
 
     basicFilters->set_allow_unfinished(filter.allowUnfinished);
-    basicFilters->set_allow_no_genre(filter.allowNoGenre);
+
 
     basicFilters->set_ensure_active(filter.ensureActive);
     basicFilters->set_ensure_completed(filter.ensureCompleted);
 
-    result.set_filtering_mode(static_cast<ProtoSpace::Filter::FilterMode>(filter.mode));
-    result.set_sort_mode(static_cast<ProtoSpace::Filter::SortMode>(filter.sortMode));
-    result.set_rating(static_cast<ProtoSpace::Filter::RatingFilter>(filter.rating));
-    result.set_genre_presence_include(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForInclude));
-    result.set_genre_presence_exclude(static_cast<ProtoSpace::Filter::GenrePresence>(filter.genrePresenceForExclude));
-    result.set_use_this_author_only(filter.useThisAuthor);
-    result.set_display_purged_fics(filter.displayPurgedFics);
+    result.set_filtering_mode(static_cast<ProtoSpace::Filter::EFilterMode>(filter.mode));
+    result.set_sort_mode(static_cast<ProtoSpace::Filter::ESortMode>(filter.sortMode));
+    result.set_rating(static_cast<ProtoSpace::Filter::ERatingFilter>(filter.rating));
 
+    auto* sourcesFilter = result.mutable_sources();
+    sourcesFilter->add_authors(filter.useThisAuthor);
     for(auto author : filter.usedRecommenders)
-        result.add_used_recommender_ids(author);
+        sourcesFilter->add_recommender_ids(author);
 
     auto* sizeLimits = result.mutable_size_limits();
     sizeLimits->set_record_limit(filter.recordLimit);
@@ -135,6 +126,11 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     recentPopular->set_fav_ratio(filter.recentAndPopularFavRatio);
     recentPopular->set_date_cutoff(filter.recentCutoff.toString("yyyyMMdd").toStdString());
 
+    auto* snoozeFilter = result.mutable_snoozes();
+    snoozeFilter ->set_display_all(filter.displaySnoozedFics);
+
+    auto* randomizer = result.mutable_randomizer();
+    randomizer->set_randomize_results(filter.randomizeResults);
 
     auto* contentFilter = result.mutable_content_filter();
     contentFilter->set_fandom(filter.fandom);
@@ -144,35 +140,36 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     contentFilter->set_other_fandoms_mode(filter.otherFandomsMode);
     contentFilter->set_use_ignored_fandoms(filter.ignoreFandoms);
 
-
-    for(auto genre : filter.genreExclusion)
-        contentFilter->add_genre_exclusion(genre.toStdString());
-    for(auto genre : filter.genreInclusion)
-        contentFilter->add_genre_inclusion(genre.toStdString());
     for(auto word : filter.wordExclusion)
         contentFilter->add_word_exclusion(word.toStdString());
     for(auto word : filter.wordInclusion)
         contentFilter->add_word_inclusion(word.toStdString());
 
 
+    auto* genreFilter = result.mutable_genre_filter();
+
+    for(auto genre : filter.genreExclusion)
+        genreFilter->add_genre_exclusion(genre.toStdString());
+    for(auto genre : filter.genreInclusion)
+        genreFilter->add_genre_inclusion(genre.toStdString());
+    genreFilter->set_use_implied_genre(filter.useRealGenres);
+
+    genreFilter->set_allow_no_genre(filter.allowNoGenre);
+    genreFilter->set_genre_presence_include(static_cast<ProtoSpace::GenreFilter::GenrePresence>(filter.genrePresenceForInclude));
+    genreFilter->set_genre_presence_exclude(static_cast<ProtoSpace::GenreFilter::GenrePresence>(filter.genrePresenceForExclude));
 
     auto* tagFilter = result.mutable_tag_filter();
     tagFilter->set_ignore_already_tagged(filter.ignoreAlreadyTagged);
+    tagFilter->set_tags_are_for_authors(filter.tagsAreUsedForAuthors);
+    tagFilter->set_use_and_for_tags(filter.tagsAreANDed);
 
-    //    auto* usertags = userData->mutable_user_tags();
-    //    for(auto tag : filter.activeTags)
-    //        usertags->add_searched_tags(tag);
+    auto* explicitFilter = result.mutable_explicit_filter();
+    auto* slashFilter = explicitFilter->mutable_slash();
 
-    //    auto allTagged = GetTaggedIDs();
-
-    //    for(auto id : allTagged)
-    //        tagFilter->add_all_tagged(id);
-
-    auto* slashFilter = result.mutable_slash_filter();
-    slashFilter->set_use_slash_filter(filter.slashFilter.slashFilterEnabled);
-    slashFilter->set_exclude_slash(filter.slashFilter.excludeSlash);
-    slashFilter->set_include_slash(filter.slashFilter.includeSlash);
-    slashFilter->set_slash_filter_level(filter.slashFilter.slashFilterLevel);
+    slashFilter->set_use_filter(filter.slashFilter.slashFilterEnabled);
+    slashFilter->set_exclude_content(filter.slashFilter.excludeSlash);
+    slashFilter->set_include_content(filter.slashFilter.includeSlash);
+    slashFilter->set_filter_level(filter.slashFilter.slashFilterLevel);
     slashFilter->set_enable_exceptions(filter.slashFilter.enableFandomExceptions);
     slashFilter->set_show_exact_level(filter.slashFilter.onlyExactLevel);
     slashFilter->set_filter_only_mature(filter.slashFilter.onlyMatureForSlash);
@@ -180,13 +177,13 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     for(auto exception : filter.slashFilter.fandomExceptions)
         slashFilter->add_fandom_exceptions(exception);
 
-
     auto* recommendations = result.mutable_recommendations();
     recommendations->set_list_open_mode(filter.listOpenMode);
     recommendations->set_list_for_recommendations(filter.listForRecommendations);
     recommendations->set_use_this_recommender_only(filter.useThisRecommenderOnly);
     recommendations->set_min_recommendations(filter.minRecommendations);
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
+    recommendations->set_display_purged_fics(filter.displayPurgedFics);
     for(auto fic : filter.recsHash.keys())
     {
         userData->mutable_recommendation_list()->add_list_of_fics(fic);
@@ -222,11 +219,19 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     // ignore fandoms intentionally not passed because likely use case can be done locally
 
     core::StoryFilter result;
-    result.randomizeResults = filter.randomize_results();
-    result.useRealGenres = filter.use_implied_genre();
-    result.displayPurgedFics = filter.display_purged_fics();
-    result.descendingDirection = filter.descending_direction();
-    result.protocolVersion =  FS(filter.protocol_version()).toInt();
+    result.randomizeResults = filter.randomizer().randomize_results();
+    result.useRealGenres = filter.genre_filter().use_implied_genre();
+    result.displayPurgedFics = filter.recommendations().display_purged_fics();
+    if(filter.sort_direction() == ::ProtoSpace::Filter_ESortDirection::Filter_ESortDirection_sd_ascending)
+    {
+        QLOG_INFO() << "Is ascending direction";
+        result.descendingDirection = false;
+    }
+    else
+    {
+        QLOG_INFO() << "Is descending direction";
+        result.descendingDirection = true;
+    }
     result.website = FS(filter.basic_filters().website());
     result.minWords = filter.basic_filters().min_words();
     result.maxWords = filter.basic_filters().max_words();
@@ -236,7 +241,7 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
 
     result.allowUnfinished = filter.basic_filters().allow_unfinished();
-    result.allowNoGenre = filter.basic_filters().allow_no_genre();
+    result.allowNoGenre = filter.genre_filter().allow_no_genre();
 
     result.ensureActive = filter.basic_filters().ensure_active();
     result.ensureCompleted = filter.basic_filters().ensure_completed();
@@ -244,8 +249,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.mode = static_cast<core::StoryFilter::EFilterMode>(filter.filtering_mode());
     result.sortMode = static_cast<core::StoryFilter::ESortMode>(filter.sort_mode());
     result.rating = static_cast<core::StoryFilter::ERatingFilter>(filter.rating());
-    result.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(filter.genre_presence_include());
-    result.genrePresenceForExclude = static_cast<core::StoryFilter::EGenrePresence>(filter.genre_presence_exclude());
+    result.genrePresenceForInclude = static_cast<core::StoryFilter::EGenrePresence>(filter.genre_filter().genre_presence_include());
+    result.genrePresenceForExclude = static_cast<core::StoryFilter::EGenrePresence>(filter.genre_filter().genre_presence_exclude());
 
     result.recordLimit = filter.size_limits().record_limit();
     result.recordPage = filter.size_limits().record_page();
@@ -256,15 +261,14 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     result.recentAndPopularFavRatio = filter.recent_and_popular().fav_ratio();
     result.recentCutoff = DFS(filter.recent_and_popular().date_cutoff());
-    result.useThisAuthor = filter.use_this_author_only();
-    for(int i = 0; i < filter.used_recommender_ids_size(); i++)
-        result.usedRecommenders.push_back(filter.used_recommender_ids(i));
+    if(filter.sources().authors_size() > 0)
+        result.useThisAuthor = filter.sources().authors(0);
+    for(int i = 0; i < filter.sources().recommender_ids_size(); i++)
+        result.usedRecommenders.push_back(filter.sources().recommender_ids(i));
 
     result.fandom = filter.content_filter().fandom();
-    if(filter.filter_version() != 0)
-        result.secondFandom = filter.content_filter().crossover_fandom();
-    else
-        result.secondFandom = -1;
+    result.secondFandom = filter.content_filter().crossover_fandom();
+
     result.includeCrossovers = filter.content_filter().include_crossovers();
     result.crossoversOnly = filter.content_filter().crossovers_only();
     result.otherFandomsMode = filter.content_filter().other_fandoms_mode();
@@ -273,10 +277,10 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
 
 
-    for(int i = 0; i < filter.content_filter().genre_exclusion_size(); i++)
-        result.genreExclusion.push_back(FS(filter.content_filter().genre_exclusion(i)));
-    for(int i = 0; i < filter.content_filter().genre_inclusion_size(); i++)
-        result.genreInclusion.push_back(FS(filter.content_filter().genre_inclusion(i)));
+    for(int i = 0; i < filter.genre_filter().genre_exclusion_size(); i++)
+        result.genreExclusion.push_back(FS(filter.genre_filter().genre_exclusion(i)));
+    for(int i = 0; i < filter.genre_filter().genre_inclusion_size(); i++)
+        result.genreInclusion.push_back(FS(filter.genre_filter().genre_inclusion(i)));
     for(int i = 0; i < filter.content_filter().word_exclusion_size(); i++)
         result.wordExclusion.push_back(FS(filter.content_filter().word_exclusion(i)));
     for(int i = 0; i < filter.content_filter().word_inclusion_size(); i++)
@@ -305,25 +309,25 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.allSnoozeCount = userThreadData->allSnoozedFics.size();
 
 
-    result.slashFilter.slashFilterEnabled = filter.slash_filter().use_slash_filter();
-    result.slashFilter.excludeSlash = filter.slash_filter().exclude_slash();
-    result.slashFilter.includeSlash = filter.slash_filter().include_slash();
-    result.slashFilter.enableFandomExceptions = filter.slash_filter().enable_exceptions();
-    result.slashFilter.slashFilterLevel = filter.slash_filter().slash_filter_level();
-    result.slashFilter.onlyMatureForSlash = filter.slash_filter().filter_only_mature();
-    result.slashFilter.onlyExactLevel= filter.slash_filter().show_exact_level();
+    result.slashFilter.slashFilterEnabled = filter.explicit_filter().slash().use_filter();
+    result.slashFilter.excludeSlash = filter.explicit_filter().slash().exclude_content();
+    result.slashFilter.includeSlash = filter.explicit_filter().slash().include_content();
+    result.slashFilter.enableFandomExceptions = filter.explicit_filter().slash().enable_exceptions();
+    result.slashFilter.slashFilterLevel = filter.explicit_filter().slash().filter_level();
+    result.slashFilter.onlyMatureForSlash = filter.explicit_filter().slash().filter_only_mature();
+    result.slashFilter.onlyExactLevel= filter.explicit_filter().slash().show_exact_level();
 
-    for(int i = 0; i < filter.slash_filter().fandom_exceptions_size(); i++)
-        result.slashFilter.fandomExceptions.push_back(filter.slash_filter().fandom_exceptions(i));
+    for(int i = 0; i < filter.explicit_filter().slash().fandom_exceptions_size(); i++)
+        result.slashFilter.fandomExceptions.push_back(filter.explicit_filter().slash().fandom_exceptions(i));
 
     result.listOpenMode = filter.recommendations().list_open_mode();
     result.listForRecommendations = filter.recommendations().list_for_recommendations();
     result.useThisRecommenderOnly = filter.recommendations().use_this_recommender_only();
     result.minRecommendations = filter.recommendations().min_recommendations();
     result.showOriginsInLists = filter.recommendations().show_origins_in_lists();
-    result.tagsAreUsedForAuthors = filter.tags_are_for_authors();
-    result.displaySnoozedFics= filter.display_snoozed();
-    result.tagsAreANDed = filter.use_and_for_tags();
+    result.tagsAreUsedForAuthors = filter.tag_filter().tags_are_for_authors();
+    result.displaySnoozedFics= filter.snoozes().display_all();
+    result.tagsAreANDed = filter.tag_filter().use_and_for_tags();
     for(int i =0; i < filter.tag_filter().active_tags_size(); i++)
         result.activeTags.push_back(QString::fromStdString(filter.tag_filter().active_tags(i)));
 
@@ -788,10 +792,10 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
 
     ProcessStandardError(status);
 
-    fics->resize(static_cast<size_t>(response->fanfics_size()));
+    fics->resize(static_cast<int>(response->fanfics_size()));
     for(int i = 0; i < response->fanfics_size(); i++)
     {
-        proto_converters::ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<size_t>(i)]);
+        proto_converters::ProtoFicToLocalFic(response->fanfics(i), (*fics)[static_cast<int>(i)]);
     }
 
     task.release_filter();
@@ -888,7 +892,7 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
     fandoms->resize(response->fandoms_size());
     for(int i = 0; i < response->fandoms_size(); i++)
     {
-        proto_converters::ProtoFandomToLocalFandom(response->fandoms(i), (*fandoms)[static_cast<size_t>(i)]);
+        proto_converters::ProtoFandomToLocalFandom(response->fandoms(i), (*fandoms)[static_cast<int>(i)]);
     }
     return true;
 }
@@ -962,7 +966,7 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
     for(int i = 0; i < response.breakdowns_size(); i++)
     {
         auto ficid= response.breakdowns(i).id();
-        recList.ficData.breakdowns[ficid].ficId = ficid;
+        recList.ficData.breakdowns[ficid].ficId = static_cast<uint32_t>(ficid);
         auto&  breakdown = recList.ficData.breakdowns[response.breakdowns(i).id()];
         breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
                             response.breakdowns(i).counts_common(),
@@ -1494,9 +1498,9 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserDa
         return false;
     if(!VerifyInt(filter.size_limits().record_page()))
         return false;
-    if(!VerifyInt(filter.content_filter().genre_exclusion_size(), 20))
+    if(!VerifyInt(filter.genre_filter().genre_exclusion_size(), 20))
         return false;
-    if(!VerifyInt(filter.content_filter().genre_inclusion_size(), 20))
+    if(!VerifyInt(filter.genre_filter().genre_inclusion_size(), 20))
         return false;
     if(!VerifyInt(filter.content_filter().word_exclusion_size(), 50))
         return false;
@@ -1510,7 +1514,7 @@ bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserDa
         return false;
     if(!VerifyInt(user.recommendation_list().list_of_matches_size(), 1000000))
         return false;
-    if(!VerifyInt(filter.slash_filter().fandom_exceptions_size(), 20000))
+    if(!VerifyInt(filter.explicit_filter().slash().fandom_exceptions_size(), 20000))
         return false;
 
     //if(filter.tag_filter())

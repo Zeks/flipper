@@ -2241,7 +2241,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
     filter.sortMode = SortRecoder(ui->cbSortMode->currentIndex());
     //filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
-    filter.protocolVersion = 1;
+
     if(ui->chkUseReclistMatches->isChecked())
         filter.minRecommendations =  ui->sbMinimumListMatches->value();
     filter.recordLimit = ui->chkLimitPageSize->isChecked() ?  ui->sbPageSize->value() : 5000;
