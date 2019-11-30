@@ -249,16 +249,36 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     lblUserIdActive->setText("<a href=\"" + env->interfaces.userDb->GetUserToken() + "\">"+ env->interfaces.userDb->GetUserToken() +"</a>");
     lblUserIdActive->setTextFormat(Qt::RichText);
     lblUserIdActive->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    lblUserIdActive->setToolTip("<FONT COLOR=black>This is used for troubleshooting.</FONT>");
+    lblUserIdActive->setStyle(new ImmediateTooltipProxyStyle());
     connect(lblUserIdActive, &QLabel::linkActivated, this, &MainWindow::onCopyDbUIDToClipboard);
 
     ui->statusBar->addPermanentWidget(lblUserIdStatic,0);
     ui->statusBar->addPermanentWidget(lblUserIdActive,0);
     if(!env->status.lastDBUpdate.isEmpty())
     {
-        lblDBUpdate = new QLabel;
-        QString dbUpdateText = "Fic DB last updated: %1";
-        lblDBUpdate->setText(dbUpdateText.arg(env->status.lastDBUpdate));
-        ui->statusBar->addPermanentWidget(lblDBUpdate,0);
+        lblDBUpdateInfo = new QLabel;
+        QString dbUpdateText = "Fic DB last updated:";
+        lblDBUpdateInfo->setText(dbUpdateText);
+        ui->statusBar->addPermanentWidget(lblDBUpdateInfo,0);
+
+        auto dateFromDB = QDate::fromString(QDate::currentDate().toString("yyyy") + " " + env->status.lastDBUpdate, "yyyy MMM dd");
+        int diff = dateFromDB.daysTo(QDate::currentDate());
+
+        QLOG_INFO() << "date diff: " << diff;
+
+        lblDBUpdateDate = new QLabel;
+        ui->statusBar->addPermanentWidget(lblDBUpdateDate,0);
+        QString prototype = "<b><font color=\"%1\">%2</font></b>";
+        lblDBUpdateDate->setText(prototype.arg(diff < 7 ? "darkGreen" : "darkBrown").arg(env->status.lastDBUpdate));
+        lblDBUpdateDate->setStyle(new ImmediateTooltipProxyStyle());
+        lblDBUpdateInfo->setStyle(new ImmediateTooltipProxyStyle());
+
+        QString tooltip = "<FONT COLOR=black>Fanfic database updates roughly once in 20 to 30 days. When you see that the update has happened"
+                          " you can refresh your recommendation list with the Refresh button to the left of its name to see more fics.</FONT>";
+        lblDBUpdateInfo->setToolTip(tooltip);
+        lblDBUpdateDate->setToolTip(tooltip);
+
     }
 
     ui->statusBar->addPermanentWidget(lblCurrentOperation,1);

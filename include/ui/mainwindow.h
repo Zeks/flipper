@@ -341,7 +341,8 @@ private:
     QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
     QLabel* lblUserIdStatic = nullptr; // a copyable user id
     QLabel* lblUserIdActive = nullptr; // a copyable user id
-    QLabel* lblDBUpdate = nullptr; // a copyable user id
+    QLabel* lblDBUpdateInfo = nullptr; // a copyable user id
+    QLabel* lblDBUpdateDate = nullptr; // a copyable user id
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
     ActionProgress* actionProgress = nullptr;
     QMenu fandomMenu;
