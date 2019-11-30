@@ -26,6 +26,10 @@ Item {
         anchors.top: tsTags.rotation === 0 ? parent.top : tsTags.bottom;
         id:tsGenre
         tagName: "Genre"
+        tooltip: "Displays the genres of the fic. By default implied genres are displayed where possible.\n" +
+                 "'Implied' means genres detected using statistics.\n" +
+                 "Those are often more accurate than what the author sets or don't contradict those.\n"+
+                 "If you want to see the original genres, double click here.\n"
         currentChoices: {
             if(realGenre.length > 0)
                 delegateItem.hasRealGenres = true
@@ -49,6 +53,13 @@ Item {
         currentChoices: tags
         canAdd: true
         allChoices: tagModel
+        tooltip: "Displays the tags you've set on a fic and allows you to set custom ones.\n" +
+                 "If you want to tag a fic with something not present on the quick tag panel click 'Plus' button."
+        plusTooltip: "Opens up custom tag selector.\n" +
+                     "Generally it's quicker to use quick tag panel,\nbut if something isn't on it you can set this tag through here.\n" +
+                     "If you click 'Magnet' button next to a tag here,\nyou will be able to set that tag with Magnet on the quick tagger panel."
+
+
         //minSlashLevel: minSlashLevel
     }
     function makeSelection(){

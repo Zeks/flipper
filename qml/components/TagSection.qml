@@ -15,7 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-import QtQuick 2.0
+import QtQuick 2.5
+import QtQuick.Controls 2.4
+import QtQuick.Window 2.2
+import QtQuick.Layouts 1.11
 
 Rectangle{
     id: root
@@ -25,6 +28,8 @@ Rectangle{
     signal activated(var index)
     signal tagToggled(var tag, var value)
     property string tagName
+    property string tooltip
+    property string plusTooltip
     property bool active: false
     property var allChoices
     //property string minSlashLevel
@@ -99,22 +104,28 @@ Rectangle{
             text: root.tagName
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
-        }
-        MouseArea{
-            anchors.fill: parent
-            onDoubleClicked: {
-                lvFics.detailedGenreMode = !lvFics.detailedGenreMode
+            MouseArea{
+                anchors.fill: parent
+                hoverEnabled: true
+                ToolTip.delay: 1000
+                ToolTip.visible: containsMouse
+                ToolTip.text: tooltip
+
+                onDoubleClicked: {
+                    lvFics.detailedGenreMode = !lvFics.detailedGenreMode
+                }
+                onClicked: {
+                    actOnAFic(indexOfThisDelegate, url)
+                    print("Current index: " + delegateItem.indexOfThisDelegate)
+                    lvFics.currentIndex = delegateItem.indexOfThisDelegate
+                    active = true
+                    activated(delegateItem.indexOfThisDelegate)
+                    root.parent.rotation =  0;
+                    rect.rotation = 0;
+                }
             }
-            onClicked: {
-                actOnAFic(indexOfThisDelegate, url)
-                print("Current index: " + delegateItem.indexOfThisDelegate)
-                lvFics.currentIndex = delegateItem.indexOfThisDelegate
-                active = true
-                activated(delegateItem.indexOfThisDelegate)
-                root.parent.rotation =  0;
-                rect.rotation = 0;
-            }
         }
+
         Image{
             id:plus
             height:rect.height
@@ -129,6 +140,10 @@ Rectangle{
             width: appendVisible ? 24 : 0
             MouseArea{
                 anchors.fill: parent
+                hoverEnabled: true
+                ToolTip.delay: 1000
+                ToolTip.visible: containsMouse
+                ToolTip.text: plusTooltip
                 onClicked: {
                     actOnAFic(indexOfThisDelegate, url)
                     if(canAdd)

@@ -895,7 +895,7 @@ void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filte
         allTokens.insert(uuid);
         allSearches++;
     }
-    if(filter.sortMode == core::StoryFilter::sm_reccount ||
+    if(filter.sortMode == core::StoryFilter::sm_metascore ||
             filter.minRecommendations > 0)
     {
         token.recommendationsSearches++;

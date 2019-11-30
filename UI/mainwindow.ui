@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1144</width>
+    <width>1147</width>
     <height>1359</height>
    </rect>
   </property>
@@ -745,8 +745,27 @@
                          </item>
                          <item>
                           <widget class="QComboBox" name="cbNewListName">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;The name for the newly created recommendation list. You can have more than one and this name is later used to disambiguate which you want to use for searches.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
                            <property name="editable">
                             <bool>true</bool>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="chkAssignLikedToSources">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is checked, fics used to create recommendation list will automatically receive &amp;quot;Liked&amp;quot; tag.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>Assign &quot;Liked&quot; to sources</string>
                            </property>
                           </widget>
                          </item>
@@ -3699,7 +3718,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1144</width>
+     <width>1147</width>
      <height>21</height>
     </rect>
    </property>
@@ -3728,7 +3747,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgRecsSource"/>
   <buttongroup name="bgRecsMode"/>
+  <buttongroup name="bgRecsSource"/>
  </buttongroups>
 </ui>

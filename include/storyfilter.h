@@ -57,14 +57,14 @@ struct StoryFilter{
         sm_undefined         = 0,
         sm_wordcount         = 1,
         sm_favourites        = 2,
-        sm_favrate           = 3,
+        sm_trending           = 3,
         sm_updatedate        = 4,
         sm_publisdate        = 5,
-        sm_reccount          = 6,
+        sm_metascore          = 6,
         sm_wcrcr             = 7,
         sm_revtofav          = 8,
         sm_genrevalues       = 9,
-        sm_scores            = 10,
+        sm_userscores            = 10,
         sm_minimize_dislikes = 11,
 
     };
@@ -121,6 +121,7 @@ struct StoryFilter{
     bool listOpenMode= false;
     bool showRecSources = false;
     bool tagsAreUsedForAuthors = false;
+    bool likedAuthorsEnabled = false;
     bool tagsAreANDed = false;
     bool useRealGenres = false;
     bool descendingDirection = true;

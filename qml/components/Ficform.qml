@@ -216,6 +216,10 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         hoverEnabled :true
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "Clicking this copies the url into the clipboard and sends the url into the list below the fics."
+
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
@@ -251,10 +255,17 @@ Rectangle{
                     verticalAlignment: Text.AlignVCenter
                     source: "qrc:/icons/icons/scan_small.png"
                     visible: true
-                    //visible: lvFics.showScanIcon
+
                     MouseArea{
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "Clicking this will display fics that are most favourited with this one.\n" +
+                                      "This would create an automatic recommendation list #similarfics to do that.\n"+
+                                      "Please select your own list again in Recommendation List combobox\nor press Back button after you are done with this mode."
+
                         anchors.fill : parent
                         propagateComposedEvents : true
+                        hoverEnabled :true
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             lvFics.findSimilarClicked(url);
@@ -270,6 +281,12 @@ Rectangle{
                     MouseArea{
                         anchors.fill : parent
                         propagateComposedEvents : true
+                        hoverEnabled :true
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "This will display other fics from the author of this one that Flipper's database knows of.\n" +
+                                      "After you're done with them, please tick off the `ID search` element that is used to display these things and Reload or press Back button."
+
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             if(lvFics.authorFilterActive === false)
@@ -355,6 +372,18 @@ Rectangle{
                                 return "qrc:/icons/icons/updating_old.png"
 
                         }
+                        MouseArea{
+                            anchors.fill : parent
+                            propagateComposedEvents : true
+                            hoverEnabled :true
+                            ToolTip.delay: 1000
+                            ToolTip.visible: containsMouse
+                            ToolTip.text: "This indicates how long ago the fic was last updated.\n" +
+                                          "If the icon is fully gray - it was updated more than a year ago.\n" +
+                                          "If the icon is yellow - it was updated within last year.\n" +
+                                          "If the icon is green - it was updated within last month."
+
+                        }
                     }
 
 
@@ -365,6 +394,17 @@ Rectangle{
                         source: { if(complete == 1)
                                 return "qrc:/icons/icons/ok.png"
                             return "qrc:/icons/icons/ok_grayed.png"
+                        }
+                        MouseArea{
+                            anchors.fill : parent
+                            propagateComposedEvents : true
+                            hoverEnabled :true
+                            ToolTip.delay: 1000
+                            ToolTip.visible: containsMouse
+                            ToolTip.text: "This indicates if the fic is finished or not.\n" +
+                                          "If the icon is gray - it is unfinished.\n" +
+                                          "If the icon is green - it is finished."
+
                         }
                     }
                 }
@@ -389,6 +429,14 @@ Rectangle{
                         MouseArea{
                             anchors.fill : parent
                             propagateComposedEvents : true
+
+                            ToolTip.delay: 1000
+                            ToolTip.visible: containsMouse
+                            ToolTip.text: "This displays fanfom(s) for the fic.\n" +
+                                          "Clicking here will send the fandom name to the ignores section\n" +
+                                          "There, you can press Ignore Fandom to exclude it from appearing in the list.\n" +
+                                          "Clicking again will cycle between first fandom and crossover fandom."
+
                             onClicked : {
                                 actOnAFic(indexOfThisDelegate, url)
                                 lvFics.fandomToggled(index);
@@ -494,6 +542,12 @@ Rectangle{
                         hoverEnabled :true
                         anchors.fill : parent
                         propagateComposedEvents : true
+
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "If this is half-green, this fic is from the author whose fic(s) you've already liked."
+
+
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
@@ -548,6 +602,20 @@ Rectangle{
                     visible: recommendationsMain > 0
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 16
+                    MouseArea{
+
+                        hoverEnabled :true
+                        anchors.fill : parent
+                        propagateComposedEvents : true
+
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "The metascore assign to the fic is based on:\nThe amount of people who liked it and have tastes similar to yours.\n" +
+                                      "How closely their lists are aligned to yours.\n" +
+                                      "How closely genres in their lists are aligned to yours.\n" +
+                                      "To control which of these factors are enabled when lsit is created see Advanced Mode in list creation."
+
+                    }
                 }
                 Text {
                     id: txtPositionDiff
@@ -603,6 +671,18 @@ Rectangle{
                     visible: recommendationsMain > 0
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 16
+                    MouseArea{
+                        hoverEnabled :true
+                        anchors.fill : parent
+                        propagateComposedEvents : true
+
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "This displays how much FFN favourites per one point of metascore a fic has.\n" +
+                                      "if the second number is really high(500+), the fic is probably not something you'd like.\n" +
+                                      "This is more a hint than a rule though. There are a lot of exceptions."
+
+                    }
                 }
                 Text {
                     id: txtWords

@@ -39,13 +39,13 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     query = NewQuery();
 
     queryString.clear();
-    bool scoreSorting = filter.sortMode == StoryFilter::sm_reccount  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
+    bool scoreSorting = filter.sortMode == StoryFilter::sm_metascore  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
 
     bool useRecommendationFiltering = scoreSorting || filter.listOpenMode;
     useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
     bool useRecommendationOrdering = useRecommendationFiltering && !filter.listOpenMode;
 
-    bool useScoresOrdering = filter.sortMode == StoryFilter::sm_scores;
+    bool useScoresOrdering = filter.sortMode == StoryFilter::sm_userscores;
 
     if(createLimits)
     {
@@ -555,10 +555,10 @@ QString DefaultQueryBuilder::ProcessActiveRecommendationsPart(StoryFilter filter
 QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 {
     QString queryString;
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString += " and ( favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
 
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString+= " and published <> updated "
                       " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
                                                                                                                                      " and published < date('now', '-" + QString::number(45) + " days') "
@@ -575,7 +575,7 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
 {
     QString diffField;
-    bool scoreSorting = filter.sortMode == StoryFilter::sm_reccount  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
+    bool scoreSorting = filter.sortMode == StoryFilter::sm_metascore  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
 
     if(filter.sortMode == StoryFilter::sm_wordcount)
         diffField = " WORDCOUNT";
@@ -589,13 +589,13 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
         diffField = " published";
     else if(scoreSorting)
         diffField = " sumrecs";
-    else if(filter.sortMode == StoryFilter::sm_favrate)
+    else if(filter.sortMode == StoryFilter::sm_trending)
         diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
     else if(filter.sortMode == StoryFilter::sm_revtofav)
         diffField = " favourites /(reviews + 1)";
     else if(filter.sortMode == StoryFilter::sm_genrevalues)
         diffField = " genrevalue";
-    else if(filter.sortMode == StoryFilter::sm_scores)
+    else if(filter.sortMode == StoryFilter::sm_userscores)
         diffField = " scores ";
     diffField += filter.descendingDirection ? " DESC" : " ASC";
 
@@ -920,10 +920,10 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter, bool createLi
 QString CountQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 {
     QString queryString;
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString += " and ( favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
 
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString+= " and published <> updated "
                       " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
                                                                                                                                      " and published < date('now', '-" + QString::number(45) + " days') "

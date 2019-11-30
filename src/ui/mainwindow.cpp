@@ -1272,6 +1272,11 @@ void MainWindow::ReadSettings()
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
     ui->chkDisplayPurged->setChecked(uiSettings.value("Settings/chkDisplayPurged", false).toBool());
     ui->chkEnableSlashFilter->setChecked(uiSettings.value("Settings/chkEnableSlashFilter", false).toBool());
+
+    ui->chkLikedAuthors->setChecked(uiSettings.value("Settings/chkLikedAuthors", false).toBool());
+    ui->chkDisplaySnoozed->setChecked(uiSettings.value("Settings/chkDisplaySnoozed", false).toBool());
+    ui->chkIdSearch->setChecked(uiSettings.value("Settings/chkIdSearch", false).toBool());
+
     SilentCall(ui->chkDisplayAuthorName)->setChecked(uiSettings.value("Settings/displayAuthorName", false).toBool());
     SilentCall(ui->chkDisplaySecondList)->setChecked(uiSettings.value("Settings/displaySecondReclist", false).toBool());
     SilentCall(ui->chkDisplayComma)->setChecked(uiSettings.value("Settings/commasInWordcount", false).toBool());
@@ -1418,6 +1423,10 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
     settings.setValue("Settings/chkDisplayPurged", ui->chkDisplayPurged->isChecked());
     settings.setValue("Settings/chkEnableSlashFilter", ui->chkEnableSlashFilter->isChecked());
+    settings.setValue("Settings/chkLikedAuthors", ui->chkLikedAuthors->isChecked());
+    settings.setValue("Settings/chkDisplaySnoozed", ui->chkDisplaySnoozed->isChecked());
+    settings.setValue("Settings/chkIdSearch", ui->chkIdSearch->isChecked());
+
 
     settings.setValue("Settings/cbGenrePresenceTypeInclude", ui->cbGenrePresenceTypeInclude->currentText());
 
@@ -2034,7 +2043,7 @@ void MainWindow::OpenRecommendationList(QString listName)
                                             listName);
     if(env->filter.isValid)
     {
-        env->filter.sortMode = core::StoryFilter::sm_reccount;
+        env->filter.sortMode = core::StoryFilter::sm_metascore;
         auto startRecLoad = std::chrono::high_resolution_clock::now();
         LoadData();
         auto elapsed = std::chrono::high_resolution_clock::now() - startRecLoad;
@@ -2109,17 +2118,17 @@ core::StoryFilter::ESortMode SortRecoder(int index){
     case 1:
         return core::StoryFilter::sm_favourites;
     case 2:
-        return core::StoryFilter::sm_favrate;
+        return core::StoryFilter::sm_trending;
     case 3:
         return core::StoryFilter::sm_updatedate;
     case 4:
         return core::StoryFilter::sm_publisdate;
     case 5:
-        return core::StoryFilter::sm_reccount;
+        return core::StoryFilter::sm_metascore;
     case 6:
         return core::StoryFilter::sm_wcrcr;
     case 7:
-        return core::StoryFilter::sm_scores;
+        return core::StoryFilter::sm_userscores;
     case 8:
         return core::StoryFilter::sm_minimize_dislikes;
     default: return core::StoryFilter::sm_undefined;
@@ -2133,17 +2142,17 @@ int SortRecoderToUi(core::StoryFilter::ESortMode index){
         return 0;
     case core::StoryFilter::sm_favourites:
         return 1;
-    case core::StoryFilter::sm_favrate:
+    case core::StoryFilter::sm_trending:
         return 2;
     case core::StoryFilter::sm_updatedate:
         return 3;
     case core::StoryFilter::sm_publisdate:
         return 4;
-    case core::StoryFilter::sm_reccount:
+    case core::StoryFilter::sm_metascore:
         return 5;
     case core::StoryFilter::sm_wcrcr:
         return 6;
-    case core::StoryFilter::sm_scores:
+    case core::StoryFilter::sm_userscores:
         return 7;
     case core::StoryFilter::sm_minimize_dislikes:
         return 8;
@@ -2209,6 +2218,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     //    /filter.includeCrossovers =false; //ui->rbCrossovers->isChecked();
     bool tagWidgetAuthorsSelected = ui->wdgTagsPlaceholder->UseTagsForAuthors() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
     bool likedAuthorsCheckSelected = ui->chkLikedAuthors->isChecked();
+    filter.likedAuthorsEnabled = ui->chkLikedAuthors->isChecked();
     filter.tagsAreUsedForAuthors = tagWidgetAuthorsSelected || likedAuthorsCheckSelected;
     filter.tagsAreANDed = ui->wdgTagsPlaceholder->UseANDForTags() && ui->wdgTagsPlaceholder->GetSelectedTags().size() > 0;
     filter.useRealGenres = ui->chkGenreUseImplied->isChecked();
@@ -2416,6 +2426,16 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
         ui->chkGenreUseImplied->setChecked(true);
     else
         ui->chkGenreUseImplied->setChecked(false);
+
+    if(filter.displaySnoozedFics)
+        ui->chkDisplaySnoozed->setChecked(true);
+    else
+        ui->chkDisplaySnoozed->setChecked(false);
+
+    if(filter.likedAuthorsEnabled)
+        ui->chkLikedAuthors->setChecked(true);
+    else
+        ui->chkLikedAuthors->setChecked(false);
 
 
     ui->cbGenrePresenceTypeInclude->setCurrentIndex(static_cast<int>(filter.genrePresenceForInclude));
@@ -2866,6 +2886,11 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         params->useDislikes = ui->chkUseDislikes->isChecked();
         params->useDeadFicIgnore= ui->chkIgnoreMarkedDeadFics->isChecked();
     }
+//    interfaces::TagIDFetcherSettings settings;
+//    settings.tags.push_back({"Liked"});
+//    auto fics = env->interfaces.tags->GetFicsTaggedWith(settings);
+    if(ui->chkAssignLikedToSources->isChecked())
+        params->assignLikedToSources = true;
 
     auto ids = env->interfaces.fandoms->GetIgnoredFandomsIDs();
     for(auto fandom: ids.keys())
@@ -3197,6 +3222,10 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkIdSearch->setChecked(false);
     ui->wdgTagsPlaceholder->ResetFilters();
     ui->cbSortDirection->setCurrentIndex(0);
+    ui->chkDisplaySnoozed->setChecked(false);
+    ui->chkLikedAuthors->setChecked(false);
+    ui->chkIdSearch->setChecked(false);
+
 }
 
 void MainWindow::DetectGenreSearchState()

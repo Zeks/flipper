@@ -132,77 +132,51 @@ Rectangle {
         width: parent.width
         RowLayout{
             id:row
-            Image {
+            ListNavigationButton{
                 id: imgTarget
                 anchors.bottomMargin: 3
-                width: mainWindow.textSize
-                height: mainWindow.textSize
-                sourceSize.height: mainWindow.textSize
-                sourceSize.width: mainWindow.textSize
-                visible: true
-                source: mainWindow.selectedIndex == -1 ? "qrc:/icons/icons/target_grey.png" : "qrc:/icons/icons/target_blue.png"
-                MouseArea{
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(mainWindow.selectedIndex == -1)
-                            return
-                        mainWindow.actionTakenSinceNavigation = false
-                        mainWindow.centerOnSelection(mainWindow.selectedIndex);
-                    }
+                iconsize: mainWindow.textSize
+                iconsource: mainWindow.selectedIndex == -1 ? "qrc:/icons/icons/target_grey.png" : "qrc:/icons/icons/target_blue.png"
+                tooltip: "This will center the list on the recently selected fic.\nTo select a fic click somewhere on its summary, but NOT on any of the control buttons\n." +
+                         "Selection persists between refilters so if a fic is still in the list after Reload clocking this button will navigate to it."
+                onClickSlot: function(){
+                    if(mainWindow.selectedIndex == -1)
+                        return
+                    mainWindow.actionTakenSinceNavigation = false
+                    mainWindow.centerOnSelection(mainWindow.selectedIndex);
                 }
             }
-            Image {
+            ListNavigationButton{
                 id: imgBack
                 anchors.bottomMargin: 3
-                width: mainWindow.textSize
-                height: mainWindow.textSize
-                sourceSize.height: mainWindow.textSize
-                sourceSize.width: mainWindow.textSize
-                visible: true
-                source: mainWindow.havePagesBefore ? "qrc:/icons/icons/back_blue.png" :  "qrc:/icons/icons/back_grey.png"
-                MouseArea{
-                    enabled: mainWindow.havePagesBefore
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
+                iconsize: mainWindow.textSize
+                iconsource: mainWindow.havePagesBefore ? "qrc:/icons/icons/back_blue.png" :  "qrc:/icons/icons/back_grey.png"
+                clickable: mainWindow.havePagesBefore
+                tooltip: "Navigates to the previous page of the current search results if you aren't on the first one."
+                onClickSlot: function(){
                         mainWindow.backClicked();
-                    }
                 }
             }
-            Image {
+            ListNavigationButton{
                 id: imgForward
                 anchors.bottomMargin: 3
-                width: mainWindow.textSize
-                height: mainWindow.textSize
-                sourceSize.height: mainWindow.textSize
-                sourceSize.width: mainWindow.textSize
-                visible: true
-                source: mainWindow.havePagesAfter ? "qrc:/icons/icons/forward_blue.png" :  "qrc:/icons/icons/forward_grey.png"
-                MouseArea{
-                    enabled: mainWindow.havePagesAfter
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
+                iconsize: mainWindow.textSize
+                iconsource: mainWindow.havePagesAfter ? "qrc:/icons/icons/forward_blue.png" :  "qrc:/icons/icons/forward_grey.png"
+                clickable: mainWindow.havePagesAfter
+                tooltip: "Navigates to the next page of the current search results if you aren't on the last one."
+                onClickSlot: function(){
                         mainWindow.forwardClicked();
-                    }
                 }
             }
-            Image {
+            ListNavigationButton{
                 id: imgShuffle
                 anchors.bottomMargin: 3
-                width: mainWindow.textSize
-                height: mainWindow.textSize
-                sourceSize.height: mainWindow.textSize
-                sourceSize.width: mainWindow.textSize
-                visible: true
-                source: "qrc:/icons/icons/shuffle_2x.png"
-                MouseArea{
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
+                iconsize: mainWindow.textSize
+                iconsource: "qrc:/icons/icons/shuffle_2x.png"
+                clickable: mainWindow.havePagesAfter
+                tooltip: "Shuffles the currently displayed fic results."
+                onClickSlot: function(){
                         mainWindow.shuffleClicked();
-                    }
                 }
             }
             Label {
