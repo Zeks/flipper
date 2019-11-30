@@ -263,7 +263,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
         ui->statusBar->addPermanentWidget(lblDBUpdateInfo,0);
 
         auto dateFromDB = QDate::fromString(QDate::currentDate().toString("yyyy") + " " + env->status.lastDBUpdate, "yyyy MMM dd");
-        int diff = dateFromDB.daysTo(QDate::currentDate());
+        auto diff = dateFromDB.daysTo(QDate::currentDate());
 
         QLOG_INFO() << "date diff: " << diff;
 

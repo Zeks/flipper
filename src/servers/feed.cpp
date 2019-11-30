@@ -761,10 +761,10 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
         dataAccumulator.unfinishedCounter += !fic->complete;
         dataAccumulator.matureCounter += fic->adult;
     }
-    for(auto i = 0; i < 22; i++)
-    {
-        qDebug() << genreIndex->genresByIndex[i].name << " : " << dataAccumulator.genreCounters[i];
-    }
+//    for(auto i = 0; i < 22; i++)
+//    {
+//        qDebug() << genreIndex->genresByIndex[i].name << " : " << dataAccumulator.genreCounters[i];
+//    }
     dataAccumulator.ProcessIntoResult();
     AccumulatorIntoSectionStats(result, dataAccumulator);
     response->set_success(true);
