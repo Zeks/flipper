@@ -155,7 +155,10 @@ MainWindow::MainWindow(QWidget *parent) :
     reclistUIHelper.SetupVisibilityForElements();
     ui->wdgRecsCreatorInner->hide();
     ui->wdgUrlList->hide();
-    ui->pbDiagnosticList->hide();
+
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    if(!settings.value("Settings/devBuild", false).toBool())
+        ui->pbDiagnosticList->hide();
 
     ui->lblCreationStatus->hide();
 
@@ -202,7 +205,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->chkUseReclistMatches->setStyle(new ImmediateTooltipProxyStyle());
 
 
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/devBuild", false).toBool())
         ui->cbSortMode->removeItem(8);
 

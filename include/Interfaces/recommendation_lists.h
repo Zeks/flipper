@@ -59,6 +59,7 @@ public:
     bool LoadAuthorRecommendationStatsIntoDatabase(int listId, core::AuhtorStatsPtr stats);
     bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId);
     bool LoadListIntoDatabase(core::RecPtr);
+    bool LoadListAuxDataIntoDatabase(core::RecPtr);
     bool LoadListFromServerIntoDatabase(int listId,
                                         const QVector<int>& fics,
                                         const QVector<int>& matches, const QSet<int> &origins);

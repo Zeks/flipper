@@ -806,7 +806,7 @@ int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::Recommendat
         qDebug() << "Deleting list: " << list->id;
         interfaces.recs->WriteAuthorStatsForRecList(list->id, result.authorData);
         interfaces.recs->WriteFicRecommenderRelationsForRecList(list->id, result.authorsForFics);
-        interfaces.recs->LoadListIntoDatabase(list);
+        interfaces.recs->LoadListAuxDataIntoDatabase(list);
         interfaces.recs->SetCurrentRecommendationList(list->id);
     });
     action.run();

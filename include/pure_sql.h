@@ -279,6 +279,8 @@ DiagnosticSQLResult<QVector<int>> GetAllUnprocessedLinkedAuthors(QSqlDatabase db
 
 
 DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteAuxParamsForReclist(QSharedPointer<core::RecommendationList> list, QSqlDatabase db);
+
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>> GetAllTaggedFics(QSqlDatabase db);
@@ -433,3 +435,4 @@ DiagnosticSQLResult<bool> WriteMaxUpdateDateForFandom(QSharedPointer<core::Fando
 
 }
 }
+

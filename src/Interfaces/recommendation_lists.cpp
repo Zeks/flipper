@@ -366,6 +366,11 @@ bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
     return result.success;
 }
 
+bool RecommendationLists::LoadListAuxDataIntoDatabase(core::RecPtr list)
+{
+     return database::puresql::WriteAuxParamsForReclist(list, db).success;
+}
+
 bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
                                                          const QVector<int> &fics,
                                                          const QVector<int> &matches,

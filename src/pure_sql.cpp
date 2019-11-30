@@ -1246,6 +1246,23 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     return ctx.result;
 }
 
+DiagnosticSQLResult<bool> WriteAuxParamsForReclist(QSharedPointer<core::RecommendationList> list, QSqlDatabase db)
+{
+    QString qs = QString("update RecommendationLists set  "
+                 "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
+                 "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data"
+                 " where name = :name");
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("quadratic_deviation",list->quadraticDeviation);
+    ctx.bindValue("ratio_median",list->ratioMedian);
+    ctx.bindValue("distance_to_double_sigma",list->sigma2Distance);
+    ctx.bindValue("has_aux_data",list->hasAuxDataFilled);
+    ctx.bindValue("name",list->name);
+    return ctx();
+}
+
+
+
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db)
 {
     QString qs = QString("update RecommendationLists set fic_count=(select count(fic_id) "
@@ -4318,56 +4335,7 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
     return result;
 }
 
-
-
-
-//DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
-//{
-//    QString qs = QString("insert into RecommendationListAuthorStats(list_id, author_id, match_count) values(:listId, :ficId, :matchCount)");
-//    SqlContext<bool> ctx(db, qs);
-//    ctx.bindValue("listId", listId);
-//    for(int i = 0; i < fics.size(); i++)
-//    {
-//        ctx.bindValue("ficId", fics.at(i));
-//        ctx.bindValue("matchCount", matchCounts.at(i));
-//        if(!ctx.ExecAndCheck())
-//        {
-//            ctx.result.success = false;
-//            break;
-//        }
-//    }
-//    return ctx.result;
-//}
-
-
-
-
-
-
-
-
 }
 
 }
-
-
-
-//bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db)
-//{
-//    QString qs = QString("update ficfandoms set fandom_id = :new_id, reassigned = 1 where fandom_id = :old_id and reassigned != 1");
-
-//    QSqlQuery q(db);
-//    q.prepare(qs);
-//    q.bindValue(":old_id", oldId);
-//    q.bindValue(":new_id", newId);
-//    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
-//    {
-//        qDebug() << q.lastError();
-//        qDebug() << q.lastQuery();
-//        return false;
-//    }
-//    return true;
-//}
-
-
 
