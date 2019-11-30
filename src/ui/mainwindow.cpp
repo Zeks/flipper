@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/pagetask_interface.h"
 #include "include/ImmediateTooltipStyle.h"
 #include "ui/actionprogress.h"
+#include "ui/welcomedialog.h"
 #include "ui_actionprogress.h"
 #include "pagetask.h"
 #include "timeutils.h"
@@ -204,6 +205,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/devBuild", false).toBool())
         ui->cbSortMode->removeItem(8);
+
+    ui->tagWidget->removeTab(1);
 }
 
 bool MainWindow::Init(bool scheduleSlashFilterOn)
@@ -938,7 +941,7 @@ void MainWindow::OnCopyFicUrl(QString text)
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(text);
     ui->edtResults->insertPlainText(text + "\n");
-
+    ui->spDebug->setSizes({1000,1});
 }
 
 void MainWindow::OnCopyAllUrls()
@@ -1818,6 +1821,17 @@ void MainWindow::DisplayInitialFicSelection()
         on_pbLoadDatabase_clicked();
     if(hasAnyRecommendationList && settings.value("Settings/startupLoadMode", 2).toInt() == 2)
         DisplayRandomFicsForCurrentFilter();
+
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    auto seenWelcomeScreen = uiSettings.value("Settings/seenWelcome", 0).toBool();
+
+    if(hasAnyRecommendationList && !seenWelcomeScreen)
+    {
+        WelcomeDialog dialog;
+        dialog.exec();
+        uiSettings.setValue("Settings/seenWelcome", true);
+        uiSettings.sync();
+    }
 }
 
 

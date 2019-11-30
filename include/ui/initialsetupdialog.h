@@ -32,7 +32,15 @@ public:
     explicit InitialSetupDialog(QDialog *parent = nullptr);
     ~InitialSetupDialog();
     void VerifyUserID();
-    bool CreateRecommendations();
+    bool CreateRecommendationsFromProfile();
+    bool CreateRecommendationsFromUrls(QVector<int>);
+
+    bool ProcessRecommendationsFromFFNProfile();
+    bool ProcessRecommendationsFromListOfUrls();
+
+    QVector<int> PickFicIDsFromString(QString str);
+
+
     QSharedPointer<CoreEnvironment> env;
     bool authorTestSuccessfull = false;
     bool initComplete = false;
@@ -43,6 +51,10 @@ private slots:
     void on_pbSelectDatabaseFile_clicked();
 
     void on_pbPerformInit_clicked();
+
+    void on_rbHaveFFNList_clicked();
+
+    void on_rbNoFFNList_clicked();
 
 private:
     Ui::InitialSetupDialog *ui;

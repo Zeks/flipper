@@ -58,6 +58,9 @@ App{
 
     files: [
         "UI/initialsetupdialog.ui",
+        "src/ui/welcomedialog.cpp",
+        "include/ui/welcomedialog.h",
+        "UI/welcomedialog.ui",
         "include/backups.h",
         "src/backups.cpp",
         "src/ui/initialsetupdialog.cpp",
