@@ -7,6 +7,7 @@
 *.txt
 *.log.*
 *.autosave
+*-pre1
 !txt/*
 
 
