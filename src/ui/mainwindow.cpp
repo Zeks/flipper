@@ -208,7 +208,6 @@ MainWindow::MainWindow(QWidget *parent) :
     if(!settings.value("Settings/devBuild", false).toBool())
         ui->cbSortMode->removeItem(8);
 
-    ui->tagWidget->removeTab(1);
 }
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
@@ -295,9 +294,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ui->statusBar->addPermanentWidget(actionProgress,0);
 
     ui->edtResults->setOpenLinks(false);
-    auto showTagWidget = settings.value("Settings/showNewTagsWidget", false).toBool();
-    if(!showTagWidget)
-        ui->tagWidget->removeTab(1);
+    ui->tagWidget->removeTab(1);
 
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
     ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());

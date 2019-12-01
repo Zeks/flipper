@@ -749,19 +749,9 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
 
 
 int CoreEnvironment::BuildRecommendations(QSharedPointer<core::RecommendationList> params,
-                                          QVector<int> sourceFics,
-                                          bool automaticLike,
-                                          bool clearAuthors)
+                                          QVector<int> sourceFics)
 {
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    int result = -1;
-    if(settings.value("Settings/thinClient").toBool())
-    {
-        result =  BuildRecommendationsServerFetch(params,sourceFics);
-    }
-    else
-        result = BuildRecommendationsLocalVersion(params, clearAuthors);
-    return result;
+    return BuildRecommendationsServerFetch(params,sourceFics);
 }
 
 int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> list,

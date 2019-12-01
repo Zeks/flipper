@@ -192,9 +192,7 @@ public:
     core::FicSectionStats GetStatsForFicList(QVector<int>);
     int  BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
     int  BuildRecommendations(QSharedPointer<core::RecommendationList> params,
-                              QVector<int> sourceFics,
-                              bool automaticLike = false,
-                              bool clearAuthors = true);
+                              QVector<int> sourceFics);
 
     int  BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> params,
                               QVector<int> sourceFics);
