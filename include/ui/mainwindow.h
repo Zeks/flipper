@@ -339,6 +339,7 @@ private:
 
     QQuickWidget* qwFics = nullptr; // a widget that holds qml fic search results
     QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
+    QLabel* lblClientVersion = nullptr; // a copyable user id
     QLabel* lblUserIdStatic = nullptr; // a copyable user id
     QLabel* lblUserIdActive = nullptr; // a copyable user id
     QLabel* lblDBUpdateInfo = nullptr; // a copyable user id

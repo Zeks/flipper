@@ -210,7 +210,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->tagWidget->removeTab(1);
 }
-
+#define TO_STR2(x) #x
+#define STRINGIFY(x) TO_STR2(x)
 bool MainWindow::Init(bool scheduleSlashFilterOn)
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
@@ -248,6 +249,9 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     pbMain->setTextVisible(false);
 
     lblCurrentOperation = new QLabel;
+    lblClientVersion= new QLabel;
+    lblClientVersion->setText("Client version: " + QString(STRINGIFY(CLIENT_VERSION)));
+
     lblUserIdStatic= new QLabel;
     lblUserIdStatic->setText("Your id is:");
     lblUserIdActive= new QLabel;
@@ -258,8 +262,8 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     lblUserIdActive->setStyle(new ImmediateTooltipProxyStyle());
     connect(lblUserIdActive, &QLabel::linkActivated, this, &MainWindow::onCopyDbUIDToClipboard);
 
-    ui->statusBar->addPermanentWidget(lblUserIdStatic,0);
-    ui->statusBar->addPermanentWidget(lblUserIdActive,0);
+    ui->statusBar->addPermanentWidget(lblClientVersion,0);
+
     if(!env->status.lastDBUpdate.isEmpty())
     {
         lblDBUpdateInfo = new QLabel;
@@ -285,7 +289,8 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
         lblDBUpdateDate->setToolTip(tooltip);
 
     }
-
+    ui->statusBar->addPermanentWidget(lblUserIdStatic,0);
+    ui->statusBar->addPermanentWidget(lblUserIdActive,0);
     ui->statusBar->addPermanentWidget(lblCurrentOperation,1);
     ui->statusBar->addPermanentWidget(actionProgress,0);
 

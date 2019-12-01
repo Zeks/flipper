@@ -675,7 +675,7 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     serverStatus.lastDBUpdate = QString::fromStdString(response->last_database_update());
     serverStatus.motd = proto_converters::FS(response->message_of_the_day());
     serverStatus.messageRequired = response->need_to_show_motd();
-    int ownProtocolVersion = QString(STRINGIFY(PROTOCOL_VERSION)).toInt();
+    int ownProtocolVersion = QString(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
     serverStatus.protocolVersionMismatch = ownProtocolVersion != response->protocol_version();
     return serverStatus;
 }
@@ -844,6 +844,8 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
+    controls->mutable_protocol_version()->set_major(filter.protocolMajorVersion);
+    controls->mutable_protocol_version()->set_minor(filter.protocolMinorVersion);
 
     QScopedPointer<ProtoSpace::FicCountResponse> response (new ProtoSpace::FicCountResponse);
     std::chrono::system_clock::time_point deadline =

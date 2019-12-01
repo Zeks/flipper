@@ -139,9 +139,13 @@ Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::Status
     response->set_database_attached(attached);
     response->set_last_database_update(settings.value("Settings/lastDBUpdate", "").toString().toStdString());
     response->set_need_to_show_motd(settings.value("Settings/motdRequired", false).toBool());
-    auto protocolVersion = QString(STRINGIFY(PROTOCOL_VERSION)).toInt();
-    QLOG_INFO() << "Passing protocol version: " << protocolVersion;
-    response->set_protocol_version(protocolVersion);
+    auto majorProtocolVersion = QString(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
+    auto minorProtocolVersion = QString(STRINGIFY(MINOR_PROTOCOL_VERSION)).toInt();
+    QLOG_INFO() << "Passing protocol version: " << majorProtocolVersion;
+    response->set_protocol_version(majorProtocolVersion);
+    auto protocol = response->mutable_current_protocol();
+    protocol->set_major(majorProtocolVersion);
+    protocol->set_minor(minorProtocolVersion);
     return Status::OK;
 }
 
@@ -155,7 +159,6 @@ UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
     UsedInSearch result;
     if(!reqContext.Process(response))
         return result;
-
 
     if(!VerifySearchInput(reqContext.userToken,
                           protoFilter,
@@ -196,6 +199,9 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     RequestContext reqContext("Searching",task->controls(), this);
     auto prepared = PrepareSearch(response->mutable_response_info(),task->filter(),
                                   task->user_data(),reqContext);
+
+    if(task->controls().protocol_version().major() < 2)
+        return Status::CANCELLED;
 
     if(!prepared.isValid)
         return Status::OK;
@@ -307,6 +313,9 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
     RequestContext reqContext("Getting fic count",task->controls(), this);
     auto prepared = PrepareSearch(response->mutable_response_info(),task->filter(),
                                   task->user_data(),reqContext);
+
+    if(task->controls().protocol_version().major() < 2)
+        return Status::CANCELLED;
 
     if(!prepared.isValid)
         return Status::OK;

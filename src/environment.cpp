@@ -249,7 +249,7 @@ bool CoreEnvironment::Init()
     }
     if(status.protocolVersionMismatch)
     {
-        QString statusString = QString("Your client version is out of date.\nSome (or all) features may not work.\nPlease get updated binary at https://github.com/Zeks/flipper/releases");
+        QString statusString = QString("<html>Your client version is out of date.<br>Some (or all) features may not work.<br>Please get updated version <a href=https://github.com/Zeks/flipper/releases/latest>Here</a></html>");
         QMessageBox::critical(nullptr, "Warning!", statusString);
         return true;
     }
