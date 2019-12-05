@@ -138,6 +138,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->leNotContainsGenre->setClearButtonEnabled(true);
     ui->lblCrosses->hide();
     ui->cbCrossovers->hide();
+    ui->chkUseAwaysPickAt->hide();
+    ui->leRecsAlwaysPickAt->hide();
     ui->pbFandomSwitch->hide();
     ui->chkIgnoreMarkedDeadFics->hide();
     ui->pbProfileCompare->setVisible(false);
@@ -2037,7 +2039,7 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
         params->ignoredFandoms.insert(fandom);
 
     //params->Log();
-    auto result = env->BuildRecommendations(params, sourceFics, false, false);
+    auto result = env->BuildRecommendations(params, sourceFics);
     Q_UNUSED(result)
 
     auto lists = env->interfaces.recs->GetAllRecommendationListNames(true);
@@ -2077,7 +2079,7 @@ int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> pa
     TaskProgressGuard guard(this);
     int result = -1;
     TimedAction action("Full list creation: ",[&](){
-        result = env->BuildRecommendations(params, env->GetSourceFicsFromFile("lists/source.txt"), clearAuthors);
+        result = env->BuildRecommendations(params, env->GetSourceFicsFromFile("lists/source.txt"));
     });
     action.run();
     if(result == -1)
@@ -2931,7 +2933,7 @@ bool MainWindow::CreateRecommendationList(QSharedPointer<core::RecommendationLis
     bool success = false;
     TimedAction action("Full list creation: ",[&](){
         TaskProgressGuard guard(this);
-        auto result = env->BuildRecommendations(params, sourceFics, false);
+        auto result = env->BuildRecommendations(params, sourceFics);
         if(result == -1)
         {
             QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"
@@ -2952,7 +2954,7 @@ bool MainWindow::CreateDiagnosticRecommendationList(QSharedPointer<core::Recomme
     bool success = false;
     TimedAction action("Diagnostic list creation: ",[&](){
         TaskProgressGuard guard(this);
-        auto result = env->BuildRecommendations(params, sourceFics, true, false);
+        auto result = env->BuildRecommendations(params, sourceFics);
         if(result == -1)
         {
             QMessageBox::warning(nullptr, "Attention!", "Could not create a list with such parameters\n"

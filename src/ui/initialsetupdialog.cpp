@@ -94,7 +94,7 @@ bool InitialSetupDialog::CreateRecommendationsFromProfile()
     for(auto fic : sourceFicsSet)
         sourceFics.push_back(fic.toInt());
 
-    auto result = env->BuildRecommendations(params, sourceFics, false, false);
+    auto result = env->BuildRecommendations(params, sourceFics);
     return result;
 }
 
@@ -118,7 +118,7 @@ bool InitialSetupDialog::CreateRecommendationsFromUrls(QVector<int> ids)
     for(auto fic : ids)
         sourceFics.push_back(fic);
 
-    auto result = env->BuildRecommendations(params, sourceFics, false, false);
+    auto result = env->BuildRecommendations(params, sourceFics);
     return result;
 }
 

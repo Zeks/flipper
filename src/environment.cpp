@@ -859,7 +859,6 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
 
 void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
 {
-    static bool authorsLoaded = false;
     database::Transaction transaction(db);
     QSharedPointer<core::RecommendationList> params = core::RecommendationList::NewRecList();
     params->alwaysPickAt = 1;
@@ -868,7 +867,7 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, QSqlDatabase db)
     params->tagToUse = "generictag";
     params->maxUnmatchedPerMatch = 9999;
     interfaces.tags->SetTagForFic(id, "generictag");
-    BuildRecommendations(params, {id}, false, !authorsLoaded);
+    BuildRecommendations(params, {id});
     interfaces.tags->DeleteTag("generictag");
     interfaces.recs->SetFicsAsListOrigin({id}, params->id);
     transaction.finalize();
@@ -1230,7 +1229,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     for(auto fandom: ids.keys())
         params->ignoredFandoms.insert(fandom);
 
-    auto result = BuildRecommendations(params, sourceFics, false, false);
+    auto result = BuildRecommendations(params, sourceFics);
     return result;
 }
 
