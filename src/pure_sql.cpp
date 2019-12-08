@@ -1084,7 +1084,9 @@ DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::Re
         qs+=" and (votes_unique > 0)";
 
     if(!filter.displayPurged)
-        qs+=" and (purged = 0)";
+        qs+=" and purged = 0";
+
+    //qDebug() << "purged query:" << qs;
 
     SqlContext<QHash<int,int>> ctx(db, qs);
     ctx.bindValue("list_id",filter.mainListId);

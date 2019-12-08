@@ -208,13 +208,8 @@ QHash<int, int> RecommendationLists::GetAllFicsHash(core::ReclistFilter filter)
     if(!EnsureList(filter.mainListId))
         return result;
 
-//    if(!grpcCacheForLists.contains({listId, minMatchCount}))
-//    {
-        result = database::puresql::GetRelevanceScoresInFilteredReclist(filter ,db).data;
-        grpcCacheForLists[{filter.mainListId, filter.minMatchCount}] = result;
-//    }
-//    else
-//        result = grpcCacheForLists[{listId, minMatchCount}];
+    result = database::puresql::GetRelevanceScoresInFilteredReclist(filter ,db).data;
+    grpcCacheForLists[{filter.mainListId, filter.minMatchCount}] = result;
 
     return result;
 }

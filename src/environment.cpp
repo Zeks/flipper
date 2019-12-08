@@ -80,7 +80,6 @@ void CoreEnvironment::LoadData()
                                  &newFanfics);
         }
         else {
-
             UserData userData;
             userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
             // need to add non expired snoozes to tags if snooze show mode isn't selected
@@ -133,6 +132,7 @@ void CoreEnvironment::LoadData()
             reclistFilter.scoreType = scoreType;
             reclistFilter.displayPurged = filter.displayPurgedFics;
 
+
             filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
             if(filter.showRecSources == core::StoryFilter::ssm_hide)
             {
@@ -151,11 +151,9 @@ void CoreEnvironment::LoadData()
         interfaces.fanfics->FetchChaptersForFics(&newFanfics);
         interfaces.tags->FetchTagsForFics(&newFanfics);
         interfaces.recs->FetchRecommendationsBreakdown(&newFanfics, filter.listForRecommendations);
-
-        fanfics = newFanfics;
-        currentLastFanficId = ficSource->lastFicId;
-        for(auto& fic : fanfics)
+        for(auto& fic : newFanfics)
         {
+            // actual assignment of purged param happens in LoadNewScoreValuesForFanfics
             if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
                 fic.likedAuthor = true;
             if(ficScores.contains(fic.id))
@@ -175,6 +173,9 @@ void CoreEnvironment::LoadData()
                 fic.ficIsSnoozed = true;
             }
         }
+        fanfics = newFanfics;
+        currentLastFanficId = ficSource->lastFicId;
+
     });
     action.run();
 }
@@ -1172,6 +1173,11 @@ QSet<int> CoreEnvironment::GetIgnoredDeadFics()
 void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics)
 {
     interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.mainListId);
+    for(auto& fic : fanfics)
+    {
+        if(!filter.displayPurged && fic.purged)
+            fic.purged = false;
+    }
     if(fanfics.size() <= 100){
         interfaces.recs->LoadPlaceAndRecommendationsData(&fanfics, filter);
     }

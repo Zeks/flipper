@@ -580,7 +580,7 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
     if(filter.sortMode == StoryFilter::sm_wordcount)
         diffField = " WORDCOUNT";
     if(filter.sortMode == StoryFilter::sm_wcrcr)
-        diffField = " (wcr )";
+        diffField = " wcr";
     else if(filter.sortMode == StoryFilter::sm_favourites)
         diffField = " FAVOURITES";
     else if(filter.sortMode == StoryFilter::sm_updatedate)
