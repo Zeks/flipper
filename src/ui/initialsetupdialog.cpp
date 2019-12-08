@@ -199,6 +199,7 @@ void InitialSetupDialog::on_pbSelectDatabaseFile_clicked()
 
 void InitialSetupDialog::on_pbPerformInit_clicked()
 {
+    ui->pbPerformInit->hide();
     ui->lblStatus->setVisible(true);
     readsSlash = ui->rbReadSlashYes->isChecked();
 
