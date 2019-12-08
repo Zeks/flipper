@@ -92,5 +92,6 @@
         <file>icons/shuffle_2x.png</file>
         <file>icons/spoilers.png</file>
         <file>icons/spoilers_gray.png</file>
+        <file>icons/reset_filter.png</file>
     </qresource>
 </RCC>

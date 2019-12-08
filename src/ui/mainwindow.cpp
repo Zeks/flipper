@@ -2066,6 +2066,9 @@ ECacheMode MainWindow::GetCurrentCacheMode() const
 
 void MainWindow::CreateSimilarListForGivenFic(int id)
 {
+    if(ui->cbRecGroup->currentText() != "#similarfics")
+        reclistToReturn = ui->cbRecGroup->currentText();
+
     TaskProgressGuard guard(this);
     QSqlDatabase db = QSqlDatabase::database();
 
@@ -3272,7 +3275,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->cbBiasFavor->setCurrentText("None");
     ui->cbBiasOperator->setCurrentText(">");
     ui->cbSlashFilterAggressiveness->setCurrentText("Medium");
-    ui->cbSortMode->setCurrentIndex(0);
+    ui->cbSortMode->setCurrentIndex(5);
     ui->cbSourceFics->setCurrentIndex(0);
 
     ui->leBiasValue->setText("11.");
@@ -3296,6 +3299,10 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkDisplaySnoozed->setChecked(false);
     ui->chkLikedAuthors->setChecked(false);
     ui->chkIdSearch->setChecked(false);
+    if(ui->cbRecGroup->currentText() == "#similarfics" && !reclistToReturn.isEmpty())
+        ui->cbRecGroup->setCurrentText(reclistToReturn);
+    if(ui->cbRecGroup->currentText() == "#similarfics" && reclistToReturn.isEmpty())
+        ui->cbRecGroup->setCurrentIndex(1);
 
 }
 
@@ -4142,4 +4149,9 @@ void MainWindow::on_chkLikedAuthors_stateChanged(int)
 {
     if(ui->chkLikedAuthors->isChecked())
         ui->wdgTagsPlaceholder->ClearAuthorsForTags();
+}
+
+void MainWindow::on_pbResetFilter_clicked()
+{
+    ResetFilterUItoDefaults();
 }

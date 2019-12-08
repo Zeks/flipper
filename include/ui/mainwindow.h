@@ -358,6 +358,8 @@ private:
     QString styleSheetForReclistMenu;
     QString styleSheetForReclistCreation;
     bool reclistCreationShown = false;
+    QString reclistToReturn;
+
 
 public slots:
     //broken and needs refactoring anyway
@@ -582,6 +584,8 @@ private slots:
     void on_pbExpandIEntityds_clicked();
 
     void on_chkLikedAuthors_stateChanged(int arg1);
+
+    void on_pbResetFilter_clicked();
 
 signals:
 

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>653</width>
+    <width>659</width>
     <height>749</height>
    </rect>
   </property>
@@ -158,6 +158,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QCheckBox" name="chkDisplayTagSize">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If checked, will show how much fics are tagged with each of the tags.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Display Tag Sizes</string>
        </property>
@@ -165,6 +168,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="chkAndForTags">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;By default if multiple tags are selected iy's interpreted as &amp;quot;tag1 OR tag2&amp;quot; when you search.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This changes it to &amp;quot;tag1 AND tag2&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>use AND</string>
        </property>
@@ -185,6 +191,9 @@
      </item>
      <item>
       <widget class="QComboBox" name="cbTagEntitySelector">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This controls the behaviour of the button to the right.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;URLs&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; will copy fic urls into the clipboard&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;IDs&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; will copy comma separated fic IDs on ffn into the clipboard.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <item>
         <property name="text">
          <string>Urls</string>
@@ -204,6 +213,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pbUrlsForTags">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This is used to quickly make URL lists from tag contents.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Pressing this will copy the urls for the fics in the currently selected tags into the clipboard.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>For tag set</string>
        </property>
@@ -215,8 +227,11 @@
      </item>
      <item>
       <widget class="QCheckBox" name="chkUseTagsForAuthors">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is checked, the next Reload will show not fics tagged with currently selected tag(s), but fics from the authors whose fics you've tagged with it.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
-        <string>Show fics from the authors with selected tags instead</string>
+        <string>Show fics from the authors with selected tags</string>
        </property>
       </widget>
      </item>

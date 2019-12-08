@@ -492,10 +492,24 @@ Rectangle{
                     width: 517
                     height: 21
                     visible: lvFics.displayAuthorName
-                    textFormat: Text.RichText;
-                    text: " <html><style>a:link{ color: 	#99853F33      ;}</style><a href=\"http://www.fanfiction.net/u/" +  author_id.toString() + "\">" +"By: " + author + "</a></body></html>"
+                    textFormat: {
+                        if(author_id > 0 )
+                            return Text.RichText;
+                        return Text.PlainText;
+                    }
+                    text: {
+                        var authorUrl = ""
+                        if(author_id > 0 )
+                            authorUrl  = " <html><style>a:link{ color: 	#99853F33      ;}</style><a href=\"http://www.fanfiction.net/u/" +  author_id.toString() + "\">" +"By: " + author + "</a></body></html>"
+                        else
+                            authorUrl  = "By: " + author
+                        return authorUrl
+                    }
                     verticalAlignment: Text.AlignVCenter
-                    style: Text.Raised
+                    style: {
+                        if(author_id > 0 )
+                            return Text.Raised
+                    }
                     font.pointSize: 12
                     font.family: "Verdana"
                     font.bold: false
@@ -610,7 +624,7 @@ Rectangle{
 
                         ToolTip.delay: 1000
                         ToolTip.visible: containsMouse
-                        ToolTip.text: "The metascore assign to the fic is based on:\nThe amount of people who liked it and have tastes similar to yours.\n" +
+                        ToolTip.text: "The metascore assigned to the fic is based on:\nThe amount of people who liked it and have tastes similar to yours.\n" +
                                       "How closely their lists are aligned to yours.\n" +
                                       "How closely genres in their lists are aligned to yours.\n" +
                                       "To control which of these factors are enabled when lsit is created see Advanced Mode in list creation."
