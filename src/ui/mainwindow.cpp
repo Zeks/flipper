@@ -750,9 +750,37 @@ void MainWindow::OnDisplayNextPage()
 
 void MainWindow::OnShuffleDisplayedData()
 {
+    // first we need to get the id of currently selected fic to properly restore it
+    QObject* windowObject= qwFics->rootObject();
+    int selectedIndex = windowObject->property("selectedIndex").toInt();
+
+    int selectedFicId = -1;
+    if(selectedIndex >= 0)
+        selectedFicId = env->fanfics[selectedIndex].id;
+
     auto rng = std::default_random_engine {};
     std::shuffle(std::begin(env->fanfics), std::end(env->fanfics), rng);
+
+    if(selectedIndex >= 0)
+    {
+        int index = 0;
+        for(auto fic : env->fanfics)
+        {
+            if(fic.id == selectedFicId)
+            {
+                selectedIndex = index;
+                break;
+            }
+            index++;
+        }
+        if(selectedIndex >= 0)
+        {
+            QObject* windowObject= qwFics->rootObject();
+            windowObject->setProperty("selectedIndex", selectedIndex);
+        }
+    }
     holder->SetData(env->fanfics);
+
 }
 
 void MainWindow::OnDisplayPreviousPage()
