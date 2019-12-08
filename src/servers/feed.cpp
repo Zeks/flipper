@@ -137,10 +137,15 @@ Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::Status
     bool attached = settings.value("Settings/DBAttached", true).toBool();
     response->set_message_of_the_day(motd.toStdString());
     response->set_database_attached(attached);
+    response->set_last_database_update(settings.value("Settings/lastDBUpdate", "").toString().toStdString());
     response->set_need_to_show_motd(settings.value("Settings/motdRequired", false).toBool());
-    auto protocolVersion = QString(STRINGIFY(PROTOCOL_VERSION)).toInt();
-    QLOG_INFO() << "Passing protocol version: " << protocolVersion;
-    response->set_protocol_version(protocolVersion);
+    auto majorProtocolVersion = QString(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
+    auto minorProtocolVersion = QString(STRINGIFY(MINOR_PROTOCOL_VERSION)).toInt();
+    QLOG_INFO() << "Passing protocol version: " << majorProtocolVersion;
+    response->set_protocol_version(majorProtocolVersion);
+    auto protocol = response->mutable_current_protocol();
+    protocol->set_major(majorProtocolVersion);
+    protocol->set_minor(minorProtocolVersion);
     return Status::OK;
 }
 
@@ -154,7 +159,6 @@ UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
     UsedInSearch result;
     if(!reqContext.Process(response))
         return result;
-
 
     if(!VerifySearchInput(reqContext.userToken,
                           protoFilter,
@@ -196,6 +200,9 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     auto prepared = PrepareSearch(response->mutable_response_info(),task->filter(),
                                   task->user_data(),reqContext);
 
+    if(task->controls().protocol_version().major() < 2)
+        return Status::CANCELLED;
+
     if(!prepared.isValid)
         return Status::OK;
 
@@ -225,7 +232,7 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(task->id() < 1)
         return Status::OK;
 
@@ -306,6 +313,9 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
     RequestContext reqContext("Getting fic count",task->controls(), this);
     auto prepared = PrepareSearch(response->mutable_response_info(),task->filter(),
                                   task->user_data(),reqContext);
+
+    if(task->controls().protocol_version().major() < 2)
+        return Status::CANCELLED;
 
     if(!prepared.isValid)
         return Status::OK;
@@ -389,6 +399,118 @@ genre_stats::GenreMoodData CalcMoodDistributionForFicList(QList<uint32_t> ficLis
     return result;
 }
 
+
+const static auto basicRecommendationsParamReader = [](RequestContext& reqContext, const auto& task) -> QSharedPointer<core::RecommendationList> {
+    QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+    params->isAutomatic = task->data().general_params().is_automatic();
+    params->useDislikes = task->data().general_params().use_dislikes();
+    params->useDeadFicIgnore= task->data().general_params().use_dead_fic_ignore();
+    params->name =  proto_converters::FS(task->data().list_name());
+    params->minimumMatch = task->data().general_params().min_fics_to_match();
+    params->userFFNId = task->data().general_params().users_ffn_profile_id();
+    QLOG_INFO() << "Read user's FFN id: " << params->userFFNId;
+    if(params->userFFNId != -1)
+        params->userFFNId  = reqContext.dbContext.authors->GetRecommenderIDByFFNId(params->userFFNId);
+    params->maxUnmatchedPerMatch = task->data().general_params().max_unmatched_to_one_matched();
+    params->alwaysPickAt = task->data().general_params().always_pick_at();
+    params->useWeighting = task->data().general_params().use_weighting();
+    params->useMoodAdjustment = task->data().general_params().use_mood_filtering();
+    for(auto i = 0; i< task->data().user_data().ignored_fandoms().fandom_ids_size(); i++)
+        params->ignoredFandoms.insert(task->data().user_data().ignored_fandoms().fandom_ids(i));
+    for(auto i = 0; i< task->data().user_data().ignored_fics_size(); i++)
+        params->ignoredDeadFics.insert(task->data().user_data().ignored_fics(i));
+    for(auto i = 0; i< task->data().user_data().liked_authors_size(); i++)
+        params->likedAuthors.insert(task->data().user_data().liked_authors(i));
+    for(auto i = 0; i< task->data().user_data().negative_feedback().basicnegatives_size(); i++)
+        params->minorNegativeVotes.insert(task->data().user_data().negative_feedback().basicnegatives(i));
+    for(auto i = 0; i< task->data().user_data().negative_feedback().strongnegatives_size(); i++)
+        params->majorNegativeVotes.insert(task->data().user_data().negative_feedback().strongnegatives(i));
+
+
+    QLOG_INFO() << "Dumping received list creation params:";
+    params->Log();
+    return params;
+};
+
+
+struct RecommendationsSourceFics{
+    QSet<int> sourceFics;
+    QHash<uint32_t, core::FicWeightPtr> fetchedFics;
+};
+
+const static auto ficPackReader = [](RequestContext& reqContext, const auto& task) -> auto {
+    RecommendationsSourceFics result;
+
+    for(int i = 0; i < task->data().id_packs().ffn_ids_size(); i++)
+    {
+        result.sourceFics.insert(task->data().id_packs().ffn_ids(i));
+        //recs->recommendationList[task->id_packs().ffn_ids(i)]
+    }
+    QLOG_INFO() << "source contains fics: " << result.sourceFics.size();
+    reqContext.recsData->sourceFics = result.sourceFics;
+
+    TimedAction action("Fic ids conversion",[&](){
+        result.fetchedFics = reqContext.dbContext.fanfics->GetFicsForRecCreation();
+    });
+    action.run();
+    return result;
+};
+
+grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerContext *context,
+                                                                 const ProtoSpace::DiagnosticRecommendationListCreationRequest *task,
+                                                                 ProtoSpace::DiagnosticRecommendationListCreationResponse *response)
+{
+    Q_UNUSED(context);
+    RequestContext reqContext("Diagnostic Reclist Creation",task->controls(), this);
+    if(!reqContext.Process(response->mutable_response_info()))
+        return Status::OK;
+
+    reqContext.dbContext.InitFanfics();
+
+    if(task->data().id_packs().ffn_ids_size() == 0)
+        return Status::OK;
+
+    An<core::RecCalculator> recCalculator;
+
+    auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
+    auto ficResult = ficPackReader(reqContext, task);
+    auto moodData = CalcMoodDistributionForFicList(ficResult.fetchedFics.keys(), recCalculator->holder.genreComposites);
+
+    auto list = recCalculator->GetDiagnosticRecommendationList(ficResult.fetchedFics, recommendationsCreationParams, moodData);
+    TimedAction dataPassAction("Passing data: ",[&](){
+        auto* targetList = response->mutable_list();
+
+        targetList->set_quadratic_deviation(list.quad);
+        targetList->set_ratio_median(list.ratioMedian);
+        targetList->set_distance_to_double_sigma(list.sigma2Dist);
+        QLOG_INFO() << "passing authors for fics into data structures: " << list.authorsForFics.keys().size();
+        auto keys = list.authorsForFics.keys();
+        for(auto fic : keys){
+            auto* newMatch = targetList->add_matches();
+            newMatch->set_fic_id(fic);
+            for(auto author : list.authorsForFics[fic])
+                newMatch->add_author_id(author);
+        }
+        QLOG_INFO() << "passing author stats into data: " << list.authorData.size();
+        for(auto author : list.authorData)
+        {
+            auto* authorData  = targetList->add_author_params();
+            authorData->set_author_id(author.id);
+            authorData->set_total_matches(author.matches);
+            authorData->set_full_list_size(author.fullListSize);
+            authorData->set_match_category(static_cast<int>(author.authorMatchCloseness));
+            authorData->set_negative_matches(author.negativeMatches);
+            authorData->set_list_size_without_ignores(author.sizeAfterIgnore);
+            authorData->set_ratio_difference_on_neutral_mood(author.listDiff.neutralDifference.value_or(0));
+            authorData->set_ratio_difference_on_touchy_mood(author.listDiff.touchyDifference.value_or(0));
+        }
+    });
+    dataPassAction.run();
+
+
+    return Status::OK;
+}
+
 Status FeederService::RecommendationListCreation(ServerContext* context, const ProtoSpace::RecommendationListCreationRequest* task,
                                                  ProtoSpace::RecommendationListCreationResponse* response)
 {
@@ -399,7 +521,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         return Status::OK;
 
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyRecommendationsRequest(task, response->mutable_response_info()))
     {
         SetRecommedationDataError(response->mutable_response_info());
@@ -409,56 +531,27 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     reqContext.dbContext.InitFanfics();
 
-    //reqContext.dbContext.InitAuthors();
-
-    QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-    params->isAutomatic = task->is_automatic_params();
-    params->name =  proto_converters::FS(task->list_name());
-    params->minimumMatch = task->min_fics_to_match();
-    params->userFFNId = task->users_ffn_profile_id();
-    if(params->userFFNId != -1)
-        params->userFFNId  = reqContext.dbContext.authors->GetRecommenderIDByFFNId(params->userFFNId);
-    params->maxUnmatchedPerMatch = task->max_unmatched_to_one_matched();
-    params->alwaysPickAt = task->always_pick_at();
-    params->useWeighting = task->use_weighting();
-    params->useMoodAdjustment = task->use_mood_filtering();
-    for(auto i = 0; i< task->user_data().ignored_fandoms().fandom_ids_size(); i++)
-        params->ignoredFandoms.insert(task->user_data().ignored_fandoms().fandom_ids(i));
-    for(auto i = 0; i< task->user_data().liked_authors_size(); i++)
-        params->likedAuthors.insert(task->user_data().liked_authors(i));
-    for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
-        params->minorNegativeVotes.insert(task->user_data().negative_feedback().basicnegatives(i));
-    for(auto i = 0; i< task->user_data().negative_feedback().basicnegatives_size(); i++)
-        params->majorNegativeVotes.insert(task->user_data().negative_feedback().strongnegatives(i));
-
-    QLOG_INFO() << "Dumping received list creation params:";
-    params->Log();
-
-    QHash<uint32_t, core::FicWeightPtr> fetchedFics;
-    QSet<int> sourceFics;
-    for(int i = 0; i < task->id_packs().ffn_ids_size(); i++)
-    {
-        sourceFics.insert(task->id_packs().ffn_ids(i));
-        //recs->recommendationList[task->id_packs().ffn_ids(i)]
-    }
-    if(sourceFics.size() == 0)
+    if(task->data().id_packs().ffn_ids_size() == 0)
         return Status::OK;
-    QLOG_INFO() << "source contains fics: " << sourceFics.size();
-    reqContext.recsData->sourceFics = sourceFics;
-    TimedAction action("Fic ids conversion",[&](){
-        fetchedFics = reqContext.dbContext.fanfics->GetFicsForRecCreation();
-    });
-    action.run();
+
+    auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
+
+    auto ficResult = ficPackReader(reqContext, task);
+    //recommendationsCreationParams->ficData.sourceFics = ficResult.sourceFics;
+    //QLOG_INFO() << "Received source fics: " << ficResult.sourceFics.toList();
+    //recommendationsCreationParams->Log();
+
+    An<core::RecCalculator> recCalculator;
+    auto moodData = CalcMoodDistributionForFicList(ficResult.fetchedFics.keys(), recCalculator->holder.genreComposites);
 
 
-    An<core::RecCalculator> holder;
-    auto moodData = CalcMoodDistributionForFicList(fetchedFics.keys(), holder->holder.genreComposites);
+    auto list = recCalculator->GetMatchedFicsForFavList(ficResult.fetchedFics, recommendationsCreationParams, moodData);
+    int baseVotes = recommendationsCreationParams->useMoodAdjustment ? 100 : 1;
 
-    auto list = holder->GetMatchedFicsForFavList(fetchedFics, params, moodData);
-    int baseVotes = params->useMoodAdjustment ? 100 : 1;
     TimedAction dataPassAction("Passing data: ",[&](){
         auto* targetList = response->mutable_list();
-        targetList->set_list_name(proto_converters::TS(params->name));
+        QLOG_INFO() << "Notrash is of size: " <<  list.noTrashScore.size();
+        targetList->set_list_name(proto_converters::TS(recommendationsCreationParams->name));
         targetList->set_list_ready(true);
         QLOG_INFO() << "setting list ready to true";
         using core::AuthorWeightingResult;
@@ -466,23 +559,23 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         for(int key: list.recommendations.keys())
         {
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
-            if(!holder->holder.fics.contains(key))
+            if(!recCalculator->holder.fics.contains(key))
             {
                 qDebug() << "probably an older database, skipping key: " << key;
                 continue;
             }
-            if(sourceFics.contains(key) && !task->return_sources())
-                continue;
+
             int adjustedVotes = list.recommendations[key]/(baseVotes);
             if(adjustedVotes < 1)
                 adjustedVotes = 1;
-            if((params->useMoodAdjustment && (list.recommendations[key]/(baseVotes*list.pureMatches[key])) < 1) &&
+            // purging based on mood
+            if((recommendationsCreationParams->useMoodAdjustment && (list.recommendations[key]/(baseVotes*list.pureMatches[key])) < 1) &&
                     list.decentMatches[key] == 0 &&
-                    !params->likedAuthors.contains(holder->holder.fics[key]->authorId))
+                    !recommendationsCreationParams->likedAuthors.contains(recCalculator->holder.fics[key]->authorId))
             {
                 bool axisGenre = false;;
                 //qDebug() << "attempting to purge fic: " << key;
-                QHash<int, QList<genre_stats::GenreBit>>& ref = holder->holder.genreComposites;
+                QHash<int, QList<genre_stats::GenreBit>>& ref = recCalculator->holder.genreComposites;
                 QList<genre_stats::GenreBit>& refList = ref[key];
                 double maxValue = 0.;
                 // shit code, but I really don't want to refactor rn
@@ -515,6 +608,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 targetList->add_purged(0);
             }
             targetList->add_fic_matches(adjustedVotes);
+            targetList->add_no_trash_score(list.sumNegativeVotesForFic[key]);
 
             targetList->add_fic_ids(key);
             //targetList->add_fic_matches(list.recommendations[key]/100);
@@ -537,22 +631,24 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
         for(int key: list.matchReport.keys())
         {
-            if(sourceFics.contains(key) && !task->return_sources())
-                continue;
             (*targetList->mutable_match_report())[key] = list.matchReport[key];
         }
-        response->mutable_list()->mutable_used_params()->set_is_automatic(params->isAutomatic);
-        response->mutable_list()->mutable_used_params()->set_min_fics_to_match(params->minimumMatch);
-        response->mutable_list()->mutable_used_params()->set_max_unmatched_to_one_matched(params->maxUnmatchedPerMatch);
-        response->mutable_list()->mutable_used_params()->set_always_pick_at(params->alwaysPickAt);
-        response->mutable_list()->mutable_used_params()->set_use_weighting(params->useWeighting);
-        response->mutable_list()->mutable_used_params()->set_use_mood_filtering(params->useMoodAdjustment);
+        response->mutable_list()->mutable_used_params()->set_is_automatic(recommendationsCreationParams->isAutomatic);
+        response->mutable_list()->mutable_used_params()->set_min_fics_to_match(recommendationsCreationParams->minimumMatch);
+        response->mutable_list()->mutable_used_params()->set_max_unmatched_to_one_matched(recommendationsCreationParams->maxUnmatchedPerMatch);
+        response->mutable_list()->mutable_used_params()->set_always_pick_at(recommendationsCreationParams->alwaysPickAt);
+        response->mutable_list()->mutable_used_params()->set_use_weighting(recommendationsCreationParams->useWeighting);
+        response->mutable_list()->mutable_used_params()->set_use_mood_filtering(recommendationsCreationParams->useMoodAdjustment);
+        response->mutable_list()->mutable_used_params()->set_use_dislikes(recommendationsCreationParams->useDislikes);
+        response->mutable_list()->mutable_used_params()->set_use_dead_fic_ignore(recommendationsCreationParams->useDeadFicIgnore);
     });
 
     dataPassAction.run();
     QLOG_INFO() << "Byte size will be: " << response->ByteSize();
     return Status::OK;
 }
+
+
 
 Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicIdRequest* task,
                                   ProtoSpace::FicIdResponse* response)
@@ -562,7 +658,7 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->ids(), response->mutable_response_info()))
         return Status::OK;
 
@@ -594,7 +690,7 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->ids(), response->mutable_response_info()))
         return Status::OK;
 
@@ -631,7 +727,7 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->id_packs(), response->mutable_response_info()))
         return Status::OK;
 
@@ -674,10 +770,10 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
         dataAccumulator.unfinishedCounter += !fic->complete;
         dataAccumulator.matureCounter += fic->adult;
     }
-    for(auto i = 0; i < 22; i++)
-    {
-        qDebug() << genreIndex->genresByIndex[i].name << " : " << dataAccumulator.genreCounters[i];
-    }
+//    for(auto i = 0; i < 22; i++)
+//    {
+//        qDebug() << genreIndex->genresByIndex[i].name << " : " << dataAccumulator.genreCounters[i];
+//    }
     dataAccumulator.ProcessIntoResult();
     AccumulatorIntoSectionStats(result, dataAccumulator);
     response->set_success(true);
@@ -694,7 +790,7 @@ grpc::Status FeederService::GetAuthorsForFicList(grpc::ServerContext *context, c
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->id_packs(), response->mutable_response_info()))
         return Status::OK;
 
@@ -726,7 +822,7 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
 
-    QLOG_INFO() << "Verifying request params";
+    QLOG_TRACE() << "Verifying request params";
     if(task->fic_id() < 1)
         return Status::OK;
 
@@ -790,6 +886,7 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
     {
         if(snoozeData.finished || (snoozeData.atChapter >= snoozes[snoozeData.ficId].snoozedTillChapter))
         {
+            qDebug() << "is finished: " << snoozeData.finished << " at chapter: " << snoozeData.atChapter << " testing against user: " << snoozes[snoozeData.ficId].snoozedTillChapter;
             qDebug() << "adding expired snooze: " << snoozeData.ficId;
             response->add_expired_snoozes(snoozeData.ficId);
         }
@@ -807,7 +904,7 @@ void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filte
         allTokens.insert(uuid);
         allSearches++;
     }
-    if(filter.sortMode == core::StoryFilter::sm_reccount ||
+    if(filter.sortMode == core::StoryFilter::sm_metascore ||
             filter.minRecommendations > 0)
     {
         token.recommendationsSearches++;
@@ -911,7 +1008,7 @@ QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken,
     //DatabaseContext dbContext;
     QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface,rngData));
     FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
-    QLOG_INFO() << "Initializing fic source mode";
+    QLOG_TRACE() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);
     //QLOG_INFO() << "Initialized fic source mode";
     return ficSource;
@@ -1009,3 +1106,4 @@ void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicL
     for(size_t i = 1; i < dataResult.result.sizeRatios.size(); i++)
         result.sizeFactors[i] = dataResult.result.sizeRatios[i];
 }
+

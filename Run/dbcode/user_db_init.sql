@@ -26,6 +26,8 @@ CREATE INDEX if not exists I_FICTAGS_DBID ON FicTags (fic_id ASC);
 CREATE INDEX if not exists I_FICTAGS_FFNID ON FicTags (ffn_id ASC);
 CREATE INDEX if not exists I_FICTAGS_TAG_ADDED ON FicTags (added ASC);
 update FicTags set added = date('now') where added is null;
+delete from  FicTags where tag = 'Snoozed';
+ 
  
  -- ficscore table;
 CREATE TABLE if not exists FicScores (
@@ -40,8 +42,7 @@ CREATE TABLE if not exists FicSnoozes (
  snooze_added datetime,
  snoozed_at_chapter integer,
  snoozed_till_chapter integer,
- snoozed_until_finished integer default 1,
- snooze_expired integeger default 0);
+ snoozed_until_finished integer default 1);
  alter table FicSnoozes add column expired integer default 0;
 CREATE INDEX if not exists I_FICSNOOZES_DBID ON FicSnoozes (fic_id ASC);
 CREATE INDEX if not exists I_FICSNOOZES_ADDED ON FicSnoozes (snooze_added ASC);
@@ -69,10 +70,25 @@ CREATE TABLE if not exists Tags ( id integer default 0, tag varchar unique NOT N
 --CREATE INDEX if not exists  I_FIC_TAGS_FIC ON FicTags (fic_id ASC);
  
 -- a list of all recommendaton lists with their names and statistics;
-create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUTOINCREMENT default 1, name VARCHAR unique NOT NULL, minimum integer NOT NULL default 1, pick_ratio double not null default 1, always_pick_at integer not null default 9999, fic_count integer default 0,  created DATETIME);
+create table if not exists RecommendationLists(id INTEGER unique PRIMARY KEY AUTOINCREMENT default 1, 
+name VARCHAR unique NOT NULL, 
+minimum integer NOT NULL default 1,
+pick_ratio double not null default 1, 
+always_pick_at integer not null default 9999, 
+fic_count integer default 0,  
+created DATETIME);
 alter table RecommendationLists add column sources varchar;
 alter table RecommendationLists add column use_weighting integer default 1;
 alter table RecommendationLists add column use_mood_adjustment integer default 1;
+alter table RecommendationLists add column is_automatic integer default 0;
+alter table RecommendationLists add column use_dislikes integer default 0;
+alter table RecommendationLists add column use_dead_fic_ignore integer default 0;
+alter table RecommendationLists add column has_aux_data integer default 0;
+alter table RecommendationLists add column quadratic_deviation real;
+alter table RecommendationLists add column ratio_median real;
+alter table RecommendationLists add column distance_to_double_sigma integer default -1;
+
+
 
 CREATE INDEX if not exists  I_RecommendationLists_ID ON RecommendationLists (id asc);
 CREATE INDEX if not exists  I_RecommendationLists_NAME ON RecommendationLists (NAME asc);
@@ -104,8 +120,11 @@ list_id integer,
   alter table RecommendationListData add column value_rare integer default 0;
   alter table RecommendationListData add column value_unique integer default 0;
   alter table RecommendationListData add column purged integer default 0;
+  alter table RecommendationListData add column no_trash_score real;
   
   alter table RecommendationListData add column breakdown_available integer default 0;
+  alter table RecommendationListData add column position integer;
+  alter table RecommendationListData add column pedestal integer;
 
 CREATE INDEX if not exists  I_LIST_TAGS_PK ON RecommendationListData (list_id asc, fic_id asc, match_count asc);
 CREATE INDEX if not exists  I_LISTDATA_ID ON RecommendationListData (list_id ASC);
@@ -130,6 +149,7 @@ CREATE INDEX if not exists I_FURL_WEBSITE ON fandomurls (website ASC);
 create table if not exists ficnotes (
 fic_id integer PRIMARY KEY not null, 
 note_content varchar);
+alter table ficnotes add column updated datetime;
 
 CREATE INDEX if not exists I_FNQ_FIC_ID ON ficnotesquotes (fic_id ASC);
 
@@ -164,3 +184,23 @@ CREATE TABLE if not exists FicAuthors (
 CREATE INDEX if not exists I_FICAUTHORS_FIC_ID ON FicAuthors (fic_id ASC);
 CREATE INDEX if not exists I_FICAUTHORS_AUTHOR_ID ON FicAuthors (author_id ASC);
 
+-- recommeders for fics in diagnostic table;
+CREATE TABLE if not exists RecommendersForFicAndList (
+ list_id integer default -1,
+ fic_id integer default -1,
+ author_id integer default -1, PRIMARY KEY (list_id, fic_id, author_id));
+CREATE INDEX if not exists I_RECOMMENDERS_FOR_FIC_AND_LIST_KEYS_LIST_FIC ON RecommendersForFicAndList (fic_id ASC, list_id ASC);
+
+-- author params for diagnostic reclist;
+CREATE TABLE if not exists AuthorParamsForRecList (
+ list_id integer  default -1,
+ author_id integer  default -1,
+ full_list_size integer default -1,
+ total_matches integer default -1,
+ negative_matches integer default -1,
+ match_category integer default -1,
+ list_size_without_ignores integer default -1,
+ ratio_difference_on_neutral_mood real,
+ ratio_difference_on_touchy_mood real,
+ PRIMARY KEY (list_id, author_id));
+CREATE INDEX if not exists I_AUTHOR_PARAMS_FOR_RECLIST ON AuthorParamsForRecList (list_id, author_id ASC);

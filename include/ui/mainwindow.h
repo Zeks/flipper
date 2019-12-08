@@ -88,6 +88,27 @@ struct FilterErrors{
 
 
 
+class ReclistCreationUIHelper
+{
+public:
+    enum ESourcesMode{
+        sm_profile = 0,
+        sm_urls = 1,
+        sm_tags = 2,
+    };
+    bool simpleMode = true;
+    ESourcesMode sourcesMode = sm_profile;
+
+    void SetupVisibilityForElements();
+
+
+   QWidget* profileInput = nullptr;
+   QWidget* advancedSettings = nullptr;
+   QWidget* urlOuter= nullptr;
+   QWidget* urlInner = nullptr;
+   QWidget* main = nullptr;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -104,7 +125,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
     //initalizes widgets
-    bool Init();
+    bool Init(bool scheduleSlashOn = false);
 
 
     ~MainWindow();
@@ -126,9 +147,11 @@ public:
     void SetFinishedStatus();
     // used to indicate failure of the performed action to the user
     void SetFailureStatus();
+    void DisplayInitialFicSelection();
+    void DisplayRandomFicsForCurrentFilter();
+    void QueueDefaultRecommendations();
 
-
-    CoreEnvironment env;
+    QSharedPointer<CoreEnvironment> env;
 
 private:
 
@@ -247,21 +270,36 @@ private:
     void ResetFilterUItoDefaults(bool resetTagged = true);
     void DetectGenreSearchState();
     void DetectSlashSearchState();
-    void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit);
+    void LoadFFNProfileIntoTextBrowser(QTextBrowser *, QLineEdit *urlEdit, QLabel *infoLabel = nullptr);
     QVector<int> PickFicIDsFromTextBrowser(QTextBrowser*);
     QVector<int> PickFicIDsFromString(QString);
     void AnalyzeIdList(QVector<int>);
     void AnalyzeCurrentFilter();
 
     bool CreateRecommendationList(QSharedPointer<core::RecommendationList> params,
-                                  QVector<int> sources,
-                                  bool automaticLike,
-                                  bool ownProfile);
-    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool ownRecs);
+                                  QVector<int> sources);
+
+    bool CreateDiagnosticRecommendationList(QSharedPointer<core::RecommendationList> params,
+                                  QVector<int> sources);
+
+    QSharedPointer<core::RecommendationList> CreateReclistParamsFromUI(bool silent = false);
 
     void LoadFrameIntoUI(const FilterFrame& frame);
     void SetPreviousEnabled(bool value);
     void SetNextEnabled(bool value);
+    void FetchScoresForFics();
+    void CreateRecommendationListForCurrentMode();
+    void PrepareUIToDisplayNewRecommendationList(QString name);
+
+    struct FicSourceResult{
+        QVector<int> sources;
+        QString error;
+    };
+
+    FicSourceResult PickSourcesForEnteredProfile(QLineEdit* edit);
+    FicSourceResult PickSourcesFromEditor();
+    FicSourceResult PickSourcesFromTags();
+
 
 //    QHash<int, int> CreateListOfNotSlashFics();
 //    QHash<int, int> MatchSlashToNotSlash();
@@ -301,6 +339,11 @@ private:
 
     QQuickWidget* qwFics = nullptr; // a widget that holds qml fic search results
     QProgressBar* pbMain = nullptr; // a link to the progresspar on the ActionProgress widget
+    QLabel* lblClientVersion = nullptr; // a copyable user id
+    QLabel* lblUserIdStatic = nullptr; // a copyable user id
+    QLabel* lblUserIdActive = nullptr; // a copyable user id
+    QLabel* lblDBUpdateInfo = nullptr; // a copyable user id
+    QLabel* lblDBUpdateDate = nullptr; // a copyable user id
     QLabel* lblCurrentOperation = nullptr; // basically an expander so that actionProgress is shown to the right
     ActionProgress* actionProgress = nullptr;
     QMenu fandomMenu;
@@ -308,6 +351,14 @@ private:
     QMenu ignoreFandomSlashFilterMenu;
     QRImageProvider* imgProvider = nullptr;
     QString primedTag;
+    bool defaultRecommendationsQueued = false;
+    ReclistCreationUIHelper reclistUIHelper;
+    QString lastCreatedListName;
+    QString styleSheetForAccept;
+    QString styleSheetForReclistMenu;
+    QString styleSheetForReclistCreation;
+    bool reclistCreationShown = false;
+    QString reclistToReturn;
 
 
 public slots:
@@ -330,6 +381,8 @@ public slots:
     void OnHeartDoubleClicked(QVariant);
     void OnScoreAdjusted(QVariant, QVariant, QVariant);
     void OnSnoozeTypeChanged(QVariant, QVariant, QVariant);
+    void OnSnoozeAdded(QVariant);
+    void OnSnoozeRemoved(QVariant);
     void OnNotesEdited(QVariant, QVariant);
 
     void OnNewQRSource(QVariant);
@@ -349,6 +402,9 @@ public slots:
     void OnDoFormattedList();
     // queries and displays next page for the current query
     void OnDisplayNextPage();
+
+    void OnShuffleDisplayedData();
+
     // queries and displays pervious page for the current query
     void OnDisplayPreviousPage();
     // queries and displays exact page for the current query
@@ -357,7 +413,7 @@ public slots:
     // invoked on "Search" click
     void on_pbLoadDatabase_clicked();
     void LoadAutomaticSettingsForRecListSources(int size);
-    QSet<QString> LoadFavourteIdsFromFFNProfile(QString);
+    QSet<QString> LoadFavourteIdsFromFFNProfile(QString, QLabel *infoLabel = nullptr);
     void OnQMLRefilter();
     void OnQMLFandomToggled(QVariant);
     void OnQMLAuthorToggled(QVariant, QVariant active);
@@ -369,8 +425,7 @@ private slots:
 
     // used to make sure that the amount of random fics requested later will be correct
     void on_chkRandomizeSelection_clicked(bool checked);
-    // used to toggle visibility of recommendation list selector for sorting
-    void on_cbSortMode_currentTextChanged(const QString &arg1);
+
 
     // each of those functions calls an expanded editor for the corresponding line edit
     // -------------------------------------
@@ -384,16 +439,7 @@ private slots:
     // and set the tracked tick for the fandom to the value from the database
     void OnNewSelectionInRecentList(const QModelIndex &current, const QModelIndex &previous);
 
-
-    // used to toggle the tracked status for fandom on the checkbox state change
-    void on_chkTrackedFandom_toggled(bool checked);
-    // used to open the recommendation for the author that is already in the databse
-    // (and is selected in the author list)
-    void on_pbOpenRecommendations_clicked();
     void OpenRecommendationList(QString);
-
-    // misnamed. currently used to build recommedation lists from sources.txt
-    void on_pbReprocessAuthors_clicked();
 
     // used to put urls for all authors in the current list into the clipboard
     void OnCopyFavUrls();
@@ -401,13 +447,6 @@ private slots:
 
     // used to toggle the UI elements dealing with fic randomization
     void on_chkRandomizeSelection_toggled(bool checked);
-
-    // used to trigger the reinit of fandoms on ffn
-    void on_pbReinitFandoms_clicked();
-
-
-
-
 
     void OnRemoveFandomFromRecentList();
     void OnRemoveFandomFromIgnoredList();
@@ -425,7 +464,7 @@ private slots:
 
     void OnWipeCache();
 
-    void on_pbFormattedList_clicked();
+    void GenerateFormattedList();
     void OnFindSimilarClicked(QVariant);
 
     void on_pbIgnoreFandom_clicked();
@@ -439,6 +478,7 @@ private slots:
     void OnWarningRequested(QString value);
     void OnFillDBIdsForTags();
     void OnTagReloadRequested();
+    void OnClearLikedAuthorsRequested();
 
     void on_chkRecsAutomaticSettings_toggled(bool checked);
 
@@ -452,10 +492,6 @@ private slots:
     void on_cbCurrentFilteringMode_currentTextChanged(const QString &arg1);
 
     void on_cbRecGroup_currentTextChanged(const QString &arg1);
-
-    void on_pbUseProfile_clicked();
-
-    void on_pbMore_clicked();
 
     void on_pbCreateHTML_clicked();
 
@@ -500,6 +536,56 @@ private slots:
     void on_pbPreviousResults_clicked();
 
     void on_pbNextResults_clicked();
+
+    void on_pbDiagnosticList_clicked();
+
+    void on_cbRecGroupSecond_currentIndexChanged(const QString &arg1);
+
+    void on_chkDisplayAuthorName_stateChanged(int arg1);
+
+    void on_chkDisplaySecondList_stateChanged(int arg1);
+
+    void on_chkDisplayComma_stateChanged(int arg1);
+
+
+    void on_cbFicIDDisplayMode_currentIndexChanged(const QString &arg1);
+
+    void on_chkDisplayDetectedGenre_stateChanged(int arg1);
+
+    void on_pbVerifyUserFFNId_clicked();
+
+    void on_cbStartupLoadSelection_currentIndexChanged(const QString &arg1);
+
+    void on_leUserFFNId_editingFinished();
+
+    void on_chkStopPatreon_stateChanged(int arg1);
+
+    void on_rbSimpleMode_clicked();
+
+    void on_rbAdvancedMode_clicked();
+
+    void on_rbProfileMode_clicked();
+
+    void on_rbUrlMode_clicked();
+
+    void on_rbSelectedTagsMode_clicked();
+
+    void on_pbNewRecommendationList_clicked();
+
+    void on_leFFNProfileInputForUrls_returnPressed();
+
+
+    void on_chkUseAwaysPickAt_stateChanged(int arg1);
+
+
+    void on_pbValidateUserID_clicked();
+
+    void onCopyDbUIDToClipboard(const QString&);
+    void on_pbExpandIEntityds_clicked();
+
+    void on_chkLikedAuthors_stateChanged(int arg1);
+
+    void on_pbResetFilter_clicked();
 
 signals:
 

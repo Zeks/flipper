@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "include/servitorwindow.h"
+#include "include/ui/servitorwindow.h"
 #include "include/Interfaces/genres.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"
@@ -1212,6 +1212,7 @@ void ServitorWindow::on_pbUnpdateInterval_clicked()
     reloader.SetStagedAuthors(authors);
     bool useCache = ui->chkForcedLoad->isChecked();
     reloader.ReloadRecommendationsList(useCache ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+    QLOG_INFO() << "FINISHED";
 }
 
 void ServitorWindow::on_pbReprocessAllFavPages_clicked()

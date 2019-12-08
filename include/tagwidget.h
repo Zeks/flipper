@@ -15,8 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#ifndef TAGWIDGET_H
-#define TAGWIDGET_H
+#pragma once
 
 #include <QWidget>
 namespace interfaces{
@@ -48,6 +47,7 @@ public:
     bool DbIdsRequested();
     void ResetFilters();
     void SelectTags(QStringList);
+    void ClearAuthorsForTags();
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Tags> tagsInterface;
 private:
@@ -66,6 +66,7 @@ signals:
     void refilter();
     void dbIDRequest();
     void tagReloadRequested();
+    void clearLikedAuthors();
     void createUrlsForTags(bool);
 
 
@@ -82,6 +83,9 @@ public slots:
 private slots:
     void on_pbAssignTagToFandom_clicked();
 
+    void on_chkDisplayTagSize_stateChanged(int arg1);
+    void on_pbPurgeSelectedTags_clicked();
+    void on_chkUseTagsForAuthors_stateChanged(int arg1);
 };
 
-#endif // TAGWIDGET_H
+

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "include/storyfilter.h"
 #include "include/Interfaces/data_source.h"
+#include "include/rec_calc/rec_calculator_base.h"
 #include "reclist_author_result.h"
 
 #include <QSharedPointer>
@@ -49,13 +50,13 @@ struct ServerStatus
     ServerStatus(bool isValid,
                  bool dbAttached,
                  bool messageRequired,
-                 QDateTime lastDBUpdate,
+                 QString lastDBUpdate,
                  QString motd):isValid(isValid), dbAttached(dbAttached), messageRequired(messageRequired), lastDBUpdate(lastDBUpdate),motd(motd) {}
     bool isValid = false;
     bool dbAttached = false;
     bool messageRequired = false;
     bool protocolVersionMismatch = false;
-    QDateTime lastDBUpdate;
+    QString lastDBUpdate;
     QString motd;
     QString error;
 };
@@ -75,6 +76,8 @@ public:
     void FetchFic(int ficId, QVector<core::Fic>*fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
+
+    core::DiagnosticsForReclist GetDiagnosticsForRecListFromServer(core::RecommendationList recList);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
     bool GetInternalIDsForFics(QVector<core::IdPack>*);
     bool GetFFNIDsForFics(QVector<core::IdPack>*);
@@ -94,6 +97,7 @@ public:
 bool VerifyFilterData(const ProtoSpace::Filter& filter, const ProtoSpace::UserData &user);
 bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseInfo* info);
 bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRequest* request, ProtoSpace::ResponseInfo *info);
+
 
 namespace proto_converters
 {

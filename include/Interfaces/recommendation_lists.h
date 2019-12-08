@@ -59,6 +59,7 @@ public:
     bool LoadAuthorRecommendationStatsIntoDatabase(int listId, core::AuhtorStatsPtr stats);
     bool RemoveAuthorRecommendationStatsFromDatabase(int listId, int authorId);
     bool LoadListIntoDatabase(core::RecPtr);
+    bool LoadListAuxDataIntoDatabase(core::RecPtr);
     bool LoadListFromServerIntoDatabase(int listId,
                                         const QVector<int>& fics,
                                         const QVector<int>& matches, const QSet<int> &origins);
@@ -82,10 +83,7 @@ public:
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId, core::StoryFilter::ESourceListLimiter limiter);
     QVector<int> GetAllSourceFicIDs(int listId);
-    QHash<int, int> GetAllFicsHash(int listId,
-                                   int minMatchCount = 0,
-                                   core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all,
-                                   bool displayPurged = false);
+    QHash<int, int> GetAllFicsHash(core::ReclistFilter);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QString GetAuthorsForRecommendationListClient(int listId);
@@ -98,7 +96,13 @@ public:
     int GetCurrentRecommendationList() const;
     void SetCurrentRecommendationList(int value);
     void FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId);
+    void FetchRecommendationScoreForFics(QVector<core::Fic> * fics, core::ReclistFilter filter);
+    void LoadPlaceAndRecommendationsData(QVector<core::Fic> * fics, core::ReclistFilter);
+
     QSharedPointer<core::RecommendationList> FetchParamsForRecList(QString name);
+
+    bool WriteFicRecommenderRelationsForRecList(int listId, QHash<uint32_t,QVector<uint32_t>>);
+    bool WriteAuthorStatsForRecList(int listId,QVector<core::AuthorResult>);
 
 
     QList<core::RecPtr> lists;

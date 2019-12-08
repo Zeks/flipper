@@ -37,6 +37,8 @@ struct SlashFilterState
     bool onlyMatureForSlash;
 };
 namespace core{
+
+
 struct StoryFilter{
     void Log();
 
@@ -45,19 +47,25 @@ struct StoryFilter{
             return str.split(delimiter);
         return str.split(" ");
     }
+    enum EScoreType
+    {
+        st_points = 0,
+        st_minimal_dislikes = 1,
+    };
     enum ESortMode
     {
-        sm_undefined    = 0,
-        sm_wordcount    = 1,
-        sm_favourites   = 2,
-        sm_favrate      = 3,
-        sm_updatedate   = 4,
-        sm_publisdate   = 5,
-        sm_reccount     = 6,
-        sm_wcrcr        = 7,
-        sm_revtofav     = 8,
-        sm_genrevalues  = 9,
-        sm_scores  = 10,
+        sm_undefined         = 0,
+        sm_wordcount         = 1,
+        sm_favourites        = 2,
+        sm_trending           = 3,
+        sm_updatedate        = 4,
+        sm_publisdate        = 5,
+        sm_metascore          = 6,
+        sm_wcrcr             = 7,
+        sm_revtofav          = 8,
+        sm_genrevalues       = 9,
+        sm_userscores            = 10,
+        sm_minimize_dislikes = 11,
 
     };
     enum EReviewBiasMode{
@@ -96,6 +104,11 @@ struct StoryFilter{
       utf_ffn_id = 0,
       utf_db_id = 1
     };
+    enum EShowSourcesMode{
+        ssm_filter_as_usual = 0,
+        ssm_show = 1,
+        ssm_hide = 2,
+    };
     //do I even need that?
     //QString ficCategory;
     bool isValid = true;
@@ -111,8 +124,8 @@ struct StoryFilter{
     bool showOriginsInLists = false;
     bool otherFandomsMode = false;
     bool listOpenMode= false;
-    bool showRecSources = false;
     bool tagsAreUsedForAuthors = false;
+    bool likedAuthorsEnabled = false;
     bool tagsAreANDed = false;
     bool useRealGenres = false;
     bool descendingDirection = true;
@@ -138,9 +151,12 @@ struct StoryFilter{
     int recommendationsCount = 0;
     int activeTagsCount = 0;
     int allTagsCount = 0;
+    int allSnoozeCount = 0;
     int useThisAuthor = -1;
     int useThisFic = -1;
-    int protocolVersion = 0;
+    int protocolMajorVersion = 2;
+    int protocolMinorVersion = 0;
+
     QList<int> usedRecommenders;
     ESortMode sortMode;
     EReviewBiasMode reviewBias;
@@ -149,6 +165,7 @@ struct StoryFilter{
     ERatingFilter rating;
     EGenrePresence genrePresenceForInclude;
     EGenrePresence genrePresenceForExclude;
+    EShowSourcesMode showRecSources = ssm_filter_as_usual;
     ESourceListLimiter sourcesLimiter = ESourceListLimiter::sll_all;
     EUseThisFicType useThisFicType = EUseThisFicType::utf_ffn_id;
 
@@ -173,5 +190,15 @@ struct StoryFilter{
     QHash<int, int> scoresHash; // for use on the server
     QString userToken;
 };
+
+struct ReclistFilter{
+    int mainListId = -1;
+    int secondListId = -1;
+    int minMatchCount = 0;
+    core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all;
+    core::StoryFilter::EScoreType scoreType = core::StoryFilter::st_points;
+    bool displayPurged = false;
+};
+
 }
 

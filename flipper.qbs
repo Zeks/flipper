@@ -45,7 +45,7 @@ App{
 
     Precompiled{condition:localvariables.usePrecompiledHeader}
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601"])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.3"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",
@@ -57,6 +57,14 @@ App{
     cpp.minimumWindowsVersion: "6.0"
 
     files: [
+        "UI/initialsetupdialog.ui",
+        "src/ui/welcomedialog.cpp",
+        "include/ui/welcomedialog.h",
+        "UI/welcomedialog.ui",
+        "include/backups.h",
+        "src/backups.cpp",
+        "src/ui/initialsetupdialog.cpp",
+        "include/ui/initialsetupdialog.h",
         "forms.qrc",
         "icons.qrc",
         "include/Interfaces/authors.h",
@@ -87,12 +95,12 @@ App{
         "include/tasks/author_task_processor.h",
         "include/timeutils.h",
         "include/webpage.h",
-        "src/actionprogress.cpp",
-        "include/actionprogress.h",
+        "src/ui/actionprogress.cpp",
+        "include/ui/actionprogress.h",
         "UI/actionprogress.ui",
         "src/generic_utils.cpp",
         "src/parsers/ffn/fandomindexparser.cpp",
-        "include/mainwindow.h",
+        "include/ui/mainwindow.h",
         "include/parse.h",
         "include/querybuilder.h",
         "include/queryinterfaces.h",
@@ -100,7 +108,7 @@ App{
         "include/service_functions.h",
         "include/storyfilter.h",
         "include/tagwidget.h",
-        "include/fanficdisplay.h",
+        "include/ui/fanficdisplay.h",
         "include/transaction.h",
         "include/url_utils.h",
         "qml_ficmodel.cpp",
@@ -133,7 +141,7 @@ App{
         "src/parsers/ffn/ffnparserbase.cpp",
         "src/parsers/ffn/ficparser.cpp",
         "src/main_flipper.cpp",
-        "src/mainwindow_utility.cpp",
+        "src/ui/mainwindow_utility.cpp",
         "src/pagegetter.cpp",
         "include/pagegetter.h",
         "src/pure_sql.cpp",
@@ -148,9 +156,9 @@ App{
         "UI/mainwindow.ui",
         "UI/tagwidget.ui",
         "UI/fanficdisplay.ui",
-        "src/mainwindow.cpp",
+        "src/ui/mainwindow.cpp",
         "src/tagwidget.cpp",
-        "src/fanficdisplay.cpp",
+        "src/ui/fanficdisplay.cpp",
         "src/page_utils.cpp",
         "include/page_utils.h",
         "src/environment.cpp",
@@ -233,10 +241,13 @@ App{
         proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
-            "proto/filter.proto",
-            "proto/fanfic.proto",
-            "proto/fandom.proto",
-            "proto/favlist.proto",
+            "proto/search/filter.proto",
+            "proto/search/fanfic.proto",
+            "proto/search/fandom.proto",
+            "proto/statistics/favlist.proto",
+            "proto/recommendations/diagnostic_recommendations.proto",
+            "proto/recommendations/recommendations.proto",
+            "proto/server_base_structs.proto",
         ]
         fileTags: ["proto"]
     }

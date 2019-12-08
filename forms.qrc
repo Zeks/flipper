@@ -10,5 +10,7 @@
         <file>qml/components/NoteTooltip.qml</file>
         <file>qml/components/QuickTagger.qml</file>
         <file>qml/components/NotesTagger.qml</file>
+        <file>qml/components/SnoozeToggle.qml</file>
+        <file>qml/components/ListNavigationButton.qml</file>
     </qresource>
 </RCC>

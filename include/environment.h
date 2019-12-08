@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/tasks/author_cache_reprocessor.h"
 #include "include/pagegetter.h"
 #include "querybuilder.h"
+#include "grpc/grpc_source.h"
 
 #include <QQueue>
 
@@ -52,7 +53,8 @@ public:
 };
 
 
-
+class QLineEdit;
+class QLabel;
 
 struct FilterFrame{
 
@@ -84,7 +86,7 @@ struct BastardizedCircularBuffer{
 
 //        while(currentIndex != 0)
 //        {
-//            data.pop_back();
+//            data.pop_();
 //            currentIndex--;
 //        }
 
@@ -141,6 +143,7 @@ public:
         QSharedPointer<interfaces::RecommendationLists> recs;
         QSharedPointer<database::IDBWrapper> db;
         QSharedPointer<database::IDBWrapper> userDb;
+        QSharedPointer<database::IDBWrapper> backupDb;
         QSharedPointer<database::IDBWrapper> pageCache;
         QSharedPointer<database::IDBWrapper> tasks;
     };
@@ -156,6 +159,7 @@ public:
     // used to set up connections between database and interfaces
     // and between differnt interfaces themselves
     void InitInterfaces();
+    void InstantiateClientDatabases(QString);
     void LoadData();
     void LoadHistoryFrame(FilterFrame);
     int GetResultCount();
@@ -163,6 +167,8 @@ public:
     void LoadMoreAuthors(QString listname, ECacheMode cacheMode);
     void LoadAllLinkedAuthors(ECacheMode cacheMode);
     void LoadAllLinkedAuthorsMultiFromCache();
+
+
     void UseAuthorTask(PageTaskPtr task);
     void UseFandomTask(PageTaskPtr task);
     PageTaskPtr ProcessFandomsAsTask(QList<core::FandomPtr> fandoms,
@@ -181,13 +187,15 @@ public:
     void ProcessListIntoRecommendations(QString list);
 
     QVector<int> GetSourceFicsFromFile(QString filename);
-    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics, bool automaticLike = false);
+    int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics);
+
     core::FicSectionStats GetStatsForFicList(QVector<int>);
     int  BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
     int  BuildRecommendations(QSharedPointer<core::RecommendationList> params,
-                              QVector<int> sourceFics,
-                              bool automaticLike = false,
-                              bool clearAuthors = true);
+                              QVector<int> sourceFics);
+
+    int  BuildDiagnosticsForRecList(QSharedPointer<core::RecommendationList> params,
+                              QVector<int> sourceFics);
 
     bool ResumeUnfinishedTasks();
 
@@ -198,12 +206,24 @@ public:
     void Log(QString);
 
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
-    QSet<QString> LoadAuthorFicIdsForRecCreation(QString url);
+    QSet<QString> LoadAuthorFicIdsForRecCreation(QString url,
+                                                 QLabel* infoTarget = nullptr,
+                                                 bool silent = false);
+    bool TestAuthorID(QString id);
+    bool TestAuthorID(QLineEdit*, QLabel*);
+
     QList<QSharedPointer<core::Fic>>  LoadAuthorFics(QString url);
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
     void FillDBIDsForTags();
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);
+    QSet<int> GetFicsForTags(QStringList);
+    QSet<int> GetFicsForNegativeTags();
+    QSet<int> GetIgnoredDeadFics();
+    void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics);
+    void BackupUserDatabase();
+    int CreateDefaultRecommendationsForCurrentUser();
+
 
     void RefreshSnoozes();
 
@@ -223,8 +243,7 @@ public:
     QString userToken;
     QSet<int> likedAuthors;
     QHash<int, int> ficScores;
-    bool thinClient = true;
-
+    ServerStatus status;
     BastardizedCircularBuffer<FilterFrame> searchHistory;
 
 

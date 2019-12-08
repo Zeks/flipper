@@ -39,11 +39,13 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     query = NewQuery();
 
     queryString.clear();
-    bool useRecommendationFiltering = filter.sortMode == StoryFilter::sm_reccount || filter.listOpenMode;
+    bool scoreSorting = filter.sortMode == StoryFilter::sm_metascore  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
+
+    bool useRecommendationFiltering = scoreSorting || filter.listOpenMode;
     useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
     bool useRecommendationOrdering = useRecommendationFiltering && !filter.listOpenMode;
 
-    bool useScoresOrdering = filter.sortMode == StoryFilter::sm_scores;
+    bool useScoresOrdering = filter.sortMode == StoryFilter::sm_userscores;
 
     if(createLimits)
     {
@@ -84,21 +86,13 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             where = temp + where;
         }
 
-//        if(useScoresOrdering)
-//        {
-
-//            QString temp = " and cfInScores(f.id) > 0 ";
-//            where = temp + where;
-//        }
-
         QString randomizer = ProcessRandomization(filter, where);
 
         QRegularExpression rx("^\\s{0,10}(and|AND)");
-        //^\\s{0,10}(and|AND)
         auto match = rx.match(where);
         if(match.hasMatch())
         {
-            qDebug() << "FOUND MATCH";
+            //qDebug() << "FOUND MATCH";
             where = where.mid(match.captured().length());
         }
 
@@ -109,7 +103,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             auto match = rx.match(randomizer);
             if(match.hasMatch())
             {
-                qDebug() << "FOUND MATCH";
+                //qDebug() << "FOUND MATCH";
                 randomizer = randomizer.mid(match.captured().length());
             }
             queryString +=  " where " + randomizer;
@@ -133,7 +127,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     queryString.replace(" fid ", " f.id ");
     queryString.replace(" fid)", " f.id)");
     queryString.replace("(fid", "(f.id");
-    qDebug().noquote() << query->str;
+    qDebug().noquote() << "Created query is:" << query->str;
 
 
     return query;
@@ -176,6 +170,7 @@ QString DefaultQueryBuilder::CreateWhere(StoryFilter filter,
     queryString+= ProcessAuthor(filter);
     queryString+= ProcessFicID(filter);
     queryString+= ProcessRecommenders(filter);
+    queryString+= ProcessSnoozes(filter);
     queryString+= tagFilterBuilder->GetString(filter);
     queryString+= ignoredFandomsBuilder->GetString(filter);
     //queryString+= ProcessFandomIgnore(filter);
@@ -224,7 +219,7 @@ QString DefaultQueryBuilder::ProcessOtherFandomsMode(StoryFilter filter, bool re
     QString queryString;
     if(filter.otherFandomsMode)
     {
-        queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) > 0").arg(userToken);
+        queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) > 0");
     }
     //        queryString += " and not exists ("
     //                       "select fandom_id from ficfandoms where fic_id = f.id and fandom_id in "
@@ -297,16 +292,22 @@ QString DefaultQueryBuilder::ProcessRecommenders(StoryFilter filter)
     QString result;
     if(filter.usedRecommenders.size() == 0)
         return result;
-    //    QStringList authorList;
-    //    for(auto author : filter.usedRecommenders)
-    //        authorList.push_back(QString::number(author));
 
-    //    result = QString(" and exists (select distinct fic_id from recommendations where recommender_id in (%1) and fic_id = f.id) ")
-    //            .arg("'"+ authorList.join("','") +"'");
     result = " and cfInFicsForAuthors(f.id) > 0 ";
     return result;
 
 }
+
+QString DefaultQueryBuilder::ProcessSnoozes(StoryFilter filter)
+{
+    QString result;
+    if(filter.displaySnoozedFics)
+        return result;
+
+    result = " and cfInSnoozes(f.id) < 1 ";
+    return result;
+}
+
 QString DefaultQueryBuilder::ProcessUrl(StoryFilter)
 {
     QString currentTagValue = " f.ffn_id as url, ";
@@ -554,10 +555,10 @@ QString DefaultQueryBuilder::ProcessActiveRecommendationsPart(StoryFilter filter
 QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 {
     QString queryString;
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString += " and ( favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
 
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString+= " and published <> updated "
                       " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
                                                                                                                                      " and published < date('now', '-" + QString::number(45) + " days') "
@@ -574,54 +575,29 @@ QString DefaultQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
 {
     QString diffField;
+    bool scoreSorting = filter.sortMode == StoryFilter::sm_metascore  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
 
-    if(filter.protocolVersion == 0)
-    {
-        if(filter.sortMode == StoryFilter::sm_wordcount)
-            diffField = " WORDCOUNT DESC";
-        if(filter.sortMode == StoryFilter::sm_wcrcr)
-            diffField = " (wcr ) asc";
-        else if(filter.sortMode == StoryFilter::sm_favourites)
-            diffField = " FAVOURITES DESC";
-        else if(filter.sortMode == StoryFilter::sm_updatedate)
-            diffField = " updated DESC";
-        else if(filter.sortMode == StoryFilter::sm_publisdate)
-            diffField = " published DESC";
-        else if(filter.sortMode == StoryFilter::sm_reccount)
-            diffField = " sumrecs desc";
-        else if(filter.sortMode == StoryFilter::sm_favrate)
-            diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) desc";
-        else if(filter.sortMode == StoryFilter::sm_revtofav)
-            diffField = " favourites /(reviews + 1) desc";
-        else if(filter.sortMode == StoryFilter::sm_genrevalues)
-            diffField = " genrevalue desc";
-        else if(filter.sortMode == StoryFilter::sm_scores)
-            diffField = " scores desc";
-    }
-    else{
-
-        if(filter.sortMode == StoryFilter::sm_wordcount)
-            diffField = " WORDCOUNT";
-        if(filter.sortMode == StoryFilter::sm_wcrcr)
-            diffField = " (wcr )";
-        else if(filter.sortMode == StoryFilter::sm_favourites)
-            diffField = " FAVOURITES";
-        else if(filter.sortMode == StoryFilter::sm_updatedate)
-            diffField = " updated";
-        else if(filter.sortMode == StoryFilter::sm_publisdate)
-            diffField = " published";
-        else if(filter.sortMode == StoryFilter::sm_reccount)
-            diffField = " sumrecs";
-        else if(filter.sortMode == StoryFilter::sm_favrate)
-            diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
-        else if(filter.sortMode == StoryFilter::sm_revtofav)
-            diffField = " favourites /(reviews + 1)";
-        else if(filter.sortMode == StoryFilter::sm_genrevalues)
-            diffField = " genrevalue";
-        else if(filter.sortMode == StoryFilter::sm_scores)
-            diffField = " scores ";
-        diffField += filter.descendingDirection ? " DESC" : " ASC";
-    }
+    if(filter.sortMode == StoryFilter::sm_wordcount)
+        diffField = " WORDCOUNT";
+    if(filter.sortMode == StoryFilter::sm_wcrcr)
+        diffField = " wcr";
+    else if(filter.sortMode == StoryFilter::sm_favourites)
+        diffField = " FAVOURITES";
+    else if(filter.sortMode == StoryFilter::sm_updatedate)
+        diffField = " updated";
+    else if(filter.sortMode == StoryFilter::sm_publisdate)
+        diffField = " published";
+    else if(scoreSorting)
+        diffField = " sumrecs";
+    else if(filter.sortMode == StoryFilter::sm_trending)
+        diffField = " favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published))";
+    else if(filter.sortMode == StoryFilter::sm_revtofav)
+        diffField = " favourites /(reviews + 1)";
+    else if(filter.sortMode == StoryFilter::sm_genrevalues)
+        diffField = " genrevalue";
+    else if(filter.sortMode == StoryFilter::sm_userscores)
+        diffField = " scores ";
+    diffField += filter.descendingDirection ? " DESC" : " ASC";
 
     return diffField;
 }
@@ -944,10 +920,10 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter, bool createLi
 QString CountQueryBuilder::ProcessWhereSortMode(StoryFilter filter)
 {
     QString queryString;
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString += " and ( favourites/(julianday(CURRENT_TIMESTAMP) - julianday(Published)) > " + QString::number(filter.recentAndPopularFavRatio) + " OR  favourites > 1000) ";
 
-    if(filter.sortMode == StoryFilter::sm_favrate)
+    if(filter.sortMode == StoryFilter::sm_trending)
         queryString+= " and published <> updated "
                       " and published > date('now', '-" + QString::number(filter.recentCutoff.date().daysTo(QDate::currentDate())) + " days') "
                                                                                                                                      " and published < date('now', '-" + QString::number(45) + " days') "
@@ -1001,13 +977,13 @@ QString TagFilteringClient::GetString(StoryFilter filter)
     else
     {
         if(filter.mode == core::StoryFilter::filtering_in_fics && filter.activeTagsCount > 0)
-            queryString += QString(" and cfInActiveTags(f.id) = 1 ").arg(userToken);
+            queryString += QString(" and cfInActiveTags(f.id) = 1 ");
         else
         {
             if(filter.ignoreAlreadyTagged || filter.allTagsCount == 0)
                 queryString += QString("");
             else
-                queryString += QString(" and cfInTags(f.id) < 1 ").arg(userToken);
+                queryString += QString(" and cfInTags(f.id) < 1 ");
         }
     }
 
@@ -1054,7 +1030,7 @@ QString FandomIgnoreClient::GetString(StoryFilter filter)
     QString queryString;
     {
         if(filter.ignoreFandoms && filter.ignoredFandomCount > 0)
-            queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) < 1").arg(userToken);
+            queryString += QString(" and cfInIgnoredFandoms(f.fandom1,f.fandom2) < 1");
         else
             queryString += QString("");
     }

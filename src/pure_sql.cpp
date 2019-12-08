@@ -1064,31 +1064,36 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 
 
-DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId,
-                                                                         QSqlDatabase db,
-                                                                         int minMatchCount,
-                                                                         core::StoryFilter::ESourceListLimiter limiter, bool displayPurged)
+DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::ReclistFilter filter, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id, match_count from RecommendationListData where list_id = :list_id");
-    if(minMatchCount != 0)
-        qs += " and match_count > :match_count";
+    QString qs = QString("select fic_id, %1 from RecommendationListData where list_id = :list_id");
+    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = qs.arg(pointsField);
 
-    if(limiter == core::StoryFilter::sll_above_average)
+
+    if(filter.minMatchCount != 0)
+    {
+        qs += QString(" and %1 > :match_count").arg(pointsField);
+    }
+
+    if(filter.limiter == core::StoryFilter::sll_above_average)
         qs+=" and (votes_uncommon > 0 or votes_rare > 0 or votes_unique> 0)";
-    else if(limiter == core::StoryFilter::sll_very_close)
+    else if(filter.limiter == core::StoryFilter::sll_very_close)
         qs+=" and (votes_rare > 0 or votes_unique > 0)";
-    if(limiter == core::StoryFilter::sll_exceptional)
+    if(filter.limiter == core::StoryFilter::sll_exceptional)
         qs+=" and (votes_unique > 0)";
 
-    if(!displayPurged)
-        qs+=" and (purged = 0)";
+    if(!filter.displayPurged)
+        qs+=" and purged = 0";
+
+    //qDebug() << "purged query:" << qs;
 
     SqlContext<QHash<int,int>> ctx(db, qs);
-    ctx.bindValue("list_id",listId);
-    if(minMatchCount != 0)
-        ctx.bindValue("match_count",minMatchCount);
+    ctx.bindValue("list_id",filter.mainListId);
+    if(filter.minMatchCount != 0)
+        ctx.bindValue("match_count",filter.minMatchCount);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        ctx.result.data[q.value("fic_id").toInt()] = q.value("match_count").toInt();
+        ctx.result.data[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
     });
     return ctx.result;
 }
@@ -1207,17 +1212,27 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     qDebug() << "Created new list with id: " << list->id;
     ctx.result.data = list->id > 0;
 
-    qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, "
+    qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, is_automatic = :is_automatic, "
                  " always_pick_at = :always_pick_at,  created = :created,"
+                 "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
+                 "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data,"
                  "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,"
+                 "  use_dislikes = :use_dislikes, use_dead_fic_ignore = :use_dead_fic_ignore,"
                  " sources = :sources where name = :name");
     ctx.ReplaceQuery(qs);
     ctx.bindValue("minimum",list->minimumMatch);
     ctx.bindValue("pick_ratio",list->maxUnmatchedPerMatch);
+    ctx.bindValue("is_automatic",list->isAutomatic);
     ctx.bindValue("always_pick_at",list->alwaysPickAt);
     ctx.bindValue("created",creationTimestamp);
+    ctx.bindValue("quadratic_deviation",list->quadraticDeviation);
+    ctx.bindValue("ratio_median",list->ratioMedian);
+    ctx.bindValue("distance_to_double_sigma",list->sigma2Distance);
+    ctx.bindValue("has_aux_data",list->hasAuxDataFilled);
     ctx.bindValue("use_weighting",list->useWeighting);
     ctx.bindValue("use_mood_adjustment",list->useMoodAdjustment);
+    ctx.bindValue("use_dislikes",list->useDislikes);
+    ctx.bindValue("use_dead_fic_ignore",list->useDeadFicIgnore);
     QStringList authors;
     for(auto id : list->ficData.authorIds)
         authors.push_back(QString::number(id));
@@ -1232,6 +1247,23 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
 
     return ctx.result;
 }
+
+DiagnosticSQLResult<bool> WriteAuxParamsForReclist(QSharedPointer<core::RecommendationList> list, QSqlDatabase db)
+{
+    QString qs = QString("update RecommendationLists set  "
+                 "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
+                 "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data"
+                 " where name = :name");
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("quadratic_deviation",list->quadraticDeviation);
+    ctx.bindValue("ratio_median",list->ratioMedian);
+    ctx.bindValue("distance_to_double_sigma",list->sigma2Distance);
+    ctx.bindValue("has_aux_data",list->hasAuxDataFilled);
+    ctx.bindValue("name",list->name);
+    return ctx();
+}
+
+
 
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db)
 {
@@ -1404,10 +1436,29 @@ DiagnosticSQLResult<bool> UpdateAuthorFavouritesUpdateDate(int authorId, QDateTi
 
 DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
 {
+    DiagnosticSQLResult<QStringList> result;
+    QSet<QString> tags;
+    {
     QString qs = QString("Select tag from tags");
     SqlContext<QStringList> ctx(db);
     ctx.FetchLargeSelectIntoList<QString>("tag", qs);
-    return ctx.result;
+    if(!ctx.result.success)
+        return ctx.result;
+    tags = ctx.result.data.toSet();
+    }
+    {
+    QString qs = QString("select distinct tag from fictags");
+    SqlContext<QStringList> ctx(db);
+    ctx.FetchLargeSelectIntoList<QString>("tag", qs);
+    if(!ctx.result.success)
+        return ctx.result;
+    tags += ctx.result.data.toSet();
+    }
+    result.data = tags.toList();
+    std::sort(result.data.begin(), result.data.end());
+    result.success = true;
+    return result;
+
 }
 
 DiagnosticSQLResult<bool>  PushTaglistIntoDatabase(QStringList tagList, QSqlDatabase db)
@@ -2189,28 +2240,15 @@ DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSq
     return ctx.result;
 }
 
-DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(bool allowSnoozed, QSqlDatabase db)
+DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QSqlDatabase db)
 {
         QString qs = QString("select distinct fic_id from fictags ");
-        QStringList parts;
-
-        if(!allowSnoozed)
-            parts.push_back(" fic_id not in (select distinct fic_id from ficsnoozes where expired = 1) ");
-        if(allowSnoozed)
-            parts.push_back(" tag <> 'Snoozed'");
-
-        if(parts.size() > 0)
-        {
-            qs+= " where ";
-            qs+= parts.join(" and ");
-        }
-        qDebug() << "snooze query: "  << qs;
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
 }
 
-DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, bool allowSnoozed, QSqlDatabase db){
+DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, QSqlDatabase db){
 
     if(!useAND)
     {
@@ -2225,9 +2263,6 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
             qs+= " where ";
             qs+= parts.join(" and ");
         }
-        if(!allowSnoozed)
-            qs+= " and fic_id not in (select distinct fic_id from ficsnoozes where expired = 0) ";
-        qDebug() << "snooze tags query: "  << qs;
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
@@ -2243,10 +2278,6 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
             tokens.push_back(prototype.arg(tag));
         }
         qs += tokens.join(" and ");
-        if(!allowSnoozed)
-            qs+= " and fic_id not in (select distinct fic_id from ficsnoozes where expired = 0) ";
-
-        //qs += " and " + parts.join(" and ");
         SqlContext<QSet<int>> ctx(db, qs);
         ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
         return ctx.result;
@@ -2261,38 +2292,82 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase
     return ctx.result;
 }
 
+DiagnosticSQLResult<QHash<QString, int> > GetTagSizes(QStringList tags, QSqlDatabase db)
+{
+    QString qs = "select tag, count(tag) as count_tags from fictags %1 group by tag ";
+    if(tags.size() > 0)
+        qs = qs.arg("where tag in ('" + tags.join("','") + "')");
+    else
+        qs = qs.arg("");
+
+    SqlContext<QHash<QString, int>> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data.insert(q.value("tag").toString(),q.value("count_tags").toInt());
+    });
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    if(tags.size() == 0)
+    {
+        result.success = true;
+        return result;
+    }
+
+    QString qs = QString("delete from fictags where tag in (%1)");
+    qs = qs.arg("'" + tags.join("','") + "'");
+    return SqlContext<bool> (db, qs)();
+}
+
+
+
 DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db)
 {
-    QString qs = "select id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
+    QString qs = "select id, ffn_id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
     SqlContext<QHash<int, core::SnoozeInfo>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        qDebug() << " loading snooze data";
+        //qDebug() << " loading snooze data:";
         core::SnoozeInfo info;
         info.ficId = q.value("id").toInt();
         info.finished = q.value("complete").toInt();
         info.atChapter = q.value("chapters").toInt();
-        qDebug() << " ficid: " << info.ficId ;
-        qDebug() << " finished: " << info.finished;
-        qDebug() << " atChapter: " << info.atChapter;
+        //qDebug() << " snoozed ficid: " << info.ficId ;
+        //qDebug() << " snoozed fic ffn id: " << q.value("ffn_id").toInt();
+        //qDebug() << " finished: " << info.finished;
+        //qDebug() << " atChapter: " << info.atChapter;
+        //qDebug() << "///////////////";
         ctx.result.data[info.ficId] = info;
     });
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool limitedSelection, QSqlDatabase db){
+DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
     QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
 
+    QStringList filters;
+
     if(limitedSelection)
-        qs = qs.arg(" where cfInFicSelection(fic_id) > 0 ");
+        filters.push_back(" cfInFicSelection(fic_id) > 0 ");
+
+    if(!fetchExpired)
+        filters.push_back(" expired == 0 ");
+
+    if(filters.size() > 0)
+        qs=qs.arg(QString(" where ") + filters.join(" and "));
     else
-        qs = qs.arg("");
+        qs=qs.arg("");
+
+    QLOG_TRACE() <<  "snooze query: " << qs;
+
 
     SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         core::SnoozeTaskInfo info;
         info.ficId =                q.value("fic_id").toInt();
         info.added =                q.value("snooze_added").toDateTime();
-        info.expired =              q.value("expired").toInt();
+        info.expired =              q.value("expired").toBool();
         info.untilFinished =        q.value("snoozed_until_finished").toInt();
         info.snoozedAtChapter=      q.value("snoozed_at_chapter").toInt();
         info.snoozedTillChapter =   q.value("snoozed_till_chapter").toInt();
@@ -2360,10 +2435,16 @@ DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo data,QSqlDatabase db){
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("fic_id", data.ficId);
     ctx.bindValue("snoozed_at_chapter", data.snoozedAtChapter);
-    ctx.bindValue("snoozed_till_chapter", data.snoozedTillChapter);
+    if(!data.untilFinished)
+        ctx.bindValue("snoozed_till_chapter", data.snoozedTillChapter);
+    else
+        ctx.bindValue("snoozed_till_chapter", -1);
     ctx.bindValue("snoozed_until_finished", data.untilFinished);
     ctx.bindValue("snoozed_at_chapter_", data.snoozedAtChapter);
-    ctx.bindValue("snoozed_till_chapter_", data.snoozedTillChapter);
+    if(!data.untilFinished)
+        ctx.bindValue("snoozed_till_chapter_", data.snoozedTillChapter);
+    else
+        ctx.bindValue("snoozed_till_chapter_", -1);
     ctx.bindValue("snoozed_until_finished_", data.untilFinished);
     ctx.bindValue("fic_id_", data.ficId);
     ctx.bindValue("fic_id", data.ficId);
@@ -2378,8 +2459,8 @@ DiagnosticSQLResult<bool> RemoveSnooze(int fic_id,QSqlDatabase db){
 
 DiagnosticSQLResult<bool> AddNoteToFic(int fic_id, QString note, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO ficnotes(fic_id, note_content) values(:fic_id, :note) "
-                 "on conflict (fic_id) do update set note_content = :note_ where fic_id = :fic_id_";
+    QString qs = "INSERT INTO ficnotes(fic_id, note_content, updated) values(:fic_id, :note, date('now')) "
+                 "on conflict (fic_id) do update set note_content = :note_, updated = date('now') where fic_id = :fic_id_";
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("fic_id", fic_id);
     ctx.bindValue("note", note);
@@ -2502,7 +2583,75 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
         fic.voteBreakdownCounts = breakdownCounts[fic.id];
         if(purgedFics.contains(fic.id))
             fic.purged = true;
+        else
+            fic.purged = false;
     }
+    return ctx.result;
+}
+
+
+DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& scores, core::ReclistFilter filter, QSqlDatabase db)
+{
+    // need to create a list of ids to query for
+    QStringList ids;
+    for(auto fic: scores.keys())
+        ids.push_back(QString::number(fic));
+    QString qs = QString("select fic_id, %1 from RecommendationListData where list_id = :list_id and fic_id in (%2)" );
+    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = qs.arg(pointsField);
+    qs = qs.arg(ids.join(","));
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("list_id", filter.mainListId);
+
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        scores[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
+    });
+    return ctx.result;
+
+
+}
+
+DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter, QSqlDatabase db)
+{
+    QStringList ficIds;
+
+    QHash<int, int> indices;
+    int i = 0;
+    for(auto fic: *fics)
+    {
+        ficIds.push_back(QString::number(fic.id));
+        indices[fic.id] = i;
+        i++;
+    }
+    QStringList listIds;
+    listIds << QString::number(filter.mainListId);
+    if(filter.secondListId != -1)
+        listIds << QString::number(filter.secondListId);
+
+
+    QString qs = QString("select fic_id, list_id, %1, position, pedestal from RecommendationListData where list_id in (%2) and fic_id in (%3)" );
+    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = qs.arg(pointsField);
+    qs = qs.arg(listIds.join(","));
+    qs = qs.arg(ficIds.join(","));
+
+    SqlContext<bool> ctx(db, qs);
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        int ficId = q.value("fic_id").toInt();
+        auto& fic = (*fics)[indices[ficId]];
+        if(q.value("list_id").toInt() == filter.mainListId)
+        {
+            fic.recommendationsMainList = q.value(pointsField).toInt();
+            fic.placeInMainList = q.value("position").toInt();
+            fic.placeOnSecondPedestal = q.value("pedestal").toInt();
+        }
+        else{
+            fic.recommendationsSecondList = q.value(pointsField).toInt();
+            fic.placeInSecondList = q.value("position").toInt();
+            fic.placeOnSecondPedestal= q.value("pedestal").toInt();
+        }
+    });
     return ctx.result;
 }
 
@@ -2515,11 +2664,14 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecL
         ctx.result.data = QSharedPointer<core::RecommendationList>{new core::RecommendationList};
         ctx.result.data->id = q.value("id").toInt();
         ctx.result.data->name = q.value("name").toString();
-        ctx.result.data->maxUnmatchedPerMatch = q.value("pick_ratio").toDouble();
+        ctx.result.data->maxUnmatchedPerMatch = q.value("pick_ratio").toInt();
         ctx.result.data->alwaysPickAt = q.value("always_pick_at").toInt();
         ctx.result.data->minimumMatch = q.value("minimum").toInt();
-        ctx.result.data->useWeighting = q.value("use_weighting").toInt();
-        ctx.result.data->useMoodAdjustment= q.value("use_mood_adjustment").toInt();
+        ctx.result.data->useWeighting = q.value("use_weighting").toBool();
+        ctx.result.data->useMoodAdjustment= q.value("use_mood_adjustment").toBool();
+        ctx.result.data->useDislikes = q.value("use_dislikes").toBool();
+        ctx.result.data->useDeadFicIgnore= q.value("use_dead_fic_ignore").toBool();
+        ctx.result.data->isAutomatic = q.value("is_automatic").toBool();
     });
     return ctx.result;
 }
@@ -3585,6 +3737,77 @@ DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase
     return SqlContext<bool>(db, qs)();
 }
 
+DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int list_id, QHash<uint32_t, QVector<uint32_t> > relations, QSqlDatabase db)
+{
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+    {
+        QString qs = QString("delete from RecommendersForFicAndList where list_id = :list_id");
+        SqlContext<bool>(db, qs,BP1(list_id))();
+    }
+
+    {
+        QString qs = QString("insert into RecommendersForFicAndList(list_id, fic_id, author_id) values(:list_id, :fic_id, :author_id)");
+        SqlContext<bool>ctx (db, qs);
+        ctx.bindValue("list_id", list_id);
+        auto fics = relations.keys();
+        std::sort(fics.begin(), fics.end());
+        for(auto& fic : fics){
+            ctx.bindValue("fic_id", fic);
+            for(auto& author : relations[fic]){
+                ctx.bindValue("author_id", author);
+                ctx();
+                if(!ctx.result.success){
+                    result = ctx.result;
+                    return result;
+                }
+            }
+        }
+    }
+    result.success = true;
+    return result;
+}
+
+DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int list_id,
+                                                            QVector<core::AuthorResult> authors,
+                                                     QSqlDatabase db){
+    DiagnosticSQLResult<bool> result;
+    result.success = false;
+    {
+        QString qs = QString("delete from AuthorParamsForRecList where list_id = :list_id");
+        SqlContext<bool>(db, qs,BP1(list_id))();
+    }
+    {
+        QString qs = QString("insert into AuthorParamsForRecList"
+                             "(list_id, author_id, full_list_size, total_matches, negative_matches, match_category, "
+                             "list_size_without_ignores, ratio_difference_on_neutral_mood, ratio_difference_on_touchy_mood) "
+                             "values(:list_id, :author_id, :full_list_size, :total_matches, :negative_matches, :match_category,"
+                             ":list_size_without_ignores, :ratio_difference_on_neutral_mood, :ratio_difference_on_touchy_mood)");
+        SqlContext<bool> ctx(db, qs);
+        ctx.bindValue("list_id", list_id);
+        for(auto& author : authors){
+            ctx.bindValue("author_id", author.id);
+            ctx.bindValue("full_list_size", author.fullListSize);
+            ctx.bindValue("total_matches", author.matches);
+            ctx.bindValue("negative_matches", author.negativeMatches);
+            ctx.bindValue("match_category", static_cast<int>(author.authorMatchCloseness));
+            ctx.bindValue("list_size_without_ignores", author.sizeAfterIgnore);
+            ctx.bindValue("ratio_difference_on_neutral_mood", author.listDiff.neutralDifference.value_or(-1));
+            ctx.bindValue("ratio_difference_on_touchy_mood", author.listDiff.touchyDifference.value_or(-1));
+            ctx();
+            if(!ctx.result.success){
+                result = ctx.result;
+                return result;
+            }
+        }
+
+    }
+    result.success = true;
+    return result;
+}
+
+
+
 DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
 {
     thread_local QHash<QString, int> result;
@@ -3686,15 +3909,52 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
 
 //alter table RecommendationListData add column breakdown_available integer default 0;
 
+static QHash<int, int> RecastFicScoresIntoPedestalSet(const core::RecommendationListFicData& ficData){
+    int position = 1;
+    QSet<int> scoresSet;
+    QList<int> scoresList;
+    QHash<int, int> scorePositions;
+    QVector ficsCopy = ficData.fics;
+    for(int i = 0; i < ficData.fics.size(); i++)
+        scoresSet.insert(ficData.matchCounts[i]);
+
+    scoresList = scoresSet.toList();
+    std::sort(scoresList.begin(), scoresList.end());
+    std::reverse(scoresList.begin(), scoresList.end());
+
+    for(int i = 0; i < scoresList.size(); i++)
+        scorePositions[scoresList.at(i)]=position++;
+    return scorePositions;
+}
+
+static QHash<int, int> CreateFicPositions(const core::RecommendationListFicData& ficData){
+
+    // first we need to fill the hash of scores per fic
+    QHash<int, int> scores;
+    QHash<int, int> positions;
+    QVector ficsCopy = ficData.fics;
+    for(int i = 0; i < ficData.fics.size(); i++)
+        scores[ficData.fics[i]] = ficData.matchCounts[i];
+
+    std::sort(ficsCopy.begin(), ficsCopy.end(), [&](const int& fic1, const int& fic2){
+        return scores[fic1] > scores[fic2] ;
+    });
+    for(int i = 0; i < ficData.fics.size(); i++){
+        positions[ficsCopy[i]] = i+1;
+    }
+    return positions;
+}
+
 
 DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
                                              QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin, "
+    QString qs = QString("insert into RecommendationListData(list_id, fic_id, position, pedestal, "
+                         "match_count, no_trash_score, is_origin, "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
                          "value_common, value_uncommon, value_rare, value_unique, purged) "
-                         "values(:listId, :ficId, :matchCount, :is_origin,"
+                         "values(:listId, :ficId, :position, :pedestal, :matchCount, :no_trash_score, :is_origin,"
                          ":breakdown_available,"
                          ":votes_common, :votes_uncommon, :votes_rare, :votes_unique, "
                          ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)");
@@ -3704,14 +3964,20 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
 
     qDebug() << "Creating new vote breakdown records for list with id: " << list->id;
     ctx.bindValue("listId", list->id);
+    auto scorePedestalPositions = RecastFicScoresIntoPedestalSet(list->ficData);
+    auto ficPositionsInList = CreateFicPositions(list->ficData);
+
     for(int i = 0; i < list->ficData.fics.size(); i++)
     {
 
         int ficId = list->ficData.fics.at(i);
 
         ctx.bindValue("ficId", ficId);
-        ctx.bindValue("purged", list->ficData.purges.at(i));
+        ctx.bindValue("position", ficPositionsInList[ficId]);
+        ctx.bindValue("pedestal", scorePedestalPositions[list->ficData.matchCounts.at(i)]);
+
         ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
+        ctx.bindValue("no_trash_score", list->ficData.noTrashScores.at(i));
         bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
         //QLOG_INFO() << "Writing fic: " << ficId << " isOrigin: " << isOrigin;
         ctx.bindValue("is_origin", isOrigin);
@@ -3726,6 +3992,7 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
         ctx.bindValue("value_uncommon", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::uncommon]);
         ctx.bindValue("value_rare", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::rare]);
         ctx.bindValue("value_unique", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::unique]);
+        ctx.bindValue("purged", list->ficData.purges.at(i));
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;
@@ -3966,60 +4233,111 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
     return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
 }
 
+DiagnosticSQLResult<bool> PassScoresToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "score", "updated"};
+    QString insertQS = QString("insert into FicScores(fic_id, score , updated) values(:fic_id, :score , :updated)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicScores", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
+DiagnosticSQLResult<bool> PassSnoozesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "snooze_added", "snoozed_at_chapter",
+                           "snoozed_till_chapter", "snoozed_until_finished", "expired"};
+    QString insertQS = QString("insert into FicSnoozes(fic_id, snooze_added, snoozed_at_chapter, snoozed_till_chapter,snoozed_until_finished,expired) "
+                               " values(:fic_id, :snooze_added, :snoozed_at_chapter, :snoozed_till_chapter,:snoozed_until_finished,:expired)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicSnoozes", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
+DiagnosticSQLResult<bool> PassFicTagsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag", "added"};
+    QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id,sv_id,tag, added) "
+                               " values(:fic_id, :ffn_id, :ao3_id, :sb_id,:sv_id,:tag, :added)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicTags", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
+DiagnosticSQLResult<bool> PassFicNotesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "note_content", "updated"};
+    QString insertQS = QString("insert into ficnotes(fic_id, note_content , updated) values(:fic_id, :note_content , :updated)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from ficnotes", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
+DiagnosticSQLResult<bool> PassTagSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"id", "tag"};
+    QString insertQS = QString("insert into Tags(id, tag) values(:id, :tag)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from Tags", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
+DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fandom", "seq_num"};
+    QString insertQS = QString("insert into recent_fandoms(fandom, seq_num) values(:fandom, :seq_num)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from recent_fandoms", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
+DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fandom_id", "including_crossovers"};
+    QString insertQS = QString("insert into ignored_fandoms(fandom_id, including_crossovers) values(:fandom_id, :including_crossovers)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from ignored_fandoms", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
+DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    {
+        QString qs = QString("delete from user_settings");
+        SqlContext<bool> (dbTarget, qs)();
+    }
+    QStringList keyList = {"name", "value"};
+    QString insertQS = QString("insert into user_settings(name, value) values(:name, :value)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from user_settings", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
-//DiagnosticSQLResult<bool> FillAuthorDataForList(int listId, const QVector<int> &, QSqlDatabase db)
-//{
-//    QString qs = QString("insert into RecommendationListAuthorStats(list_id, author_id, match_count) values(:listId, :ficId, :matchCount)");
-//    SqlContext<bool> ctx(db, qs);
-//    ctx.bindValue("listId", listId);
-//    for(int i = 0; i < fics.size(); i++)
-//    {
-//        ctx.bindValue("ficId", fics.at(i));
-//        ctx.bindValue("matchCount", matchCounts.at(i));
-//        if(!ctx.ExecAndCheck())
-//        {
-//            ctx.result.success = false;
-//            break;
-//        }
-//    }
-//    return ctx.result;
-//}
+DiagnosticSQLResult<bool> PassReadingDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QStringList keyList = {"fic_id", "at_chapter"};
+    QString insertQS = QString("insert into FicReadingTracker(fic_id, at_chapter) values(:name, :at_chapter)");
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicReadingTracker", keyList,
+                                  dbTarget, insertQS, keyList);
+    return ctx();
+}
 
-
-
-
-
-
-
-
+DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase db)
+{
+    DiagnosticSQLResult<DBVerificationResult> result;
+    QString qs = "pragma quick_check;";
+    SqlContext<QStringList> ctx(db);
+    ctx.FetchLargeSelectIntoListWithoutSize<QString>("quick_check", qs);
+    if(ctx.result.data.size() == 0 || ctx.result.data.at(0) != "ok")
+    {
+        result.success = false;
+        result.data.data = ctx.result.data;
+    }
+    else
+        result.success = true;
+    return result;
 }
 
 }
 
-
-
-//bool RebindFicsToIndex(int oldId, int newId, QSqlDatabase db)
-//{
-//    QString qs = QString("update ficfandoms set fandom_id = :new_id, reassigned = 1 where fandom_id = :old_id and reassigned != 1");
-
-//    QSqlQuery q(db);
-//    q.prepare(qs);
-//    q.bindValue(":old_id", oldId);
-//    q.bindValue(":new_id", newId);
-//    if(q.lastError().isValid() && !q.lastError().text().contains("UNIQUE constraint failed"))
-//    {
-//        qDebug() << q.lastError();
-//        qDebug() << q.lastQuery();
-//        return false;
-//    }
-//    return true;
-//}
-
+}
 

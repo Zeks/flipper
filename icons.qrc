@@ -88,5 +88,10 @@
         <file>icons/note.png</file>
         <file>icons/target_blue.png</file>
         <file>icons/target_grey.png</file>
+        <file>icons/question1.png</file>
+        <file>icons/shuffle_2x.png</file>
+        <file>icons/spoilers.png</file>
+        <file>icons/spoilers_gray.png</file>
+        <file>icons/reset_filter.png</file>
     </qresource>
 </RCC>

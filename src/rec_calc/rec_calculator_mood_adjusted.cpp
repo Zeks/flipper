@@ -26,18 +26,18 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
 {
     bool firstPass =  author.ratio <= params->maxUnmatchedPerMatch && author.matches > 0;
     author.usedRatio = params->maxUnmatchedPerMatch;
-    author.usedSize= params->minimumMatch;
+    author.usedMinimumMatrch= params->minimumMatch;
 
     if(!firstPass)
         return false;
 
-    auto cleanRatio = author.matches != 0 ? static_cast<double>(author.size)/static_cast<double>(author.matches) : 999999;
+    auto cleanRatio = author.matches != 0 ? static_cast<double>(author.fullListSize)/static_cast<double>(author.matches) : 999999;
     if(author.listDiff.touchyDifference.has_value())
     {
         auto authorcoef = author.listDiff.touchyDifference.value();
         if((cleanRatio > params->maxUnmatchedPerMatch) && authorcoef  >= 0.4)
         {
-            qDebug() << "skipping author: " << author.id << "with coef: "  << authorcoef  << " and ratio: " <<  cleanRatio;
+            //qDebug() << "skipping author: " << author.id << "with coef: "  << authorcoef  << " and ratio: " <<  cleanRatio;
             author.ratio = 999999;
         }
     }
@@ -46,7 +46,7 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
 };
 
 RecCalculatorImplWeighted::FilterListType RecCalculatorImplMoodAdjusted::GetFilterList(){
-    return {matchesFilter, ratioFilterMoodAdjusted};
+    return {matchesFilter, ratioFilterMoodAdjusted, negativeFilter};
 }
 
 RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors input, genre_stats::GenreMoodData moodData):

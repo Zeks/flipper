@@ -75,11 +75,14 @@ double sqrt_coef(double ratio, double median, double sigma, int base, int scaler
 
 
 RecCalculatorImplWeighted::FilterListType RecCalculatorImplWeighted::GetFilterList(){
-    return {matchesFilter, ratioFilter};
+    return {matchesFilter, ratioFilter, negativeFilter};
 }
 RecCalculatorImplBase::ActionListType RecCalculatorImplWeighted::GetActionList(){
-    auto ratioAccumulator = [ratioSum = std::reference_wrapper<double>(this->ratioSum)](RecCalculatorImplBase* ,AuthorResult & author)
-    {ratioSum+=author.ratio;};
+    auto ratioAccumulator = [ratioSum = std::reference_wrapper<double>(this->ratioSum)](RecCalculatorImplBase* calc,AuthorResult & author)
+    {
+        if(calc->ownProfileId != author.id)
+            ratioSum+=author.ratio;
+    };
     return {authorAccumulator, ratioAccumulator};
 };
 std::function<AuthorWeightingResult(AuthorResult&, int, int)> RecCalculatorImplWeighted::GetWeightingFunc(){
@@ -97,7 +100,9 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     QLOG_INFO() << "ratioSum:" << ratioSum;
     QLOG_INFO() << "filteredAuthors.size():" << filteredAuthors.size();
 
+
     int matchMedian = matchSum/inputs.faves.size();
+
     ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(filteredAuthors.size());
 
     double normalizer = 1./static_cast<double>(filteredAuthors.size()-1.);
@@ -175,6 +180,7 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
     {
         result.authorType = AuthorWeightingResult::EAuthorType::common;
     }
+    author.authorMatchCloseness = result.authorType;
     return result;
 }
 

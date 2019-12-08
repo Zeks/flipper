@@ -240,8 +240,9 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
     }
     if(!foundIterating)
     {
-        recentFandoms.push_back(nameIndex[fandom]);
-        nameIndex[fandom]->idInRecentFandoms = 0;
+        auto fandomPtr = nameIndex[fandom];
+        recentFandoms.push_back(fandomPtr);
+        fandomPtr->idInRecentFandoms = 0;
     }
     return true;
 }
@@ -252,6 +253,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
 void Fandoms::PushFandomToTopOfRecent(QString fandom)
 {
     fandom = core::Fandom::ConvertName(fandom);
+
     if(!EnsureFandom(fandom))
         return;
 

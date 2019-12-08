@@ -82,7 +82,7 @@ class Fanfics : public IDBWebIDIndex {
     // used on the server with threaded user data
     QHash<int, core::SnoozeInfo> GetSnoozeInfo();
     // used on the client to fetch snoozed fics to pass to the server
-    QHash<int, core::SnoozeTaskInfo> GetUserSnoozeInfo(bool useLimitedSelection = false);
+    QHash<int, core::SnoozeTaskInfo> GetUserSnoozeInfo(bool fetchExpired = true, bool useLimitedSelection = false);
     bool WriteExpiredSnoozes(QSet<int>);
     bool SnoozeFic(core::SnoozeTaskInfo);
     bool RemoveSnooze(int ficId);

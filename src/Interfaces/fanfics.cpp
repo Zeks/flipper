@@ -231,9 +231,9 @@ QHash<int, core::SnoozeInfo> Fanfics::GetSnoozeInfo()
     return database::puresql::GetSnoozeInfo(db).data;
 }
 
-QHash<int, core::SnoozeTaskInfo> Fanfics::GetUserSnoozeInfo(bool useLimitedSelection)
+QHash<int, core::SnoozeTaskInfo> Fanfics::GetUserSnoozeInfo(bool fetchExpired, bool useLimitedSelection)
 {
-    return database::puresql::GetUserSnoozeInfo(useLimitedSelection, db).data;
+    return database::puresql::GetUserSnoozeInfo(fetchExpired, useLimitedSelection, db).data;
 }
 
 bool Fanfics::WriteExpiredSnoozes(QSet<int> data)
@@ -266,7 +266,7 @@ bool Fanfics::FetchSnoozesForFics(QVector<core::Fic> * fics)
 
     UploadFicIdsForSelection(fics);
 
-    auto snoozes = GetUserSnoozeInfo(true);
+    auto snoozes = GetUserSnoozeInfo(true, true);
     for(auto& fic: *fics)
     {
         if(snoozes.contains(fic.id))

@@ -10,6 +10,7 @@
 #include "core/section.h"
 #include "core/fic_genre_data.h"
 #include "include/storyfilter.h"
+#include "include/reclist_author_result.h"
 #include "regex_utils.h"
 #include "transaction.h"
 #include "sqlcontext.h"
@@ -232,6 +233,15 @@ DiagnosticSQLResult<bool> WipeAuthorStatisticsRecords(QSqlDatabase db);
 DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db);
 DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField, QSqlDatabase db);
 
+DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int listId,
+                                                            QHash<uint32_t,QVector<uint32_t>>,
+                                                            QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int listId,
+                                                            QVector<core::AuthorResult>,
+                                                            QSqlDatabase db);
+
+
+
 
 
 DiagnosticSQLResult<QList<core::AuhtorStatsPtr>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db);
@@ -244,10 +254,12 @@ DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int lis
 DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId, core::StoryFilter::ESourceListLimiter limiter, QSqlDatabase db);
 DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId, QSqlDatabase db);
 
-DiagnosticSQLResult<QHash<int,int>> GetAllFicsHashFromRecommendationList(int listId,
-                                                                         QSqlDatabase db,
-                                                                         int minMatchCount = 0,
-                                                                         core::StoryFilter::ESourceListLimiter limiter = core::StoryFilter::sll_all, bool displayPurged = false);
+
+
+DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::ReclistFilter filter,QSqlDatabase db);
+
+
+
 DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db);
 
 DiagnosticSQLResult<int> GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db);
@@ -267,16 +279,20 @@ DiagnosticSQLResult<QVector<int>> GetAllUnprocessedLinkedAuthors(QSqlDatabase db
 
 
 DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db);
+DiagnosticSQLResult<bool> WriteAuxParamsForReclist(QSharedPointer<core::RecommendationList> list, QSqlDatabase db);
+
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db);
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int ficId, QSqlDatabase db);
-DiagnosticSQLResult<QSet<int>> GetAllTaggedFics(bool allowSnoozed, QSqlDatabase db);
-DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, bool allowSnoozed, QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>> GetAllTaggedFics(QSqlDatabase db);
+DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, QSqlDatabase db);
 DiagnosticSQLResult<QSet<int>> GetAuthorsForTags(QStringList tags, QSqlDatabase db);
+DiagnosticSQLResult<QHash<QString, int>> GetTagSizes(QStringList tags, QSqlDatabase db);
+DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase db);
 
 
 // assumes that ficsForSelection are filled
 DiagnosticSQLResult<QHash<int, core::SnoozeInfo>> GetSnoozeInfo(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool limitedSelection = false, QSqlDatabase db = {});
+DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired = true, bool limitedSelection = false, QSqlDatabase db = {});
 
 
 DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> ,QSqlDatabase db);
@@ -304,6 +320,10 @@ DiagnosticSQLResult<bool> FetchReadingChaptersForFics(QVector<core::Fic> * fics,
 
 
 DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int> &scores, core::ReclistFilter, QSqlDatabase db);
+
+DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> * fics, core::ReclistFilter, QSqlDatabase db);
+
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db);
 
 
@@ -388,6 +408,23 @@ DiagnosticSQLResult<bool>  EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db);
 DiagnosticSQLResult<QString> GetUserToken(QSqlDatabase db);
 DiagnosticSQLResult<int> GetLastFandomID(QSqlDatabase db);
 
+
+DiagnosticSQLResult<bool> PassScoresToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassReadingDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassSnoozesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassFicTagsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassFicNotesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassTagSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+
+struct DBVerificationResult{
+  bool success = true;
+  QStringList data;
+};
+DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase db);
+
 namespace Internal{
 DiagnosticSQLResult<bool> WriteMaxUpdateDateForFandom(QSharedPointer<core::Fandom> fandom,
                                  QString condition,
@@ -398,3 +435,4 @@ DiagnosticSQLResult<bool> WriteMaxUpdateDateForFandom(QSharedPointer<core::Fando
 
 }
 }
+

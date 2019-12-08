@@ -34,7 +34,7 @@ Rectangle{
     }
     height: {
         var height = ficSheet.height
-        if(!snoozeExpired && tags.indexOf("Snoozed") !== -1)
+        if(!snoozeExpired && ficIsSnoozed)
             height = height + snoozePart.height
         if(rectNotes.active)
             height = height + 200
@@ -48,7 +48,6 @@ Rectangle{
     property bool hasRealGenres : false
     property bool displayNotes: false
     property int indexOfThisDelegate: index
-    property bool snoozed: tags.indexOf("Snoozed") !== -1
     signal mouseClicked
     clip: false
 
@@ -60,6 +59,27 @@ Rectangle{
         else
             lvFics.tagDeletedInTagWidget(tag,rownum)
     }
+
+    function getDiffAndSecondIndex(displayMode,
+                                   positionInFirstList, positionInSecondList,
+                                   placeOnFirstPedestal, placeOnSecondPedestal){
+        var diff = 0;
+        var secondIndex = 0;
+
+        if(displayMode === 0){
+            diff = positionInFirstList - positionInSecondList;
+            secondIndex = positionInSecondList;
+        }
+        else if (displayMode === 1){
+            // intentionally empty
+        }
+        else{
+            diff = placeOnFirstPedestal - placeOnSecondPedestal;
+            secondIndex = placeOnSecondPedestal;
+        }
+        return [diff, secondIndex]
+    }
+
 
     function actOnAFic(ficIndex, ficUrl) {
         //console.log("acting on a fic")
@@ -196,6 +216,10 @@ Rectangle{
                         anchors.fill : parent
                         propagateComposedEvents : true
                         hoverEnabled :true
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "Clicking this copies the url into the clipboard and sends the url into the list below the fics."
+
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             lvFics.urlCopyClicked("http://www.fanfiction.net/s/" + url);
@@ -231,10 +255,17 @@ Rectangle{
                     verticalAlignment: Text.AlignVCenter
                     source: "qrc:/icons/icons/scan_small.png"
                     visible: true
-                    //visible: lvFics.showScanIcon
+
                     MouseArea{
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "Clicking this will display fics that are most favourited with this one.\n" +
+                                      "This would create an automatic recommendation list #similarfics to do that.\n"+
+                                      "Please select your own list again in Recommendation List combobox\nor press Back button after you are done with this mode."
+
                         anchors.fill : parent
                         propagateComposedEvents : true
+                        hoverEnabled :true
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             lvFics.findSimilarClicked(url);
@@ -250,6 +281,12 @@ Rectangle{
                     MouseArea{
                         anchors.fill : parent
                         propagateComposedEvents : true
+                        hoverEnabled :true
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "This will display other fics from the author of this one that Flipper's database knows of.\n" +
+                                      "After you're done with them, please tick off the `ID search` element that is used to display these things and Reload or press Back button."
+
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             if(lvFics.authorFilterActive === false)
@@ -272,9 +309,18 @@ Rectangle{
                     height: 21
                     textFormat: Text.RichText;
                     text: {
-                        if(!tiAtChapter.visible)
-                            return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
-                        return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"http://www.fanfiction.net/s/" + url + "/" + tiAtChapter.text + "\">" + indexOfThisDelegate + "."  + title + "</a></body></html>"
+                        var usedUrl = "http://www.fanfiction.net/s/" + url
+                        if(tiAtChapter.visible)
+                            usedUrl += "/" + tiAtChapter.text
+                        var displayedId = -1;
+                        if(lvFics.idDisplayMode === 0)
+                            displayedId = placeMain;
+                        else if (lvFics.idDisplayMode === 1)
+                            displayedId = indexOfThisDelegate;
+                        else
+                            displayedId = placeOnFirstPedestal;
+
+                        return " <html><style>a:link{ color: 	#CD853F33      ;}</style><a href=\"" + usedUrl +"\">" + displayedId + "."  + title + "</a></body></html>"
                     }
                     verticalAlignment: Text.AlignVCenter
                     style: Text.Raised
@@ -326,6 +372,18 @@ Rectangle{
                                 return "qrc:/icons/icons/updating_old.png"
 
                         }
+                        MouseArea{
+                            anchors.fill : parent
+                            propagateComposedEvents : true
+                            hoverEnabled :true
+                            ToolTip.delay: 1000
+                            ToolTip.visible: containsMouse
+                            ToolTip.text: "This indicates how long ago the fic was last updated.\n" +
+                                          "If the icon is fully gray - it was updated more than a year ago.\n" +
+                                          "If the icon is yellow - it was updated within last year.\n" +
+                                          "If the icon is green - it was updated within last month."
+
+                        }
                     }
 
 
@@ -336,6 +394,17 @@ Rectangle{
                         source: { if(complete == 1)
                                 return "qrc:/icons/icons/ok.png"
                             return "qrc:/icons/icons/ok_grayed.png"
+                        }
+                        MouseArea{
+                            anchors.fill : parent
+                            propagateComposedEvents : true
+                            hoverEnabled :true
+                            ToolTip.delay: 1000
+                            ToolTip.visible: containsMouse
+                            ToolTip.text: "This indicates if the fic is finished or not.\n" +
+                                          "If the icon is gray - it is unfinished.\n" +
+                                          "If the icon is green - it is finished."
+
                         }
                     }
                 }
@@ -360,6 +429,14 @@ Rectangle{
                         MouseArea{
                             anchors.fill : parent
                             propagateComposedEvents : true
+
+                            ToolTip.delay: 1000
+                            ToolTip.visible: containsMouse
+                            ToolTip.text: "This displays fanfom(s) for the fic.\n" +
+                                          "Clicking here will send the fandom name to the ignores section\n" +
+                                          "There, you can press Ignore Fandom to exclude it from appearing in the list.\n" +
+                                          "Clicking again will cycle between first fandom and crossover fandom."
+
                             onClicked : {
                                 actOnAFic(indexOfThisDelegate, url)
                                 lvFics.fandomToggled(index);
@@ -415,10 +492,24 @@ Rectangle{
                     width: 517
                     height: 21
                     visible: lvFics.displayAuthorName
-                    textFormat: Text.RichText;
-                    text: " <html><style>a:link{ color: 	#99853F33      ;}</style><a href=\"http://www.fanfiction.net/u/" +  author_id.toString() + "\">" +"By: " + author + "</a></body></html>"
+                    textFormat: {
+                        if(author_id > 0 )
+                            return Text.RichText;
+                        return Text.PlainText;
+                    }
+                    text: {
+                        var authorUrl = ""
+                        if(author_id > 0 )
+                            authorUrl  = " <html><style>a:link{ color: 	#99853F33      ;}</style><a href=\"http://www.fanfiction.net/u/" +  author_id.toString() + "\">" +"By: " + author + "</a></body></html>"
+                        else
+                            authorUrl  = "By: " + author
+                        return authorUrl
+                    }
                     verticalAlignment: Text.AlignVCenter
-                    style: Text.Raised
+                    style: {
+                        if(author_id > 0 )
+                            return Text.Raised
+                    }
                     font.pointSize: 12
                     font.family: "Verdana"
                     font.bold: false
@@ -448,12 +539,12 @@ Rectangle{
 
                 Image {
                     id: imgRecommendations
-                    width: recommendations > 0 ? 20 : 0
+                    width: recommendationsMain > 0 ? 20 : 0
                     height: 24
                     sourceSize.height: 24
                     sourceSize.width: 24
                     property bool chartVisible: false
-                    visible: recommendations > 0
+                    visible: recommendationsMain > 0
                     source: {
                         if(likedAuthor > 0)
                             return "qrc:/icons/icons/heart_half.png"
@@ -465,6 +556,12 @@ Rectangle{
                         hoverEnabled :true
                         anchors.fill : parent
                         propagateComposedEvents : true
+
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "If this is half-green, this fic is from the author whose fic(s) you've already liked."
+
+
                         onClicked : {
                             actOnAFic(indexOfThisDelegate, url)
                             lvFics.recommenderCopyClicked("http://www.fanfiction.net/s/" + url);
@@ -507,19 +604,100 @@ Rectangle{
                         }
                     }
                 }
-
                 Text {
                     id: txtRecCount
-                    width: recommendations > 0 ? 20 : 0
+                    width: recommendationsMain > 0 ? 20 : 0
                     height: 24
-                    text: { return recommendations + " Ratio: 1/" + Math.round(favourites/recommendations)}
+                    text: {
+                        return recommendationsMain
+                    }
                     //text: { return recommendations + " Ratio: 1/" + chapters}
                     //text: { return recommendations + " Faves: " + favourites}
-                    visible: recommendations > 0
+                    visible: recommendationsMain > 0
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 16
-                }
+                    MouseArea{
 
+                        hoverEnabled :true
+                        anchors.fill : parent
+                        propagateComposedEvents : true
+
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "The metascore assigned to the fic is based on:\nThe amount of people who liked it and have tastes similar to yours.\n" +
+                                      "How closely their lists are aligned to yours.\n" +
+                                      "How closely genres in their lists are aligned to yours.\n" +
+                                      "To control which of these factors are enabled when lsit is created see Advanced Mode in list creation."
+
+                    }
+                }
+                Text {
+                    id: txtPositionDiff
+                    visible: {
+                        var values = getDiffAndSecondIndex(lvFics.idDisplayMode, placeMain,placeSecond, placeOnFirstPedestal,placeOnSecondPedestal);
+                        var diff = values[0];
+                        var secondIndex = values[1];
+
+                        lvFics.displayListDifference && diff !== 0 && secondIndex !== 0
+                    }
+                    width: recommendationsMain > 0 ? 20 : 0
+                    height: 24
+                    text: {
+                        var values = getDiffAndSecondIndex(lvFics.idDisplayMode, placeMain,placeSecond, placeOnFirstPedestal,placeOnSecondPedestal);
+                        var diff = values[0];
+                        var secondIndex = values[1];
+
+                        if(lvFics.displayListDifference && recommendationsSecond != 0)
+                            return "O:" + secondIndex + "(" + recommendationsSecond + ")"
+
+                        var str = ""
+                        if(diff >= 0)
+                            str+="-";
+                        else if(diff < 0)
+                            str+="+";
+                        str+=Math.abs(diff);
+                        if(secondIndex === 0)
+                            return "new";
+                        return str
+                    }
+                    verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 16
+                    color: {
+                        var values = getDiffAndSecondIndex(lvFics.idDisplayMode, placeMain,placeSecond, placeOnFirstPedestal,placeOnSecondPedestal);
+                        var diff = values[0];
+                        var secondIndex = values[1];
+
+                        var color = Qt.lighter("darkRed")
+                        if(diff > 0)
+                         color = Qt.lighter("darkRed")
+                        else
+                         color = Qt.lighter("darkGreen")
+                        if(secondIndex === 0)
+                            color = Qt.lighter("darkGreen")
+                        return color;
+                    }
+                }
+                Text {
+                    id: txtRatio
+                    width: recommendationsMain > 0 ? 20 : 0
+                    height: 24
+                    text: { return " Ratio: 1/" + Math.round(favourites/recommendationsMain)}
+                    visible: recommendationsMain > 0
+                    verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 16
+                    MouseArea{
+                        hoverEnabled :true
+                        anchors.fill : parent
+                        propagateComposedEvents : true
+
+                        ToolTip.delay: 1000
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: "This displays how much FFN favourites per one point of metascore a fic has.\n" +
+                                      "if the second number is really high(500+), the fic is probably not something you'd like.\n" +
+                                      "This is more a hint than a rule though. There are a lot of exceptions."
+
+                    }
+                }
                 Text {
                     id: txtWords
                     width: 70
@@ -617,7 +795,16 @@ Rectangle{
                     opacity_full: 1
                     opacity_gray: 0.7
                 }
-
+                QuickTagger{
+                    id: imgSpoiler
+                    delegateTag: "Spoiler"
+                    delegateTags: tags
+                    tooltip:  qsTr("Tag: Spoiler")
+                    icon_colored: "qrc:/icons/icons/spoilers.png"
+                    icon_gray: "qrc:/icons/icons/spoilers_gray.png"
+                    opacity_full: 1
+                    opacity_gray: 0.7
+                }
                 QuickTagger{
                     id: imgWait
                     delegateTag: "Wait"
@@ -712,10 +899,8 @@ Rectangle{
                     height: 24
                     visible: complete && !snoozeExpired
                 }
-                QuickTagger{
+                SnoozeToggle{
                     id: imgSnooze
-                    delegateTag: "Snoozed"
-                    delegateTags: tags
                     tooltip: qsTr("Use this to remove fics from tag search results until they update")
                     icon_colored: "qrc:/icons/icons/bell.png"
                     icon_gray: "qrc:/icons/icons/bell_gray.png"
@@ -822,7 +1007,7 @@ Rectangle{
         anchors.right: ficSheet.right
         anchors.topMargin: 2
         //z:parent.z
-        visible: delegateItem.snoozed && !snoozeExpired
+        visible: ficIsSnoozed && !snoozeExpired
         border.width: 2
         border.color: Qt.rgba(0, 0, 1, 0.4)
 
@@ -873,9 +1058,10 @@ Rectangle{
                         if(snoozeMode === 0)
                             return "Next Chapter"
                         if(snoozeMode === 1)
-                            return "Until Finished"
-                        if(snoozeMode === 2)
                             return "Until Chapter"
+                        if(snoozeMode === 2)
+                            return "Until Finished"
+
                     }
                     verticalAlignment: Text.AlignVCenter
                     font.pointSize: 12
@@ -914,18 +1100,18 @@ Rectangle{
                 color: "lightyellow"
                 width: 60
                 height:row.height - 5
-                visible: lblSnoozeType.text == "Until Chapter"
+                visible: snoozeMode === 1
                 TextInput{
                     id: tiFicNotes
                     horizontalAlignment:  TextInput.AlignRight
                     font.pixelSize: mainWindow.textSize
                     anchors.fill: parent
-                    visible: lblSnoozeType.text == "Until Chapter"
+                    visible: snoozeMode === 1
                     color: "black"
-                    text: snoozeLimit === -1 ? chapters : snoozeLimit
+                    text: snoozeLimit === -1 ? chapters + 1 : snoozeLimit
                     onEditingFinished: {
                         console.log("Edited text is: ", text)
-                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 2, parseInt(text));
+                        lvFics.snoozeTypeChanged(indexOfThisDelegate, 1, parseInt(text));
                         snoozeLimit = parseInt(text)
                     }
                 }

@@ -69,7 +69,7 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 16), Qt::DisplayRole).toInt();
         if(role == RownumRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 17), Qt::DisplayRole).toInt();
-        if(role == RecommendationsRole)
+        if(role == RecommendationsMainRole)
             return AdaptingTableModel::data(index.sibling(index.row(), 18), Qt::DisplayRole).toInt();
         if(role == LanguageRole)
             return QString("");
@@ -135,6 +135,18 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             auto var = AdaptingTableModel::data(index.sibling(index.row(), 33), Qt::DisplayRole);
             return var;
         }
+        if(role == RecommendationsSecondRole)
+            return AdaptingTableModel::data(index.sibling(index.row(), 34), Qt::DisplayRole).toInt();
+        if(role == PlaceInMainList)
+            return AdaptingTableModel::data(index.sibling(index.row(), 35), Qt::DisplayRole).toInt();
+        if(role == PlaceInSecondList)
+            return AdaptingTableModel::data(index.sibling(index.row(), 36), Qt::DisplayRole).toInt();
+        if(role == PlaceOnFirstPedestal)
+            return AdaptingTableModel::data(index.sibling(index.row(), 37), Qt::DisplayRole).toInt();
+        if(role == PlaceOnSecondPedestal)
+            return AdaptingTableModel::data(index.sibling(index.row(), 38), Qt::DisplayRole).toInt();
+        if(role == FicIsSnoozed)
+            return AdaptingTableModel::data(index.sibling(index.row(), 39), Qt::DisplayRole).toBool();
 
         if(role == CurrentChapterRole)
             return QString("");
@@ -180,7 +192,7 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[AtChapterRole] = "atChapter";
     roles[RownumRole] = "rownum";
     roles[FicIdRole] = "ID";
-    roles[RecommendationsRole] = "recommendations";
+    roles[RecommendationsMainRole] = "recommendationsMain";
     roles[RealGenreRole] = "realGenre";
     roles[SlashRole] = "minSlashLevel";
     roles[BreakdownRole] = "roleBreakdown";
@@ -195,6 +207,12 @@ QHash<int, QByteArray> FicModel::roleNames() const {
     roles[NotesRole] = "notes";
     roles[QuotesRole] = "quotes";
     roles[SelectedRole] = "selected";
+    roles[RecommendationsSecondRole] = "recommendationsSecond";
+    roles[PlaceInMainList] = "placeMain";
+    roles[PlaceInSecondList] = "placeSecond";
+    roles[PlaceOnFirstPedestal] = "placeOnFirstPedestal";
+    roles[PlaceOnSecondPedestal] = "placeOnSecondPedestal";
+    roles[FicIsSnoozed] = "ficIsSnoozed";
 
     return roles;
 }

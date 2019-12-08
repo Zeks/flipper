@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSettings>
 #include <QPluginLoader>
 
-#include "include/servitorwindow.h"
+#include "include/ui/servitorwindow.h"
 #include "include/Interfaces/interface_sqlite.h"
 
 void SetupLogger()
@@ -101,7 +101,6 @@ int main(int argc, char *argv[])
     w.env.interfaces.db = dbInterface;
     w.env.interfaces.pageCache= pageCacheInterface;
     w.env.interfaces.tasks = tasksInterface;
-    w.env.thinClient = false;
     w.env.InitInterfaces();
     w.env.userToken = QUuid::createUuid().toString();
 

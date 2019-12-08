@@ -120,7 +120,7 @@ void FeederEnvironment::Init()
     rng->portableDBInterface = interfaces.db;
     queryBuilder.SetIdRNGgenerator(rng.release());
 
-    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    QSettings settings("settings/ui.ini", QSettings::IniFormat);
     auto storedRecList = settings.value("Settings/currentList").toString();
     interfaces.recs->SetCurrentRecommendationList(interfaces.recs->GetListIdForName(storedRecList));
     interfaces.recs->LoadAvailableRecommendationLists();
@@ -151,7 +151,7 @@ inline core::Fic FeederEnvironment::LoadFanfic(QSqlQuery& q)
     result.chapters = QString::number(q.value("CHAPTERS").toInt());
     result.complete= q.value("COMPLETE").toInt();
     result.atChapter = q.value("AT_CHAPTER").toInt();
-    result.recommendations= q.value("SUMRECS").toInt();
+    result.recommendationsMainList= q.value("SUMRECS").toInt();
     //QLOG_INFO() << "recs value: " << result.recommendations;
     return result;
 }

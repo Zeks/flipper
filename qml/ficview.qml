@@ -38,15 +38,15 @@ Rectangle {
 
     property bool havePagesBefore: false
     property bool havePagesAfter: false
-    property bool displayAuthorName: true
     property bool authorFilterActive: false
-    property bool detailedGenreMode: true
+
     property bool displaySnoozed: true
     property bool displayNoteTooltip: false
 
     signal pageRequested(int page)
     signal backClicked()
     signal forwardClicked()
+    signal shuffleClicked()
 
     property bool chartDisplay: false
     property bool qrDisplay: false
@@ -132,60 +132,51 @@ Rectangle {
         width: parent.width
         RowLayout{
             id:row
-            Image {
+            ListNavigationButton{
                 id: imgTarget
                 anchors.bottomMargin: 3
-                width: mainWindow.textSize
-                height: mainWindow.textSize
-                sourceSize.height: mainWindow.textSize
-                sourceSize.width: mainWindow.textSize
-                visible: true
-                source: mainWindow.selectedIndex == -1 ? "qrc:/icons/icons/target_grey.png" : "qrc:/icons/icons/target_blue.png"
-                MouseArea{
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
-                        if(mainWindow.selectedIndex == -1)
-                            return
-                        mainWindow.actionTakenSinceNavigation = false
-                        mainWindow.centerOnSelection(mainWindow.selectedIndex);
-                    }
+                iconsize: mainWindow.textSize
+                iconsource: mainWindow.selectedIndex == -1 ? "qrc:/icons/icons/target_grey.png" : "qrc:/icons/icons/target_blue.png"
+                tooltip: "This will center the list on the recently selected fic.\nTo select a fic click somewhere on its summary, but NOT on any of the control buttons\n." +
+                         "Selection persists between refilters so if a fic is still in the list after Reload clocking this button will navigate to it."
+                onClickSlot: function(){
+                    if(mainWindow.selectedIndex == -1)
+                        return
+                    mainWindow.actionTakenSinceNavigation = false
+                    mainWindow.centerOnSelection(mainWindow.selectedIndex);
                 }
             }
-            Image {
+            ListNavigationButton{
                 id: imgBack
                 anchors.bottomMargin: 3
-                width: mainWindow.textSize
-                height: mainWindow.textSize
-                sourceSize.height: mainWindow.textSize
-                sourceSize.width: mainWindow.textSize
-                visible: true
-                source: mainWindow.havePagesBefore ? "qrc:/icons/icons/back_blue.png" :  "qrc:/icons/icons/back_grey.png"
-                MouseArea{
-                    enabled: mainWindow.havePagesBefore
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
+                iconsize: mainWindow.textSize
+                iconsource: mainWindow.havePagesBefore ? "qrc:/icons/icons/back_blue.png" :  "qrc:/icons/icons/back_grey.png"
+                clickable: mainWindow.havePagesBefore
+                tooltip: "Navigates to the previous page of the current search results if you aren't on the first one."
+                onClickSlot: function(){
                         mainWindow.backClicked();
-                    }
                 }
             }
-            Image {
+            ListNavigationButton{
                 id: imgForward
                 anchors.bottomMargin: 3
-                width: mainWindow.textSize
-                height: mainWindow.textSize
-                sourceSize.height: mainWindow.textSize
-                sourceSize.width: mainWindow.textSize
-                visible: true
-                source: mainWindow.havePagesAfter ? "qrc:/icons/icons/forward_blue.png" :  "qrc:/icons/icons/forward_grey.png"
-                MouseArea{
-                    enabled: mainWindow.havePagesAfter
-                    anchors.fill : parent
-                    propagateComposedEvents : true
-                    onClicked : {
+                iconsize: mainWindow.textSize
+                iconsource: mainWindow.havePagesAfter ? "qrc:/icons/icons/forward_blue.png" :  "qrc:/icons/icons/forward_grey.png"
+                clickable: mainWindow.havePagesAfter
+                tooltip: "Navigates to the next page of the current search results if you aren't on the last one."
+                onClickSlot: function(){
                         mainWindow.forwardClicked();
-                    }
+                }
+            }
+            ListNavigationButton{
+                id: imgShuffle
+                anchors.bottomMargin: 3
+                iconsize: mainWindow.textSize
+                iconsource: "qrc:/icons/icons/shuffle_2x.png"
+                clickable: true
+                tooltip: "Shuffles the currently displayed fic results."
+                onClickSlot: function(){
+                        mainWindow.shuffleClicked();
                 }
             }
             Label {
@@ -218,15 +209,15 @@ Rectangle {
             Label {
                 text: "of:"
                 font.pixelSize: mainWindow.textSize
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 2
+//                anchors.bottom: row.bottom
+//                anchors.bottomMargin: 2
             }
             Label {
                 id:total
                 font.pixelSize: mainWindow.textSize
                 text: mainWindow.totalPages
-                anchors.bottom: row.bottom
-                anchors.bottomMargin: 2
+//                anchors.bottom: row.bottom
+//                anchors.bottomMargin: 2
             }
 
             Item {
@@ -275,6 +266,9 @@ Rectangle {
             property bool showScanIcon: scanIconVisible
             property bool authorFilterActive: false
             property bool displayAuthorName : displayAuthorNameInList
+            property bool displayListDifference: displayListDifferenceInList
+            property int idDisplayMode: idDisplayModeInList
+            property bool detailedGenreMode: detailedGenreModeInList
 
             spacing: 5
             clip:true
@@ -300,6 +294,8 @@ Rectangle {
             signal refilterClicked()
             signal heartDoubleClicked(var id)
             signal scoreAdjusted(var id, var value, var currentScore)
+            signal addSnooze(var id)
+            signal removeSnooze(var id)
             signal snoozeTypeChanged(var id, var value, var chapter)
             signal notesEdited(var id, var value)
         }

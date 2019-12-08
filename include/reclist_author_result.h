@@ -1,11 +1,14 @@
 #pragma once
 #include <QHash>
 #include <QSet>
+#include <QVector>
 #include <optional>
 //#include "include/rec_calc/rec_calculator_base.h"
 
 
 namespace core{
+
+
 struct ListMoodDifference{
     std::optional<double> neutralDifference = 0.;
     std::optional<double> touchyDifference = 0.;
@@ -23,18 +26,7 @@ struct AuthorMatchBreakdown{
     bool priority2 = false;
     bool priority3 = false;
 };
-struct AuthorResult{
-    int id;
-    int matches;
-    double ratio;
-    int size;
-    uint64_t sizeAfterIgnore = 0;
-    double distance = 0;
-    double usedRatio = 0;
-    int usedSize= 0;
-    AuthorMatchBreakdown breakdown;
-    ListMoodDifference listDiff;
-};
+
 struct AuthorWeightingResult
 {
     enum class EAuthorType{
@@ -56,10 +48,44 @@ struct AuthorWeightingResult
     EAuthorType authorType;
 };
 
+struct AuthorResult{
+    uint32_t sizeAfterIgnore = 0;
+
+    uint32_t id;
+    uint32_t matches = 0;
+    uint32_t negativeMatches = 0;
+    uint32_t fullListSize;
+    uint32_t usedMinimumMatrch= 0;
+
+    double ratio = 0;
+    double negativeRatio = 0;
+    double negativeToPositiveMatches = 0;
+    double distance = 0;
+    double usedRatio = 0;
+
+    AuthorWeightingResult::AuthorWeightingResult::EAuthorType authorMatchCloseness = AuthorWeightingResult::EAuthorType::common;
+    AuthorMatchBreakdown breakdown;
+    ListMoodDifference listDiff;
+};
+
+
+struct DiagnosticsForReclist{
+    bool isValid = false;
+
+    int sigma2Dist = 0;
+    double ratioMedian = 0;
+    double quad = 0;
+
+    QHash<uint32_t, QVector<uint32_t>> authorsForFics;
+    QVector<AuthorResult> authorData;
+};
+
+
 inline uint qHash(AuthorWeightingResult::EAuthorType key, uint seed)
  {
      return ::qHash(static_cast<uint>(key), seed);
  }
+
 struct MatchBreakdown{
   uint32_t ficId = -1;
   QHash<AuthorWeightingResult::EAuthorType, int> authorTypes;

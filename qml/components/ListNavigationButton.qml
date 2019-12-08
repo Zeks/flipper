@@ -1,6 +1,6 @@
 /*
 Flipper is a replacement search engine for fanfiction.net search results
-Copyright (C) 2017-2018  Marchenko Nikolai
+Copyright (C) 2017-2019  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,13 +15,34 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
+import QtQuick 2.5
+import QtQuick.Controls 2.4
 
-syntax = "proto3";
+Image {
+    property int iconsize
+    property string iconsource
+    property string tooltip
+    property bool clickable : true
+    property var onClickSlot
 
-package ProtoSpace;
+    width: iconsize
+    height: iconsize
+    sourceSize.height: iconsize
+    sourceSize.width: iconsize
 
-message Fandom{
-    int32 id         = 1;
-    string name      = 2;
-    string website   = 3;
+    source: iconsource
+
+    MouseArea{
+        hoverEnabled: true
+        ToolTip.delay: 1000
+        ToolTip.visible: containsMouse
+        ToolTip.text: tooltip
+        anchors.fill : parent
+        propagateComposedEvents : true
+        enabled: clickable
+        onClicked : {
+            onClickSlot();
+        }
+    }
 }
+

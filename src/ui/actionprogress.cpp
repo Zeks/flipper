@@ -15,17 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "fanficdisplay.h"
-#include "ui_fanficdisplay.h"
+#include "ui/actionprogress.h"
+#include "ui_actionprogress.h"
 
-FanficDisplay::FanficDisplay(QWidget *parent) :
+ActionProgress::ActionProgress(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::FanficDisplay)
+    ui(new Ui::ActionProgress)
 {
     ui->setupUi(this);
 }
 
-FanficDisplay::~FanficDisplay()
+ActionProgress::~ActionProgress()
 {
     delete ui;
 }

@@ -15,16 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "mainwindow.h"
+#include "ui/mainwindow.h"
+#include "ui/initialsetupdialog.h"
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "include/sqlitefunctions.h"
+#include "include/pure_sql.h"
 #include "include/db_fixers.h"
+#include "include/backups.h"
+#include "logger/QsLog.h"
 
 #include <QApplication>
 #include <QDir>
 #include <QDebug>
 #include <QSettings>
+#include <QTextCodec>
+#include <QStandardPaths>
+#include <QMessageBox>
 void SetupLogger()
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
@@ -43,83 +50,95 @@ void SetupLogger()
                 QsLogging::DestinationFactory::MakeDebugOutputDestination() );
     logger->addDestination(debugDestination);
     logger->addDestination(fileDestination);
-
 }
+
+
+
+typedef database::puresql::DiagnosticSQLResult<database::puresql::DBVerificationResult> VerificationResult;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setApplicationName("Flipper");
     SetupLogger();
 
-    QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
-    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    int threads =  sqlite3_threadsafe();
+
+    QDir dir;
+    auto backupPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups";
+    dir.mkpath(backupPath);
+    dir.setPath(backupPath);
+
+    QSharedPointer<CoreEnvironment> coreEnvironment(new CoreEnvironment());
+    QLOG_INFO() << "current appPath is: " << QDir::currentPath();
+
+
+    QSettings uiSettings("settings/ui.ini", QSettings::IniFormat);
+    uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    if(settings.value("Settings/doBackups", true).toBool())
-        dbInterface->BackupDatabase("CrawlerDB");
-    qDebug() << "current appPath is: " << QDir::currentPath();
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    bool mainDBIsCrawler= settings.value("Settings/thinClient").toBool();
-    QSqlDatabase mainDb, userDb;
-    if(mainDBIsCrawler)
-    {
-//        QLOG_INFO() << "Init CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-        QLOG_INFO() << "Init UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", false);
-        userDbInterface->EnsureUUIDForUserDatabase();
-    }
-    else
-    {
-//        QLOG_INFO() << "Init CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", false);
-        QLOG_INFO() << "Init UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", true);
-        userDbInterface->EnsureUUIDForUserDatabase();
-    }
-    auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
+    QString databaseFolderPath = uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString();
+    QString currentDatabaseFile = databaseFolderPath + "/" + "UserDB.sqlite";
+    bool hasDBFile = QFileInfo::exists(currentDatabaseFile);
+    An<PageManager>()->timeout = settings.value("Settings/pageFetchTimeout", 2000).toInt();
 
-//    QLOG_INFO() << "reading CrawlerDB";
-//    dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
-    QLOG_INFO() << "reading UserDB";
-    userDbInterface->ReadDbFile("dbcode/user_db_init.sql", "UserDB");
-    QLOG_INFO() << "reading PageCache";
-    pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
-    if(mainDBIsCrawler)
+    bool backupRestored = false;
+    if(databaseFolderPath.length() > 0)
     {
-//        QLOG_INFO() << "reinit CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", true);
-        QLOG_INFO() << "reinit UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", false);
-        userDbInterface->EnsureUUIDForUserDatabase();
+
+        VerificationResult verificationResult;
+        if(hasDBFile)
+            verificationResult = VerifyDatabase(currentDatabaseFile);
+        bool validDbFile  = hasDBFile && verificationResult.success;
+        if(!validDbFile)
+        {
+            backupRestored = ProcessBackupForInvalidDbFile(databaseFolderPath, "UserDB", verificationResult.data.data);
+            if(!backupRestored)
+                hasDBFile = false;
+            else
+                hasDBFile =true;
+
+        }
     }
-    else
-    {
-//        QLOG_INFO() << "reinit CrawlerDB";
-//        mainDb = dbInterface->InitDatabase("CrawlerDB", false);
-        QLOG_INFO() << "reinit UserDB";
-        userDb = userDbInterface->InitDatabase("UserDB", true);
-        userDbInterface->EnsureUUIDForUserDatabase();
-    }
-    QSqlDatabase tasksDb;
-    QLOG_INFO() << "Init Tasks";
-    tasksDb = tasksInterface->InitDatabase("Tasks");
-    QLOG_INFO() << "reading Tasks";
-    tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
-    QLOG_INFO() << "finished db";
+
 
     MainWindow w;
-    w.env.interfaces.db = dbInterface;
-    w.env.interfaces.userDb = userDbInterface;
-    w.env.interfaces.pageCache= pageCacheInterface;
-    w.env.interfaces.tasks = tasksInterface;
-    w.InitInterfaces();
-    if(!w.Init())
+    bool scheduleSlashFilter = false;
+    if(!hasDBFile || !uiSettings.value("Settings/initialInitComplete", false).toBool())
+    {
+        InitialSetupDialog setupDialog;
+        setupDialog.setWindowTitle("Welcome!");
+        setupDialog.setWindowModality(Qt::ApplicationModal);
+        setupDialog.env = coreEnvironment;
+        setupDialog.exec();
+        if(!setupDialog.initComplete)
+            return 2;
+        if(setupDialog.recsCreated)
+            w.QueueDefaultRecommendations();
+
+        scheduleSlashFilter = !setupDialog.readsSlash;
+    }
+    else
+    {
+
+        coreEnvironment->InstantiateClientDatabases(uiSettings.value("Settings/dbPath", QCoreApplication::applicationDirPath()).toString());
+        coreEnvironment->InitInterfaces();
+        coreEnvironment->Init();
+        coreEnvironment->BackupUserDatabase();
+        RemoveOlderBackups("UserDB");
+        if(backupRestored)
+            w.QueueDefaultRecommendations();
+    }
+
+
+
+
+    w.env = coreEnvironment;
+    if(!w.Init(scheduleSlashFilter))
         return 0;
     w.InitConnections();
     w.show();
+    w.DisplayInitialFicSelection();
     w.StartTaskTimer();
 
     return a.exec();

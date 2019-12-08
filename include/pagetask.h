@@ -122,6 +122,7 @@ public:
     int parts = 0; // amount of subtasks the task is split into
     int entities = 0; // I don't remember what teh fuck that is. to be explained later
     int allowedSubtaskRetries = -1; // how much retries a task can use
+    int delay = 500;
 
 
     QString results; // why the fuck am I using a string for the results, looks retarded

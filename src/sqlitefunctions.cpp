@@ -22,8 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDriver>
 #include <QFile>
 #include <QDebug>
+#include <QUuid>
 #include <QSettings>
 #include <QTextStream>
+#include <QCoreApplication>
 #include <third_party/quazip/quazip.h>
 #include <third_party/quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
@@ -88,6 +90,18 @@ void cfInFicsForAuthors(sqlite3_context* ctx, int , sqlite3_value** argv)
     auto* data = ThreadData::GetUserData();
 
     if(data->ficsForAuthorSearch.contains(ficId))
+        sqlite3_result_int(ctx, 1);
+    else
+        sqlite3_result_int(ctx, 0);
+}
+
+void cfInSnoozes(sqlite3_context* ctx, int , sqlite3_value** argv)
+{
+    int ficId = sqlite3_value_int(argv[0]);
+    //QLOG_INFO() << "accessing info for fic: " << ficId<< " user: " << userToken;
+    auto* data = ThreadData::GetUserData();
+
+    if(data->allSnoozedFics.contains(ficId))
         sqlite3_result_int(ctx, 1);
     else
         sqlite3_result_int(ctx, 0);
@@ -309,7 +323,7 @@ void cfGetSecondFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
 
 bool InstallCustomFunctions(QSqlDatabase db)
 {
-    QLOG_INFO() << "Installing custom sqlite functions";
+    //QLOG_INFO() << "Installing custom sqlite functions";
     QVariant v = db.driver()->handle();
     if (v.isValid() && qstrcmp(v.typeName(), "sqlite3*")==0)
     {
@@ -323,6 +337,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
 
             sqlite3_create_function(db_handle, "cfInTags", 1, SQLITE_UTF8 , nullptr, &cfInTags, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInFicsForAuthors", 1, SQLITE_UTF8 , nullptr, &cfInFicsForAuthors, nullptr, nullptr);
+            sqlite3_create_function(db_handle, "cfInSnoozes", 1, SQLITE_UTF8 , nullptr, &cfInSnoozes, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInSourceFics", 1, SQLITE_UTF8 , nullptr, &cfInSourceFics, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInRecommendations", 1, SQLITE_UTF8 , nullptr, &cfInRecommendations, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfInScores", 1, SQLITE_UTF8 , nullptr, &cfInScores, nullptr, nullptr);
@@ -335,7 +350,7 @@ bool InstallCustomFunctions(QSqlDatabase db)
             sqlite3_create_function(db_handle, "cfInFicSelection", 1, SQLITE_UTF8 , nullptr, &cfInFicSelection, nullptr, nullptr);
             sqlite3_create_function(db_handle, "cfGetFirstFandom", 1, SQLITE_UTF8 , nullptr, &cfGetFirstFandom, nullptr, nullptr);
 
-            QLOG_INFO() << "Installed funcs succesfully";
+            //QLOG_INFO() << "Installed funcs succesfully";
             return true;
         }
     }
@@ -351,7 +366,7 @@ bool ReadDbFile(QString file, QString connectionName)
     settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     auto reportSchemaErrors = settings.value("Settings/reportSchemaErrors", false).toBool();
 
-    qDebug() << "Reading init file: " << file;
+    QLOG_INFO() << "Reading init file: " << file;
     if (data.open(QFile::ReadOnly))
     {
         QTextStream in(&data);
@@ -378,7 +393,7 @@ bool ReadDbFile(QString file, QString connectionName)
             //bool isOpen = db.isOpen();
 
             q.prepare(statement.trimmed());
-            QLOG_INFO() << "Executing: " << statement;
+            QLOG_TRACE() << "Executing: " << statement;
             database::puresql::ExecAndCheck(q, reportSchemaErrors);
         }
         db.commit();
@@ -518,7 +533,7 @@ QSqlDatabase InitDatabase(QString name, bool setDefault)
         db = QSqlDatabase::addDatabase("QSQLITE", name);
     db.setDatabaseName(path + ".sqlite");
     bool isOpen = db.open();
-    qDebug() << "Database status: " << name << ", open : " << isOpen;
+    QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
 
     return db;
@@ -560,7 +575,7 @@ QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault
         db = QSqlDatabase::addDatabase("QSQLITE", dbName);
     db.setDatabaseName(filename + ".sqlite");
     bool isOpen = db.open();
-    qDebug() << "Database status: " << dbName << ", open : " << isOpen;
+    QLOG_INFO() << "Database status: " << dbName << ", open : " << isOpen;
     InstallCustomFunctions(db);
 
     return db;
@@ -576,9 +591,34 @@ QSqlDatabase InitDatabase2(QString file, QString name, bool setDefault)
         db = QSqlDatabase::addDatabase("QSQLITE", name);
     db.setDatabaseName(file + ".sqlite");
     bool isOpen = db.open();
-    qDebug() << "Database status: " << name << ", open : " << isOpen;
+    QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
     InstallCustomFunctions(db);
 
+    return db;
+}
+
+QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
+                                          QString file,
+                                          QString sqlFile,
+                                          QString connectionName,
+                                          bool setDefault)
+{
+    QSqlDatabase db;
+    if(setDefault)
+        db = QSqlDatabase::addDatabase("QSQLITE");
+    else
+        db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+    QString filename  = folder + "/" + file + ".sqlite";
+    db.setDatabaseName(filename);
+    bool isOpen = db.open();
+
+    InstallCustomFunctions(db);
+
+    QSettings settings("settings/settings.ini", QSettings::IniFormat);
+    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    ReadDbFile(sqlFile, setDefault ? "" : connectionName);
+    bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
+    QLOG_INFO() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;
     return db;
 }
 

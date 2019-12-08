@@ -202,21 +202,14 @@ QVector<int> RecommendationLists::GetAllSourceFicIDs(int listId)
     return result;
 }
 
-QHash<int, int> RecommendationLists::GetAllFicsHash(int listId,
-                                                    int minMatchCount,
-                                                    core::StoryFilter::ESourceListLimiter limiter, bool displayPurged)
+QHash<int, int> RecommendationLists::GetAllFicsHash(core::ReclistFilter filter)
 {
     QHash<int, int> result;
-    if(!EnsureList(listId))
+    if(!EnsureList(filter.mainListId))
         return result;
 
-//    if(!grpcCacheForLists.contains({listId, minMatchCount}))
-//    {
-        result = database::puresql::GetAllFicsHashFromRecommendationList(listId,db, minMatchCount, limiter, displayPurged).data;
-        grpcCacheForLists[{listId, minMatchCount}] = result;
-//    }
-//    else
-//        result = grpcCacheForLists[{listId, minMatchCount}];
+    result = database::puresql::GetRelevanceScoresInFilteredReclist(filter ,db).data;
+    grpcCacheForLists[{filter.mainListId, filter.minMatchCount}] = result;
 
     return result;
 }
@@ -366,6 +359,11 @@ bool RecommendationLists::LoadListIntoDatabase(core::RecPtr list)
         return false;
     AddToIndex(list);
     return result.success;
+}
+
+bool RecommendationLists::LoadListAuxDataIntoDatabase(core::RecPtr list)
+{
+     return database::puresql::WriteAuxParamsForReclist(list, db).success;
 }
 
 bool RecommendationLists::LoadListFromServerIntoDatabase(int listId,
@@ -521,6 +519,23 @@ void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics
     database::puresql::FetchRecommendationsBreakdown(fics, listId, db);
 }
 
+void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fics, core::ReclistFilter filter)
+{
+    QHash<int, int> scores;
+    for(auto fic: *fics)
+        scores[fic.id] = 0;
+
+    database::puresql::FetchRecommendationScoreForFics(scores, filter, db);
+    for(auto& fic: *fics){
+        fic.recommendationsMainList = scores[fic.id];
+    }
+}
+
+void RecommendationLists::LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter)
+{
+    database::puresql::LoadPlaceAndRecommendationsData(fics, filter, db);
+}
+
 QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecList(QString name)
 {
     auto id = GetListIdForName(name);
@@ -528,6 +543,16 @@ QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecL
         return QSharedPointer<core::RecommendationList>();
 
     return database::puresql::FetchParamsForRecList(id, db).data;
+}
+
+bool RecommendationLists::WriteFicRecommenderRelationsForRecList(int listId, QHash<uint32_t, QVector<uint32_t> > data)
+{
+    return database::puresql::WriteFicRecommenderRelationsForRecList(listId,data, db).success;
+}
+
+bool RecommendationLists::WriteAuthorStatsForRecList(int listId, QVector<core::AuthorResult> data)
+{
+    return database::puresql::WriteAuthorStatsForRecList(listId,data, db).success;
 }
 
 

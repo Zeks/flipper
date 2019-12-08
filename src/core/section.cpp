@@ -170,7 +170,11 @@ void core::Fic::Log()
     qDebug() << "StatSection:" << statSection;
     qDebug() << "Tags:" << tags;
     qDebug() << "Language:" << language;
-    qDebug() << "Summary:" << summary;
+
+    qDebug() << "Recommendations main:" << recommendationsMainList;
+    qDebug() << "Recommendations second:" << recommendationsSecondList;
+    qDebug() << "Place main:" << placeInMainList;
+    qDebug() << "Place second:" << placeInSecondList;
     LogWebIds();
     calcStats.Log();
     qDebug() << "//////////////////////////////////////";
@@ -190,18 +194,38 @@ void core::Fic::FicCalcStats::Log()
     qDebug() << "DaysRunning:" << daysRunning;
 }
 
-void core::RecommendationList::Log()
+void core::RecommendationList:: Log()
 {
 
     qDebug() << "List id: " << id ;
     qDebug() << "name: " << name ;
-    qDebug() << "automaic: " << isAutomatic;
+    qDebug() << "automatic: " << isAutomatic;
+    qDebug() << "useWeighting: " << useWeighting;
+    qDebug() << "useDislikes: " << useDislikes;
+    qDebug() << "useDeadFicIgnore: " << useDeadFicIgnore;
+    qDebug() << "useMoodAdjustment: " << useMoodAdjustment;
+    qDebug() << "hasAuxDataFilled: " << hasAuxDataFilled;
+    qDebug() << "maxUnmatchedPerMatch: " << maxUnmatchedPerMatch;
     qDebug() << "ficCount: " << ficCount ;
     qDebug() << "tagToUse: " << tagToUse ;
     qDebug() << "minimumMatch: " << minimumMatch ;
     qDebug() << "alwaysPickAt: " << alwaysPickAt ;
     qDebug() << "pickRatio: " << maxUnmatchedPerMatch ;
     qDebug() << "created: " << created ;
+    //qDebug() << "source fics: " << ficData.sourceFics;
+}
+
+void core::RecommendationList::PassSetupParamsInto(RecommendationList &other)
+{
+    other.isAutomatic = isAutomatic;
+    other.useWeighting = useWeighting;
+    other.useMoodAdjustment = useMoodAdjustment;
+    other.useDislikes = useDislikes;
+    other.useDeadFicIgnore= useDeadFicIgnore;
+    other.minimumMatch = minimumMatch;
+    other.alwaysPickAt = alwaysPickAt;
+    other.maxUnmatchedPerMatch = maxUnmatchedPerMatch;
+    other.name = name;
 }
 
 void core::AuthorStats::Serialize(QDataStream &out)
@@ -314,3 +338,8 @@ void core::FicSectionStats::Deserialize(QDataStream &in)
     in >>  lastPublished;
 }
 
+
+QString core::Fandom::GetName() const
+{
+    return this->name;
+}

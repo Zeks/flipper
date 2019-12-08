@@ -559,6 +559,7 @@ public:
     bool likedAuthor = false;
     int minSlashPass = 0;
     int score = 0;
+    bool ficIsSnoozed = false;
     int chapterTillSnoozed = -1;
     int chapterSnoozed = -1;
 
@@ -646,7 +647,12 @@ public:
     int sb_id = -1;
     int sv_id = -1;
     QString urlFFN;
-    int recommendations = 0;
+    int recommendationsMainList = 0;
+    int recommendationsSecondList = 0;
+    int placeInMainList = 0;
+    int placeInSecondList = 0;
+    int placeOnFirstPedestal= 0;
+    int placeOnSecondPedestal = 0;
     QString webSite = "ffn";
 
     UpdateMode updateMode = UpdateMode::none;
@@ -748,7 +754,7 @@ public:
         urls.append(url);
     }
     void SetName(QString name){this->name = ConvertName(name);}
-    QString GetName() const {return this->name;}
+    QString GetName() const;
     int id = -1;
     int idInRecentFandoms = -1;
     int ficCount = 0;
@@ -827,6 +833,7 @@ struct RecommendationListFicData
     QVector<int> fics;
     QVector<int> purges;
     QVector<int> matchCounts;
+    QVector<double> noTrashScores;
     QVector<int> authorIds;
     QHash<int, int> matchReport;
     QHash<int, core::MatchBreakdown> breakdowns;
@@ -837,24 +844,40 @@ class RecommendationList : public DBEntity{
 public:
     static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
     void Log();
+    void PassSetupParamsInto(RecommendationList& other);
+    bool isAutomatic = true;
+    bool useWeighting = false;
+    bool useMoodAdjustment = false;
+    bool hasAuxDataFilled = false;
+    bool useDislikes = false;
+    bool useDeadFicIgnore= false;
+    bool assignLikedToSources = false;
+
     int id = -1;
     int ficCount =-1;
-    QString name;
-    QString tagToUse;
     int minimumMatch = -1;
     int alwaysPickAt = -2;
     int maxUnmatchedPerMatch = -1;
     int userFFNId = -1;
-    bool isAutomatic = true;
-    bool useWeighting = false;
-    bool useMoodAdjustment = false;
+    int sigma2Distance = -1;
+
+    double quadraticDeviation = -1;
+    double ratioMedian = -1;
+
+    QString name;
+    QString tagToUse;
+
     QSet<int> ignoredFandoms;
+    QSet<int> ignoredDeadFics;
     QSet<int> likedAuthors;
     QSet<int> minorNegativeVotes;
     QSet<int> majorNegativeVotes;
     QDateTime created;
     RecommendationListFicData ficData;
+
+    QStringList errors;
 };
+
 
 struct MatchedFics{
     int ratio = 0;

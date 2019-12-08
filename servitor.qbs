@@ -47,6 +47,7 @@ App{
         sourceDirectory,
         sourceDirectory + "/../",
         sourceDirectory + "/include",
+        sourceDirectory + "/proto",
         sourceDirectory + "/libs",
         sourceDirectory + "/third_party/zlib",
         sourceDirectory + "/libs/Logger/include",
@@ -58,7 +59,7 @@ App{
         "include/calc_data_holder.h",
         "include/core/fic_genre_data.h",
         "include/servers/token_processing.h",
-        "include/servitorwindow.h",
+        "include/ui/servitorwindow.h",
         "include/tasks/author_cache_reprocessor.h",
         "include/tasks/author_genre_iteration_processor.h",
         "include/tasks/slash_task_processor.h",
@@ -72,7 +73,7 @@ App{
         "src/rec_calc/rec_calculator_mood_adjusted.cpp",
         "src/rec_calc/rec_calculator_weighted.cpp",
         "src/servers/token_processing.cpp",
-        "src/servitorwindow.cpp",
+        "src/ui/servitorwindow.cpp",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",
         "include/Interfaces/genres.h",
@@ -204,10 +205,14 @@ App{
         proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
-            "proto/filter.proto",
-            "proto/fanfic.proto",
-            "proto/fandom.proto",
-            "proto/favlist.proto",
+            "proto/search/filter.proto",
+            "proto/search/fanfic.proto",
+            "proto/search/fandom.proto",
+            "proto/statistics/favlist.proto",
+            "proto/recommendations/diagnostic_recommendations.proto",
+            "proto/recommendations/recommendations.proto",
+            "proto/server_base_structs.proto"
+
         ]
         fileTags: ["proto"]
     }

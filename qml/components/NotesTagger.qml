@@ -74,6 +74,7 @@ Rectangle{
                 {
                     rectNotes.active = false
                     displayNotes = false
+                    lvFics.notesEdited(indexOfThisDelegate, tiNotes.text)
                 }
             }
 

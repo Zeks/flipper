@@ -84,6 +84,70 @@ QSqlDatabase SqliteInterface::InitDatabase2(QString fileName, QString connection
     return db;
 }
 
+QSqlDatabase SqliteInterface::InitAndUpdateDatabaseForFile(QString folder,
+                                                           QString file,
+                                                           QString sqlFile,
+                                                           QString connectionName,
+                                                           bool setDefault)
+{
+    db = sqlite::InitAndUpdateDatabaseForFile(folder,file,  sqlFile, connectionName, setDefault);
+    return db;
+}
+
+//DiagnosticSQLResult<bool> PassScoresToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+//DiagnosticSQLResult<bool> PassSnoozesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+//DiagnosticSQLResult<bool> PassFicTagsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+//DiagnosticSQLResult<bool> PassFicNotesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+//DiagnosticSQLResult<bool> PassTagSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+//DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+//DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+//DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+
+bool SqliteInterface::PassScoresToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassScoresToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassSnoozesToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassSnoozesToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassFicTagsToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassFicTagsToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassFicNotesToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassFicNotesToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassTagSetToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassTagSetToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassRecentFandomsToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassRecentFandomsToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassIgnoredFandomsToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassClientDataToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassClientDataToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassReadingDataToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassReadingDataToAnotherDatabase(db, dbTarget).success;
+}
+
 QSqlDatabase SqliteInterface::InitNamedDatabase(QString dbName, QString fileName, bool setDefault)
 {
     db = sqlite::InitNamedDatabase(dbName, fileName, setDefault);

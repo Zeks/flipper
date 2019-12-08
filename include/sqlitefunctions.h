@@ -25,6 +25,9 @@ QDateTime GetCurrentDateTime(QSqlDatabase db);
 QSqlDatabase InitDatabase(QString name, bool setDefault = false);
 QSqlDatabase InitDatabase2(QString file, QString name, bool setDefault = false);
 QSqlDatabase InitNamedDatabase(QString dbName, QString filename, bool setDefault = false);
+
+QSqlDatabase InitAndUpdateDatabaseForFile(QString folder, QString file, QString sqlFile, QString connectionName, bool setDefault);
+
 int CreateNewTask(QSqlDatabase db);
 int CreateNewSubTask(int taskId, int subTaskId, QSqlDatabase db);
 }

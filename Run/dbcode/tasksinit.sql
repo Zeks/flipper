@@ -1,3 +1,8 @@
+CREATE TABLE if not exists user_settings(name varchar unique, value integer unique);
+INSERT INTO user_settings(name, value) values('Last Fandom Id', 0);
+INSERT INTO user_settings(name, value) values('user_ffn_id', -1);
+
+
 -- task table;
 CREATE TABLE if not exists PageTasks (
  id integer NOT NULL primary key autoincrement default 0,

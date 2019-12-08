@@ -58,6 +58,10 @@ public:
     RecommendationListResult GetMatchedFicsForFavList(QHash<uint32_t, FicWeightPtr> fetchedFics,
                                                       QSharedPointer<core::RecommendationList> params,
                                                       genre_stats::GenreMoodData moodData = {});
+
+    DiagnosticRecommendationListResult GetDiagnosticRecommendationList(QHash<uint32_t, FicWeightPtr> fetchedFics,
+                                                      QSharedPointer<core::RecommendationList> params,
+                                                      genre_stats::GenreMoodData moodData);
     DataHolder holder;
 };
 
