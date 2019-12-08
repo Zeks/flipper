@@ -1922,10 +1922,22 @@
         </item>
         <item row="0" column="0">
          <widget class="QTabWidget" name="tabSlashFilter">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="currentIndex">
            <number>0</number>
           </property>
           <widget class="QWidget" name="tab_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <attribute name="title">
             <string>Recommendations</string>
            </attribute>
@@ -1949,12 +1961,21 @@
               </property>
               <widget class="QWidget" name="wdgRecs" native="true">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="autoFillBackground">
+                <bool>true</bool>
+               </property>
+               <property name="styleSheet">
+                <string notr="true"/>
+               </property>
                <layout class="QGridLayout" name="gridLayout_16">
+                <property name="sizeConstraint">
+                 <enum>QLayout::SetMaximumSize</enum>
+                </property>
                 <property name="leftMargin">
                  <number>0</number>
                 </property>
@@ -1965,15 +1986,21 @@
                  <number>0</number>
                 </property>
                 <property name="bottomMargin">
-                 <number>6</number>
+                 <number>0</number>
                 </property>
                 <item row="0" column="0">
                  <widget class="QWidget" name="wdgRecsCreator" native="true">
                   <property name="sizePolicy">
-                   <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
                     <horstretch>0</horstretch>
                     <verstretch>0</verstretch>
                    </sizepolicy>
+                  </property>
+                  <property name="autoFillBackground">
+                   <bool>true</bool>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true"/>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_8">
                    <property name="leftMargin">
@@ -1983,6 +2010,9 @@
                     <number>0</number>
                    </property>
                    <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
                     <number>0</number>
                    </property>
                    <item>
@@ -2015,6 +2045,12 @@
                    </item>
                    <item>
                     <widget class="QWidget" name="wdgRecsCreatorInner" native="true">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
                      <property name="minimumSize">
                       <size>
                        <width>0</width>
@@ -2200,7 +2236,7 @@
                         <item>
                          <widget class="QWidget" name="wdgAdvancedControls" native="true">
                           <property name="sizePolicy">
-                           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
                             <horstretch>0</horstretch>
                             <verstretch>0</verstretch>
                            </sizepolicy>
@@ -2675,7 +2711,7 @@
                       <item>
                        <widget class="QPushButton" name="pbDiagnosticList">
                         <property name="sizePolicy">
-                         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                           <horstretch>4</horstretch>
                           <verstretch>0</verstretch>
                          </sizepolicy>
@@ -2695,7 +2731,7 @@
               </widget>
               <widget class="QSplitter" name="spFanIgnFan">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
@@ -2887,7 +2923,14 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QListView" name="lvIgnoredFandoms"/>
+                  <widget class="QListView" name="lvIgnoredFandoms">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                  </widget>
                  </item>
                  <item>
                   <widget class="QComboBox" name="cbIgnoreFandomSelector">
@@ -2949,6 +2992,12 @@
            </layout>
           </widget>
           <widget class="QWidget" name="tbFavBreak">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <attribute name="title">
             <string>Fic List Breakdown</string>
            </attribute>
@@ -3106,6 +3155,12 @@
         </item>
         <item row="2" column="0">
          <widget class="QWidget" name="widget_2" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -3337,6 +3392,12 @@
         </item>
         <item row="3" column="0">
          <widget class="QWidget" name="widget_4" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="minimumSize">
            <size>
             <width>0</width>

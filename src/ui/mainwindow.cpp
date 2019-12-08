@@ -350,6 +350,8 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     SetClientMode();
     ResetFilterUItoDefaults();
     ReadSettings();
+    QApplication::processEvents();
+    QApplication::processEvents();
     if(!ui->cbCrossovers->currentText().isEmpty())
         ui->chkCrossovers->setChecked(true);
     //    ui->spRecsFan->setStretchFactor(0, 0);
@@ -1379,6 +1381,8 @@ void MainWindow::ReadSettings()
     ui->chkAdjustOnListSimilarity->setChecked(uiSettings.value("Settings/chkAdjustOnListSimilarity", false).toBool());
     ui->chkUseAwaysPickAt->setChecked(uiSettings.value("Settings/chkUseAwaysPickAt", false).toBool());
     ui->chkRecsAutomaticSettings->setChecked(uiSettings.value("Settings/chkRecsAutomaticSettings", false).toBool());
+    ui->spRecsFan->restoreState(uiSettings.value("Settings/spRecsFan").toByteArray());
+
     auto creationMode = uiSettings.value("Settings/creationMode", 0).toInt();
     if(creationMode == 0)
     {
@@ -1414,8 +1418,9 @@ void MainWindow::ReadSettings()
         this->resize(uiSettings.value("Settings/appsize").toSize());
     if(!uiSettings.value("Settings/position").toPoint().isNull())
         this->move(uiSettings.value("Settings/position").toPoint());
-    if(uiSettings.value("Settings/maximized").toPoint().isNull())
+    if(uiSettings.value("Settings/maximized").toInt())
         this->showMaximized();
+
 
 }
 
@@ -1520,6 +1525,9 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/chkIgnoreMarkedDeadFics", ui->chkIgnoreMarkedDeadFics->isChecked());
     settings.setValue("Settings/chkUseDislikes", ui->chkUseDislikes->isChecked());
     settings.setValue("Settings/chkOtherPerson", ui->chkOtherPerson->isChecked());
+    settings.setValue("Settings/spRecsFan", ui->spRecsFan->saveState());
+
+
     settings.sync();
 }
 
@@ -3966,10 +3974,6 @@ void MainWindow::on_rbSimpleMode_clicked()
     ui->chkRecsAutomaticSettings->setChecked(true);
     reclistUIHelper.SetupVisibilityForElements();
     QCoreApplication::processEvents();
-//    ui->wdgRecsCreator->resize(10, 10);
-//    ui->wdgRecsCreator->adjustSize();
-//    ui->wdgRecs->resize(10, 10);
-//    ui->wdgRecs->adjustSize();
     ui->spRecsFan->setSizes({0,1000});
 }
 
