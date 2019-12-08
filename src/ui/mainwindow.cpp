@@ -157,6 +157,7 @@ MainWindow::MainWindow(QWidget *parent) :
     reclistUIHelper.SetupVisibilityForElements();
     ui->wdgRecsCreatorInner->hide();
     ui->wdgUrlList->hide();
+    ui->wdgFilteringModes->hide();
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/devBuild", false).toBool())

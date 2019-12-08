@@ -52,1257 +52,10 @@
         <property name="bottomMargin">
          <number>0</number>
         </property>
-        <item row="0" column="0">
-         <widget class="QTabWidget" name="tabSlashFilter">
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <widget class="QWidget" name="tab_3">
-           <attribute name="title">
-            <string>Recommendations</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_29">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item row="0" column="0">
-             <widget class="QSplitter" name="spRecsFan">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <widget class="QWidget" name="wdgRecs" native="true">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_16">
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>6</number>
-                </property>
-                <item row="0" column="0">
-                 <widget class="QWidget" name="wdgRecsCreator" native="true">
-                  <layout class="QVBoxLayout" name="verticalLayout_8">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <widget class="QPushButton" name="pbNewRecommendationList">
-                     <property name="minimumSize">
-                      <size>
-                       <width>0</width>
-                       <height>25</height>
-                      </size>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>16777215</width>
-                       <height>25</height>
-                      </size>
-                     </property>
-                     <property name="font">
-                      <font>
-                       <weight>75</weight>
-                       <bold>true</bold>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string>New Recommendation List</string>
-                     </property>
-                     <property name="checkable">
-                      <bool>false</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QWidget" name="wdgRecsCreatorInner" native="true">
-                     <property name="minimumSize">
-                      <size>
-                       <width>0</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <layout class="QVBoxLayout" name="verticalLayout_9">
-                      <item>
-                       <widget class="QWidget" name="wdgReclistModeSelector" native="true">
-                        <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                          <horstretch>0</horstretch>
-                          <verstretch>0</verstretch>
-                         </sizepolicy>
-                        </property>
-                        <layout class="QHBoxLayout" name="horizontalLayout_4">
-                         <property name="leftMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
-                          <number>0</number>
-                         </property>
-                         <item>
-                          <widget class="QLabel" name="lblMode">
-                           <property name="text">
-                            <string>Mode:</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QRadioButton" name="rbSimpleMode">
-                           <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A simple mode will try to create a recommendation list fully automatically given the sources.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                           <property name="text">
-                            <string>Simple</string>
-                           </property>
-                           <attribute name="buttonGroup">
-                            <string notr="true">bgRecsMode</string>
-                           </attribute>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QRadioButton" name="rbAdvancedMode">
-                           <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Advanced mode lets you control the way recommendations are created. This will potentially create better recommendations. If you have a lot of favourites on FFN, it's worth checking this out to finetune your list.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                           <property name="text">
-                            <string>Advanced</string>
-                           </property>
-                           <attribute name="buttonGroup">
-                            <string notr="true">bgRecsMode</string>
-                           </attribute>
-                          </widget>
-                         </item>
-                         <item>
-                          <spacer name="horizontalSpacer_10">
-                           <property name="orientation">
-                            <enum>Qt::Horizontal</enum>
-                           </property>
-                           <property name="sizeHint" stdset="0">
-                            <size>
-                             <width>262</width>
-                             <height>20</height>
-                            </size>
-                           </property>
-                          </spacer>
-                         </item>
-                         <item>
-                          <widget class="QLabel" name="lblSource">
-                           <property name="text">
-                            <string>Source:</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QRadioButton" name="rbProfileMode">
-                           <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Recommendation list will be created from your FFN favourites&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                           <property name="text">
-                            <string>FFN Profile</string>
-                           </property>
-                           <attribute name="buttonGroup">
-                            <string notr="true">bgRecsSource</string>
-                           </attribute>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QRadioButton" name="rbUrlMode">
-                           <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Recommendation list will be created from a list of urls. Urls must be in the format of :&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                           <property name="text">
-                            <string>List of Urls</string>
-                           </property>
-                           <attribute name="buttonGroup">
-                            <string notr="true">bgRecsSource</string>
-                           </attribute>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QRadioButton" name="rbSelectedTagsMode">
-                           <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Will create a recommendation list from selected tags. Note that when your first list os created &amp;quot;Liked&amp;quot; tag is filled automatically.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If you then &amp;quot;Like&amp;quot; more fics in Flipper, it's worth it to create subsequent recommendations from tags instead of your FFN profile.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                           <property name="text">
-                            <string>Selected Tags</string>
-                           </property>
-                           <attribute name="buttonGroup">
-                            <string notr="true">bgRecsSource</string>
-                           </attribute>
-                          </widget>
-                         </item>
-                        </layout>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QWidget" name="wdgProfileSelector" native="true">
-                        <layout class="QHBoxLayout" name="horizontalLayout_3">
-                         <property name="leftMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
-                          <number>0</number>
-                         </property>
-                         <item>
-                          <widget class="QLabel" name="lblRecsUrl">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="text">
-                            <string>FFN Profile ID:</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QLineEdit" name="leRecsFFNUrl">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="placeholderText">
-                            <string>Just the number</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QPushButton" name="pbValidateUserID">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="text">
-                            <string>Validate</string>
-                           </property>
-                          </widget>
-                         </item>
-                        </layout>
-                       </widget>
-                      </item>
-                      <item>
-                       <layout class="QHBoxLayout" name="horizontalLayout_15">
-                        <item>
-                         <widget class="QWidget" name="wdgAdvancedControls" native="true">
-                          <property name="sizePolicy">
-                           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                           </sizepolicy>
-                          </property>
-                          <layout class="QGridLayout" name="gridLayout_20">
-                           <property name="leftMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="topMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="rightMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="bottomMargin">
-                            <number>0</number>
-                           </property>
-                           <item row="3" column="0" colspan="2">
-                            <widget class="QLabel" name="lblAlgoTuners">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="text">
-                              <string>Algorithm tuners:</string>
-                             </property>
-                             <property name="alignment">
-                              <set>Qt::AlignCenter</set>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="7" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkUseDislikes">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="text">
-                              <string>Adjust scores on disliked fics count</string>
-                             </property>
-                             <property name="checked">
-                              <bool>false</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="2" column="0" colspan="2">
-                            <layout class="QGridLayout" name="gridLayout_14">
-                             <property name="sizeConstraint">
-                              <enum>QLayout::SetMaximumSize</enum>
-                             </property>
-                             <item row="0" column="0">
-                              <widget class="QLabel" name="label_23">
-                               <property name="text">
-                                <string>Minimum Matches:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="0" column="1">
-                              <widget class="QLineEdit" name="leRecsMinimumMatches">
-                               <property name="enabled">
-                                <bool>false</bool>
-                               </property>
-                               <property name="maximumSize">
-                                <size>
-                                 <width>70</width>
-                                 <height>16777215</height>
-                                </size>
-                               </property>
-                               <property name="inputMask">
-                                <string>9999</string>
-                               </property>
-                               <property name="text">
-                                <string>6</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="1" column="0">
-                              <widget class="QLabel" name="label_24">
-                               <property name="text">
-                                <string>Max pick ratio:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="1" column="1">
-                              <widget class="QLineEdit" name="leRecsPickRatio">
-                               <property name="enabled">
-                                <bool>false</bool>
-                               </property>
-                               <property name="maximumSize">
-                                <size>
-                                 <width>70</width>
-                                 <height>16777215</height>
-                                </size>
-                               </property>
-                               <property name="inputMask">
-                                <string>9999</string>
-                               </property>
-                               <property name="text">
-                                <string>50</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="2" column="0">
-                              <widget class="QCheckBox" name="chkUseAwaysPickAt">
-                               <property name="enabled">
-                                <bool>false</bool>
-                               </property>
-                               <property name="text">
-                                <string>Always pick at:</string>
-                               </property>
-                              </widget>
-                             </item>
-                             <item row="2" column="1">
-                              <widget class="QLineEdit" name="leRecsAlwaysPickAt">
-                               <property name="enabled">
-                                <bool>false</bool>
-                               </property>
-                               <property name="maximumSize">
-                                <size>
-                                 <width>70</width>
-                                 <height>16777215</height>
-                                </size>
-                               </property>
-                               <property name="inputMask">
-                                <string>9999</string>
-                               </property>
-                               <property name="text">
-                                <string>50</string>
-                               </property>
-                              </widget>
-                             </item>
-                            </layout>
-                           </item>
-                           <item row="1" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkRecsAutomaticSettings">
-                             <property name="text">
-                              <string>Automatic Margins</string>
-                             </property>
-                             <property name="checked">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="4" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkAdjustOnListSimilarity">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="text">
-                              <string>Adjust scores on list similarity</string>
-                             </property>
-                             <property name="checked">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="8" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkOtherPerson">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="text">
-                              <string>Recommendations are for someone else</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="0" column="0" colspan="2">
-                            <widget class="QLabel" name="lblAdvancedControls">
-                             <property name="text">
-                              <string>Advanced Controls</string>
-                             </property>
-                             <property name="alignment">
-                              <set>Qt::AlignCenter</set>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="9" column="1">
-                            <spacer name="verticalSpacer_3">
-                             <property name="orientation">
-                              <enum>Qt::Vertical</enum>
-                             </property>
-                             <property name="sizeHint" stdset="0">
-                              <size>
-                               <width>20</width>
-                               <height>89</height>
-                              </size>
-                             </property>
-                            </spacer>
-                           </item>
-                           <item row="5" column="0" colspan="2">
-                            <widget class="QCheckBox" name="chkFilterGenres">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="toolTip">
-                              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Purges fics from your reclist when they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                             </property>
-                             <property name="text">
-                              <string>Adjust scores on genre similarity</string>
-                             </property>
-                             <property name="checked">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="3" column="2">
-                            <spacer name="horizontalSpacer_3">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <property name="sizeHint" stdset="0">
-                              <size>
-                               <width>40</width>
-                               <height>20</height>
-                              </size>
-                             </property>
-                            </spacer>
-                           </item>
-                           <item row="6" column="0">
-                            <widget class="QCheckBox" name="chkIgnoreMarkedDeadFics">
-                             <property name="text">
-                              <string>Ignore marked dead fics</string>
-                             </property>
-                             <property name="checked">
-                              <bool>false</bool>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                        <item>
-                         <widget class="QWidget" name="wdgUrlList" native="true">
-                          <property name="sizePolicy">
-                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                            <horstretch>0</horstretch>
-                            <verstretch>0</verstretch>
-                           </sizepolicy>
-                          </property>
-                          <property name="styleSheet">
-                           <string notr="true"/>
-                          </property>
-                          <layout class="QGridLayout" name="gridLayout_10">
-                           <property name="leftMargin">
-                            <number>1</number>
-                           </property>
-                           <property name="topMargin">
-                            <number>1</number>
-                           </property>
-                           <property name="rightMargin">
-                            <number>1</number>
-                           </property>
-                           <property name="bottomMargin">
-                            <number>1</number>
-                           </property>
-                           <item row="0" column="0" colspan="2">
-                            <widget class="QWidget" name="wdgUrlPart" native="true">
-                             <property name="minimumSize">
-                              <size>
-                               <width>0</width>
-                               <height>120</height>
-                              </size>
-                             </property>
-                             <layout class="QGridLayout" name="gridLayout_19">
-                              <property name="leftMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="topMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="rightMargin">
-                               <number>0</number>
-                              </property>
-                              <property name="bottomMargin">
-                               <number>0</number>
-                              </property>
-                              <item row="0" column="0">
-                               <spacer name="horizontalSpacer_8">
-                                <property name="orientation">
-                                 <enum>Qt::Horizontal</enum>
-                                </property>
-                                <property name="sizeHint" stdset="0">
-                                 <size>
-                                  <width>159</width>
-                                  <height>20</height>
-                                 </size>
-                                </property>
-                               </spacer>
-                              </item>
-                              <item row="1" column="1" colspan="2">
-                               <widget class="QLineEdit" name="leFFNProfileInputForUrls">
-                                <property name="placeholderText">
-                                 <string>ID of your FFN Profile</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item row="0" column="2">
-                               <spacer name="horizontalSpacer_9">
-                                <property name="orientation">
-                                 <enum>Qt::Horizontal</enum>
-                                </property>
-                                <property name="sizeHint" stdset="0">
-                                 <size>
-                                  <width>158</width>
-                                  <height>20</height>
-                                 </size>
-                                </property>
-                               </spacer>
-                              </item>
-                              <item row="1" column="0">
-                               <widget class="QPushButton" name="pbRecsLoadFFNProfileIntoSource">
-                                <property name="minimumSize">
-                                 <size>
-                                  <width>90</width>
-                                  <height>0</height>
-                                 </size>
-                                </property>
-                                <property name="text">
-                                 <string>Load From FFN Faves</string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item row="2" column="0" colspan="3">
-                               <widget class="QTextBrowser" name="edtRecsContents">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-                                  <horstretch>0</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                               </widget>
-                              </item>
-                              <item row="0" column="1">
-                               <widget class="QLabel" name="label_33">
-                                <property name="text">
-                                 <string>Enter Fic URLs below</string>
-                                </property>
-                               </widget>
-                              </item>
-                             </layout>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                       </layout>
-                      </item>
-                      <item>
-                       <widget class="QWidget" name="widget_13" native="true">
-                        <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                          <horstretch>0</horstretch>
-                          <verstretch>0</verstretch>
-                         </sizepolicy>
-                        </property>
-                        <property name="minimumSize">
-                         <size>
-                          <width>0</width>
-                          <height>0</height>
-                         </size>
-                        </property>
-                        <layout class="QHBoxLayout" name="horizontalLayout_13">
-                         <property name="spacing">
-                          <number>6</number>
-                         </property>
-                         <property name="leftMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
-                          <number>0</number>
-                         </property>
-                         <item>
-                          <widget class="QPushButton" name="pbRecsCreateListFromSources">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="text">
-                            <string>Create New Recommendation List</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QLabel" name="label_29">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="text">
-                            <string>List Name:</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QComboBox" name="cbNewListName">
-                           <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;The name for the newly created recommendation list. You can have more than one and this name is later used to disambiguate which you want to use for searches.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                           <property name="editable">
-                            <bool>true</bool>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QCheckBox" name="chkAssignLikedToSources">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="toolTip">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is checked, fics used to create recommendation list will automatically receive &amp;quot;Liked&amp;quot; tag.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                           <property name="text">
-                            <string>Assign &quot;Liked&quot; to sources</string>
-                           </property>
-                          </widget>
-                         </item>
-                        </layout>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="lblCreationStatus">
-                        <property name="font">
-                         <font>
-                          <pointsize>10</pointsize>
-                          <weight>75</weight>
-                          <bold>true</bold>
-                         </font>
-                        </property>
-                        <property name="text">
-                         <string>TextLabel</string>
-                        </property>
-                        <property name="alignment">
-                         <set>Qt::AlignCenter</set>
-                        </property>
-                        <property name="wordWrap">
-                         <bool>true</bool>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QPushButton" name="pbDiagnosticList">
-                        <property name="sizePolicy">
-                         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                          <horstretch>4</horstretch>
-                          <verstretch>0</verstretch>
-                         </sizepolicy>
-                        </property>
-                        <property name="text">
-                         <string>Get Diagnostics</string>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QSplitter" name="spFanIgnFan">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <widget class="QWidget" name="layoutWidget">
-                <layout class="QVBoxLayout" name="verticalLayout_4">
-                 <property name="leftMargin">
-                  <number>2</number>
-                 </property>
-                 <item>
-                  <widget class="QWidget" name="widget_11" native="true">
-                   <property name="minimumSize">
-                    <size>
-                     <width>0</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <layout class="QHBoxLayout" name="horizontalLayout_17">
-                    <property name="leftMargin">
-                     <number>9</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                    <item>
-                     <widget class="QLabel" name="label_26">
-                      <property name="font">
-                       <font>
-                        <weight>75</weight>
-                        <bold>true</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>Recent Fandom Searches</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="lblRecentFandomsInfo">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>24</width>
-                        <height>24</height>
-                       </size>
-                      </property>
-                      <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Th&lt;span style=&quot; font-size:10pt;&quot;&gt;ese are just recent searches so that relevant fandoms can be accessed quickly. You can search on all other fandoms by typing them into the combobox next to &amp;quot;Searched Fandom&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="pixmap">
-                       <pixmap resource="../icons.qrc">:/icons/icons/question1.png</pixmap>
-                      </property>
-                      <property name="scaledContents">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QListView" name="lvTrackedFandoms">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This keeps a list of your last accessed fandoms for quick navigation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="selectionMode">
-                    <enum>QAbstractItemView::NoSelection</enum>
-                   </property>
-                   <property name="selectionBehavior">
-                    <enum>QAbstractItemView::SelectRows</enum>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="layoutWidget">
-                <layout class="QVBoxLayout" name="verticalLayout_5">
-                 <property name="leftMargin">
-                  <number>2</number>
-                 </property>
-                 <item>
-                  <widget class="QWidget" name="widget_12" native="true">
-                   <property name="minimumSize">
-                    <size>
-                     <width>0</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_27">
-                    <property name="leftMargin">
-                     <number>9</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_27">
-                      <property name="font">
-                       <font>
-                        <weight>75</weight>
-                        <bold>true</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>Ignored Fandoms</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3">
-                     <widget class="QLabel" name="lblIgnoredFandomsInfo">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>24</width>
-                        <height>24</height>
-                       </size>
-                      </property>
-                      <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you want to change the ignore mode (crossovers or not) remove the fandom via right click and re-add it with new settings. To quickly select the fandom you want to ignore: click on the fandom section of the displayed fic. More than one click cycles fandoms.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="pixmap">
-                       <pixmap resource="../icons.qrc">:/icons/icons/question1.png</pixmap>
-                      </property>
-                      <property name="scaledContents">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="2">
-                     <widget class="QCheckBox" name="chkOtherFandoms">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If checked, the next Reload will only search in ignored fandoms.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                      <property name="text">
-                       <string>Reverse ignores</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QListView" name="lvIgnoredFandoms"/>
-                 </item>
-                 <item>
-                  <widget class="QComboBox" name="cbIgnoreFandomSelector">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>100</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of all fandoms for category. Uses auto-complete so you just have to start typing.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="editable">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_9">
-                   <item>
-                    <widget class="QPushButton" name="pbIgnoreFandom">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Pressing this will ignore the fandom currently in the combobox to the right. If &amp;quot;Also crossovers&amp;quot; is checked it will also stop displaying fics that have this fandom as a second one. To remove a fandom from ignores or changes &amp;quot;Also crossovers&amp;quot; mode, right clock on it in the list and remove it. Then add it back.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string>Ignore Fandom</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QCheckBox" name="chkIgnoreIncludesCrossovers">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is checked pressing &amp;quot;Ignore fandom&amp;quot; will also exclude fandoms that have the ignored fandom as a crossover fandom in addition to purely being of that fandom.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string>Also Crossovers</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </item>
-                </layout>
-               </widget>
-              </widget>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tbFavBreak">
-           <attribute name="title">
-            <string>Fic List Breakdown</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_6">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item row="0" column="0">
-             <widget class="QPushButton" name="pbAnalyzeListOfFics">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Analyze</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="pbLoadUrlForAnalysis">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Load</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QLineEdit" name="leFFNProfileLoad">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="placeholderText">
-               <string>FFN Profile Url</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0" colspan="3">
-             <widget class="QWidget" name="widget_7" native="true">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QPushButton" name="pbProfileCompare">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Compare</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLineEdit" name="leFFNProfileLeft">
-                 <property name="placeholderText">
-                  <string>First FFN Profile Url</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLineEdit" name="leFFNProfileRight">
-                 <property name="placeholderText">
-                  <string>Second FFN Profile Url</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="2" column="0" colspan="3">
-             <widget class="QSplitter" name="spSourceAnalysis">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <widget class="QWidget" name="layoutWidget">
-               <layout class="QVBoxLayout" name="verticalLayout_6">
-                <item>
-                 <widget class="QLabel" name="label_6">
-                  <property name="text">
-                   <string>Source Fics</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QTextBrowser" name="edtAnalysisSources">
-                  <property name="readOnly">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="layoutWidget">
-               <layout class="QVBoxLayout" name="verticalLayout_7">
-                <item>
-                 <widget class="QLabel" name="label_10">
-                  <property name="text">
-                   <string>Results</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QTextBrowser" name="edtAnalysisResults"/>
-                </item>
-               </layout>
-              </widget>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_23"/>
-        </item>
-        <item row="5" column="0">
-         <widget class="QWidget" name="wdgFilteringModes" native="true">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_26">
-           <property name="leftMargin">
-            <number>2</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="label_25">
-             <property name="text">
-              <string>Filtering modes:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="cbCurrentFilteringMode">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>150</width>
-               <height>0</height>
-              </size>
-             </property>
-             <item>
-              <property name="text">
-               <string>Default</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Random Recs</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Tag Search</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pbReapplyFilteringMode">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This will reapply the predefined default filter set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>Reapply</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
         <item row="4" column="0">
          <widget class="QTabWidget" name="tabWidget_2">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+           <sizepolicy hsizetype="Ignored" vsizetype="Maximum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1345,6 +98,499 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
+            <item row="10" column="0" colspan="2">
+             <layout class="QHBoxLayout" name="horizontalLayout_12"/>
+            </item>
+            <item row="9" column="0">
+             <widget class="QWidget" name="widget_6" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_11">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_30">
+                 <property name="text">
+                  <string>Recommendation list:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_10">
+                 <item>
+                  <widget class="QPushButton" name="pbGetSourceLinks">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copies urls of list's source fics to clipboard&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../icons.qrc">
+                     <normaloff>:/icons/icons/clipboard.png</normaloff>:/icons/icons/clipboard.png</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>16</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pbRefreshRecList">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Pressing this button will recreate the currently selected recommendation list potentially picking new fics if the database has been updated.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Use this sparingly because the database is only updated ~1-2 time a month&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../icons.qrc">
+                     <normaloff>:/icons/icons/refresh.png</normaloff>:/icons/icons/refresh.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="cbRecGroup">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Allows you to select which recommendation list to display on reloads if sorting mode is Metascore or &amp;quot;Only in current reclist&amp;quot; is checked.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;You can create recommendation lists based on genres, based on fandoms, with custom settings etc... and switch between them here.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="cbRecGroupSecond">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pbDeleteRecList">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Deletes the currently selected recommendation list.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../icons.qrc">
+                     <normaloff>:/icons/icons/cross_red.png</normaloff>:/icons/icons/cross_red.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout"/>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblSourceFics">
+                 <property name="text">
+                  <string>Source fics:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="cbSourceFics">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This controls whether fics that were used as the source of the current recommendation list are shown or not.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Filter as usual&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means nothing is done, all filters applied normally.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Show fics&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means sources are forcibly injected into search results regardless of filters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Hide fics&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means sources are forcibly ejected from the search results regardless of filters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>Filter as usual</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Show Sources</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Hide Sources</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="chkDisplayPurged">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Displays fics that were purged from your reclist because they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>Display Purged Fics</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="7" column="0" colspan="3">
+             <layout class="QGridLayout" name="gridLayout_12">
+              <property name="leftMargin">
+               <number>2</number>
+              </property>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="leContainsGenre">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of genres to include separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QPushButton" name="pbExpandPlusGenre">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="5">
+               <widget class="QPushButton" name="pbExpandPlusWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="chkGenreMinus">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles genre exclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;You can search on either the genres that the author has set, or autodetected ones. This is controlled by &amp;quot;Use implied genre&amp;quot; checkbox.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;When implied genre search is used you can also set how relevant a genre must be.&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>-Genre</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QCheckBox" name="chkWordsPlus">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles word inclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Word search can only be used with a fandom selected.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>+Words</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="5">
+               <widget class="QPushButton" name="pbExpandMinusWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <widget class="QPushButton" name="pbExpandMinusGenre">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="acceptDrops">
+                 <bool>false</bool>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="chkGenrePlus">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles genre inclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;You can search on either the genres that the author has set, or autodetected ones. This is controlled by &amp;quot;Use implied genre&amp;quot; checkbox.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;When implied genre search is used you can also set how relevant a genre must be.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>+Genre</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="leNotContainsGenre">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of genres to exclude separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="4">
+               <widget class="QLineEdit" name="leContainsWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of words to search on separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This edit is case insensitive.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="3">
+               <widget class="QCheckBox" name="chkWordsMinus">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles word exclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Word search can only be used with a fandom selected.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>-Words</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="4">
+               <widget class="QLineEdit" name="leNotContainsWords">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of words to exclude from search separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This edit is case insensitive.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="3">
+               <widget class="QCheckBox" name="chkIdSearch">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This toggles the ID search mode on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;ID search is used to display different entities by their IDs:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- individual fics (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific authors (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific recommendation lists (filled automatically on heart doublelick)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Id Search</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="4">
+               <widget class="QWidget" name="widget_9" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_16">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QComboBox" name="cbIDMode">
+                   <property name="minimumSize">
+                    <size>
+                     <width>100</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Allows you to select between possible ID searches&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- individual fics (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific authors (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific recommendation lists (filled automatically on heart doublelick)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>FFN Fanfic</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>FFN Author</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>DB Recommender</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="leAuthorID">
+                   <property name="minimumSize">
+                    <size>
+                     <width>120</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="3" column="5">
+               <widget class="QPushButton" name="pbExpandIEntityds">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>20</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>20</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
             <item row="3" column="0">
              <widget class="QWidget" name="widget_3" native="true">
               <property name="minimumSize">
@@ -1782,182 +1028,6 @@
               </layout>
              </widget>
             </item>
-            <item row="10" column="0" colspan="2">
-             <layout class="QHBoxLayout" name="horizontalLayout_12"/>
-            </item>
-            <item row="9" column="0">
-             <widget class="QWidget" name="widget_6" native="true">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_11">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="label_30">
-                 <property name="text">
-                  <string>Recommendation list:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_10">
-                 <item>
-                  <widget class="QPushButton" name="pbGetSourceLinks">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copies urls of list's source fics to clipboard&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="icon">
-                    <iconset resource="../icons.qrc">
-                     <normaloff>:/icons/icons/clipboard.png</normaloff>:/icons/icons/clipboard.png</iconset>
-                   </property>
-                   <property name="iconSize">
-                    <size>
-                     <width>16</width>
-                     <height>16</height>
-                    </size>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="pbRefreshRecList">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Pressing this button will recreate the currently selected recommendation list potentially picking new fics if the database has been updated.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Use this sparingly because the database is only updated ~1-2 time a month&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="icon">
-                    <iconset resource="../icons.qrc">
-                     <normaloff>:/icons/icons/refresh.png</normaloff>:/icons/icons/refresh.png</iconset>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QComboBox" name="cbRecGroup">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>150</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Allows you to select which recommendation list to display on reloads if sorting mode is Metascore or &amp;quot;Only in current reclist&amp;quot; is checked.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;You can create recommendation lists based on genres, based on fandoms, with custom settings etc... and switch between them here.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QComboBox" name="cbRecGroupSecond">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>150</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="pbDeleteRecList">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Deletes the currently selected recommendation list.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="icon">
-                    <iconset resource="../icons.qrc">
-                     <normaloff>:/icons/icons/cross_red.png</normaloff>:/icons/icons/cross_red.png</iconset>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout"/>
-               </item>
-               <item>
-                <widget class="QLabel" name="lblSourceFics">
-                 <property name="text">
-                  <string>Source fics:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="cbSourceFics">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This controls whether fics that were used as the source of the current recommendation list are shown or not.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Filter as usual&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means nothing is done, all filters applied normally.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Show fics&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means sources are forcibly injected into search results regardless of filters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Hide fics&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means sources are forcibly ejected from the search results regardless of filters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>Filter as usual</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>Show Sources</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>Hide Sources</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="chkDisplayPurged">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Displays fics that were purged from your reclist because they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string>Display Purged Fics</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-              </layout>
-             </widget>
-            </item>
             <item row="5" column="0">
              <widget class="QWidget" name="widget_8" native="true">
               <property name="minimumSize">
@@ -2150,323 +1220,6 @@
                </item>
               </layout>
              </widget>
-            </item>
-            <item row="7" column="0" colspan="3">
-             <layout class="QGridLayout" name="gridLayout_12">
-              <property name="leftMargin">
-               <number>2</number>
-              </property>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="leContainsGenre">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of genres to include separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="2">
-               <widget class="QPushButton" name="pbExpandPlusGenre">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>20</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>20</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="5">
-               <widget class="QPushButton" name="pbExpandPlusWords">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>20</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>20</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QCheckBox" name="chkGenreMinus">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles genre exclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;You can search on either the genres that the author has set, or autodetected ones. This is controlled by &amp;quot;Use implied genre&amp;quot; checkbox.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;When implied genre search is used you can also set how relevant a genre must be.&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>-Genre</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
-               <widget class="QCheckBox" name="chkWordsPlus">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles word inclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Word search can only be used with a fandom selected.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>+Words</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="5">
-               <widget class="QPushButton" name="pbExpandMinusWords">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>20</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>20</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="2">
-               <widget class="QPushButton" name="pbExpandMinusGenre">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>20</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>20</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="acceptDrops">
-                 <bool>false</bool>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="chkGenrePlus">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles genre inclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;You can search on either the genres that the author has set, or autodetected ones. This is controlled by &amp;quot;Use implied genre&amp;quot; checkbox.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;When implied genre search is used you can also set how relevant a genre must be.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>+Genre</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QLineEdit" name="leNotContainsGenre">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of genres to exclude separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="4">
-               <widget class="QLineEdit" name="leContainsWords">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of words to search on separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This edit is case insensitive.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="3">
-               <widget class="QCheckBox" name="chkWordsMinus">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Toggles word exclusion on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Word search can only be used with a fandom selected.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>-Words</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="4">
-               <widget class="QLineEdit" name="leNotContainsWords">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of words to exclude from search separated by whitespaces.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This edit is case insensitive.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="3">
-               <widget class="QCheckBox" name="chkIdSearch">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This toggles the ID search mode on and off.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;ID search is used to display different entities by their IDs:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- individual fics (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific authors (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific recommendation lists (filled automatically on heart doublelick)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Id Search</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="4">
-               <widget class="QWidget" name="widget_9" native="true">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_16">
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <widget class="QComboBox" name="cbIDMode">
-                   <property name="minimumSize">
-                    <size>
-                     <width>100</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Allows you to select between possible ID searches&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- individual fics (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific authors (ffn ID)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- fics from specific recommendation lists (filled automatically on heart doublelick)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <item>
-                    <property name="text">
-                     <string>FFN Fanfic</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>FFN Author</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>DB Recommender</string>
-                    </property>
-                   </item>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLineEdit" name="leAuthorID">
-                   <property name="minimumSize">
-                    <size>
-                     <width>120</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="3" column="5">
-               <widget class="QPushButton" name="pbExpandIEntityds">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>20</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>20</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Press this if you need a bigger input field.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
             </item>
            </layout>
           </widget>
@@ -3167,215 +1920,1188 @@
           </widget>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QWidget" name="widget_4" native="true">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
+        <item row="0" column="0">
+         <widget class="QTabWidget" name="tabSlashFilter">
+          <property name="currentIndex">
+           <number>0</number>
           </property>
-          <property name="autoFillBackground">
-           <bool>false</bool>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_15">
-           <item row="0" column="0" colspan="3">
-            <widget class="QPushButton" name="pbLoadDatabase">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>30</height>
-              </size>
-             </property>
-             <property name="font">
-              <font>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Reloads the list of fics with filters applied.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>Reload List (with filters applied)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
-            <widget class="QPushButton" name="pbPreviousResults">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>30</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Navigates back between refilters restoring all the relevant filters and search results.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>&lt;</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="4">
-            <widget class="QPushButton" name="pbNextResults">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>30</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>50</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Navigates forward between refilters restoring all the relevant filters and search results.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>&gt;</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_28">
-             <item>
-              <widget class="QCheckBox" name="chkSearchWithinList">
-               <property name="text">
-                <string>Only in current reclist</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_14">
-               <property name="text">
-                <string>Source Users:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="cbSourceListLimiter">
-               <item>
-                <property name="text">
-                 <string>All</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Above average</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Very Similar</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Extremely Similar</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_4">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>211</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-           <item row="1" column="1">
-            <layout class="QHBoxLayout" name="horizontalLayout_24">
-             <item>
-              <widget class="QCheckBox" name="chkRandomizeSelection">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is toggled, then at most X random fics will be brought up on the next Reload that satisfy the current search criteria. X is controlled by the number to the right.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Use this to see the less rated stuff from your recommendation list in a random manner. You can combine this with Metascore filter to bring up random fics with a score of at least Y.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Random fics</string>
-               </property>
-               <property name="checked">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="sbMaxRandomFicCount">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
+          <widget class="QWidget" name="tab_3">
+           <attribute name="title">
+            <string>Recommendations</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_29">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="QSplitter" name="spRecsFan">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <widget class="QWidget" name="wdgRecs" native="true">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="toolTip">
-                <string>Limits te amount of fics to display. Needed for randomization due to the way it selects random fics from the database.</string>
-               </property>
-               <property name="maximum">
-                <number>100</number>
-               </property>
-               <property name="value">
-                <number>6</number>
-               </property>
+               <layout class="QGridLayout" name="gridLayout_16">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>6</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QWidget" name="wdgRecsCreator" native="true">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_8">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <widget class="QPushButton" name="pbNewRecommendationList">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <weight>75</weight>
+                       <bold>true</bold>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>New Recommendation List</string>
+                     </property>
+                     <property name="checkable">
+                      <bool>false</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QWidget" name="wdgRecsCreatorInner" native="true">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_9">
+                      <item>
+                       <widget class="QWidget" name="wdgReclistModeSelector" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <layout class="QHBoxLayout" name="horizontalLayout_4">
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QLabel" name="lblMode">
+                           <property name="text">
+                            <string>Mode:</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QRadioButton" name="rbSimpleMode">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A simple mode will try to create a recommendation list fully automatically given the sources.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>Simple</string>
+                           </property>
+                           <attribute name="buttonGroup">
+                            <string notr="true">bgRecsMode</string>
+                           </attribute>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QRadioButton" name="rbAdvancedMode">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Advanced mode lets you control the way recommendations are created. This will potentially create better recommendations. If you have a lot of favourites on FFN, it's worth checking this out to finetune your list.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>Advanced</string>
+                           </property>
+                           <attribute name="buttonGroup">
+                            <string notr="true">bgRecsMode</string>
+                           </attribute>
+                          </widget>
+                         </item>
+                         <item>
+                          <spacer name="horizontalSpacer_10">
+                           <property name="orientation">
+                            <enum>Qt::Horizontal</enum>
+                           </property>
+                           <property name="sizeHint" stdset="0">
+                            <size>
+                             <width>262</width>
+                             <height>20</height>
+                            </size>
+                           </property>
+                          </spacer>
+                         </item>
+                         <item>
+                          <widget class="QLabel" name="lblSource">
+                           <property name="text">
+                            <string>Source:</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QRadioButton" name="rbProfileMode">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Recommendation list will be created from your FFN favourites&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>FFN Profile</string>
+                           </property>
+                           <attribute name="buttonGroup">
+                            <string notr="true">bgRecsSource</string>
+                           </attribute>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QRadioButton" name="rbUrlMode">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Recommendation list will be created from a list of urls. Urls must be in the format of :&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;https://www.fanfiction.net/s/.....&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>List of Urls</string>
+                           </property>
+                           <attribute name="buttonGroup">
+                            <string notr="true">bgRecsSource</string>
+                           </attribute>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QRadioButton" name="rbSelectedTagsMode">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Will create a recommendation list from selected tags. Note that when your first list os created &amp;quot;Liked&amp;quot; tag is filled automatically.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If you then &amp;quot;Like&amp;quot; more fics in Flipper, it's worth it to create subsequent recommendations from tags instead of your FFN profile.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>Selected Tags</string>
+                           </property>
+                           <attribute name="buttonGroup">
+                            <string notr="true">bgRecsSource</string>
+                           </attribute>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QWidget" name="wdgProfileSelector" native="true">
+                        <layout class="QHBoxLayout" name="horizontalLayout_3">
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QLabel" name="lblRecsUrl">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="text">
+                            <string>FFN Profile ID:</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QLineEdit" name="leRecsFFNUrl">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="placeholderText">
+                            <string>Just the number</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QPushButton" name="pbValidateUserID">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="text">
+                            <string>Validate</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
+                      </item>
+                      <item>
+                       <layout class="QHBoxLayout" name="horizontalLayout_15">
+                        <item>
+                         <widget class="QWidget" name="wdgAdvancedControls" native="true">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <layout class="QGridLayout" name="gridLayout_20">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="3" column="0" colspan="2">
+                            <widget class="QLabel" name="lblAlgoTuners">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Algorithm tuners:</string>
+                             </property>
+                             <property name="alignment">
+                              <set>Qt::AlignCenter</set>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="7" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkUseDislikes">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Adjust scores on disliked fics count</string>
+                             </property>
+                             <property name="checked">
+                              <bool>false</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="2" column="0" colspan="2">
+                            <layout class="QGridLayout" name="gridLayout_14">
+                             <property name="sizeConstraint">
+                              <enum>QLayout::SetMaximumSize</enum>
+                             </property>
+                             <item row="0" column="0">
+                              <widget class="QLabel" name="label_23">
+                               <property name="text">
+                                <string>Minimum Matches:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="0" column="1">
+                              <widget class="QLineEdit" name="leRecsMinimumMatches">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>70</width>
+                                 <height>16777215</height>
+                                </size>
+                               </property>
+                               <property name="inputMask">
+                                <string>9999</string>
+                               </property>
+                               <property name="text">
+                                <string>6</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="1" column="0">
+                              <widget class="QLabel" name="label_24">
+                               <property name="text">
+                                <string>Max pick ratio:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="1" column="1">
+                              <widget class="QLineEdit" name="leRecsPickRatio">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>70</width>
+                                 <height>16777215</height>
+                                </size>
+                               </property>
+                               <property name="inputMask">
+                                <string>9999</string>
+                               </property>
+                               <property name="text">
+                                <string>50</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="2" column="0">
+                              <widget class="QCheckBox" name="chkUseAwaysPickAt">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="text">
+                                <string>Always pick at:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item row="2" column="1">
+                              <widget class="QLineEdit" name="leRecsAlwaysPickAt">
+                               <property name="enabled">
+                                <bool>false</bool>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>70</width>
+                                 <height>16777215</height>
+                                </size>
+                               </property>
+                               <property name="inputMask">
+                                <string>9999</string>
+                               </property>
+                               <property name="text">
+                                <string>50</string>
+                               </property>
+                              </widget>
+                             </item>
+                            </layout>
+                           </item>
+                           <item row="1" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkRecsAutomaticSettings">
+                             <property name="text">
+                              <string>Automatic Margins</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="4" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkAdjustOnListSimilarity">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Adjust scores on list similarity</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="8" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkOtherPerson">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="text">
+                              <string>Recommendations are for someone else</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="0" colspan="2">
+                            <widget class="QLabel" name="lblAdvancedControls">
+                             <property name="text">
+                              <string>Advanced Controls</string>
+                             </property>
+                             <property name="alignment">
+                              <set>Qt::AlignCenter</set>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="9" column="1">
+                            <spacer name="verticalSpacer_3">
+                             <property name="orientation">
+                              <enum>Qt::Vertical</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>20</width>
+                               <height>89</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="5" column="0" colspan="2">
+                            <widget class="QCheckBox" name="chkFilterGenres">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="toolTip">
+                              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Purges fics from your reclist when they are on a very few favourite lists and those have considerably different genre preferences than you.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                             </property>
+                             <property name="text">
+                              <string>Adjust scores on genre similarity</string>
+                             </property>
+                             <property name="checked">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="3" column="2">
+                            <spacer name="horizontalSpacer_3">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="6" column="0">
+                            <widget class="QCheckBox" name="chkIgnoreMarkedDeadFics">
+                             <property name="text">
+                              <string>Ignore marked dead fics</string>
+                             </property>
+                             <property name="checked">
+                              <bool>false</bool>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QWidget" name="wdgUrlList" native="true">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="styleSheet">
+                           <string notr="true"/>
+                          </property>
+                          <layout class="QGridLayout" name="gridLayout_10">
+                           <property name="leftMargin">
+                            <number>1</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>1</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>1</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>1</number>
+                           </property>
+                           <item row="0" column="0" colspan="2">
+                            <widget class="QWidget" name="wdgUrlPart" native="true">
+                             <property name="minimumSize">
+                              <size>
+                               <width>0</width>
+                               <height>120</height>
+                              </size>
+                             </property>
+                             <layout class="QGridLayout" name="gridLayout_19">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <spacer name="horizontalSpacer_8">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>159</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                              <item row="1" column="1" colspan="2">
+                               <widget class="QLineEdit" name="leFFNProfileInputForUrls">
+                                <property name="placeholderText">
+                                 <string>ID of your FFN Profile</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="2">
+                               <spacer name="horizontalSpacer_9">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>158</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                              <item row="1" column="0">
+                               <widget class="QPushButton" name="pbRecsLoadFFNProfileIntoSource">
+                                <property name="minimumSize">
+                                 <size>
+                                  <width>90</width>
+                                  <height>0</height>
+                                 </size>
+                                </property>
+                                <property name="text">
+                                 <string>Load From FFN Faves</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="0" colspan="3">
+                               <widget class="QTextBrowser" name="edtRecsContents">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QLabel" name="label_33">
+                                <property name="text">
+                                 <string>Enter Fic URLs below</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                      <item>
+                       <widget class="QWidget" name="widget_13" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="minimumSize">
+                         <size>
+                          <width>0</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <layout class="QHBoxLayout" name="horizontalLayout_13">
+                         <property name="spacing">
+                          <number>6</number>
+                         </property>
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QPushButton" name="pbRecsCreateListFromSources">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="text">
+                            <string>Create New Recommendation List</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QLabel" name="label_29">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="text">
+                            <string>List Name:</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QComboBox" name="cbNewListName">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;The name for the newly created recommendation list. You can have more than one and this name is later used to disambiguate which you want to use for searches.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="editable">
+                            <bool>true</bool>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QCheckBox" name="chkAssignLikedToSources">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is checked, fics used to create recommendation list will automatically receive &amp;quot;Liked&amp;quot; tag.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>Assign &quot;Liked&quot; to sources</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="lblCreationStatus">
+                        <property name="font">
+                         <font>
+                          <pointsize>10</pointsize>
+                          <weight>75</weight>
+                          <bold>true</bold>
+                         </font>
+                        </property>
+                        <property name="text">
+                         <string>TextLabel</string>
+                        </property>
+                        <property name="alignment">
+                         <set>Qt::AlignCenter</set>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="pbDiagnosticList">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                          <horstretch>4</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="text">
+                         <string>Get Diagnostics</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
               </widget>
-             </item>
-            </layout>
-           </item>
-           <item row="1" column="2" colspan="3">
-            <layout class="QHBoxLayout" name="horizontalLayout_14">
-             <item>
-              <widget class="QCheckBox" name="chkLimitPageSize">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Uncheking this will make searches take longer and will display at most 5k fics satisfying current filters. You can still page through these normally.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <widget class="QSplitter" name="spFanIgnFan">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
-               <property name="text">
-                <string>Page Size</string>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
                </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
+               <widget class="QWidget" name="layoutWidget">
+                <layout class="QVBoxLayout" name="verticalLayout_4">
+                 <property name="leftMargin">
+                  <number>2</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="widget_11" native="true">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_17">
+                    <property name="leftMargin">
+                     <number>9</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="label_26">
+                      <property name="font">
+                       <font>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Recent Fandom Searches</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="lblRecentFandomsInfo">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>24</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Th&lt;span style=&quot; font-size:10pt;&quot;&gt;ese are just recent searches so that relevant fandoms can be accessed quickly. You can search on all other fandoms by typing them into the combobox next to &amp;quot;Searched Fandom&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap resource="../icons.qrc">:/icons/icons/question1.png</pixmap>
+                      </property>
+                      <property name="scaledContents">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QListView" name="lvTrackedFandoms">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This keeps a list of your last accessed fandoms for quick navigation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="selectionMode">
+                    <enum>QAbstractItemView::NoSelection</enum>
+                   </property>
+                   <property name="selectionBehavior">
+                    <enum>QAbstractItemView::SelectRows</enum>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="layoutWidget">
+                <layout class="QVBoxLayout" name="verticalLayout_5">
+                 <property name="leftMargin">
+                  <number>2</number>
+                 </property>
+                 <item>
+                  <widget class="QWidget" name="widget_12" native="true">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_27">
+                    <property name="leftMargin">
+                     <number>9</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_27">
+                      <property name="font">
+                       <font>
+                        <weight>75</weight>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>Ignored Fandoms</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="3">
+                     <widget class="QLabel" name="lblIgnoredFandomsInfo">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>24</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you want to change the ignore mode (crossovers or not) remove the fandom via right click and re-add it with new settings. To quickly select the fandom you want to ignore: click on the fandom section of the displayed fic. More than one click cycles fandoms.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap resource="../icons.qrc">:/icons/icons/question1.png</pixmap>
+                      </property>
+                      <property name="scaledContents">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="2">
+                     <widget class="QCheckBox" name="chkOtherFandoms">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If checked, the next Reload will only search in ignored fandoms.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string>Reverse ignores</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QListView" name="lvIgnoredFandoms"/>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="cbIgnoreFandomSelector">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>100</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of all fandoms for category. Uses auto-complete so you just have to start typing.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="editable">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_9">
+                   <item>
+                    <widget class="QPushButton" name="pbIgnoreFandom">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Pressing this will ignore the fandom currently in the combobox to the right. If &amp;quot;Also crossovers&amp;quot; is checked it will also stop displaying fics that have this fandom as a second one. To remove a fandom from ignores or changes &amp;quot;Also crossovers&amp;quot; mode, right clock on it in the list and remove it. Then add it back.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>Ignore Fandom</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="chkIgnoreIncludesCrossovers">
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is checked pressing &amp;quot;Ignore fandom&amp;quot; will also exclude fandoms that have the ignored fandom as a crossover fandom in addition to purely being of that fandom.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string>Also Crossovers</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
               </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="sbPageSize">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Controls the amount of fics to display per search. Fics past that number can be navigated to by pressing &amp;quot;right arrow&amp;quot; above the fic list.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tbFavBreak">
+           <attribute name="title">
+            <string>Fic List Breakdown</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_6">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="QPushButton" name="pbAnalyzeListOfFics">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Analyze</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="pbLoadUrlForAnalysis">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Load</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLineEdit" name="leFFNProfileLoad">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="placeholderText">
+               <string>FFN Profile Url</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" colspan="3">
+             <widget class="QWidget" name="widget_7" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <property name="leftMargin">
+                <number>0</number>
                </property>
-               <property name="maximum">
-                <number>5000</number>
+               <property name="topMargin">
+                <number>0</number>
                </property>
-               <property name="value">
-                <number>100</number>
+               <property name="rightMargin">
+                <number>0</number>
                </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QPushButton" name="pbProfileCompare">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Compare</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="leFFNProfileLeft">
+                 <property name="placeholderText">
+                  <string>First FFN Profile Url</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="leFFNProfileRight">
+                 <property name="placeholderText">
+                  <string>Second FFN Profile Url</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="2" column="0" colspan="3">
+             <widget class="QSplitter" name="spSourceAnalysis">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <widget class="QWidget" name="layoutWidget">
+               <layout class="QVBoxLayout" name="verticalLayout_6">
+                <item>
+                 <widget class="QLabel" name="label_6">
+                  <property name="text">
+                   <string>Source Fics</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QTextBrowser" name="edtAnalysisSources">
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
+              <widget class="QWidget" name="layoutWidget">
+               <layout class="QVBoxLayout" name="verticalLayout_7">
+                <item>
+                 <widget class="QLabel" name="label_10">
+                  <property name="text">
+                   <string>Results</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QTextBrowser" name="edtAnalysisResults"/>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
         <item row="2" column="0">
@@ -3526,6 +3252,298 @@
                </property>
                <property name="text">
                 <string>Crossover Fandom</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_23"/>
+        </item>
+        <item row="5" column="0">
+         <widget class="QWidget" name="wdgFilteringModes" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_26">
+           <property name="leftMargin">
+            <number>2</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_25">
+             <property name="text">
+              <string>Filtering modes:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="cbCurrentFilteringMode">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>150</width>
+               <height>0</height>
+              </size>
+             </property>
+             <item>
+              <property name="text">
+               <string>Default</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Random Recs</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Tag Search</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbReapplyFilteringMode">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This will reapply the predefined default filter set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Reapply</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QWidget" name="widget_4" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_15">
+           <item row="0" column="0" colspan="3">
+            <widget class="QPushButton" name="pbLoadDatabase">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Reloads the list of fics with filters applied.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Reload List (with filters applied)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QPushButton" name="pbPreviousResults">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Navigates back between refilters restoring all the relevant filters and search results.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>&lt;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QPushButton" name="pbNextResults">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Navigates forward between refilters restoring all the relevant filters and search results.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>&gt;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <layout class="QHBoxLayout" name="horizontalLayout_28">
+             <item>
+              <widget class="QCheckBox" name="chkSearchWithinList">
+               <property name="text">
+                <string>Only in current reclist</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_14">
+               <property name="text">
+                <string>Source Users:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cbSourceListLimiter">
+               <property name="minimumSize">
+                <size>
+                 <width>110</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <item>
+                <property name="text">
+                 <string>All</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Above average</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Very Similar</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Extremely Similar</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>211</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item row="1" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_24">
+             <item>
+              <widget class="QCheckBox" name="chkRandomizeSelection">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is toggled, then at most X random fics will be brought up on the next Reload that satisfy the current search criteria. X is controlled by the number to the right.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Use this to see the less rated stuff from your recommendation list in a random manner. You can combine this with Metascore filter to bring up random fics with a score of at least Y.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Random fics</string>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="sbMaxRandomFicCount">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>Limits te amount of fics to display. Needed for randomization due to the way it selects random fics from the database.</string>
+               </property>
+               <property name="maximum">
+                <number>100</number>
+               </property>
+               <property name="value">
+                <number>6</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="1" column="2" colspan="3">
+            <layout class="QHBoxLayout" name="horizontalLayout_14">
+             <item>
+              <widget class="QCheckBox" name="chkLimitPageSize">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Uncheking this will make searches take longer and will display at most 5k fics satisfying current filters. You can still page through these normally.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Page Size</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="sbPageSize">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Controls the amount of fics to display per search. Fics past that number can be navigated to by pressing &amp;quot;right arrow&amp;quot; above the fic list.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="maximum">
+                <number>5000</number>
+               </property>
+               <property name="value">
+                <number>100</number>
                </property>
               </widget>
              </item>
