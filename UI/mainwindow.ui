@@ -1912,9 +1912,12 @@
                </item>
                <item>
                 <widget class="QComboBox" name="cbSourceFics">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;This controls whether fics that were used as the source of the current recommendation list are shown or not.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Filter as usual&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means nothing is done, all filters applied normally.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Show fics&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means sources are forcibly injected into search results regardless of filters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Hide fics&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; means sources are forcibly ejected from the search results regardless of filters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <item>
                   <property name="text">
-                   <string>FIlter as usual</string>
+                   <string>Filter as usual</string>
                   </property>
                  </item>
                  <item>
