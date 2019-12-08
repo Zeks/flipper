@@ -104,6 +104,11 @@ struct StoryFilter{
       utf_ffn_id = 0,
       utf_db_id = 1
     };
+    enum EShowSourcesMode{
+        ssm_filter_as_usual = 0,
+        ssm_show = 1,
+        ssm_hide = 2,
+    };
     //do I even need that?
     //QString ficCategory;
     bool isValid = true;
@@ -119,7 +124,6 @@ struct StoryFilter{
     bool showOriginsInLists = false;
     bool otherFandomsMode = false;
     bool listOpenMode= false;
-    bool showRecSources = false;
     bool tagsAreUsedForAuthors = false;
     bool likedAuthorsEnabled = false;
     bool tagsAreANDed = false;
@@ -152,6 +156,7 @@ struct StoryFilter{
     int useThisFic = -1;
     int protocolMajorVersion = 2;
     int protocolMinorVersion = 0;
+
     QList<int> usedRecommenders;
     ESortMode sortMode;
     EReviewBiasMode reviewBias;
@@ -160,6 +165,7 @@ struct StoryFilter{
     ERatingFilter rating;
     EGenrePresence genrePresenceForInclude;
     EGenrePresence genrePresenceForExclude;
+    EShowSourcesMode showRecSources = ssm_filter_as_usual;
     ESourceListLimiter sourcesLimiter = ESourceListLimiter::sll_all;
     EUseThisFicType useThisFicType = EUseThisFicType::utf_ffn_id;
 

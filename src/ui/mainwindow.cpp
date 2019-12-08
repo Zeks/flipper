@@ -160,7 +160,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     if(!settings.value("Settings/devBuild", false).toBool())
+    {
         ui->pbDiagnosticList->hide();
+        ui->chkDisplayPurged->hide();
+    }
 
     ui->lblCreationStatus->hide();
 
@@ -174,6 +177,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lblAlgoTuners->setAutoFillBackground(true);
     ui->lblAdvancedControls->setPalette(pal);
     ui->lblAdvancedControls->setAutoFillBackground(true);
+
+    ui->lblMode->setPalette(pal);
+    ui->lblMode->setAutoFillBackground(true);
+
+    ui->lblSource->setPalette(pal);
+    ui->lblSource->setAutoFillBackground(true);
 
 //    ui->wdgAdvancedControls->setPalette(pal);
 //    ui->wdgAdvancedControls->setAutoFillBackground(true);
@@ -1275,7 +1284,6 @@ void MainWindow::ReadSettings()
     ui->chkShowUnfinished->setChecked(uiSettings.value("Settings/showUnfinished", false).toBool());
     ui->chkNoGenre->setChecked(uiSettings.value("Settings/chkNoGenre", false).toBool());
     ui->chkComplete->setChecked(uiSettings.value("Settings/completed", false).toBool());
-    ui->chkShowSources->setChecked(uiSettings.value("Settings/chkShowSources", false).toBool());
     ui->chkSearchWithinList->setChecked(uiSettings.value("Settings/chkSearchWithinList", false).toBool());
     //ui->chkAutomaticLike->setChecked(uiSettings.value("Settings/chkAutomaticLike", false).toBool());
     ui->chkFaveLimitActivated->setChecked(uiSettings.value("Settings/chkFaveLimitActivated", false).toBool());
@@ -1291,6 +1299,7 @@ void MainWindow::ReadSettings()
     SilentCall(ui->chkDisplayComma)->setChecked(uiSettings.value("Settings/commasInWordcount", false).toBool());
     SilentCall(ui->chkDisplayDetectedGenre)->setChecked(uiSettings.value("Settings/displayDetectedGenre", false).toBool());
     SilentCall(ui->cbFicIDDisplayMode)->setCurrentIndex(uiSettings.value("Settings/idDisplayMode", "0").toInt());
+    SilentCall(ui->cbSourceFics)->setCurrentIndex(uiSettings.value("Settings/sourceFicsDisplayMode", "0").toInt());
 
     ui->spMain->restoreState(uiSettings.value("Settings/spMain", false).toByteArray());
     ui->spDebug->restoreState(uiSettings.value("Settings/spDebug", false).toByteArray());
@@ -1426,7 +1435,6 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/biasValue", ui->leBiasValue->text());
     settings.setValue("Settings/currentList", ui->cbRecGroup->currentText());
     settings.setValue("Settings/currentListSecond", ui->cbRecGroupSecond->currentText());
-    settings.setValue("Settings/chkShowSources", ui->chkShowSources->isChecked());
     settings.setValue("Settings/chkSearchWithinList", ui->chkSearchWithinList->isChecked());
 
     settings.setValue("Settings/chkGenreUseImplied", ui->chkGenreUseImplied->isChecked());
@@ -1447,6 +1455,8 @@ void MainWindow::WriteSettings()
     settings.setValue("Settings/cbFicRating", ui->cbFicRating->currentText());
     settings.setValue("Settings/cbSourceListLimiter", ui->cbSourceListLimiter->currentText());
     settings.setValue("Settings/cbIDMode", ui->cbIDMode->currentText());
+    settings.setValue("Settings/sourceFicsDisplayMode", ui->cbSourceFics->currentIndex());
+
     settings.setValue("Settings/leAuthorID", ui->leAuthorID->text());
 
     settings.setValue("Settings/chkStrongMOnly", ui->chkStrongMOnly->isChecked());
@@ -2207,7 +2217,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     if(ui->chkLikedAuthors->isChecked())
         filter.activeTags = QStringList{"Liked", "Rec", "Gems"};
 
-    filter.showRecSources = ui->chkShowSources->isChecked();
+    filter.showRecSources = static_cast<core::StoryFilter::EShowSourcesMode>(ui->cbSourceFics->currentIndex());
     qDebug() << "Active tags: " << filter.activeTags;
     filter.allowNoGenre = ui->chkNoGenre->isChecked();
     filter.allowUnfinished = ui->chkShowUnfinished->isChecked();
@@ -2349,10 +2359,14 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     else
         ui->chkNoGenre->setChecked(false);
 
-    if(filter.showRecSources)
-        ui->chkShowSources->setChecked(true);
+
+    if(filter.showRecSources == core::StoryFilter::ssm_show)
+        ui->cbSourceFics->setCurrentIndex(1);
+    else if(filter.showRecSources == core::StoryFilter::ssm_hide)
+        ui->cbSourceFics->setCurrentIndex(2);
     else
-        ui->chkShowSources->setChecked(false);
+        ui->cbSourceFics->setCurrentIndex(0);
+
 
     if(filter.allowUnfinished)
         ui->chkShowUnfinished->setChecked(true);
@@ -3222,6 +3236,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->cbBiasOperator->setCurrentText(">");
     ui->cbSlashFilterAggressiveness->setCurrentText("Medium");
     ui->cbSortMode->setCurrentIndex(0);
+    ui->cbSourceFics->setCurrentIndex(0);
 
     ui->leBiasValue->setText("11.");
     QDateTime dt = QDateTime::currentDateTimeUtc().addYears(-1);
@@ -3230,7 +3245,6 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->sbPageSize->setValue(100);
     ui->sbMaxRandomFicCount->setValue(6);
     ui->chkSearchWithinList->setChecked(false);
-    ui->chkShowSources->setChecked(false);
     ui->chkGenreUseImplied->setChecked(false);
     ui->chkUseReclistMatches->setChecked(false);
     ui->chkDisplayPurged->setChecked(false);

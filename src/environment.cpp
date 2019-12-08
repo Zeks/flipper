@@ -91,7 +91,7 @@ void CoreEnvironment::LoadData()
                     continue;
             }
 
-
+            auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
             if(filter.activeTags.size() > 0)
             {
                 tagFetcherSettings.tags = filter.activeTags;
@@ -106,17 +106,16 @@ void CoreEnvironment::LoadData()
             }
             else
             {
-                if(filter.showRecSources)
+                if(filter.showRecSources == core::StoryFilter::ssm_show)
                 {
-                    auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
                     for(auto fic : sources)
                         userData.allTaggedFics.remove(fic);
                 }
-                else
+                else if(filter.showRecSources == core::StoryFilter::ssm_hide)
                 {
-                    auto sources = interfaces.recs->GetAllSourceFicIDs(filter.listForRecommendations);
                     for(auto fic : sources)
                         userData.allTaggedFics.insert(fic);
+
                 }
             }
 
@@ -135,6 +134,12 @@ void CoreEnvironment::LoadData()
             reclistFilter.displayPurged = filter.displayPurgedFics;
 
             filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
+            if(filter.showRecSources == core::StoryFilter::ssm_hide)
+            {
+                for(auto fic : sources)
+                    filter.recsHash.remove(fic);
+
+            }
             filter.scoresHash = ficScores;
 
             ficSource->FetchData(filter,
