@@ -144,8 +144,8 @@ Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::Status
     QLOG_INFO() << "Passing protocol version: " << majorProtocolVersion;
     response->set_protocol_version(majorProtocolVersion);
     auto protocol = response->mutable_current_protocol();
-    protocol->set_major(majorProtocolVersion);
-    protocol->set_minor(minorProtocolVersion);
+    protocol->set_major_version(majorProtocolVersion);
+    protocol->set_minor_version(minorProtocolVersion);
     return Status::OK;
 }
 
@@ -200,7 +200,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     auto prepared = PrepareSearch(response->mutable_response_info(),task->filter(),
                                   task->user_data(),reqContext);
 
-    if(task->controls().protocol_version().major() < 2)
+    if(task->controls().protocol_version().major_version() < 2)
         return Status::CANCELLED;
 
     if(!prepared.isValid)
@@ -314,7 +314,7 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
     auto prepared = PrepareSearch(response->mutable_response_info(),task->filter(),
                                   task->user_data(),reqContext);
 
-    if(task->controls().protocol_version().major() < 2)
+    if(task->controls().protocol_version().major_version() < 2)
         return Status::CANCELLED;
 
     if(!prepared.isValid)

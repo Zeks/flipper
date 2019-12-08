@@ -765,8 +765,8 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
-    controls->mutable_protocol_version()->set_major(filter.protocolMajorVersion);
-    controls->mutable_protocol_version()->set_minor(filter.protocolMinorVersion);
+    controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
+    controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
 
     auto* tags = userData->mutable_user_tags();
@@ -844,8 +844,8 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
-    controls->mutable_protocol_version()->set_major(filter.protocolMajorVersion);
-    controls->mutable_protocol_version()->set_minor(filter.protocolMinorVersion);
+    controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
+    controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
     QScopedPointer<ProtoSpace::FicCountResponse> response (new ProtoSpace::FicCountResponse);
     std::chrono::system_clock::time_point deadline =
