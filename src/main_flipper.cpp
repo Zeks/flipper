@@ -113,6 +113,9 @@ int main(int argc, char *argv[])
         setupDialog.exec();
         if(!setupDialog.initComplete)
             return 2;
+        if(setupDialog.recsCreated)
+            w.QueueDefaultRecommendations();
+
         scheduleSlashFilter = !setupDialog.readsSlash;
     }
     else

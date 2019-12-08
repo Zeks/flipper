@@ -284,6 +284,8 @@ void InitialSetupDialog::on_pbPerformInit_clicked()
                                                       "Use \"New Recommendation List\" button for that.");
         }
     }
+    else
+        recsCreated = true;
 
     uiSettings.setValue("Settings/initialInitComplete", true);
     uiSettings.sync();

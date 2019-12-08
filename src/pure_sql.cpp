@@ -2350,7 +2350,7 @@ DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fet
         filters.push_back(" cfInFicSelection(fic_id) > 0 ");
 
     if(!fetchExpired)
-        filters.push_back(" expired <> 0 ");
+        filters.push_back(" expired == 0 ");
 
     if(filters.size() > 0)
         qs=qs.arg(QString(" where ") + filters.join(" and "));

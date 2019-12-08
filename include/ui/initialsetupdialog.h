@@ -45,6 +45,7 @@ public:
     bool authorTestSuccessfull = false;
     bool initComplete = false;
     bool readsSlash = false;
+    bool recsCreated = false;
 private slots:
     void on_pbVerifyUserFFNId_clicked();
 

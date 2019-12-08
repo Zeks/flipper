@@ -1212,6 +1212,7 @@ void ServitorWindow::on_pbUnpdateInterval_clicked()
     reloader.SetStagedAuthors(authors);
     bool useCache = ui->chkForcedLoad->isChecked();
     reloader.ReloadRecommendationsList(useCache ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+    QLOG_INFO() << "FINISHED";
 }
 
 void ServitorWindow::on_pbReprocessAllFavPages_clicked()

@@ -173,7 +173,7 @@ Rectangle {
                 anchors.bottomMargin: 3
                 iconsize: mainWindow.textSize
                 iconsource: "qrc:/icons/icons/shuffle_2x.png"
-                clickable: mainWindow.havePagesAfter
+                clickable: true
                 tooltip: "Shuffles the currently displayed fic results."
                 onClickSlot: function(){
                         mainWindow.shuffleClicked();

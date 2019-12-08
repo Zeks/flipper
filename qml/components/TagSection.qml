@@ -76,14 +76,17 @@ Rectangle{
     //height: list.height
     //height:40
     Rectangle{
+        z:1
         id:rect
         //rotation: root.rotation === 180 ? 180 : 0;
         height: 24//txtGenre.height + 6
         width:parent.width
         color: tagSelectorColor
         Image{
+            z:2
             id:slashIndicator
             height:rect.height
+            width: appendVisible ? 24 : 0
             visible: tagName === "Genre" && minSlashLevel > 0
             source: {
                 //console.log("minSlashLevel is", minSlashLevel);
@@ -94,7 +97,16 @@ Rectangle{
                 else
                     return "qrc:/icons/icons/slash_certain.png"
             }
-            width: appendVisible ? 24 : 0
+            MouseArea{
+                anchors.fill: parent
+                hoverEnabled: true
+                ToolTip.delay: 1000
+                ToolTip.visible: containsMouse
+                propagateComposedEvents : false
+
+                ToolTip.text: "Circled red S: certain slash.\nUncircled red S: most likely slash.\nWhite S: possibly slash, pay attention to the summary."
+            }
+
         }
         Text{
             id:txtGenre
@@ -110,6 +122,7 @@ Rectangle{
                 ToolTip.delay: 1000
                 ToolTip.visible: containsMouse
                 ToolTip.text: tooltip
+                z:1
 
                 onDoubleClicked: {
                     lvFics.detailedGenreMode = !lvFics.detailedGenreMode
