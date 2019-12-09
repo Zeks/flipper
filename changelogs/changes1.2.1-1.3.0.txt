@@ -1,0 +1,42 @@
+Bugfixes:
+1. Fixed snoozing. It was working for "until next chapter" but nothing else. Also, "Snooze" is no longer a tag, but an entirely separate mechanism so sorting on tags no longer brings up snoozed stuff unless explicitly desired with "Snoozed" checkbox.
+2. Tags are properly cleared when recommendation list is created. Previously tags just got decolored but were still selected which produced inexplicable results on next list creation. 
+3. Fixed saving of fic notes. the were saved when user navigated out of the fic, but not on save button 
+4. Fixed crash at the start of the first run in the Mint version.
+5. Flipper will correctly reinitialize RNG sequence when tag selection is changed while random searches are done. Previously it was stuck on the first tag set used during the session.
+
+New stuff:
+1. Flipper now has initial setup dialog so that the user hopefully enters main window with recommendations already created.
+2. It's now possible to select what is displayed on application start in "settings: Load on startup" THe choice is between nothing, top of your recommendation list and random fics from your recommendation list.
+3. Added a new button to reset filter to defaults to reduce confusion when certain button presses set not entirely obvious filters. 
+4. Added a shuffle button next to page navigation to displayed shuffle fics in place
+5. User tags, snoozes, notes and ignores are now periodically backed up to Appdata/Roaming/Flipper/backups. Flipper will also verify user database integrity on each startup and if it's broken will make a backup of the current one, then offer to restore from latest backup
+6. Flipper now displays the latest database update date on the status bar below.
+7. A new checkbox to display fics from liked authors. "Liked authors" are ones you've tagged with "liked" and "rec". Initial recommendation list automatically assigns "liked" to its sources so this mode should be working from the beginning. It was possible to do this through tags tab earlier but it was a bit too out of the way.
+8. Added a new combobox that allows user to select whether they want to see source for current recommendation list on refilter or not. see tooltips for "Source fics" next to recommendation list selector for details.
+9. It is now possible to see how much fics are assigned to each tag. See "Display Tag Sizes" checkbox on the tags tab.
+10. It is now possible to purge all fics from a tag with "Purged selected tags"
+11. A new "Spoiler" quick tagger for stuff you'd like to read after you've seen the source material
+12. A new algorithm adjuster that will lower the scores for fics based on your dislikes. This will only work when enough dislikes have been accumulated. To be specific - you need to tag fics as Disliked and Hide. Once 100 of those have been accumulated this adjuster will start to work. Otherwise it will do nothing.
+
+Improvements:
+1. Reworked the recommendation list creation widget to maybe make more sense. It is now cleaner visuall, has less confusing options and separated into distict modes for easier perception.
+2. Changing recommendation list in the list selector updates the scores of currently selected fics to ones in the new list without refiltering.
+3. A bunch of renames in the sorting UI to better reflect what each of them means. Rec Count is now called Metascore. FavRate is now called Trending.
+4. A new Settings tab to control the behaviour of the application,
+It's now possible to display the position of the fic in the whole recommendation list (see settings: "Displayed fic is is")
+5. LOTS of tooltips everywhere. You can hover over most of the elements for explanations
+6. Replaced message boxes with labels where possible, less annoying windows to close
+7. Deleting a tag will no longer make fics tagged with it unrechable because unless it was also purged it will always pop back on the next relaunch
+8. Now you can recreate recomendation list with Refresh button to the left of it's name and it includes all the params of the list to reacreate. NOTE: only for lists created with the new version of Flipper. 
+9. Added a checkbox to toggle id search on/off without clearing the edit
+10. Modified layout a bit to allow the filter part to be minimized to a greater degree
+11. It's now possible control the display of comma in wordcount, detected or original genre, and display of author name on a fic in settings.
+12. Some elements were moved to places where they are more organically located
+13. Added a section with contact information
+
+Retired elements:
+1. Retired "Fic list compare" until I have a proper m. page parser or FFN shows more than 500 faves.
+2. "Own profile" check is retired in favor of explicitly setting the profile id on the first run of the app and setting it later via settings tab if needed. 
+3. Retired "Always pick at:" in recommendation list creation becuase it was useless
+
