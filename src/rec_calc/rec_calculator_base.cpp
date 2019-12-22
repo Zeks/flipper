@@ -200,8 +200,12 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
 
     // first we need to prepare the dataset
     QMap<int, QList<int>> authorsByMatches;
+    int totalMatches = 0;
     for(auto author : filteredAuthors)
+    {
         authorsByMatches[allAuthors[author].matches].push_back(allAuthors[author].id);
+        totalMatches++;
+    }
     //QLOG_INFO() << "authorsByMatches: " << authorsByMatches;
     // then we go through matches calculating averages and checking that conditions are satisfied
 
@@ -211,9 +215,20 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
     QList<int> matches = authorsByMatches.keys();
     QLOG_INFO() << "Keys used: " << matches;
     QLOG_INFO() << "matches count is: " << matches.count();
+    //QLOG_INFO() << "total matches: " << totalMatches;
+    auto matchCountPreIndex = [&](int externalIndex){
+        int sum = 0;
+        for(int index = 0; index <= externalIndex && index < matches.size(); index++){
+            sum+=authorsByMatches[matches[index]].count();
+        }
+        //QLOG_INFO() << "Matches left: " << totalMatches - sum;
+        return totalMatches - sum;
+
+    };
     if(matches.size() > 3)
     {
         for(int i = 0; i < matches.count() - 2; i ++){
+
             QLOG_INFO() << "starting processing of: " << i;
             int firstCount = authorsByMatches[matches[i]].count();
             int secondCount = authorsByMatches[matches[i+1]].count();
@@ -221,9 +236,15 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
             QLOG_INFO() << firstCount << secondCount << thirdCount;
             double average = static_cast<double>(firstCount + secondCount + thirdCount)/3.;
             //QLOG_INFO() << "average is: " << average;
+
             if(i == 0 && average < 70)
             {
                 stoppingIndex = 0;
+                break;
+            }
+            if(static_cast<float>(matchCountPreIndex(i+2))/static_cast<float>(totalMatches) < 0.1f)
+            {
+                stoppingIndex = i;
                 break;
             }
             double relative = std::abs((static_cast<double>(secondCount) - average)/static_cast<double>(secondCount));
