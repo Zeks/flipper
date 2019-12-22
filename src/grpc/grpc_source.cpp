@@ -994,6 +994,7 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
     recList.alwaysPickAt = response.used_params().always_pick_at();
     recList.useWeighting = response.used_params().use_weighting();
     recList.useMoodAdjustment = response.used_params().use_mood_filtering();
+    recList.success = response.success();
 
 };
 

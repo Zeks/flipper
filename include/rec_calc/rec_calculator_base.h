@@ -32,6 +32,7 @@ struct RecommendationListResult{
             breakdowns[fic].ficId = fic;
         breakdowns[fic].AddAuthor(type, value);
     }
+    bool success = false;
     QHash<int, int> recommendations;
     QHash<int, int> matchReport;
     QHash<uint32_t, MatchBreakdown> breakdowns;
@@ -91,7 +92,7 @@ public:
 
     virtual ~RecCalculatorImplBase(){}
 
-    void Calc();
+    bool Calc();
     Roaring BuildIgnoreList();
     void FetchAuthorRelations();
     void CollectFicMatchQuality();
@@ -102,7 +103,7 @@ public:
     void ReportNegativeResults();
     void FillFilteredAuthorsForFics();
 
-    virtual void CollectVotes();
+    virtual bool CollectVotes();
 
     virtual void CalcWeightingParams() = 0;
     virtual FilterListType GetFilterList() = 0;

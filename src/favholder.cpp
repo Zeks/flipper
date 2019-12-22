@@ -98,7 +98,7 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
         calculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));
     QLOG_INFO() << "Received negative votes: " << params->majorNegativeVotes.size();
     TimedAction action("Reclist Creation",[&](){
-        calculator->Calc();
+        calculator->result.success = calculator->Calc();
     });
     action.run();
     calculator->result.authors = calculator->filteredAuthors;
@@ -119,7 +119,7 @@ DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationLis
         actualCalculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));
 
     TimedAction action("Reclist Creation",[&](){
-        actualCalculator->Calc();
+        result.recs.success = actualCalculator->Calc();
         QLOG_INFO() << "Param calc finished";
     });
     action.run();

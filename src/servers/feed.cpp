@@ -550,6 +550,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     TimedAction dataPassAction("Passing data: ",[&](){
         auto* targetList = response->mutable_list();
+        targetList->set_success(list.success);
         QLOG_INFO() << "Notrash is of size: " <<  list.noTrashScore.size();
         targetList->set_list_name(proto_converters::TS(recommendationsCreationParams->name));
         targetList->set_list_ready(true);

@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "timeutils.h"
 
 namespace core{
-void RecCalculatorImplBase::Calc(){
+bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
 
@@ -44,11 +44,13 @@ void RecCalculatorImplBase::Calc(){
     weighting.run();
 
     CalculateNegativeToPositiveRatio();
-
+    bool succesfullyGotVotes = false;
     TimedAction collecting("collecting votes ",[&](){
-        CollectVotes();
+        succesfullyGotVotes = CollectVotes();
     });
     collecting.run();
+    if(!succesfullyGotVotes)
+        return false;
 
     TimedAction report("writing match report",[&](){
         for(auto& author: filteredAuthors)
@@ -59,6 +61,7 @@ void RecCalculatorImplBase::Calc(){
     ReportNegativeResults();
     if(needsDiagnosticData)
         FillFilteredAuthorsForFics();
+    return true;
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -83,10 +86,12 @@ double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
 
 
 
-void RecCalculatorImplBase::CollectVotes()
+bool RecCalculatorImplBase::CollectVotes()
 {
     auto weightingFunc = GetWeightingFunc();
     auto authorSize = filteredAuthors.size();
+    if(filteredAuthors.size() == 0)
+        return false;
     qDebug() << "Max Matches:" <<  prevMaximumMatches;
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [this](int author){
         for(auto fic: inputs.faves[author])
@@ -174,10 +179,7 @@ void RecCalculatorImplBase::CollectVotes()
             result.AddToBreakdown(fic, weighting.authorType, weighting.GetCoefficient());
         }
     });
-
-
-
-
+    return true;
     //for(auto& breakdownKey : result.pureMatches.keys())
     //{
 //        auto normalizer = 1 + 0.1*std::max(4-result.pureMatches[breakdownKey], 0);

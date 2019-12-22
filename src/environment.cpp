@@ -641,7 +641,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         QLOG_ERROR() << "list creation failed";
         return -1;
     }
-    if(params->ficData.fics.size() == 0)
+    if(!params->success || params->ficData.fics.size() == 0)
     {
         return -1;
     }

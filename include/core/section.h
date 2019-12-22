@@ -845,6 +845,7 @@ public:
     static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
     void Log();
     void PassSetupParamsInto(RecommendationList& other);
+    bool success = false;
     bool isAutomatic = true;
     bool useWeighting = false;
     bool useMoodAdjustment = false;
