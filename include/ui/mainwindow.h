@@ -288,7 +288,7 @@ private:
     void SetPreviousEnabled(bool value);
     void SetNextEnabled(bool value);
     void FetchScoresForFics();
-    void CreateRecommendationListForCurrentMode();
+    bool CreateRecommendationListForCurrentMode();
     void PrepareUIToDisplayNewRecommendationList(QString name);
 
     struct FicSourceResult{
@@ -586,6 +586,8 @@ private slots:
     void on_chkLikedAuthors_stateChanged(int arg1);
 
     void on_pbResetFilter_clicked();
+
+    void OnTagFromClipboard();
 
 signals:
 

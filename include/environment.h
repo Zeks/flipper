@@ -216,6 +216,7 @@ public:
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
     void FillDBIDsForTags();
+    QList<int> GetDBIDsForFics(QVector<int>);
     QSet<int> GetAuthorsContainingFicFromRecList(int fic, QString recList);
     QSet<int> GetFicsForTags(QStringList);
     QSet<int> GetFicsForNegativeTags();
