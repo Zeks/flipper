@@ -7,7 +7,7 @@ Bugfixes:
 
 New stuff:
 1. Flipper now has initial setup dialog so that the user hopefully enters main window with recommendations already created.
-2. It's now possible to select what is displayed on application start in "settings: Load on startup" THe choice is between nothing, top of your recommendation list and random fics from your recommendation list.
+2. It's now possible to select what is displayed on application start in "settings: Load on startup" The choice is between nothing, top of your recommendation list and random fics from your recommendation list.
 3. Added a new button to reset filter to defaults to reduce confusion when certain button presses set not entirely obvious filters. 
 4. Added a shuffle button next to page navigation to displayed shuffle fics in place
 5. User tags, snoozes, notes and ignores are now periodically backed up to Appdata/Roaming/Flipper/backups. Flipper will also verify user database integrity on each startup and if it's broken will make a backup of the current one, then offer to restore from latest backup
@@ -20,7 +20,7 @@ New stuff:
 12. A new algorithm adjuster that will lower the scores for fics based on your dislikes. This will only work when enough dislikes have been accumulated. To be specific - you need to tag fics as Disliked and Hide. Once 100 of those have been accumulated this adjuster will start to work. Otherwise it will do nothing.
 
 Improvements:
-1. Reworked the recommendation list creation widget to maybe make more sense. It is now cleaner visuall, has less confusing options and separated into distict modes for easier perception.
+1. Reworked the recommendation list creation widget to maybe make more sense. It is now cleaner visually, has less confusing options and is separated into distict modes for easier perception.
 2. Changing recommendation list in the list selector updates the scores of currently selected fics to ones in the new list without refiltering.
 3. A bunch of renames in the sorting UI to better reflect what each of them means. Rec Count is now called Metascore. FavRate is now called Trending.
 4. A new Settings tab to control the behaviour of the application,
