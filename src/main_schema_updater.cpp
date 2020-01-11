@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
             SqlContext<QString> ctx(db, qs);
             ctx.FetchSingleValue<QString>("value", "-1");
             qDebug() << ctx.result.data;
+            lastId = ctx.result.data;
         }
     }
 
@@ -193,8 +194,15 @@ int main(int argc, char *argv[])
     });
     if(!result)
         db.rollback();
-    else
+    else{
         db.commit();
+        {
+            using namespace database::puresql;
+            QString qs = QString(" update fanficdata.database_settings set value = %1 where name = 'Last Migration Id'").arg(lastId);
+            SqlContext<bool> ctx(db, qs);
+            ctx.ExecAndCheck();
+        }
+    }
 
 
     return 0;
