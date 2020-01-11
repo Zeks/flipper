@@ -28,6 +28,7 @@ struct QueryBinding{
 
 
 bool ExecAndCheck(QSqlQuery& q, bool reportErrors = true,  bool ignoreUniqueness = false);
+bool ExecAndCheck(QSqlQuery& q, QString sql, bool reportErrors = true,  bool ignoreUniqueness = false);
 
 template <typename T>
 struct DiagnosticSQLResult

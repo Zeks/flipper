@@ -44,4 +44,33 @@ Q_UNUSED(success)
     }
     return true;
 }
-}}
+
+
+bool ExecAndCheck(QSqlQuery& q, QString sql, bool reportErrors ,  bool ignoreUniqueness )
+{
+    bool success = q.exec(sql);
+
+Q_UNUSED(success)
+
+    if(q.lastError().isValid())
+    {
+        if(reportErrors && !(ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed")))
+        {
+            if(q.lastError().text().contains("record"))
+                QLOG_ERROR() << "Error while performing a query: ";
+            QLOG_ERROR() << " ";
+            QLOG_ERROR() << " ";
+            QLOG_ERROR() << "Error while performing a query: ";
+            QLOG_ERROR_PURE()<< q.lastQuery();
+            QLOG_ERROR() << "Error was: " <<  q.lastError();
+            QLOG_ERROR() << q.lastError().nativeErrorCode();
+            QLOG_ERROR() << q.lastError().driverText();
+            QLOG_ERROR() << q.lastError().databaseText();
+        }
+        return false;
+    }
+    return true;
+}
+
+}
+}

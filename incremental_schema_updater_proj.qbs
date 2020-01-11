@@ -15,35 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#pragma once
-#include <QString>
-#include <QVariantHash>
-#include <QSharedPointer>
-#include <QSqlDatabase>
-class StoryFilter;
-//#include "Interfaces/db_interface.h"
-namespace database { class IDBWrapper; }
 
-namespace core {
-struct QueryBinding{
-    QString key;
-    QVariant value;
-};
-struct Query
-{
-    void Clear(){ str.clear(); bindings.clear();}
-    QString str;
-    QList<QueryBinding> bindings;
-    //QVariantHash bindings;
-};
+import qbs 1.0
+import qbs.Process
+import "BaseDefines.qbs" as Application
 
-class IQueryBuilder
-{
-public:
-    virtual ~IQueryBuilder(){}
-    virtual QSharedPointer<Query> Build(StoryFilter,  bool createLimits = true) = 0;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
-};
-
-
+Project {
+    name: "incremental_schema_updater"
+    references: [
+        "incremental_schema_updater.qbs",
+        "core_condition.qbs",
+        "libs/Logger/logger.qbs",
+    ]
 }
