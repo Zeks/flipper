@@ -400,6 +400,7 @@ struct ParallelSqlContext
     }
 
     DiagnosticSQLResult<ResultType> operator()(bool ignoreUniqueness = false){
+        BindSourceValues();
         if(!result.ExecAndCheck(sourceQ))
             return result;
         while(sourceQ.next())
@@ -429,6 +430,21 @@ struct ParallelSqlContext
         return result;
     }
     bool Success() const {return result.success;}
+    void bindSourceValue(QString key, QVariant value){
+        auto it = std::find_if(sourceBindValues.begin(), sourceBindValues.end(), [key](const QueryBinding b){
+            return b.key == key;
+        });
+        if(it!=sourceBindValues.end())
+            it->value = value;
+        else
+            sourceBindValues.push_back({key, value});
+    }
+    void BindSourceValues(){
+        for(auto bind : sourceBindValues)
+        {
+            sourceQ.bindValue(QString(":") + bind.key, bind.value);
+        }
+    }
     DiagnosticSQLResult<ResultType> result;
     QSqlQuery sourceQ;
     QSqlQuery targetQ;
@@ -437,6 +453,7 @@ struct ParallelSqlContext
     QStringList sourceFields;
     QStringList targetFields;
     Transaction transaction;
+    QList<QueryBinding> sourceBindValues;
     QHash<QString,std::function<QVariant(QString, QSqlQuery, QSqlDatabase, DiagnosticSQLResult<ResultType>&)>> valueConverters;
 };
 

@@ -1,0 +1,12 @@
+# options: replace_rows; append_rows; replace_data; append_data;
+mode:replace_rows;
+# options: * picks all columns
+# writing stuff like column1-->column2 will override what is transferred where
+# writing individual column names picks just these columns without overriding names
+columns:*;
+# tells which table to transfer where
+table:fanfics-->fanfics;
+# will find the last value of the pivot in the target DB and select all the rows past that in the source
+pivot:lastupdate-->lastupdate;
+# identity fields in each of the databases
+identity:id-->id;

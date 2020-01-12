@@ -4,8 +4,10 @@ create table if not exists UserData.Users(user_id uuid unique);
 
 alter table UserData.Users add column id serial unique;
 alter table UserData.Users add primary key (user_id, id);
+alter table UserData.Users add column name varchar;
 
 CREATE INDEX if not exists I_Users_PK ON UserData.Users (user_id ASC, id ASC);  
+CREATE INDEX if not exists I_Users_NAME ON UserData.Users (name ASC, id ASC);  
 
 
 -- 'user_ffn_id';

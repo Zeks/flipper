@@ -59,3 +59,5 @@ libs/logger/llogger.pri
 
 
 modules/modules/localvariables*
+
+Run/settings/databases.ini
