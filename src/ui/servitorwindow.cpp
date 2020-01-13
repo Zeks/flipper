@@ -43,6 +43,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/parsers/ffn/favparser.h"
 #include "include/timeutils.h"
 #include "include/page_utils.h"
+#include "GlobalHeaders/snippets_templates.h"
+#include "GlobalHeaders/run_once.h"
 #include "pagegetter.h"
 #include "tasks/recommendations_reload_precessor.h"
 #include <type_traits>
@@ -1168,9 +1170,9 @@ void ServitorWindow::OnNewProgressString(QString )
 
 }
 
-void ServitorWindow::on_pbUnpdateInterval_clicked()
+void ServitorWindow::on_pbUpdateInterval_clicked()
 {
-    auto db = QSqlDatabase::database();
+    auto db = GetDatabase(ui->cbDatabaseChoice->currentText());
     auto authorInterface = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
@@ -1211,7 +1213,8 @@ void ServitorWindow::on_pbUnpdateInterval_clicked()
 
     reloader.SetStagedAuthors(authors);
     bool useCache = ui->chkForcedLoad->isChecked();
-    reloader.ReloadRecommendationsList(useCache ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+    //reloader.ReloadRecommendationsList(useCache ? ECacheMode::use_cache : ECacheMode::dont_use_cache);
+    reloader.ReloadRecommendationsList(ECacheMode::use_only_cache);
     QLOG_INFO() << "FINISHED";
 }
 
@@ -2011,6 +2014,67 @@ QHash<int, int> ServitorWindow::CreateSummaryMatches()
         }
     }
     return result;
+}
+
+QSqlDatabase OpenSqliteDatabase(QString filename, QString connectionName){
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+    db.setDatabaseName(filename);
+    bool isOpen = db.open();
+    return db;
+}
+
+QSqlDatabase OpenPostgresDatabase(QString host, int port, QString user, QString password, QString connectionName){
+    QSqlDatabase db;
+    bool ok  = false;
+    db = QSqlDatabase::addDatabase("QPSQL", connectionName);
+    db.setHostName(host);
+    db.setDatabaseName(user);
+    db.setUserName(user);
+    db.setPort(port);
+    db.setPassword(password);
+    ok = db.open();
+    {
+        QString qs = QString("SET search_path TO fanficdata,statisticsdata,userdata,public");
+        QSqlQuery q(db);
+        //q.exec("SET search_path TO fanficdata,statisticsdata,userdata,public");
+        q.prepare(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, "
+               " urls.website as website, urls.custom as section, ind.lastupdate as updated  "
+               " from fanficdata.fandomindex ind left join fanficdata.fandomurls urls on ind.id = urls.global_id "
+               " where name = :name");
+        q.bindValue(":name", "X-Men");
+        q.exec();
+        qDebug() << q.lastError().text();
+        //'X-Men'
+    }
+    return db;
+}
+
+QSqlDatabase OpenDatabase(QSettings& settings, QString group){
+    FuncCleanup f([&](){settings.endGroup();});
+    settings.beginGroup(group);
+    QString type = settings.value("type").toString();
+    if(type == "sqlite")
+        return OpenSqliteDatabase(settings.value("location").toString(), group);
+    if(type == "postgres")
+        return OpenPostgresDatabase(settings.value("hostname").toString(),
+                                    settings.value("port").toInt(),
+                                    settings.value("user").toString(),
+                                    settings.value("pass").toString(),
+                                    group);
+    return QSqlDatabase();
+}
+
+QSqlDatabase ServitorWindow::GetDatabase(QString value)
+{
+    if(value == "SQLITE")
+        return QSqlDatabase::database();
+    QSettings databases("settings/databases.ini", QSettings::IniFormat);
+    if(value == "PG Test")
+        return OpenDatabase(databases,"test.postgres");
+    if(value == "PG Production")
+        return OpenDatabase(databases,"production.postgres");
+    return QSqlDatabase();
+
 }
 void ServitorWindow::on_cbMoodSource_currentIndexChanged(const QString &arg1)
 {

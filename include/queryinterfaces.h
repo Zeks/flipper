@@ -20,7 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QVariantHash>
 #include <QSharedPointer>
 #include <QSqlDatabase>
+namespace core {
 class StoryFilter;
+}
 //#include "Interfaces/db_interface.h"
 namespace database { class IDBWrapper; }
 

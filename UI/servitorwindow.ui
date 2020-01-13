@@ -50,56 +50,7 @@
        </property>
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="3">
-          <widget class="QPushButton" name="pbPCRescue">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Rescue PageCache</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="QLineEdit" name="leReprocessFics">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QPushButton" name="pbReprocessFics">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Reprocess Fics</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QPushButton" name="pbLoadFic">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>(Re) Load Fic URL</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
+         <item row="3" column="1">
           <widget class="QPushButton" name="pbSlashCalc">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
@@ -112,7 +63,30 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1" colspan="2">
+         <item row="3" column="2">
+          <widget class="QLineEdit" name="leReprocessFics">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QPushButton" name="pbPCRescue">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Rescue PageCache</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1" colspan="2">
           <widget class="QLineEdit" name="leFicUrl">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
@@ -122,7 +96,33 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="3">
+         <item row="3" column="0">
+          <widget class="QPushButton" name="pbReprocessFics">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Reprocess Fics</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QPushButton" name="pbLoadFic">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>(Re) Load Fic URL</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
           <widget class="QPushButton" name="pbFindSlashSummary">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
@@ -133,6 +133,25 @@
            <property name="text">
             <string>Check Summary</string>
            </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QComboBox" name="cbDatabaseChoice">
+           <item>
+            <property name="text">
+             <string>PG Test</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>SQLITE</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>PG Production</string>
+            </property>
+           </item>
           </widget>
          </item>
         </layout>
@@ -369,7 +388,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pbUnpdateInterval">
+           <widget class="QPushButton" name="pbUpdateInterval">
             <property name="text">
              <string>Update interval</string>
             </property>
@@ -906,7 +925,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1146</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

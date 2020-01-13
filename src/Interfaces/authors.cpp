@@ -388,8 +388,6 @@ void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
 
 bool Authors::CreateAuthorRecord(core::AuthorPtr author)
 {
-
-
     auto result = database::puresql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
     database::puresql::WipeAuthorStatistics(author,db);
     //ConvertFandomsToIds(author, fandomInterface);

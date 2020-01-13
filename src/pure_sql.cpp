@@ -542,7 +542,7 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
 DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db)
 {
     // atm this pairs favourite story with an author
-    QString qs = " insert into recommendations (recommender_id, fic_id) values(:recommender_id,:fic_id); ";
+    QString qs = " insert into recommendations (recommender_id, fic_id) values(:recommender_id,:fic_id) ON CONFLICT DO NOTHING ";
     SqlContext<bool> ctx(db, qs, {{"recommender_id", author->id},{"fic_id", fic_id}});
     if(!author || author->id < 0)
         return ctx.result;
@@ -1963,8 +1963,8 @@ DiagnosticSQLResult<QList<core::FandomPtr>> GetAllFandoms(QSqlDatabase db)
     core::FandomPtr currentFandom;
     int lastId = -1;
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
-                         " urls.custom as section, ind.updated as updated "
-                         " from fandomindex ind left join fandomurls urls"
+                         " urls.custom as section, ind.lastupdate as updated "
+                         " from fanficdata.fandomindex ind left join fandomurls urls"
                          " on ind.id = urls.global_id order by id asc");
     SqlContext<QList<core::FandomPtr>> ctx(db, qs);
     ctx.result.data.reserve(fandomsSize);
@@ -1995,8 +1995,8 @@ DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandomsAfter(int id, QSqlData
     core::FandomPtr currentFandom;
     int lastId = -1;
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
-                         " urls.custom as section, ind.updated as updated "
-                         " from fandomindex ind left join fandomurls urls"
+                         " urls.custom as section, ind.lastupdate as updated "
+                         " from fanficdata.fandomindex ind left join fandomurls urls"
                          " on ind.id = urls.global_id where ind.id > :id order by id asc ");
     SqlContext<QList<core::FandomPtr>> ctx(db, qs, BP1(id));
     ctx.result.data.reserve(fandomsSize);
@@ -2018,8 +2018,22 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, bool loadFandomSt
 {
     core::FandomPtr currentFandom;
 
+//    {
+//        QString qs = QString("SET search_path TO fanficdata,statisticsdata,userdata,public");
+//        QSqlQuery q(db);
+//        //q.exec("SET search_path TO fanficdata,statisticsdata,userdata,public");
+//        q.prepare(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, "
+//               " urls.website as website, urls.custom as section, ind.lastupdate as updated  "
+//               " from fanficdata.fandomindex ind left join fanficdata.fandomurls urls on ind.id = urls.global_id "
+//               " where name = :name");
+//        q.bindValue(":name", "X-Men");
+//        q.exec();
+//        //qDebug() << q.lastError().text();
+//        //'X-Men'
+//    }
+
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
-                         " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
+                         " urls.custom as section, ind.lastupdate as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
                          " where name = :fandom ");
     SqlContext<core::FandomPtr> ctx(db, qs, BP1(fandom));
 
@@ -2028,12 +2042,12 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, bool loadFandomSt
     });
     if(loadFandomStats)
     {
-        auto statResult = GetFandomStats(currentFandom, db);
-        if(!statResult.success)
-        {
-            ctx.result.success = false;
-            return ctx.result;
-        }
+//        auto statResult = GetFandomStats(currentFandom, db);
+//        if(!statResult.success)
+//        {
+//            ctx.result.success = false;
+//            return ctx.result;
+//        }
     }
 
     ctx.result.data = currentFandom;
@@ -2045,7 +2059,7 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats, QSq
     core::FandomPtr currentFandom;
 
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
-                         " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
+                         " urls.custom as section, ind.lastupdate as updated from fanficdata.fandomindex ind left join fanficdata.fandomurls urls on ind.id = urls.global_id"
                          " where id = :id");
     SqlContext<core::FandomPtr> ctx(db, qs, BP1(id));
 
@@ -2758,7 +2772,7 @@ DiagnosticSQLResult<bool> EraseFicFandomsTable(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> SetLastUpdateDateForFandom(int id, QDate updated, QSqlDatabase db)
 {
-    QString qs = QString("update fandomindex set updated = :updated where id = :id");
+    QString qs = QString("update fandomindex set lastupdate = :updated where id = :id");
     return SqlContext<bool>(db, qs, BP2(updated, id))();
 }
 

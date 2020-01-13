@@ -22,7 +22,7 @@ import "BaseDefines.qbs" as App
 
 
 App{
-    name: "incrementral_schema_updater"
+    name: "servitor"
     consoleApplication:false
     type:"application"
     qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]

@@ -467,6 +467,7 @@ void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fic>> fics)
 bool Fanfics::WriteRecommendations()
 {
     database::Transaction transaction(db);
+    qDebug() << "writing recommendations of size: " << ficRecommendations.size();
     for(auto recommendation: ficRecommendations)
     {
         if(!recommendation.IsValid() || !authorInterface->EnsureId(recommendation.author))
@@ -573,8 +574,10 @@ bool Fanfics::FlushDataQueues()
     }
     if(hasFailures)
         return false;
-
+    auto startWriteRecommendations = std::chrono::high_resolution_clock::now();
     WriteRecommendations();
+    auto elapsed = std::chrono::high_resolution_clock::now() - startWriteRecommendations;
+    qDebug() << "Recommendations written in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     if(insertCounter > 0)
         qDebug() << "inserted: " << insertCounter;
     if(updateCounter > 0)

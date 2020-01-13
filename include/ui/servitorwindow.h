@@ -106,6 +106,7 @@ public:
     void CalcConstantMemory();
     void FillFicsForUser(QString);
     QHash<int, int> CreateSummaryMatches();
+    QSqlDatabase GetDatabase(QString);
     QHash<uint32_t, core::FicWeightPtr> ficData;
     QHash<uint32_t, QSet<uint32_t>> ficsForFandoms;
     QHash<uint32_t, Roaring> ficsToFavLists;
@@ -160,7 +161,7 @@ private slots:
     void OnUpdatedProgressValue(int value);
     void OnNewProgressString(QString value);
 
-    void on_pbUnpdateInterval_clicked();
+    void on_pbUpdateInterval_clicked();
 
     void on_pbReprocessAllFavPages_clicked();
 

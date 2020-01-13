@@ -72,6 +72,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     auto fanficsInterface = this->fanficsInterface;
     auto authorsInterface = this->authorsInterface;
     auto fandomsInterface = this->fandomsInterface;
+
     auto job = [fanficsInterface,authorsInterface,fandomsInterface](QString url, QString content){
         QList<QSharedPointer<core::Fic> > sections;
         FavouriteStoryParser parser(fanficsInterface);
@@ -96,7 +97,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         auto page = env::RequestPage(author->url("ffn"), cacheMode);
         auto elapsed = std::chrono::high_resolution_clock::now() - startPageRequest;
         qDebug() <<  "Loading author: " << author->GetWebID("ffn");
-        //qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
         FavouriteStoryParser parser(fanficsInterface);
         //parser.ProcessPage(page.url, page.content);
@@ -119,14 +120,22 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         for(auto actualParser: futures)
             finishedParsers.push_back(actualParser.result());
 
+        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+        qDebug() << "Arrived to pre-write in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
         FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
         authorsInterface->UpdateAuthorRecord(author);
+
+        elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+        qDebug() << "Arrived to after-write in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
         for(auto actualParser: finishedParsers)
             sumParser.processedStuff+=actualParser.processedStuff;
         ////
         {
             WriteProcessedFavourites(sumParser, author, fanficsInterface, authorsInterface, fandomsInterface);
+            elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
+            qDebug() << "Arrived to after-favwritten in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
             if(fanficsInterface->skippedCounter > 0)
                 qDebug() << "skipped: " << fanficsInterface->skippedCounter;
         }
@@ -137,7 +146,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         QCoreApplication::processEvents();
 
         elapsed = std::chrono::high_resolution_clock::now() - startPageProcess;
-        //qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        qDebug() << "Processed page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     }
     fandomsInterface->RecalculateFandomStats(fandoms.values());
     transaction.finalize();

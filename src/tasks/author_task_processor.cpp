@@ -68,10 +68,16 @@ void WriteProcessedFavourites(FavouriteStoryParser& parser,
                               QSharedPointer<interfaces::Authors> authorsInterface,
                               QSharedPointer<interfaces::Fandoms> fandomsInterface)
 {
+    auto startWriteRequest = std::chrono::high_resolution_clock::now();
     QSet<int> uniqueAuthors;
     fanficsInterface->ProcessIntoDataQueues(parser.processedStuff);
+    auto elapsed = std::chrono::high_resolution_clock::now() - startWriteRequest;
+    qDebug() << "Arrived to post data queues in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
     auto fandoms = fandomsInterface->EnsureFandoms(parser.processedStuff);
     fandoms.intersect(fandoms);
+    elapsed = std::chrono::high_resolution_clock::now() - startWriteRequest;
+    qDebug() << "Arrived to post ensure fandoms in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     QList<core::FicRecommendation> tempRecommendations;
     tempRecommendations.reserve(parser.processedStuff.size());
     uniqueAuthors.reserve(parser.processedStuff.size());
@@ -86,9 +92,15 @@ void WriteProcessedFavourites(FavouriteStoryParser& parser,
             uniqueAuthors.insert(section->author->GetWebID("ffn"));
     }
     fanficsInterface->AddRecommendations(tempRecommendations);
+    elapsed = std::chrono::high_resolution_clock::now() - startWriteRequest;
+    qDebug() << "Arrived to post add recommendations in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     auto result =fanficsInterface->FlushDataQueues();
+    elapsed = std::chrono::high_resolution_clock::now() - startWriteRequest;
+    qDebug() << "Arrived to post flush data queues in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
     //todo this also needs to be done everywhere
     authorsInterface->UploadLinkedAuthorsForAuthor(author->id, "ffn", uniqueAuthors.values());
+    elapsed = std::chrono::high_resolution_clock::now() - startWriteRequest;
+    qDebug() << "Arrived to post linked authors in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 }
 
 void AuthorLoadProcessor::Run(PageTaskPtr task)
