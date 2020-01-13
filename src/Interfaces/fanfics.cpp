@@ -468,12 +468,26 @@ bool Fanfics::WriteRecommendations()
 {
     database::Transaction transaction(db);
     qDebug() << "writing recommendations of size: " << ficRecommendations.size();
+    using namespace database::puresql;
+    QString qs = " insert into recommendations (recommender_id, fic_id) values(:recommender_id,:fic_id) ON CONFLICT DO NOTHING ";
+    QSqlQuery q(db);
+    q.prepare(qs);
     for(auto recommendation: ficRecommendations)
     {
         if(!recommendation.IsValid() || !authorInterface->EnsureId(recommendation.author))
             continue;
         auto id = GetIDFromWebID(recommendation.fic->webId, recommendation.fic->webSite);
-        database::puresql::WriteRecommendation(recommendation.author, id, db);
+        //database::puresql::WriteRecommendation(recommendation.author, id, db);
+        {
+            //, {{"recommender_id", author->id},{"fic_id", fic_id}}
+
+
+            q.bindValue(":recommender_id",recommendation.author->id);
+            q.bindValue(":fic_id",id);
+            q.exec();
+            if(q.lastError().isValid())
+                qDebug() << q.lastError().text();
+        }
     }
 
     if(!transaction.finalize())

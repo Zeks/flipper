@@ -322,10 +322,14 @@ struct SqlContext
     }
 
     void BindValues(){
+        //QVariantList list;
+        //list.reserve(bindValues.size());
         for(auto bind : bindValues)
         {
             q.bindValue(QString(":") + bind.key, bind.value);
+            //list.push_back(bind.value);
         }
+        //qDebug() << list;
     }
 
     template<typename KeyType>

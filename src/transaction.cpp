@@ -31,7 +31,7 @@ database::Transaction::Transaction(QSqlDatabase db)
     {
         //qDebug() << "opening transaction";
         start();
-        transactionSet.insert(db.connectionName());
+        transactionSet.insert(connetionName);
     }
 
 }

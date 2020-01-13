@@ -551,7 +551,7 @@ public:
     void LogUrls();
     void LogWebIds();
     static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
-    int complete=0;
+    bool complete=0;
     int atChapter=0;
     int webId = -1;
     int id = -1;

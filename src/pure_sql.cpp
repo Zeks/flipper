@@ -456,30 +456,30 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
 DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
 {
     QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
-                    " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
+                    " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED,"
                     " wcr, reviewstofavourites, age, daysrunning, at_chapter, lastupdate, fandom1, fandom2, author_id ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
-                    " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,"
-                    " :wcr, :reviewstofavourites, :age, :daysrunning, 0, date('now'), :fandom1, :fandom2, :author_id)";
+                    " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated,"
+                    " :wcr, :reviewstofavourites, :age, :daysrunning, 0, now(), :fandom1, :fandom2, :author_id)";
     query=query.arg(section->webSite);
 
     SqlContext<bool> ctx(db, query);
     ctx.bindValue("site_id",section->webId); //?
     ctx.bindValue("fandom",section->fandom);
     ctx.bindValue("author",section->author->name); //?
-    ctx.bindValue("author_id",section->author->GetWebID("ffn"));
     ctx.bindValue("title",section->title);
     ctx.bindValue("wordcount",section->wordCount.toInt());
     ctx.bindValue("CHAPTERS",section->chapters.trimmed().toInt());
     ctx.bindValue("FAVOURITES",section->favourites.toInt());
     ctx.bindValue("REVIEWS",section->reviews.toInt());
     ctx.bindValue("CHARACTERS",section->charactersFull);
+    ctx.bindValue("COMPLETE",section->complete);
     ctx.bindValue("RATED",section->rated);
     ctx.bindValue("summary",section->summary);
-    ctx.bindValue("COMPLETE",section->complete);
     ctx.bindValue("genres",section->genreString);
     ctx.bindValue("published",section->published);
     ctx.bindValue("updated",section->updated);
+    ctx.bindValue("author_id",section->author->GetWebID("ffn"));
     ctx.bindValue("wcr",section->calcStats.wcr);
     ctx.bindValue("reviewstofavourites",section->calcStats.reviewsTofavourites);
     ctx.bindValue("age",section->calcStats.age);
@@ -495,6 +495,7 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
 
     return ctx();
 }
+
 DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
 {
     QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
