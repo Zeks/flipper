@@ -86,7 +86,6 @@ bool OperateOnDataTasks(QDir rootFolder, std::function<bool(QString)> fileProces
 }
 
 auto GetCommandLineArguments(QCommandLineParser& parser){
-    qDebug() << "value of s is:" << parser.value("sqldriver");
     return std::make_tuple(parser.value("folder"));
 }
 
@@ -178,9 +177,9 @@ auto GetDatabases(QString folder){
         if(!settings.childGroups().contains(group))
         {
             qDebug() << "no such group: " << group;
-            return true;
+            return false;
         }
-        return false;
+        return true;
     };
 
     QSettings databases("settings/databases.ini", QSettings::IniFormat);
@@ -290,10 +289,13 @@ struct TaskPartTarget{
     QStringList TransformColumnNames(QStringList sources){
         QStringList result;
         for(auto source : sources)
+        {
+            source = source.toUpper().trimmed();
             if(renames.contains(source))
                 result.push_back(renames[source]);
             else
                 result.push_back(source);
+        }
         return result;
     }
     QString table;
@@ -350,8 +352,30 @@ bool VerifyTaskFileAndFillTasks(QString file,
     if(!sourceTableExists  || !targetTableExists)
         return false;
 
-    auto allSourceColumns = GetAllColumns(taskFile.value("source/table").toString(), sourceDB);
-    auto allTargetColumns = GetAllColumns(taskFile.value("target/table").toString(), targetDB);
+    auto uppercaseList = [](QStringList source){
+        QStringList result;
+        for(auto token : source)
+        {
+            result.push_back(token.toUpper().trimmed());
+        }
+        return result;
+    };
+
+    auto allSourceColumns = uppercaseList(GetAllColumns(taskFile.value("source/table").toString(), sourceDB));
+    auto allTargetColumns = uppercaseList(GetAllColumns(taskFile.value("target/table").toString(), targetDB));
+
+    QStringList difference;
+    std::sort(allSourceColumns.begin(), allSourceColumns.end());
+    std::sort(allTargetColumns.begin(), allTargetColumns.end());
+    std::set_difference (allSourceColumns.begin(), allSourceColumns.end(), allTargetColumns.begin(), allTargetColumns.end(),
+                         std::inserter(difference, difference.begin()));
+    qDebug() << "Columns only in source: " << difference;
+    difference.clear();
+    std::set_difference (allTargetColumns.begin(), allTargetColumns.end(), allSourceColumns.begin(), allSourceColumns.end(),
+                         std::inserter(difference, difference.begin()));
+    qDebug() << "Columns only in target: " << difference;
+
+
     if(allSourceColumns.isEmpty() || allTargetColumns.isEmpty()){
         qDebug() << "Source or target columns are empty";
         return false;
@@ -359,10 +383,12 @@ bool VerifyTaskFileAndFillTasks(QString file,
 
     // verify that columns exist
     QStringList sourceColumns = taskFile.value("source/columns").toString().split(",", QString::SkipEmptyParts);
+    bool passEverything = false;
     for(auto column : sourceColumns){
         if(column == "*")
         {
-            taskSource.columns = allSourceColumns;
+            passEverything = true;
+            //taskSource.columns = allSourceColumns;
             break;
         }
         if(!allSourceColumns.contains(column))
@@ -371,7 +397,10 @@ bool VerifyTaskFileAndFillTasks(QString file,
             return false;
         }
     }
-    taskSource.columns = sourceColumns;
+    if(passEverything)
+        taskSource.columns = allSourceColumns;
+    else
+        taskSource.columns = sourceColumns;
 
     // then verify that renames exist
     QStringList renamesList = taskFile.value("target/renames").toString().split(",", QString::SkipEmptyParts);
@@ -383,22 +412,22 @@ bool VerifyTaskFileAndFillTasks(QString file,
             qDebug() << "Rename pair invalid: " << renameBits;
             return false;
         }
-        if(!allSourceColumns.contains(renameBits.at(0)))
+        if(!allSourceColumns.contains(renameBits.at(0).toUpper().trimmed()))
         {
             qDebug() << "Source column doesn't exist in table: " << renameBits.at(0);
             return false;
         }
-        if(!allTargetColumns.contains(renameBits.at(1)))
+        if(!allTargetColumns.contains(renameBits.at(1).toUpper().trimmed()))
         {
             qDebug() << "Target column doesn't exist in table: " << renameBits.at(1);
             return false;
         }
-        taskTarget.renames[renameBits.at(0)] = renameBits.at(1);
+        taskTarget.renames[renameBits.at(0).toUpper().trimmed()] = renameBits.at(1).toUpper().trimmed();
     }
 
     // then verify that pivot and identity exist
     auto columnExistsVerifier = [](QStringList columnList, QString columnName, QString columnDesignation){
-        if(!columnList.contains(columnName))
+        if(!columnList.contains(columnName.toUpper().trimmed()))
         {
             qDebug() << "Column doesn't exit: " << columnDesignation;
             return false;
@@ -413,11 +442,11 @@ bool VerifyTaskFileAndFillTasks(QString file,
     QString targetPivotType = taskFile.value("target/pivotType").toString();
     QString targetIdentity= taskFile.value("target/identity").toString();
     if(!columnExistsVerifier(allSourceColumns, sourcePivot, "source pivot")
-            || !columnExistsVerifier(allSourceColumns, sourcePivotType, "source pivot type")
+
             || !columnExistsVerifier(allSourceColumns, sourcePivot, "source identity") )
         return false;
     if(!columnExistsVerifier(allTargetColumns, targetPivot, "target pivot")
-            || !columnExistsVerifier(allTargetColumns, targetPivotType, "target pivot type")
+
             || !columnExistsVerifier(allTargetColumns, targetIdentity, "target identity") )
         return false;
 
@@ -484,6 +513,7 @@ int main(int argc, char *argv[])
         if(taskSource.pivotType == "date")
         {
             QString qs = QString("select max(%1) as pivot from %2");
+            qs = qs.arg(taskTarget.pivot).arg(taskTarget.table);
             SqlContext<QDateTime> ctx(targetDB, qs);
             ctx.FetchSingleValue<QDateTime>("pivot", QDateTime(), false);
             if(!ctx.result.success)
@@ -494,6 +524,7 @@ int main(int argc, char *argv[])
         {
             QString qs = QString("select max(%1) as pivot from %2");
             SqlContext<QString> ctx(targetDB, qs);
+            qs = qs.arg(taskTarget.pivot).arg(taskTarget.table);
             ctx.FetchSingleValue<QString>("pivot", "-1", false);
             if(!ctx.result.success)
                 return false;
@@ -508,8 +539,7 @@ int main(int argc, char *argv[])
 
 
 
-        QStringList keyList = {"tag","id"};
-        QString insertQS = QString("insert into %1(%2) values(%3)");
+        QString insertQS = QString("insert into %1 ( %2 ) values ( %3 )");
         QStringList targetColumns = taskTarget.TransformColumnNames(taskSource.columns);
         insertQS = insertQS.arg(taskTarget.table).arg(targetColumns.join(","));
         QStringList binds;
@@ -520,21 +550,55 @@ int main(int argc, char *argv[])
         QStringList conflictPart;
         QString conflictMerged;
         for(auto column: targetColumns)
-            binds.push_back(column + "= :" + column);
+        {
+            if(column.toUpper().trimmed() == taskTarget.identity.toUpper().trimmed())
+                continue;
+            conflictPart.push_back(column + "= :" + column);
+        }
+        conflictPart.clear();
         if(conflictPart.size() > 0)
         {
-            conflictMerged += " on conflict do update set " + conflictPart.join(",") + " where " + taskTarget.identity + " = :" + taskTarget.identity;
+            conflictMerged += "\n on conflict (" + taskTarget.identity.toUpper().trimmed() + ") do update set \n " + conflictPart.join(",")
+                    + " \n where " + taskTarget.table + "." + taskTarget.identity + " = :" + taskTarget.identity;
         }
         insertQS += conflictMerged;
 
 
-        ParallelSqlContext<bool> ctx (sourceDB, selectFromSource, taskSource.columns,
-                                      targetDB, insertQS, targetColumns);
-        if(validDatePivot)
-            ctx.bindSourceValue(taskSource.pivot, pivotValue.toDateTime());
-        else if(validStringPivot)
-            ctx.bindSourceValue(taskSource.pivot, pivotValue.toString());
-        ctx();
+        qDebug() << "Insert string: " << insertQS;
+//        qDebug() << "Select string: " << selectFromSource;
+
+//        qDebug() << "Select columns: " << taskSource.columns;
+//        qDebug() << "Insert columns: " << targetColumns;
+        // need to fetch count of rows and split tasks for qt
+        int fullSize = 0;
+        {
+            QString qs = QString("select count(*) as cnt from(" + selectFromSource + ")");
+            SqlContext<int> ctx(sourceDB, qs);
+            ctx.FetchSingleValue<int>("cnt", 0);
+            if(!ctx.result.success)
+                return false;
+            fullSize = ctx.result.data;
+        }
+        int splitSize = 500000;
+        int segments = 1 + fullSize/splitSize;
+        for(auto i = 0; i < segments; i++)
+        {
+//            if(i < 0 || i > 0)
+//                continue;
+            qDebug() <<  "Doing part: " << i;
+
+            QString partialSelect =    selectFromSource + " LIMIT " + QString::number(splitSize) + " OFFSET " + QString::number(i*splitSize);
+            //qDebug() << partialSelect;
+            ParallelSqlContext<bool> ctx (sourceDB, partialSelect, taskSource.columns,
+                                          targetDB, insertQS, targetColumns, true);
+            if(validDatePivot)
+                ctx.bindSourceValue(taskSource.pivot, pivotValue.toDateTime());
+            else if(validStringPivot)
+                ctx.bindSourceValue(taskSource.pivot, pivotValue.toString());
+            ctx();
+            if(!ctx.result.success)
+                return false;
+        }
         return true;
     });
     if(!result)

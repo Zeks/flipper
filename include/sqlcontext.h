@@ -1,7 +1,7 @@
 #pragma once
 #include "transaction.h"
 #include "logger/QsLog.h"
-
+#include "GlobalHeaders/snippets_templates.h"
 #include <QString>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -214,7 +214,7 @@ struct SqlContext
                                   std::function<ValueType(QSqlQuery&)> func = std::function<ValueType(QSqlQuery&)>())
     {
         if(countQuery.isEmpty())
-            qs = "select count(*) from ( " + actualQuery + " ) ";
+            qs = "select count(*) from ( " + actualQuery + " ) as countquery";
         else
             qs = countQuery;
         Prepare(qs);
@@ -385,13 +385,15 @@ template <typename ResultType>
 struct ParallelSqlContext
 {
     ParallelSqlContext(QSqlDatabase source, QString sourceQuery, QStringList sourceFields,
-                       QSqlDatabase target, QString targetQuery, QStringList targetFields):
+                       QSqlDatabase target, QString targetQuery, QStringList targetFields, bool externalTransaction = false):
         sourceQ(source), targetQ(target),
-        sourceDB(source), targetDB(target), transaction(target) {
+        sourceDB(source), targetDB(target), transaction(QSqlDatabase()){
         sourceQ.prepare(sourceQuery);
         targetQ.prepare(targetQuery);
         this->sourceFields = sourceFields;
         this->targetFields = targetFields;
+        if(!externalTransaction)
+            transaction = Transaction(target);
     }
 
     ~ParallelSqlContext(){
@@ -403,8 +405,11 @@ struct ParallelSqlContext
         BindSourceValues();
         if(!result.ExecAndCheck(sourceQ))
             return result;
+        int rowCounter = 0;
         while(sourceQ.next())
         {
+            if(rowCounter % 1000 == 0)
+                qDebug() << "at row: " << rowCounter;
             for(int i = 0; i < sourceFields.size(); ++i )
             {
                 //qDebug() << "binding field: " << sourceFields[i];
@@ -418,6 +423,9 @@ struct ParallelSqlContext
                 else
                 {
                     value = sourceQ.value(sourceFields[i]);
+                    //qDebug() << "value type is: " << value.type();
+                    if(value.type() *in(QVariant::Int, QVariant::LongLong))
+                        value = QString::number(value.toInt());
                     //qDebug() << "binding value: " << value;
                 }
                 //qDebug() << "to target field: " << targetFields[i];
@@ -426,6 +434,7 @@ struct ParallelSqlContext
 
             if(!result.ExecAndCheck(targetQ, ignoreUniqueness))
                 return result;
+            rowCounter++;
         }
         return result;
     }

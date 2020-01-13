@@ -40,7 +40,7 @@ alter table FanficData.fanfics add column ao3_id integer default null;
 alter table FanficData.fanfics add column sb_id integer default null;
 alter table FanficData.fanfics add column sv_id integer default null;
 alter table FanficData.fanfics add column author_id integer default null;
-alter table FanficData.fanfics add column author_web_id integer default null;
+--alter table FanficData.fanfics add column author_web_id integer default null;
 alter table FanficData.fanfics add column for_fill boolean default null;
 alter table FanficData.fanfics add column wordcount integer default null;
 alter table FanficData.fanfics add column hidden boolean default false;
