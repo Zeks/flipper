@@ -55,6 +55,7 @@ xcf/*
 
 
 third_party/zlib/*
+third_party/google/*
 libs/logger/llogger.pri
 
 
