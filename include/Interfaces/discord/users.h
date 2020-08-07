@@ -1,0 +1,57 @@
+/*
+Flipper is a replacement search engine for fanfiction.net search results
+Copyright (C) 2017-2018  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
+#pragma once
+#include "Interfaces/base.h"
+#include "Interfaces/db_interface.h"
+#include "discord/limits.h"
+#include "core/section.h"
+#include "QScopedPointer"
+#include "QSharedPointer"
+#include "QSqlDatabase"
+#include "QReadWriteLock"
+
+
+
+namespace interfaces {
+class IDBWrapper;
+class Fandoms;
+
+class Users {
+public:
+    virtual ~Users();
+    QSharedPointer<discord::User> GetUser(QString);
+    void WriteUser(QSharedPointer<discord::User>);
+    int WriteUserList(QString user_id,
+                      QString list_name, discord::EListType list_type,
+                      int min_match, int match_ratio, int always_at);
+    void IgnoreFandom(QString userId, int fandomId, bool ignoreCrosses);
+    void UnignoreFandom(QString userId, int fandomId);
+    QList<discord::IgnoreFandom> GetIgnoreList(QString userId);
+    void TagFanfic(QString userId, QString tag, int ficId);
+    void UnTagFanfic(QString userId, QString tag, int ficId); // empty tag removes all
+    void BanUser(QString userId);
+    void UpdateCurrentPage(QString userId, int page);
+
+
+    QSqlDatabase db;
+    QSharedPointer<database::IDBWrapper> portableDBInterface;
+
+
+};
+
+}
