@@ -162,7 +162,7 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
                 intersection.push_back(fic);
             else
             {
-                bool sufficientMatches = notSlashFics[fic] >= 5;
+                //bool sufficientMatches = notSlashFics[fic] >= 5;
             }
         }
     });

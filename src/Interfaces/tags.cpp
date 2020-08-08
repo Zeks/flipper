@@ -90,6 +90,7 @@ bool Tags::ExportToFile(QString filename)
     if(closeDb.isOpen())
         closeDb.close();
     bool success = QFile::remove(exportFile);
+    Q_UNUSED(success);
     QSharedPointer<database::IDBWrapper> tagExportInterface (new database::SqliteInterface());
     auto tagExportDb = tagExportInterface->InitDatabase("TagExport", false);
     tagExportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagExport");

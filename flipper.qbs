@@ -119,8 +119,7 @@ App{
         "src/tasks/fandom_task_processor.cpp",
         "src/tasks/author_task_processor.cpp",
         "src/pageconsumer.cpp",
-        "third_party/sqlite3/sqlite3.c",
-        "third_party/sqlite3/sqlite3.h",
+
         "src/Interfaces/authors.cpp",
         "src/Interfaces/base.cpp",
         "src/Interfaces/db_interface.cpp",
@@ -184,6 +183,18 @@ App{
         "src/rng.cpp",
         "include/rng.h",
     ]
+    Group{
+    name: "sqlite"
+    files: [
+        "third_party/sqlite3/sqlite3.c",
+        "third_party/sqlite3/sqlite3.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
     Group{
     name: "qr"
     files: [

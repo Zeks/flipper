@@ -77,7 +77,6 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toString().split(",", QString::SkipEmptyParts);
         if(role == AuthorIdRole)
         {
-            auto value = AdaptingTableModel::data(index.sibling(index.row(), 20), Qt::DisplayRole).toInt();
             return AdaptingTableModel::data(index.sibling(index.row(), 20), Qt::DisplayRole).toInt();
         }
         if(role == SlashRole)

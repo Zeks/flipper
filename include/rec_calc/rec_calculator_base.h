@@ -139,7 +139,7 @@ public:
     int votesBase = 1;
 };
 static auto matchesFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params){
-    return author.matches >= params->minimumMatch || author.matches >= params->alwaysPickAt;
+    return static_cast<int>(author.matches) >= params->minimumMatch || static_cast<int>(author.matches) >= params->alwaysPickAt;
 };
 static auto ratioFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params)
 {

@@ -1436,7 +1436,7 @@ ServerStatus FicSourceGRPC::GetStatus()
     return impl->GetStatus();
 }
 
-bool VerifyString(const std::string& s, int maxSize = 200){
+bool VerifyString(const std::string& s, uint maxSize = 200){
     if(s.length() > maxSize)
         return false;
     return true;

@@ -25,6 +25,7 @@ Product{
         }
         return path
     }
+    cpp.cxxFlags: ["-Wno-unused-function"]
     destinationDirectory: {
         var path = localvariables.projectPath
         path += qbs.buildVariant == "release" ? "/release" : "/debug"

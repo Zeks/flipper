@@ -87,6 +87,7 @@ void WriteProcessedFavourites(FavouriteStoryParser& parser,
     }
     fanficsInterface->AddRecommendations(tempRecommendations);
     auto result =fanficsInterface->FlushDataQueues();
+    Q_UNUSED(result);
     //todo this also needs to be done everywhere
     authorsInterface->UploadLinkedAuthorsForAuthor(author->id, "ffn", uniqueAuthors.values());
 }
