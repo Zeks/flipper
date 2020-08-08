@@ -161,16 +161,16 @@ void CoreEnvironment::LoadData()
             if(snoozeInfo.contains(fic.id))
             {
                 auto info = snoozeInfo[fic.id];
-                fic.snoozeExpired = info.expired;
-                fic.chapterTillSnoozed = info.snoozedTillChapter;
+                fic.userData.snoozeExpired = info.expired;
+                fic.userData.chapterTillSnoozed = info.snoozedTillChapter;
                 if(info.snoozedTillChapter - info.snoozedAtChapter == 1)
-                    fic.snoozeMode = core::Fic::efsm_next_chapter;
+                    fic.userData.snoozeMode = core::Fic::efsm_next_chapter;
                 else if(info.untilFinished)
-                    fic.snoozeMode = core::Fic::efsm_til_finished;
+                    fic.userData.snoozeMode = core::Fic::efsm_til_finished;
                 else
-                    fic.snoozeMode = core::Fic::efsm_target_chapter;
-                fic.chapterSnoozed = info.snoozedAtChapter;
-                fic.ficIsSnoozed = true;
+                    fic.userData.snoozeMode = core::Fic::efsm_target_chapter;
+                fic.userData.chapterSnoozed = info.snoozedAtChapter;
+                fic.userData.ficIsSnoozed = true;
             }
         }
         fanfics = newFanfics;
@@ -1175,8 +1175,8 @@ void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, Q
     interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.mainListId);
     for(auto& fic : fanfics)
     {
-        if(!filter.displayPurged && fic.purged)
-            fic.purged = false;
+        if(!filter.displayPurged && fic.recommendationsData.purged)
+            fic.recommendationsData.purged = false;
     }
     if(fanfics.size() <= 100){
         interfaces.recs->LoadPlaceAndRecommendationsData(&fanfics, filter);

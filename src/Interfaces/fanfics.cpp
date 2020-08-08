@@ -272,18 +272,18 @@ bool Fanfics::FetchSnoozesForFics(QVector<core::Fic> * fics)
         if(snoozes.contains(fic.id))
         {
             auto& snooze = snoozes[fic.id];
-            fic.chapterTillSnoozed = snooze.snoozedTillChapter;
-            fic.chapterSnoozed = snooze .snoozedAtChapter;
+            fic.userData.chapterTillSnoozed = snooze.snoozedTillChapter;
+            fic.userData.chapterSnoozed = snooze .snoozedAtChapter;
             if(snooze.untilFinished)
             {
-                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_til_finished;
+                fic.userData.snoozeMode = core::Fic::EFicSnoozeMode::efsm_til_finished;
             }
             else if((snooze.snoozedTillChapter - snooze.snoozedAtChapter) == 1)
             {
-                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_next_chapter;
+                fic.userData.snoozeMode = core::Fic::EFicSnoozeMode::efsm_next_chapter;
             }
             else
-                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_target_chapter;
+                fic.userData.snoozeMode = core::Fic::EFicSnoozeMode::efsm_target_chapter;
         }
     }
     return true;
@@ -320,10 +320,10 @@ bool Fanfics::FetchChaptersForFics(QVector<core::Fic> * fics)
     {
         if(chapters.contains(fic.id))
         {
-            fic.atChapter = chapters[fic.id];
+            fic.userData.atChapter = chapters[fic.id];
         }
         else
-            fic.atChapter = 0;
+            fic.userData.atChapter = 0;
     }
 
     return true;

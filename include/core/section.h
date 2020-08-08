@@ -1,4 +1,4 @@
-/*
+﻿/*
 Flipper is a replacement search engine for fanfiction.net search results
 Copyright (C) 2017-2019  Marchenko Nikolai
 
@@ -534,16 +534,47 @@ public:
     public:
         void Log();
         bool isValid = false;
+
         int age;
         int daysRunning;
+        int minSlashPass = 0;
+
         double wcr;
         double wcr_adjusted;
         double reviewsTofavourites;
+
+        QString realGenreString;
+
+
+
+        QList<genre_stats::GenreBit> realGenreData;
     };
 
     struct UserData{
         bool likedAuthor = false;
         bool ficIsSnoozed = false;
+        bool snoozeExpired = false;
+        EFicSnoozeMode snoozeMode = EFicSnoozeMode::efsm_next_chapter;
+        int atChapter=0;
+        int chapterTillSnoozed = -1;
+        int chapterSnoozed = -1;
+        QString tags;
+    };
+
+    struct RecommendationListData{
+        bool purged = false;
+        int recommendationsMainList = 0;
+        int recommendationsSecondList = 0;
+        int placeInMainList = 0;
+        int placeInSecondList = 0;
+        int placeOnFirstPedestal= 0;
+        int placeOnSecondPedestal = 0;
+        QStringList voteBreakdown;
+        QStringList voteBreakdownCounts;
+    };
+
+    struct UiData{
+        bool selected = false;
     };
 
     Fic(){
@@ -557,39 +588,21 @@ public:
     void LogWebIds();
     static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
 
-    //bool likedAuthor = false;
-    bool ficIsSnoozed = false;
-    bool purged = false;
-    bool snoozeExpired = false;
-    bool selected = false;
-    bool hasNotes = false;
     bool isCrossover = false;
     bool isValid =false;
-
-    EFicSnoozeMode snoozeMode = EFicSnoozeMode::efsm_next_chapter;
     int complete=0;
-    int atChapter=0;
     int webId = -1;
     int id = -1;
-    int minSlashPass = 0;
     int score = 0;
-    int chapterTillSnoozed = -1;
-    int chapterSnoozed = -1;
     int author_id = -1;
     int ffn_id = -1;
     int ao3_id = -1;
     int sb_id = -1;
     int sv_id = -1;
-    int recommendationsMainList = 0;
-    int recommendationsSecondList = 0;
-    int placeInMainList = 0;
-    int placeInSecondList = 0;
-    int placeOnFirstPedestal= 0;
-    int placeOnSecondPedestal = 0;
 
     QString urlFFN;
     QString webSite = "ffn";
-    QString realGenreString;
+
     QString wordCount;
     QString chapters;
     QString reviews;
@@ -604,14 +617,13 @@ public:
     QString summary;
     QString statSection;
     QString notes;
-    QString tags;
+
     QString charactersFull;
     QString authorName;
 
     QSharedPointer<Author> author;
 
-    QStringList voteBreakdown;
-    QStringList voteBreakdownCounts;
+
     QStringList genres;
     QStringList characters;
     QStringList quotes;
@@ -621,12 +633,14 @@ public:
     QDateTime published;
     QDateTime updated;
 
-    QList<genre_stats::GenreBit> realGenreData;
+
     QList<int> fandomIds;
 
     UpdateMode updateMode = UpdateMode::none;
     EFicSource ficSource = efs_search;
     UserData userData;
+    UiData uiData;
+    RecommendationListData recommendationsData;
     SlashData slashData;
     Statistics statistics;
 

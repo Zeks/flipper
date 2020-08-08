@@ -527,7 +527,7 @@ void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fi
 
     database::puresql::FetchRecommendationScoreForFics(scores, filter, db);
     for(auto& fic: *fics){
-        fic.recommendationsMainList = scores[fic.id];
+        fic.recommendationsData.recommendationsMainList = scores[fic.id];
     }
 }
 

@@ -371,7 +371,7 @@ DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabas
 core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
 {
     auto fic = core::Fic::NewFanfic();
-    fic->atChapter = q1.value("AT_CHAPTER").toInt();
+    fic->userData.atChapter = q1.value("AT_CHAPTER").toInt();
     fic->complete  = q1.value("COMPLETE").toInt();
     fic->webId     = q1.value(website + "_ID").toInt();
     fic->id        = q1.value("ID").toInt();
@@ -2520,7 +2520,7 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
         tags[q.value("fic_id").toInt()] = q.value("tags").toString();
     });
     for(auto& fic : *fics)
-        fic.tags = tags[fic.id];
+        fic.userData.tags = tags[fic.id];
     return ctx.result;
 }
 
@@ -2579,12 +2579,12 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
 
     for(auto& fic : *fics)
     {
-        fic.voteBreakdown = breakdown[fic.id];
-        fic.voteBreakdownCounts = breakdownCounts[fic.id];
+        fic.recommendationsData.voteBreakdown = breakdown[fic.id];
+        fic.recommendationsData.voteBreakdownCounts = breakdownCounts[fic.id];
         if(purgedFics.contains(fic.id))
-            fic.purged = true;
+            fic.recommendationsData.purged = true;
         else
-            fic.purged = false;
+            fic.recommendationsData.purged = false;
     }
     return ctx.result;
 }
@@ -2642,14 +2642,14 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fi
         auto& fic = (*fics)[indices[ficId]];
         if(q.value("list_id").toInt() == filter.mainListId)
         {
-            fic.recommendationsMainList = q.value(pointsField).toInt();
-            fic.placeInMainList = q.value("position").toInt();
-            fic.placeOnSecondPedestal = q.value("pedestal").toInt();
+            fic.recommendationsData.recommendationsMainList = q.value(pointsField).toInt();
+            fic.recommendationsData.placeInMainList = q.value("position").toInt();
+            fic.recommendationsData.placeOnSecondPedestal = q.value("pedestal").toInt();
         }
         else{
-            fic.recommendationsSecondList = q.value(pointsField).toInt();
-            fic.placeInSecondList = q.value("position").toInt();
-            fic.placeOnSecondPedestal= q.value("pedestal").toInt();
+            fic.recommendationsData.recommendationsSecondList = q.value(pointsField).toInt();
+            fic.recommendationsData.placeInSecondList = q.value("position").toInt();
+            fic.recommendationsData.placeOnSecondPedestal= q.value("pedestal").toInt();
         }
     });
     return ctx.result;

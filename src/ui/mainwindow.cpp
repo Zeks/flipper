@@ -448,7 +448,7 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
 }
 
 int ConvertFicSnoozeModeToInt (core::Fic::EFicSnoozeMode type){return static_cast<int>(type);}
-void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = static_cast<core::Fic::EFicSnoozeMode>(value);}
+void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snoozeMode = static_cast<core::Fic::EFicSnoozeMode>(value);}
 
 #define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
@@ -598,36 +598,36 @@ void MainWindow::SetupTableAccess()
     ADD_DATE_GETSET(holder, 7, 0, published);
     ADD_DATE_GETSET(holder, 8, 0, updated);
     ADD_STRING_GETSET(holder, 9, 0, urlFFN);
-    ADD_STRING_GETSET(holder, 10, 0, tags);
+    ADD_STRING_GETSET(holder, 10, 0, userData.tags);
     ADD_STRING_NUMBER_GETSET(holder, 11, 0, wordCount);
     ADD_STRING_INTEGER_GETSET(holder, 12, 0, favourites);
     ADD_STRING_INTEGER_GETSET(holder, 13, 0, reviews);
     ADD_STRING_INTEGER_GETSET(holder, 14, 0, chapters);
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
-    ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
+    ADD_INTEGER_GETSET(holder, 16, 0, userData.atChapter);
     ADD_INTEGER_GETSET(holder, 17, 0, id);
-    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsMainList);
-    ADD_STRING_GETSET(holder, 19, 0, realGenreString);
+    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsData.recommendationsMainList);
+    ADD_STRING_GETSET(holder, 19, 0, statistics.realGenreString);
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
-    ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
-    ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
-    ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
+    ADD_INTEGER_GETSET(holder, 21, 0, statistics.minSlashPass);
+    ADD_STRINGLIST_GETTER(holder, 22, 0, recommendationsData.voteBreakdown);
+    ADD_STRINGLIST_GETTER(holder, 23, 0, recommendationsData.voteBreakdownCounts);
     ADD_INTEGER_GETSET(holder, 24, 0, userData.likedAuthor);
-    ADD_INTEGER_GETSET(holder, 25, 0, purged);
+    ADD_INTEGER_GETSET(holder, 25, 0, recommendationsData.purged);
     ADD_INTEGER_GETSET(holder, 26, 0, score);
-    ADD_INTEGER_GETSET(holder, 27, 0, snoozeExpired);
-    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, snoozeMode);
-    ADD_INTEGER_GETSET(holder, 29, 0, chapterTillSnoozed);
-    ADD_INTEGER_GETSET(holder, 30, 0, chapterSnoozed);
+    ADD_INTEGER_GETSET(holder, 27, 0, userData.snoozeExpired);
+    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, userData.snoozeMode);
+    ADD_INTEGER_GETSET(holder, 29, 0, userData.chapterTillSnoozed);
+    ADD_INTEGER_GETSET(holder, 30, 0, userData.chapterSnoozed);
     ADD_STRING_GETSET(holder, 31, 0, notes);
     ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
-    ADD_STRINGLIST_GETTER(holder, 33, 0, selected);
-    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsSecondList);
-    ADD_INTEGER_GETSET(holder, 35, 0, placeInMainList);
-    ADD_INTEGER_GETSET(holder, 36, 0, placeInSecondList);
-    ADD_INTEGER_GETSET(holder, 37, 0, placeOnFirstPedestal);
-    ADD_INTEGER_GETSET(holder, 38, 0, placeOnSecondPedestal);
-    ADD_INTEGER_GETSET(holder, 39, 0, ficIsSnoozed);
+    ADD_STRINGLIST_GETTER(holder, 33, 0, uiData.selected);
+    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsData.recommendationsSecondList);
+    ADD_INTEGER_GETSET(holder, 35, 0, recommendationsData.placeInMainList);
+    ADD_INTEGER_GETSET(holder, 36, 0, recommendationsData.placeInSecondList);
+    ADD_INTEGER_GETSET(holder, 37, 0, recommendationsData.placeOnFirstPedestal);
+    ADD_INTEGER_GETSET(holder, 38, 0, recommendationsData.placeOnSecondPedestal);
+    ADD_INTEGER_GETSET(holder, 39, 0, userData.ficIsSnoozed);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)

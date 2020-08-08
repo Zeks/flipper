@@ -144,14 +144,14 @@ inline core::Fic FeederEnvironment::LoadFanfic(QSqlQuery& q)
     result.published = published;
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
-    result.tags = q.value("TAGS").toString();
+    result.userData.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
     result.chapters = QString::number(q.value("CHAPTERS").toInt());
     result.complete= q.value("COMPLETE").toInt();
-    result.atChapter = q.value("AT_CHAPTER").toInt();
-    result.recommendationsMainList= q.value("SUMRECS").toInt();
+    result.userData.atChapter = q.value("AT_CHAPTER").toInt();
+    result.recommendationsData.recommendationsMainList= q.value("SUMRECS").toInt();
     //QLOG_INFO() << "recs value: " << result.recommendations;
     return result;
 }

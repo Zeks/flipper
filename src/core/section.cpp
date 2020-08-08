@@ -174,17 +174,17 @@ void core::Fic::Log()
     //qDebug() << "Follows:" << follows; // not yet parsed
     qDebug() << "Rated:" << rated;
     qDebug() << "Complete:" << complete;
-    qDebug() << "AtChapter:" << atChapter;
+    qDebug() << "AtChapter:" << userData.atChapter;
     qDebug() << "Is Crossover:" << isCrossover;
     qDebug() << "Summary:" << summary;
     qDebug() << "StatSection:" << statSection;
-    qDebug() << "Tags:" << tags;
+    qDebug() << "Tags:" << userData.tags;
     qDebug() << "Language:" << language;
 
-    qDebug() << "Recommendations main:" << recommendationsMainList;
-    qDebug() << "Recommendations second:" << recommendationsSecondList;
-    qDebug() << "Place main:" << placeInMainList;
-    qDebug() << "Place second:" << placeInSecondList;
+    qDebug() << "Recommendations main:" << recommendationsData.recommendationsMainList;
+    qDebug() << "Recommendations second:" << recommendationsData.recommendationsSecondList;
+    qDebug() << "Place main:" << recommendationsData.placeInMainList;
+    qDebug() << "Place second:" << recommendationsData.placeInSecondList;
     LogWebIds();
     statistics.Log();
     qDebug() << "//////////////////////////////////////";

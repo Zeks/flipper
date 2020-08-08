@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/rec_calc/rec_calculator_weighted.h"
+#include <cmath>
 namespace core {
 
 

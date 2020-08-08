@@ -393,10 +393,10 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.id = protoFic.id();
 
     // I will probably disable this for now in the ui
-    coreFic.atChapter = GetChapterForFic(coreFic.id);
+    coreFic.userData.atChapter = GetChapterForFic(coreFic.id);
 
     coreFic.complete = protoFic.complete();
-    coreFic.recommendationsMainList = protoFic.recommendations();
+    coreFic.recommendationsData.recommendationsMainList = protoFic.recommendations();
     coreFic.wordCount = FS(protoFic.word_count());
     coreFic.chapters = FS(protoFic.chapters());
     //qDebug() << "received chapters: " << coreFic.chapters ;
@@ -429,9 +429,9 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
 
     coreFic.urls["ffn"] = QString::number(coreFic.webId); // temporary
     for(auto i =0; i < protoFic.real_genres_size(); i++)
-        coreFic.realGenreData.push_back({{FS(protoFic.real_genres(i).genre())}, protoFic.real_genres(i).relevance()});
+        coreFic.statistics.realGenreData.push_back({{FS(protoFic.real_genres(i).genre())}, protoFic.real_genres(i).relevance()});
 
-    std::sort(coreFic.realGenreData.begin(),coreFic.realGenreData.end(),[](const genre_stats::GenreBit& g1,const genre_stats::GenreBit& g2){
+    std::sort(coreFic.statistics.realGenreData.begin(),coreFic.statistics.realGenreData.end(),[](const genre_stats::GenreBit& g1,const genre_stats::GenreBit& g2){
         if(g1.genres.size() != 0 && g2.genres.size() == 0)
             return true;
         if(g2.genres.size() != 0 && g1.genres.size() == 0)
@@ -441,7 +441,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
         return g1.relevance > g2.relevance;
     });
 
-    coreFic.realGenreString = GenreDataToString(coreFic.realGenreData);
+    coreFic.statistics.realGenreString = GenreDataToString(coreFic.statistics.realGenreData);
 
     coreFic.urlFFN = coreFic.urls["ffn"];
 
@@ -451,13 +451,13 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.slashData.filter_pass_1= protoFic.slash_data().filter_pass_1();
     coreFic.slashData.filter_pass_2= protoFic.slash_data().filter_pass_2();
     if(coreFic.slashData.keywords_result)
-        coreFic.minSlashPass = 1;
+        coreFic.statistics.minSlashPass = 1;
     else if(coreFic.slashData.filter_pass_1)
-        coreFic.minSlashPass = 2;
+        coreFic.statistics.minSlashPass = 2;
     else if(coreFic.slashData.filter_pass_2)
-        coreFic.minSlashPass = 3;
+        coreFic.statistics.minSlashPass = 3;
     else
-        coreFic.minSlashPass = 0;
+        coreFic.statistics.minSlashPass = 0;
 
     return true;
 }
@@ -469,7 +469,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 
     protoFic->set_chapters(TS(coreFic.chapters));
     protoFic->set_complete(coreFic.complete);
-    protoFic->set_recommendations(coreFic.recommendationsMainList);
+    protoFic->set_recommendations(coreFic.recommendationsData.recommendationsMainList);
 
     protoFic->set_word_count(TS(coreFic.wordCount));
     protoFic->set_reviews(TS(coreFic.reviews));
@@ -494,7 +494,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     for(auto fandom : coreFic.fandomIds)
         protoFic->add_fandom_ids(fandom);
 
-    for(auto realGenre : coreFic.realGenreData)
+    for(auto realGenre : coreFic.statistics.realGenreData)
     {
         auto* genreData =  protoFic->add_real_genres();
         genreData->set_genre(TS(realGenre.genres.join(",")));
