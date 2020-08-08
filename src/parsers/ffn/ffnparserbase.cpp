@@ -149,7 +149,7 @@ void FFNParserBase::GetUrl(core::Section & section, int& startfrom, QString text
     int indexStart = rxStart.indexIn(text,startfrom);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     section.result->SetUrl("ffn",text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
-    section.result->webId = section.result->ffn_id = url_utils::GetWebId(section.result->url("ffn"), "ffn").toInt();
+    section.result->identity.web.ffn = url_utils::GetWebId(section.result->url("ffn"), "ffn").toInt();
     startfrom = indexEnd+2;
 }
 

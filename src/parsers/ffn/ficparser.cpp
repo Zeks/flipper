@@ -47,8 +47,8 @@ QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
     }
 
     section = GetSection(str);
-    section.result->webId = url_utils::GetWebId(url, "ffn").toInt();
-    qDebug() << "Processing fic: " << section.result->webId;
+    section.result->identity.web.ffn = url_utils::GetWebId(url, "ffn").toInt();
+    qDebug() << "Processing fic: " << section.result->identity.web.ffn;
     currentPosition = section.start;
 
     GetAuthor(section, str);

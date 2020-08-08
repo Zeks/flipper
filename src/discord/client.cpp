@@ -277,8 +277,8 @@ void MyClientClass::SendDetailedList(QSharedPointer<discord::User> user,
             if(fandom != -1)
                 fandomsList+=fandoms->GetNameForID(fandom);
 
-        embed.description += QString("ID#: " + QString::number(fic.ffn_id)).rightJustified(10, ' ').toStdString();
-        embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.ffn_id))+"\n").toStdString();
+        embed.description += QString("ID#: " + QString::number(fic.identity.web.GetPrimaryId())).rightJustified(10, ' ').toStdString();
+        embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
 
         if(fic.complete)
             embed.description += QString(" `Complete`  ").toStdString();
@@ -317,8 +317,8 @@ void MyClientClass::SendLongList(QSharedPointer<discord::User> user, SleepyDisco
             if(fandom != -1)
                 fandomsList+=fandoms->GetNameForID(fandom);
 
-        embed.description += QString("ID#: " + QString::number(fic.id)).rightJustified(10, ' ').toStdString();
-        embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.ffn_id))+"\n").toStdString();
+        embed.description += QString("ID#: " + QString::number(fic.GetIdInDatabase())).rightJustified(10, ' ').toStdString();
+        embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
 
         if(fic.complete)
             embed.description += QString(" `Complete`  ").toStdString();
@@ -404,7 +404,7 @@ ListData CreateListData(RecRequest request, QString userToken){
     //dbClose.run();
 
     for(auto fic: result)
-        task.ids += fic->ffn_id;
+        task.ids += fic->identity.web.GetPrimaryId();
 
     QSettings settings("settings_discord.ini", QSettings::IniFormat);
 
@@ -437,17 +437,17 @@ ListData CreateListData(RecRequest request, QString userToken){
     ficSource->GetRecommendationListFromServer(*list);
     //QLOG_INFO() << "Got fics";
 
-    QVector<core::IdPack> pack;
+    QVector<core::Identity> pack;
     pack.resize(task.ids.size());
     int i = 0;
     for(auto source: task.ids)
     {
-        pack[i].ffn = source;
+        pack[i].web.ffn = source;
         i++;
     }
     ficSource->GetInternalIDsForFics(&pack);
     for(auto source: pack)
-        list->ficData.sourceFics+=source.db;
+        list->ficData.sourceFics+=source.id;
 
     ListData actualResult;
     actualResult.userId = request.userID;

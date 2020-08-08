@@ -373,8 +373,8 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
     auto fic = core::Fic::NewFanfic();
     fic->userData.atChapter = q1.value("AT_CHAPTER").toInt();
     fic->complete  = q1.value("COMPLETE").toInt();
-    fic->webId     = q1.value(website + "_ID").toInt();
-    fic->id        = q1.value("ID").toInt();
+
+    fic->identity.id = q1.value("ID").toInt();
     fic->wordCount = q1.value("WORDCOUNT").toString();
     //fic->chapters = q1.value("CHAPTERS").toString();
     fic->reviews = q1.value("REVIEWS").toString();
@@ -390,10 +390,10 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
     fic->characters = q1.value("CHARACTERS").toString().split(",");
     //fic->authorId = q1.value("AUTHOR_ID").toInt();
     fic->author->name = q1.value("AUTHOR").toString();
-    fic->ffn_id = q1.value("FFN_ID").toInt();
-    fic->ao3_id = q1.value("AO3_ID").toInt();
-    fic->sb_id = q1.value("SB_ID").toInt();
-    fic->sv_id = q1.value("SV_ID").toInt();
+    fic->identity.web.ffn = q1.value("FFN_ID").toInt();
+    fic->identity.web.ao3 = q1.value("AO3_ID").toInt();
+    fic->identity.web.sb = q1.value("SB_ID").toInt();
+    fic->identity.web.sv = q1.value("SV_ID").toInt();
     return fic;
 }
 
@@ -426,8 +426,8 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
                                   "and (updated < :updated or updated is null)) as count_updated").arg(fic->webSite);
 
     SqlContext<bool> ctx(db, getKeyQuery);
-    ctx.bindValue("site_id1", fic->webId);
-    ctx.bindValue("site_id2", fic->webId);
+    ctx.bindValue("site_id1", fic->identity.web.GetPrimaryId());
+    ctx.bindValue("site_id2", fic->identity.web.GetPrimaryId());
     ctx.bindValue("updated", fic->updated);
     if(!fic)
         return ctx.result;
@@ -464,7 +464,7 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
     query=query.arg(section->webSite);
 
     SqlContext<bool> ctx(db, query);
-    ctx.bindValue("site_id",section->webId); //?
+    ctx.bindValue("site_id",section->identity.web.GetPrimaryId()); //?
     ctx.bindValue("fandom",section->fandom);
     ctx.bindValue("author",section->author->name); //?
     ctx.bindValue("author_id",section->author->GetWebID("ffn"));
@@ -521,7 +521,7 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
     ctx.bindValue("genres",section->genreString);
     ctx.bindValue("published",section->published);
     ctx.bindValue("updated",section->updated);
-    ctx.bindValue("site_id",section->webId);
+    ctx.bindValue("site_id",section->identity.web.GetPrimaryId());
     ctx.bindValue("wcr",section->statistics.wcr);
     ctx.bindValue("reviewstofavourites",section->statistics.reviewsTofavourites);
     ctx.bindValue("age",section->statistics.age);
@@ -2485,17 +2485,17 @@ DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID(QSqlDatabase db)
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack> pack, QSqlDatabase db)
+DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity> pack, QSqlDatabase db)
 {
     QString qs = QString("update fictags set fic_id = :id where ffn_id = :ffn_id");
     SqlContext<bool> ctx(db, qs);
-    for(const core::IdPack& id: pack)
+    for(const core::Identity& identity: pack)
     {
-        if(id.db < 1)
+        if(identity.id < 1)
             continue;
 
-        ctx.bindValue("id", id.db);
-        ctx.bindValue("ffn_id", id.ffn);
+        ctx.bindValue("id", identity.id);
+        ctx.bindValue("ffn_id", identity.web.ffn);
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;
@@ -2513,14 +2513,14 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
     auto& hash = data->sourceFics;
 
     for(const auto& fic : *fics)
-        hash.insert(fic.id);
+        hash.insert(fic.identity.id);
 
     SqlContext<bool> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         tags[q.value("fic_id").toInt()] = q.value("tags").toString();
     });
     for(auto& fic : *fics)
-        fic.userData.tags = tags[fic.id];
+        fic.userData.tags = tags[fic.identity.id];
     return ctx.result;
 }
 
@@ -2544,7 +2544,7 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
     auto& sourceSet = data->sourceFics;
 
     for(const auto& fic : *fics)
-        sourceSet.insert(fic.id);
+        sourceSet.insert(fic.identity.id);
     QSet<int> purgedFics;
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("listId", listId);
@@ -2579,9 +2579,9 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
 
     for(auto& fic : *fics)
     {
-        fic.recommendationsData.voteBreakdown = breakdown[fic.id];
-        fic.recommendationsData.voteBreakdownCounts = breakdownCounts[fic.id];
-        if(purgedFics.contains(fic.id))
+        fic.recommendationsData.voteBreakdown = breakdown[fic.identity.id];
+        fic.recommendationsData.voteBreakdownCounts = breakdownCounts[fic.identity.id];
+        if(purgedFics.contains(fic.identity.id))
             fic.recommendationsData.purged = true;
         else
             fic.recommendationsData.purged = false;
@@ -2620,8 +2620,8 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fi
     int i = 0;
     for(auto fic: *fics)
     {
-        ficIds.push_back(QString::number(fic.id));
-        indices[fic.id] = i;
+        ficIds.push_back(QString::number(fic.identity.id));
+        indices[fic.identity.id] = i;
         i++;
     }
     QStringList listIds;

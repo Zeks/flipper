@@ -310,7 +310,7 @@ DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelec
 
 
 DiagnosticSQLResult<QVector<int>> GetAllFicsThatDontHaveDBID( QSqlDatabase db);
-DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase db);
+DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity>, QSqlDatabase db);
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 
 DiagnosticSQLResult<bool> FetchSnoozesForFics(QVector<core::Fic> * fics, QSqlDatabase db);

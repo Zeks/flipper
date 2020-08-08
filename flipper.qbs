@@ -63,6 +63,7 @@ App{
 
     files: [
         "UI/initialsetupdialog.ui",
+        "include/core/identity.h",
         "src/ui/welcomedialog.cpp",
         "include/ui/welcomedialog.h",
         "UI/welcomedialog.ui",
@@ -124,7 +125,6 @@ App{
         "src/tasks/fandom_task_processor.cpp",
         "src/tasks/author_task_processor.cpp",
         "src/pageconsumer.cpp",
-
         "src/Interfaces/authors.cpp",
         "src/Interfaces/base.cpp",
         "src/Interfaces/db_interface.cpp",

@@ -390,10 +390,10 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     if(!coreFic.isValid)
         return false;
 
-    coreFic.id = protoFic.id();
+    coreFic.identity.id = protoFic.id();
 
     // I will probably disable this for now in the ui
-    coreFic.userData.atChapter = GetChapterForFic(coreFic.id);
+    coreFic.userData.atChapter = GetChapterForFic(coreFic.identity.id);
 
     coreFic.complete = protoFic.complete();
     coreFic.recommendationsData.recommendationsMainList = protoFic.recommendations();
@@ -423,11 +423,10 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.isCrossover = coreFic.fandoms.size() > 1;
 
     coreFic.genreString = FS(protoFic.genres());
-    coreFic.webId = protoFic.site_pack().ffn().id(); // temporary
-    coreFic.ffn_id = coreFic.webId; // temporary
+    coreFic.identity.web.ffn = protoFic.site_pack().ffn().id();  // temporary
     coreFic.webSite = "ffn"; // temporary
 
-    coreFic.urls["ffn"] = QString::number(coreFic.webId); // temporary
+    coreFic.urls["ffn"] = QString::number(coreFic.identity.web.ffn); // temporary
     for(auto i =0; i < protoFic.real_genres_size(); i++)
         coreFic.statistics.realGenreData.push_back({{FS(protoFic.real_genres(i).genre())}, protoFic.real_genres(i).relevance()});
 
@@ -465,7 +464,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
 bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
 {
     protoFic->set_is_valid(true);
-    protoFic->set_id(coreFic.id);
+    protoFic->set_id(coreFic.identity.id);
 
     protoFic->set_chapters(TS(coreFic.chapters));
     protoFic->set_complete(coreFic.complete);
@@ -502,7 +501,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     }
 
 
-    protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.ffn_id);
+    protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.identity.web.ffn);
 
     auto slashData = protoFic->mutable_slash_data();
     slashData->set_keywords_no(coreFic.slashData.keywords_no);
@@ -622,8 +621,8 @@ public:
             stub_ = ProtoSpace::Feeder::NewStub(customChannel);
     }
     ServerStatus GetStatus();
-    bool GetInternalIDsForFics(QVector<core::IdPack> * ficList);
-    bool GetFFNIDsForFics(QVector<core::IdPack> * ficList);
+    bool GetInternalIDsForFics(QVector<core::Identity> * ficList);
+    bool GetFFNIDsForFics(QVector<core::Identity> * ficList);
     void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
     void FetchFic(int ficId, QVector<core::Fic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
     int GetFicCount(core::StoryFilter filter);
@@ -631,7 +630,7 @@ public:
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
     core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList);
     void ProcessStandardError(grpc::Status status);
-    core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
+    core::FicSectionStats GetStatsForFicList(QVector<core::Identity> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
     QHash<int, core::MatchedFics > GetMatchesForUsers(int sourceUser, QList<int> users);
@@ -680,7 +679,7 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     return serverStatus;
 }
 
-bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
+bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::Identity> * ficList){
     grpc::ClientContext context;
 
     ProtoSpace::FicIdRequest task;
@@ -696,10 +695,10 @@ bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
-    for(core::IdPack& fic : *ficList)
+    for(core::Identity& fic : *ficList)
     {
-        task.mutable_ids()->add_db_ids(fic.db);
-        task.mutable_ids()->add_ffn_ids(fic.ffn);
+        task.mutable_ids()->add_db_ids(fic.id);
+        task.mutable_ids()->add_ffn_ids(fic.web.ffn);
     }
 
     grpc::Status status = stub_->GetDBFicIDS(&context, task, response.data());
@@ -708,13 +707,13 @@ bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
 
     for(int i = 0; i < response->ids().db_ids_size(); i++)
     {
-        (*ficList)[i].db = response->ids().db_ids(i);
-        (*ficList)[i].ffn = response->ids().ffn_ids(i);
+        (*ficList)[i].id = response->ids().db_ids(i);
+        (*ficList)[i].web.ffn = response->ids().ffn_ids(i);
     }
     return true;
 }
 
-bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
+bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
 {
     grpc::ClientContext context;
 
@@ -730,10 +729,10 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
-    for(core::IdPack& fic : *ficList)
+    for(core::Identity& fic : *ficList)
     {
-        task.mutable_ids()->add_db_ids(fic.db);
-        task.mutable_ids()->add_ffn_ids(fic.ffn);
+        task.mutable_ids()->add_db_ids(fic.id);
+        task.mutable_ids()->add_ffn_ids(fic.web.ffn);
     }
 
     grpc::Status status = stub_->GetFFNFicIDS(&context, task, response.data());
@@ -742,8 +741,8 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
 
     for(int i = 0; i < response->ids().db_ids_size(); i++)
     {
-        (*ficList)[i].db = response->ids().db_ids(i);
-        (*ficList)[i].ffn = response->ids().ffn_ids(i);
+        (*ficList)[i].id = response->ids().db_ids(i);
+        (*ficList)[i].web.ffn = response->ids().ffn_ids(i);
     }
     return true;
 }
@@ -1108,7 +1107,7 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
     error+=QString::fromStdString(status.error_message());
 }
 
-core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack> ficList)
+core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identity> ficList)
 {
     core::FicSectionStats result;
 
@@ -1126,10 +1125,10 @@ core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userToken));
 
-    for(core::IdPack& fic : ficList)
+    for(core::Identity& fic : ficList)
     {
         auto idPacks = task.mutable_id_packs();
-        idPacks->add_ffn_ids(fic.ffn);
+        idPacks->add_ffn_ids(fic.web.ffn);
     }
 
     grpc::Status status = stub_->GetFavListDetails(&context, task, response.data());
@@ -1375,21 +1374,21 @@ bool FicSourceGRPC::GetRecommendationListFromServer(core::RecommendationList &re
     return impl->GetRecommendationListFromServer(recList);
 }
 
-bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::IdPack> * ficList)
+bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::Identity> * ficList)
 {
     if(!impl)
         return false;
     return impl->GetInternalIDsForFics(ficList);
 }
 
-bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::IdPack> * ficList)
+bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::Identity> * ficList)
 {
     if(!impl)
         return false;
     return impl->GetFFNIDsForFics(ficList);
 }
 
-std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList(QVector<core::IdPack> ficList)
+std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList(QVector<core::Identity> ficList)
 {
     if(!impl)
         return {};

@@ -123,15 +123,15 @@ void core::Fic::LogUrls()
 void core::Fic::LogWebIds()
 {
     qDebug() << "WebIds:" ;
-    qDebug() << "webId: " << webId;
-    if(ffn_id != -1)
-        qDebug() << "FFN: " << ffn_id;
-    if(ao3_id != -1)
-        qDebug() << "Ao3: " << ao3_id;
-    if(sb_id != -1)
-        qDebug() << "SB: " << sb_id;
-    if(sv_id != -1)
-        qDebug() << "SV: " << sv_id;
+    qDebug() << "webId: " << identity.web.ffn;
+    if(identity.web.ffn != -1)
+        qDebug() << "FFN: " << identity.web.ffn;
+    if(identity.web.ao3 != -1)
+        qDebug() << "Ao3: " << identity.web.ao3;
+    if(identity.web.sb!= -1)
+        qDebug() << "SB: " << identity.web.sb;
+    if(identity.web.sv != -1)
+        qDebug() << "SV: " << identity.web.sv;
 }
 
 core::Fic::Statistics core::Fic::getCalcStats() const

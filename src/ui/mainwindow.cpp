@@ -605,7 +605,7 @@ void MainWindow::SetupTableAccess()
     ADD_STRING_INTEGER_GETSET(holder, 14, 0, chapters);
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
     ADD_INTEGER_GETSET(holder, 16, 0, userData.atChapter);
-    ADD_INTEGER_GETSET(holder, 17, 0, id);
+    ADD_INTEGER_GETSET(holder, 17, 0, identity.id);
     ADD_INTEGER_GETSET(holder, 18, 0, recommendationsData.recommendationsMainList);
     ADD_STRING_GETSET(holder, 19, 0, statistics.realGenreString);
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
@@ -759,7 +759,7 @@ void MainWindow::OnShuffleDisplayedData()
 
     int selectedFicId = -1;
     if(selectedIndex >= 0)
-        selectedFicId = env->fanfics[selectedIndex].id;
+        selectedFicId = env->fanfics[selectedIndex].GetIdInDatabase();
 
     auto rng = std::default_random_engine {};
     std::shuffle(std::begin(env->fanfics), std::end(env->fanfics), rng);
@@ -769,7 +769,7 @@ void MainWindow::OnShuffleDisplayedData()
         int index = 0;
         for(auto fic : env->fanfics)
         {
-            if(fic.id == selectedFicId)
+            if(fic.GetIdInDatabase() == selectedFicId)
             {
                 selectedIndex = index;
                 break;
@@ -1026,7 +1026,7 @@ void MainWindow::OnDoFormattedListByFandoms()
         if(fandoms.size() == 0)
         {
             auto fandom = ficPtr->fandom.trimmed();
-            qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">";
+            qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">";
         }
         for(auto fandom: fandoms)
         {
@@ -1057,7 +1057,7 @@ void MainWindow::OnDoFormattedListByFandoms()
         for(auto fic : byFandoms[fandomKey])
         {
             auto* ficPtr = fic;
-            QPair<QString, int> key = {name, fic->id};
+            QPair<QString, int> key = {name, fic->GetIdInDatabase()};
 
             if(already.contains(key))
                 continue;
@@ -1067,7 +1067,7 @@ void MainWindow::OnDoFormattedListByFandoms()
             bool validGenre = true;
             if(validGenre)
             {
-                result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+                result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
                 result+=ficPtr->genreString + "<br><br>";
                 QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
@@ -1101,7 +1101,7 @@ void MainWindow::OnDoFormattedList()
         bool validGenre = true;
         if(validGenre)
         {
-            result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+            result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
             result+=ficPtr->genreString + "<br><br>";
             QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 

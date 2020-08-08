@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <array>
 #include "core/fic_genre_data.h"
 #include "reclist_author_result.h"
+#include "core/identity.h"
 namespace core {
 
 class DBEntity{
@@ -93,13 +94,7 @@ class FicSectionStatsTemporaryToken
     QDate pageCreated;
 };
 
-struct IdPack{
-  int db;
-  int ffn;
-  int ao3;
-  int sb;
-  int sv;
-};
+
 
 class FicSectionStats{
 public:
@@ -591,14 +586,8 @@ public:
     bool isCrossover = false;
     bool isValid =false;
     int complete=0;
-    int webId = -1;
-    int id = -1;
     int score = 0;
     int author_id = -1;
-    int ffn_id = -1;
-    int ao3_id = -1;
-    int sb_id = -1;
-    int sv_id = -1;
 
     QString urlFFN;
     QString webSite = "ffn";
@@ -643,6 +632,7 @@ public:
     RecommendationListData recommendationsData;
     SlashData slashData;
     Statistics statistics;
+    Identity identity;
 
     void SetGenres(QString genreString, QString website){
 
@@ -677,6 +667,7 @@ public:
 
     Statistics getCalcStats() const;
     void setCalcStats(const Statistics &value);
+    int GetIdInDatabase() const { return identity.id; }
 };
 
 class Section : public DBEntity

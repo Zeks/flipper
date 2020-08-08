@@ -79,9 +79,9 @@ public:
 
     core::DiagnosticsForReclist GetDiagnosticsForRecListFromServer(core::RecommendationList recList);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
-    bool GetInternalIDsForFics(QVector<core::IdPack>*);
-    bool GetFFNIDsForFics(QVector<core::IdPack>*);
-    std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::IdPack>);
+    bool GetInternalIDsForFics(QVector<core::Identity>*);
+    bool GetFFNIDsForFics(QVector<core::Identity>*);
+    std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::Identity>);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int>);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
     QHash<int, core::MatchedFics> GetMatchesForUsers(int sourceUser, QList<int> users);

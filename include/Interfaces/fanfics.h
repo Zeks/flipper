@@ -39,11 +39,10 @@ class Fanfics : public IDBWebIDIndex {
 
     void ClearIndex();
     void ClearIndexWithIdIndex();
-    void Reindex();
     void AddFicToIndex(core::FicPtr);
 
-    int EnsureId(core::FicPtr fic);
-    void EnsureId(QString website, int webId);
+    int LoadFicIntoIdHash(core::FicPtr fic);
+    void LoadFicIntoIdHash(QString website, int webId);
 
     bool EnsureFicLoaded(int id, QString website);
     bool LoadFicFromDB(int id, QString website);
@@ -134,15 +133,14 @@ class Fanfics : public IDBWebIDIndex {
     int skippedCounter = 0;
     int insertedCounter = 0;
     int updatedCounter = 0;
-    QList<core::FicPtr> fics;
-    QHash<int, core::FicPtr> idIndex;
-    QHash<QString, QHash<int, core::FicPtr>> webIdIndex;
+    QHash<int, core::FicPtr> fanficIndex;
 
     QSharedPointer<Fandoms> fandomInterface;
     QSharedPointer<Authors> authorInterface;
     QSqlDatabase db;
 private:
     int GetIdFromDatabase(QString website, int id);
+    int GetIdFromDatabase(core::SiteId);
     // index for ids only, for cases where I don't need to operate on whole fics
     struct IdResult
     {
@@ -150,19 +148,17 @@ private:
         bool valid = false;
         int id = -1;
     };
-    struct FicIds{
+    struct FicIdToWebsiteMapping{
         void Clear();
-        IdResult GetIdByWebId(QString, int);
-        IdResult GetWebIdById(QString, int);
+        IdResult GetDBIdByWebId(core::SiteId);
+        IdResult GetDBIdByWebId(QString, int);
+        IdResult GetWebIdByDBId(QString, int);
         void Add(QString website, int webId, int id);
-//        void AddToAccessedWebIds(QString website, int webId);
-//        void AddToAccessedIds(int id);
-        //QSet<QPair<QString, int>> accessedWebIDs;
-        //QSet<int> accessedIDs;
+        void ProcessIdentityIntoMappings(core::Identity);
         QHash<int, QHash<QString, int>> idIndex;
         QHash<QString, QHash<int, int>> webIdIndex;
     };
-    FicIds idOnly;
+    FicIdToWebsiteMapping idToWebsiteMappings;
 
 };
 }

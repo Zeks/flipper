@@ -523,11 +523,11 @@ void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fi
 {
     QHash<int, int> scores;
     for(auto fic: *fics)
-        scores[fic.id] = 0;
+        scores[fic.identity.id] = 0;
 
     database::puresql::FetchRecommendationScoreForFics(scores, filter, db);
     for(auto& fic: *fics){
-        fic.recommendationsData.recommendationsMainList = scores[fic.id];
+        fic.recommendationsData.recommendationsMainList = scores[fic.identity.id];
     }
 }
 

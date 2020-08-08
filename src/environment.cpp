@@ -156,11 +156,12 @@ void CoreEnvironment::LoadData()
             // actual assignment of purged param happens in LoadNewScoreValuesForFanfics
             if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
                 fic.userData.likedAuthor = true;
-            if(ficScores.contains(fic.id))
-                fic.score = ficScores[fic.id];
-            if(snoozeInfo.contains(fic.id))
+            auto ficId = fic.GetIdInDatabase();
+            if(ficScores.contains(ficId))
+                fic.score = ficScores[ficId];
+            if(snoozeInfo.contains(ficId))
             {
-                auto info = snoozeInfo[fic.id];
+                auto info = snoozeInfo[ficId];
                 fic.userData.snoozeExpired = info.expired;
                 fic.userData.chapterTillSnoozed = info.snoozedTillChapter;
                 if(info.snoozedTillChapter - info.snoozedAtChapter == 1)
@@ -613,12 +614,12 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     params->id = interfaces.recs->GetListIdForName(params->name);
     qDebug() << "Fetched name for list is: " << params->name;
 
-    QVector<core::IdPack> pack;
+    QVector<core::Identity> pack;
     pack.resize(sourceFics.size());
     int i = 0;
     for(auto source: sourceFics)
     {
-        pack[i].ffn = source;
+        pack[i].web.ffn = source;
         i++;
     }
     grpcSource->GetInternalIDsForFics(&pack);
@@ -631,8 +632,8 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
     //    QSet<int> sourceSet;
     //    sourceSet.reserve(sourceFics.size());
-    for(auto id: pack)
-        params->ficData.sourceFics.insert(id.db);
+    for(auto identity: pack)
+        params->ficData.sourceFics.insert(identity.id);
 
 
 
@@ -684,12 +685,12 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 core::FicSectionStats CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)
 {
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
-    QVector<core::IdPack> pack;
+    QVector<core::Identity> pack;
     pack.resize(sourceFics.size());
     int i = 0;
     for(auto source: sourceFics)
     {
-        pack[i].ffn = source;
+        pack[i].web.ffn = source;
         i++;
     }
     auto result = grpcSource->GetStatsForFicList(pack);
@@ -772,12 +773,12 @@ int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::Recommendat
     list->id = interfaces.recs->GetListIdForName(list->name);
     qDebug() << "Fetched name for list is: " << list->name;
 
-    QVector<core::IdPack> pack;
+    QVector<core::Identity> pack;
     pack.resize(sourceFics.size());
     int i = 0;
     for(auto source: sourceFics)
     {
-        pack[i].ffn = source;
+        pack[i].web.ffn = source;
         i++;
     }
     grpcSource->GetInternalIDsForFics(&pack);
@@ -884,18 +885,18 @@ QVector<int> CoreEnvironment::GetListSourceFFNIds(int listId)
     QVector<int> result;
     auto sources = interfaces.recs->GetAllSourceFicIDs(listId);
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
-    QVector<core::IdPack> pack;
+    QVector<core::Identity> pack;
     pack.resize(sources.size());
     result.reserve(sources.size());
     int i = 0;
     for(auto source: sources)
     {
-        pack[i].db = source;
+        pack[i].id = source;
         i++;
     }
     grpcSource->GetFFNIDsForFics(&pack);
-    for(auto id : pack)
-        result.push_back(id.ffn);
+    for(auto identity : pack)
+        result.push_back(identity.web.ffn);
 
 
     return result;
@@ -905,18 +906,18 @@ QVector<int> CoreEnvironment::GetFFNIds(QSet<int> sources)
 {
     QVector<int> result;
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
-    QVector<core::IdPack> pack;
+    QVector<core::Identity> pack;
     pack.resize(sources.size());
     result.reserve(sources.size());
     int i = 0;
     for(auto source: sources)
     {
-        pack[i].db = source;
+        pack[i].id = source;
         i++;
     }
     grpcSource->GetFFNIDsForFics(&pack);
     for(auto id : pack)
-        result.push_back(id.ffn);
+        result.push_back(id.web.ffn);
 
     return result;
 }
@@ -965,7 +966,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     for(auto fic : result)
     {
         if(fic->ficSource != core::Fic::efs_own_works)
-            urlResult.insert(QString::number(fic->ffn_id));
+            urlResult.insert(QString::number(fic->identity.web.ffn));
     }
 
     if(result.size() < 500)

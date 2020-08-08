@@ -73,7 +73,7 @@ QSqlQuery FicSourceDirect::BuildQuery(core::StoryFilter filter, bool countOnly)
 inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
 {
     core::Fic result;
-    result.id = q.value("ID").toInt();
+    result.identity.id = q.value("ID").toInt();
     //result.fandom = q.value("FANDOM").toString();
     //QLOG_INFO() << "fandom ids:" <<  q.value("FANDOMIDS").toString();
     for(auto id: q.value("FANDOMIDS").toString().split("::::"))
@@ -91,7 +91,7 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.published = published;
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
-    result.ffn_id = q.value("URL").toInt();
+    result.identity.web.ffn = q.value("URL").toInt();
     //QLOG_INFO() << "ffn_id:" <<  q.value("URL").toString();
     result.userData.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
@@ -178,7 +178,7 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
     }
     QLOG_INFO_PURE() << "EXECUTED QUERY:" << q.lastQuery();
     if(data->size() > 0)
-        lastFicId = (*data)[data->size() - 1].id;
+        lastFicId = (*data)[data->size() - 1].identity.id;
     QLOG_TRACE_PURE() << "loaded fics:" << counter;
 }
 

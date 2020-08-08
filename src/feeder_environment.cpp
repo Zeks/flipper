@@ -94,7 +94,7 @@ void FeederEnvironment::LoadData(SlashFilterState slashFilter)
             qDebug() << "tick " << counter/1000;
     }
     if(fanfics.size() > 0)
-        currentLastFanficId = fanfics.last().id;
+        currentLastFanficId = fanfics.last().GetIdInDatabase();
     qDebug() << "loaded fics:" << counter;
 }
 
@@ -130,7 +130,7 @@ void FeederEnvironment::Init()
 inline core::Fic FeederEnvironment::LoadFanfic(QSqlQuery& q)
 {
     core::Fic result;
-    result.id = q.value("ID").toInt();
+    result.identity.id = q.value("ID").toInt();
     result.fandom = q.value("FANDOM").toString();
     result.author = core::Author::NewAuthor();
     result.author->name = q.value("AUTHOR").toString();

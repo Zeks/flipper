@@ -44,9 +44,9 @@ public:
     QSet<int> GetAllTaggedFics(TagIDFetcherSettings settings = {});
     QSet<int> GetFicsTaggedWith(TagIDFetcherSettings settings = {});
     QSet<int> GetAuthorsForTags(QStringList);
-    QVector<core::IdPack> GetAllFicsThatDontHaveDBID();
+    QVector<core::Identity> GetAllFicsThatDontHaveDBID();
     QHash<QString, int> GetTagSizes(QStringList);
-    bool FillDBIDsForFics(QVector<core::IdPack>);
+    bool FillDBIDsForFics(QVector<core::Identity>);
     bool FetchTagsForFics(QVector<core::Fic>*);
     bool RemoveTagsFromEveryFic(QStringList);
 

@@ -128,7 +128,7 @@ inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fic
 
     auto result = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
     //auto ficPtr = fanfics->GetFicById(fanfics->GetIDFromWebID(fic->ffn_id, "ffn"));
-    bool isInSlashSet = knownSlashFics.size() > 0 && knownSlashFics.contains(fic->ffn_id);
+    bool isInSlashSet = knownSlashFics.size() > 0 && knownSlashFics.contains(fic->identity.web.ffn);
     if(isInSlashSet || result.IsSlash())
         wordsKeeper[1]++;
 
