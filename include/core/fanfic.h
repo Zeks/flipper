@@ -169,4 +169,43 @@ public:
     int GetIdInDatabase() const { return identity.id; }
 };
 
+
+
+struct FicDataForRecommendationCreation
+{
+    bool complete = false;
+    bool slash = false;
+    bool dead = false;
+    bool sameLanguage = true;
+    bool adult = false;
+
+    int id = -1;
+    int sumAuthorFaves = -1;
+    int favCount = -1;
+    int reviewCount = -1;
+    int wordCount = -1;
+    int chapterCount = 0;
+    int authorId = -1;
+
+    QList<int> fandoms;
+    QStringList genres;
+
+    QString genreString;
+
+    QDate published;
+    QDate updated;
+
+
+    friend  QTextStream &operator<<(QTextStream &out, const FicDataForRecommendationCreation &p);
+    friend  QTextStream &operator>>(QTextStream &in, FicDataForRecommendationCreation &p);
+
+    void Log();
+    void Serialize(QDataStream &out);
+    void Deserialize(QDataStream &in);
+
+};
+inline QTextStream &operator>>(QTextStream &in, FicDataForRecommendationCreation &p);
+inline QTextStream &operator<<(QTextStream &out, const FicDataForRecommendationCreation &p);
+
+
 }

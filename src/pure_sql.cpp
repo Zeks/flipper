@@ -1560,7 +1560,7 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
 }
 
 static auto getFicWeightPtrFromQuery = [](auto& q){
-    core::FicWeightPtr fw(new core::FicForWeightCalc);
+    core::FicWeightPtr fw(new core::FicDataForRecommendationCreation);
     fw->adult = q.value("Rated").toString() == "M";
     fw->authorId = q.value("author_id").toInt();
     fw->complete = q.value("complete").toBool();
