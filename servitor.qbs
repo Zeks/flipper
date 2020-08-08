@@ -52,6 +52,11 @@ App{
         sourceDirectory + "/third_party/zlib",
         sourceDirectory + "/libs/Logger/include",
     ]
+    cpp.systemIncludePaths: [
+        sourceDirectory +"/proto",
+        sourceDirectory + "/third_party",
+        "/home/zeks/grpc/third_party/protobuf/src",
+        sourceDirectory + "/../"]
     cpp.minimumWindowsVersion: "6.0"
     files: [
         "UI/servitorwindow.ui",
