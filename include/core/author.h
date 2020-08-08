@@ -82,4 +82,24 @@ public:
     void Deserialize(QDataStream &in);
 
 };
+
+class AuthorRecommendationStats;
+typedef QSharedPointer<AuthorRecommendationStats> AuhtorStatsPtr;
+
+class AuthorRecommendationStats : public DBEntity
+{
+public:
+    static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}
+    int authorId= -1;
+    int totalRecommendations = -1;
+    int matchesWithReference = -1;
+    double matchRatio = -1;
+    bool isValid = false;
+    //QString listName;
+    int listId = -1;
+    QString usedTag;
+    QString authorName;
+};
+
 }
+Q_DECLARE_METATYPE(core::AuthorPtr);

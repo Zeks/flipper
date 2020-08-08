@@ -9,6 +9,7 @@
 #include <QSharedPointer>
 #include "core/section.h"
 #include "core/fic_genre_data.h"
+#include "core/recommendation_list.h"
 #include "include/storyfilter.h"
 #include "include/reclist_author_result.h"
 #include "regex_utils.h"

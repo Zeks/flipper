@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "core/fanfic.h"
 #include "core/author.h"
 #include "core/fav_list_details.h"
+#include "core/recommendation_list.h"
 namespace core {
 
 class FavouritesPage
@@ -229,92 +230,6 @@ private:
 
 };
 
-class AuthorRecommendationStats;
-typedef QSharedPointer<AuthorRecommendationStats> AuhtorStatsPtr;
-
-class AuthorRecommendationStats : public DBEntity
-{
-public:
-    static AuhtorStatsPtr NewAuthorStats() { return QSharedPointer<AuthorRecommendationStats>(new AuthorRecommendationStats);}
-    int authorId= -1;
-    int totalRecommendations = -1;
-    int matchesWithReference = -1;
-    double matchRatio = -1;
-    bool isValid = false;
-    //QString listName;
-    int listId = -1;
-    QString usedTag;
-    QString authorName;
-};
-
-struct FicRecommendation
-{
-    QSharedPointer<core::Fic> fic;
-    QSharedPointer<core::Author> author;
-    bool IsValid(){
-        if(!fic || !author)
-            return false;
-        return true;
-    }
-};
-
-class RecommendationList;
-typedef QSharedPointer<RecommendationList> RecPtr;
-
-struct RecommendationListFicData
-{
-    int id = -1;
-    QSet<int> sourceFics;
-    QVector<int> fics;
-    QVector<int> purges;
-    QVector<int> matchCounts;
-    QVector<double> noTrashScores;
-    QVector<int> authorIds;
-    QHash<int, int> matchReport;
-    QHash<int, core::MatchBreakdown> breakdowns;
-};
-
-
-class RecommendationList : public DBEntity{
-public:
-    static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
-    void Log();
-    void PassSetupParamsInto(RecommendationList& other);
-    bool success = false;
-    bool isAutomatic = true;
-    bool useWeighting = false;
-    bool useMoodAdjustment = false;
-    bool hasAuxDataFilled = false;
-    bool useDislikes = false;
-    bool useDeadFicIgnore= false;
-    bool assignLikedToSources = false;
-
-    int id = -1;
-    int ficCount =-1;
-    int minimumMatch = -1;
-    int alwaysPickAt = -2;
-    int maxUnmatchedPerMatch = -1;
-    int userFFNId = -1;
-    int sigma2Distance = -1;
-
-    double quadraticDeviation = -1;
-    double ratioMedian = -1;
-
-    QString name;
-    QString tagToUse;
-
-    QSet<int> ignoredFandoms;
-    QSet<int> ignoredDeadFics;
-    QSet<int> likedAuthors;
-    QSet<int> minorNegativeVotes;
-    QSet<int> majorNegativeVotes;
-    QDateTime created;
-    RecommendationListFicData ficData;
-
-    QStringList errors;
-};
-
-
 struct MatchedFics{
     int ratio = 0;
     int ratioWithoutIgnores = 0;
@@ -335,5 +250,5 @@ struct SnoozeTaskInfo{
     QDateTime added;
 };
 }
-Q_DECLARE_METATYPE(core::AuthorPtr);
+
 

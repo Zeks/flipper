@@ -87,6 +87,8 @@ App{
         "include/Interfaces/discord/users.h",
         "include/core/author.h",
         "src/core/author.cpp",
+        "include/core/recommendation_list.h",
+        "src/core/recommendation_list.cpp",
     ]
     Group{
     name: "sqlite"

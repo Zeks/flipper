@@ -6,6 +6,100 @@ namespace core {
 Fic::Fic(){
     author = QSharedPointer<Author>(new Author);
 }
+void core::Fic::LogUrls()
+{
+    qDebug() << "Urls:" ;
+    for(auto key : urls.keys())
+    {
+        if(!key.trimmed().isEmpty())
+            qDebug() << key << " " << urls[key];
+    }
+}
+void core::Fic::LogWebIds()
+{
+    qDebug() << "WebIds:" ;
+    qDebug() << "webId: " << identity.web.ffn;
+    if(identity.web.ffn != -1)
+        qDebug() << "FFN: " << identity.web.ffn;
+    if(identity.web.ao3 != -1)
+        qDebug() << "Ao3: " << identity.web.ao3;
+    if(identity.web.sb!= -1)
+        qDebug() << "SB: " << identity.web.sb;
+    if(identity.web.sv != -1)
+        qDebug() << "SV: " << identity.web.sv;
+}
+
+core::Fic::Statistics core::Fic::getCalcStats() const
+{
+    return statistics;
+}
+
+void core::Fic::setCalcStats(const Statistics &value)
+{
+    statistics = value;
+}
+
+void core::Fic::SetUrl(QString type, QString url)
+{
+    urls[type] = url;
+    urlFFN = url;
+}
+void core::Fic::Log()
+{
+    //qDebug() << "Author:"  << author->GetWebIds() << author->name
+    qDebug() << "//////////////////////////////////////";
+    qDebug() << "Author: ";
+    if(author)
+        author->Log();
+    else
+        qDebug() << "Author pointer invalid";
+
+    LogUrls();
+    qDebug() << "Title:" << title;
+    qDebug() << "Fandoms:" << fandoms.join(" + ");
+    qDebug() << "Genre:" << genres.join(",");
+    qDebug() << "Published:" << published;
+    qDebug() << "Updated:" << updated;
+    qDebug() << "Characters:" << charactersFull;
+
+    qDebug() << "WordCount:" << wordCount;
+    qDebug() << "Chapters:" << chapters;
+    qDebug() << "Reviews:" << reviews;
+    qDebug() << "Favourites:" << favourites;
+    //qDebug() << "Follows:" << follows; // not yet parsed
+    qDebug() << "Rated:" << rated;
+    qDebug() << "Complete:" << complete;
+    qDebug() << "AtChapter:" << userData.atChapter;
+    qDebug() << "Is Crossover:" << isCrossover;
+    qDebug() << "Summary:" << summary;
+    qDebug() << "StatSection:" << statSection;
+    qDebug() << "Tags:" << userData.tags;
+    qDebug() << "Language:" << language;
+
+    qDebug() << "Recommendations main:" << recommendationsData.recommendationsMainList;
+    qDebug() << "Recommendations second:" << recommendationsData.recommendationsSecondList;
+    qDebug() << "Place main:" << recommendationsData.placeInMainList;
+    qDebug() << "Place second:" << recommendationsData.placeInSecondList;
+    LogWebIds();
+    statistics.Log();
+    qDebug() << "//////////////////////////////////////";
+}
+
+void core::Fic::Statistics::Log()
+{
+    if(!isValid)
+    {
+        qDebug() << "Statistics not yet calculated";
+        return;
+    }
+    qDebug() << "Wcr:" << wcr;
+    qDebug() << "Wcr adjusted:" << wcr_adjusted;
+    qDebug() << "ReviewsTofavourites:" << reviewsTofavourites;
+    qDebug() << "Age:" << age;
+    qDebug() << "DaysRunning:" << daysRunning;
+}
+
+
 
 void FicDataForRecommendationCreation::Serialize(QDataStream &out)
 {

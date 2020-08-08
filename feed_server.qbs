@@ -77,6 +77,8 @@ App{
         "src/core/fanfic.cpp",
         "src/core/fav_list_analysis.cpp",
         "src/core/fav_list_details.cpp",
+        "include/core/recommendation_list.h",
+        "src/core/recommendation_list.cpp",
         "src/data_code/rec_calc_data.cpp",
         "src/grpc/grpc_source.cpp",
         "src/Interfaces/data_source.cpp",

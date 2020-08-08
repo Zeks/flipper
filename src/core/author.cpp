@@ -81,4 +81,28 @@ void core::Author::Deserialize(QDataStream &in)
     stats.Deserialize(in);
 }
 
+void core::AuthorStats::Serialize(QDataStream &out)
+{
+    out << pageCreated;
+    out << bioLastUpdated;
+    out << favouritesLastUpdated;
+    out << favouritesLastChecked;
+    out << bioWordCount;
+
+    favouriteStats.Serialize(out);
+    ownFicStats.Serialize(out);
+}
+
+void core::AuthorStats::Deserialize(QDataStream &in)
+{
+    in >> pageCreated;
+    in >> bioLastUpdated;
+    in >> favouritesLastUpdated;
+    in >> favouritesLastChecked;
+    in >> bioWordCount;
+
+    favouriteStats.Deserialize(in);
+    ownFicStats.Deserialize(in);
+}
+
 }
