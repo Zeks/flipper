@@ -81,17 +81,16 @@ App{
         "include/Interfaces/discord/users.h",
     ]
     Group{
-        name: "SqlBS"
-        files: [
-            "third_party/sqlite3/sqlite3.c",
-            "third_party/sqlite3/sqlite3.h"
-        ]
-        cpp.cFlags: {
-            var flags = []
-            flags = [ "-w"]
-            return flags
-        }
-
+    name: "sqlite"
+    files: [
+        "third_party/sqlite3/sqlite3.c",
+        "third_party/sqlite3/sqlite3.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
     }
 
     consoleApplication:false

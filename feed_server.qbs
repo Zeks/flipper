@@ -107,8 +107,6 @@ App{
         "third_party/roaring/roaring.c",
         "third_party/roaring/roaring.h",
         "third_party/roaring/roaring.hh",
-        "third_party/sqlite3/sqlite3.c",
-        "third_party/sqlite3/sqlite3.h",
         "src/sqlcontext.cpp",
         "src/main_feed_server.cpp",
         "src/pure_sql.cpp",
@@ -139,6 +137,18 @@ App{
         "src/servers/database_context.cpp",
         "include/servers/database_context.h",
     ]
+    Group{
+    name: "sqlite"
+    files: [
+        "third_party/sqlite3/sqlite3.c",
+        "third_party/sqlite3/sqlite3.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
     cpp.systemIncludePaths: [
         sourceDirectory +"/proto",
         sourceDirectory + "/third_party",

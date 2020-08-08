@@ -111,8 +111,6 @@ App{
         "third_party/roaring/roaring.c",
         "third_party/roaring/roaring.h",
         "third_party/roaring/roaring.hh",
-        "third_party/sqlite3/sqlite3.c",
-        "third_party/sqlite3/sqlite3.h",
         "src/sqlcontext.cpp",
         "src/pure_sql.cpp",
         "src/querybuilder.cpp",
@@ -164,7 +162,18 @@ App{
         "include/Interfaces/data_source.h",
         "src/grpc/grpc_source.cpp",
     ]
-
+    Group{
+    name: "sqlite"
+    files: [
+        "third_party/sqlite3/sqlite3.c",
+        "third_party/sqlite3/sqlite3.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
     cpp.staticLibraries: {
         //var libs = ["UniversalModels", "logger", "quazip"]
         var libs = []
