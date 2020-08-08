@@ -155,7 +155,7 @@ void CoreEnvironment::LoadData()
         {
             // actual assignment of purged param happens in LoadNewScoreValuesForFanfics
             if(fic.author_id > 1 && likedAuthors.contains(fic.author_id))
-                fic.likedAuthor = true;
+                fic.userData.likedAuthor = true;
             if(ficScores.contains(fic.id))
                 fic.score = ficScores[fic.id];
             if(snoozeInfo.contains(fic.id))

@@ -206,7 +206,7 @@ public:
     void Log(QString);
 
     core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
-    static QSet<QString> LoadAuthorFicIdsForRecCreation(QString url,
+    QSet<QString> LoadAuthorFicIdsForRecCreation(QString url,
                                                  QLabel* infoTarget = nullptr,
                                                  bool silent = false);
     bool TestAuthorID(QString id);

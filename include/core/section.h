@@ -541,6 +541,11 @@ public:
         double reviewsTofavourites;
     };
 
+    struct UserData{
+        bool likedAuthor = false;
+        bool ficIsSnoozed = false;
+    };
+
     Fic(){
         author = QSharedPointer<Author>(new Author);
     }
@@ -552,7 +557,7 @@ public:
     void LogWebIds();
     static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
 
-    bool likedAuthor = false;
+    //bool likedAuthor = false;
     bool ficIsSnoozed = false;
     bool purged = false;
     bool snoozeExpired = false;
@@ -621,7 +626,7 @@ public:
 
     UpdateMode updateMode = UpdateMode::none;
     EFicSource ficSource = efs_search;
-
+    UserData userData;
     SlashData slashData;
     Statistics statistics;
 

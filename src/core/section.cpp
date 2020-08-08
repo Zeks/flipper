@@ -134,14 +134,14 @@ void core::Fic::LogWebIds()
         qDebug() << "SV: " << sv_id;
 }
 
-Statistics Fic::getCalcStats() const
+core::Fic::Statistics core::Fic::getCalcStats() const
 {
-    return calcStats;
+    return statistics;
 }
 
-void Fic::setCalcStats(const Statistics &value)
+void core::Fic::setCalcStats(const Statistics &value)
 {
-    calcStats = value;
+    statistics = value;
 }
 
 void core::Fic::SetUrl(QString type, QString url)

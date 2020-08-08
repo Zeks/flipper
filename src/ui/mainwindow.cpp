@@ -612,7 +612,7 @@ void MainWindow::SetupTableAccess()
     ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
     ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
     ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
-    ADD_INTEGER_GETSET(holder, 24, 0, likedAuthor);
+    ADD_INTEGER_GETSET(holder, 24, 0, userData.likedAuthor);
     ADD_INTEGER_GETSET(holder, 25, 0, purged);
     ADD_INTEGER_GETSET(holder, 26, 0, score);
     ADD_INTEGER_GETSET(holder, 27, 0, snoozeExpired);
@@ -2124,7 +2124,7 @@ void MainWindow::OpenRecommendationList(QString listName)
     }
 }
 
-int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool)
 {
     TaskProgressGuard guard(this);
     int result = -1;
