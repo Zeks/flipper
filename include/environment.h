@@ -189,7 +189,7 @@ public:
     QVector<int> GetSourceFicsFromFile(QString filename);
     int  BuildRecommendationsServerFetch(QSharedPointer<core::RecommendationList> params, QVector<int> sourceFics);
 
-    core::FicSectionStats GetStatsForFicList(QVector<int>);
+    core::FavListDetails GetStatsForFicList(QVector<int>);
     int  BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors = true);
     int  BuildRecommendations(QSharedPointer<core::RecommendationList> params,
                               QVector<int> sourceFics);

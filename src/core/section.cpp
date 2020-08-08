@@ -262,7 +262,7 @@ void core::AuthorStats::Deserialize(QDataStream &in)
     ownFicStats.Deserialize(in);
 }
 
-void core::FicSectionStats::Serialize(QDataStream &out)
+void core::FavListDetails::Serialize(QDataStream &out)
 {
     out << favourites;
     out << ficWordCount;
@@ -303,7 +303,7 @@ void core::FicSectionStats::Serialize(QDataStream &out)
 
 }
 
-void core::FicSectionStats::Deserialize(QDataStream &in)
+void core::FavListDetails::Deserialize(QDataStream &in)
 {
     in >>  favourites;
     in >>  ficWordCount;

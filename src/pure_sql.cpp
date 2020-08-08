@@ -851,12 +851,12 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString web
 
 void AuthorStatisticsFromQuery(QSqlQuery& q,  core::AuthorPtr author)
 {
-    core::FicSectionStats& stats = author->stats.favouriteStats;
+    core::FavListDetails& stats = author->stats.favouriteStats;
     stats.favourites = q.value("favourites").toInt();
     stats.ficWordCount = q.value("favourites_wordcount").toInt();
     stats.averageLength = q.value("average_words_per_chapter").toInt();
-    stats.esrbType = static_cast<core::FicSectionStats::ESRBType>(q.value("esrb_type").toInt());
-    stats.prevalentMood = static_cast<core::FicSectionStats::MoodType>(q.value("prevalent_mood").toInt());
+    stats.esrbType = static_cast<core::FavListDetails::ESRBType>(q.value("esrb_type").toInt());
+    stats.prevalentMood = static_cast<core::FavListDetails::MoodType>(q.value("prevalent_mood").toInt());
     stats.mostFavouritedSize = static_cast<core::EntitySizeType>(q.value("most_favourited_size").toInt());
     stats.sectionRelativeSize= static_cast<core::EntitySizeType>(q.value("favourites_type").toInt());
     stats.averageLength = q.value("average_favourited_length").toDouble();

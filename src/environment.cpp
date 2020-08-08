@@ -682,7 +682,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     return params->id;
 }
 
-core::FicSectionStats CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)
+core::FavListDetails CoreEnvironment::GetStatsForFicList(QVector<int> sourceFics)
 {
     FicSourceGRPC* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     QVector<core::Identity> pack;
@@ -696,7 +696,7 @@ core::FicSectionStats CoreEnvironment::GetStatsForFicList(QVector<int> sourceFic
     auto result = grpcSource->GetStatsForFicList(pack);
     if(result.has_value())
         return *result;
-    return core::FicSectionStats();
+    return core::FavListDetails();
 }
 
 int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::RecommendationList> params, bool clearAuthors)

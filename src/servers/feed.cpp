@@ -51,7 +51,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //template void core::DataHolder::LoadData<0>(QString);
 //template void core::DataHolder::LoadData<1>(QString);
-void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicListDataAccumulator& dataResult);
+void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicListDataAccumulator& dataResult);
 
 static QString GetDbNameFromCurrentThread(){
     std::stringstream ss;
@@ -745,7 +745,7 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
         fetchedFics = reqContext.dbContext.fanfics->GetFicsForRecCreation();
     });
     action.run();
-    core::FicSectionStats result;
+    core::FavListDetails result;
 
     core::FicListDataAccumulator dataAccumulator;
     auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
@@ -1062,7 +1062,7 @@ bool RequestContext::Process(ProtoSpace::ResponseInfo * info)
     return true;
 }
 
-void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicListDataAccumulator& dataResult)
+void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicListDataAccumulator& dataResult)
 {
     result.isValid = true;
     result.favourites = dataResult.ficCount;

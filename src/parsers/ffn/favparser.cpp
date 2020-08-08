@@ -353,12 +353,12 @@ inline void ProcessESRB(QSharedPointer<core::Author> author, int ficTotal, QHash
     bool hasprevalentESRB = author->stats.favouriteStats.esrbUniformityFactor > 0.65;
     bool kiddyPrevalent = esrbKeeper[0] > esrbKeeper[1];
     if(!hasprevalentESRB)
-        author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::agnostic;
+        author->stats.favouriteStats.esrbType = core::FavListDetails::ESRBType::agnostic;
     else{
         if(kiddyPrevalent)
-            author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::kiddy;
+            author->stats.favouriteStats.esrbType = core::FavListDetails::ESRBType::kiddy;
         else
-            author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::mature;
+            author->stats.favouriteStats.esrbType = core::FavListDetails::ESRBType::mature;
     }
 }
 
@@ -379,11 +379,11 @@ inline void ProcessMood(QSharedPointer<core::Author> author,
     author->stats.favouriteStats.moodNeutral = static_cast<double>(moodKeeper[1])/static_cast<double>(ficTotal);
     author->stats.favouriteStats.moodHappy= static_cast<double>(moodKeeper[2])/static_cast<double>(ficTotal);
     if(author->stats.favouriteStats.moodHappy > 0.5)
-        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::positive;
+        author->stats.favouriteStats.prevalentMood = core::FavListDetails::MoodType::positive;
     else if(author->stats.favouriteStats.moodNeutral> 0.5)
-        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::neutral;
+        author->stats.favouriteStats.prevalentMood = core::FavListDetails::MoodType::neutral;
     if(author->stats.favouriteStats.moodSad> 0.5)
-        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::sad;
+        author->stats.favouriteStats.prevalentMood = core::FavListDetails::MoodType::sad;
     auto maxMood = std::max(author->stats.favouriteStats.moodSad, std::max(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
     auto minMood = std::min(author->stats.favouriteStats.moodSad, std::min(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
     author->stats.favouriteStats.moodUniformity = static_cast<double>(minMood)/static_cast<double>(maxMood);

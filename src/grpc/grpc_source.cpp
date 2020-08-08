@@ -513,7 +513,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     return true;
 }
 
-bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::FicSectionStats &stats)
+bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::FavListDetails &stats)
 {
     stats.isValid = protoStats.is_valid();
     if(!stats.isValid)
@@ -552,7 +552,7 @@ bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::Fic
     return true;
 }
 
-bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavListDetails *protoStats)
+bool FavListLocalToProto(const core::FavListDetails &stats, ProtoSpace::FavListDetails *protoStats)
 {
     protoStats->set_is_valid(true);
     protoStats->set_fic_count(stats.favourites);
@@ -630,7 +630,7 @@ public:
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
     core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList);
     void ProcessStandardError(grpc::Status status);
-    core::FicSectionStats GetStatsForFicList(QVector<core::Identity> ficList);
+    core::FavListDetails GetStatsForFicList(QVector<core::Identity> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
     QHash<int, core::MatchedFics > GetMatchesForUsers(int sourceUser, QList<int> users);
@@ -1107,9 +1107,9 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
     error+=QString::fromStdString(status.error_message());
 }
 
-core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identity> ficList)
+core::FavListDetails FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identity> ficList)
 {
-    core::FicSectionStats result;
+    core::FavListDetails result;
 
     grpc::ClientContext context;
 
@@ -1388,7 +1388,7 @@ bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::Identity> * ficList)
     return impl->GetFFNIDsForFics(ficList);
 }
 
-std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList(QVector<core::Identity> ficList)
+std::optional<core::FavListDetails> FicSourceGRPC::GetStatsForFicList(QVector<core::Identity> ficList)
 {
     if(!impl)
         return {};

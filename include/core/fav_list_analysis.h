@@ -30,7 +30,7 @@ struct FicDataAccumulatorResult{
     EntitySizeType mostFavouritedSize;
     EntitySizeType sectionRelativeSize;
 
-    FicSectionStats::MoodType prevalentMood;
+    FavListDetails::MoodType prevalentMood;
 
 
 };

@@ -86,7 +86,7 @@ class FicSectionStatsTemporaryToken
 
 
 
-class FicSectionStats{
+class FavListDetails{
 public:
     enum class FavouritesType{
         tiny = 0 ,
@@ -164,8 +164,8 @@ public:
     QDate favouritesLastChecked;
     int bioWordCount = -1;
 
-    FicSectionStats favouriteStats;
-    FicSectionStats ownFicStats;
+    FavListDetails favouriteStats;
+    FavListDetails ownFicStats;
     void Serialize(QDataStream &out);
     void Deserialize(QDataStream &in);
 };
