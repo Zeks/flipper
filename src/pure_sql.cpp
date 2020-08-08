@@ -480,10 +480,10 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
     ctx.bindValue("genres",section->genreString);
     ctx.bindValue("published",section->published);
     ctx.bindValue("updated",section->updated);
-    ctx.bindValue("wcr",section->calcStats.wcr);
-    ctx.bindValue("reviewstofavourites",section->calcStats.reviewsTofavourites);
-    ctx.bindValue("age",section->calcStats.age);
-    ctx.bindValue("daysrunning",section->calcStats.daysRunning);
+    ctx.bindValue("wcr",section->statistics.wcr);
+    ctx.bindValue("reviewstofavourites",section->statistics.reviewsTofavourites);
+    ctx.bindValue("age",section->statistics.age);
+    ctx.bindValue("daysrunning",section->statistics.daysRunning);
     if(section->fandomIds.size() > 0)
         ctx.bindValue("fandom1",section->fandomIds.at(0));
     else
@@ -522,10 +522,10 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
     ctx.bindValue("published",section->published);
     ctx.bindValue("updated",section->updated);
     ctx.bindValue("site_id",section->webId);
-    ctx.bindValue("wcr",section->calcStats.wcr);
-    ctx.bindValue("reviewstofavourites",section->calcStats.reviewsTofavourites);
-    ctx.bindValue("age",section->calcStats.age);
-    ctx.bindValue("daysrunning",section->calcStats.daysRunning);
+    ctx.bindValue("wcr",section->statistics.wcr);
+    ctx.bindValue("reviewstofavourites",section->statistics.reviewsTofavourites);
+    ctx.bindValue("age",section->statistics.age);
+    ctx.bindValue("daysrunning",section->statistics.daysRunning);
     if(section->fandomIds.size() > 0)
         ctx.bindValue("fandom1",section->fandomIds.at(0));
     else

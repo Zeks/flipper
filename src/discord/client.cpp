@@ -206,7 +206,7 @@ void MyClientClass::OnFutureFinished()
     QLOG_INFO() << "Reached future slot";
     auto result = watcher.future().result();
     auto user = users.GetUser(result.userId);
-    users.userInterface->WriteUserList(result.userId, "", discord::elt_favourites, result.listParams->minimumMatch, result.listParams->pickRatio, result.listParams->alwaysPickAt);
+    users.userInterface->WriteUserList(result.userId, "", discord::elt_favourites, result.listParams->minimumMatch, result.listParams->maxUnmatchedPerMatch, result.listParams->alwaysPickAt);
     user->SetFicList(result.fics);
     SendLongList(user,  result.channelID);
 
@@ -346,7 +346,7 @@ void FetchFicsForList(QSharedPointer<FicSourceGRPC> source,
     filter.ignoreAlreadyTagged = true;
     filter.showOriginsInLists = false;
     filter.recordLimit = size;
-    filter.sortMode = core::StoryFilter::sm_reccount;
+    filter.sortMode = core::StoryFilter::sm_metascore;
     filter.reviewBias = core::StoryFilter::bias_none;
     filter.mode = core::StoryFilter::filtering_in_fics;
     //filter.mode = core::StoryFilter::filtering_in_recommendations;
@@ -393,7 +393,7 @@ ListData CreateListData(RecRequest request, QString userToken){
     //TimedAction linkGet("Link fetch", [&](){
         QString url = "https://www.fanfiction.net/u/" + request.ffnID;
         task.url = url.toStdString();
-        result = url_utils::ffn::LoadFavourteLinksFromFFNProfile(url);
+        //result = url_utils::ffn::LoadFavourteLinksFromFFNProfile(url);
 
 //    });
 //    linkGet.run();
@@ -423,12 +423,12 @@ ListData CreateListData(RecRequest request, QString userToken){
     if(request.requestArguments.size() == 2)
     {
         list->minimumMatch = 6;
-        list->pickRatio = 50;
+        list->maxUnmatchedPerMatch = 50;
         list->alwaysPickAt = 9999;
     }
     else{
         list->minimumMatch = request.requestArguments.at(3).toInt();
-        list->pickRatio = request.requestArguments.at(4).toInt();
+        list->maxUnmatchedPerMatch = request.requestArguments.at(4).toInt();
         list->alwaysPickAt = request.requestArguments.at(5).toInt();
     }
     list->ficData.fics = task.ids;

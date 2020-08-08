@@ -51,8 +51,6 @@ void FFNParserBase::ProcessStatSection(core::Section &section)
 
     section.result->statSection = section.statSection.text;
     auto statText = section.statSection.text;
-    if(!statText.contains("English"))
-        section.result->isEnglish = false;
 
     statText = statText.replace(",", "");
 

@@ -134,6 +134,16 @@ void core::Fic::LogWebIds()
         qDebug() << "SV: " << sv_id;
 }
 
+Statistics Fic::getCalcStats() const
+{
+    return calcStats;
+}
+
+void Fic::setCalcStats(const Statistics &value)
+{
+    calcStats = value;
+}
+
 void core::Fic::SetUrl(QString type, QString url)
 {
     urls[type] = url;
@@ -176,11 +186,11 @@ void core::Fic::Log()
     qDebug() << "Place main:" << placeInMainList;
     qDebug() << "Place second:" << placeInSecondList;
     LogWebIds();
-    calcStats.Log();
+    statistics.Log();
     qDebug() << "//////////////////////////////////////";
 }
 
-void core::Fic::FicCalcStats::Log()
+void core::Fic::Statistics::Log()
 {
     if(!isValid)
     {

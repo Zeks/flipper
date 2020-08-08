@@ -529,18 +529,18 @@ public:
         efsm_target_chapter= 1,
         efsm_til_finished = 2
     };
-    class FicCalcStats
+    struct Statistics
     {
     public:
         void Log();
         bool isValid = false;
+        int age;
+        int daysRunning;
         double wcr;
         double wcr_adjusted;
         double reviewsTofavourites;
-        int age;
-        int daysRunning;
-
     };
+
     Fic(){
         author = QSharedPointer<Author>(new Author);
     }
@@ -551,66 +551,79 @@ public:
     void LogUrls();
     void LogWebIds();
     static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
+
+    bool likedAuthor = false;
+    bool ficIsSnoozed = false;
+    bool purged = false;
+    bool snoozeExpired = false;
+    bool selected = false;
+    bool hasNotes = false;
+    bool isCrossover = false;
+    bool isValid =false;
+
+    EFicSnoozeMode snoozeMode = EFicSnoozeMode::efsm_next_chapter;
     int complete=0;
     int atChapter=0;
     int webId = -1;
     int id = -1;
-    bool isEnglish = true;
-    bool likedAuthor = false;
     int minSlashPass = 0;
     int score = 0;
-    bool ficIsSnoozed = false;
     int chapterTillSnoozed = -1;
     int chapterSnoozed = -1;
+    int author_id = -1;
+    int ffn_id = -1;
+    int ao3_id = -1;
+    int sb_id = -1;
+    int sv_id = -1;
+    int recommendationsMainList = 0;
+    int recommendationsSecondList = 0;
+    int placeInMainList = 0;
+    int placeInSecondList = 0;
+    int placeOnFirstPedestal= 0;
+    int placeOnSecondPedestal = 0;
 
-
-    bool purged = false;
-    bool snoozeExpired = false;
-    bool selected = false;
-
-    EFicSnoozeMode snoozeMode = EFicSnoozeMode::efsm_next_chapter;
-
-
-    bool hasNotes = false;
-    bool hasQuotes = false;
-    QStringList voteBreakdown;
-    QStringList voteBreakdownCounts;
-
+    QString urlFFN;
+    QString webSite = "ffn";
+    QString realGenreString;
     QString wordCount;
     QString chapters;
     QString reviews;
     QString favourites;
     QString follows;
     QString rated;
-
     QString fandom;
     QStringList fandoms;
-    bool isCrossover = false;
     QString title;
-    //QString genres;
-    QStringList genres;
+    QString language;
     QString genreString;
     QString summary;
     QString statSection;
-
+    QString notes;
     QString tags;
-    //QString origin;
-    QString language;
+    QString charactersFull;
+    QString authorName;
+
+    QSharedPointer<Author> author;
+
+    QStringList voteBreakdown;
+    QStringList voteBreakdownCounts;
+    QStringList genres;
+    QStringList characters;
+    QStringList quotes;
+
+    QHash<QString, QString> urls;
 
     QDateTime published;
     QDateTime updated;
-    QString charactersFull;
-    QStringList characters;
-    QString notes;
-    QStringList quotes;
-    bool isValid =false;
+
+    QList<genre_stats::GenreBit> realGenreData;
+    QList<int> fandomIds;
+
+    UpdateMode updateMode = UpdateMode::none;
     EFicSource ficSource = efs_search;
-    QString authorName;
-    int author_id = -1;
-    QSharedPointer<Author> author;
 
-
-    QHash<QString, QString> urls;
+    SlashData slashData;
+    Statistics statistics;
 
     void SetGenres(QString genreString, QString website){
 
@@ -642,25 +655,9 @@ public:
     }
     void SetUrl(QString type, QString url);
 
-    int ffn_id = -1;
-    int ao3_id = -1;
-    int sb_id = -1;
-    int sv_id = -1;
-    QString urlFFN;
-    int recommendationsMainList = 0;
-    int recommendationsSecondList = 0;
-    int placeInMainList = 0;
-    int placeInSecondList = 0;
-    int placeOnFirstPedestal= 0;
-    int placeOnSecondPedestal = 0;
-    QString webSite = "ffn";
 
-    UpdateMode updateMode = UpdateMode::none;
-    FicCalcStats calcStats;
-    QList<genre_stats::GenreBit> realGenreData;
-    QString realGenreString;
-    QList<int> fandomIds;
-    SlashData slashData;
+    Statistics getCalcStats() const;
+    void setCalcStats(const Statistics &value);
 };
 
 class Section : public DBEntity

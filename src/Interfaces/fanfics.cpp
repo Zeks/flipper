@@ -453,14 +453,14 @@ void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fic>> fics)
         if(!fic)
             continue;
 
-        fic->calcStats.wcr = 200000; // default
+        fic->statistics.wcr = 200000; // default
         if(fic->wordCount.toInt() > 1000 && fic->reviews > 0)
-            fic->calcStats.wcr = fic->wordCount.toDouble()/fic->reviews.toDouble();
-        fic->calcStats.reviewsTofavourites = 0;
+            fic->statistics.wcr = fic->wordCount.toDouble()/fic->reviews.toDouble();
+        fic->statistics.reviewsTofavourites = 0;
         if(fic->favourites.toInt())
-            fic->calcStats.reviewsTofavourites = fic->reviews.toDouble()/fic->favourites.toDouble();
-        fic->calcStats.age = std::abs(QDateTime::currentDateTimeUtc().daysTo(fic->published));
-        fic->calcStats.daysRunning = std::abs(fic->updated.daysTo(fic->published));
+            fic->statistics.reviewsTofavourites = fic->reviews.toDouble()/fic->favourites.toDouble();
+        fic->statistics.age = std::abs(QDateTime::currentDateTimeUtc().daysTo(fic->published));
+        fic->statistics.daysRunning = std::abs(fic->updated.daysTo(fic->published));
     }
 }
 
