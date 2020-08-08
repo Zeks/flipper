@@ -54,7 +54,11 @@ App{
 
     files: [
         "include/calc_data_holder.h",
+        "include/core/db_entity.h",
+        "include/core/fanfic.h",
         "include/core/fav_list_analysis.h",
+        "include/core/identity.h",
+        "include/core/slash_data.h",
         "include/data_code/data_holders.h",
         "include/data_code/rec_calc_data.h",
         "include/grpc/grpc_source.h",
@@ -67,6 +71,7 @@ App{
         "include/threaded_data/threaded_load.h",
         "include/threaded_data/threaded_save.h",
         "src/calc_data_holder.cpp",
+        "src/core/fanfic.cpp",
         "src/core/fav_list_analysis.cpp",
         "src/data_code/rec_calc_data.cpp",
         "src/grpc/grpc_source.cpp",

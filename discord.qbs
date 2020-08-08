@@ -17,6 +17,10 @@ App{
     Depends { name: "grpc_generation" }
 
     files: [
+        "include/core/db_entity.h",
+        "include/core/fanfic.h",
+        "include/core/identity.h",
+        "include/core/slash_data.h",
         "include/discord/client.h",
         "include/discord/limits.h",
         "include/discord/task.h",

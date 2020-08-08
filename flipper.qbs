@@ -63,7 +63,11 @@ App{
 
     files: [
         "UI/initialsetupdialog.ui",
+        "include/core/db_entity.h",
+        "include/core/fanfic.h",
         "include/core/identity.h",
+        "include/core/slash_data.h",
+        "src/core/fanfic.cpp",
         "src/ui/welcomedialog.cpp",
         "include/ui/welcomedialog.h",
         "UI/welcomedialog.ui",
