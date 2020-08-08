@@ -104,5 +104,26 @@ void core::AuthorStats::Deserialize(QDataStream &in)
     favouriteStats.Deserialize(in);
     ownFicStats.Deserialize(in);
 }
+void AuthorFandomStatsForWeightCalc::Serialize(QDataStream &out)
+{
+      out << listId;
+      out << fandomCount;
+      out << ficCount;
+      out << fandomDiversity;
 
+      out << fandomPresence;
+      out << fandomCounts;
+}
+
+void AuthorFandomStatsForWeightCalc::Deserialize(QDataStream &in)
+{
+    in >> listId;
+    in >> fandomCount;
+    in >> ficCount;
+    in >> fandomDiversity;
+
+    in >> fandomPresence;
+    in >> fandomCounts;
+
+}
 }

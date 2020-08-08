@@ -43,7 +43,7 @@ static QString MicrosecondsToString(int value) {
     QString partial = QString::number(value).mid(offset,1);
     return decimal + "." + partial;}
 
-void ReserveSpaceForSections(QList<QSharedPointer<core::Fic>>& sections,  core::Section& section, QString& str)
+void ReserveSpaceForSections(QList<QSharedPointer<core::Fic>>& sections,  core::FanficSectionInFFNFavourites& section, QString& str)
 {
     int parts = str.length()/(section.end-section.start);
     sections.reserve(parts);
@@ -394,7 +394,7 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     thread_local FieldSearcher profilePageCreatedFinder = CreateProfilePageCreatedSearcher();
     statToken = core::FicSectionStatsTemporaryToken();
     QList<QSharedPointer<core::Fic>>  sections;
-    core::Section section;
+    core::FanficSectionInFFNFavourites section;
     int currentPosition = 0;
     int counter = 0;
 
@@ -621,7 +621,7 @@ QString FavouriteStoryParser::ExtractRecommenderNameFromUrl(QString url)
     return url.mid(pos+1);
 }
 
-void FavouriteStoryParser::GetFandomFromTaggedSection(core::Section & section, QString text)
+void FavouriteStoryParser::GetFandomFromTaggedSection(core::FanficSectionInFFNFavourites & section, QString text)
 {
     thread_local QRegExp rxFandom("(.*)(?=\\s-\\sRated:)");
     GetTaggedSection(text, rxFandom,    [&section](QString val){
@@ -630,7 +630,7 @@ void FavouriteStoryParser::GetFandomFromTaggedSection(core::Section & section, Q
     });
 }
 
-void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QString text)
+void FavouriteStoryParser::GetTitle(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text)
 {
     thread_local QRegExp rxStart(QRegExp::escape("data-title=\""));
     thread_local QRegExp rxEnd(QRegExp::escape("\""));
@@ -643,7 +643,7 @@ void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QSt
 }
 
 
-void FavouriteStoryParser::GetTitleAndUrl(core::Section & section, int& currentPosition, QString str)
+void FavouriteStoryParser::GetTitleAndUrl(core::FanficSectionInFFNFavourites & section, int& currentPosition, QString str)
 {
     GetTitle(section, currentPosition, str);
     GetUrl(section, currentPosition, str);

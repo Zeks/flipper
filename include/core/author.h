@@ -101,5 +101,21 @@ public:
     QString authorName;
 };
 
+struct AuthorFandomStatsForWeightCalc{
+  int listId = -1;
+  int fandomCount = -1;
+  int ficCount = -1;
+
+  double fandomDiversity = 0.0;
+
+  QHash<int, double> fandomPresence;
+  QHash<int, int> fandomCounts;
+
+  void Serialize(QDataStream &out);
+  void Deserialize(QDataStream &in);
+};
+
+typedef QSharedPointer<AuthorFandomStatsForWeightCalc> AuthorFavFandomStatsPtr;
 }
+
 Q_DECLARE_METATYPE(core::AuthorPtr);

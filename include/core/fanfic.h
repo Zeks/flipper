@@ -207,5 +207,5 @@ struct FicDataForRecommendationCreation
 inline QTextStream &operator>>(QTextStream &in, FicDataForRecommendationCreation &p);
 inline QTextStream &operator<<(QTextStream &out, const FicDataForRecommendationCreation &p);
 
-
+typedef QSharedPointer<FicDataForRecommendationCreation> FicWeightPtr;
 }

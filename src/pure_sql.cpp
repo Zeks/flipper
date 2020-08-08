@@ -3573,7 +3573,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
         ctx.bindValue("author_id", author);
         //qDebug() << "loading author: " << author;
 
-        core::AuthorFavFandomStatsPtr fs(new core::FandomStatsForWeightCalc);
+        core::AuthorFavFandomStatsPtr fs(new core::AuthorFandomStatsForWeightCalc);
 
         fs->listId = author;
         ctx.FetchSelectFunctor(qs, DATAQN{

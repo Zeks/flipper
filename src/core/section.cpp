@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-core::Section::Section():result(new core::Fic())
+core::FanficSectionInFFNFavourites::FanficSectionInFFNFavourites():result(new core::Fic())
 {
 
 }

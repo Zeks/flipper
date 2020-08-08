@@ -64,6 +64,7 @@ App{
     files: [
         "UI/initialsetupdialog.ui",
         "include/core/db_entity.h",
+        "include/core/experimental/fic_relations.h",
         "include/core/fanfic.h",
         "include/core/fav_list_details.h",
         "include/core/identity.h",

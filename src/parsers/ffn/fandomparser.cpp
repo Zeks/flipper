@@ -63,10 +63,10 @@ void FandomParser::ProcessPage(WebPage page)
     processedStuff.clear();
     minSectionUpdateDate = QDateTime::currentDateTimeUtc().date();
     QString& str = page.content;
-    core::Section section;
+    core::FanficSectionInFFNFavourites section;
     int currentPosition = 0;
     int counter = 0;
-    QList<core::Section> sections;
+    QList<core::FanficSectionInFFNFavourites> sections;
     QList<QDate> updateDates;
 
     while(true)
@@ -146,7 +146,7 @@ QString FandomParser::CreateURL(QString str)
 {
     return "https://www.fanfiction.net/" + str;
 }
-void FandomParser::GetTitle(core::Section & section, int& startfrom, QString text)
+void FandomParser::GetTitle(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text)
 {
     QRegExp rxStart(QRegExp::escape(">"));
     QRegExp rxEnd(QRegExp::escape("</a>"));
@@ -157,7 +157,7 @@ void FandomParser::GetTitle(core::Section & section, int& startfrom, QString tex
 //    /qDebug() << section.result->title;
 }
 
-void FandomParser::GetTitleAndUrl(core::Section & section, int& currentPosition, QString str)
+void FandomParser::GetTitleAndUrl(core::FanficSectionInFFNFavourites & section, int& currentPosition, QString str)
 {
     GetUrl(section, currentPosition, str);
     GetTitle(section, currentPosition, str);

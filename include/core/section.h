@@ -46,64 +46,10 @@ public:
 class Fic;
 
 
-
-
-struct FandomStatsForWeightCalc{
-  int listId = -1;
-  int fandomCount = -1;
-  int ficCount = -1;
-
-  double fandomDiversity = 0.0;
-
-  QHash<int, double> fandomPresence;
-  QHash<int, int> fandomCounts;
-
-
-  void Serialize(QDataStream &out)
-  {
-        out << listId;
-        out << fandomCount;
-        out << ficCount;
-        out << fandomDiversity;
-
-        out << fandomPresence;
-        out << fandomCounts;
-  }
-
-  void Deserialize(QDataStream &in)
-  {
-      in >> listId;
-      in >> fandomCount;
-      in >> ficCount;
-      in >> fandomDiversity;
-
-      in >> fandomPresence;
-      in >> fandomCounts;
-
-  }
-
-};
-
-
-struct FicWeightResult{
-    int ficId1;
-    int ficId2;
-    int ficListCount1;
-    int ficListCount2;
-    int meetingCount;
-    bool sameFandom;
-    double attraction;
-    double repulsion;
-    double finalAttraction;
-};
-
-typedef QSharedPointer<FicDataForRecommendationCreation> FicWeightPtr;
-typedef QSharedPointer<FandomStatsForWeightCalc> AuthorFavFandomStatsPtr;
-
-class Section : public DBEntity
+class FanficSectionInFFNFavourites : public DBEntity
 {
 public:
-    Section();
+    FanficSectionInFFNFavourites();
     struct Tag
     {
         Tag(){}
@@ -118,7 +64,7 @@ public:
         int end = -1;
         bool isValid = false;
     };
-    struct StatSection{
+    struct StatisticsLine{
         // these are tagged if they appear
         Tag rated;
         Tag reviews;
@@ -148,7 +94,7 @@ public:
     int statSectionStart=0;
     int statSectionEnd=0;
 
-    StatSection statSection;
+    StatisticsLine statSection;
     QSharedPointer<Fic> result;
     bool isValid =false;
 };
