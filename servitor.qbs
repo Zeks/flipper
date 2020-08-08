@@ -64,6 +64,7 @@ App{
         "include/calc_data_holder.h",
         "include/core/db_entity.h",
         "include/core/fanfic.h",
+        "include/core/fav_list_details.h",
         "include/core/fic_genre_data.h",
         "include/core/identity.h",
         "include/core/slash_data.h",
@@ -77,6 +78,7 @@ App{
         "include/threaded_data/threaded_save.h",
         "src/calc_data_holder.cpp",
         "src/core/fanfic.cpp",
+        "src/core/fav_list_details.cpp",
         "src/data_code/rec_calc_data.cpp",
         "src/main_servitor.cpp",
         "src/rec_calc/rec_calculator_base.cpp",
@@ -171,6 +173,8 @@ App{
         "include/grpc/grpc_source.h",
         "include/Interfaces/data_source.h",
         "src/grpc/grpc_source.cpp",
+        "include/core/author.h",
+        "src/core/author.cpp",
     ]
     Group{
     name: "sqlite"

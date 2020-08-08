@@ -6,6 +6,15 @@
 #include "core/section.h"
 namespace core{
 
+enum class ExplorerRanges{
+    none = 0,
+    barely_known= 1,
+    relatively_unknown = 2,
+    popular = 3
+};
+core::ExplorerRanges ProcesFavouritesIntoPopularityCategory(int);
+core::EntitySizeType ProcesWordcountIntoSizeCategory(int);
+
 struct FicDataAccumulatorResult{
     std::array<double, 4> moodRatios{};
     std::array<double, 5> sizeRatios{};

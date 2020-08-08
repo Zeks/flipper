@@ -19,12 +19,14 @@ App{
     files: [
         "include/core/db_entity.h",
         "include/core/fanfic.h",
+        "include/core/fav_list_details.h",
         "include/core/identity.h",
         "include/core/slash_data.h",
         "include/discord/client.h",
         "include/discord/limits.h",
         "include/discord/task.h",
         "include/sql/discord/discord_queries.h",
+        "src/core/fav_list_details.cpp",
         "src/discord/client.cpp",
         "src/discord/limits.cpp",
         "src/discord/task.cpp",
@@ -83,6 +85,8 @@ App{
         "include/pagegetter.h",
         "src/Interfaces/discord/users.cpp",
         "include/Interfaces/discord/users.h",
+        "include/core/author.h",
+        "src/core/author.cpp",
     ]
     Group{
     name: "sqlite"

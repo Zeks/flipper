@@ -1,5 +1,5 @@
 #pragma once
-
+#include <QString>
 namespace core {
 struct SiteId{
     QString website;

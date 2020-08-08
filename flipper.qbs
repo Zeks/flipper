@@ -65,9 +65,11 @@ App{
         "UI/initialsetupdialog.ui",
         "include/core/db_entity.h",
         "include/core/fanfic.h",
+        "include/core/fav_list_details.h",
         "include/core/identity.h",
         "include/core/slash_data.h",
         "src/core/fanfic.cpp",
+        "src/core/fav_list_details.cpp",
         "src/ui/welcomedialog.cpp",
         "include/ui/welcomedialog.h",
         "UI/welcomedialog.ui",
@@ -191,6 +193,8 @@ App{
         "src/in_tag_accessor.cpp",
         "src/rng.cpp",
         "include/rng.h",
+        "include/core/author.h",
+        "src/core/author.cpp",
     ]
     Group{
     name: "sqlite"
