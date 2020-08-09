@@ -31,20 +31,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "core/db_entity.h"
 #include "core/fanfic.h"
 #include "core/author.h"
+#include "core/url.h"
 #include "core/fav_list_details.h"
 #include "core/recommendation_list.h"
 namespace core {
-
-class FavouritesPage
-{
-public:
-    QSharedPointer<Author> author;
-    QString pageData;
-    //type of website, ffn or ao3
-
-};
-class Fic;
-
 
 class FanficSectionInFFNFavourites : public DBEntity
 {
@@ -95,106 +85,13 @@ public:
     int statSectionEnd=0;
 
     StatisticsLine statSection;
-    QSharedPointer<Fic> result;
+    QSharedPointer<Fanfic> result;
     bool isValid =false;
 };
-class Fandom;
-typedef  QSharedPointer<Fandom> FandomPtr;
 
-class Url
-{
-public:
-    Url(QString url, QString source, QString type = "default"){
-        this->url = url;
-        this->source = source;
-        this->type = type;
-    }
-    QString GetUrl(){return url;}
-    QString GetSource(){return source;}
-    QString GetType(){return type;}
-    void SetType(QString value) {type = value;}
-private:
-    QString url;
-    QString source;
-    QString type;
-};
 
-class Fandom : public DBEntity
-{
-public:
-    Fandom(){}
-    Fandom(QString name){this->name = ConvertName(name);}
-    //    Fandom(QString name,QString section,QString source = "ffn"){
-    //        this->name = ConvertName(name);
-    //        this->section = section.trimmed();
-    //        this->source = source.trimmed();
-    //    }
-    static FandomPtr NewFandom() { return QSharedPointer<Fandom>(new Fandom);}
-    QList<Url> GetUrls(){
-        return urls;
-    }
-    void AddUrl(Url url){
-        urls.append(url);
-    }
-    void SetName(QString name){this->name = ConvertName(name);}
-    QString GetName() const;
-    int id = -1;
-    int idInRecentFandoms = -1;
-    int ficCount = 0;
-    double averageFavesTop3 = 0.0;
 
-    QString section = "none";
-    QString source = "ffn";
-    QList<Url> urls;
-    QDate dateOfCreation;
-    QDate dateOfFirstFic;
-    QDate dateOfLastFic;
-    QDate lastUpdateDate;
-    bool tracked = false;
-    static QString ConvertName(QString name)
-    {
-        thread_local QHash<QString, QString> cache;
-        name=name.trimmed();
-        QString result;
-        if(cache.contains(name))
-            result = cache[name];
-        else
-        {
-            QRegExp rx = QRegExp("(/(.|\\s){0,}[^\\x0000-\\x007F])|(/(.|\\s){0,}[?][?][?])");
-            rx.setMinimal(true);
-            int index = name.indexOf(rx);
-            if(index != -1)
-                cache[name] = name.left(index).trimmed();
-            else
-                cache[name] = name.trimmed();
-            result = cache[name];
-        }
-        return result;
-    }
-private:
-    QString name;
 
-};
-
-struct MatchedFics{
-    int ratio = 0;
-    int ratioWithoutIgnores = 0;
-    QList<int> matches;
-};
-
-struct SnoozeInfo{
-    int ficId = -1;
-    bool finished = false;
-    int atChapter = -1;
-};
-struct SnoozeTaskInfo{
-    int ficId = -1;
-    bool untilFinished = false;
-    int snoozedAtChapter = -1;
-    int snoozedTillChapter = -1;
-    bool expired = false;
-    QDateTime added;
-};
 }
 
 

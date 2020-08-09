@@ -218,12 +218,12 @@ QSet<int> Fanfics::GetFicIDsWithUnsetAuthors()
     return database::puresql::GetFicIDsWithUnsetAuthors(db).data;
 }
 
-QHash<int, core::SnoozeInfo> Fanfics::GetSnoozeInfo()
+QHash<int, core::FanficCompletionStatus> Fanfics::GetSnoozeInfo()
 {
     return database::puresql::GetSnoozeInfo(db).data;
 }
 
-QHash<int, core::SnoozeTaskInfo> Fanfics::GetUserSnoozeInfo(bool fetchExpired, bool useLimitedSelection)
+QHash<int, core::FanficSnoozeStatus> Fanfics::GetUserSnoozeInfo(bool fetchExpired, bool useLimitedSelection)
 {
     return database::puresql::GetUserSnoozeInfo(fetchExpired, useLimitedSelection, db).data;
 }
@@ -233,7 +233,7 @@ bool Fanfics::WriteExpiredSnoozes(QSet<int> data)
     return database::puresql::WriteExpiredSnoozes(data, db).success;
 }
 
-bool Fanfics::SnoozeFic(core::SnoozeTaskInfo data)
+bool Fanfics::SnoozeFic(core::FanficSnoozeStatus data)
 {
     return database::puresql::SnoozeFic(data, db).success;
 }
@@ -243,7 +243,7 @@ bool Fanfics::RemoveSnooze(int ficId)
     return database::puresql::RemoveSnooze(ficId, db).success;
 }
 
-void UploadFicIdsForSelection(QVector<core::Fic> * fics){
+void UploadFicIdsForSelection(QVector<core::Fanfic> * fics){
     auto* userThreadData = ThreadData::GetUserData();
     userThreadData->ficsForSelection.clear();
     for(auto& fic : *fics)
@@ -251,7 +251,7 @@ void UploadFicIdsForSelection(QVector<core::Fic> * fics){
 }
 
 
-bool Fanfics::FetchSnoozesForFics(QVector<core::Fic> * fics)
+bool Fanfics::FetchSnoozesForFics(QVector<core::Fanfic> * fics)
 {
     if(!fics)
         return false;
@@ -268,20 +268,20 @@ bool Fanfics::FetchSnoozesForFics(QVector<core::Fic> * fics)
             fic.userData.chapterSnoozed = snooze .snoozedAtChapter;
             if(snooze.untilFinished)
             {
-                fic.userData.snoozeMode = core::Fic::EFicSnoozeMode::efsm_til_finished;
+                fic.userData.snoozeMode = core::Fanfic::EFicSnoozeMode::efsm_til_finished;
             }
             else if((snooze.snoozedTillChapter - snooze.snoozedAtChapter) == 1)
             {
-                fic.userData.snoozeMode = core::Fic::EFicSnoozeMode::efsm_next_chapter;
+                fic.userData.snoozeMode = core::Fanfic::EFicSnoozeMode::efsm_next_chapter;
             }
             else
-                fic.userData.snoozeMode = core::Fic::EFicSnoozeMode::efsm_target_chapter;
+                fic.userData.snoozeMode = core::Fanfic::EFicSnoozeMode::efsm_target_chapter;
         }
     }
     return true;
 }
 
-bool Fanfics::FetchNotesForFics(QVector<core::Fic> * fics)
+bool Fanfics::FetchNotesForFics(QVector<core::Fanfic> * fics)
 {
     if(!fics)
         return false;
@@ -300,7 +300,7 @@ bool Fanfics::FetchNotesForFics(QVector<core::Fic> * fics)
     return true;
 }
 
-bool Fanfics::FetchChaptersForFics(QVector<core::Fic> * fics)
+bool Fanfics::FetchChaptersForFics(QVector<core::Fanfic> * fics)
 {
     if(!fics)
         return false;
@@ -438,9 +438,9 @@ void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
     ficRecommendations += recommendations;
 }
 
-void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fic>> fics)
+void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fanfic>> fics)
 {
-    for(QSharedPointer<core::Fic> fic: fics)
+    for(QSharedPointer<core::Fanfic> fic: fics)
     {
         if(!fic)
             continue;
@@ -485,13 +485,13 @@ bool Fanfics::WriteAuthorsForFics(QHash<uint32_t, uint32_t> data)
 }
 
 
-void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
+void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fanfic>> fics, bool alwaysUpdateIfNotInsert)
 {
     CalcStatsForFics(fics);
     skippedCounter = 0;
     updatedCounter = 0;
     insertedCounter = 0;
-    for(QSharedPointer<core::Fic> fic: fics)
+    for(QSharedPointer<core::Fanfic> fic: fics)
     {
         if(!fic)
             continue;

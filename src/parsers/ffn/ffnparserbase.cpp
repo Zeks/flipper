@@ -220,7 +220,7 @@ void FFNParserBase::ProcessSection(core::FanficSectionInFFNFavourites &section, 
 {
     section.result->isValid = true;
     GetTitleAndUrl(section, currentPosition, str);
-    if(section.result->ficSource != core::Fic::efs_own_works)
+    if(section.result->ficSource != core::Fanfic::efs_own_works)
         GetAuthor(section, currentPosition, str);
     GetSummary(section, currentPosition, str);
 

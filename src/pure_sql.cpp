@@ -370,7 +370,7 @@ DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabas
 
 core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
 {
-    auto fic = core::Fic::NewFanfic();
+    auto fic = core::Fanfic::NewFanfic();
     fic->userData.atChapter = q1.value("AT_CHAPTER").toInt();
     fic->complete  = q1.value("COMPLETE").toInt();
 
@@ -419,7 +419,7 @@ DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 }
 
 
-DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
+DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
     QString getKeyQuery = QString("Select ( select count(*) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
                                   " ( select count(*) from FANFICS where  %1_id = :site_id2 "
@@ -453,7 +453,7 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
+DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db)
 {
     QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
@@ -495,7 +495,7 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
 
     return ctx();
 }
-DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
+DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db)
 {
     QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
                     "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
@@ -1560,7 +1560,7 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
 }
 
 static auto getFicWeightPtrFromQuery = [](auto& q){
-    core::FicWeightPtr fw(new core::FicDataForRecommendationCreation);
+    core::FicWeightPtr fw(new core::FanficDataForRecommendationCreation);
     fw->adult = q.value("Rated").toString() == "M";
     fw->authorId = q.value("author_id").toInt();
     fw->complete = q.value("complete").toBool();
@@ -2323,13 +2323,13 @@ DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase 
 
 
 
-DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, core::FanficCompletionStatus> > GetSnoozeInfo(QSqlDatabase db)
 {
     QString qs = "select id, ffn_id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
-    SqlContext<QHash<int, core::SnoozeInfo>> ctx(db, qs);
+    SqlContext<QHash<int, core::FanficCompletionStatus>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         //qDebug() << " loading snooze data:";
-        core::SnoozeInfo info;
+        core::FanficCompletionStatus info;
         info.ficId = q.value("id").toInt();
         info.finished = q.value("complete").toInt();
         info.atChapter = q.value("chapters").toInt();
@@ -2343,7 +2343,7 @@ DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
+DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
     QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
 
     QStringList filters;
@@ -2362,9 +2362,9 @@ DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fet
     QLOG_TRACE() <<  "snooze query: " << qs;
 
 
-    SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);
+    SqlContext<QHash<int, core::FanficSnoozeStatus>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        core::SnoozeTaskInfo info;
+        core::FanficSnoozeStatus info;
         info.ficId =                q.value("fic_id").toInt();
         info.added =                q.value("snooze_added").toDateTime();
         info.expired =              q.value("expired").toBool();
@@ -2421,7 +2421,7 @@ DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> data,QSqlDatabase db){
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo data,QSqlDatabase db){
+DiagnosticSQLResult<bool> SnoozeFic(core::FanficSnoozeStatus data,QSqlDatabase db){
     QString qs = "INSERT INTO FicSnoozes(fic_id, snoozed_at_chapter, snoozed_till_chapter, snoozed_until_finished, snooze_added)"
                  " values(:fic_id, :snoozed_at_chapter, :snoozed_till_chapter, :snoozed_until_finished,  date('now')) "
                  " on conflict (fic_id) "
@@ -2505,7 +2505,7 @@ DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity> pack, QSqlDat
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db)
+DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fanfic> * fics, QSqlDatabase db)
 {
     QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInSourceFics(fic_id) > 0 group by fic_id");
     QHash<int, QString> tags;
@@ -2529,7 +2529,7 @@ template <typename T1, typename T2>
 inline double DivideAsDoubles(T1 arg1, T2 arg2){
     return static_cast<double>(arg1)/static_cast<double>(arg2);
 }
-DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db)
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fanfic> * fics, int listId, QSqlDatabase db)
 {
     QString qs = QString("select fic_id,  "
                          "breakdown_available,"
@@ -2612,7 +2612,7 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
 
 }
 
-DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter, QSqlDatabase db)
+DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> *fics, core::ReclistFilter filter, QSqlDatabase db)
 {
     QStringList ficIds;
 

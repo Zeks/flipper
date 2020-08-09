@@ -25,6 +25,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlDatabase>
 #include <QDateTime>
 #include <functional>
+
+class FavouritesPage
+{
+public:
+    QSharedPointer<core::Author> author;
+    QString pageData;
+    //type of website, ffn or ao3
+
+};
+
 class FavouriteStoryParser : public FFNParserBase
 {
 public:
@@ -33,7 +43,7 @@ public:
             commonRegex.Init();
     }
     FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics);
-    QList<QSharedPointer<core::Fic>> ProcessPage(QString url,QString&);
+    QList<QSharedPointer<core::Fanfic>> ProcessPage(QString url,QString&);
     QString ExtractRecommenderNameFromUrl(QString url);
     void GetGenre(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);
     void GetWordCount(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);
@@ -47,7 +57,7 @@ public:
     void ClearDoneCache();
     void SetCurrentTag(QString);
     void SetAuthor(core::AuthorPtr);
-    void UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
+    void UpdateWordsCounterNew(QSharedPointer<core::Fanfic> fic,
                                       const CommonRegex& regexToken,
                                       QHash<int, int>& wordsKeeper);
 
@@ -55,7 +65,7 @@ public:
     static void MergeStats(core::AuthorPtr,  QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers);
     static void MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<core::FicSectionStatsTemporaryToken> tokens);
     core::FicSectionStatsTemporaryToken statToken;
-    core::FavouritesPage recommender;
+    FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
     QString currentTagMode = "core";
     QString authorName;

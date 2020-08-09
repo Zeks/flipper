@@ -74,6 +74,7 @@ App{
         "include/core/author.h",
         "src/core/author.cpp",
         "src/calc_data_holder.cpp",
+        "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_analysis.cpp",
         "src/core/fav_list_details.cpp",

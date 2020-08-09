@@ -43,7 +43,7 @@ static QString MicrosecondsToString(int value) {
     QString partial = QString::number(value).mid(offset,1);
     return decimal + "." + partial;}
 
-void ReserveSpaceForSections(QList<QSharedPointer<core::Fic>>& sections,  core::FanficSectionInFFNFavourites& section, QString& str)
+void ReserveSpaceForSections(QList<QSharedPointer<core::Fanfic>>& sections,  core::FanficSectionInFFNFavourites& section, QString& str)
 {
     int parts = str.length()/(section.end-section.start);
     sections.reserve(parts);
@@ -88,7 +88,7 @@ QDate DateFromXUtime(QString value)
     return temp.date();
 }
 
-inline void UpdatePopularity(QSharedPointer<core::Fic> fic, QHash<int, int>& popularUnpopularKeeper)
+inline void UpdatePopularity(QSharedPointer<core::Fanfic> fic, QHash<int, int>& popularUnpopularKeeper)
 {
     auto faveCount = fic->favourites.toInt();
     if(faveCount <= 50)
@@ -99,7 +99,7 @@ inline void UpdatePopularity(QSharedPointer<core::Fic> fic, QHash<int, int>& pop
         popularUnpopularKeeper[2]++;
 }
 
-inline void UpdateFandoms(QSharedPointer<core::Fic> fic,
+inline void UpdateFandoms(QSharedPointer<core::Fanfic> fic,
                           QHash<int, int>& crossKeeper,
                           QHash<QString, int>& fandomKeeper)
 {
@@ -112,14 +112,14 @@ inline void UpdateFandoms(QSharedPointer<core::Fic> fic,
         fandomKeeper[fandom]++;
     }
 }
-inline void UpdateCompleteness(QSharedPointer<core::Fic> fic, QHash<int, int>& unfinishedKeeper)
+inline void UpdateCompleteness(QSharedPointer<core::Fanfic> fic, QHash<int, int>& unfinishedKeeper)
 {
     if(fic->complete == 1)
         unfinishedKeeper[0]++;
     else
         unfinishedKeeper[1]++;
 }
-inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
+inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fanfic> fic,
                                   const CommonRegex& regexToken,
                                   QHash<int, int>& wordsKeeper)
 {
@@ -138,7 +138,7 @@ inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fic
         wordsKeeper[2]++;
 
 }
-inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& wordsKeeper)
+inline void UpdateWordsCounter(QSharedPointer<core::Fanfic> fic, QHash<int, int>& wordsKeeper)
 {
 //    if(fic->summary.contains("crack", Qt::CaseInsensitive))
 //        wordsKeeper[0]++;
@@ -172,7 +172,7 @@ inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& w
 
 }
 
-inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes, int& chapterCount)
+inline void UpdateFicSize(QSharedPointer<core::Fanfic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes, int& chapterCount)
 {
     auto wordCount = fic->wordCount.toInt();
     chapterCount+=fic->chapters.toInt();
@@ -189,7 +189,7 @@ inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favour
 
 
 
-inline void UpdateESRB(QSharedPointer<core::Fic> fic, QHash<int, int>& esrbKeeper)
+inline void UpdateESRB(QSharedPointer<core::Fanfic> fic, QHash<int, int>& esrbKeeper)
 {
     if(fic->rated != "M")
         esrbKeeper[0]++; // kiddy
@@ -223,7 +223,7 @@ static QHash<QString, int> CreateMoodRedirects(){
     result["Friendship"] = 1;
     return result;
 }
-inline void UpdateGenreResults(QSharedPointer<core::Fic> fic,
+inline void UpdateGenreResults(QSharedPointer<core::Fanfic> fic,
                                QHash<QString, int>& genreKeeper,
                                QHash<int, int>& moodKeeper
                                )
@@ -388,12 +388,12 @@ inline void ProcessMood(QSharedPointer<core::Author> author,
     auto minMood = std::min(author->stats.favouriteStats.moodSad, std::min(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
     author->stats.favouriteStats.moodUniformity = static_cast<double>(minMood)/static_cast<double>(maxMood);
 }
-QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
+QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
     thread_local FieldSearcher profilePageUpdatedFinder = CreateProfilePageUpdatedSearcher();
     thread_local FieldSearcher profilePageCreatedFinder = CreateProfilePageCreatedSearcher();
     statToken = core::FicSectionStatsTemporaryToken();
-    QList<QSharedPointer<core::Fic>>  sections;
+    QList<QSharedPointer<core::Fanfic>>  sections;
     core::FanficSectionInFFNFavourites section;
     int currentPosition = 0;
     int counter = 0;
@@ -445,11 +445,11 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
         if(ownStory)
         {
-            section.result->ficSource = core::Fic::efs_own_works;
+            section.result->ficSource = core::Fanfic::efs_own_works;
             section.result->author = author;
         }
         else
-            section.result->ficSource = core::Fic::efs_favourites;
+            section.result->ficSource = core::Fanfic::efs_favourites;
 
         if(sections.size() == 0)
             ReserveSpaceForSections(sections, section, str);
@@ -501,7 +501,7 @@ void FavouriteStoryParser::ClearProcessed()
     fandoms.clear();
     diagnostics = QStringList{};
     alreadyDone.clear();
-    recommender = core::FavouritesPage();
+    recommender = FavouritesPage();
 }
 
 void FavouriteStoryParser::ClearDoneCache()

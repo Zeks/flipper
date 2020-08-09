@@ -29,7 +29,7 @@
 void FetchFicsForList(QSharedPointer<FicSourceGRPC> source,
                       QSharedPointer<discord::User> user,
                       int size,
-                      QVector<core::Fic>* fics);
+                      QVector<core::Fanfic>* fics);
 ListData CreateListData(RecRequest request, QString userToken);
 
 struct Task{
@@ -265,7 +265,7 @@ void MyClientClass::SendDetailedList(QSharedPointer<discord::User> user,
         users.userInterface->UpdateCurrentPage(user->UserID(), user->CurrentPage());
     }
 
-    QVector<core::Fic> fics;
+    QVector<core::Fanfic> fics;
     FetchFicsForList(ficSource, user, 4, &fics);
     SleepyDiscord::Embed embed;
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/s/%1), page: %2\n\n").arg(user->FfnID()).arg(user->CurrentPage()).toStdString();
@@ -302,7 +302,7 @@ void MyClientClass::SendLongList(QSharedPointer<discord::User> user, SleepyDisco
     }
 
 
-    QVector<core::Fic> fics;
+    QVector<core::Fanfic> fics;
     QLOG_INFO() << "Fetching fics";
     FetchFicsForList(ficSource, user, 10, &fics);
     QLOG_INFO() << "Fetched fics";
@@ -339,7 +339,7 @@ void MyClientClass::SendLongList(QSharedPointer<discord::User> user, SleepyDisco
 void FetchFicsForList(QSharedPointer<FicSourceGRPC> source,
                       QSharedPointer<discord::User> user,
                       int size,
-                      QVector<core::Fic>* fics)
+                      QVector<core::Fanfic>* fics)
 {
     core::StoryFilter filter;
     filter.recordPage = user->CurrentPage();
@@ -388,7 +388,7 @@ ListData CreateListData(RecRequest request, QString userToken){
     //dbInit.run();
 
 
-    QList<QSharedPointer<core::Fic>> result;
+    QList<QSharedPointer<core::Fanfic>> result;
 
     //TimedAction linkGet("Link fetch", [&](){
         QString url = "https://www.fanfiction.net/u/" + request.ffnID;

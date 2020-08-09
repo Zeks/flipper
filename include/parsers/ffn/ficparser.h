@@ -36,7 +36,7 @@ class FicParser : public FFNParserBase
 public:
     FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
               QSharedPointer<interfaces::Genres> genres);
-    QSharedPointer<core::Fic> ProcessPage(QString url,QString&);
+    QSharedPointer<core::Fanfic> ProcessPage(QString url,QString&);
     void ClearProcessed();
     //void WriteProcessed();
     void SetRewriteAuthorNames(bool);

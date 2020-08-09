@@ -10,10 +10,10 @@
 
 namespace core {
 class Author;
-class Fic;
-typedef QSharedPointer<Fic> FicPtr;
+class Fanfic;
+typedef QSharedPointer<Fanfic> FicPtr;
 
-class Fic : public DBEntity{
+class Fanfic : public DBEntity{
 public:
     enum EFicSource{
         efs_search = 0,
@@ -73,14 +73,14 @@ public:
         bool selected = false;
     };
 
-    Fic();
-    Fic(const Fic&) = default;
-    Fic& operator=(const Fic&) = default;
-    ~Fic(){}
+    Fanfic();
+    Fanfic(const Fanfic&) = default;
+    Fanfic& operator=(const Fanfic&) = default;
+    ~Fanfic(){}
     void Log();
     void LogUrls();
     void LogWebIds();
-    static FicPtr NewFanfic() { return QSharedPointer<Fic>(new Fic);}
+    static FicPtr NewFanfic() { return QSharedPointer<Fanfic>(new Fanfic);}
 
     bool isCrossover = false;
     bool isValid =false;
@@ -171,7 +171,7 @@ public:
 
 
 
-struct FicDataForRecommendationCreation
+struct FanficDataForRecommendationCreation
 {
     bool complete = false;
     bool slash = false;
@@ -196,16 +196,31 @@ struct FicDataForRecommendationCreation
     QDate updated;
 
 
-    friend  QTextStream &operator<<(QTextStream &out, const FicDataForRecommendationCreation &p);
-    friend  QTextStream &operator>>(QTextStream &in, FicDataForRecommendationCreation &p);
+    friend  QTextStream &operator<<(QTextStream &out, const FanficDataForRecommendationCreation &p);
+    friend  QTextStream &operator>>(QTextStream &in, FanficDataForRecommendationCreation &p);
 
     void Log();
     void Serialize(QDataStream &out);
     void Deserialize(QDataStream &in);
 
 };
-inline QTextStream &operator>>(QTextStream &in, FicDataForRecommendationCreation &p);
-inline QTextStream &operator<<(QTextStream &out, const FicDataForRecommendationCreation &p);
+inline QTextStream &operator>>(QTextStream &in, FanficDataForRecommendationCreation &p);
+inline QTextStream &operator<<(QTextStream &out, const FanficDataForRecommendationCreation &p);
 
-typedef QSharedPointer<FicDataForRecommendationCreation> FicWeightPtr;
+typedef QSharedPointer<FanficDataForRecommendationCreation> FicWeightPtr;
+
+struct FanficCompletionStatus{
+    int ficId = -1;
+    bool finished = false;
+    int atChapter = -1;
+};
+
+struct FanficSnoozeStatus{
+    int ficId = -1;
+    bool untilFinished = false;
+    int snoozedAtChapter = -1;
+    int snoozedTillChapter = -1;
+    bool expired = false;
+    QDateTime added;
+};
 }

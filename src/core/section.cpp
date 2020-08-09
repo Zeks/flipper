@@ -30,12 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-core::FanficSectionInFFNFavourites::FanficSectionInFFNFavourites():result(new core::Fic())
+core::FanficSectionInFFNFavourites::FanficSectionInFFNFavourites():result(new core::Fanfic())
 {
 
 }
 
-QString core::Fandom::GetName() const
-{
-    return this->name;
-}

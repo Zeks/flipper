@@ -68,7 +68,7 @@ void CoreEnvironment::LoadData()
     TimedAction action("Full data load",[&](){
         auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
 
-        QVector<core::Fic> newFanfics;
+        QVector<core::Fanfic> newFanfics;
         interfaces::TagIDFetcherSettings tagFetcherSettings;
         tagFetcherSettings.allowSnoozed = filter.displaySnoozedFics;
 
@@ -165,11 +165,11 @@ void CoreEnvironment::LoadData()
                 fic.userData.snoozeExpired = info.expired;
                 fic.userData.chapterTillSnoozed = info.snoozedTillChapter;
                 if(info.snoozedTillChapter - info.snoozedAtChapter == 1)
-                    fic.userData.snoozeMode = core::Fic::efsm_next_chapter;
+                    fic.userData.snoozeMode = core::Fanfic::efsm_next_chapter;
                 else if(info.untilFinished)
-                    fic.userData.snoozeMode = core::Fic::efsm_til_finished;
+                    fic.userData.snoozeMode = core::Fanfic::efsm_til_finished;
                 else
-                    fic.userData.snoozeMode = core::Fic::efsm_target_chapter;
+                    fic.userData.snoozeMode = core::Fanfic::efsm_target_chapter;
                 fic.userData.chapterSnoozed = info.snoozedAtChapter;
                 fic.userData.ficIsSnoozed = true;
             }
@@ -965,7 +965,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     QSet<QString> urlResult;
     for(auto fic : result)
     {
-        if(fic->ficSource != core::Fic::efs_own_works)
+        if(fic->ficSource != core::Fanfic::efs_own_works)
             urlResult.insert(QString::number(fic->identity.web.ffn));
     }
 
@@ -1083,7 +1083,7 @@ bool CoreEnvironment::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
     return true;
 }
 
-QList<QSharedPointer<core::Fic> > CoreEnvironment::LoadAuthorFics(QString url)
+QList<QSharedPointer<core::Fanfic> > CoreEnvironment::LoadAuthorFics(QString url)
 {
     QStringList result;
     WebPage page;
@@ -1171,7 +1171,7 @@ QSet<int> CoreEnvironment::GetIgnoredDeadFics()
     return GetFicsForTags({"Limbo"});
 }
 
-void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics)
+void CoreEnvironment::LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fanfic>& fanfics)
 {
     interfaces.recs->FetchRecommendationsBreakdown(&fanfics, filter.mainListId);
     for(auto& fic : fanfics)

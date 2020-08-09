@@ -3,10 +3,10 @@
 
 
 namespace core {
-Fic::Fic(){
+Fanfic::Fanfic(){
     author = QSharedPointer<Author>(new Author);
 }
-void core::Fic::LogUrls()
+void core::Fanfic::LogUrls()
 {
     qDebug() << "Urls:" ;
     for(auto key : urls.keys())
@@ -15,7 +15,7 @@ void core::Fic::LogUrls()
             qDebug() << key << " " << urls[key];
     }
 }
-void core::Fic::LogWebIds()
+void core::Fanfic::LogWebIds()
 {
     qDebug() << "WebIds:" ;
     qDebug() << "webId: " << identity.web.ffn;
@@ -29,22 +29,22 @@ void core::Fic::LogWebIds()
         qDebug() << "SV: " << identity.web.sv;
 }
 
-core::Fic::Statistics core::Fic::getCalcStats() const
+core::Fanfic::Statistics core::Fanfic::getCalcStats() const
 {
     return statistics;
 }
 
-void core::Fic::setCalcStats(const Statistics &value)
+void core::Fanfic::setCalcStats(const Statistics &value)
 {
     statistics = value;
 }
 
-void core::Fic::SetUrl(QString type, QString url)
+void core::Fanfic::SetUrl(QString type, QString url)
 {
     urls[type] = url;
     urlFFN = url;
 }
-void core::Fic::Log()
+void core::Fanfic::Log()
 {
     //qDebug() << "Author:"  << author->GetWebIds() << author->name
     qDebug() << "//////////////////////////////////////";
@@ -85,7 +85,7 @@ void core::Fic::Log()
     qDebug() << "//////////////////////////////////////";
 }
 
-void core::Fic::Statistics::Log()
+void core::Fanfic::Statistics::Log()
 {
     if(!isValid)
     {
@@ -101,7 +101,7 @@ void core::Fic::Statistics::Log()
 
 
 
-void FicDataForRecommendationCreation::Serialize(QDataStream &out)
+void FanficDataForRecommendationCreation::Serialize(QDataStream &out)
 {
     out << id;
     out << adult;
@@ -121,7 +121,7 @@ void FicDataForRecommendationCreation::Serialize(QDataStream &out)
     for(auto fandom: fandoms)
         out << fandom;
 }
-void FicDataForRecommendationCreation::Log()
+void FanficDataForRecommendationCreation::Log()
 {
     qDebug() << id;
     qDebug() << adult;
@@ -142,7 +142,7 @@ void FicDataForRecommendationCreation::Log()
         qDebug() << fandom;
 }
 
-void FicDataForRecommendationCreation::Deserialize(QDataStream &in)
+void FanficDataForRecommendationCreation::Deserialize(QDataStream &in)
 {
     in >> id;
     //qDebug() << "id: " << id;
@@ -182,7 +182,7 @@ void FicDataForRecommendationCreation::Deserialize(QDataStream &in)
     }
 }
 
-inline QTextStream &operator>>(QTextStream &in, FicDataForRecommendationCreation &p)
+inline QTextStream &operator>>(QTextStream &in, FanficDataForRecommendationCreation &p)
 {
     QString temp;
 
@@ -239,7 +239,7 @@ inline QTextStream &operator>>(QTextStream &in, FicDataForRecommendationCreation
     return in;
 }
 
-inline QTextStream &operator<<(QTextStream &out, const FicDataForRecommendationCreation &p)
+inline QTextStream &operator<<(QTextStream &out, const FanficDataForRecommendationCreation &p)
 {
     out << QString::number(p.id) << " ";
     out << QString::number(static_cast<int>(p.adult)) << " ";

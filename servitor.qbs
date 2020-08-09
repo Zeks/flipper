@@ -77,6 +77,7 @@ App{
         "include/threaded_data/threaded_load.h",
         "include/threaded_data/threaded_save.h",
         "src/calc_data_holder.cpp",
+        "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_details.cpp",
         "src/data_code/rec_calc_data.cpp",

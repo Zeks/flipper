@@ -447,12 +447,12 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     ReinitProgressbar(task->size);
 }
 
-int ConvertFicSnoozeModeToInt (core::Fic::EFicSnoozeMode type){return static_cast<int>(type);}
-void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snoozeMode = static_cast<core::Fic::EFicSnoozeMode>(value);}
+int ConvertFicSnoozeModeToInt (core::Fanfic::EFicSnoozeMode type){return static_cast<int>(type);}
+void AssignFicSnoozeModeFromInt(core::Fanfic* data, int value){data->userData.snoozeMode = static_cast<core::Fanfic::EFicSnoozeMode>(value);}
 
 #define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -461,7 +461,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toString(); \
@@ -471,7 +471,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
 
 #define ADD_STRING_NUMBER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data){ \
     QString temp;\
@@ -489,7 +489,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toString(); \
@@ -499,7 +499,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
 
 #define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -508,7 +508,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toDateTime(); \
@@ -517,7 +517,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
 
 #define ADD_STRING_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -526,7 +526,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = QString::number(value.toInt()); \
@@ -535,7 +535,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
 
 #define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -544,7 +544,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toInt(); \
@@ -553,7 +553,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
 
 #define ADD_ENUM_GETSET(GETTER, SETTER, HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(GETTER(data->PARAM)); \
@@ -562,7 +562,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     SETTER(data, value.toInt());    \
@@ -571,7 +571,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->userData.snooz
 
 #define ADD_STRINGLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -644,7 +644,7 @@ void MainWindow::SetupTableAccess()
 
 void MainWindow::SetupFanficTable()
 {
-    holder = new TableDataListHolder<QVector, core::Fic>();
+    holder = new TableDataListHolder<QVector, core::Fanfic>();
     typetableModel = new FicModel();
 
     SetupTableAccess();
@@ -1017,8 +1017,8 @@ void MainWindow::OnDoFormattedListByFandoms()
     for(int i = 0; i < typetableModel->rowCount(); i ++)
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
-    QMap<int, QList<core::Fic*>> byFandoms;
-    for(core::Fic& fic : env->fanfics)
+    QMap<int, QList<core::Fanfic*>> byFandoms;
+    for(core::Fanfic& fic : env->fanfics)
     {
         auto* ficPtr = &fic;
 
@@ -1093,7 +1093,7 @@ void MainWindow::OnDoFormattedList()
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
     QMap<QString, QList<int>> byFandoms;
-    for(core::Fic& fic : env->fanfics)
+    for(core::Fanfic& fic : env->fanfics)
     {
         //auto ficPtr = env->interfaces.fanfics->GetFicById(id);
         auto* ficPtr = &fic;
@@ -1655,7 +1655,7 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
     int rownum = row.toInt();
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
     auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
-    core::SnoozeTaskInfo data;
+    core::FanficSnoozeStatus data;
     data.ficId = id;
     if(type.toInt() == 0)
     {
@@ -1693,7 +1693,7 @@ void MainWindow::OnSnoozeAdded(QVariant row)
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
 
     auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
-    core::SnoozeTaskInfo info;
+    core::FanficSnoozeStatus info;
     info.ficId = id;
     info.untilFinished = 0;
     info.snoozedTillChapter = currentChapter+1;

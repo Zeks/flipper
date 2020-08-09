@@ -1,4 +1,6 @@
 #pragma once
+namespace core {
+
 
 struct FicWeightResult{
     int ficId1;
@@ -12,3 +14,4 @@ struct FicWeightResult{
     double finalAttraction;
 };
 
+}

@@ -78,7 +78,7 @@ void WriteProcessedFavourites(FavouriteStoryParser& parser,
 
     for(auto& section : parser.processedStuff)
     {
-        if(section->ficSource == core::Fic::efs_own_works)
+        if(section->ficSource == core::Fanfic::efs_own_works)
             continue;
 
         tempRecommendations.push_back({section, author});

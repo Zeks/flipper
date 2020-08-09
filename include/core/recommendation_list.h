@@ -7,18 +7,24 @@
 #include <QString>
 #include <QDateTime>
 namespace core {
-class Fic;
+class Fanfic;
 class Author;
 
 struct FicRecommendation
 {
-    QSharedPointer<core::Fic> fic;
+    QSharedPointer<core::Fanfic> fic;
     QSharedPointer<core::Author> author;
     bool IsValid(){
         if(!fic || !author)
             return false;
         return true;
     }
+};
+
+struct FavouritesMatchResult{
+    int ratio = 0;
+    int ratioWithoutIgnores = 0;
+    QList<int> matches;
 };
 
 class RecommendationList;
@@ -76,5 +82,7 @@ public:
 
     QStringList errors;
 };
+
+
 
 }

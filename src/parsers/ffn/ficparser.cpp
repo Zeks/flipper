@@ -34,7 +34,7 @@ FicParser::FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
 
 }
 
-QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
+QSharedPointer<core::Fanfic> FicParser::ProcessPage(QString url, QString& str)
 {
     core::FanficSectionInFFNFavourites section;
     int currentPosition = 0;

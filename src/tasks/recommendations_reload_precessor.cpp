@@ -73,7 +73,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     auto authorsInterface = this->authorsInterface;
     auto fandomsInterface = this->fandomsInterface;
     auto job = [fanficsInterface,authorsInterface,fandomsInterface](QString url, QString content){
-        QList<QSharedPointer<core::Fic> > sections;
+        QList<QSharedPointer<core::Fanfic> > sections;
         FavouriteStoryParser parser(fanficsInterface);
         parser.ProcessPage(url, content);
         return parser;
@@ -88,7 +88,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
             QLOG_INFO() << "At this moment processed:  "<< counter << " authors of: " << authors.size();
             QLOG_INFO() << "=========================================================================";
         }
-        QList<QSharedPointer<core::Fic>> sections;
+        QList<QSharedPointer<core::Fanfic>> sections;
         QList<QFuture<FavouriteStoryParser>> futures;
         QSet<int> uniqueAuthors;
         authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);

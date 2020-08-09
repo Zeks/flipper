@@ -206,7 +206,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     if(!prepared.isValid)
         return Status::OK;
 
-    QVector<core::Fic> data;
+    QVector<core::Fanfic> data;
     TimedAction action("Fetching data",[&](){
         prepared.ficSource->FetchData(prepared.filter, &data);
     });
@@ -247,7 +247,7 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     QLOG_INFO() << "Fetching data for fic ID: " << task->id();
     QLOG_INFO() << "ID type: " << task->id_type();
 
-    QVector<core::Fic> data;
+    QVector<core::Fanfic> data;
     TimedAction action("Fetching data",[&](){
         ficSource->FetchData(filter, &data);
     });
@@ -263,7 +263,7 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
     Q_UNUSED(context);
     QLOG_INFO() << "Starting user matches";
     An<core::RecCalculator> holder;
-    QHash<int, core::MatchedFics> fics;
+    QHash<int, core::FavouritesMatchResult> fics;
     QLOG_INFO() << "received user task of size: " << task->test_users_size();
     Roaring r;
     Roaring ignoredFandoms;
@@ -320,7 +320,7 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
     if(!prepared.isValid)
         return Status::OK;
 
-    QVector<core::Fic> data;
+    QVector<core::Fanfic> data;
     int count = 0;
     TimedAction ("Getting fic count",[&](){
         count = prepared.ficSource->GetFicCount(prepared.filter);
@@ -845,7 +845,7 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
 }
 
 void PassTaskIntoSnoozes(const ProtoSpace::SnoozeInfoRequest *task,
-                         QHash<int, core::SnoozeTaskInfo>& snoozes){
+                         QHash<int, core::FanficSnoozeStatus>& snoozes){
 
     for(int i = 0; i < task->snoozes_size(); i++)
     {
@@ -872,7 +872,7 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
         return Status::OK;
 
     reqContext.dbContext.InitFanfics();
-    QHash<int, core::SnoozeTaskInfo> snoozes;
+    QHash<int, core::FanficSnoozeStatus> snoozes;
     PassTaskIntoSnoozes(task, snoozes);
 
 

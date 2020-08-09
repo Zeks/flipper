@@ -157,7 +157,7 @@ bool Tags::FillDBIDsForFics(QVector<core::Identity> pack)
     return database::puresql::FillDBIDsForFics(pack, db).success;
 }
 
-bool Tags::FetchTagsForFics(QVector<core::Fic> * fics)
+bool Tags::FetchTagsForFics(QVector<core::Fanfic> * fics)
 {
     return database::puresql::FetchTagsForFics(fics, db).success;
 }

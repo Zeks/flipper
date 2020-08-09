@@ -514,12 +514,12 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
 }
 
 
-void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics, int listId)
+void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fanfic> *fics, int listId)
 {
     database::puresql::FetchRecommendationsBreakdown(fics, listId, db);
 }
 
-void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fics, core::ReclistFilter filter)
+void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fanfic> *fics, core::ReclistFilter filter)
 {
     QHash<int, int> scores;
     for(auto fic: *fics)
@@ -531,7 +531,7 @@ void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fi
     }
 }
 
-void RecommendationLists::LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter)
+void RecommendationLists::LoadPlaceAndRecommendationsData(QVector<core::Fanfic> *fics, core::ReclistFilter filter)
 {
     database::puresql::LoadPlaceAndRecommendationsData(fics, filter, db);
 }

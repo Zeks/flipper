@@ -67,7 +67,7 @@ struct FilterFrame{
     bool havePagesAfter = false;
     bool authorFilterActive = false;
 
-    QVector<core::Fic> fanfics; // filtered fanfic data
+    QVector<core::Fanfic> fanfics; // filtered fanfic data
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
@@ -212,7 +212,7 @@ public:
     bool TestAuthorID(QString id);
     bool TestAuthorID(QLineEdit*, QLabel*);
 
-    QList<QSharedPointer<core::Fic>>  LoadAuthorFics(QString url);
+    QList<QSharedPointer<core::Fanfic>>  LoadAuthorFics(QString url);
 
     PageTaskPtr LoadTrackedFandoms(ForcedFandomUpdateDate forcedDate, ECacheMode cacheMode, QString wordCutoff);
     void FillDBIDsForTags();
@@ -220,7 +220,7 @@ public:
     QSet<int> GetFicsForTags(QStringList);
     QSet<int> GetFicsForNegativeTags();
     QSet<int> GetIgnoredDeadFics();
-    void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fic>& fanfics);
+    void LoadNewScoreValuesForFanfics(core::ReclistFilter filter, QVector<core::Fanfic>& fanfics);
     void BackupUserDatabase();
     int CreateDefaultRecommendationsForCurrentUser();
 
@@ -234,7 +234,7 @@ public:
     int pageOfCurrentQuery = 0; // current page that the used search query is at
     int currentLastFanficId = -1;
 
-    QVector<core::Fic> fanfics; // filtered fanfic data
+    QVector<core::Fanfic> fanfics; // filtered fanfic data
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 

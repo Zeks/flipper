@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "Interfaces/base.h"
 #include "core/section.h"
+#include "core/experimental/fic_relations.h"
 #include "regex_utils.h"
 #include "QScopedPointer"
 #include <QSet>
@@ -61,7 +62,7 @@ class Fanfics : public IDBWebIDIndex {
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
 
     void ProcessIntoDataQueues(QList<core::FicPtr> fics, bool alwaysUpdateIfNotInsert = false);
-    void CalcStatsForFics(QList<QSharedPointer<core::Fic>>);
+    void CalcStatsForFics(QList<QSharedPointer<core::Fanfic>>);
     bool WriteRecommendations();
     bool WriteFicRelations(QList<core::FicWeightResult> result);
     bool WriteAuthorsForFics(QHash<uint32_t, uint32_t>);
@@ -79,16 +80,16 @@ class Fanfics : public IDBWebIDIndex {
     QSet<int> GetAllKnownFicIDs(QString where);
     QSet<int> GetFicIDsWithUnsetAuthors();
     // used on the server with threaded user data
-    QHash<int, core::SnoozeInfo> GetSnoozeInfo();
+    QHash<int, core::FanficCompletionStatus> GetSnoozeInfo();
     // used on the client to fetch snoozed fics to pass to the server
-    QHash<int, core::SnoozeTaskInfo> GetUserSnoozeInfo(bool fetchExpired = true, bool useLimitedSelection = false);
+    QHash<int, core::FanficSnoozeStatus> GetUserSnoozeInfo(bool fetchExpired = true, bool useLimitedSelection = false);
     bool WriteExpiredSnoozes(QSet<int>);
-    bool SnoozeFic(core::SnoozeTaskInfo);
+    bool SnoozeFic(core::FanficSnoozeStatus);
     bool RemoveSnooze(int ficId);
 
-    bool FetchSnoozesForFics(QVector<core::Fic>*);
-    bool FetchNotesForFics(QVector<core::Fic>*);
-    bool FetchChaptersForFics(QVector<core::Fic>*);
+    bool FetchSnoozesForFics(QVector<core::Fanfic>*);
+    bool FetchNotesForFics(QVector<core::Fanfic>*);
+    bool FetchChaptersForFics(QVector<core::Fanfic>*);
 
 
     bool AddNoteToFic(int ficId, QString note);

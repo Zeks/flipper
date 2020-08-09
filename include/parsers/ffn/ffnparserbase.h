@@ -57,7 +57,7 @@ public:
     virtual void ClearProcessed() = 0;
 
     QSharedPointer<interfaces::Fanfics> fanfics;
-    QList<QSharedPointer<core::Fic>> processedStuff;
+    QList<QSharedPointer<core::Fanfic>> processedStuff;
     QStringList diagnostics;
 };
 

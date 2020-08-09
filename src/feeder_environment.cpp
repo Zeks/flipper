@@ -127,9 +127,9 @@ void FeederEnvironment::Init()
 }
 
 
-inline core::Fic FeederEnvironment::LoadFanfic(QSqlQuery& q)
+inline core::Fanfic FeederEnvironment::LoadFanfic(QSqlQuery& q)
 {
-    core::Fic result;
+    core::Fanfic result;
     result.identity.id = q.value("ID").toInt();
     result.fandom = q.value("FANDOM").toString();
     result.author = core::Author::NewAuthor();

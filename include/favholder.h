@@ -53,7 +53,7 @@ public:
     void LoadFavouritesDataFromDatabase(QSharedPointer<interfaces::Authors> authorInterface);
     void LoadStoredFavouritesData();
     void SaveFavouritesData();
-    MatchedFics GetMatchedFics(UserMatchesInput user1, int user2);
+    FavouritesMatchResult GetMatchedFics(UserMatchesInput user1, int user2);
 
     RecommendationListResult GetMatchedFicsForFavList(QHash<uint32_t, FicWeightPtr> fetchedFics,
                                                       QSharedPointer<core::RecommendationList> params,

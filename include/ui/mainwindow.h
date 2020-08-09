@@ -323,7 +323,7 @@ private:
 
     QSharedPointer<TableDataInterface> typetableInterface;
     FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
-    TableDataListHolder<QVector, core::Fic>* holder = nullptr; // an interface class that model uses to access the data
+    TableDataListHolder<QVector, core::Fanfic>* holder = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
     QStringListModel* ignoredFandomsModel= nullptr;

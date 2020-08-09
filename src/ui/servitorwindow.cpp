@@ -1910,12 +1910,12 @@ void ServitorWindow::FillFicsForUser(QString user)
 {
     InitGrpcSource();
     auto fullMatchList = CreateSummaryMatches();
-    QHash<int, core::Fic> fics;
+    QHash<int, core::Fanfic> fics;
     //QVector<core::Fic> fics;
     //for(auto fic: matchesForUsers[user.toInt()].matches)
     for(auto fic: fullMatchList.keys())
     {
-        QVector<core::Fic> tempFics;
+        QVector<core::Fanfic> tempFics;
         grpcSource->FetchFic(fic, &tempFics, core::StoryFilter::EUseThisFicType::utf_db_id);
         fics[fic]=tempFics[0];
     }

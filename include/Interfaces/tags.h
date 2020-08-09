@@ -47,7 +47,7 @@ public:
     QVector<core::Identity> GetAllFicsThatDontHaveDBID();
     QHash<QString, int> GetTagSizes(QStringList);
     bool FillDBIDsForFics(QVector<core::Identity>);
-    bool FetchTagsForFics(QVector<core::Fic>*);
+    bool FetchTagsForFics(QVector<core::Fanfic>*);
     bool RemoveTagsFromEveryFic(QStringList);
 
 

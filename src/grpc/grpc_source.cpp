@@ -384,7 +384,7 @@ QString GenreDataToString(QList<genre_stats::GenreBit> data)
 }
 
 
-bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
+bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fanfic& coreFic)
 {
     coreFic.isValid = protoFic.is_valid();
     if(!coreFic.isValid)
@@ -461,7 +461,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     return true;
 }
 
-bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
+bool LocalFicToProtoFic(const core::Fanfic& coreFic, ProtoSpace::Fanfic* protoFic)
 {
     protoFic->set_is_valid(true);
     protoFic->set_id(coreFic.identity.id);
@@ -623,8 +623,8 @@ public:
     ServerStatus GetStatus();
     bool GetInternalIDsForFics(QVector<core::Identity> * ficList);
     bool GetFFNIDsForFics(QVector<core::Identity> * ficList);
-    void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
-    void FetchFic(int ficId, QVector<core::Fic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
+    void FetchData(core::StoryFilter filter, QVector<core::Fanfic> * fics);
+    void FetchFic(int ficId, QVector<core::Fanfic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
     int GetFicCount(core::StoryFilter filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
@@ -633,9 +633,9 @@ public:
     core::FavListDetails GetStatsForFicList(QVector<core::Identity> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
-    QHash<int, core::MatchedFics > GetMatchesForUsers(int sourceUser, QList<int> users);
-    QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches data, QList<int> users);
-    QSet<int> GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data);
+    QHash<int, core::FavouritesMatchResult > GetMatchesForUsers(int sourceUser, QList<int> users);
+    QHash<int, core::FavouritesMatchResult> GetMatchesForUsers(InputsForMatches data, QList<int> users);
+    QSet<int> GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus> data);
 
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
@@ -747,7 +747,7 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
     return true;
 }
 
-void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
+void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic> * fics)
 {
     grpc::ClientContext context;
 
@@ -802,7 +802,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
     task.release_filter();
 }
 
-void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fic> *fics, core::StoryFilter::EUseThisFicType idType)
+void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fanfic> *fics, core::StoryFilter::EUseThisFicType idType)
 {
     grpc::ClientContext context;
 
@@ -1208,9 +1208,9 @@ QSet<int> FicSourceGRPCImpl::GetAuthorsForFicInRecList(int sourceFic, QString au
     return result;
 }
 
-QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(int sourceUser, QList<int> users)
+QHash<int, core::FavouritesMatchResult > FicSourceGRPCImpl::GetMatchesForUsers(int sourceUser, QList<int> users)
 {
-    QHash<int, core::MatchedFics> result;
+    QHash<int, core::FavouritesMatchResult> result;
 
     grpc::ClientContext context;
 
@@ -1244,9 +1244,9 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(int sourceU
     return result;
 }
 
-QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMatches data, QList<int> users)
+QHash<int, core::FavouritesMatchResult > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMatches data, QList<int> users)
 {
-    QHash<int, core::MatchedFics> result;
+    QHash<int, core::FavouritesMatchResult> result;
 
     grpc::ClientContext context;
 
@@ -1283,7 +1283,7 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMa
     return result;
 }
 
-QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data)
+QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus> data)
 {
     QSet<int> result;
 
@@ -1330,7 +1330,7 @@ FicSourceGRPC::~FicSourceGRPC()
 {
 
 }
-void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics)
+void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fanfic> *fics)
 {
     if(!impl)
         return;
@@ -1338,7 +1338,7 @@ void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics
     impl->FetchData(filter, fics);
 }
 
-void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fic> *fics, core::StoryFilter::EUseThisFicType idType)
+void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fanfic> *fics, core::StoryFilter::EUseThisFicType idType)
 {
     if(!impl)
         return;
@@ -1409,20 +1409,20 @@ QSet<int> FicSourceGRPC::GetAuthorsForFicInRecList(int sourceFic, QString author
     return impl->GetAuthorsForFicInRecList(sourceFic, authors);
 }
 
-QHash<int, core::MatchedFics > FicSourceGRPC::GetMatchesForUsers(int sourceUser, QList<int> users)
+QHash<int, core::FavouritesMatchResult > FicSourceGRPC::GetMatchesForUsers(int sourceUser, QList<int> users)
 {
     if(!impl)
         return {};
     return impl->GetMatchesForUsers(sourceUser, users);
 }
-QHash<int, core::MatchedFics> FicSourceGRPC::GetMatchesForUsers(InputsForMatches data, QList<int> users)
+QHash<int, core::FavouritesMatchResult> FicSourceGRPC::GetMatchesForUsers(InputsForMatches data, QList<int> users)
 {
     if(!impl)
         return {};
     return impl->GetMatchesForUsers(data, users);
 }
 
-QSet<int> FicSourceGRPC::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data)
+QSet<int> FicSourceGRPC::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus> data)
 {
     if(!impl)
         return {};

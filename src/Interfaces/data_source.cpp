@@ -70,9 +70,9 @@ QSqlQuery FicSourceDirect::BuildQuery(core::StoryFilter filter, bool countOnly)
     return q;
 }
 
-inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
+inline core::Fanfic FicSourceDirect::LoadFanfic(QSqlQuery& q)
 {
-    core::Fic result;
+    core::Fanfic result;
     result.identity.id = q.value("ID").toInt();
     //result.fandom = q.value("FANDOM").toString();
     //QLOG_INFO() << "fandom ids:" <<  q.value("FANDOMIDS").toString();
@@ -143,7 +143,7 @@ void FicSourceDirect::InitQueryType(bool client, QString userToken)
     countQueryBuilder.InitTagFilterBuilder(client, userToken);
 }
 
-void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fic> *data)
+void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fanfic> *data)
 {
     if(!data)
         return;
@@ -189,7 +189,7 @@ FicFilterSlash::FicFilterSlash()
 
 FicFilterSlash::~FicFilterSlash(){}
 
-bool FicFilterSlash::Passed(core::Fic * fic, const SlashFilterState& slashFilter)
+bool FicFilterSlash::Passed(core::Fanfic * fic, const SlashFilterState& slashFilter)
 {
     bool allow = true;
     SlashPresence slashToken;
