@@ -146,6 +146,7 @@ App{
         sourceDirectory + "/third_party/sleepy-discord/deps/asio/asio/include",
         sourceDirectory + "/third_party/sleepy-discord/deps/websocketpp",
         sourceDirectory + "/third_party/sleepy-discord/deps/cpr/include",
+        Environment.sqliteFolder,
     ]
 
     cpp.systemIncludePaths: [

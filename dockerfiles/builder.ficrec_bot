@@ -12,14 +12,14 @@ ENV INCLUDES_DIR /build/includes
 
 RUN mkdir -p $PACKAGE_DIR $BUILD_DIR $TARGET_DIR
 
-ARG GRPC_PLUGIN=/home/zekses/Downloads/grpc/bins/opt/grpc_cpp_plugin
+ARG GRPC_PLUGIN=/usr/local/bin/grpc_cpp_plugin
 ARG LD_LIBRARY_PATH=/home/zekses/Downloads/grpc/libs/opt/protobuf:/home/zekses/Downloads/grpc/third_party/protobuf/src/.libs/:/home/zekses/soft/grpc/libs/opt/:${LD_LIBRARY_PATH}
 ARG LIBNAME_PROTOBUF=protobuf
 ARG LINK_SSL=0
 ARG LINK_ZLIB=0
 ARG NO_AT_BRIDGE=1
 ARG PATH=/home/zekses/libs/grpc/bin:${PATH}
-ARG PROTOC=/home/zekses/Downloads/grpc/bins/opt/protobuf/protoc
+ARG PROTOC=/build/libs/grpc-1.30.2/bin/protoc
 ARG SQLITE_FOLDER=/build/libs
 ARG USE_ADDRESS_SORTING=1
 ARG USE_PRECOMPILED_HEADER=0
@@ -37,7 +37,8 @@ ENV SQLITE_FOLDER $SQLITE_FOLDER
 ENV USE_ADDRESS_SORTING $USE_ADDRESS_SORTING
 ENV USE_PRECOMPILED_HEADER $USE_ADDRESS_SORTING
 ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
-
+ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
+ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 
 RUN --mount=type=ssh \
     cd $PACKAGE_DIR  \ 
