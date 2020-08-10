@@ -1,6 +1,7 @@
 #include "discord/client.h"
 
 #include "include/grpc/grpc_source.h"
+#include "include/sqlitefunctions.h"
 
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
@@ -58,9 +59,9 @@ int main(int argc, char *argv[]) {
         a.setApplicationName("ffnet sane search engine");
         SetupLogger();
         QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
-        QSqlDatabase userDb = userDbInterface->InitDatabase("DiscordDB", false);
-        userDbInterface->EnsureUUIDForUserDatabase();
-        userDbInterface->ReadDbFile("dbcode/discord_init.sql", "DiscordDB");
+        //userDbInterface->EnsureUUIDForUserDatabase();
+        //userDbInterface->ReadDbFile("dbcode/discord_init.sql", "database/DiscordDB");
+        userDbInterface->SetDatabase(database::sqlite::InitAndUpdateDatabaseForFile("database","DiscordDB","dbcode/discord_init.sql", "DiscordDB", false));
         userDbInterface->EnsureUUIDForUserDatabase();
 
         QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());

@@ -48,4 +48,3 @@ CREATE INDEX if not exists I_FURL_ID ON fandomurls (global_id ASC);
 CREATE INDEX if not exists I_FURL_URL ON fandomurls (url ASC);
 CREATE INDEX if not exists I_FURL_CUSTOM ON fandomurls (custom ASC);
 CREATE INDEX if not exists I_FURL_WEBSITE ON fandomurls (website ASC);
-

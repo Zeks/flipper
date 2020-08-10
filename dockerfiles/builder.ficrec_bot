@@ -40,7 +40,7 @@ ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
 ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 
-
+ENV cacheBUSTER v0
 
 RUN   apt-get -y install git cmake ninja-build libssl-dev curl libcurl4-openssl-dev
 RUN --mount=type=ssh \
@@ -59,7 +59,8 @@ RUN --mount=type=ssh \
     && cd ../../../ \
     && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
 
-RUN chmod +x shell/deploy_bot.sh \
+RUN cd $PACKAGE_DIR/flipper  \
+    && chmod +x shell/deploy_bot.sh \
     && shell/deploy_bot.sh
 
 

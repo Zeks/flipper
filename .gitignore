@@ -51,6 +51,7 @@ Run/intermediate*
 Run/gpr.lib
 Run/feed_server.lib
 Run/flipper.lib
+Run/database/*
 xcf/*
 *.qbs.user.*
 *.qbs.user
