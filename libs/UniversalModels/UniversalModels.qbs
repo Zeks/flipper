@@ -7,7 +7,6 @@ Library{
 name: "UniversalModels"
 type:"staticlibrary"
 qbsSearchPaths: sourceDirectory + "/../../modules"
-Depends { name: "localvariables" }
 Depends { name: "Qt.core"}
 Depends { name: "Qt.sql" }
 Depends { name: "Qt.widgets" }
@@ -46,7 +45,6 @@ files: [
         "src/genericeventfilter.cpp",
     ]
 
-cpp.dynamicLibraries: ["logger"]
 Depends { name: "logger" }
 //destinationDirectory: "../../build"
 }

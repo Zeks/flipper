@@ -74,7 +74,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     auto fandomsInterface = this->fandomsInterface;
     auto job = [fanficsInterface,authorsInterface,fandomsInterface](QString url, QString content){
         QList<QSharedPointer<core::Fanfic> > sections;
-        FavouriteStoryParser parser(fanficsInterface);
+        FavouriteStoryParser parser;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -98,7 +98,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         qDebug() <<  "Loading author: " << author->GetWebID("ffn");
         //qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
-        FavouriteStoryParser parser(fanficsInterface);
+        FavouriteStoryParser parser;
         //parser.ProcessPage(page.url, page.content);
 
         auto splittings = page_utils::SplitJob(page.content);

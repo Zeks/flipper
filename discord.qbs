@@ -156,10 +156,7 @@ App{
 
     cpp.staticLibraries: {
         var libs = []
-        
-        libs = ["logger","dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl", "pthread"]
-        libs = libs.concat(localvariables.zlib)
-        libs = libs.concat(localvariables.ssl)
+        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl", "pthread"]
         libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }
@@ -167,10 +164,14 @@ App{
 
     Group{
         name:"grpc files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        grpc_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
-        grpc_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: {
+            var result = project.rootFolder  + "/proto"
+//            /console.error(project.rootFolder);
+            return result
+        }
+        grpc_generation.rootDir: project.rootFolder  + "/proto"
+        proto_generation.protobufDependencyDir: project.rootFolder  + "../"
+        grpc_generation.protobufDependencyDir: project.rootFolder  + "../"
         proto_generation.toolchain : qbs.toolchain
         grpc_generation.toolchain : qbs.toolchain
         files: [
@@ -180,8 +181,12 @@ App{
     }
     Group{
         name:"proto files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: {
+            var result = project.rootFolder  + "/proto"
+            //console.error(project.rootFolder);
+            return result
+        }
+        proto_generation.protobufDependencyDir: project.rootFolder  + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
             "proto/search/filter.proto",

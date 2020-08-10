@@ -88,7 +88,7 @@ void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
 
                 auto processor = [&source, &sink, &slashRepo, &fanficsInterface](){
                     statistics_utils::UserPagePageResult result;
-                    FavouriteStoryParser parser(fanficsInterface);
+                    FavouriteStoryParser parser;
                     parser.knownSlashFics = slashRepo;
                     forever{
                         result = source.Get();

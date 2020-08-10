@@ -68,6 +68,9 @@ App{
         "include/core/fic_genre_data.h",
         "include/core/identity.h",
         "include/core/slash_data.h",
+        "include/parsers/ffn/desktop_favparser.h",
+        "include/parsers/ffn/favparser_wrapper.h",
+        "include/parsers/ffn/mobile_favparser.h",
         "include/servers/token_processing.h",
         "include/ui/servitorwindow.h",
         "include/tasks/author_cache_reprocessor.h",
@@ -82,6 +85,9 @@ App{
         "src/core/fav_list_details.cpp",
         "src/data_code/rec_calc_data.cpp",
         "src/main_servitor.cpp",
+        "src/parsers/ffn/desktop_favparser.cpp",
+        "src/parsers/ffn/favparser_wrapper.cpp",
+        "src/parsers/ffn/mobile_favparser.cpp",
         "src/rec_calc/rec_calculator_base.cpp",
         "src/rec_calc/rec_calculator_mood_adjusted.cpp",
         "src/rec_calc/rec_calculator_weighted.cpp",
@@ -153,8 +159,6 @@ App{
         "include/servers/database_context.h",
         "include/pagegetter.h",
         "src/pagegetter.cpp",
-        "include/parsers/ffn/favparser.h",
-        "src/parsers/ffn/favparser.cpp",
         "src/parsers/ffn/fandomparser.cpp",
         "include/parsers/ffn/fandomparser.h",
         "src/parsers/ffn/ffnparserbase.cpp",
@@ -195,17 +199,14 @@ App{
         //var libs = ["UniversalModels", "logger", "quazip"]
         var libs = []
         if(qbs.toolchain.contains("msvc"))
-            libs = ["logger"]
+            libs = []
         else{
-            libs = ["logger", "dl", "protobuf"]
+            libs = ["dl", "protobuf"]
         }
-        libs = libs.concat(localvariables.zlib)
-        libs = libs.concat(localvariables.ssl)
-
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(qbs.toolchain.contains("msvc"))
-            libs = libs.concat([localvariables.protobufName,"grpc", "grpc++", "gpr"])
+            libs = libs.concat(["grpc", "grpc++", "gpr"])
         else
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
@@ -214,10 +215,10 @@ App{
 
     Group{
         name:"grpc files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        grpc_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
-        grpc_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: project.rootFolder + "/proto"
+        grpc_generation.rootDir: project.rootFolder + "/proto"
+        proto_generation.protobufDependencyDir: project.rootFolder + "../"
+        grpc_generation.protobufDependencyDir: project.rootFolder + "../"
         proto_generation.toolchain : qbs.toolchain
         grpc_generation.toolchain : qbs.toolchain
         files: [
@@ -227,8 +228,8 @@ App{
     }
     Group{
         name:"proto files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: project.rootFolder + "/proto"
+        proto_generation.protobufDependencyDir: project.rootFolder + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
             "proto/search/filter.proto",

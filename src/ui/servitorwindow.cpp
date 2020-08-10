@@ -1048,7 +1048,7 @@ void ServitorWindow::on_pushButton_3_clicked()
     An<PageManager> pager;
 
     auto job = [fanfics, authorInterface, fandomInterface](QString url, QString content){
-        FavouriteStoryParser parser(fanfics);
+        FavouriteStoryParser parser;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -1069,7 +1069,7 @@ void ServitorWindow::on_pushButton_3_clicked()
         futures.clear();
         parsers.clear();
         //QLOG_INFO() <<  "Author: " << author->url("ffn");
-        FavouriteStoryParser parser(fanfics);
+        FavouriteStoryParser parser;
         parser.authorName = author->name;
 
         //TimedAction pageAction("Page loaded in: ",[&](){
