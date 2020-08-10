@@ -46,4 +46,5 @@ echo "Operation: Copying Qt Dependencies"
 echo "plugins"
 cp -rf $QT_BASE_DIR/plugins $dirname/$deployfolder/libs/plugins
 cp -rf $QT_BASE_DIR/plugins $dirname/$deployfolder/plugins
+cp -rf $QT_BASE_DIR/plugins/sqldrivers $dirname/$deployfolder
 

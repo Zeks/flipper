@@ -40,7 +40,7 @@ ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
 ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 
-ENV cacheBUSTER v0
+ENV cacheBUSTER v1
 
 RUN   apt-get -y install git cmake ninja-build libssl-dev curl libcurl4-openssl-dev
 RUN --mount=type=ssh \
@@ -68,6 +68,7 @@ FROM ubuntu:latest as bot_runner
 SHELL ["bash", "-l", "-c"]
 WORKDIR /root/
 COPY --from=bot_build /build/downloads/flipper/deployment .
+ENV LD_LIBRARY_PATH=/root/libs:$LD_LIBRARY_PATH
 RUN chmod +x discord
 CMD ["./discord"]  
 
