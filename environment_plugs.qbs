@@ -38,5 +38,6 @@ Product{
             }
         }
         property bool usePrecompiledHeader : Funcs.getEnvOrDie("USE_PRECOMPILED_HEADER") == "1"
+        property string sqliteFolder: Funcs.getEnvOrDie("SQLITE_FOLDER")
     }
 }
