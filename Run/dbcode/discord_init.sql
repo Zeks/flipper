@@ -36,7 +36,10 @@ CREATE INDEX if not exists  I_fic_tags_PK ON list_sources (user_id asc, fic_id a
 CREATE TABLE if not exists ignored_fandoms(user_id varchar, fandom_id INTEGER, including_crossovers integer default 0, PRIMARY KEY (user_id asc, fandom_id asc));
 
 
-create table if not exists fandomindex (id integer, name VARCHAR NOT NULL, primary key(id, name));
+create table if not exists fandomindex (id integer, name VARCHAR NOT NULL, tracked integer default 0, primary key(id, name));
+alter table fandomindex add column updated datetime;
+CREATE INDEX if not exists I_FANDOMINDEX_PK ON fandomindex (id ASC, name asc);
+CREATE INDEX if not exists I_FANDOMINDEX_UPDATED ON fandomindex (updated ASC);
 CREATE INDEX if not exists I_FANDOMINDEX_ID ON fandomindex (id ASC);
 CREATE INDEX if not exists I_FANDOMINDEX_NAME ON fandomindex (name ASC);
 

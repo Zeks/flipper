@@ -1485,12 +1485,14 @@ bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRe
 {
     if(request->data().list_name().size() > 100)
         return false;
-    if(request->data().general_params().min_fics_to_match() <= 0 || request->data().general_params().min_fics_to_match() > 10000)
+    if(!request->data().general_params().is_automatic() &&
+            (request->data().general_params().min_fics_to_match() <= 0 || request->data().general_params().min_fics_to_match() > 10000))
         return false;
-    if(request->data().general_params().max_unmatched_to_one_matched() <= 0)
+    if(!request->data().general_params().is_automatic()
+            && request->data().general_params().max_unmatched_to_one_matched() <= 0)
         return false;
-    if(request->data().general_params().always_pick_at() < 1)
-        return false;
+//    if(request->data().general_params().always_pick_at() < 1)
+//        return false;
     if(!VerifyIDPack(request->data().id_packs(), info))
         return false;
     return true;

@@ -276,7 +276,7 @@ void MyClientClass::SendDetailedList(QSharedPointer<discord::User> user,
     QVector<core::Fanfic> fics;
     FetchFicsForList(ficSource, user, 4, &fics);
     SleepyDiscord::Embed embed;
-    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/s/%1), page: %2\n\n").arg(user->FfnID()).arg(user->CurrentPage()).toStdString();
+    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2\n\n").arg(user->FfnID()).arg(user->CurrentPage()).toStdString();
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
     for(auto fic: fics)
     {
@@ -315,21 +315,20 @@ void MyClientClass::SendLongList(QSharedPointer<discord::User> user, SleepyDisco
     FetchFicsForList(ficSource, user, 10, &fics);
     QLOG_INFO() << "Fetched fics";
     SleepyDiscord::Embed embed;
-    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/s/%1), page: %2\n\n").arg(user->FfnID()).arg(user->CurrentPage()).toStdString();
+    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2\n\n").arg(user->FfnID()).arg(user->CurrentPage()).toStdString();
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
+
+    fandoms->FetchFandomsForFics(&fics);
 
     for(auto fic: fics)
     {
-        QStringList fandomsList;
-        for(auto fandom : fic.fandomIds)
-            if(fandom != -1)
-                fandomsList+=fandoms->GetNameForID(fandom);
+        auto fandomsList=fic.fandoms;
 
         embed.description += QString("ID#: " + QString::number(fic.GetIdInDatabase())).rightJustified(10, ' ').toStdString();
         embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
 
         if(fic.complete)
-            embed.description += QString(" `Complete`  ").toStdString();
+            embed.description += QString(" `Complete  `  ").toStdString();
         else
             embed.description += QString(" `Incomplete`").toStdString();
         embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
@@ -417,8 +416,8 @@ ListData CreateListData(RecRequest request, QString userToken){
             return;
         }
 
-        parser.FetchFavouritesFromDesktopPage();
-        userFavourites = parser.result;
+            parser.FetchFavouritesFromDesktopPage();
+            userFavourites = parser.result;
 
         if(!quickResult.canDoQuickParse)
         {
@@ -451,13 +450,17 @@ ListData CreateListData(RecRequest request, QString userToken){
 
 
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
+    list->minimumMatch = 6;
+    list->maxUnmatchedPerMatch = 50;
+    list->alwaysPickAt = 9999;
+    list->isAutomatic = true;
     list->useWeighting = true;
+    list->useMoodAdjustment = true;
+    list->name = "Recommendations";
+    list->assignLikedToSources = true;
     list->name = "generic";
-    list->ficData.fics = task.ids;
+    list->userFFNId = request.ffnID.toInt();
 
-    //QLOG_INFO() << "Getting fics";
-    ficSource->GetRecommendationListFromServer(*list);
-    //QLOG_INFO() << "Got fics";
 
     QVector<core::Identity> pack;
     pack.resize(task.ids.size());
@@ -469,7 +472,16 @@ ListData CreateListData(RecRequest request, QString userToken){
     }
     ficSource->GetInternalIDsForFics(&pack);
     for(auto source: pack)
+    {
         list->ficData.sourceFics+=source.id;
+        list->ficData.fics+=source.web.ffn;
+    }
+
+    //QLOG_INFO() << "Getting fics";
+    ficSource->GetRecommendationListFromServer(*list);
+    //QLOG_INFO() << "Got fics";
+
+
 
 
     actualResult.userId = request.userID;
@@ -478,3 +490,4 @@ ListData CreateListData(RecRequest request, QString userToken){
     actualResult.listParams = list;
     return actualResult;
 }
+

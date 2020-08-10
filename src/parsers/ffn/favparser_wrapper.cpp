@@ -23,8 +23,9 @@ bool UserFavouritesParser::FetchDesktopUserPage(QString userId)
     this->userId = userId;
     QStringList result;
     WebPage page;
+    QString pageUrl = QString("https://www.fanfiction.net/u/%1").arg(userId);
     TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(QString("https://fanfiction.net/u/%1").arg(userId),  ECacheMode::dont_use_cache);
+        page = env::RequestPage(pageUrl,  ECacheMode::dont_use_cache);
     });
     fetchAction.run(false);
     dektopPage = page;

@@ -37,8 +37,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     // generating all of the urls that will need to be grabbed
     QStringList mobileUrls;
     // 26th page onwards can't be reached without m.
-    const int startOfUnreachablePart = 26;
-    for(int i = startOfUnreachablePart; i <= amountOfPagesToGrab; i++)
+    for(int i = pageToStartFrom; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
     QList<QString> mobileStories;
