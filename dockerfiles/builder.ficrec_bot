@@ -13,12 +13,12 @@ ENV INCLUDES_DIR /build/includes
 RUN mkdir -p $PACKAGE_DIR $BUILD_DIR $TARGET_DIR
 
 ARG GRPC_PLUGIN=/usr/local/bin/grpc_cpp_plugin
-ARG LD_LIBRARY_PATH=/home/zekses/Downloads/grpc/libs/opt/protobuf:/home/zekses/Downloads/grpc/third_party/protobuf/src/.libs/:/home/zekses/soft/grpc/libs/opt/:${LD_LIBRARY_PATH}
+ARG LD_LIBRARY_PATH=/build/libs/grpc-1.30.2/lib::${LD_LIBRARY_PATH}
 ARG LIBNAME_PROTOBUF=protobuf
 ARG LINK_SSL=0
 ARG LINK_ZLIB=0
 ARG NO_AT_BRIDGE=1
-ARG PATH=/home/zekses/libs/grpc/bin:${PATH}
+ARG PATH=${PATH}
 ARG PROTOC=/build/libs/grpc-1.30.2/bin/protoc
 ARG SQLITE_FOLDER=/build/libs
 ARG USE_ADDRESS_SORTING=1
@@ -40,13 +40,21 @@ ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
 ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 
+
+
+RUN   apt-get -y install git cmake ninja-build libssl-dev curl libcurl4-openssl-dev
 RUN --mount=type=ssh \
     cd $PACKAGE_DIR  \ 
     && git clone https://github.com/Zeks/flipper.git   \ 
     && cd flipper \
     && git checkout discord_new \
-    && git submodule update --init
-
-RUN --mount=type=cache,target=/root/.cache/qbs \
-    cd $PACKAGE_DIR/flipper \
+    && git submodule update --init \
+    && cd third_party/sleepy-discord \
+    && mkdir build \
+    && cd build \
+    && cmake .. -G "Ninja" \ 
+    && ninja  \
+    && cp sleepy_discord/libsleepy-discord.a /usr/lib \ 
+    && cp lib/libcpr.a /usr/lib/libcpr.a \
+    && cd ../../../ \
     && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
