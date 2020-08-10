@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 class FandomParser : public FFNParserBase
 {
 public:
-    FandomParser(QSharedPointer<interfaces::Fanfics> fanfics);
+    FandomParser();
     void ProcessPage(WebPage page);
     void GetWordCount(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);
     void GetPublishedDate(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);

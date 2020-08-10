@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/authors.h"
 #include "include/url_utils.h"
 #include "include/timeutils.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/page_utils.h"
 #include "include/pagetask.h"
 #include "include/generic_utils.h"
@@ -104,7 +104,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
     auto fandoms = this->fandoms;
     pageInterface->SetCurrentTask(task);
     auto job = [fanfics,authors, fandoms](QString url, QString content){
-        FavouriteStoryParser parser(fanfics);
+        FavouriteStoryParser parser;
         parser.ProcessPage(url, content);
         return parser;
     };

@@ -75,7 +75,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "genericeventfilter.h"
 
 
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/parsers/ffn/fandomparser.h"
 #include "include/parsers/ffn/fandomindexparser.h"
 #include "include/url_utils.h"

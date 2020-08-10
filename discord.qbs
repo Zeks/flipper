@@ -10,6 +10,7 @@ App{
     Depends { name: "Qt.sql" }
     Depends { name: "Qt.network" }
     Depends { name: "Qt.gui" }
+    Depends { name: "Qt.widgets" }
     Depends { name: "Qt.concurrent" }
     Depends { name: "cpp" }
     Depends { name: "logger" }
@@ -17,6 +18,7 @@ App{
     Depends { name: "grpc_generation" }
 
     files: [
+        "include/Interfaces/pagetask_interface.h",
         "include/core/db_entity.h",
         "include/core/fanfic.h",
         "include/core/fav_list_details.h",
@@ -25,16 +27,41 @@ App{
         "include/discord/client.h",
         "include/discord/limits.h",
         "include/discord/task.h",
+        "include/environment.h",
+        "include/page_utils.h",
+        "include/pageconsumer.h",
+        "include/parsers/ffn/desktop_favparser.h",
+        "include/parsers/ffn/fandomparser.h",
+        "include/parsers/ffn/favparser_wrapper.h",
+        "include/parsers/ffn/mobile_favparser.h",
         "include/sql/discord/discord_queries.h",
+        "include/tasks/author_cache_reprocessor.h",
+        "include/tasks/author_task_processor.h",
+        "include/tasks/fandom_task_processor.h",
+        "src/Interfaces/pagetask_interface.cpp",
+        "src/Interfaces/tags.cpp",
+        "src/core/fandom.cpp",
+        "src/core/fanfic.cpp",
         "src/core/fav_list_details.cpp",
         "src/discord/client.cpp",
         "src/discord/limits.cpp",
         "src/discord/task.cpp",
+        "src/environment.cpp",
         "src/main_discord.cpp",
         "include/grpc/grpc_source.h",
         "src/grpc/grpc_source.cpp",
         "include/url_utils.h",
+        "src/page_utils.cpp",
+        "src/pageconsumer.cpp",
+        "src/parsers/ffn/desktop_favparser.cpp",
+        "src/parsers/ffn/fandomparser.cpp",
+        "src/parsers/ffn/favparser_wrapper.cpp",
+        "src/parsers/ffn/mobile_favparser.cpp",
+        "src/servers/token_processing.cpp",
         "src/sql/discord/discord_queries.cpp",
+        "src/tasks/author_cache_reprocessor.cpp",
+        "src/tasks/author_task_processor.cpp",
+        "src/tasks/fandom_task_processor.cpp",
         "src/url_utils.cpp",
         "src/storyfilter.cpp",
         "include/storyfilter.h",
@@ -56,9 +83,7 @@ App{
         "include/pagetask.h",
         "src/sqlitefunctions.cpp",
         "include/timeutils.h",
-        "include/parsers/ffn/favparser.h",
         "include/parsers/ffn/ffnparserbase.h",
-        "src/parsers/ffn/favparser.cpp",
         "src/parsers/ffn/ffnparserbase.cpp",
         "include/Interfaces/data_source.h",
         "src/Interfaces/data_source.cpp",

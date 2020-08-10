@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
 
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/core/section.h"
 #include "include/pure_sql.h"
 #include "include/url_utils.h"
@@ -30,18 +30,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <chrono>
 #include <algorithm>
 //CommonRegex FavouriteStoryParser::commonRegex;
-FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics)
-    : FFNParserBase(fanfics)
+FavouriteStoryParser::FavouriteStoryParser()
 {
     if(!commonRegex.initComplete)
         commonRegex.Init();
     //commonRegex.Log();
 }
-static QString MicrosecondsToString(int value) {
-    QString decimal = QString::number(value/1000000);
-    int offset = decimal == "0" ? 0 : decimal.length();
-    QString partial = QString::number(value).mid(offset,1);
-    return decimal + "." + partial;}
 
 void ReserveSpaceForSections(QList<QSharedPointer<core::Fanfic>>& sections,  core::FanficSectionInFFNFavourites& section, QString& str)
 {
@@ -388,6 +382,7 @@ inline void ProcessMood(QSharedPointer<core::Author> author,
     auto minMood = std::min(author->stats.favouriteStats.moodSad, std::min(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
     author->stats.favouriteStats.moodUniformity = static_cast<double>(minMood)/static_cast<double>(maxMood);
 }
+
 QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
     thread_local FieldSearcher profilePageUpdatedFinder = CreateProfilePageUpdatedSearcher();
@@ -493,6 +488,17 @@ QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString u
     authorStats = author;
     currentPosition = 999;
     return sections;
+}
+
+QSet<QString> FavouriteStoryParser::FetchFavouritesIdList()
+{
+    QSet<QString> idResult;
+    for(auto fic : processedStuff)
+    {
+        if(fic->ficSource != core::Fanfic::efs_own_works)
+            idResult.insert(QString::number(fic->identity.web.ffn));
+    }
+    return idResult;
 }
 
 void FavouriteStoryParser::ClearProcessed()

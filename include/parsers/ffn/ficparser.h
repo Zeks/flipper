@@ -58,6 +58,7 @@ private:
     void GetStatSectionTag(QString, QString text, core::FanficSectionInFFNFavourites::Tag *);
     void GetFandom(core::FanficSectionInFFNFavourites &section, int &startfrom, QString text);
 
+    QSharedPointer<interfaces::Fanfics> fanfics;
     QSharedPointer<core::Author> queuedAuthor; //! todo will need to write this
     QSharedPointer<interfaces::Genres> genres;
     bool rewriteAuthorName = false;

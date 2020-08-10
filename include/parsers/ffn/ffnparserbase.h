@@ -34,9 +34,6 @@ class FFNParserBase
 {
 public:
     FFNParserBase(){}
-    FFNParserBase(QSharedPointer<interfaces::Fanfics> fanfics){
-        this->fanfics = fanfics;
-    }
     virtual ~FFNParserBase();
     virtual core::FanficSectionInFFNFavourites GetSection(QString text, QString sectionSeparator, int start);
     virtual void ProcessSection(core::FanficSectionInFFNFavourites &section, int &startfrom, QString str);
@@ -56,7 +53,7 @@ public:
     virtual void GetCrossoverFandomList(core::FanficSectionInFFNFavourites & section, QString text);
     virtual void ClearProcessed() = 0;
 
-    QSharedPointer<interfaces::Fanfics> fanfics;
+    //QSharedPointer<interfaces::Fanfics> fanfics;
     QList<QSharedPointer<core::Fanfic>> processedStuff;
     QStringList diagnostics;
 };

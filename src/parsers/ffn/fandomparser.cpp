@@ -52,8 +52,7 @@ static QDate GetRealMinDate(QList<QDate> dates)
 }
 
 
-FandomParser::FandomParser(QSharedPointer<interfaces::Fanfics> fanfics)
-    : FFNParserBase(fanfics)
+FandomParser::FandomParser()
 {
 
 }

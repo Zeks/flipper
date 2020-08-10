@@ -38,12 +38,9 @@ public:
 class FavouriteStoryParser : public FFNParserBase
 {
 public:
-    FavouriteStoryParser(){
-        if(!commonRegex.initComplete)
-            commonRegex.Init();
-    }
-    FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics);
+    FavouriteStoryParser();
     QList<QSharedPointer<core::Fanfic>> ProcessPage(QString url,QString&);
+    QSet<QString> FetchFavouritesIdList();
     QString ExtractRecommenderNameFromUrl(QString url);
     void GetGenre(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);
     void GetWordCount(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);

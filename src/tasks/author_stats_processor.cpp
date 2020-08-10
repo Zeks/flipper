@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagegetter.h"
 #include "include/pagetask.h"
 #include "include/parsers/ffn/fandomparser.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/transaction.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"

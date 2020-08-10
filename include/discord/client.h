@@ -29,6 +29,7 @@ struct ListData{
     SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID;
     core::RecommendationListFicData fics;
     QSharedPointer<core::RecommendationList> listParams;
+    QString error;
 };
 
 //core::RecommendationList task;

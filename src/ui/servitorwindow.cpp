@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFutureWatcher>
 #include "ui_servitorwindow.h"
 #include "include/parsers/ffn/ficparser.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/timeutils.h"
 #include "include/page_utils.h"
 #include "pagegetter.h"

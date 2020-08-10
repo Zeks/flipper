@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 FicParser::FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
                      QSharedPointer<interfaces::Genres> genres)
-: FFNParserBase(fanfics), genres(genres){
+: fanfics(fanfics), genres(genres){
 
 }
 

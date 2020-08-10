@@ -56,7 +56,7 @@ FandomParseTaskResult FandomLoadProcessor::Run(FandomParseTask task)
 
     QSet<QString> updatedFandoms;
     database::Transaction transaction(db);
-    FandomParser parser(fanficsInterface);
+    FandomParser parser;
     An<PageManager> pager;
     FandomParseTaskResult result;
     do
@@ -262,7 +262,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
 
             auto urlString = prototype.arg(FixCrossoverUrl(url.GetUrl()));
             WebPage currentPage = pager->GetPage(urlString, cacheMode);
-            FandomParser parser(fanficsInterface);
+            FandomParser parser;
             QString lastUrl = parser.GetLast(currentPage.content, urlString);
 
             subtask = PageSubTask::CreateNewSubTask();

@@ -1,6 +1,7 @@
 #include "discord/client.h"
 #include "include/storyfilter.h"
 #include "include/grpc/grpc_source.h"
+#include "include/parsers/ffn/favparser_wrapper.h"
 
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
@@ -49,6 +50,8 @@ void MyClientClass::onMessage(SleepyDiscord::Message message) {
 
     if(message.author.ID == this->getID())
         return;
+
+    QLOG_INFO() << content;
 
     if(!IsACommand(content))
         return;
@@ -177,11 +180,16 @@ bool MyClientClass::IsACommand(QString content)
     if(content.left(1) != "!")
         return false;
 
-    QStringList commands;
+    static auto commandFiller = [](){
+        QStringList commands;
     commands << "!recs" << "!fandom" << "!ignfandom" << "!xignfandom" << "!tagfanfic" << "!help" << "!status" << "!help";
     commands << "!page" << "!dig" << "!dive" << "!drop";
     commands << "!prev" << "!nope" << "!shit" << "!gah";
     commands << "!next" << "!ahoy" << "!bitch" << "!pl";
+    return commands;
+    };
+    static QStringList commands = commandFiller();
+
     int pos = content.indexOf(" ");
     if(pos != -1)
         content = content.mid(0, pos);
@@ -379,6 +387,7 @@ inline QString CreateConnectString(QString ip,QString port)
 
 ListData CreateListData(RecRequest request, QString userToken){
     Task task;
+    ListData actualResult;
 
     QSqlDatabase pageCacheDb;
     //TimedAction dbInit("DB Init", [&](){
@@ -388,23 +397,47 @@ ListData CreateListData(RecRequest request, QString userToken){
     //dbInit.run();
 
 
-    QList<QSharedPointer<core::Fanfic>> result;
+    QSet<QString> userFavourites;
 
-    //TimedAction linkGet("Link fetch", [&](){
+    TimedAction linkGet("Link fetch", [&](){
         QString url = "https://www.fanfiction.net/u/" + request.ffnID;
         task.url = url.toStdString();
-        //result = url_utils::ffn::LoadFavourteLinksFromFFNProfile(url);
+        parsers::ffn::UserFavouritesParser parser;
+        auto result = parser.FetchDesktopUserPage(request.ffnID);
+        if(!result)
+        {
+            actualResult.error = "Could not load user page on FFN. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.";
+            return;
+        }
 
-//    });
-//    linkGet.run();
+        auto quickResult = parser.QuickParseAvailable();
+        if(!quickResult.validFavouritesCount)
+        {
+            actualResult.error = "Could not read favourites from your FFN page. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.";
+            return;
+        }
+
+        parser.FetchFavouritesFromDesktopPage();
+        userFavourites = parser.result;
+
+        if(!quickResult.canDoQuickParse)
+        {
+            parser.FetchFavouritesFromMobilePage();
+            userFavourites = parser.result;
+        }
+    });
+    linkGet.run();
+
+    if(!actualResult.error.isEmpty())
+        return actualResult;
 
 //    TimedAction dbClose("DB CLose", [&](){
     pageCacheDb.removeDatabase("PageCache");
     //});
     //dbClose.run();
 
-    for(auto fic: result)
-        task.ids += fic->identity.web.GetPrimaryId();
+    for(auto fic: userFavourites)
+        task.ids += fic.toInt();
 
     QSettings settings("settings_discord.ini", QSettings::IniFormat);
 
@@ -420,17 +453,6 @@ ListData CreateListData(RecRequest request, QString userToken){
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
     list->useWeighting = true;
     list->name = "generic";
-    if(request.requestArguments.size() == 2)
-    {
-        list->minimumMatch = 6;
-        list->maxUnmatchedPerMatch = 50;
-        list->alwaysPickAt = 9999;
-    }
-    else{
-        list->minimumMatch = request.requestArguments.at(3).toInt();
-        list->maxUnmatchedPerMatch = request.requestArguments.at(4).toInt();
-        list->alwaysPickAt = request.requestArguments.at(5).toInt();
-    }
     list->ficData.fics = task.ids;
 
     //QLOG_INFO() << "Getting fics";
@@ -449,7 +471,7 @@ ListData CreateListData(RecRequest request, QString userToken){
     for(auto source: pack)
         list->ficData.sourceFics+=source.id;
 
-    ListData actualResult;
+
     actualResult.userId = request.userID;
     actualResult.channelID = request.channelId;
     actualResult.fics = list->ficData;

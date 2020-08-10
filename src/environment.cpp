@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/Interfaces/ffn/ffn_authors.h"
 #include "include/Interfaces/ffn/ffn_fanfics.h"
 #include "include/db_fixers.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/tasks/author_cache_reprocessor.h"
 #include "include/in_tag_accessor.h"
 #include "include/timeutils.h"
@@ -930,7 +930,7 @@ core::AuthorPtr CoreEnvironment::LoadAuthor(QString url, QSqlDatabase db)
     });
     fetchAction.run(false);
     emit resetEditorText();
-    FavouriteStoryParser parser(interfaces.fanfics);
+    FavouriteStoryParser parser;
     QString name = ParseAuthorNameFromFavouritePage(page.content);
     parser.authorName = name;
     parser.ProcessPage(page.url, page.content);
@@ -1092,7 +1092,7 @@ QList<QSharedPointer<core::Fanfic> > CoreEnvironment::LoadAuthorFics(QString url
     });
     fetchAction.run(false);
     emit resetEditorText();
-    FavouriteStoryParser parser(interfaces.fanfics);
+    FavouriteStoryParser parser;
     QString name = ParseAuthorNameFromFavouritePage(page.content);
     parser.authorName = name;
     parser.ProcessPage(page.url, page.content);

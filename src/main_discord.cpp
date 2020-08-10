@@ -67,10 +67,10 @@ int main(int argc, char *argv[]) {
         auto pageCacheDb = pageCacheInterface->InitDatabase2("PageCache","pcInit");
         pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pcInit");
 
-    QSettings settings("settings_discord.ini", QSettings::IniFormat);
-    QSettings bot("bot_token.ini", QSettings::IniFormat);
-
-    MyClientClass client(bot.value("Login/botToken").toString().toStdString(), 2);
+    QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
+    QSettings bot("settings/bot_token.ini", QSettings::IniFormat);
+    auto token = bot.value("Login/botToken").toString().toStdString();
+    MyClientClass client(token, 2);
 
         client.userDbInterface = userDbInterface;
         client.UsersInit();
