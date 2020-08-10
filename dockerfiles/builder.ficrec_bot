@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:1.0-experimental
-FROM builder:base
+FROM builder:base AS bot_build
 SHELL ["bash", "-l", "-c"]
 
 ARG THREAD_COUNT=12
@@ -58,3 +58,16 @@ RUN --mount=type=ssh \
     && cp lib/libcpr.a /usr/lib/libcpr.a \
     && cd ../../../ \
     && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
+
+RUN chmod +x shell/deploy_bot.sh \
+    && shell/deploy_bot.sh
+
+
+FROM ubuntu:latest as bot_runner
+SHELL ["bash", "-l", "-c"]
+WORKDIR /root/
+COPY --from=bot_build /build/downloads/flipper/deployment .
+RUN chmod +x discord
+CMD ["./discord"]  
+
+
