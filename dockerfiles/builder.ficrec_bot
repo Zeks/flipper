@@ -1,0 +1,51 @@
+# syntax = docker/dockerfile:1.0-experimental
+FROM builder:base
+SHELL ["bash", "-l", "-c"]
+
+ARG THREAD_COUNT=12
+
+# создаём общие директории
+ENV PACKAGE_DIR /build/downloads
+ENV BUILD_DIR /build/tmp
+ENV TARGET_DIR /build/libs
+ENV INCLUDES_DIR /build/includes
+
+RUN mkdir -p $PACKAGE_DIR $BUILD_DIR $TARGET_DIR
+
+ARG GRPC_PLUGIN=/home/zekses/Downloads/grpc/bins/opt/grpc_cpp_plugin
+ARG LD_LIBRARY_PATH=/home/zekses/Downloads/grpc/libs/opt/protobuf:/home/zekses/Downloads/grpc/third_party/protobuf/src/.libs/:/home/zekses/soft/grpc/libs/opt/:${LD_LIBRARY_PATH}
+ARG LIBNAME_PROTOBUF=protobuf
+ARG LINK_SSL=0
+ARG LINK_ZLIB=0
+ARG NO_AT_BRIDGE=1
+ARG PATH=/home/zekses/libs/grpc/bin:${PATH}
+ARG PROTOC=/home/zekses/Downloads/grpc/bins/opt/protobuf/protoc
+ARG SQLITE_FOLDER=/build/libs
+ARG USE_ADDRESS_SORTING=1
+ARG USE_PRECOMPILED_HEADER=0
+ARG ZLIB_DEPENDENCIES=zlib,cares,crypto
+
+ENV GRPC_PLUGIN {$GRPC_PLUGIN}
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH 
+ENV LIBNAME_PROTOBUF $LIBNAME_PROTOBUF
+ENV LINK_SSL  $LINK_SSL
+ENV LINK_ZLIB  $LINK_ZLIB
+ENV NO_AT_BRIDGE $NO_AT_BRIDGE
+ENV PATH  $PATH
+ENV PROTOC $PROTOC
+ENV SQLITE_FOLDER $SQLITE_FOLDER
+ENV USE_ADDRESS_SORTING $USE_ADDRESS_SORTING
+ENV USE_PRECOMPILED_HEADER $USE_ADDRESS_SORTING
+ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
+
+
+RUN --mount=type=ssh \
+    cd $PACKAGE_DIR  \ 
+    && git clone https://github.com/Zeks/flipper.git   \ 
+    && cd flipper \
+    && git checkout discord_new \
+    && git submodule update --init
+
+RUN --mount=type=cache,target=/root/.cache/qbs \
+    cd $PACKAGE_DIR/flipper \
+    && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt

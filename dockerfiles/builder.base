@@ -58,6 +58,8 @@ RUN mkdir -p $TARGET_DIR/qt/qt.$QT_FULL_VERSION
 RUN --mount=type=cache,target=/root/.cache/qbs wget http://download.qt.io/official_releases/qt/$QT_MAJOR_VERSION/$QT_FULL_VERSION/single/qt-everywhere-src-$QT_FULL_VERSION.tar.xz -P $PACKAGE_DIR/ \
 	&& tar xpJf $PACKAGE_DIR/qt-everywhere-src-$QT_FULL_VERSION.tar.xz -C $BUILD_DIR/ \
     && cd $BUILD_DIR/qt-everywhere-src-$QT_FULL_VERSION \
+    && cp $BUILD_DIR/qt-everywhere-src-$QT_FULL_VERSION/qtbase/src/3rdparty/sqlite/sqlite3.c  $TARGET_DIR/sqlite3.c \
+    && cp $BUILD_DIR/qt-everywhere-src-$QT_FULL_VERSION/qtbase/src/3rdparty/sqlite/sqlite3.h  $TARGET_DIR/sqlite3.h \
     && ./configure -release -ccache -opensource -confirm-license -nomake examples -nomake tests -nomake tools -skip qtandroidextras -skip qtconnectivity -skip qtgamepad -skip qtmacextras -skip qtsensors -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtvirtualkeyboard -no-avx2 -xcb -xcb-xlib -prefix $TARGET_DIR/qt/qt.$QT_FULL_VERSION \
     && make -j$THREAD_COUNT  \
     && make install \
@@ -77,3 +79,31 @@ ENV PATH $PATH:$TARGET_DIR/qbs-$QBS_VERSION/usr/local/bin
 # setup qbs
 RUN qbs setup-toolchains --detect
 RUN qbs setup-qt $TARGET_DIR/qt/qt.$QT_FULL_VERSION/bin/qmake defaultqt
+
+
+ARG GRPC_VERSION=1.30.2
+#grpc compile part
+RUN mkdir -p $BUILD_DIR  \
+    && mkdir -p $TARGET_DIR \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION/include \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION/lib \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION/bin 
+
+# grpc
+RUN apt-get -y install autoconf libtool
+RUN --mount=type=cache,target=/root/.cache/qbs \
+    cd $BUILD_DIR \
+    && git clone https://github.com/grpc/grpc.git \
+    && cd grpc \
+    && git checkout v$GRPC_VERSION \
+    && git submodule update --init  \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION \
+    && make CXXFLAGS="-Wno-error=cast-function-type -Wno-error=sizeof-pointer-memaccess -Wno-error=class-memaccess -Wno-error=ignored-qualifiers -Wno-error=stringop-truncation" CFLAGS="-Wno-error=cast-function-type  -Wno-error=sizeof-pointer-memaccess -Wno-error=class-memaccess -Wno-error=ignored-qualifiers -Wno-error=stringop-truncation"  -j$THREAD_COUNT \
+    && make install  \
+    && cp -rf $BUILD_DIR/grpc/third_party/protobuf/src/google  $TARGET_DIR/grpc-$GRPC_VERSION/include \
+    && cp -rf $BUILD_DIR/grpc/third_party/protobuf/src/*.la $TARGET_DIR/grpc-$GRPC_VERSION/lib  \
+    && cp -rf $BUILD_DIR/grpc/third_party/protobuf/src/.libs/*.a $TARGET_DIR/grpc-$GRPC_VERSION/lib \
+    && cp $BUILD_DIR/grpc/bins/opt/protobuf/protoc $TARGET_DIR/grpc-$GRPC_VERSION/bin \
+    && cp $BUILD_DIR/grpc/libs/opt/protobuf/libprotoc.a $TARGET_DIR/grpc-$GRPC_VERSION/lib \
+    && rm -rf $PACKAGE_DIR/* $BUILD_DIR/*
