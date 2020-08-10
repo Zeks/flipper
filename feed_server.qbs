@@ -153,8 +153,8 @@ App{
     Group{
     name: "sqlite"
     files: [
-        "third_party/sqlite3/sqlite3.c",
-        "third_party/sqlite3/sqlite3.h"
+        Environment.sqliteFolder + "/sqlite3.c",
+        Environment.sqliteFolder + "/sqlite3.h"
     ]
     cpp.cFlags: {
         var flags = []
