@@ -27,7 +27,7 @@ mkdir -p $dirname/$deployfolder/settings
 mkdir -p $dirname/$deployfolder/libs/plugins
 
 
-settingFiles=( "settings_discord" )
+#settingFiles=( "settings_discord" )
 executableFiles=( discord )
 scripts=( discord_init dbinit pagecacheinit tasksinit )
 
