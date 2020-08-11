@@ -214,8 +214,15 @@ void MyClientClass::OnFutureFinished()
     QLOG_INFO() << "Reached future slot";
     auto result = watcher.future().result();
     auto user = users.GetUser(result.userId);
+    if(!result.error.isEmpty())
+    {
+        SleepyDiscord::Embed embed;
+        sendMessage(result.channelID, result.error.toStdString(), embed);
+        return;
+    }
     users.userInterface->WriteUserList(result.userId, "", discord::elt_favourites, result.listParams->minimumMatch, result.listParams->maxUnmatchedPerMatch, result.listParams->alwaysPickAt);
     user->SetFicList(result.fics);
+
     SendLongList(user,  result.channelID);
 
     if(recRequests.size() > 0)
@@ -428,7 +435,11 @@ ListData CreateListData(RecRequest request, QString userToken){
     linkGet.run();
 
     if(!actualResult.error.isEmpty())
+    {
+        actualResult.userId = request.userID;
+        actualResult.channelID = request.channelId;
         return actualResult;
+    }
 
 //    TimedAction dbClose("DB CLose", [&](){
     pageCacheDb.removeDatabase("PageCache");

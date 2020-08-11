@@ -40,7 +40,7 @@ ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
 ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 
-ENV cacheBUSTER v1
+ENV cacheBUSTER v0.0
 
 RUN   apt-get -y install git cmake ninja-build libssl-dev curl libcurl4-openssl-dev
 RUN --mount=type=ssh \
@@ -59,6 +59,8 @@ RUN --mount=type=ssh \
     && cd ../../../ \
     && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
 
+ENV cacheBUSTER v1.0
+
 RUN cd $PACKAGE_DIR/flipper  \
     && chmod +x shell/deploy_bot.sh \
     && shell/deploy_bot.sh
@@ -66,6 +68,16 @@ RUN cd $PACKAGE_DIR/flipper  \
 
 FROM ubuntu:latest as bot_runner
 SHELL ["bash", "-l", "-c"]
+RUN apt-get update && apt-get -y install curl libssl-dev \
+ && echo 'openssl_conf = default_conf' > /etc/ssl/openssl.cnf \
+   &&  echo '[ default_conf ]' >> /etc/ssl/openssl.cnf \
+   &&  echo 'ssl_conf = ssl_sect' >> /etc/ssl/openssl.cnf \
+   &&  echo '[ssl_sect]' >> /etc/ssl/openssl.cnf \
+   &&  echo 'system_default = system_default_sect' >> /etc/ssl/openssl.cnf \
+   &&  echo '[system_default_sect]' >> /etc/ssl/openssl.cnf \
+   &&  echo 'MinProtocol = TLSv1.2' >> /etc/ssl/openssl.cnf \
+   &&  echo 'CipherString = DEFAULT:@SECLEVEL=1' >> /etc/ssl/openssl.cnf 
+
 WORKDIR /root/
 COPY --from=bot_build /build/downloads/flipper/deployment .
 ENV LD_LIBRARY_PATH=/root/libs:$LD_LIBRARY_PATH
