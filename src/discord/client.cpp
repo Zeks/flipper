@@ -65,6 +65,12 @@ void MyClientClass::onMessage(SleepyDiscord::Message message) {
         needsGeneration = !users.GetUser(authorID)->HasActiveSet();
 
     needsGeneration = needsGeneration || message.startsWith("!recs");
+    QLOG_INFO() << "known user: " << knownUser << " needsGeneration: " << needsGeneration;
+    bool isNavigationCommand = false;
+    isNavigationCommand = content.contains(QRegExp("^!(page|dig|dive|drop)"));
+    isNavigationCommand = isNavigationCommand || content.contains(QRegExp("^!(next|ahoy|bitch|pls)"));
+    isNavigationCommand = isNavigationCommand || content.contains(QRegExp("^!(prev|nope|shit|gah)"));
+
     if(!needsGeneration && knownUser)
     {
         auto user = users.GetUser(authorID);
@@ -88,6 +94,14 @@ void MyClientClass::onMessage(SleepyDiscord::Message message) {
             return;
         }
     }
+
+    if(isNavigationCommand)
+    {
+        QLOG_INFO() << "caught navigation command but activeset is not present";
+    }
+
+    if(!isNavigationCommand && !content.contains(QRegExp("^!recs")))
+        return;
 
     auto matchRecs = recsExp.match(QString::fromStdString(message.content));
     QStringList captures = matchRecs.capturedTexts();
@@ -214,6 +228,7 @@ void MyClientClass::OnFutureFinished()
     QLOG_INFO() << "Reached future slot";
     auto result = watcher.future().result();
     auto user = users.GetUser(result.userId);
+    QLOG_INFO() << "created list of size: " << result.fics.fics.size() << " with matchcounts: " << result.fics.matchCounts.size();
     if(!result.error.isEmpty())
     {
         SleepyDiscord::Embed embed;
