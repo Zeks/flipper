@@ -21,6 +21,7 @@ namespace discord_quries{
     DiagnosticSQLResult<QList<discord::IgnoreFandom>> GetIgnoreList(QSqlDatabase db, QString userId);
 
     DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User>);
+    DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QString list_name);
     DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id,
                                            QString list_name, discord::EListType list_type,
                                            int min_match, int match_ratio, int always_at);

@@ -97,6 +97,16 @@ DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id, QString
     return result;
 }
 
+DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QString list_name)
+{
+    QString qs = "delete from user_lists where user_id = :user_id and list_id = 0";
+    auto generated= QDateTime::currentDateTimeUtc();
+    SqlContext<bool> ctx(db, qs, BP2(user_id, list_name));
+    ctx.ExecAndCheck(false);
+    return ctx.result;
+}
+
+
 DiagnosticSQLResult<bool> IgnoreFandom(QSqlDatabase db, QString user_id, int fandom_id, bool including_crossovers){
     QString qs = "INSERT INTO ignored_fandoms(user_id, fandom_id,including_crossovers) values(:user_id, :fandom_id, :including_crossovers)";
     SqlContext<bool> ctx(db, qs, BP3(user_id, fandom_id, including_crossovers));
@@ -151,6 +161,7 @@ DiagnosticSQLResult<bool> UpdateCurrentPage(QSqlDatabase db, QString user_id, in
     ctx.ExecAndCheck(true);
     return ctx.result;
 }
+
 
 
 

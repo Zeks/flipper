@@ -220,6 +220,7 @@ void MyClientClass::OnFutureFinished()
         sendMessage(result.channelID, result.error.toStdString(), embed);
         return;
     }
+    users.userInterface->DeleteUserList(result.userId, "");
     users.userInterface->WriteUserList(result.userId, "", discord::elt_favourites, result.listParams->minimumMatch, result.listParams->maxUnmatchedPerMatch, result.listParams->alwaysPickAt);
     user->SetFicList(result.fics);
 
@@ -319,6 +320,7 @@ void MyClientClass::SendLongList(QSharedPointer<discord::User> user, SleepyDisco
 
     QVector<core::Fanfic> fics;
     QLOG_INFO() << "Fetching fics";
+
     FetchFicsForList(ficSource, user, 10, &fics);
     QLOG_INFO() << "Fetched fics";
     SleepyDiscord::Embed embed;

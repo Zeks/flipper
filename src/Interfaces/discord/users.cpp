@@ -45,6 +45,11 @@ int Users::WriteUserList(QString user_id, QString list_name, discord::EListType 
     return database::discord_quries::WriteUserList(db, user_id, list_name, list_type, min_match, match_ratio, always_at).data;
 }
 
+bool Users::DeleteUserList(QString user_id, QString list_name)
+{
+    return database::discord_quries::DeleteUserList(db, user_id, list_name).data;
+}
+
 void Users::IgnoreFandom(QString userId, int fandomId, bool ignoreCrosses)
 {
     database::discord_quries::IgnoreFandom(db, userId, fandomId, ignoreCrosses);
