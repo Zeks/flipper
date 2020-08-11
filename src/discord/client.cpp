@@ -466,12 +466,12 @@ ListData CreateListData(RecRequest request, QString userToken){
     for(auto fic: userFavourites)
         task.ids += fic.toInt();
 
-    QSettings settings("settings_discord.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
 
     auto ip = settings.value("Login/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Login/serverPort", "3055").toString();
 
-
+    QLOG_INFO() << "will connect to grpc via: " << ip << " "  << port;
     static QSharedPointer<FicSourceGRPC> ficSource;
     ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userToken,  160));
 
