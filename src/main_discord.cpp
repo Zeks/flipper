@@ -93,14 +93,15 @@ int main(int argc, char *argv[]) {
 
     auto ip = settings.value("Login/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Login/serverPort", "3055").toString();
+    QLOG_INFO() << "will connect to grpc via: " << ip << " "  << port;
 
-        userDbInterface->userToken = userDbInterface->GetUserToken();
-        client.ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
+    userDbInterface->userToken = userDbInterface->GetUserToken();
+    client.ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
 
-        QVector<core::Fandom> fandoms;
-        client.ficSource->GetFandomListFromServer(client.fandoms->GetLastFandomID(), &fandoms);
-        if(fandoms.size() > 0)
-            client.fandoms->UploadFandomsIntoDatabase(fandoms);
+    QVector<core::Fandom> fandoms;
+    client.ficSource->GetFandomListFromServer(client.fandoms->GetLastFandomID(), &fandoms);
+    if(fandoms.size() > 0)
+        client.fandoms->UploadFandomsIntoDatabase(fandoms);
 
     auto serverSetup = [&](){
     client.run();
