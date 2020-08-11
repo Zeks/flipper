@@ -1014,6 +1014,8 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     controls->set_user_token(proto_converters::TS(userToken));
 
     grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
+    if(!status.ok())
+        QLOG_INFO() << "error calling grpc: " <<  status.error_code() << " " << QString::fromStdString(status.error_message());
 
     ProcessStandardError(status);
     //DumpToLog("Test Dump", response.data());
