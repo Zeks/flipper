@@ -888,6 +888,9 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
 
     grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
 
+    if(!status.ok())
+        QLOG_INFO() << "error calling grpc: " <<  status.error_code() << " " << QString::fromStdString(status.error_message());
+
     ProcessStandardError(status);
     if(!response->needs_update())
         return false;
