@@ -68,6 +68,7 @@ signals:
     void tagReloadRequested();
     void clearLikedAuthors();
     void createUrlsForTags(bool);
+    void tagFromClipboard();
 
 
 public slots:
@@ -86,6 +87,8 @@ private slots:
     void on_chkDisplayTagSize_stateChanged(int arg1);
     void on_pbPurgeSelectedTags_clicked();
     void on_chkUseTagsForAuthors_stateChanged(int arg1);
+    void on_pbTagFromClipboard_clicked();
+
 };
 
 

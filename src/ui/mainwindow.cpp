@@ -185,8 +185,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lblSource->setPalette(pal);
     ui->lblSource->setAutoFillBackground(true);
 
-//    ui->wdgAdvancedControls->setPalette(pal);
-//    ui->wdgAdvancedControls->setAutoFillBackground(true);
+    //    ui->wdgAdvancedControls->setPalette(pal);
+    //    ui->wdgAdvancedControls->setAutoFillBackground(true);
 
 
     styleSheetForReclistMenu = "QPushButton{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(239,225,179, 128), stop:1 rgba(224,179,110, 128))}"
@@ -419,6 +419,7 @@ void MainWindow::InitConnections()
 
     });
     connect(ui->wdgTagsPlaceholder, &TagWidget::dbIDRequest, this, &MainWindow::OnFillDBIdsForTags);
+    connect(ui->wdgTagsPlaceholder, &TagWidget::tagFromClipboard, this, &MainWindow::OnTagFromClipboard);
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagReloadRequested, this, &MainWindow::OnTagReloadRequested);
     connect(ui->wdgTagsPlaceholder, &TagWidget::clearLikedAuthors, this, &MainWindow::OnClearLikedAuthorsRequested);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
@@ -2960,9 +2961,9 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         params->useDislikes = ui->chkUseDislikes->isChecked();
         params->useDeadFicIgnore= ui->chkIgnoreMarkedDeadFics->isChecked();
     }
-//    interfaces::TagIDFetcherSettings settings;
-//    settings.tags.push_back({"Liked"});
-//    auto fics = env->interfaces.tags->GetFicsTaggedWith(settings);
+    //    interfaces::TagIDFetcherSettings settings;
+    //    settings.tags.push_back({"Liked"});
+    //    auto fics = env->interfaces.tags->GetFicsTaggedWith(settings);
     if(ui->chkAssignLikedToSources->isChecked())
         params->assignLikedToSources = true;
 
@@ -3060,7 +3061,7 @@ void FetchFFNIdForOtherUserIntoParams(QSharedPointer<core::RecommendationList> p
     params->userFFNId = otherID;
 }
 
-void MainWindow::CreateRecommendationListForCurrentMode()
+bool MainWindow::CreateRecommendationListForCurrentMode()
 {
     // step 1: get sources
     MainWindow::FicSourceResult sources;
@@ -3078,7 +3079,7 @@ void MainWindow::CreateRecommendationListForCurrentMode()
     if(!sources.error.isEmpty())
     {
         ui->lblCreationStatus->setText(sources.error);
-        return;
+        return false;
     }
 
     ui->lblCreationStatus->setText("<font color=\"darkBlue\">Fetching user data.</font>");
@@ -3092,12 +3093,12 @@ void MainWindow::CreateRecommendationListForCurrentMode()
     if(!params)
     {
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Couldn't create params for recommendations.</font>");
-        return;
+        return false;
     }
     if(params->name.isEmpty())
     {
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Name for the recommendation list must be supplied.</font>");
-        return;
+        return false;
     }
     // step 3: create list
     ui->lblCreationStatus->setText("<font color=\"darkBlue\">Creating recommendations.</font>");
@@ -3116,10 +3117,11 @@ void MainWindow::CreateRecommendationListForCurrentMode()
             report=report.arg("");
 
         ui->lblCreationStatus->setText(report);
-        return;
+        return false;
     }
     lastCreatedListName = params->name;
     ui->lblCreationStatus->setText("<font color=\"darkGreen\">Finished.</font>");
+    return true;
 }
 
 void MainWindow::PrepareUIToDisplayNewRecommendationList(QString name)
@@ -3149,7 +3151,7 @@ MainWindow::FicSourceResult MainWindow::PickSourcesForEnteredProfile(QLineEdit *
         result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
     }
     else
-       result.error = "<font color=\"darkRed\">Not a valid FFN user ID.</font>";
+        result.error = "<font color=\"darkRed\">Not a valid FFN user ID.</font>";
     return result;
 
 }
@@ -3178,7 +3180,7 @@ MainWindow::FicSourceResult MainWindow::PickSourcesFromTags()
         result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
     }
     else
-       result.error = "<font color=\"darkRed\">No tags selected or no fics assigned to those tags.</font>";
+        result.error = "<font color=\"darkRed\">No tags selected or no fics assigned to those tags.</font>";
 
     return result;
 }
@@ -3193,7 +3195,8 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Please select a name for your list.</font>");
         return;
     }
-    CreateRecommendationListForCurrentMode();
+    if(!CreateRecommendationListForCurrentMode())
+        return;
     if(lastCreatedListName.isEmpty())
         return;
 
@@ -3206,10 +3209,10 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
 void MainWindow::on_pbRefreshRecList_clicked()
 {
     QMessageBox::StandardButton reply;
-     reply = QMessageBox::question(this, "Warning!", "This will recreate this recommendations list to pull new fics from the server. Do you want  to recreate?",
-                                   QMessageBox::Yes|QMessageBox::No);
-     if (reply != QMessageBox::Yes)
-         return;
+    reply = QMessageBox::question(this, "Warning!", "This will recreate this recommendations list to pull new fics from the server. Do you want  to recreate?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if (reply != QMessageBox::Yes)
+        return;
 
     auto defaultParams = CreateReclistParamsFromUI(true);
     auto params = env->interfaces.recs->FetchParamsForRecList(ui->cbRecGroup->currentText());
@@ -3353,7 +3356,7 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
     if(fics.size() == 0)
         return;
 
-    LoadAutomaticSettingsForRecListSources(fics.size());
+    //LoadAutomaticSettingsForRecListSources(fics.size());
     edit->clear();
     edit->setOpenExternalLinks(false);
     edit->setOpenLinks(false);
@@ -4154,4 +4157,37 @@ void MainWindow::on_chkLikedAuthors_stateChanged(int)
 void MainWindow::on_pbResetFilter_clicked()
 {
     ResetFilterUItoDefaults();
+}
+
+void MainWindow::OnTagFromClipboard()
+{
+    MainWindow::FicSourceResult result;
+
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Warning!", "Mass tagging from clipboard is a potentially dangerous operation. Are you sure?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if (reply != QMessageBox::Yes)
+        return;
+
+
+    auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    QClipboard *clipboard = QApplication::clipboard();
+    ui->edtRecsContents->clear();
+    QString text = clipboard->text();
+
+    if(!text.trimmed().isEmpty())
+    {
+        ui->edtRecsContents->setText(clipboard->text());
+        result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    }
+    else
+        result.error = "<font color=\"darkRed\">No tags selected or no fics assigned to those tags.</font>";
+
+    auto ficIDs = env->GetDBIDsForFics(result.sources);
+
+    for(auto tag : tags){
+        for(auto fic : ficIDs){
+            env->interfaces.tags->SetTagForFic(fic, tag);
+        }
+    }
 }

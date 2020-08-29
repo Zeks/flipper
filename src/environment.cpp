@@ -1060,11 +1060,18 @@ bool CoreEnvironment::TestAuthorID(QString id)
         return false;
     return true;
 }
-
+//QRegularExpression rx("https://www.fanfiction.net/u/(\\d)+");
+//auto match = rx.match(url);
+//if(!match.hasMatch())
+//{
+//    QMessageBox::warning(nullptr, "Warning!", "URL is not an FFN author url\nNeeeds to be a https://www.fanfiction.net/u/NUMERIC_ID");
+//    return result;
+//}
 bool CoreEnvironment::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
 {
     auto userID = input->text();
-    QRegularExpression rx("(\\d)+");
+    //https://www.fanfiction.net/u/4507073/
+    QRegularExpression rx("^(https://www.fanfiction.net/u/){0,1}(\\d+)/{0,1}");
     auto match = rx.match(userID);
     if(!match.hasMatch())
     {
@@ -1072,6 +1079,8 @@ bool CoreEnvironment::TestAuthorID(QLineEdit * input, QLabel * lblStatus)
         lblStatus->setText("<font color=\"Red\">Provided user ID is not a valid number.</font>");
         return false;
     }
+    userID=match.captured(2);
+    input->setText(userID);
     auto validUser = TestAuthorID(userID);
     if(!validUser){
         lblStatus->setVisible(true);
@@ -1136,6 +1145,20 @@ void CoreEnvironment::FillDBIDsForTags()
     grpcSource->GetInternalIDsForFics(&pack);
     interfaces.tags->FillDBIDsForFics(pack);
     transaction.finalize();
+}
+
+QList<int> CoreEnvironment::GetDBIDsForFics(QVector<int> ids)
+{
+    QVector<core::IdPack> pack;
+    for(auto fic : ids)
+        pack.push_back({-1, fic, -1,-1,-1});
+
+    auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
+    grpcSource->GetInternalIDsForFics(&pack);
+    QList<int> result;
+    for(auto fic : pack)
+        result.push_back(fic.db);
+    return result;
 }
 
 QSet<int> CoreEnvironment::GetAuthorsContainingFicFromRecList(int fic, QString recList)
