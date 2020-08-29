@@ -1468,15 +1468,15 @@ bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseIn
 {
     bool isValid = true;
     if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 )
-        isValid = true;
+        isValid = false;
     if(idPack.ffn_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(idPack.ao3_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(idPack.sb_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(idPack.sv_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(!isValid)
     {
         SetFicIDSyncDataError(info);

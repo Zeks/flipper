@@ -661,7 +661,10 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
 
     QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->ids(), response->mutable_response_info()))
+    {
+        QLOG_ERROR() << "failed verifying id pack";
         return Status::OK;
+    }
 
     QHash<int, int> idsToFill;
     for(int i = 0; i < task->ids().ffn_ids_size(); i++)
@@ -670,10 +673,12 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     bool result = reqContext.dbContext.fanfics->ConvertFFNTaggedFicsToDB(idsToFill);
     if(!result)
     {
+        QLOG_ERROR() << "failed to convert";
         response->set_success(false);
         return Status::OK;
     }
     response->set_success(true);
+    QLOG_INFO() << "Succesfully converted ids:" << idsToFill.keys().size();
     for(int fic: idsToFill.keys())
     {
         //QLOG_INFO() << "Returning fic ids: " << "DB: " << idsToFill[fic] << " FFN: " << fic;

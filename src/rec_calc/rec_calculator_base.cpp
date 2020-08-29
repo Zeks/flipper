@@ -398,120 +398,120 @@ void RecCalculatorImplBase::FetchAuthorRelations()
 
 void RecCalculatorImplBase::CollectFicMatchQuality()
 {
-    QVector<int> tempAuthors;
+//    QVector<int> tempAuthors;
 
-    for(auto authorId : filteredAuthors)
-    {
-        tempAuthors.push_back(authorId);
-        auto& author = allAuthors[authorId];
-        auto& authorFaves = inputs.faves[authorId];
-        Roaring temp = ownFavourites;
-        auto matches = temp & authorFaves;
-        for(auto value : matches)
-        {
-            auto itFic = inputs.fics.find(value);
-            if(itFic == inputs.fics.end())
-                continue;
+//    for(auto authorId : filteredAuthors)
+//    {
+//        tempAuthors.push_back(authorId);
+//        auto& author = allAuthors[authorId];
+//        auto& authorFaves = inputs.faves[authorId];
+//        Roaring temp = ownFavourites;
+//        auto matches = temp & authorFaves;
+//        for(auto value : matches)
+//        {
+//            auto itFic = inputs.fics.find(value);
+//            if(itFic == inputs.fics.end())
+//                continue;
 
-            // < 500 1 votes
-            // < 300 4 votes
-            // < 100 8 votes
-            // < 50 15 votes
+//            // < 500 1 votes
+//            // < 300 4 votes
+//            // < 100 8 votes
+//            // < 50 15 votes
 
-            author.breakdown.total++;
-            if(itFic->get()->favCount <= 50)
-            {
-                author.breakdown.below50++;
-                author.breakdown.votes+=15;
-                if(itFic->get()->authorId != -1)
-                    author.breakdown.authors.insert(itFic->get()->authorId);
+//            author.breakdown.total++;
+//            if(itFic->get()->favCount <= 50)
+//            {
+//                author.breakdown.below50++;
+//                author.breakdown.votes+=15;
+//                if(itFic->get()->authorId != -1)
+//                    author.breakdown.authors.insert(itFic->get()->authorId);
 
-            }
-            else if(itFic->get()->favCount <= 100)
-            {
-                author.breakdown.below100++;
-                author.breakdown.votes+=8;
-                if(itFic->get()->authorId != -1)
-                    author.breakdown.authors.insert(itFic->get()->authorId);
-            }
-            else if(itFic->get()->favCount <= 300)
-            {
-                author.breakdown.below300++;
-                author.breakdown.votes+=4;
-                if(itFic->get()->authorId != -1)
-                    author.breakdown.authors.insert(itFic->get()->authorId);
-            }
-            else if(itFic->get()->favCount <= 500)
-            {
-                author.breakdown.below500++;
-                author.breakdown.votes+=1;
-            }
-        }
-        author.breakdown.priority1 = (author.breakdown.below50 + author.breakdown.below100) >= 3;
-        author.breakdown.priority1 = author.breakdown.priority1 && author.breakdown.authors.size() > 1;
+//            }
+//            else if(itFic->get()->favCount <= 100)
+//            {
+//                author.breakdown.below100++;
+//                author.breakdown.votes+=8;
+//                if(itFic->get()->authorId != -1)
+//                    author.breakdown.authors.insert(itFic->get()->authorId);
+//            }
+//            else if(itFic->get()->favCount <= 300)
+//            {
+//                author.breakdown.below300++;
+//                author.breakdown.votes+=4;
+//                if(itFic->get()->authorId != -1)
+//                    author.breakdown.authors.insert(itFic->get()->authorId);
+//            }
+//            else if(itFic->get()->favCount <= 500)
+//            {
+//                author.breakdown.below500++;
+//                author.breakdown.votes+=1;
+//            }
+//        }
+//        author.breakdown.priority1 = (author.breakdown.below50 + author.breakdown.below100) >= 3;
+//        author.breakdown.priority1 = author.breakdown.priority1 && author.breakdown.authors.size() > 1;
 
-        author.breakdown.priority2 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300) >= 5;
-        author.breakdown.priority2 = author.breakdown.priority1 || (author.breakdown.priority2 && author.breakdown.authors.size() > 1);
+//        author.breakdown.priority2 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300) >= 5;
+//        author.breakdown.priority2 = author.breakdown.priority1 || (author.breakdown.priority2 && author.breakdown.authors.size() > 1);
 
-        author.breakdown.priority3 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300 + author.breakdown.below500) >= 8;
-        author.breakdown.priority3 = (author.breakdown.priority1 || author.breakdown.priority2) || (author.breakdown.priority3 && author.breakdown.authors.size() > 1);
-    }
-    std::sort(tempAuthors.begin(), tempAuthors.end(), [&](int id1, int id2){
+//        author.breakdown.priority3 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300 + author.breakdown.below500) >= 8;
+//        author.breakdown.priority3 = (author.breakdown.priority1 || author.breakdown.priority2) || (author.breakdown.priority3 && author.breakdown.authors.size() > 1);
+//    }
+//    std::sort(tempAuthors.begin(), tempAuthors.end(), [&](int id1, int id2){
 
-        bool largerScore = allAuthors[id1].breakdown.votes > allAuthors[id2].breakdown.votes;
-        bool doubleBelow100First =  (allAuthors[id1].breakdown.below50 + allAuthors[id1].breakdown.below100) >= 2;
-        bool doubleBelow100Second =  (allAuthors[id2].breakdown.below50 + allAuthors[id2].breakdown.below100) >= 2;
-        if(doubleBelow100First && !doubleBelow100Second)
-            return true;
-        if(!doubleBelow100First && doubleBelow100Second)
-            return false;
-        return largerScore;
-    });
+//        bool largerScore = allAuthors[id1].breakdown.votes > allAuthors[id2].breakdown.votes;
+//        bool doubleBelow100First =  (allAuthors[id1].breakdown.below50 + allAuthors[id1].breakdown.below100) >= 2;
+//        bool doubleBelow100Second =  (allAuthors[id2].breakdown.below50 + allAuthors[id2].breakdown.below100) >= 2;
+//        if(doubleBelow100First && !doubleBelow100Second)
+//            return true;
+//        if(!doubleBelow100First && doubleBelow100Second)
+//            return false;
+//        return largerScore;
+//    });
 
-    QLOG_INFO() << "Displaying 100 most closesly matched authors";
-    auto justified = [](int value, int padding) {
-        return QString::number(value).leftJustified(padding, ' ');
-    };
-    QLOG_INFO() << "Displaying priority lists: ";
-    QLOG_INFO() << "//////////////////////";
-    QLOG_INFO() << "P1: ";
-    QLOG_INFO() << "//////////////////////";
-    for(int i = 0; i < 100; i++)
-    {
-        if(allAuthors[tempAuthors[i]].breakdown.priority1)
-            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
-    }
-    QLOG_INFO() << "//////////////////////";
-    QLOG_INFO() << "P2: ";
-    QLOG_INFO() << "//////////////////////";
-    for(int i = 0; i < 100; i++)
-    {
-        if(allAuthors[tempAuthors[i]].breakdown.priority2)
-            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
-    }
-    QLOG_INFO() << "//////////////////////";
-    QLOG_INFO() << "P3: ";
-    QLOG_INFO() << "//////////////////////";
-    for(int i = 0; i < 100; i++)
-    {
-        if(allAuthors[tempAuthors[i]].breakdown.priority3)
-            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
-    }
+//    QLOG_INFO() << "Displaying 100 most closesly matched authors";
+//    auto justified = [](int value, int padding) {
+//        return QString::number(value).leftJustified(padding, ' ');
+//    };
+//    QLOG_INFO() << "Displaying priority lists: ";
+//    QLOG_INFO() << "//////////////////////";
+//    QLOG_INFO() << "P1: ";
+//    QLOG_INFO() << "//////////////////////";
+//    for(int i = 0; i < 100; i++)
+//    {
+//        if(allAuthors[tempAuthors[i]].breakdown.priority1)
+//            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+//                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+//                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+//                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+//    }
+//    QLOG_INFO() << "//////////////////////";
+//    QLOG_INFO() << "P2: ";
+//    QLOG_INFO() << "//////////////////////";
+//    for(int i = 0; i < 100; i++)
+//    {
+//        if(allAuthors[tempAuthors[i]].breakdown.priority2)
+//            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+//                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+//                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+//                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+//    }
+//    QLOG_INFO() << "//////////////////////";
+//    QLOG_INFO() << "P3: ";
+//    QLOG_INFO() << "//////////////////////";
+//    for(int i = 0; i < 100; i++)
+//    {
+//        if(allAuthors[tempAuthors[i]].breakdown.priority3)
+//            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+//                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+//                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+//                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+//    }
 
 }
 
