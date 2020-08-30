@@ -51,6 +51,9 @@ fi
 
 dirname=$workdir
 unpackpath=$dirname/fpmtmp
+source shell/env_or_default.sh
+env_or_default FPM_SOURCE unpackpath $unpackpath
+
 unpackdir="feeder"
 scriptfolder="shell/"
 rm -rf $unpackpath
@@ -76,10 +79,26 @@ ident=$gitversion$separator$branch
 if [ ! -z "$removefile" ]; then
     rm -f $removefile
 fi
+
+source shell/env_or_default.sh
+
+
 mkdir $dirname/fpmtmp
 echo 'creating rpm'
 echo $unpackpath
 packageName="feeder"
-fpm -s dir -t deb -n $packageName -v $ident --workdir ~/m_feeder --verbose --debug --deb-compression gz -C $unpackpath 
+
+fpmdir=/tmp/m_parser
+
+fpmoutput="."
+
+env_or_default FPM_WORKDIR fpmdir $fpmdir
+env_or_default FPM_OUTPUT fpmoutput $fpmoutput
+
+mkdir -p $fpmdir 
+mkdir -p $fpmoutput 
+
+
+fpm -s dir -t deb -n $packageName -v $ident --workdir $fpmdir --verbose --debug --deb-compression gz -C $unpackpath -p $fpmoutput .
 
 
