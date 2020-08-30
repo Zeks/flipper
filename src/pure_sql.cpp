@@ -1814,7 +1814,7 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(Q
                 }
 
                 genre_stats::GenreBit bit;
-                bit.genres = genre.split(QRegExp("[\\s,]"), QString::SkipEmptyParts);
+                bit.genres = genre.split(QRegExp("[\\s,]"), Qt::SkipEmptyParts);
                 bit.relevance = q.value(tgKeyValue).toFloat();
                 bit.isDetected = true;
                 for(auto genreBit : bit.genres)

@@ -645,7 +645,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     });
 
     dataPassAction.run();
-    QLOG_INFO() << "Byte size will be: " << response->ByteSize();
+    QLOG_INFO() << "Byte size will be: " << response->ByteSizeLong();
     return Status::OK;
 }
 
@@ -834,7 +834,7 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
 
     reqContext.dbContext.InitAuthors();
     auto allAuthors = reqContext.dbContext.authors->GetRecommendersForFics({task->fic_id()});
-    auto recsAuthorsList = QString::fromStdString(task->author_list()).split(",", QString::SkipEmptyParts);
+    auto recsAuthorsList = QString::fromStdString(task->author_list()).split(",", Qt::SkipEmptyParts);
     QSet<int> result;
     for(auto author: recsAuthorsList)
     {

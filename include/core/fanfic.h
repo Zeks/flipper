@@ -146,7 +146,7 @@ public:
         }
 
         if(website == "ffn")
-            genresList = fixedGenreString.split("/", QString::SkipEmptyParts);
+            genresList = fixedGenreString.split("/", Qt::SkipEmptyParts);
         if(hasHurt)
             genresList.push_back("Hurt/Comfort");
         for(auto& genre: genresList)

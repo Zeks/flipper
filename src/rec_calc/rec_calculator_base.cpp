@@ -561,10 +561,10 @@ void RecCalculatorImplBase::ReportNegativeResults()
     int limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
     QLOG_INFO() << "RATIO REPORT";
     for(int i = 0; i < limit; i++){
-        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
+        QLOG_INFO() << Qt::endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << Qt::endl
                        << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
                        << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
-        << endl
+        << Qt::endl
                 << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
                 << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
 
@@ -576,10 +576,10 @@ void RecCalculatorImplBase::ReportNegativeResults()
     });
     limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
     for(int i = 0; i < limit; i++){
-        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
+        QLOG_INFO() << Qt::endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << Qt::endl
                        << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
                        << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
-        << endl
+        << Qt::endl
                 << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
                 << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
 
@@ -598,10 +598,10 @@ void RecCalculatorImplBase::ReportNegativeResults()
     });
     limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
     for(int i = 0; i < limit; i++){
-        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
+        QLOG_INFO() << Qt::endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << Qt::endl
                        << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
                        << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
-        << endl
+        << Qt::endl
                 << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
                 << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
 
