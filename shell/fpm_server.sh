@@ -51,7 +51,7 @@ fi
 
 dirname=$workdir
 unpackpath=$dirname/fpmtmp
-source shell/env_or_default.sh
+source shell/env_or_defaults.sh
 env_or_default FPM_SOURCE unpackpath $unpackpath
 
 unpackdir="feeder"
