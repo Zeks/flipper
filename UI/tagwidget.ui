@@ -259,6 +259,13 @@
        <number>0</number>
       </property>
       <item>
+       <widget class="QPushButton" name="pbTagFromClipboard">
+        <property name="text">
+         <string>Apply selected tag to clipboard</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="pbTagExport">
         <property name="text">
          <string>Export Tags</string>

@@ -57,6 +57,7 @@ public:
     virtual bool PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
 
     QSqlDatabase GetDatabase() {return db;}
+    void SetDatabase(QSqlDatabase db) {this->db = db;}
     QString userToken;
 protected:
     QSqlDatabase db;

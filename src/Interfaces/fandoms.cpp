@@ -437,7 +437,7 @@ QHash<int, QString> Fandoms::GetFandomNamesForIDs(QList<int> fandoms)
     return database::puresql::GetFandomNamesForIDs(fandoms, db).data;
 }
 
-bool Fandoms::FetchFandomsForFics(QVector<core::Fic> *fics)
+bool Fandoms::FetchFandomsForFics(QVector<core::Fanfic> *fics)
 {
     static bool loadFandoms = true;
     LoadAllFandoms(loadFandoms);

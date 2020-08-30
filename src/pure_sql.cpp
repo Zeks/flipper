@@ -370,11 +370,11 @@ DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabas
 
 core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
 {
-    auto fic = core::Fic::NewFanfic();
-    fic->atChapter = q1.value("AT_CHAPTER").toInt();
+    auto fic = core::Fanfic::NewFanfic();
+    fic->userData.atChapter = q1.value("AT_CHAPTER").toInt();
     fic->complete  = q1.value("COMPLETE").toInt();
-    fic->webId     = q1.value(website + "_ID").toInt();
-    fic->id        = q1.value("ID").toInt();
+
+    fic->identity.id = q1.value("ID").toInt();
     fic->wordCount = q1.value("WORDCOUNT").toString();
     //fic->chapters = q1.value("CHAPTERS").toString();
     fic->reviews = q1.value("REVIEWS").toString();
@@ -390,10 +390,10 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
     fic->characters = q1.value("CHARACTERS").toString().split(",");
     //fic->authorId = q1.value("AUTHOR_ID").toInt();
     fic->author->name = q1.value("AUTHOR").toString();
-    fic->ffn_id = q1.value("FFN_ID").toInt();
-    fic->ao3_id = q1.value("AO3_ID").toInt();
-    fic->sb_id = q1.value("SB_ID").toInt();
-    fic->sv_id = q1.value("SV_ID").toInt();
+    fic->identity.web.ffn = q1.value("FFN_ID").toInt();
+    fic->identity.web.ao3 = q1.value("AO3_ID").toInt();
+    fic->identity.web.sb = q1.value("SB_ID").toInt();
+    fic->identity.web.sv = q1.value("SV_ID").toInt();
     return fic;
 }
 
@@ -419,15 +419,15 @@ DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 }
 
 
-DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
+DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
     QString getKeyQuery = QString("Select ( select count(*) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
                                   " ( select count(*) from FANFICS where  %1_id = :site_id2 "
                                   "and (updated < :updated or updated is null)) as count_updated").arg(fic->webSite);
 
     SqlContext<bool> ctx(db, getKeyQuery);
-    ctx.bindValue("site_id1", fic->webId);
-    ctx.bindValue("site_id2", fic->webId);
+    ctx.bindValue("site_id1", fic->identity.web.GetPrimaryId());
+    ctx.bindValue("site_id2", fic->identity.web.GetPrimaryId());
     ctx.bindValue("updated", fic->updated);
     if(!fic)
         return ctx.result;
@@ -453,7 +453,7 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlD
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
+DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db)
 {
     QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
@@ -464,7 +464,7 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
     query=query.arg(section->webSite);
 
     SqlContext<bool> ctx(db, query);
-    ctx.bindValue("site_id",section->webId); //?
+    ctx.bindValue("site_id",section->identity.web.GetPrimaryId()); //?
     ctx.bindValue("fandom",section->fandom);
     ctx.bindValue("author",section->author->name); //?
     ctx.bindValue("author_id",section->author->GetWebID("ffn"));
@@ -480,10 +480,10 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
     ctx.bindValue("genres",section->genreString);
     ctx.bindValue("published",section->published);
     ctx.bindValue("updated",section->updated);
-    ctx.bindValue("wcr",section->calcStats.wcr);
-    ctx.bindValue("reviewstofavourites",section->calcStats.reviewsTofavourites);
-    ctx.bindValue("age",section->calcStats.age);
-    ctx.bindValue("daysrunning",section->calcStats.daysRunning);
+    ctx.bindValue("wcr",section->statistics.wcr);
+    ctx.bindValue("reviewstofavourites",section->statistics.reviewsTofavourites);
+    ctx.bindValue("age",section->statistics.age);
+    ctx.bindValue("daysrunning",section->statistics.daysRunning);
     if(section->fandomIds.size() > 0)
         ctx.bindValue("fandom1",section->fandomIds.at(0));
     else
@@ -495,7 +495,7 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDa
 
     return ctx();
 }
-DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db)
+DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db)
 {
     QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
                     "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
@@ -521,11 +521,11 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDat
     ctx.bindValue("genres",section->genreString);
     ctx.bindValue("published",section->published);
     ctx.bindValue("updated",section->updated);
-    ctx.bindValue("site_id",section->webId);
-    ctx.bindValue("wcr",section->calcStats.wcr);
-    ctx.bindValue("reviewstofavourites",section->calcStats.reviewsTofavourites);
-    ctx.bindValue("age",section->calcStats.age);
-    ctx.bindValue("daysrunning",section->calcStats.daysRunning);
+    ctx.bindValue("site_id",section->identity.web.GetPrimaryId());
+    ctx.bindValue("wcr",section->statistics.wcr);
+    ctx.bindValue("reviewstofavourites",section->statistics.reviewsTofavourites);
+    ctx.bindValue("age",section->statistics.age);
+    ctx.bindValue("daysrunning",section->statistics.daysRunning);
     if(section->fandomIds.size() > 0)
         ctx.bindValue("fandom1",section->fandomIds.at(0));
     else
@@ -851,12 +851,12 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString web
 
 void AuthorStatisticsFromQuery(QSqlQuery& q,  core::AuthorPtr author)
 {
-    core::FicSectionStats& stats = author->stats.favouriteStats;
+    core::FavListDetails& stats = author->stats.favouriteStats;
     stats.favourites = q.value("favourites").toInt();
     stats.ficWordCount = q.value("favourites_wordcount").toInt();
     stats.averageLength = q.value("average_words_per_chapter").toInt();
-    stats.esrbType = static_cast<core::FicSectionStats::ESRBType>(q.value("esrb_type").toInt());
-    stats.prevalentMood = static_cast<core::FicSectionStats::MoodType>(q.value("prevalent_mood").toInt());
+    stats.esrbType = static_cast<core::FavListDetails::ESRBType>(q.value("esrb_type").toInt());
+    stats.prevalentMood = static_cast<core::FavListDetails::MoodType>(q.value("prevalent_mood").toInt());
     stats.mostFavouritedSize = static_cast<core::EntitySizeType>(q.value("most_favourited_size").toInt());
     stats.sectionRelativeSize= static_cast<core::EntitySizeType>(q.value("favourites_type").toInt());
     stats.averageLength = q.value("average_favourited_length").toDouble();
@@ -1560,7 +1560,7 @@ DiagnosticSQLResult<QSet<int> > ConvertFFNSourceFicsToDB(QString uid, QSqlDataba
 }
 
 static auto getFicWeightPtrFromQuery = [](auto& q){
-    core::FicWeightPtr fw(new core::FicForWeightCalc);
+    core::FicWeightPtr fw(new core::FanficDataForRecommendationCreation);
     fw->adult = q.value("Rated").toString() == "M";
     fw->authorId = q.value("author_id").toInt();
     fw->complete = q.value("complete").toBool();
@@ -1814,7 +1814,7 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(Q
                 }
 
                 genre_stats::GenreBit bit;
-                bit.genres = genre.split(QRegExp("[\\s,]"), QString::SkipEmptyParts);
+                bit.genres = genre.split(QRegExp("[\\s,]"), Qt::SkipEmptyParts);
                 bit.relevance = q.value(tgKeyValue).toFloat();
                 bit.isDetected = true;
                 for(auto genreBit : bit.genres)
@@ -2323,13 +2323,13 @@ DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase 
 
 
 
-DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, core::FanficCompletionStatus> > GetSnoozeInfo(QSqlDatabase db)
 {
     QString qs = "select id, ffn_id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
-    SqlContext<QHash<int, core::SnoozeInfo>> ctx(db, qs);
+    SqlContext<QHash<int, core::FanficCompletionStatus>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         //qDebug() << " loading snooze data:";
-        core::SnoozeInfo info;
+        core::FanficCompletionStatus info;
         info.ficId = q.value("id").toInt();
         info.finished = q.value("complete").toInt();
         info.atChapter = q.value("chapters").toInt();
@@ -2343,7 +2343,7 @@ DiagnosticSQLResult<QHash<int, core::SnoozeInfo> > GetSnoozeInfo(QSqlDatabase db
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
+DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
     QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
 
     QStringList filters;
@@ -2362,9 +2362,9 @@ DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fet
     QLOG_TRACE() <<  "snooze query: " << qs;
 
 
-    SqlContext<QHash<int, core::SnoozeTaskInfo>> ctx(db, qs);
+    SqlContext<QHash<int, core::FanficSnoozeStatus>> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        core::SnoozeTaskInfo info;
+        core::FanficSnoozeStatus info;
         info.ficId =                q.value("fic_id").toInt();
         info.added =                q.value("snooze_added").toDateTime();
         info.expired =              q.value("expired").toBool();
@@ -2421,7 +2421,7 @@ DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> data,QSqlDatabase db){
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo data,QSqlDatabase db){
+DiagnosticSQLResult<bool> SnoozeFic(core::FanficSnoozeStatus data,QSqlDatabase db){
     QString qs = "INSERT INTO FicSnoozes(fic_id, snoozed_at_chapter, snoozed_till_chapter, snoozed_until_finished, snooze_added)"
                  " values(:fic_id, :snoozed_at_chapter, :snoozed_till_chapter, :snoozed_until_finished,  date('now')) "
                  " on conflict (fic_id) "
@@ -2485,17 +2485,17 @@ DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID(QSqlDatabase db)
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack> pack, QSqlDatabase db)
+DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity> pack, QSqlDatabase db)
 {
     QString qs = QString("update fictags set fic_id = :id where ffn_id = :ffn_id");
     SqlContext<bool> ctx(db, qs);
-    for(const core::IdPack& id: pack)
+    for(const core::Identity& identity: pack)
     {
-        if(id.db < 1)
+        if(identity.id < 1)
             continue;
 
-        ctx.bindValue("id", id.db);
-        ctx.bindValue("ffn_id", id.ffn);
+        ctx.bindValue("id", identity.id);
+        ctx.bindValue("ffn_id", identity.web.ffn);
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;
@@ -2505,7 +2505,7 @@ DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack> pack, QSqlDatab
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db)
+DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fanfic> * fics, QSqlDatabase db)
 {
     QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInSourceFics(fic_id) > 0 group by fic_id");
     QHash<int, QString> tags;
@@ -2513,14 +2513,14 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDataba
     auto& hash = data->sourceFics;
 
     for(const auto& fic : *fics)
-        hash.insert(fic.id);
+        hash.insert(fic.identity.id);
 
     SqlContext<bool> ctx(db, qs);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         tags[q.value("fic_id").toInt()] = q.value("tags").toString();
     });
     for(auto& fic : *fics)
-        fic.tags = tags[fic.id];
+        fic.userData.tags = tags[fic.identity.id];
     return ctx.result;
 }
 
@@ -2529,7 +2529,7 @@ template <typename T1, typename T2>
 inline double DivideAsDoubles(T1 arg1, T2 arg2){
     return static_cast<double>(arg1)/static_cast<double>(arg2);
 }
-DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db)
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fanfic> * fics, int listId, QSqlDatabase db)
 {
     QString qs = QString("select fic_id,  "
                          "breakdown_available,"
@@ -2544,7 +2544,7 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
     auto& sourceSet = data->sourceFics;
 
     for(const auto& fic : *fics)
-        sourceSet.insert(fic.id);
+        sourceSet.insert(fic.identity.id);
     QSet<int> purgedFics;
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("listId", listId);
@@ -2579,12 +2579,12 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fic
 
     for(auto& fic : *fics)
     {
-        fic.voteBreakdown = breakdown[fic.id];
-        fic.voteBreakdownCounts = breakdownCounts[fic.id];
-        if(purgedFics.contains(fic.id))
-            fic.purged = true;
+        fic.recommendationsData.voteBreakdown = breakdown[fic.identity.id];
+        fic.recommendationsData.voteBreakdownCounts = breakdownCounts[fic.identity.id];
+        if(purgedFics.contains(fic.identity.id))
+            fic.recommendationsData.purged = true;
         else
-            fic.purged = false;
+            fic.recommendationsData.purged = false;
     }
     return ctx.result;
 }
@@ -2612,7 +2612,7 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
 
 }
 
-DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter, QSqlDatabase db)
+DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> *fics, core::ReclistFilter filter, QSqlDatabase db)
 {
     QStringList ficIds;
 
@@ -2620,8 +2620,8 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fi
     int i = 0;
     for(auto fic: *fics)
     {
-        ficIds.push_back(QString::number(fic.id));
-        indices[fic.id] = i;
+        ficIds.push_back(QString::number(fic.identity.id));
+        indices[fic.identity.id] = i;
         i++;
     }
     QStringList listIds;
@@ -2642,14 +2642,14 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> *fi
         auto& fic = (*fics)[indices[ficId]];
         if(q.value("list_id").toInt() == filter.mainListId)
         {
-            fic.recommendationsMainList = q.value(pointsField).toInt();
-            fic.placeInMainList = q.value("position").toInt();
-            fic.placeOnSecondPedestal = q.value("pedestal").toInt();
+            fic.recommendationsData.recommendationsMainList = q.value(pointsField).toInt();
+            fic.recommendationsData.placeInMainList = q.value("position").toInt();
+            fic.recommendationsData.placeOnSecondPedestal = q.value("pedestal").toInt();
         }
         else{
-            fic.recommendationsSecondList = q.value(pointsField).toInt();
-            fic.placeInSecondList = q.value("position").toInt();
-            fic.placeOnSecondPedestal= q.value("pedestal").toInt();
+            fic.recommendationsData.recommendationsSecondList = q.value(pointsField).toInt();
+            fic.recommendationsData.placeInSecondList = q.value("position").toInt();
+            fic.recommendationsData.placeOnSecondPedestal= q.value("pedestal").toInt();
         }
     });
     return ctx.result;
@@ -3573,7 +3573,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
         ctx.bindValue("author_id", author);
         //qDebug() << "loading author: " << author;
 
-        core::AuthorFavFandomStatsPtr fs(new core::FandomStatsForWeightCalc);
+        core::AuthorFavFandomStatsPtr fs(new core::AuthorFandomStatsForWeightCalc);
 
         fs->listId = author;
         ctx.FetchSelectFunctor(qs, DATAQN{

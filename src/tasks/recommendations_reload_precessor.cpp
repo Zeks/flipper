@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagegetter.h"
 #include "include/pagetask.h"
 #include "include/parsers/ffn/fandomparser.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/transaction.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"
@@ -73,8 +73,8 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     auto authorsInterface = this->authorsInterface;
     auto fandomsInterface = this->fandomsInterface;
     auto job = [fanficsInterface,authorsInterface,fandomsInterface](QString url, QString content){
-        QList<QSharedPointer<core::Fic> > sections;
-        FavouriteStoryParser parser(fanficsInterface);
+        QList<QSharedPointer<core::Fanfic> > sections;
+        FavouriteStoryParser parser;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -88,7 +88,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
             QLOG_INFO() << "At this moment processed:  "<< counter << " authors of: " << authors.size();
             QLOG_INFO() << "=========================================================================";
         }
-        QList<QSharedPointer<core::Fic>> sections;
+        QList<QSharedPointer<core::Fanfic>> sections;
         QList<QFuture<FavouriteStoryParser>> futures;
         QSet<int> uniqueAuthors;
         authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
@@ -98,7 +98,7 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         qDebug() <<  "Loading author: " << author->GetWebID("ffn");
         //qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
-        FavouriteStoryParser parser(fanficsInterface);
+        FavouriteStoryParser parser;
         //parser.ProcessPage(page.url, page.content);
 
         auto splittings = page_utils::SplitJob(page.content);

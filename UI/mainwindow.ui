@@ -2211,7 +2211,7 @@
                             </sizepolicy>
                            </property>
                            <property name="placeholderText">
-                            <string>Just the number</string>
+                            <string>Numeric url or just the number. Not the customized url</string>
                            </property>
                           </widget>
                          </item>
@@ -3867,7 +3867,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgRecsMode"/>
   <buttongroup name="bgRecsSource"/>
+  <buttongroup name="bgRecsMode"/>
  </buttongroups>
 </ui>

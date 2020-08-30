@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
 
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/core/section.h"
 #include "include/pure_sql.h"
 #include "include/url_utils.h"
@@ -30,20 +30,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <chrono>
 #include <algorithm>
 //CommonRegex FavouriteStoryParser::commonRegex;
-FavouriteStoryParser::FavouriteStoryParser(QSharedPointer<interfaces::Fanfics> fanfics)
-    : FFNParserBase(fanfics)
+FavouriteStoryParser::FavouriteStoryParser()
 {
     if(!commonRegex.initComplete)
         commonRegex.Init();
     //commonRegex.Log();
 }
-static QString MicrosecondsToString(int value) {
-    QString decimal = QString::number(value/1000000);
-    int offset = decimal == "0" ? 0 : decimal.length();
-    QString partial = QString::number(value).mid(offset,1);
-    return decimal + "." + partial;}
 
-void ReserveSpaceForSections(QList<QSharedPointer<core::Fic>>& sections,  core::Section& section, QString& str)
+void ReserveSpaceForSections(QList<QSharedPointer<core::Fanfic>>& sections,  core::FanficSectionInFFNFavourites& section, QString& str)
 {
     int parts = str.length()/(section.end-section.start);
     sections.reserve(parts);
@@ -88,7 +82,7 @@ QDate DateFromXUtime(QString value)
     return temp.date();
 }
 
-inline void UpdatePopularity(QSharedPointer<core::Fic> fic, QHash<int, int>& popularUnpopularKeeper)
+inline void UpdatePopularity(QSharedPointer<core::Fanfic> fic, QHash<int, int>& popularUnpopularKeeper)
 {
     auto faveCount = fic->favourites.toInt();
     if(faveCount <= 50)
@@ -99,7 +93,7 @@ inline void UpdatePopularity(QSharedPointer<core::Fic> fic, QHash<int, int>& pop
         popularUnpopularKeeper[2]++;
 }
 
-inline void UpdateFandoms(QSharedPointer<core::Fic> fic,
+inline void UpdateFandoms(QSharedPointer<core::Fanfic> fic,
                           QHash<int, int>& crossKeeper,
                           QHash<QString, int>& fandomKeeper)
 {
@@ -112,14 +106,14 @@ inline void UpdateFandoms(QSharedPointer<core::Fic> fic,
         fandomKeeper[fandom]++;
     }
 }
-inline void UpdateCompleteness(QSharedPointer<core::Fic> fic, QHash<int, int>& unfinishedKeeper)
+inline void UpdateCompleteness(QSharedPointer<core::Fanfic> fic, QHash<int, int>& unfinishedKeeper)
 {
     if(fic->complete == 1)
         unfinishedKeeper[0]++;
     else
         unfinishedKeeper[1]++;
 }
-inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fic> fic,
+inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fanfic> fic,
                                   const CommonRegex& regexToken,
                                   QHash<int, int>& wordsKeeper)
 {
@@ -128,7 +122,7 @@ inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fic
 
     auto result = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
     //auto ficPtr = fanfics->GetFicById(fanfics->GetIDFromWebID(fic->ffn_id, "ffn"));
-    bool isInSlashSet = knownSlashFics.size() > 0 && knownSlashFics.contains(fic->ffn_id);
+    bool isInSlashSet = knownSlashFics.size() > 0 && knownSlashFics.contains(fic->identity.web.ffn);
     if(isInSlashSet || result.IsSlash())
         wordsKeeper[1]++;
 
@@ -138,7 +132,7 @@ inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fic
         wordsKeeper[2]++;
 
 }
-inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& wordsKeeper)
+inline void UpdateWordsCounter(QSharedPointer<core::Fanfic> fic, QHash<int, int>& wordsKeeper)
 {
 //    if(fic->summary.contains("crack", Qt::CaseInsensitive))
 //        wordsKeeper[0]++;
@@ -172,7 +166,7 @@ inline void UpdateWordsCounter(QSharedPointer<core::Fic> fic, QHash<int, int>& w
 
 }
 
-inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes, int& chapterCount)
+inline void UpdateFicSize(QSharedPointer<core::Fanfic> fic, QHash<int, int>& favouritesSizeKeeper, QList<int>& sizes, int& chapterCount)
 {
     auto wordCount = fic->wordCount.toInt();
     chapterCount+=fic->chapters.toInt();
@@ -189,7 +183,7 @@ inline void UpdateFicSize(QSharedPointer<core::Fic> fic, QHash<int, int>& favour
 
 
 
-inline void UpdateESRB(QSharedPointer<core::Fic> fic, QHash<int, int>& esrbKeeper)
+inline void UpdateESRB(QSharedPointer<core::Fanfic> fic, QHash<int, int>& esrbKeeper)
 {
     if(fic->rated != "M")
         esrbKeeper[0]++; // kiddy
@@ -223,7 +217,7 @@ static QHash<QString, int> CreateMoodRedirects(){
     result["Friendship"] = 1;
     return result;
 }
-inline void UpdateGenreResults(QSharedPointer<core::Fic> fic,
+inline void UpdateGenreResults(QSharedPointer<core::Fanfic> fic,
                                QHash<QString, int>& genreKeeper,
                                QHash<int, int>& moodKeeper
                                )
@@ -353,12 +347,12 @@ inline void ProcessESRB(QSharedPointer<core::Author> author, int ficTotal, QHash
     bool hasprevalentESRB = author->stats.favouriteStats.esrbUniformityFactor > 0.65;
     bool kiddyPrevalent = esrbKeeper[0] > esrbKeeper[1];
     if(!hasprevalentESRB)
-        author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::agnostic;
+        author->stats.favouriteStats.esrbType = core::FavListDetails::ESRBType::agnostic;
     else{
         if(kiddyPrevalent)
-            author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::kiddy;
+            author->stats.favouriteStats.esrbType = core::FavListDetails::ESRBType::kiddy;
         else
-            author->stats.favouriteStats.esrbType = core::FicSectionStats::ESRBType::mature;
+            author->stats.favouriteStats.esrbType = core::FavListDetails::ESRBType::mature;
     }
 }
 
@@ -379,22 +373,23 @@ inline void ProcessMood(QSharedPointer<core::Author> author,
     author->stats.favouriteStats.moodNeutral = static_cast<double>(moodKeeper[1])/static_cast<double>(ficTotal);
     author->stats.favouriteStats.moodHappy= static_cast<double>(moodKeeper[2])/static_cast<double>(ficTotal);
     if(author->stats.favouriteStats.moodHappy > 0.5)
-        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::positive;
+        author->stats.favouriteStats.prevalentMood = core::FavListDetails::MoodType::positive;
     else if(author->stats.favouriteStats.moodNeutral> 0.5)
-        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::neutral;
+        author->stats.favouriteStats.prevalentMood = core::FavListDetails::MoodType::neutral;
     if(author->stats.favouriteStats.moodSad> 0.5)
-        author->stats.favouriteStats.prevalentMood = core::FicSectionStats::MoodType::sad;
+        author->stats.favouriteStats.prevalentMood = core::FavListDetails::MoodType::sad;
     auto maxMood = std::max(author->stats.favouriteStats.moodSad, std::max(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
     auto minMood = std::min(author->stats.favouriteStats.moodSad, std::min(author->stats.favouriteStats.moodNeutral, author->stats.favouriteStats.moodHappy));
     author->stats.favouriteStats.moodUniformity = static_cast<double>(minMood)/static_cast<double>(maxMood);
 }
-QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
+
+QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString url, QString& str)
 {
     thread_local FieldSearcher profilePageUpdatedFinder = CreateProfilePageUpdatedSearcher();
     thread_local FieldSearcher profilePageCreatedFinder = CreateProfilePageCreatedSearcher();
     statToken = core::FicSectionStatsTemporaryToken();
-    QList<QSharedPointer<core::Fic>>  sections;
-    core::Section section;
+    QList<QSharedPointer<core::Fanfic>>  sections;
+    core::FanficSectionInFFNFavourites section;
     int currentPosition = 0;
     int counter = 0;
 
@@ -445,11 +440,11 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
 
         if(ownStory)
         {
-            section.result->ficSource = core::Fic::efs_own_works;
+            section.result->ficSource = core::Fanfic::efs_own_works;
             section.result->author = author;
         }
         else
-            section.result->ficSource = core::Fic::efs_favourites;
+            section.result->ficSource = core::Fanfic::efs_favourites;
 
         if(sections.size() == 0)
             ReserveSpaceForSections(sections, section, str);
@@ -495,13 +490,24 @@ QList<QSharedPointer<core::Fic> > FavouriteStoryParser::ProcessPage(QString url,
     return sections;
 }
 
+QSet<QString> FavouriteStoryParser::FetchFavouritesIdList()
+{
+    QSet<QString> idResult;
+    for(auto fic : processedStuff)
+    {
+        if(fic->ficSource != core::Fanfic::efs_own_works)
+            idResult.insert(QString::number(fic->identity.web.ffn));
+    }
+    return idResult;
+}
+
 void FavouriteStoryParser::ClearProcessed()
 {
     processedStuff.clear();
     fandoms.clear();
     diagnostics = QStringList{};
     alreadyDone.clear();
-    recommender = core::FavouritesPage();
+    recommender = FavouritesPage();
 }
 
 void FavouriteStoryParser::ClearDoneCache()
@@ -621,7 +627,7 @@ QString FavouriteStoryParser::ExtractRecommenderNameFromUrl(QString url)
     return url.mid(pos+1);
 }
 
-void FavouriteStoryParser::GetFandomFromTaggedSection(core::Section & section, QString text)
+void FavouriteStoryParser::GetFandomFromTaggedSection(core::FanficSectionInFFNFavourites & section, QString text)
 {
     thread_local QRegExp rxFandom("(.*)(?=\\s-\\sRated:)");
     GetTaggedSection(text, rxFandom,    [&section](QString val){
@@ -630,7 +636,7 @@ void FavouriteStoryParser::GetFandomFromTaggedSection(core::Section & section, Q
     });
 }
 
-void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QString text)
+void FavouriteStoryParser::GetTitle(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text)
 {
     thread_local QRegExp rxStart(QRegExp::escape("data-title=\""));
     thread_local QRegExp rxEnd(QRegExp::escape("\""));
@@ -643,7 +649,7 @@ void FavouriteStoryParser::GetTitle(core::Section & section, int& startfrom, QSt
 }
 
 
-void FavouriteStoryParser::GetTitleAndUrl(core::Section & section, int& currentPosition, QString str)
+void FavouriteStoryParser::GetTitleAndUrl(core::FanficSectionInFFNFavourites & section, int& currentPosition, QString str)
 {
     GetTitle(section, currentPosition, str);
     GetUrl(section, currentPosition, str);

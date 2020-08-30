@@ -313,7 +313,7 @@ void PageManager::WipeAllCache()
 }
 #include "pagegetter.moc"
 
-PageThreadWorker::PageThreadWorker(QObject *parent)
+PageThreadWorker::PageThreadWorker(QObject*)
 {
     startTimer(2000);
 }

@@ -23,8 +23,8 @@ namespace interfaces {
 
 struct WriteStats
 {
-    QList<QSharedPointer<core::Fic>> requiresInsert;
-    QList<QSharedPointer<core::Fic>> requiresUpdate;
+    QList<QSharedPointer<core::Fanfic>> requiresInsert;
+    QList<QSharedPointer<core::Fanfic>> requiresUpdate;
     bool HasData(){return requiresInsert.size() > 0 || requiresUpdate.size() > 0;}
 };
 

@@ -118,7 +118,7 @@ QStringList TagWidget::GetAllTags()
     return allTags;
 }
 
-void TagWidget::SetAddDialogVisibility(bool value)
+void TagWidget::SetAddDialogVisibility(bool )
 {
     //ui->wdgControls->setVisible(value);
 }
@@ -347,8 +347,13 @@ void TagWidget::on_pbPurgeSelectedTags_clicked()
      SelectTags(selectedTags);
 }
 
-void TagWidget::on_chkUseTagsForAuthors_stateChanged(int arg1)
+void TagWidget::on_chkUseTagsForAuthors_stateChanged(int)
 {
     if(ui->chkUseTagsForAuthors->isChecked())
         emit clearLikedAuthors();
+}
+
+void TagWidget::on_pbTagFromClipboard_clicked()
+{
+    emit tagFromClipboard();
 }

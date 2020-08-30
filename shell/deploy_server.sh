@@ -34,15 +34,23 @@ CopyFilesToFolder settingFiles Run $dirname/$deployfolder  ".ini"
 CopyFilesToFolder executableFiles release $dirname/$deployfolder  
 CopyFilesToFolder scripts Run/dbcode $dirname/$deployfolder/dbcode  ".sql"
 
+mkdir $dirname/$deployfolder/Logs
+mkdir $dirname/$deployfolder/ServerData
+
 #copying .so dependencies to libs folder
 for filename in "${executableFiles[@]}"
 do
 	./shell/cpld.sh $dirname/$deployfolder/$filename $dirname/$deployfolder/libs
 done
 
+
+strip -s -R .comment -R .gnu.version  $dirname/$deployfolder/feed_server
+
 #copying qt dependencies
 echo "Operation: Copying Qt Dependencies"
 echo "plugins"
 cp -rf $QT_BASE_DIR/plugins $dirname/$deployfolder/libs/plugins
 cp -rf $QT_BASE_DIR/plugins $dirname/$deployfolder/plugins
+cp -rf $QT_BASE_DIR/plugins/sqldrivers $dirname/$deployfolder/sqldrivers
+
 

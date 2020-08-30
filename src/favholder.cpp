@@ -137,7 +137,7 @@ DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationLis
     return result;
 }
 
-MatchedFics RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
+FavouritesMatchResult RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
 {
     QLOG_INFO() << "Creating calculator";
     QSharedPointer<RecCalculatorImplWeighted> calculator;
@@ -156,7 +156,7 @@ MatchedFics RecCalculator::GetMatchedFics(UserMatchesInput input, int user2)
     auto unignoredSize = holder.faves[user2].xor_cardinality(ignoredTemp);
 
 
-    MatchedFics result;
+    FavouritesMatchResult result;
     QLOG_INFO() << "Blargh";
     Roaring temp = input.userFavourites;
     temp = temp & holder.faves[user2];

@@ -51,7 +51,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 //template void core::DataHolder::LoadData<0>(QString);
 //template void core::DataHolder::LoadData<1>(QString);
-void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicListDataAccumulator& dataResult);
+void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicListDataAccumulator& dataResult);
 
 static QString GetDbNameFromCurrentThread(){
     std::stringstream ss;
@@ -206,7 +206,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
     if(!prepared.isValid)
         return Status::OK;
 
-    QVector<core::Fic> data;
+    QVector<core::Fanfic> data;
     TimedAction action("Fetching data",[&](){
         prepared.ficSource->FetchData(prepared.filter, &data);
     });
@@ -247,7 +247,7 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
     QLOG_INFO() << "Fetching data for fic ID: " << task->id();
     QLOG_INFO() << "ID type: " << task->id_type();
 
-    QVector<core::Fic> data;
+    QVector<core::Fanfic> data;
     TimedAction action("Fetching data",[&](){
         ficSource->FetchData(filter, &data);
     });
@@ -263,7 +263,7 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
     Q_UNUSED(context);
     QLOG_INFO() << "Starting user matches";
     An<core::RecCalculator> holder;
-    QHash<int, core::MatchedFics> fics;
+    QHash<int, core::FavouritesMatchResult> fics;
     QLOG_INFO() << "received user task of size: " << task->test_users_size();
     Roaring r;
     Roaring ignoredFandoms;
@@ -320,7 +320,7 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
     if(!prepared.isValid)
         return Status::OK;
 
-    QVector<core::Fic> data;
+    QVector<core::Fanfic> data;
     int count = 0;
     TimedAction ("Getting fic count",[&](){
         count = prepared.ficSource->GetFicCount(prepared.filter);
@@ -645,7 +645,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     });
 
     dataPassAction.run();
-    QLOG_INFO() << "Byte size will be: " << response->ByteSize();
+    QLOG_INFO() << "Byte size will be: " << response->ByteSizeLong();
     return Status::OK;
 }
 
@@ -661,7 +661,10 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
 
     QLOG_TRACE() << "Verifying request params";
     if(!VerifyIDPack(task->ids(), response->mutable_response_info()))
+    {
+        QLOG_ERROR() << "failed verifying id pack";
         return Status::OK;
+    }
 
     QHash<int, int> idsToFill;
     for(int i = 0; i < task->ids().ffn_ids_size(); i++)
@@ -670,10 +673,12 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     bool result = reqContext.dbContext.fanfics->ConvertFFNTaggedFicsToDB(idsToFill);
     if(!result)
     {
+        QLOG_ERROR() << "failed to convert";
         response->set_success(false);
         return Status::OK;
     }
     response->set_success(true);
+    QLOG_INFO() << "Succesfully converted ids:" << idsToFill.keys().size();
     for(int fic: idsToFill.keys())
     {
         //QLOG_INFO() << "Returning fic ids: " << "DB: " << idsToFill[fic] << " FFN: " << fic;
@@ -745,7 +750,7 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
         fetchedFics = reqContext.dbContext.fanfics->GetFicsForRecCreation();
     });
     action.run();
-    core::FicSectionStats result;
+    core::FavListDetails result;
 
     core::FicListDataAccumulator dataAccumulator;
     auto genresInterface  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
@@ -829,7 +834,7 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
 
     reqContext.dbContext.InitAuthors();
     auto allAuthors = reqContext.dbContext.authors->GetRecommendersForFics({task->fic_id()});
-    auto recsAuthorsList = QString::fromStdString(task->author_list()).split(",", QString::SkipEmptyParts);
+    auto recsAuthorsList = QString::fromStdString(task->author_list()).split(",", Qt::SkipEmptyParts);
     QSet<int> result;
     for(auto author: recsAuthorsList)
     {
@@ -845,7 +850,7 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
 }
 
 void PassTaskIntoSnoozes(const ProtoSpace::SnoozeInfoRequest *task,
-                         QHash<int, core::SnoozeTaskInfo>& snoozes){
+                         QHash<int, core::FanficSnoozeStatus>& snoozes){
 
     for(int i = 0; i < task->snoozes_size(); i++)
     {
@@ -872,7 +877,7 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
         return Status::OK;
 
     reqContext.dbContext.InitFanfics();
-    QHash<int, core::SnoozeTaskInfo> snoozes;
+    QHash<int, core::FanficSnoozeStatus> snoozes;
     PassTaskIntoSnoozes(task, snoozes);
 
 
@@ -1062,7 +1067,7 @@ bool RequestContext::Process(ProtoSpace::ResponseInfo * info)
     return true;
 }
 
-void AccumulatorIntoSectionStats(core::FicSectionStats& result, const core::FicListDataAccumulator& dataResult)
+void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicListDataAccumulator& dataResult)
 {
     result.isValid = true;
     result.favourites = dataResult.ficCount;

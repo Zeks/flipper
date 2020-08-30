@@ -70,10 +70,10 @@ QSqlQuery FicSourceDirect::BuildQuery(core::StoryFilter filter, bool countOnly)
     return q;
 }
 
-inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
+inline core::Fanfic FicSourceDirect::LoadFanfic(QSqlQuery& q)
 {
-    core::Fic result;
-    result.id = q.value("ID").toInt();
+    core::Fanfic result;
+    result.identity.id = q.value("ID").toInt();
     //result.fandom = q.value("FANDOM").toString();
     //QLOG_INFO() << "fandom ids:" <<  q.value("FANDOMIDS").toString();
     for(auto id: q.value("FANDOMIDS").toString().split("::::"))
@@ -91,25 +91,25 @@ inline core::Fic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.published = published;
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
-    result.ffn_id = q.value("URL").toInt();
+    result.identity.web.ffn = q.value("URL").toInt();
     //QLOG_INFO() << "ffn_id:" <<  q.value("URL").toString();
-    result.tags = q.value("TAGS").toString();
+    result.userData.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
     result.chapters = QString::number(q.value("CHAPTERS").toInt());
     result.complete= q.value("COMPLETE").toInt();
-    result.atChapter = q.value("AT_CHAPTER").toInt();
-    result.recommendationsMainList= q.value("SUMRECS").toInt();
+    result.userData.atChapter = q.value("AT_CHAPTER").toInt();
+    result.recommendationsData.recommendationsMainList= q.value("SUMRECS").toInt();
     QString tg1 = q.value("true_genre1").toString();
     QString tg2 = q.value("true_genre2").toString();
     QString tg3 = q.value("true_genre3").toString();
     if(!tg1.isEmpty())
-        result.realGenreData.push_back({{tg1}, q.value("true_genre1_percent").toFloat()});
+        result.statistics.realGenreData.push_back({{tg1}, q.value("true_genre1_percent").toFloat()});
     if(!tg2.isEmpty())
-        result.realGenreData.push_back({{tg2}, q.value("true_genre2_percent").toFloat()});
+        result.statistics.realGenreData.push_back({{tg2}, q.value("true_genre2_percent").toFloat()});
     if(!tg3.isEmpty())
-        result.realGenreData.push_back({{tg3}, q.value("true_genre3_percent").toFloat()});
+        result.statistics.realGenreData.push_back({{tg3}, q.value("true_genre3_percent").toFloat()});
 
     result.slashData.keywords_no = q.value("keywords_no").toInt();
     result.slashData.keywords_yes = q.value("keywords_yes").toInt();
@@ -143,7 +143,7 @@ void FicSourceDirect::InitQueryType(bool client, QString userToken)
     countQueryBuilder.InitTagFilterBuilder(client, userToken);
 }
 
-void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fic> *data)
+void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fanfic> *data)
 {
     if(!data)
         return;
@@ -178,7 +178,7 @@ void FicSourceDirect::FetchData(core::StoryFilter searchfilter, QVector<core::Fi
     }
     QLOG_INFO_PURE() << "EXECUTED QUERY:" << q.lastQuery();
     if(data->size() > 0)
-        lastFicId = (*data)[data->size() - 1].id;
+        lastFicId = (*data)[data->size() - 1].identity.id;
     QLOG_TRACE_PURE() << "loaded fics:" << counter;
 }
 
@@ -189,7 +189,7 @@ FicFilterSlash::FicFilterSlash()
 
 FicFilterSlash::~FicFilterSlash(){}
 
-bool FicFilterSlash::Passed(core::Fic * fic, const SlashFilterState& slashFilter)
+bool FicFilterSlash::Passed(core::Fanfic * fic, const SlashFilterState& slashFilter)
 {
     bool allow = true;
     SlashPresence slashToken;

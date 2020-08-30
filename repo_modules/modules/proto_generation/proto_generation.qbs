@@ -2,6 +2,8 @@ import qbs
 import qbs.FileInfo
 import qbs.File
 import qbs.Utilities
+import qbs.Environment
+import "../../../BuildHelpers.js" as Funcs
 
 Module {
     property string rootDir: ""
@@ -25,8 +27,12 @@ Module {
             }
         }
 
+        Artifact {
+            filePath: FileInfo.path(input.filePath)  + '/' + FileInfo.baseName(input.fileName) + '.pb.h'
+        }
+
         prepare: {
-            var protoc = product.moduleProperty('localvariables', 'protoc');
+            var protoc = Funcs.getEnvOrDie("PROTOC")
 
             // use of canonicalFilePath is discourage because it might break on symlinks
 
@@ -42,12 +48,12 @@ Module {
             protoArgs = protoArgs.concat(["--cpp_out=" + generationDir]);
             protoArgs = protoArgs.concat(input.filePath);
 
-//            console.error("rdir: " + rootDir)
+            //console.error("rdir: " + rootDir)
 //            console.error("relativeDir: " + FileInfo.path(input.fileName))
 //            console.error(protoArgs.join())
 
             var protoCommand = new Command(protoc, protoArgs);
-            protoCommand.description = 'Generating classes from: ' + input.fileName;
+            protoCommand.description = 'protoc-cpp ' + input.fileName;
 
             return [protoCommand];
         }

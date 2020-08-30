@@ -288,7 +288,7 @@ private:
     void SetPreviousEnabled(bool value);
     void SetNextEnabled(bool value);
     void FetchScoresForFics();
-    void CreateRecommendationListForCurrentMode();
+    bool CreateRecommendationListForCurrentMode();
     void PrepareUIToDisplayNewRecommendationList(QString name);
 
     struct FicSourceResult{
@@ -323,7 +323,7 @@ private:
 
     QSharedPointer<TableDataInterface> typetableInterface;
     FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
-    TableDataListHolder<QVector, core::Fic>* holder = nullptr; // an interface class that model uses to access the data
+    TableDataListHolder<QVector, core::Fanfic>* holder = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
     QStringListModel* ignoredFandomsModel= nullptr;
@@ -586,6 +586,8 @@ private slots:
     void on_chkLikedAuthors_stateChanged(int arg1);
 
     void on_pbResetFilter_clicked();
+
+    void OnTagFromClipboard();
 
 signals:
 

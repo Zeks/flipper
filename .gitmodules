@@ -3,4 +3,4 @@
 	url = https://github.com/yourWaifu/sleepy-discord.git
 [submodule "proto"]
 	path = proto
-	url = git@github.com:Zeks/flipper-proto.git
+	url = https://github.com/Zeks/flipper-proto.git

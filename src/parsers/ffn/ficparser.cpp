@@ -30,13 +30,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 FicParser::FicParser(QSharedPointer<interfaces::Fanfics> fanfics,
                      QSharedPointer<interfaces::Genres> genres)
-: FFNParserBase(fanfics), genres(genres){
+: fanfics(fanfics), genres(genres){
 
 }
 
-QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
+QSharedPointer<core::Fanfic> FicParser::ProcessPage(QString url, QString& str)
 {
-    core::Section section;
+    core::FanficSectionInFFNFavourites section;
     int currentPosition = 0;
     if(str.contains("Unable to locate story. Code 1"))
     {
@@ -47,8 +47,8 @@ QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
     }
 
     section = GetSection(str);
-    section.result->webId = url_utils::GetWebId(url, "ffn").toInt();
-    qDebug() << "Processing fic: " << section.result->webId;
+    section.result->identity.web.ffn = url_utils::GetWebId(url, "ffn").toInt();
+    qDebug() << "Processing fic: " << section.result->identity.web.ffn;
     currentPosition = section.start;
 
     GetAuthor(section, str);
@@ -97,9 +97,9 @@ QSharedPointer<core::Fic> FicParser::ProcessPage(QString url, QString& str)
     return section.result;
 }
 
-core::Section::Tag FicParser::GetStatTag(QString text, QString tag)
+core::FanficSectionInFFNFavourites::Tag FicParser::GetStatTag(QString text, QString tag)
 {
-    core::Section::Tag result;
+    core::FanficSectionInFFNFavourites::Tag result;
     result.marker = tag;
     QRegExp rx(tag);
     auto index = rx.indexIn(text);
@@ -125,7 +125,7 @@ void FicParser::GetTaggedSection(QString text,  QString rxString, std::function<
         functor("not found");
 }
 
-void FicParser::ProcessUnmarkedSections(core::Section & section)
+void FicParser::ProcessUnmarkedSections(core::FanficSectionInFFNFavourites & section)
 {
     auto& stat = section.statSection;
     // step 0, process rating to find the end of it
@@ -142,7 +142,7 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
     int separatorTagLength = 3;
     if(index == -1)
         return;
-    stat.language = core::Section::Tag(rxlanguage.cap(1), index + separatorTagLength + rxlanguage.cap(1).length());
+    stat.language = core::FanficSectionInFFNFavourites::Tag(rxlanguage.cap(1), index + separatorTagLength + rxlanguage.cap(1).length());
 
     // step 2 decide if we have one or two sections between language and next found tagged position
     int nextTaggedSectionPosition = -1;
@@ -208,7 +208,7 @@ void FicParser::ProcessUnmarkedSections(core::Section & section)
     }
 }
 
-void FicParser::DetermineMarkedSubsectionPresence(core::Section & section)
+void FicParser::DetermineMarkedSubsectionPresence(core::FanficSectionInFFNFavourites & section)
 {
     auto& stat = section.statSection;
     stat.rated = GetStatTag(stat.text, "Rated:");
@@ -241,7 +241,7 @@ void FicParser::SetRewriteAuthorNames(bool value)
     rewriteAuthorName = value;
 }
 
-void FicParser::GetFandom(core::Section & section, int &, QString text)
+void FicParser::GetFandom(core::FanficSectionInFFNFavourites & section, int &, QString text)
 {
     auto full = GetDoubleNarrow(text,"id=pre_story_links", "</a>\\n", true,
                                 "",  "/\">", true,
@@ -256,7 +256,7 @@ void FicParser::GetFandom(core::Section & section, int &, QString text)
 }
 
 
-void FicParser::GetAuthor(core::Section & section,  QString text)
+void FicParser::GetAuthor(core::FanficSectionInFFNFavourites & section,  QString text)
 {
     auto full = GetDoubleNarrow(text,"/u/\\d+/", "</a>", true,
                                 "",  "'>", false,
@@ -276,7 +276,7 @@ void FicParser::GetAuthor(core::Section & section,  QString text)
     queuedAuthor = author;
 }
 
-void FicParser::GetTitle(core::Section & section,QString text)
+void FicParser::GetTitle(core::FanficSectionInFFNFavourites & section,QString text)
 {
     QRegExp rx("Follow/Fav</button><b\\sclass='xcontrast[_]txt'>(.*)</");
     rx.setMinimal(true);
@@ -290,14 +290,14 @@ void FicParser::GetTitle(core::Section & section,QString text)
     qDebug() << section.result->title;
 }
 
-void FicParser::GetStatSection(core::Section &section,  QString text)
+void FicParser::GetStatSection(core::FanficSectionInFFNFavourites &section,  QString text)
 {
     auto full = GetSingleNarrow(text,"Rated:", "\\sid:", true);
     qDebug() << full;
     section.statSection.text = full;
 }
 
-void FicParser::GetSummary(core::Section & section, QString text)
+void FicParser::GetSummary(core::FanficSectionInFFNFavourites & section, QString text)
 {
     auto summary = GetDoubleNarrow(text,
                     "Private\\sMessage", "</div", true,
@@ -308,9 +308,9 @@ void FicParser::GetSummary(core::Section & section, QString text)
     qDebug() << summary;
 }
 
-core::Section FicParser::GetSection(QString text)
+core::FanficSectionInFFNFavourites FicParser::GetSection(QString text)
 {
-    core::Section section;
+    core::FanficSectionInFFNFavourites section;
     section.start = 0;
     section.end = text.length();
     return section;

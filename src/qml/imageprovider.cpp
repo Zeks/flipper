@@ -4,7 +4,7 @@
 #include <QPainter>
 #include "third_party/qr/QrCode.hpp"
 
-    QPixmap QRImageProvider::requestPixmap ( const QString &id, QSize *size, const QSize &requestedSize )
+    QPixmap QRImageProvider::requestPixmap ( const QString &, QSize *, const QSize &)
     {
         QSize localSize;
         localSize.setWidth(300);

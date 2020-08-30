@@ -75,7 +75,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "genericeventfilter.h"
 
 
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/parsers/ffn/fandomparser.h"
 #include "include/parsers/ffn/fandomindexparser.h"
 #include "include/url_utils.h"
@@ -185,8 +185,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lblSource->setPalette(pal);
     ui->lblSource->setAutoFillBackground(true);
 
-//    ui->wdgAdvancedControls->setPalette(pal);
-//    ui->wdgAdvancedControls->setAutoFillBackground(true);
+    //    ui->wdgAdvancedControls->setPalette(pal);
+    //    ui->wdgAdvancedControls->setAutoFillBackground(true);
 
 
     styleSheetForReclistMenu = "QPushButton{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(239,225,179, 128), stop:1 rgba(224,179,110, 128))}"
@@ -419,6 +419,7 @@ void MainWindow::InitConnections()
 
     });
     connect(ui->wdgTagsPlaceholder, &TagWidget::dbIDRequest, this, &MainWindow::OnFillDBIdsForTags);
+    connect(ui->wdgTagsPlaceholder, &TagWidget::tagFromClipboard, this, &MainWindow::OnTagFromClipboard);
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagReloadRequested, this, &MainWindow::OnTagReloadRequested);
     connect(ui->wdgTagsPlaceholder, &TagWidget::clearLikedAuthors, this, &MainWindow::OnClearLikedAuthorsRequested);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
@@ -447,12 +448,12 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     ReinitProgressbar(task->size);
 }
 
-int ConvertFicSnoozeModeToInt (core::Fic::EFicSnoozeMode type){return static_cast<int>(type);}
-void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = static_cast<core::Fic::EFicSnoozeMode>(value);}
+int ConvertFicSnoozeModeToInt (core::Fanfic::EFicSnoozeMode type){return static_cast<int>(type);}
+void AssignFicSnoozeModeFromInt(core::Fanfic* data, int value){data->userData.snoozeMode = static_cast<core::Fanfic::EFicSnoozeMode>(value);}
 
 #define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -461,7 +462,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toString(); \
@@ -471,7 +472,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_STRING_NUMBER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data){ \
     QString temp;\
@@ -489,7 +490,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toString(); \
@@ -499,7 +500,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -508,7 +509,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toDateTime(); \
@@ -517,7 +518,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_STRING_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -526,7 +527,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = QString::number(value.toInt()); \
@@ -535,7 +536,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -544,7 +545,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toInt(); \
@@ -553,7 +554,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_ENUM_GETSET(GETTER, SETTER, HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(GETTER(data->PARAM)); \
@@ -562,7 +563,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     SETTER(data, value.toInt());    \
@@ -571,7 +572,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_STRINGLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -598,36 +599,36 @@ void MainWindow::SetupTableAccess()
     ADD_DATE_GETSET(holder, 7, 0, published);
     ADD_DATE_GETSET(holder, 8, 0, updated);
     ADD_STRING_GETSET(holder, 9, 0, urlFFN);
-    ADD_STRING_GETSET(holder, 10, 0, tags);
+    ADD_STRING_GETSET(holder, 10, 0, userData.tags);
     ADD_STRING_NUMBER_GETSET(holder, 11, 0, wordCount);
     ADD_STRING_INTEGER_GETSET(holder, 12, 0, favourites);
     ADD_STRING_INTEGER_GETSET(holder, 13, 0, reviews);
     ADD_STRING_INTEGER_GETSET(holder, 14, 0, chapters);
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
-    ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
-    ADD_INTEGER_GETSET(holder, 17, 0, id);
-    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsMainList);
-    ADD_STRING_GETSET(holder, 19, 0, realGenreString);
+    ADD_INTEGER_GETSET(holder, 16, 0, userData.atChapter);
+    ADD_INTEGER_GETSET(holder, 17, 0, identity.id);
+    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsData.recommendationsMainList);
+    ADD_STRING_GETSET(holder, 19, 0, statistics.realGenreString);
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
-    ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
-    ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
-    ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
-    ADD_INTEGER_GETSET(holder, 24, 0, likedAuthor);
-    ADD_INTEGER_GETSET(holder, 25, 0, purged);
+    ADD_INTEGER_GETSET(holder, 21, 0, statistics.minSlashPass);
+    ADD_STRINGLIST_GETTER(holder, 22, 0, recommendationsData.voteBreakdown);
+    ADD_STRINGLIST_GETTER(holder, 23, 0, recommendationsData.voteBreakdownCounts);
+    ADD_INTEGER_GETSET(holder, 24, 0, userData.likedAuthor);
+    ADD_INTEGER_GETSET(holder, 25, 0, recommendationsData.purged);
     ADD_INTEGER_GETSET(holder, 26, 0, score);
-    ADD_INTEGER_GETSET(holder, 27, 0, snoozeExpired);
-    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, snoozeMode);
-    ADD_INTEGER_GETSET(holder, 29, 0, chapterTillSnoozed);
-    ADD_INTEGER_GETSET(holder, 30, 0, chapterSnoozed);
+    ADD_INTEGER_GETSET(holder, 27, 0, userData.snoozeExpired);
+    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, userData.snoozeMode);
+    ADD_INTEGER_GETSET(holder, 29, 0, userData.chapterTillSnoozed);
+    ADD_INTEGER_GETSET(holder, 30, 0, userData.chapterSnoozed);
     ADD_STRING_GETSET(holder, 31, 0, notes);
     ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
-    ADD_STRINGLIST_GETTER(holder, 33, 0, selected);
-    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsSecondList);
-    ADD_INTEGER_GETSET(holder, 35, 0, placeInMainList);
-    ADD_INTEGER_GETSET(holder, 36, 0, placeInSecondList);
-    ADD_INTEGER_GETSET(holder, 37, 0, placeOnFirstPedestal);
-    ADD_INTEGER_GETSET(holder, 38, 0, placeOnSecondPedestal);
-    ADD_INTEGER_GETSET(holder, 39, 0, ficIsSnoozed);
+    ADD_STRINGLIST_GETTER(holder, 33, 0, uiData.selected);
+    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsData.recommendationsSecondList);
+    ADD_INTEGER_GETSET(holder, 35, 0, recommendationsData.placeInMainList);
+    ADD_INTEGER_GETSET(holder, 36, 0, recommendationsData.placeInSecondList);
+    ADD_INTEGER_GETSET(holder, 37, 0, recommendationsData.placeOnFirstPedestal);
+    ADD_INTEGER_GETSET(holder, 38, 0, recommendationsData.placeOnSecondPedestal);
+    ADD_INTEGER_GETSET(holder, 39, 0, userData.ficIsSnoozed);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -644,7 +645,7 @@ void MainWindow::SetupTableAccess()
 
 void MainWindow::SetupFanficTable()
 {
-    holder = new TableDataListHolder<QVector, core::Fic>();
+    holder = new TableDataListHolder<QVector, core::Fanfic>();
     typetableModel = new FicModel();
 
     SetupTableAccess();
@@ -759,7 +760,7 @@ void MainWindow::OnShuffleDisplayedData()
 
     int selectedFicId = -1;
     if(selectedIndex >= 0)
-        selectedFicId = env->fanfics[selectedIndex].id;
+        selectedFicId = env->fanfics[selectedIndex].GetIdInDatabase();
 
     auto rng = std::default_random_engine {};
     std::shuffle(std::begin(env->fanfics), std::end(env->fanfics), rng);
@@ -769,7 +770,7 @@ void MainWindow::OnShuffleDisplayedData()
         int index = 0;
         for(auto fic : env->fanfics)
         {
-            if(fic.id == selectedFicId)
+            if(fic.GetIdInDatabase() == selectedFicId)
             {
                 selectedIndex = index;
                 break;
@@ -1017,8 +1018,8 @@ void MainWindow::OnDoFormattedListByFandoms()
     for(int i = 0; i < typetableModel->rowCount(); i ++)
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
-    QMap<int, QList<core::Fic*>> byFandoms;
-    for(core::Fic& fic : env->fanfics)
+    QMap<int, QList<core::Fanfic*>> byFandoms;
+    for(core::Fanfic& fic : env->fanfics)
     {
         auto* ficPtr = &fic;
 
@@ -1026,7 +1027,7 @@ void MainWindow::OnDoFormattedListByFandoms()
         if(fandoms.size() == 0)
         {
             auto fandom = ficPtr->fandom.trimmed();
-            qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">";
+            qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">";
         }
         for(auto fandom: fandoms)
         {
@@ -1057,7 +1058,7 @@ void MainWindow::OnDoFormattedListByFandoms()
         for(auto fic : byFandoms[fandomKey])
         {
             auto* ficPtr = fic;
-            QPair<QString, int> key = {name, fic->id};
+            QPair<QString, int> key = {name, fic->GetIdInDatabase()};
 
             if(already.contains(key))
                 continue;
@@ -1067,7 +1068,7 @@ void MainWindow::OnDoFormattedListByFandoms()
             bool validGenre = true;
             if(validGenre)
             {
-                result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+                result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
                 result+=ficPtr->genreString + "<br><br>";
                 QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
@@ -1093,7 +1094,7 @@ void MainWindow::OnDoFormattedList()
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
     QMap<QString, QList<int>> byFandoms;
-    for(core::Fic& fic : env->fanfics)
+    for(core::Fanfic& fic : env->fanfics)
     {
         //auto ficPtr = env->interfaces.fanfics->GetFicById(id);
         auto* ficPtr = &fic;
@@ -1101,7 +1102,7 @@ void MainWindow::OnDoFormattedList()
         bool validGenre = true;
         if(validGenre)
         {
-            result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+            result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
             result+=ficPtr->genreString + "<br><br>";
             QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
@@ -1655,7 +1656,7 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
     int rownum = row.toInt();
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
     auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
-    core::SnoozeTaskInfo data;
+    core::FanficSnoozeStatus data;
     data.ficId = id;
     if(type.toInt() == 0)
     {
@@ -1693,7 +1694,7 @@ void MainWindow::OnSnoozeAdded(QVariant row)
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
 
     auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
-    core::SnoozeTaskInfo info;
+    core::FanficSnoozeStatus info;
     info.ficId = id;
     info.untilFinished = 0;
     info.snoozedTillChapter = currentChapter+1;
@@ -2124,7 +2125,7 @@ void MainWindow::OpenRecommendationList(QString listName)
     }
 }
 
-int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool)
 {
     TaskProgressGuard guard(this);
     int result = -1;
@@ -2960,9 +2961,9 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         params->useDislikes = ui->chkUseDislikes->isChecked();
         params->useDeadFicIgnore= ui->chkIgnoreMarkedDeadFics->isChecked();
     }
-//    interfaces::TagIDFetcherSettings settings;
-//    settings.tags.push_back({"Liked"});
-//    auto fics = env->interfaces.tags->GetFicsTaggedWith(settings);
+    //    interfaces::TagIDFetcherSettings settings;
+    //    settings.tags.push_back({"Liked"});
+    //    auto fics = env->interfaces.tags->GetFicsTaggedWith(settings);
     if(ui->chkAssignLikedToSources->isChecked())
         params->assignLikedToSources = true;
 
@@ -3060,7 +3061,7 @@ void FetchFFNIdForOtherUserIntoParams(QSharedPointer<core::RecommendationList> p
     params->userFFNId = otherID;
 }
 
-void MainWindow::CreateRecommendationListForCurrentMode()
+bool MainWindow::CreateRecommendationListForCurrentMode()
 {
     // step 1: get sources
     MainWindow::FicSourceResult sources;
@@ -3078,7 +3079,7 @@ void MainWindow::CreateRecommendationListForCurrentMode()
     if(!sources.error.isEmpty())
     {
         ui->lblCreationStatus->setText(sources.error);
-        return;
+        return false;
     }
 
     ui->lblCreationStatus->setText("<font color=\"darkBlue\">Fetching user data.</font>");
@@ -3092,12 +3093,12 @@ void MainWindow::CreateRecommendationListForCurrentMode()
     if(!params)
     {
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Couldn't create params for recommendations.</font>");
-        return;
+        return false;
     }
     if(params->name.isEmpty())
     {
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Name for the recommendation list must be supplied.</font>");
-        return;
+        return false;
     }
     // step 3: create list
     ui->lblCreationStatus->setText("<font color=\"darkBlue\">Creating recommendations.</font>");
@@ -3116,10 +3117,11 @@ void MainWindow::CreateRecommendationListForCurrentMode()
             report=report.arg("");
 
         ui->lblCreationStatus->setText(report);
-        return;
+        return false;
     }
     lastCreatedListName = params->name;
     ui->lblCreationStatus->setText("<font color=\"darkGreen\">Finished.</font>");
+    return true;
 }
 
 void MainWindow::PrepareUIToDisplayNewRecommendationList(QString name)
@@ -3149,7 +3151,7 @@ MainWindow::FicSourceResult MainWindow::PickSourcesForEnteredProfile(QLineEdit *
         result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
     }
     else
-       result.error = "<font color=\"darkRed\">Not a valid FFN user ID.</font>";
+        result.error = "<font color=\"darkRed\">Not a valid FFN user ID.</font>";
     return result;
 
 }
@@ -3178,7 +3180,7 @@ MainWindow::FicSourceResult MainWindow::PickSourcesFromTags()
         result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
     }
     else
-       result.error = "<font color=\"darkRed\">No tags selected or no fics assigned to those tags.</font>";
+        result.error = "<font color=\"darkRed\">No tags selected or no fics assigned to those tags.</font>";
 
     return result;
 }
@@ -3193,7 +3195,8 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
         ui->lblCreationStatus->setText("<font color=\"darkRed\">Please select a name for your list.</font>");
         return;
     }
-    CreateRecommendationListForCurrentMode();
+    if(!CreateRecommendationListForCurrentMode())
+        return;
     if(lastCreatedListName.isEmpty())
         return;
 
@@ -3206,10 +3209,10 @@ void MainWindow::on_pbRecsCreateListFromSources_clicked()
 void MainWindow::on_pbRefreshRecList_clicked()
 {
     QMessageBox::StandardButton reply;
-     reply = QMessageBox::question(this, "Warning!", "This will recreate this recommendations list to pull new fics from the server. Do you want  to recreate?",
-                                   QMessageBox::Yes|QMessageBox::No);
-     if (reply != QMessageBox::Yes)
-         return;
+    reply = QMessageBox::question(this, "Warning!", "This will recreate this recommendations list to pull new fics from the server. Do you want  to recreate?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if (reply != QMessageBox::Yes)
+        return;
 
     auto defaultParams = CreateReclistParamsFromUI(true);
     auto params = env->interfaces.recs->FetchParamsForRecList(ui->cbRecGroup->currentText());
@@ -3353,7 +3356,7 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
     if(fics.size() == 0)
         return;
 
-    LoadAutomaticSettingsForRecListSources(fics.size());
+    //LoadAutomaticSettingsForRecListSources(fics.size());
     edit->clear();
     edit->setOpenExternalLinks(false);
     edit->setOpenLinks(false);
@@ -4154,4 +4157,37 @@ void MainWindow::on_chkLikedAuthors_stateChanged(int)
 void MainWindow::on_pbResetFilter_clicked()
 {
     ResetFilterUItoDefaults();
+}
+
+void MainWindow::OnTagFromClipboard()
+{
+    MainWindow::FicSourceResult result;
+
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Warning!", "Mass tagging from clipboard is a potentially dangerous operation. Are you sure?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if (reply != QMessageBox::Yes)
+        return;
+
+
+    auto tags = ui->wdgTagsPlaceholder->GetSelectedTags();
+    QClipboard *clipboard = QApplication::clipboard();
+    ui->edtRecsContents->clear();
+    QString text = clipboard->text();
+
+    if(!text.trimmed().isEmpty())
+    {
+        ui->edtRecsContents->setText(clipboard->text());
+        result.sources = PickFicIDsFromTextBrowser(ui->edtRecsContents);
+    }
+    else
+        result.error = "<font color=\"darkRed\">No tags selected or no fics assigned to those tags.</font>";
+
+    auto ficIDs = env->GetDBIDsForFics(result.sources);
+
+    for(auto tag : tags){
+        for(auto fic : ficIDs){
+            env->interfaces.tags->SetTagForFic(fic, tag);
+        }
+    }
 }

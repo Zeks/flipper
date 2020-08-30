@@ -60,7 +60,7 @@ struct GenreConverter{
             fixedGenreString = fixedGenreString.replace("Hurt/Comfort", "");
         }
 
-        genresList = fixedGenreString.split("/", QString::SkipEmptyParts);
+        genresList = fixedGenreString.split("/", Qt::SkipEmptyParts);
         if(hasHurt)
             genresList.push_back("Hurt/Comfort");
         for(auto& genre: genresList)

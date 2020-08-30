@@ -25,19 +25,19 @@ FFNParserBase::~FFNParserBase()
 
 }
 
-void FFNParserBase::ProcessGenres(core::Section &section, QString genreText)
+void FFNParserBase::ProcessGenres(core::FanficSectionInFFNFavourites &section, QString genreText)
 {
     section.result->SetGenres(genreText, "ffn");
     //qDebug() << "Genres: " << section.result->genres;
 }
 
-void FFNParserBase::ProcessCharacters(core::Section &section, QString characters)
+void FFNParserBase::ProcessCharacters(core::FanficSectionInFFNFavourites &section, QString characters)
 {
     section.result->charactersFull = characters.trimmed();
     //qDebug() << "Characters: " << characters;
 }
 
-void FFNParserBase::ProcessStatSection(core::Section &section)
+void FFNParserBase::ProcessStatSection(core::FanficSectionInFFNFavourites &section)
 {
     thread_local QRegExp rxWords("Words:\\s(\\d{1,8})");
     thread_local QRegExp rxChapters("Chapters:\\s(\\d{1,5})");
@@ -51,8 +51,6 @@ void FFNParserBase::ProcessStatSection(core::Section &section)
 
     section.result->statSection = section.statSection.text;
     auto statText = section.statSection.text;
-    if(!statText.contains("English"))
-        section.result->isEnglish = false;
 
     statText = statText.replace(",", "");
 
@@ -98,7 +96,7 @@ void FFNParserBase::GetTaggedSection(QString text, QRegExp &rx, std::function<vo
         functor("not found");
 }
 
-void FFNParserBase::GetFandomFromTaggedSection(core::Section &, QString )
+void FFNParserBase::GetFandomFromTaggedSection(core::FanficSectionInFFNFavourites &, QString )
 {
     //intentionally empty
 }
@@ -122,7 +120,7 @@ void FFNParserBase::GetCharacters(QString text,
         full = QString();
     functor(full);
 }
-void FFNParserBase::GetCrossoverFandomList(core::Section & section,  QString text)
+void FFNParserBase::GetCrossoverFandomList(core::FanficSectionInFFNFavourites & section,  QString text)
 {
     thread_local QRegExp rxStart("Crossover\\s-\\s");
     thread_local QRegExp rxEnd("\\s-\\sRated:");
@@ -143,7 +141,7 @@ void FFNParserBase::GetCrossoverFandomList(core::Section & section,  QString tex
     section.result->isCrossover = true;
 }
 
-void FFNParserBase::GetUrl(core::Section & section, int& startfrom, QString text)
+void FFNParserBase::GetUrl(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text)
 {
     // looking for first href
     thread_local QRegExp rxStart(QRegExp::escape("href=\""));
@@ -151,13 +149,13 @@ void FFNParserBase::GetUrl(core::Section & section, int& startfrom, QString text
     int indexStart = rxStart.indexIn(text,startfrom);
     int indexEnd = rxEnd.indexIn(text, indexStart);
     section.result->SetUrl("ffn",text.mid(indexStart + 6,indexEnd - (indexStart + 6)));
-    section.result->webId = section.result->ffn_id = url_utils::GetWebId(section.result->url("ffn"), "ffn").toInt();
+    section.result->identity.web.ffn = url_utils::GetWebId(section.result->url("ffn"), "ffn").toInt();
     startfrom = indexEnd+2;
 }
 
 
 
-void FFNParserBase::GetAuthor(core::Section & section, int &startfrom,  QString text)
+void FFNParserBase::GetAuthor(core::FanficSectionInFFNFavourites & section, int &startfrom,  QString text)
 {
     text = text.mid(startfrom);
     auto full = GetDoubleNarrow(text,"/u/\\d+/", "</a>", true,
@@ -177,7 +175,7 @@ void FFNParserBase::GetAuthor(core::Section & section, int &startfrom,  QString 
 
 }
 
-void FFNParserBase::GetSummary(core::Section & section, int& startfrom, QString text)
+void FFNParserBase::GetSummary(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text)
 {
     thread_local QRegExp rxStart(QRegExp::escape("padtop'>"));
     thread_local QRegExp rxEnd(QRegExp::escape("<div"));
@@ -188,7 +186,7 @@ void FFNParserBase::GetSummary(core::Section & section, int& startfrom, QString 
     section.summaryEnd = indexEnd;
     startfrom = indexEnd;
 }
-void FFNParserBase::GetStatSection(core::Section &section, int &startfrom, QString text)
+void FFNParserBase::GetStatSection(core::FanficSectionInFFNFavourites &section, int &startfrom, QString text)
 {
     thread_local QRegExp rxStart("padtop2\\sxgray");
     thread_local QRegExp rxEnd("</div></div></div>");
@@ -200,9 +198,9 @@ void FFNParserBase::GetStatSection(core::Section &section, int &startfrom, QStri
     //qDebug() << section.statSection;
 }
 
-core::Section FFNParserBase::GetSection(QString text, QString sectionSeparator, int start)
+core::FanficSectionInFFNFavourites FFNParserBase::GetSection(QString text, QString sectionSeparator, int start)
 {
-    core::Section section ;
+    core::FanficSectionInFFNFavourites section ;
     thread_local QRegExp rxStart(sectionSeparator);
     rxStart.setPattern(sectionSeparator);
     int index = rxStart.indexIn(text, start);
@@ -218,11 +216,11 @@ core::Section FFNParserBase::GetSection(QString text, QString sectionSeparator, 
     return section;
 }
 
-void FFNParserBase::ProcessSection(core::Section &section, int &currentPosition, QString str)
+void FFNParserBase::ProcessSection(core::FanficSectionInFFNFavourites &section, int &currentPosition, QString str)
 {
     section.result->isValid = true;
     GetTitleAndUrl(section, currentPosition, str);
-    if(section.result->ficSource != core::Fic::efs_own_works)
+    if(section.result->ficSource != core::Fanfic::efs_own_works)
         GetAuthor(section, currentPosition, str);
     GetSummary(section, currentPosition, str);
 

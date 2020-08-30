@@ -152,7 +152,7 @@ void QsLogging::FileDestination::write(const QString& message, Level level, Leve
         mOutputStream.setDevice(&mFile);
     }
 
-    mOutputStream << message << endl;
+    mOutputStream << message << Qt::endl;
     mOutputStream.flush();
 }
 
@@ -193,7 +193,7 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
             }
 
 
-            mOutputStream << message << endl;
+            mOutputStream << message << Qt::endl;
             mOutputStream.flush();
         }
         queue.push_back(message);
@@ -212,14 +212,14 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
         }
         bool queueFull = queue.size() > 0;
         if(queueFull)
-            mOutputStream << "Error level triggered, dumping full cycle" << endl;
+            mOutputStream << "Error level triggered, dumping full cycle" << Qt::endl;
         for(auto string : queue)
         {
-            mOutputStream << string << endl;
+            mOutputStream << string << Qt::endl;
         }
-        mOutputStream << message << endl;
+        mOutputStream << message << Qt::endl;
         if(queueFull)
-            mOutputStream << "Error level triggered, end of dump" << endl;
+            mOutputStream << "Error level triggered, end of dump" << Qt::endl;
         queue.clear();
         mOutputStream.flush();
     }

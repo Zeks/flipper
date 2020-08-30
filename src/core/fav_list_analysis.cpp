@@ -150,11 +150,11 @@ void FicListDataAccumulator::ProcessGenres()
     auto maxMood = std::max(result.moodRatios[1], std::max(result.moodRatios[2], result.moodRatios[3]));
     result.moodUniformityRatio = DivideAsDoubles(minMood,maxMood);
     if(result.moodRatios[1] > result.moodRatios[2] && result.moodRatios[1] > result.moodRatios[3])
-        result.prevalentMood = FicSectionStats::MoodType::sad;
+        result.prevalentMood = FavListDetails::MoodType::sad;
     if(result.moodRatios[2] > result.moodRatios[1] && result.moodRatios[2] > result.moodRatios[3])
-        result.prevalentMood = FicSectionStats::MoodType::neutral;
+        result.prevalentMood = FavListDetails::MoodType::neutral;
     if(result.moodRatios[3] > result.moodRatios[2] && result.moodRatios[3] > result.moodRatios[1])
-        result.prevalentMood = FicSectionStats::MoodType::positive;
+        result.prevalentMood = FavListDetails::MoodType::positive;
 }
 
 void FicListDataAccumulator::ProcessFandoms()

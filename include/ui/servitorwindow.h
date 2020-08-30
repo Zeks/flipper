@@ -131,7 +131,7 @@ public:
     ChartData viewMatchingList;
     QStringList genreList;
     QStringList moodList;
-    QHash<int, core::MatchedFics> matchesForUsers;
+    QHash<int, core::FavouritesMatchResult> matchesForUsers;
     QSharedPointer<FicSourceGRPC> grpcSource;
     InputForGenresIteration2 inputs;
     bool stopDiscordProcessing = false;

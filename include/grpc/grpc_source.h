@@ -72,21 +72,21 @@ public:
     FicSourceGRPC(QString connectionString, QString userToken, int deadline);
     virtual ~FicSourceGRPC() override;
 
-    virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*) override;
-    void FetchFic(int ficId, QVector<core::Fic>*fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
+    virtual void FetchData(core::StoryFilter filter, QVector<core::Fanfic>*) override;
+    void FetchFic(int ficId, QVector<core::Fanfic>*fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
 
     core::DiagnosticsForReclist GetDiagnosticsForRecListFromServer(core::RecommendationList recList);
     bool GetRecommendationListFromServer(core::RecommendationList &recList);
-    bool GetInternalIDsForFics(QVector<core::IdPack>*);
-    bool GetFFNIDsForFics(QVector<core::IdPack>*);
-    std::optional<core::FicSectionStats> GetStatsForFicList(QVector<core::IdPack>);
+    bool GetInternalIDsForFics(QVector<core::Identity>*);
+    bool GetFFNIDsForFics(QVector<core::Identity>*);
+    std::optional<core::FavListDetails> GetStatsForFicList(QVector<core::Identity>);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int>);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
-    QHash<int, core::MatchedFics> GetMatchesForUsers(int sourceUser, QList<int> users);
-    QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches, QList<int> users);
-    QSet<int> GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo>);
+    QHash<int, core::FavouritesMatchResult> GetMatchesForUsers(int sourceUser, QList<int> users);
+    QHash<int, core::FavouritesMatchResult> GetMatchesForUsers(InputsForMatches, QList<int> users);
+    QSet<int> GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus>);
 
     ServerStatus GetStatus();
 
@@ -105,11 +105,11 @@ namespace proto_converters
 ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter, ProtoSpace::UserData *userData);
 core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const ProtoSpace::UserData &userData);
 
-bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic);
-bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic *protoFic);
+bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fanfic& coreFic);
+bool LocalFicToProtoFic(const core::Fanfic& coreFic, ProtoSpace::Fanfic *protoFic);
 
-bool FavListProtoToLocal(const ProtoSpace::FavListDetails& protoStats, core::FicSectionStats& stats);
-bool FavListLocalToProto(const core::FicSectionStats& stats, ProtoSpace::FavListDetails *protoStats);
+bool FavListProtoToLocal(const ProtoSpace::FavListDetails& protoStats, core::FavListDetails& stats);
+bool FavListLocalToProto(const core::FavListDetails& stats, ProtoSpace::FavListDetails *protoStats);
 bool AuthorListProtoToLocal(const ProtoSpace::AuthorsForFicsResponse& protoStats,  QHash<uint32_t, uint32_t>& result);
 void LocalFandomToProtoFandom(const core::Fandom& coreFandom, ProtoSpace::Fandom* protoFandom);
 void ProtoFandomToLocalFandom(const ProtoSpace::Fandom& protoFandom, core::Fandom &coreFandom);

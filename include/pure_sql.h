@@ -8,7 +8,10 @@
 #include <QSqlError>
 #include <QSharedPointer>
 #include "core/section.h"
+#include "core/fandom.h"
 #include "core/fic_genre_data.h"
+#include "core/recommendation_list.h"
+#include "core/experimental/fic_relations.h"
 #include "include/storyfilter.h"
 #include "include/reclist_author_result.h"
 #include "regex_utils.h"
@@ -134,9 +137,9 @@ DiagnosticSQLResult<core::FicPtr> GetFicById(int ficId, QSqlDatabase db);
 
 
 
-DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
-DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
-DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
+DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
+DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db);
+DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> result,  QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  QSqlDatabase db);
@@ -291,12 +294,12 @@ DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase 
 
 
 // assumes that ficsForSelection are filled
-DiagnosticSQLResult<QHash<int, core::SnoozeInfo>> GetSnoozeInfo(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired = true, bool limitedSelection = false, QSqlDatabase db = {});
+DiagnosticSQLResult<QHash<int, core::FanficCompletionStatus>> GetSnoozeInfo(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool fetchExpired = true, bool limitedSelection = false, QSqlDatabase db = {});
 
 
 DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> ,QSqlDatabase db);
-DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo,QSqlDatabase db);
+DiagnosticSQLResult<bool> SnoozeFic(core::FanficSnoozeStatus,QSqlDatabase db);
 DiagnosticSQLResult<bool> RemoveSnooze(int,QSqlDatabase db);
 
 DiagnosticSQLResult<bool> AddNoteToFic(int, QString, QSqlDatabase db);
@@ -310,19 +313,19 @@ DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelec
 
 
 DiagnosticSQLResult<QVector<int>> GetAllFicsThatDontHaveDBID( QSqlDatabase db);
-DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase db);
-DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity>, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fanfic> * fics, QSqlDatabase db);
 
-DiagnosticSQLResult<bool> FetchSnoozesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
-DiagnosticSQLResult<bool> FetchReadingChaptersForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchSnoozesForFics(QVector<core::Fanfic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchReadingChaptersForFics(QVector<core::Fanfic> * fics, QSqlDatabase db);
 //DiagnosticSQLResult<bool> FetchNotesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 
 
 
-DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fanfic> * fics, int listId, QSqlDatabase db);
 DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int> &scores, core::ReclistFilter, QSqlDatabase db);
 
-DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> * fics, core::ReclistFilter, QSqlDatabase db);
+DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> * fics, core::ReclistFilter, QSqlDatabase db);
 
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db);
 

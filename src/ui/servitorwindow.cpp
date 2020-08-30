@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFutureWatcher>
 #include "ui_servitorwindow.h"
 #include "include/parsers/ffn/ficparser.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/timeutils.h"
 #include "include/page_utils.h"
 #include "pagegetter.h"
@@ -1048,7 +1048,7 @@ void ServitorWindow::on_pushButton_3_clicked()
     An<PageManager> pager;
 
     auto job = [fanfics, authorInterface, fandomInterface](QString url, QString content){
-        FavouriteStoryParser parser(fanfics);
+        FavouriteStoryParser parser;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -1069,7 +1069,7 @@ void ServitorWindow::on_pushButton_3_clicked()
         futures.clear();
         parsers.clear();
         //QLOG_INFO() <<  "Author: " << author->url("ffn");
-        FavouriteStoryParser parser(fanfics);
+        FavouriteStoryParser parser;
         parser.authorName = author->name;
 
         //TimedAction pageAction("Page loaded in: ",[&](){
@@ -1910,12 +1910,12 @@ void ServitorWindow::FillFicsForUser(QString user)
 {
     InitGrpcSource();
     auto fullMatchList = CreateSummaryMatches();
-    QHash<int, core::Fic> fics;
+    QHash<int, core::Fanfic> fics;
     //QVector<core::Fic> fics;
     //for(auto fic: matchesForUsers[user.toInt()].matches)
     for(auto fic: fullMatchList.keys())
     {
-        QVector<core::Fic> tempFics;
+        QVector<core::Fanfic> tempFics;
         grpcSource->FetchFic(fic, &tempFics, core::StoryFilter::EUseThisFicType::utf_db_id);
         fics[fic]=tempFics[0];
     }

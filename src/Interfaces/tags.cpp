@@ -90,6 +90,7 @@ bool Tags::ExportToFile(QString filename)
     if(closeDb.isOpen())
         closeDb.close();
     bool success = QFile::remove(exportFile);
+    Q_UNUSED(success);
     QSharedPointer<database::IDBWrapper> tagExportInterface (new database::SqliteInterface());
     auto tagExportDb = tagExportInterface->InitDatabase("TagExport", false);
     tagExportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagExport");
@@ -132,14 +133,16 @@ QSet<int> Tags::GetAuthorsForTags(QStringList tags)
     return database::puresql::GetAuthorsForTags(tags, db).data;
 }
 
-QVector<core::IdPack> Tags::GetAllFicsThatDontHaveDBID()
+QVector<core::Identity> Tags::GetAllFicsThatDontHaveDBID()
 {
     auto result =  database::puresql::GetAllFicsThatDontHaveDBID(db).data;
-    QVector<core::IdPack> pack;
+    QVector<core::Identity> pack;
     pack.reserve(result.size());
     for(auto id: result)
     {
-        pack.push_back({-1, id, -1,-1, -1});
+        core::Identity newIdentity;
+        newIdentity.id = id;
+        pack.push_back(newIdentity);
     }
     return pack;
 }
@@ -149,12 +152,12 @@ QHash<QString, int> Tags::GetTagSizes(QStringList tags)
     return database::puresql::GetTagSizes(tags, db).data;
 }
 
-bool Tags::FillDBIDsForFics(QVector<core::IdPack> pack)
+bool Tags::FillDBIDsForFics(QVector<core::Identity> pack)
 {
     return database::puresql::FillDBIDsForFics(pack, db).success;
 }
 
-bool Tags::FetchTagsForFics(QVector<core::Fic> * fics)
+bool Tags::FetchTagsForFics(QVector<core::Fanfic> * fics)
 {
     return database::puresql::FetchTagsForFics(fics, db).success;
 }

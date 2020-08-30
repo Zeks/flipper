@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "ECacheMode.h"
 #include "include/pageconsumer.h"
 #include "include/core/section.h"
+#include "include/core/fandom.h"
 struct FandomParseTask{
     FandomParseTask() = default;
     FandomParseTask(QStringList parts,
