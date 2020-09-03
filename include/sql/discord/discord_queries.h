@@ -12,6 +12,7 @@
 #include "regex_utils.h"
 #include "transaction.h"
 #include "Interfaces/discord/users.h"
+#include "discord/discord_user.h"
 #include "sqlcontext.h"
 namespace database {
 using namespace puresql;

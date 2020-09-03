@@ -8,6 +8,7 @@
 #include "Interfaces/db_interface.h"
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/fanfics.h"
+#include "Interfaces/discord/users.h"
 #include "Interfaces/ffn/ffn_fanfics.h"
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/fandoms.h"
@@ -84,6 +85,8 @@ int main(int argc, char *argv[]) {
 
     QSharedPointer<FicSourceGRPC> ficSource;
     ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
+    An<interfaces::Users> usersDbInterface;
+    usersDbInterface->portableDBInterface = userDbInterface;
 
     QVector<core::Fandom> fandoms;
     ficSource->GetFandomListFromServer(fandomsInterface->GetLastFandomID(), &fandoms);

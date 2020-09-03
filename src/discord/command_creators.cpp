@@ -1,4 +1,4 @@
-#include "discord/commands.h"
+#include "discord/command_creators.h"
 #include "discord/client_v2.h"
 #include "discord/discord_user.h"
 #include "Interfaces/discord/users.h"
@@ -65,6 +65,7 @@ CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message
         auto match = matches.next();
         createRecs.ids.push_back(match.captured(1).toUInt());
         createRecs.originalMessage = message;
+        result.hasParseCommand = true;
         result.Push(createRecs);
     }
     return result;
@@ -89,8 +90,11 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
     displayRecs.originalMessage = message;
     result.Push(createRecs);
     result.Push(displayRecs);
+    result.hasParseCommand = true;
     return result;
 }
+
+
 
 
 
@@ -261,6 +265,16 @@ void SendMessageCommand::Invoke(Client * client)
         client->sendMessage(originalMessage.channelID, text.toStdString());
     else
         client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
+}
+
+IgnoreFandomWithCrossesCommand::IgnoreFandomWithCrossesCommand()
+{
+
+}
+
+CommandChain IgnoreFandomWithCrossesCommand::ProcessInputImpl(SleepyDiscord::Message)
+{
+
 }
 
 

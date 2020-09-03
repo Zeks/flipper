@@ -19,11 +19,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/base.h"
 #include "Interfaces/db_interface.h"
 #include "discord/limits.h"
+#include "discord/discord_user.h"
 #include "core/section.h"
-#include "QScopedPointer"
-#include "QSharedPointer"
-#include "QSqlDatabase"
-#include "QReadWriteLock"
+
+#include "GlobalHeaders/SingletonHolder.h"
+
+#include <QScopedPointer>
+#include <QSharedPointer>
+#include <QSqlDatabase>
+#include <QReadWriteLock>
+
+#include <mutex>
 
 
 
@@ -49,11 +55,10 @@ public:
     void BanUser(QString userId);
     void UpdateCurrentPage(QString userId, int page);
 
-
+    std::mutex dbMutex;
     QSqlDatabase db;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
-
-
 };
 
 }
+BIND_TO_SELF_SINGLE(interfaces::Users);

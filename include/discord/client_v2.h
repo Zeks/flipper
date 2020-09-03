@@ -9,7 +9,7 @@
 #pragma GCC diagnostic pop
 
 #include "discord/limits.h"
-#include "discord/commands.h"
+#include "discord/command_creators.h"
 #include "discord/discord_user.h"
 #include "core/section.h"
 #include <QString>
@@ -33,6 +33,7 @@ public:
     template <typename T>
     auto RegisterCommand(){
         parser.commandProcessors.push_back(QSharedPointer<T>(new T()));
+        CommandState<T>::active = true;
     };
     CommandParser parser;
     QSharedPointer<CommandController> executor;
