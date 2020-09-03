@@ -8,6 +8,7 @@
 #include "sleepy_discord/message.h"
 #pragma GCC diagnostic pop
 #include "discord/limits.h"
+#include "discord/discord_user.h"
 #include "core/section.h"
 #include <QString>
 #include <QRegularExpression>

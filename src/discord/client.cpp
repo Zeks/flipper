@@ -1,4 +1,5 @@
 #include "discord/client.h"
+#include "discord/discord_user.h"
 #include "include/storyfilter.h"
 #include "include/grpc/grpc_source.h"
 #include "include/parsers/ffn/favparser_wrapper.h"
