@@ -1,4 +1,5 @@
 #include "discord/commands.h"
+#include "discord/client_v2.h"
 #include "discord/discord_user.h"
 #include "Interfaces/discord/users.h"
 #include "include/grpc/grpc_source.h"
@@ -252,6 +253,14 @@ CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message
     command.originalMessage = message;
     result.Push(command);
     return result;
+}
+
+void SendMessageCommand::Invoke(Client * client)
+{
+    if(embed.empty())
+        client->sendMessage(originalMessage.channelID, text.toStdString());
+    else
+        client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
 }
 
 

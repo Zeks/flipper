@@ -1,4 +1,6 @@
-#include "discord/client.h"
+//#include "discord/client.h"
+#include "discord/client_v2.h"
+#include "discord/command_controller.h"
 
 #include "include/grpc/grpc_source.h"
 #include "include/sqlitefunctions.h"
@@ -46,7 +48,7 @@ void SetupLogger()
 }
 
 
-inline QString CreateConnectString(QString ip,QString port)
+static inline QString CreateConnectString(QString ip,QString port)
 {
     QString server_address_proto("%1:%2");
     std::string result = server_address_proto.arg(ip).arg(port).toStdString();
@@ -71,38 +73,26 @@ int main(int argc, char *argv[]) {
     QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
     QSettings bot("settings/bot_token.ini", QSettings::IniFormat);
     auto token = bot.value("Login/botToken").toString().toStdString();
-    MyClientClass client(token, 2);
 
-        client.userDbInterface = userDbInterface;
-        client.UsersInit();
-        client.authors = QSharedPointer<interfaces::Authors> (new interfaces::FFNAuthors());
-        client.fandoms = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
-        client.fandoms->isClient = true;
-        client.fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
-        client.authors->portableDBInterface = client.userDbInterface;
-        client.fanfics->authorInterface = client.authors;
-        client.fanfics->fandomInterface = client.fandoms;
-        client.fandoms->portableDBInterface = client.userDbInterface;
-        client.authors->db = client.userDbInterface->GetDatabase();
-        client.fanfics->db = client.userDbInterface->GetDatabase();
-        client.fandoms->db = client.userDbInterface->GetDatabase();
-
-
-
-
+    QSharedPointer<interfaces::Fandoms> fandomsInterface (new interfaces::Fandoms());
 
     auto ip = settings.value("Login/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Login/serverPort", "3055").toString();
     QLOG_INFO() << "will connect to grpc via: " << ip << " "  << port;
 
     userDbInterface->userToken = userDbInterface->GetUserToken();
-    client.ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
+
+    QSharedPointer<FicSourceGRPC> ficSource;
+    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
 
     QVector<core::Fandom> fandoms;
-    client.ficSource->GetFandomListFromServer(client.fandoms->GetLastFandomID(), &fandoms);
+    ficSource->GetFandomListFromServer(fandomsInterface->GetLastFandomID(), &fandoms);
     if(fandoms.size() > 0)
-        client.fandoms->UploadFandomsIntoDatabase(fandoms);
+        fandomsInterface->UploadFandomsIntoDatabase(fandoms);
 
+    discord::Client client(token, 1);
+    client.InitDefaultCommandSet();
+    client.executor->Init(4);
     auto serverSetup = [&](){
     client.run();
     };

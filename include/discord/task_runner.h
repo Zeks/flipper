@@ -12,6 +12,8 @@ class TaskRunner : public  QThread{
     Q_OBJECT
     public:
     TaskRunner(QObject *parent = nullptr);
+    void AddTask(CommandChain chain);
+    void ClearState();
 
     virtual void run() override;
 
@@ -19,6 +21,7 @@ class TaskRunner : public  QThread{
     QSharedPointer<TaskEnvironment> environment;
     QList<QSharedPointer<SendMessageCommand>> result;
     std::atomic<bool> busy = false;
+
 };
 
 

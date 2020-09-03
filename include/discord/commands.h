@@ -8,6 +8,7 @@
 #include "discord/discord_user.h"
 
 namespace discord{
+class Client;
 
 struct ResultingMessage{
     QString text;
@@ -141,11 +142,19 @@ public:
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
 };
 
-
-
 class CommandParser{
 public:
     CommandChain Execute(SleepyDiscord::Message);
     QList<QSharedPointer<CommandCreator>> commandProcessors;
 };
+
+
+class SendMessageCommand{
+public:
+    void Invoke(discord::Client*);
+    SleepyDiscord::Embed embed;
+    QString text;
+    SleepyDiscord::Message originalMessage;
+};
+
 }
