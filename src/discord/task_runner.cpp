@@ -1,3 +1,4 @@
+#include "discord/actions.h"
 #include "discord/task_runner.h"
 #include "discord/task_environment.h"
 namespace discord {
@@ -17,15 +18,18 @@ void TaskRunner::AddTask(CommandChain chain)
 
 void TaskRunner::ClearState()
 {
-    result.clear();
+    result.Clear();
     busy = false;
 }
 
 void TaskRunner::run()
 {
-
+    if(chainToRun.hasParseCommand)
+        result.performedParseCommand = true;
+    for(auto command : chainToRun.commands){
+        auto action = GetAction(command.type);
+        result.Push(action->Execute(environment, command));
+    }
 }
-
-
 
 }

@@ -306,8 +306,8 @@ bool CoreEnvironment::Init()
         }
     }
 
-    auto positiveTags = settings.value("Tags/minorPositive").toString().split(",", QString::SkipEmptyParts);
-    positiveTags += settings.value("Tags/majorPositive").toString().split(",", QString::SkipEmptyParts);
+    auto positiveTags = settings.value("Tags/minorPositive").toString().split(",", Qt::SkipEmptyParts);
+    positiveTags += settings.value("Tags/majorPositive").toString().split(",", Qt::SkipEmptyParts);
     likedAuthors = interfaces.tags->GetAuthorsForTags(positiveTags);
     RefreshSnoozes();
 
@@ -1149,15 +1149,22 @@ void CoreEnvironment::FillDBIDsForTags()
 
 QList<int> CoreEnvironment::GetDBIDsForFics(QVector<int> ids)
 {
-    QVector<core::IdPack> pack;
-    for(auto fic : ids)
-        pack.push_back({-1, fic, -1,-1,-1});
+    QVector<core::Identity> pack;
+    pack.resize(ids.size());
+    int i = 0;
+    for(auto source: ids)
+    {
+        pack[i].web.ffn = source;
+        i++;
+    }
 
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     grpcSource->GetInternalIDsForFics(&pack);
     QList<int> result;
-    for(auto fic : pack)
-        result.push_back(fic.db);
+    for(auto source: pack)
+    {
+        result.push_back(source.id);
+    }
     return result;
 }
 

@@ -77,32 +77,32 @@ static DiagnosticSQLResult<FicIdHash> GetGlobalIDHash(QSqlDatabase db, QString w
     return ctx.result;
 
 }
-static const FanficIdRecord& GrabFicIDFromQuery(QSqlQuery& q, QSqlDatabase db)
-{
-    static FicIdHash webIdToGlobal = GetGlobalIDHash(db, "").data;
-    static FanficIdRecord result;
-    auto ffn = q.value("ffn_id").toInt();
-    auto ao3 = q.value("ao3_id").toInt();
-    auto sb = q.value("sb_id").toInt();
-    auto sv = q.value("sv_id").toInt();
-    result.ids["ffn"] = ffn;
-    result.ids["ao3"] = ao3;
-    result.ids["sb"] = sb;
-    result.ids["sv"] = sv;
-    if(webIdToGlobal.ids.size() == 0)
-        return result;
+//static const FanficIdRecord& GrabFicIDFromQuery(QSqlQuery& q, QSqlDatabase db)
+//{
+//    static FicIdHash webIdToGlobal = GetGlobalIDHash(db, "").data;
+//    static FanficIdRecord result;
+//    auto ffn = q.value("ffn_id").toInt();
+//    auto ao3 = q.value("ao3_id").toInt();
+//    auto sb = q.value("sb_id").toInt();
+//    auto sv = q.value("sv_id").toInt();
+//    result.ids["ffn"] = ffn;
+//    result.ids["ao3"] = ao3;
+//    result.ids["sb"] = sb;
+//    result.ids["sv"] = sv;
+//    if(webIdToGlobal.ids.size() == 0)
+//        return result;
 
-    if(webIdToGlobal.ids["ffn"].contains(ffn))
-        result.ids["db"] = webIdToGlobal.ids["ffn"][ffn];
-    else if(webIdToGlobal.ids["sb"].contains(sb))
-        result.ids["db"] = webIdToGlobal.ids["sb"][sb];
-    else if(webIdToGlobal.ids["sv"].contains(sv))
-        result.ids["db"] = webIdToGlobal.ids["sv"][sv];
-    else if(webIdToGlobal.ids["ao3"].contains(ao3))
-        result.ids["db"] = webIdToGlobal.ids["ao3"][ao3];
+//    if(webIdToGlobal.ids["ffn"].contains(ffn))
+//        result.ids["db"] = webIdToGlobal.ids["ffn"][ffn];
+//    else if(webIdToGlobal.ids["sb"].contains(sb))
+//        result.ids["db"] = webIdToGlobal.ids["sb"][sb];
+//    else if(webIdToGlobal.ids["sv"].contains(sv))
+//        result.ids["db"] = webIdToGlobal.ids["sv"][sv];
+//    else if(webIdToGlobal.ids["ao3"].contains(ao3))
+//        result.ids["db"] = webIdToGlobal.ids["ao3"][ao3];
 
-    return result;
-}
+//    return result;
+//}
 
 //bool ExecAndCheck(QSqlQuery& q)
 //{
@@ -370,6 +370,7 @@ DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabas
 
 core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
 {
+    Q_UNUSED(website)
     auto fic = core::Fanfic::NewFanfic();
     fic->userData.atChapter = q1.value("AT_CHAPTER").toInt();
     fic->complete  = q1.value("COMPLETE").toInt();
@@ -1444,7 +1445,7 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
     ctx.FetchLargeSelectIntoList<QString>("tag", qs);
     if(!ctx.result.success)
         return ctx.result;
-    tags = ctx.result.data.toSet();
+    tags = QSet<QString>(ctx.result.data.begin(), ctx.result.data.end());
     }
     {
     QString qs = QString("select distinct tag from fictags");
@@ -1452,9 +1453,9 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
     ctx.FetchLargeSelectIntoList<QString>("tag", qs);
     if(!ctx.result.success)
         return ctx.result;
-    tags += ctx.result.data.toSet();
+    tags = QSet<QString>(ctx.result.data.begin(), ctx.result.data.end());
     }
-    result.data = tags.toList();
+    result.data = tags.values();
     std::sort(result.data.begin(), result.data.end());
     result.success = true;
     return result;
@@ -3918,7 +3919,7 @@ static QHash<int, int> RecastFicScoresIntoPedestalSet(const core::Recommendation
     for(int i = 0; i < ficData.fics.size(); i++)
         scoresSet.insert(ficData.matchCounts[i]);
 
-    scoresList = scoresSet.toList();
+    scoresList = scoresSet.values();
     std::sort(scoresList.begin(), scoresList.end());
     std::reverse(scoresList.begin(), scoresList.end());
 

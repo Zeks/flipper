@@ -28,7 +28,14 @@ CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool 
 {
     if(verifyUser)
         EnsureUserExists(QString::fromStdString(message.author.ID), QString::fromStdString(message.author.username));
-
+    if(user->secsSinceLastsEasyQuery() < 3)
+    {
+        nullCommand.type = Command::ct_timeout_ative;
+        nullCommand.ids.push_back(3-user->secsSinceLastsEasyQuery());
+        nullCommand.variantHash["reason"] = "One command can be issued each 3 seconds. Please wait %1 more seconds.";
+        result.Push(nullCommand);
+        return result;
+    }
     matches = rx.globalMatch(QString::fromStdString(message.content));
     if(!matches.hasNext())
     {
@@ -41,7 +48,7 @@ CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool 
 
 void CommandCreator::EnsureUserExists(QString userId, QString userName)
 {
-    user = userId;
+    this->userId = userId;
     An<Users> users;
     if(!users->HasUser(userId)){
         bool inDatabase = users->LoadUser(userId);
@@ -52,6 +59,7 @@ void CommandCreator::EnsureUserExists(QString userId, QString userName)
             users->LoadUser(userId);
         }
     }
+    this->user = users->GetUser(userId);
 }
 
 
@@ -85,6 +93,16 @@ RecsCreationCommand::RecsCreationCommand()
 
 CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
+    if(user->secsSinceLastsRecQuery() < 60)
+    {
+        nullCommand.type = Command::ct_timeout_ative;
+        nullCommand.ids.push_back(60-user->secsSinceLastsEasyQuery());
+        nullCommand.variantHash["reason"] = "Recommendations can only be regenerated once on 60 seconds.Please wait %1 more seconds.";
+        result.Push(nullCommand);
+        return result;
+    }
+
+
     Command createRecs;
     createRecs.type = Command::ct_fill_recommendations;
     auto match = matches.next();
@@ -288,15 +306,6 @@ void SendMessageCommand::Invoke(Client * client)
         client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
 }
 
-IgnoreFandomWithCrossesCommand::IgnoreFandomWithCrossesCommand()
-{
-
-}
-
-CommandChain IgnoreFandomWithCrossesCommand::ProcessInputImpl(SleepyDiscord::Message)
-{
-
-}
 
 
 

@@ -37,9 +37,6 @@ public:
     };
     CommandParser parser;
     QSharedPointer<CommandController> executor;
-
-public slots:
-    void OnCommandReady(QSharedPointer<SendMessageCommand>);
 };
 
 }

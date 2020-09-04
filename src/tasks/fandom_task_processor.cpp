@@ -154,7 +154,7 @@ void FandomLoadProcessor::Run(PageTaskPtr task)
         if(subtask->finished)
             continue;
         acquisitioFailures.clear();
-        auto urlList= subtask->content->ToDB().split("\n",QString::SkipEmptyParts);
+        auto urlList= subtask->content->ToDB().split("\n",Qt::SkipEmptyParts);
 
         FandomParseTask fpt;
         fpt.cacheMode = task->cacheMode;

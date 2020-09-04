@@ -137,7 +137,7 @@ void FFNParserBase::GetCrossoverFandomList(core::FanficSectionInFFNFavourites & 
     QString tmp = text.mid(indexStart + (rxStart.pattern().length() -2), indexEnd - (indexStart + rxStart.pattern().length() - 2)).trimmed();
     tmp.replace("\\'", "'");
     section.result->fandom = tmp + QString(" CROSSOVER");
-    section.result->fandoms = tmp.split(" & ", QString::SkipEmptyParts);
+    section.result->fandoms = tmp.split(" & ", Qt::SkipEmptyParts);
     section.result->isCrossover = true;
 }
 

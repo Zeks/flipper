@@ -1,8 +1,13 @@
 #pragma once
 #include <QList>
 #include <QList>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #include "sleepy_discord/embed.h"
 #include "sleepy_discord/message.h"
+#pragma GCC diagnostic pop
+
 #include "discord/discord_user.h"
 
 
@@ -25,8 +30,8 @@ struct Command{
         ct_set_fandoms = 8,
         ct_ignore_fandoms = 9,
         ct_display_help = 10,
-        ct_ignore_fandom_with_crosses = 11,
         ct_display_invalid_command = 12,
+        ct_timeout_ative = 13,
     };
     enum EOperandType{
         ot_unspecified = 0,

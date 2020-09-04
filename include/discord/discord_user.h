@@ -91,6 +91,8 @@ struct User{
     bool HasActiveSet();
     void SetFicList(core::RecommendationListFicData);
     QSharedPointer<core::RecommendationListFicData> FicList();
+
+
     bool isValid = false;
 private:
     QString userID;
@@ -104,6 +106,7 @@ private:
 
     std::chrono::system_clock::time_point lastRecsQuery;
     std::chrono::system_clock::time_point lastEasyQuery;
+    std::chrono::system_clock::time_point timeoutLimit;
 
     QSharedPointer<core::RecommendationListFicData> fics;
     QSet<int> ignoredFics;

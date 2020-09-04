@@ -7,7 +7,8 @@
 #include <QString>
 #include <QTextCodec>
 #include <QThreadStorage>
-#include <QTime>
+
+#include <QElapsedTimer>
 
 //#include "GlobalHeaders/c11logger.h"
 #include "GlobalHeaders/run_once.h"
@@ -55,7 +56,7 @@ public:
 
     QString traceString;
     QString startString;
-    QTime timer;
+    QElapsedTimer timer;
     static QThreadStorage<int> logLevel;
 
 };

@@ -1,4 +1,6 @@
 #include "discord/client_v2.h"
+#include "discord/command_controller.h"
+#include "logger/QsLog.h"
 namespace discord {
 
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
@@ -44,14 +46,17 @@ void Client::InitDefaultCommandSet()
 }
 void Client::onMessage(SleepyDiscord::Message message) {
     Log(message);
+    if(message.content.at(0) != '!')
+        return;
     auto commands = parser.Execute(message);
     if(commands.Size() == 0)
         return;
+    executor->Push(commands);
 }
 
-void Client::Log(const SleepyDiscord::Message)
+void Client::Log(const SleepyDiscord::Message message)
 {
-
+    QLOG_INFO() << message.serverID.number() << " " << message.channelID.number() << " " << QString::fromStdString(message.author.username) << QString::number(message.author.ID.number()) << " " << QString::fromStdString(message.content);
 }
 
 }

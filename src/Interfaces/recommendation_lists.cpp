@@ -509,7 +509,7 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
     if(forced || lists.empty())
         LoadAvailableRecommendationLists();
     auto list = nameIndex.keys();
-    qSort(list.begin(), list.end());
+    std::sort(list.begin(), list.end());
     return list;
 }
 

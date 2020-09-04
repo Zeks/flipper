@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "discord/task_environment.h"
 #include "discord/command.h"
 
@@ -64,7 +64,14 @@ public:
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
 
+class TimeoutActiveAction : public ActionBase{
+public:
+    TimeoutActiveAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
 struct ActionChain{
+    void Clear(){actions.clear();performedParseCommand = false;}
     int Size(){return actions.size();}
     void Push(QSharedPointer<SendMessageCommand>);
     QSharedPointer<SendMessageCommand> Pop();
@@ -75,5 +82,8 @@ struct ActionChain{
     QQueue<QSharedPointer<SendMessageCommand>> actions;
     bool performedParseCommand = false;
 };
+
+QSharedPointer<ActionBase> GetAction(Command::ECommandType);
+
 
 }

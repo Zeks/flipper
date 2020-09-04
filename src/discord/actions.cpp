@@ -29,14 +29,13 @@ template<typename T> QString GetHelpForCommandIfActive(){
 QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
 {
     QString helpString = "!recs FFN_ID to create recommendations";
-    helpString += "\n" + GetHelpForCommandIfActive<NextPageCommand>();
-    helpString += "\n" + GetHelpForCommandIfActive<PreviousPageCommand>();
-    helpString += "\n" + GetHelpForCommandIfActive<PageChangeCommand>();
-    helpString += "\n" + GetHelpForCommandIfActive<SetFandomCommand>();
-    helpString += "\n" + GetHelpForCommandIfActive<IgnoreFandomCommand>();
-    //helpString += "\n" + GetHelpForCommandIfActive<IgnoreFandomWithCrossesCommand>();
-    helpString += "\n" + GetHelpForCommandIfActive<IgnoreFicCommand>();
-    helpString += "\n" + GetHelpForCommandIfActive<DisplayHelpCommand>();
+    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
+    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
+    helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
+    helpString +=  GetHelpForCommandIfActive<SetFandomCommand>();
+    helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
+    helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
+    helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
 
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
@@ -320,6 +319,37 @@ QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<T
     action->emptyAction = true;
     return action;
 }
+
+QSharedPointer<SendMessageCommand> TimeoutActiveAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
+{
+    auto reason = command.variantHash["reason"].toString();
+    auto seconds= command.ids.at(0);
+    action->text = reason .arg(QString::number(seconds));
+    return action;
+}
+
+QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
+{
+    switch(type){
+    case Command::ECommandType::ct_ignore_fics:
+        return QSharedPointer<ActionBase>(new IgnoreFicAction());
+    case Command::ECommandType::ct_ignore_fandoms:
+        return QSharedPointer<ActionBase>(new IgnoreFandomAction());
+    case Command::ECommandType::ct_set_fandoms:
+        return QSharedPointer<ActionBase>(new SetFandomAction());
+    case Command::ECommandType::ct_display_help:
+        return QSharedPointer<ActionBase>(new HelpAction());
+    case Command::ECommandType::ct_display_page:
+        return QSharedPointer<ActionBase>(new DisplayPageAction());
+    case Command::ECommandType::ct_timeout_ative:
+        return QSharedPointer<ActionBase>(new TimeoutActiveAction());
+    case Command::ECommandType::ct_fill_recommendations:
+        return QSharedPointer<ActionBase>(new RecsCreationAction());
+    default:
+        return QSharedPointer<ActionBase>();
+    }
+}
+
 }
 
 

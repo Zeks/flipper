@@ -48,10 +48,12 @@ void CommandController::OnTaskFinished()
     auto senderTask = dynamic_cast<TaskRunner*>(sender());
     auto result = senderTask->result;
     senderTask->ClearState();
-    const auto& message = result.first()->originalMessage;
+    const auto& message = result.actions.first()->originalMessage;
     auto userId = QString::fromStdString(message.author.ID.string());
-    for(auto command : result)
+    for(auto command : result.actions)
         command->Invoke(client);
+    if(activeParseCommand && result.performedParseCommand)
+        activeParseCommand = false;
     activeUsers.remove(userId);
 }
 

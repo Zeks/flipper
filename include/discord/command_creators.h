@@ -2,8 +2,12 @@
 #include <QList>
 #include <QString>
 #include <QRegularExpression>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #include "sleepy_discord/embed.h"
 #include "sleepy_discord/message.h"
+#pragma GCC diagnostic pop
+
 #include "discord/command.h"
 #include "discord/limits.h"
 #include "discord/discord_user.h"
@@ -34,7 +38,8 @@ public:
     QRegularExpressionMatchIterator matches;
     Command nullCommand;
     CommandChain result;
-    QString user;
+    QString userId;
+    QSharedPointer<User> user;
 };
 
 
@@ -87,13 +92,6 @@ public:
     IgnoreFandomCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
 };
-
-class IgnoreFandomWithCrossesCommand : public RecommendationsCommand{
-public:
-    IgnoreFandomWithCrossesCommand();
-    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
-};
-
 
 class IgnoreFicCommand: public RecommendationsCommand{
 public:

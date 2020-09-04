@@ -1,5 +1,6 @@
 #pragma once
 #include "discord/command_creators.h"
+#include "discord/actions.h"
 #include <QSet>
 #include <QThread>
 
@@ -19,7 +20,7 @@ class TaskRunner : public  QThread{
 
     CommandChain chainToRun;
     QSharedPointer<TaskEnvironment> environment;
-    QList<QSharedPointer<SendMessageCommand>> result;
+    ActionChain result;
     std::atomic<bool> busy = false;
 
 };

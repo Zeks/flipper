@@ -141,7 +141,7 @@ bool Authors::UpdateAuthorFavouritesUpdateDate(core::AuthorPtr author)
     if(!author)
         return false;
 
-    auto result = database::puresql::UpdateAuthorFavouritesUpdateDate(author->id, QDateTime(author->stats.favouritesLastUpdated), db).success;
+    auto result = database::puresql::UpdateAuthorFavouritesUpdateDate(author->id, QDate(author->stats.favouritesLastUpdated).startOfDay(), db).success;
     return result;
 }
 
