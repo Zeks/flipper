@@ -96,6 +96,36 @@ void Users::UpdateCurrentPage(QString userId, int page)
     database::discord_quries::UpdateCurrentPage(db, userId, page);
 }
 
+void Users::UnfilterFandom(QString userId, int fandomId)
+{
+    std::lock_guard<std::mutex> guard(dbMutex);
+    database::discord_quries::UnfilterFandom(db, userId, fandomId);
+}
+
+void Users::ResetFandomFilter(QString userId)
+{
+    std::lock_guard<std::mutex> guard(dbMutex);
+    database::discord_quries::ResetFandomFilter(db, userId);
+}
+
+void Users::ResetFandomIgnores(QString userId)
+{
+    std::lock_guard<std::mutex> guard(dbMutex);
+    database::discord_quries::ResetFandomIgnores(db, userId);
+}
+
+void Users::ResetFicIgnores(QString userId)
+{
+    std::lock_guard<std::mutex> guard(dbMutex);
+    database::discord_quries::ResetFicIgnores(db, userId);
+}
+
+void Users::FilterFandom(QString userId, int fandomId, bool allowCrossovers)
+{
+    std::lock_guard<std::mutex> guard(dbMutex);
+    database::discord_quries::FilterFandom(db, userId, fandomId, allowCrossovers);
+}
+
 
 
 }

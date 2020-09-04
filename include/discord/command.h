@@ -26,6 +26,7 @@ struct Command{
         ct_ignore_fandoms = 9,
         ct_display_help = 10,
         ct_ignore_fandom_with_crosses = 11,
+        ct_display_invalid_command = 12,
     };
     enum EOperandType{
         ot_unspecified = 0,
@@ -39,7 +40,7 @@ struct Command{
     bool requiresThread = false;
 
     QList<int> ids;
-    QList<QString> strings;
+    QHash<QString, QVariant> variantHash;
     SleepyDiscord::Message originalMessage;
     QSharedPointer<User> user;
 

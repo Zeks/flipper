@@ -10,6 +10,15 @@
 #include <QSettings>
 namespace discord {
 
+QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    action = SendMessageCommand::Create();
+    action->originalMessage = command.originalMessage;
+    action->user = command.user;
+    return ExecuteImpl(environment, command);
+
+}
+
 template<typename T> QString GetHelpForCommandIfActive(){
     QString result;
     if(CommandState<T>::active)
@@ -25,7 +34,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString += "\n" + GetHelpForCommandIfActive<PageChangeCommand>();
     helpString += "\n" + GetHelpForCommandIfActive<SetFandomCommand>();
     helpString += "\n" + GetHelpForCommandIfActive<IgnoreFandomCommand>();
-    helpString += "\n" + GetHelpForCommandIfActive<IgnoreFandomWithCrossesCommand>();
+    //helpString += "\n" + GetHelpForCommandIfActive<IgnoreFandomWithCrossesCommand>();
     helpString += "\n" + GetHelpForCommandIfActive<IgnoreFicCommand>();
     helpString += "\n" + GetHelpForCommandIfActive<DisplayHelpCommand>();
 
@@ -194,12 +203,17 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
 
     environment->fandoms->FetchFandomsForFics(&fics);
+    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2\n\n").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
 
+    QHash<int, int> positionToId;
+    int i = 0;
     for(auto fic: fics)
     {
+        positionToId[i] = fic.identity.web.GetPrimaryId();
+        i++;
         auto fandomsList=fic.fandoms;
 
-        embed.description += QString("ID#: " + QString::number(fic.GetIdInDatabase())).rightJustified(10, ' ').toStdString();
+        embed.description += QString("ID#: " + QString::number(i)).rightJustified(2, ' ').toStdString();
         embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
 
         if(fic.complete)
@@ -210,19 +224,102 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         embed.description += QString(" Fandom: `" + fandomsList.join(" & ") + "`\n").rightJustified(20, ' ').toStdString();
         embed.description += "\n";
     }
+    command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
     QLOG_INFO() << "Created page results";
     return action;
 }
 
-QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnvironment> environment, Command command)
+QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
-    action = SendMessageCommand::Create();
-    action->originalMessage = command.originalMessage;
-    action->user = command.user;
-    return ExecuteImpl(environment, command);
+    auto fandom = command.variantHash["fandom"].toString();
+    auto fandomId = environment->fandoms->GetIDForName(fandom);
+    auto currentFilter = command.user->GetCurrentFandomFilter();
+    An<interfaces::Users> usersDbInterface;
+    if(command.variantHash.contains("reset"))
+    {
+        usersDbInterface->ResetFandomFilter(command.user->UserID());
+        command.user->ResetFandomFilter();
+        action->emptyAction = true;
+        return action;
+    }
 
+
+    if(currentFilter.fandoms.contains(fandomId))
+    {
+        currentFilter.RemoveFandom(fandomId);
+        action->text = "Removing filtered fandom: " + fandom;
+        usersDbInterface->UnfilterFandom(command.user->UserID(), fandomId);
+    }
+    else if(currentFilter.fandoms.size() == 2)
+    {
+        auto oldFandomId = currentFilter.tokens.last().id;
+        action->text = "Replacing crossover fandom: " + environment->fandoms->GetNameForID(currentFilter.tokens.last().id) +    " with: " + fandom;
+        usersDbInterface->UnfilterFandom(command.user->UserID(), oldFandomId);
+        usersDbInterface->FilterFandom(command.user->UserID(), fandomId, command.variantHash["allow_crossovers"].toBool());
+        currentFilter.RemoveFandom(oldFandomId);
+        currentFilter.AddFandom(fandomId, command.variantHash["allow_crossovers"].toBool());
+        return action;
+    }
+    else {
+        usersDbInterface->FilterFandom(command.user->UserID(), fandomId, command.variantHash["allow_crossovers"].toBool());
+        currentFilter.AddFandom(fandomId, command.variantHash["allow_crossovers"].toBool());
+    }
+    command.user->SetFandomFilter(currentFilter);
+    action->emptyAction = true;
+    return action;
 }
 
+QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto fandom = command.variantHash["fandom"].toString();
+    auto fandomId = environment->fandoms->GetIDForName(fandom);
+    auto withCrossovers = command.variantHash["with_crossovers"].toBool();
+    An<interfaces::Users> usersDbInterface;
+    if(command.variantHash.contains("reset"))
+    {
+        usersDbInterface->ResetFandomIgnores(command.user->UserID());
+        command.user->ResetFandomIgnores();
+        action->emptyAction = true;
+        return action;
+    }
+
+    auto currentIgnores = command.user->GetCurrentFandomFilter();
+    if(currentIgnores.fandoms.contains(fandomId)){
+        usersDbInterface->UnignoreFandom(command.user->UserID(), fandomId);
+        currentIgnores.RemoveFandom(fandomId);
+    }
+    else{
+        usersDbInterface->IgnoreFandom(command.user->UserID(), fandomId, withCrossovers);
+        currentIgnores.AddFandom(fandomId, withCrossovers);
+    }
+    command.user->SetIgnoredFandoms(currentIgnores);
+    action->emptyAction = true;
+    return action;
 }
+
+QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
+{
+    auto ficIds = command.ids;
+    auto ignoredFics = command.user->GetIgnoredFics();
+    An<interfaces::Users> usersDbInterface;
+    for(auto positionalId : ficIds){
+        //need to get ffn id from positional id
+        auto ficId = command.user->GetFicIDFromPositionId(positionalId);
+        if(!ignoredFics.contains(ficId))
+        {
+            ignoredFics.insert(ficId);
+            usersDbInterface->TagFanfic(command.user->UserID(), "ignore",  ficId);
+        }
+        else{
+            ignoredFics.remove(ficId);
+            usersDbInterface->UnTagFanfic(command.user->UserID(), "ignore",  ficId);
+        }
+    }
+    command.user->SetIgnoredFics(ignoredFics);
+    action->emptyAction = true;
+    return action;
+}
+}
+
 

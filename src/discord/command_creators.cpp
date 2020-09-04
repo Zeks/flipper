@@ -19,6 +19,11 @@ Command CommandChain::Pop()
 }
 
 
+CommandCreator::~CommandCreator()
+{
+
+}
+
 CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool verifyUser)
 {
     if(verifyUser)
@@ -27,6 +32,7 @@ CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool 
     matches = rx.globalMatch(QString::fromStdString(message.content));
     if(!matches.hasNext())
     {
+        nullCommand.type = Command::ct_display_invalid_command;
         result.Push(nullCommand);
         return result;
     }
@@ -154,7 +160,7 @@ CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 SetFandomCommand::SetFandomCommand()
 {
-    rx = QRegularExpression("^!fandom\\s(\\d{1,10}){1,2}");
+    rx = QRegularExpression("^!fandom(\\s#pure){,1}(\\s#reset){,1}(\\s([A-Za-z0-9\\s]{1,30})){,1}}");
 }
 
 CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -163,7 +169,13 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
     filteredFandoms.type = Command::ct_set_fandoms;
     while(matches.hasNext()){
         auto match = matches.next();
-        filteredFandoms.strings.push_back(match.captured(1));
+        if(match.captured(1).size() > 0)
+            filteredFandoms.variantHash["allow_crossovers"] = false;
+        else
+            filteredFandoms.variantHash["allow_crossovers"] = true;
+        if(match.captured(2).size() > 0)
+            filteredFandoms.variantHash["reset"] = true;
+        filteredFandoms.variantHash["fandom"] = match.captured(3);
     }
     filteredFandoms.originalMessage = message;
     result.Push(filteredFandoms);
@@ -175,9 +187,12 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
     return result;
 }
 
+//CommandState<IgnoreFandomCommand>::help = "!xfandom X to permanently ignore fics just from this fandom"
+//                                          "\n!xfandom #full X to also ignore crossovers from this fandom,"
+//                                          "\n!xfandom #reset X to unignore";
 IgnoreFandomCommand::IgnoreFandomCommand()
 {
-    rx = QRegularExpression("^!xfandom\\s(\\d{1,10}){1,}");
+    rx = QRegularExpression("^!xfandom(\\s#full){,1}(\\s#reset){,1}(\\s([A-Za-z0-9\\s]{1,30})){,1}}");
 }
 
 CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -186,7 +201,13 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message messag
     ignoredFandoms.type = Command::ct_ignore_fandoms;
     while(matches.hasNext()){
         auto match = matches.next();
-        ignoredFandoms.strings.push_back(match.captured(1));
+        if(match.captured(1).size() > 0)
+            ignoredFandoms.variantHash["with_crossovers"] = true;
+        else
+            ignoredFandoms.variantHash["with_crossovers"] = false;
+        if(match.captured(2).size() > 0)
+            ignoredFandoms.variantHash["reset"] = true;
+        ignoredFandoms.variantHash["fandom"] = match.captured(3);
     }
     ignoredFandoms.originalMessage = message;
     result.Push(ignoredFandoms);

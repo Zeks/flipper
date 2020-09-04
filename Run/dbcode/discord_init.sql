@@ -34,6 +34,7 @@ user_id integer,fic_id integer, fic_tag varchar, PRIMARY KEY (user_id asc, fic_i
 CREATE INDEX if not exists  I_fic_tags_PK ON list_sources (user_id asc, fic_id asc, fic_tag);
 
 CREATE TABLE if not exists ignored_fandoms(user_id varchar, fandom_id INTEGER, including_crossovers integer default 0, PRIMARY KEY (user_id asc, fandom_id asc));
+CREATE TABLE if not exists filtered_fandoms(user_id varchar, fandom_id INTEGER, including_crossovers integer default 0, PRIMARY KEY (user_id asc, fandom_id asc));
 
 
 create table if not exists fandomindex (id integer, name VARCHAR NOT NULL, tracked integer default 0, primary key(id, name));

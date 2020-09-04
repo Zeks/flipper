@@ -16,7 +16,36 @@ namespace interfaces{
 class Users;
 }
 
+
 namespace discord{
+struct FandomFilterToken{
+    FandomFilterToken(int id, bool includeCrossovers){
+        this->id = id;
+        this->includeCrossovers = includeCrossovers;
+    }
+    int id = -1;
+    bool includeCrossovers = false;
+};
+
+struct FandomFilter{
+    void RemoveFandom(int id){
+        fandoms.remove(id);
+        QList<FandomFilterToken> newTokens;
+        for(auto token: tokens)
+        {
+            if(token.id != id)
+                newTokens.push_back(token);
+            tokens =newTokens;
+        }
+    }
+    void AddFandom(int id, bool inludeCrossovers){
+        fandoms.insert(id);
+        tokens.push_back({id, inludeCrossovers});
+    }
+
+    QSet<int> fandoms;
+    QList<FandomFilterToken> tokens;
+};
 struct User{
     User(){InitFicsPtr();}
     User(QString userID, QString ffnID, QString name);
@@ -38,11 +67,26 @@ struct User{
     void SetFfnID(QString id);
     void SetUserID(QString id);
     void SetUserName(QString name);
-    void ToggleFandomIgnores(QSet<int>);
+    //void ToggleFandomIgnores(QSet<int>);
+    void SetFandomFilter(int, bool displayCrossovers);
+    void SetFandomFilter(FandomFilter );
+    FandomFilter GetCurrentFandomFilter() const;
+    void SetPositionsToIdsForCurrentPage(QHash<int, int>);
 
-    QString FfnID();
-    QString UserName();
-    QString UserID();
+    FandomFilter GetCurrentIgnoredFandoms()  const;
+    void SetIgnoredFandoms(FandomFilter);
+
+    int GetFicIDFromPositionId(int) const;
+    QSet<int> GetIgnoredFics()  const;
+    void SetIgnoredFics(QSet<int>);
+
+    void ResetFandomFilter();
+    void ResetFandomIgnores();
+    void ResetFicIgnores();
+
+    QString FfnID()  const;
+    QString UserName()  const;
+    QString UserID()  const;
     bool ReadsSlash();
     bool HasActiveSet();
     void SetFicList(core::RecommendationListFicData);
@@ -62,9 +106,10 @@ private:
     std::chrono::system_clock::time_point lastEasyQuery;
 
     QSharedPointer<core::RecommendationListFicData> fics;
-    QSet<int> ignoredFandoms;
     QSet<int> ignoredFics;
-    int filteredFandom = -1;
+    FandomFilter filteredFandoms;
+    FandomFilter ignoredFandoms;
+    QHash<int, int> positionToId;
     mutable QReadWriteLock lock;
 };
 

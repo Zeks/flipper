@@ -54,7 +54,11 @@ public:
     void UnTagFanfic(QString userId, QString tag, int ficId); // empty tag removes all
     void BanUser(QString userId);
     void UpdateCurrentPage(QString userId, int page);
-
+    void UnfilterFandom(QString userId, int fandomId);
+    void ResetFandomFilter(QString userId);
+    void ResetFandomIgnores(QString userId);
+    void ResetFicIgnores(QString userId);
+    void FilterFandom(QString userId, int fandomId, bool allowCrossovers);
     std::mutex dbMutex;
     QSqlDatabase db;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
@@ -62,3 +66,4 @@ public:
 
 }
 BIND_TO_SELF_SINGLE(interfaces::Users);
+

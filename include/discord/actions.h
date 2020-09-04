@@ -46,6 +46,24 @@ public:
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
 
+class SetFandomAction : public ActionBase{
+public:
+    SetFandomAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
+class IgnoreFandomAction : public ActionBase{
+public:
+    IgnoreFandomAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
+class IgnoreFicAction : public ActionBase{
+public:
+    IgnoreFicAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
 struct ActionChain{
     int Size(){return actions.size();}
     void Push(QSharedPointer<SendMessageCommand>);

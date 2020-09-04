@@ -25,7 +25,7 @@ QString CommandState<T>::help;
 
 class CommandCreator{
 public:
-    virtual ~CommandCreator(){};
+    virtual ~CommandCreator();
     virtual CommandChain ProcessInput(SleepyDiscord::Message, bool verifyUser = false);
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message) = 0;
     void EnsureUserExists(QString, QString userName);
@@ -123,6 +123,7 @@ public:
     QSharedPointer<User> user;
     SleepyDiscord::Message originalMessage;
     QStringList errors;
+    bool emptyAction = false;
 };
 
 }

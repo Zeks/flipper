@@ -134,31 +134,107 @@ void User::SetUserName(QString name)
     this->userName = name;
 }
 
-void User::ToggleFandomIgnores(QSet<int> set)
+//void User::ToggleFandomIgnores(QSet<int> set)
+//{
+//    QWriteLocker locker(&lock);
+//    for(auto fandom: set)
+//    {
+//        if(!ignoredFandoms.contains(fandom))
+//            ignoredFandoms.insert(fandom);
+//        else
+//            ignoredFandoms.remove(fandom);
+//    }
+//}
+
+void User::SetFandomFilter(int id, bool displayCrossovers)
 {
     QWriteLocker locker(&lock);
-    for(auto fandom: set)
-    {
-        if(!ignoredFandoms.contains(fandom))
-            ignoredFandoms.insert(fandom);
-        else
-            ignoredFandoms.remove(fandom);
-    }
+    filteredFandoms.fandoms.insert(id);
+    filteredFandoms.tokens.push_back({id, displayCrossovers});
 }
 
-QString User::FfnID()
+void User::SetFandomFilter(FandomFilter filter)
+{
+    QWriteLocker locker(&lock);
+    filteredFandoms = filter;
+}
+
+FandomFilter User::GetCurrentFandomFilter() const
+{
+    QReadLocker locker(&lock);
+    return filteredFandoms;
+}
+
+void User::SetPositionsToIdsForCurrentPage(QHash<int, int> newData)
+{
+    QWriteLocker locker(&lock);
+    positionToId = newData;
+}
+
+FandomFilter User::GetCurrentIgnoredFandoms() const
+{
+    QReadLocker locker(&lock);
+    return ignoredFandoms;
+}
+
+void User::SetIgnoredFandoms(FandomFilter ignores)
+{
+    QWriteLocker locker(&lock);
+    ignoredFandoms = ignores;
+}
+
+int User::GetFicIDFromPositionId(int positionId) const
+{
+    QReadLocker locker(&lock);
+    if(positionId == -1 || !positionToId.contains(positionId))
+        return -1;
+    return positionToId[positionId];
+}
+
+QSet<int> User::GetIgnoredFics()  const
+{
+    QReadLocker locker(&lock);
+    return ignoredFics;
+}
+
+void User::SetIgnoredFics(QSet<int> fics)
+{
+    QWriteLocker locker(&lock);
+    ignoredFics = fics;
+}
+
+void User::ResetFandomFilter()
+{
+    QWriteLocker locker(&lock);
+    filteredFandoms = FandomFilter();
+}
+
+
+void User::ResetFandomIgnores()
+{
+    QWriteLocker locker(&lock);
+    ignoredFandoms = FandomFilter();
+}
+
+void User::ResetFicIgnores()
+{
+    QWriteLocker locker(&lock);
+    ignoredFics.clear();
+}
+
+QString User::FfnID() const
 {
     QReadLocker locker(&lock);
     return ffnID;
 }
 
-QString User::UserName()
+QString User::UserName() const
 {
     QReadLocker locker(&lock);
     return userName;
 }
 
-QString User::UserID()
+QString User::UserID() const
 {
     QReadLocker locker(&lock);
     return userID;
@@ -184,6 +260,7 @@ void User::SetFicList(core::RecommendationListFicData fics)
 
 QSharedPointer<core::RecommendationListFicData> User::FicList()
 {
+    QReadLocker locker(&lock);
     return fics;
 }
 void Users::AddUser(QSharedPointer<User> user)
@@ -203,6 +280,8 @@ bool Users::HasUser(QString user)
 
 QSharedPointer<User> Users::GetUser(QString user)
 {
+    if(!users.contains(user))
+        return {};
     return users[user];
 }
 
@@ -218,6 +297,7 @@ bool Users::LoadUser(QString name)
 
 void Users::InitInterface(QSqlDatabase db)
 {
+    QWriteLocker locker(&lock);
     userInterface = QSharedPointer<interfaces::Users>{new interfaces::Users};
     userInterface->db = db;
 }

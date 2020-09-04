@@ -162,6 +162,46 @@ DiagnosticSQLResult<bool> UpdateCurrentPage(QSqlDatabase db, QString user_id, in
     return ctx.result;
 }
 
+DiagnosticSQLResult<bool> UnfilterFandom(QSqlDatabase db, QString user_id, int fandom_id)
+{
+    QString qs = "delete from filtered_fandoms where user_id = :user_id and fandom_id = :fandom_id";
+    SqlContext<bool> ctx(db, qs, BP2(user_id, fandom_id));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool allow_crossovers)
+{
+    QString qs = "insert into from filtered_fandoms(user_id, fandom_id, allow_crossovers) values(:user_id, :fandom_iId, :allow_crossovers)";
+    SqlContext<bool> ctx(db, qs, BP3(user_id, fandom_id, allow_crossovers));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> ResetFandomFilter(QSqlDatabase db, QString user_id)
+{
+    QString qs = "delete from filtered_fandoms where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP1(user_id));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> ResetFandomIgnores(QSqlDatabase db, QString user_id)
+{
+    QString qs = "delete from ignored_fandoms where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP1(user_id));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> ResetFicIgnores(QSqlDatabase db, QString user_id)
+{
+    QString qs = "delete from fic_tags where user_id = :user_id and tag = 'ignore'";
+    SqlContext<bool> ctx(db, qs, BP1(user_id));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 
 
 

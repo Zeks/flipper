@@ -33,5 +33,10 @@ namespace discord_quries{
     DiagnosticSQLResult<bool> BanUser(QSqlDatabase db, QString user_id);
     DiagnosticSQLResult<bool> UnbanUser(QSqlDatabase db, QString user_id);
     DiagnosticSQLResult<bool> UpdateCurrentPage(QSqlDatabase db, QString user_id, int page);
+    DiagnosticSQLResult<bool> UnfilterFandom(QSqlDatabase db, QString user_id, int fandomId);
+    DiagnosticSQLResult<bool> ResetFandomFilter(QSqlDatabase db, QString user_id);
+    DiagnosticSQLResult<bool> ResetFandomIgnores(QSqlDatabase db, QString user_id);
+    DiagnosticSQLResult<bool> ResetFicIgnores(QSqlDatabase db, QString user_id);
+    DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool allow_crossovers);
  }
 }
