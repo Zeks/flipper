@@ -66,10 +66,10 @@ void Users::UnignoreFandom(QString userId, int fandomId)
     database::discord_quries::UnignoreFandom(db, userId, fandomId);
 }
 
-QList<discord::IgnoreFandom> Users::GetIgnoreList(QString userId)
+discord::FandomFilter Users::GetIgnoreList(QString userId)
 {
     std::lock_guard<std::mutex> guard(dbMutex);
-    return database::discord_quries::GetIgnoreList(db, userId).data;
+    return database::discord_quries::GetFandomIgnoreList(db, userId).data;
 }
 
 void Users::TagFanfic(QString userId, QString tag, int ficId)

@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
     An<interfaces::Users> usersDbInterface;
     usersDbInterface->portableDBInterface = userDbInterface;
-
+    fandomsInterface->db = userDbInterface->GetDatabase();
     QVector<core::Fandom> fandoms;
     ficSource->GetFandomListFromServer(fandomsInterface->GetLastFandomID(), &fandoms);
     if(fandoms.size() > 0)

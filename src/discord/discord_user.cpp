@@ -1,5 +1,6 @@
 #include "discord/discord_user.h"
 #include "sql/discord/discord_queries.h"
+
 using namespace std::chrono;
 namespace discord{
 User::User(QString userID, QString ffnID, QString name)
@@ -263,6 +264,11 @@ QSharedPointer<core::RecommendationListFicData> User::FicList()
     QReadLocker locker(&lock);
     return fics;
 }
+
+system_clock::time_point User::LastActive()
+{
+    return lastRecsQuery > lastEasyQuery ? lastRecsQuery : lastEasyQuery;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);
@@ -291,6 +297,10 @@ bool Users::LoadUser(QString name)
     if(!user)
         return false;
 
+    user->SetFandomFilter(database::discord_quries::GetFilterList(userInterface->db, name).data);
+    user->SetIgnoredFandoms(database::discord_quries::GetFandomIgnoreList(userInterface->db, name).data);
+    user->SetIgnoredFics(database::discord_quries::GetFicIgnoreList(userInterface->db, name).data);
+
     users[name] = user;
     return true;
 }
@@ -300,5 +310,19 @@ void Users::InitInterface(QSqlDatabase db)
     QWriteLocker locker(&lock);
     userInterface = QSharedPointer<interfaces::Users>{new interfaces::Users};
     userInterface->db = db;
+}
+
+void Users::ClearInactiveUsers()
+{
+    QWriteLocker locker(&lock);
+    auto userVec = users.values();
+    std::sort(userVec.begin(), userVec.end(), [](const auto& user1, const auto& user2){
+        return user1->LastActive() > user2->LastActive();
+    });
+    if(userVec.size() > 100)
+        userVec.erase(userVec.begin()+25, userVec.end());
+    users.clear();
+    for(auto user: userVec)
+        users[user->UserID()] = user;
 }
 }

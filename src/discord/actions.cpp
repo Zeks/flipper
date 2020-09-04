@@ -15,6 +15,7 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     action = SendMessageCommand::Create();
     action->originalMessage = command.originalMessage;
     action->user = command.user;
+    command.user->initNewEasyQuery();
     return ExecuteImpl(environment, command);
 
 }
@@ -101,6 +102,7 @@ QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnI
 
 QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
+    command.user->initNewRecsQuery();
     auto ffnId = QString::number(command.ids.at(0));
     core::RecommendationListFicData fics;
     QSharedPointer<core::RecommendationList> listParams;

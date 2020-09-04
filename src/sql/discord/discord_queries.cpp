@@ -58,17 +58,36 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
     return ctx.result;
 }
 
-DiagnosticSQLResult<QList<discord::IgnoreFandom>> GetIgnoreList(QSqlDatabase db, QString user_id){
+DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString user_id){
     QString qs = QString("select * from ignored_fandoms where user_id = :user_id");
 
-    SqlContext<QList<discord::IgnoreFandom>> ctx(db, qs, BP1(user_id));
+    SqlContext<discord::FandomFilter> ctx(db, qs, BP1(user_id));
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        ctx.result.data.push_back({q.value("fandom_id").toInt(),
-                                  q.value("including_crossovers").toBool()});
+        ctx.result.data.AddFandom(q.value("fandom_id").toInt(),
+                                  q.value("including_crossovers").toBool());
     });
     return ctx.result;
 }
 
+DiagnosticSQLResult<discord::FandomFilter> GetFilterList(QSqlDatabase db, QString user_id){
+    QString qs = QString("select * from filtered_fandoms where user_id = :user_id");
+
+    SqlContext<discord::FandomFilter> ctx(db, qs, BP1(user_id));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data.AddFandom(q.value("fandom_id").toInt(),
+                                  q.value("including_crossovers").toBool());
+    });
+    return ctx.result;
+}
+
+DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(QSqlDatabase db, QString user_id)
+{
+    QString qs = QString("select fic_id from fic_tags where user_id = :user_id and fic_tag = 'ignored'");
+
+    SqlContext<QSet<int>> ctx(db, qs, BP1(user_id));
+    ctx.FetchLargeSelectIntoList<int>("fic_id",qs);
+    return ctx.result;
+}
 
 DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User> user){
     QString qs = "INSERT INTO discord_users(user_id, user_name, ffn_id, reads_slash, current_list, banned) values(:user_id, :user_name, :ffn_id, :reads_slash, 0, 0)";
@@ -172,7 +191,7 @@ DiagnosticSQLResult<bool> UnfilterFandom(QSqlDatabase db, QString user_id, int f
 
 DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool allow_crossovers)
 {
-    QString qs = "insert into from filtered_fandoms(user_id, fandom_id, allow_crossovers) values(:user_id, :fandom_iId, :allow_crossovers)";
+    QString qs = "insert into from filtered_fandoms(user_id, fandom_id, allow_crossovers) values(:user_id, :fandom_id, :allow_crossovers)";
     SqlContext<bool> ctx(db, qs, BP3(user_id, fandom_id, allow_crossovers));
     ctx.ExecAndCheck(true);
     return ctx.result;
@@ -201,6 +220,8 @@ DiagnosticSQLResult<bool> ResetFicIgnores(QSqlDatabase db, QString user_id)
     ctx.ExecAndCheck(true);
     return ctx.result;
 }
+
+
 
 
 

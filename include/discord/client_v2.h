@@ -37,6 +37,8 @@ public:
     };
     CommandParser parser;
     QSharedPointer<CommandController> executor;
+protected:
+    virtual void timerEvent(QTimerEvent *);
 };
 
 }

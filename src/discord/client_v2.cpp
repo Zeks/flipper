@@ -7,6 +7,7 @@ Client::Client(const std::string token, const char numOfThreads, QObject *obj):Q
     SleepyDiscord::DiscordClient(token, numOfThreads)
 {
     qRegisterMetaType<QSharedPointer<core::RecommendationListFicData>>("QSharedPointer<core::RecommendationListFicData>");
+    startTimer(60000);
 
 }
 
@@ -57,6 +58,12 @@ void Client::onMessage(SleepyDiscord::Message message) {
 void Client::Log(const SleepyDiscord::Message message)
 {
     QLOG_INFO() << message.serverID.number() << " " << message.channelID.number() << " " << QString::fromStdString(message.author.username) << QString::number(message.author.ID.number()) << " " << QString::fromStdString(message.content);
+}
+
+void Client::timerEvent(QTimerEvent *)
+{
+    An<discord::Users> users;
+    users->ClearInactiveUsers();
 }
 
 }

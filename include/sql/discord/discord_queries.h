@@ -13,13 +13,16 @@
 #include "transaction.h"
 #include "Interfaces/discord/users.h"
 #include "discord/discord_user.h"
+#include "discord/fandom_filter_token.h"
 #include "sqlcontext.h"
 namespace database {
 using namespace puresql;
 namespace discord_quries{
 
     DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QString);
-    DiagnosticSQLResult<QList<discord::IgnoreFandom>> GetIgnoreList(QSqlDatabase db, QString userId);
+    DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString userId);
+    DiagnosticSQLResult<discord::FandomFilter> GetFilterList(QSqlDatabase db, QString userId);
+    DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(QSqlDatabase db, QString userId);
 
     DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User>);
     DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QString list_name);

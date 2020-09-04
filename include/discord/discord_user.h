@@ -9,6 +9,7 @@
 #include <QHash>
 #include <chrono>
 #include "core/section.h"
+#include "discord/fandom_filter_token.h"
 
 #include "GlobalHeaders/SingletonHolder.h"
 
@@ -18,34 +19,7 @@ class Users;
 
 
 namespace discord{
-struct FandomFilterToken{
-    FandomFilterToken(int id, bool includeCrossovers){
-        this->id = id;
-        this->includeCrossovers = includeCrossovers;
-    }
-    int id = -1;
-    bool includeCrossovers = false;
-};
 
-struct FandomFilter{
-    void RemoveFandom(int id){
-        fandoms.remove(id);
-        QList<FandomFilterToken> newTokens;
-        for(auto token: tokens)
-        {
-            if(token.id != id)
-                newTokens.push_back(token);
-            tokens =newTokens;
-        }
-    }
-    void AddFandom(int id, bool inludeCrossovers){
-        fandoms.insert(id);
-        tokens.push_back({id, inludeCrossovers});
-    }
-
-    QSet<int> fandoms;
-    QList<FandomFilterToken> tokens;
-};
 struct User{
     User(){InitFicsPtr();}
     User(QString userID, QString ffnID, QString name);
@@ -91,6 +65,7 @@ struct User{
     bool HasActiveSet();
     void SetFicList(core::RecommendationListFicData);
     QSharedPointer<core::RecommendationListFicData> FicList();
+    std::chrono::system_clock::time_point LastActive();
 
 
     bool isValid = false;
@@ -106,6 +81,7 @@ private:
 
     std::chrono::system_clock::time_point lastRecsQuery;
     std::chrono::system_clock::time_point lastEasyQuery;
+    std::chrono::system_clock::time_point lastActive;
     std::chrono::system_clock::time_point timeoutLimit;
 
     QSharedPointer<core::RecommendationListFicData> fics;
@@ -123,6 +99,7 @@ struct Users{
     QSharedPointer<User> GetUser(QString);
     bool LoadUser(QString user);
     void InitInterface(QSqlDatabase db);
+    void ClearInactiveUsers();
     QHash<QString,QSharedPointer<User>> users;
     QReadWriteLock lock;
 

@@ -49,7 +49,7 @@ public:
                    QString list_name);
     void IgnoreFandom(QString userId, int fandomId, bool ignoreCrosses);
     void UnignoreFandom(QString userId, int fandomId);
-    QList<discord::IgnoreFandom> GetIgnoreList(QString userId);
+    discord::FandomFilter GetIgnoreList(QString userId);
     void TagFanfic(QString userId, QString tag, int ficId);
     void UnTagFanfic(QString userId, QString tag, int ficId); // empty tag removes all
     void BanUser(QString userId);
