@@ -51,7 +51,7 @@ QSharedPointer<TaskRunner> CommandController::FetchFreeRunner()
 
 void CommandController::OnTaskFinished()
 {
-    QLOG_INFO() << "task chain finished";
+    QLOG_TRACE() << "task chain finished";
     std::lock_guard<std::mutex> guard(lock);
     auto senderTask = dynamic_cast<TaskRunner*>(sender());
     auto result = senderTask->result;

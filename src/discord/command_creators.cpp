@@ -40,6 +40,7 @@ CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool 
 {
     result.Reset();
     matches = rx.globalMatch(QString::fromStdString(message.content));
+    //QLOG_INFO() << "testing pattern: " << rx.pattern();
     if(!matches.hasNext())
         return result;
     return ProcessInputImpl(message);
@@ -70,17 +71,26 @@ CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message
 {
     result.Reset();
     matches = rx.globalMatch(QString::fromStdString(message.content));
-    QLOG_INFO() << "checking patetrn: " << rx.pattern();
+    //QLOG_INFO() << "checking pattern: " << rx.pattern();
     if(!matches.hasNext())
         return result;
 
     An<Users> users;
     auto user = users->GetUser(QString::fromStdString(message.author.ID));
     if(!user->HasActiveSet()){
+        if(user->FfnID().isEmpty() || user->FfnID() == "-1")
+        {
+            Command createRecs;
+            createRecs.type = Command::ct_no_user_ffn;
+            createRecs.originalMessage = message;
+            result.Push(createRecs);
+            result.stopExecution = true;
+            return result;
+        }
+
         Command createRecs;
         createRecs.type = Command::ct_fill_recommendations;
-        auto match = matches.next();
-        createRecs.ids.push_back(match.captured(1).toUInt());
+        createRecs.ids.push_back(user->FfnID().toInt());
         createRecs.originalMessage = message;
         result.hasParseCommand = true;
         result.Push(createRecs);
@@ -98,9 +108,10 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
 {
     if(user->secsSinceLastsRecQuery() < 60)
     {
-        nullCommand.type = Command::ct_timeout_ative;
+        nullCommand.type = Command::ct_timeout_active;
         nullCommand.ids.push_back(60-user->secsSinceLastsEasyQuery());
         nullCommand.variantHash["reason"] = "Recommendations can only be regenerated once on 60 seconds.Please wait %1 more seconds.";
+        nullCommand.originalMessage = message;
         result.Push(nullCommand);
         return result;
     }
@@ -181,7 +192,7 @@ CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 SetFandomCommand::SetFandomCommand()
 {
-    rx = QRegularExpression("^!fandom(\\s#pure){,1}(\\s#reset){,1}(\\s([A-Za-z0-9\\s]{1,30})){,1}}");
+    rx = QRegularExpression("^!fandom(\\s#pure){0,1}(\\s#reset){0,1}(\\s[A-Za-z0-9\\s]{1,30}){,1}");
 }
 
 CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -213,7 +224,8 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
 //                                          "\n!xfandom #reset X to unignore";
 IgnoreFandomCommand::IgnoreFandomCommand()
 {
-    rx = QRegularExpression("^!xfandom(\\s#full){,1}(\\s#reset){,1}(\\s([A-Za-z0-9\\s]{1,30})){,1}}");
+    rx = QRegularExpression("^!xfandom(\\s#full){0,1}(\\s#reset){0,1}(\\s[A-Za-z0-9\\s]{1,30}){0,1}");
+    //rx = QRegularExpression("^!xfandom(\\s[A-Za-z0-9\\s]{1,30}){0,1}");
 }
 
 CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -251,7 +263,7 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
     ignoredFics.type = Command::ct_ignore_fics;
     while(matches.hasNext()){
         auto match = matches.next();
-        ignoredFics.ids.push_back(match.captured(1).toUInt());
+        ignoredFics.ids.push_back(match.captured(1).trimmed().toUInt());
     }
     ignoredFics.originalMessage = message;
     result.Push(ignoredFics);
@@ -286,10 +298,11 @@ CommandChain CommandParser::Execute(SleepyDiscord::Message message)
     if(user->secsSinceLastsEasyQuery() < 3)
     {
         Command command;
-        command.type = Command::ct_timeout_ative;
+        command.type = Command::ct_timeout_active;
         command.ids.push_back(3-user->secsSinceLastsEasyQuery());
         command.variantHash["reason"] = "One command can be issued each 3 seconds. Please wait %1 more seconds.";
         command.originalMessage = message;
+        command.user = user;
         result.Push(command);
         result.stopExecution = true;
         return result;
@@ -329,7 +342,8 @@ void SendMessageCommand::Invoke(Client * client)
     if(embed.empty())
     {
         SleepyDiscord::Embed embed;
-        client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
+        if(text.length() > 0)
+            client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
     }
     else
         client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
@@ -339,3 +353,4 @@ void SendMessageCommand::Invoke(Client * client)
 
 
 }
+

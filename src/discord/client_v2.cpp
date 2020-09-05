@@ -39,10 +39,10 @@ void Client::InitDefaultCommandSet()
     RegisterCommand<PageChangeCommand>();
     RegisterCommand<NextPageCommand>();
     RegisterCommand<PreviousPageCommand>();
-    RegisterCommand<SetFandomCommand>();
+    //RegisterCommand<SetFandomCommand>();
     RegisterCommand<IgnoreFandomCommand>();
     RegisterCommand<IgnoreFicCommand>();
-    RegisterCommand<SetIdentityCommand>();
+    //RegisterCommand<SetIdentityCommand>();
     RegisterCommand<DisplayHelpCommand>();
 }
 

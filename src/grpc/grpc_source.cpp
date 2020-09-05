@@ -781,6 +781,9 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
     for(auto key: this->userData.ignoredFandoms.keys())
     {
+        QLOG_INFO() << "adding fandom ignore: " << key << " " <<this->userData.ignoredFandoms[key];
+        if(key==-1)
+            continue;
         ignoredFandoms->add_fandom_ids(key);
         ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
     }

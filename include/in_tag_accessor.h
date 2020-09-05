@@ -23,6 +23,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSharedPointer>
 #include "GlobalHeaders/SingletonHolder.h"
 struct UserData{
+    void Clear(){
+        allTaggedFics.clear();
+        allSnoozedFics.clear();
+        usedAuthors.clear();
+        ficIDsForActivetags.clear();
+        ficsForAuthorSearch.clear();
+        ficsForSelection.clear();
+        ignoredFandoms.clear();
+        token = "";
+    };
     QSet<int> allTaggedFics;
     QSet<int> allSnoozedFics;
     QSet<int> usedAuthors;

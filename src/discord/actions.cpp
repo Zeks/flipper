@@ -16,7 +16,8 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     action = SendMessageCommand::Create();
     action->originalMessage = command.originalMessage;
     action->user = command.user;
-    command.user->initNewEasyQuery();
+    if(command.type != Command::ECommandType::ct_timeout_active)
+        command.user->initNewEasyQuery();
     return ExecuteImpl(environment, command);
 
 }
@@ -124,7 +125,6 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
         recList->ficData.sourceFics+=source.id;
         recList->ficData.fics+=source.web.ffn;
     }
-
     //QLOG_INFO() << "Getting fics";
     environment->ficSource->GetRecommendationListFromServer(*recList);
     //QLOG_INFO() << "Got fics";
@@ -179,26 +179,45 @@ void FetchFicsForList(QSharedPointer<FicSourceGRPC> source,
             continue;
         filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
     }
+    auto fandomFilter = user->GetCurrentFandomFilter();
+    if(fandomFilter.tokens.size() > 0){
+        filter.fandom = fandomFilter.tokens.at(0).id;
+        filter.includeCrossovers = fandomFilter.tokens.at(0).includeCrossovers;
+    }
+    if(fandomFilter.tokens.size() > 1){
+        filter.secondFandom = fandomFilter.tokens.at(1).id;
+        filter.includeCrossovers = true;
+    }
+    if(user->GetCurrentIgnoredFandoms().fandoms.size() > 0)
+        filter.ignoreFandoms = true;
+    UserData userData;
+
+    for(auto token: user->GetCurrentIgnoredFandoms().tokens)
+        userData.ignoredFandoms[token.id] = token.includeCrossovers;
+    userData.allTaggedFics = user->GetIgnoredFics();
+
+
 
     fics->clear();
     fics->reserve(size);
+    source->userData = userData;
     source->FetchData(filter, fics);
 
 }
 
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
-    QLOG_INFO() << "Creating page results";
+    QLOG_TRACE() << "Creating page results";
     auto page = command.ids.at(0);
     command.user->SetPage(page);
     An<interfaces::Users> usersDbInterface;
     usersDbInterface->UpdateCurrentPage(command.user->UserID(), page);
 
     QVector<core::Fanfic> fics;
-    QLOG_INFO() << "Fetching fics";
+    QLOG_TRACE() << "Fetching fics";
 
     FetchFicsForList(environment->ficSource, command.user, 10, &fics);
-    QLOG_INFO() << "Fetched fics";
+    QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
@@ -233,7 +252,9 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
 QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
-    auto fandom = command.variantHash["fandom"].toString();
+    auto fandom = command.variantHash["fandom"].toString().trimmed();
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
     auto fandomId = environment->fandoms->GetIDForName(fandom);
     auto currentFilter = command.user->GetCurrentFandomFilter();
     An<interfaces::Users> usersDbInterface;
@@ -273,7 +294,9 @@ QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<T
 
 QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
-    auto fandom = command.variantHash["fandom"].toString();
+    auto fandom = command.variantHash["fandom"].toString().trimmed();
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
     auto fandomId = environment->fandoms->GetIDForName(fandom);
     auto withCrossovers = command.variantHash["with_crossovers"].toBool();
     An<interfaces::Users> usersDbInterface;
@@ -285,7 +308,7 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
         return action;
     }
 
-    auto currentIgnores = command.user->GetCurrentFandomFilter();
+    auto currentIgnores = command.user->GetCurrentIgnoredFandoms();
     if(currentIgnores.fandoms.contains(fandomId)){
         usersDbInterface->UnignoreFandom(command.user->UserID(), fandomId);
         currentIgnores.RemoveFandom(fandomId);
@@ -330,6 +353,12 @@ QSharedPointer<SendMessageCommand> TimeoutActiveAction::ExecuteImpl(QSharedPoint
     return action;
 }
 
+QSharedPointer<SendMessageCommand> NoUserInformationAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+{
+    action->text = "You need to call !recs FFN_ID first";
+    return action;
+}
+
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
     switch(type){
@@ -343,14 +372,18 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new HelpAction());
     case Command::ECommandType::ct_display_page:
         return QSharedPointer<ActionBase>(new DisplayPageAction());
-    case Command::ECommandType::ct_timeout_ative:
+    case Command::ECommandType::ct_timeout_active:
         return QSharedPointer<ActionBase>(new TimeoutActiveAction());
     case Command::ECommandType::ct_fill_recommendations:
         return QSharedPointer<ActionBase>(new RecsCreationAction());
+    case Command::ECommandType::ct_no_user_ffn:
+        return QSharedPointer<ActionBase>(new NoUserInformationAction());
     default:
         return QSharedPointer<ActionBase>();
     }
 }
+
+
 
 }
 

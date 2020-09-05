@@ -13,9 +13,9 @@ struct SqliteConnectionToken{
 };
 
 struct LockedDatabase{
-    LockedDatabase(std::mutex& lock):lockGuard(lock){}
+    LockedDatabase(std::recursive_mutex& lock):lockGuard(lock){}
     ~LockedDatabase();
-    std::lock_guard<std::mutex> lockGuard;
+    std::lock_guard<std::recursive_mutex> lockGuard;
     QSqlDatabase db;
 };
 
@@ -29,8 +29,8 @@ private:
     QSqlDatabase InstantiateDatabase(const SqliteConnectionToken&);
     SqliteConnectionToken users;
     SqliteConnectionToken pageCache;
-    std::mutex usersLock;
-    std::mutex pageCacheLock;
+    std::recursive_mutex usersLock;
+    std::recursive_mutex pageCacheLock;
 };
 
 }

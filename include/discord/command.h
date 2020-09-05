@@ -31,7 +31,8 @@ struct Command{
         ct_ignore_fandoms = 9,
         ct_display_help = 10,
         ct_display_invalid_command = 12,
-        ct_timeout_ative = 13,
+        ct_timeout_active = 13,
+        ct_no_user_ffn = 14,
     };
     enum EOperandType{
         ot_unspecified = 0,
