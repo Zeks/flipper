@@ -21,11 +21,11 @@ void Client::InitHelpForCommands(){
     CommandState<NextPageCommand>::help = "`!next` to navigate to the next page of the recommendation results";
     CommandState<PreviousPageCommand>::help = "`!prev` to navigate to the previous page of the recommendation results";
     CommandState<PageChangeCommand>::help = "`!page X` to navigate to a differnt page in recommendation results";
-    CommandState<SetFandomCommand>::help = "\nFandom commands:\n`!fandom X` for single fandom searches"
+    CommandState<SetFandomCommand>::help = "\nFandom filter commands:\n`!fandom X` for single fandom searches"
                                            "\n`!fandom #pure X` if you want to exclude crossovers "
                                            "\n`!fandom` a second time with a diffent fandom if you want to search for exact crossover"
                                            "\n`!fandom #reset` to reset fandom filter";
-    CommandState<IgnoreFandomCommand>::help = "`!xfandom X` to permanently ignore fics just from this fandom or remove an ignore"
+    CommandState<IgnoreFandomCommand>::help = "\nFandom ignore commands:\n`!xfandom X` to permanently ignore fics just from this fandom or remove an ignore"
                                               "\n`!xfandom #full X` to also ignore crossovers from this fandom,"
                                               "\n`!xfandom #reset` to reset fandom ignore list";
     //CommandState<IgnoreFandomWithCrossesCommand>::help = "xcrossfandom to permanently ignore a fandom eve when it appears in crossovers, repeat to unignore";
@@ -41,7 +41,7 @@ void Client::InitDefaultCommandSet()
     RegisterCommand<PreviousPageCommand>();
     //RegisterCommand<SetFandomCommand>();
     RegisterCommand<IgnoreFandomCommand>();
-    RegisterCommand<IgnoreFicCommand>();
+    //RegisterCommand<IgnoreFicCommand>();
     //RegisterCommand<SetIdentityCommand>();
     RegisterCommand<DisplayHelpCommand>();
 }
