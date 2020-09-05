@@ -27,6 +27,8 @@ public:
     Client(const std::string token, const char numOfThreads = SleepyDiscord::USER_CONTROLED_THREADS, QObject* obj = nullptr);
     Client(QObject* obj = nullptr);
     void InitDefaultCommandSet();
+    void InitHelpForCommands();
+    void InitCommandExecutor();
     using SleepyDiscord::DiscordClient::DiscordClient;
     void onMessage(SleepyDiscord::Message message) override;
     void Log(const SleepyDiscord::Message);

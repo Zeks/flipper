@@ -1,6 +1,8 @@
 //#include "discord/client.h"
 #include "discord/client_v2.h"
+#include "discord/discord_user.h"
 #include "discord/command_controller.h"
+#include "discord/db_vendor.h"
 
 #include "include/grpc/grpc_source.h"
 #include "include/sqlitefunctions.h"
@@ -13,6 +15,8 @@
 #include "Interfaces/ffn/ffn_authors.h"
 #include "Interfaces/fandoms.h"
 #include "Interfaces/authors.h"
+
+#include "sql/discord/discord_queries.h"
 
 
 #include "GlobalHeaders/SingletonHolder.h"
@@ -61,15 +65,19 @@ int main(int argc, char *argv[]) {
         QCoreApplication a(argc, argv);
         a.setApplicationName("ffnet sane search engine");
         SetupLogger();
-        QSharedPointer<database::IDBWrapper> userDbInterface (new database::SqliteInterface());
+        QSharedPointer<database::IDBWrapper> discordDbInterface (new database::SqliteInterface());
         //userDbInterface->EnsureUUIDForUserDatabase();
         //userDbInterface->ReadDbFile("dbcode/discord_init.sql", "database/DiscordDB");
-        userDbInterface->SetDatabase(database::sqlite::InitAndUpdateDatabaseForFile("database","DiscordDB","dbcode/discord_init.sql", "DiscordDB", false));
-        userDbInterface->EnsureUUIDForUserDatabase();
+        discordDbInterface->SetDatabase(database::sqlite::InitAndUpdateDatabaseForFile("database","DiscordDB","dbcode/discord_init.sql", "DiscordDB", false));
+        discordDbInterface->EnsureUUIDForUserDatabase();
 
         QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-        auto pageCacheDb = pageCacheInterface->InitDatabase2("PageCache","pcInit");
-        pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "pcInit");
+        pageCacheInterface->SetDatabase(database::sqlite::InitAndUpdateDatabaseForFile("database","PageCache","dbcode/pagecacheinit.sql", "PageCache", false));
+        pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
+
+        An<discord::DatabaseVendor> vendor;
+        vendor->AddConnectionToken("users", {"DiscordDB", "dbcode/discord_init.sql", "database"});
+        vendor->AddConnectionToken("pagecache", {"PageCache", "dbcode/pagecacheinit.sql", "database"});
 
     QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
     QSettings bot("settings/bot_token.ini", QSettings::IniFormat);
@@ -81,20 +89,23 @@ int main(int argc, char *argv[]) {
     auto port = settings.value("Login/serverPort", "3055").toString();
     QLOG_INFO() << "will connect to grpc via: " << ip << " "  << port;
 
-    userDbInterface->userToken = userDbInterface->GetUserToken();
+    discordDbInterface->userToken = discordDbInterface->GetUserToken();
 
     QSharedPointer<FicSourceGRPC> ficSource;
-    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
-    An<interfaces::Users> usersDbInterface;
-    usersDbInterface->portableDBInterface = userDbInterface;
-    fandomsInterface->db = userDbInterface->GetDatabase();
+    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), discordDbInterface->userToken,  160));
+
+    fandomsInterface->db = discordDbInterface->GetDatabase();
     QVector<core::Fandom> fandoms;
-    ficSource->GetFandomListFromServer(fandomsInterface->GetLastFandomID(), &fandoms);
+    auto lastFandomId = fandomsInterface->GetLastFandomID();
+    ficSource->GetFandomListFromServer(lastFandomId, &fandoms);
     if(fandoms.size() > 0)
         fandomsInterface->UploadFandomsIntoDatabase(fandoms);
+    QSqlDatabase::removeDatabase("DiscordDB");
 
-    discord::Client client(token, 1);
+    discord::Client client(token);
     client.InitDefaultCommandSet();
+    client.InitHelpForCommands();
+    client.InitCommandExecutor();
     client.executor->Init(4);
     auto serverSetup = [&](){
     client.run();

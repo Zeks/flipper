@@ -3,12 +3,19 @@
 #include "discord/discord_user.h"
 #include "Interfaces/discord/users.h"
 #include "include/grpc/grpc_source.h"
+#include "logger/QsLog.h"
 #include <QSettings>
 namespace discord{
-
+QSharedPointer<User> CommandCreator::user;
 void CommandChain::Push(Command command)
 {
     commands.push_back(command);
+}
+
+void CommandChain::AddUserToCommands(QSharedPointer<User> user)
+{
+    for(auto& command : commands)
+        command.user = user;
 }
 
 Command CommandChain::Pop()
@@ -16,6 +23,11 @@ Command CommandChain::Pop()
     auto command = commands.last();
     commands.pop_back();
     return command;
+}
+
+void CommandChain::RemoveEmptyCommands()
+{
+    commands.erase(std::remove_if(commands.begin(), commands.end(), [](const auto& item){return item.type == Command::ECommandType::ct_display_invalid_command;}));
 }
 
 
@@ -26,40 +38,26 @@ CommandCreator::~CommandCreator()
 
 CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool verifyUser)
 {
-    if(verifyUser)
-        EnsureUserExists(QString::fromStdString(message.author.ID), QString::fromStdString(message.author.username));
-    if(user->secsSinceLastsEasyQuery() < 3)
-    {
-        nullCommand.type = Command::ct_timeout_ative;
-        nullCommand.ids.push_back(3-user->secsSinceLastsEasyQuery());
-        nullCommand.variantHash["reason"] = "One command can be issued each 3 seconds. Please wait %1 more seconds.";
-        result.Push(nullCommand);
-        return result;
-    }
+    result.Reset();
     matches = rx.globalMatch(QString::fromStdString(message.content));
     if(!matches.hasNext())
-    {
-        nullCommand.type = Command::ct_display_invalid_command;
-        result.Push(nullCommand);
         return result;
-    }
     return ProcessInputImpl(message);
 }
 
 void CommandCreator::EnsureUserExists(QString userId, QString userName)
 {
-    this->userId = userId;
     An<Users> users;
     if(!users->HasUser(userId)){
         bool inDatabase = users->LoadUser(userId);
         if(!inDatabase)
         {
             QSharedPointer<discord::User> user(new discord::User(userId, "-1", userName));
-            users->userInterface->WriteUser(user);
+            An<interfaces::Users> usersInterface;
+            usersInterface->WriteUser(user);
             users->LoadUser(userId);
         }
     }
-    this->user = users->GetUser(userId);
 }
 
 
@@ -70,7 +68,12 @@ RecommendationsCommand::RecommendationsCommand()
 
 CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message, bool verifyUser)
 {
-    CommandCreator::ProcessInput(message, verifyUser);
+    result.Reset();
+    matches = rx.globalMatch(QString::fromStdString(message.content));
+    QLOG_INFO() << "checking patetrn: " << rx.pattern();
+    if(!matches.hasNext())
+        return result;
+
     An<Users> users;
     auto user = users->GetUser(QString::fromStdString(message.author.ID));
     if(!user->HasActiveSet()){
@@ -82,7 +85,7 @@ CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message
         result.hasParseCommand = true;
         result.Push(createRecs);
     }
-    return result;
+    return ProcessInputImpl(message);
 }
 
 RecsCreationCommand::RecsCreationCommand()
@@ -273,14 +276,36 @@ CommandChain SetIdentityCommand::ProcessInputImpl(SleepyDiscord::Message message
 
 CommandChain CommandParser::Execute(SleepyDiscord::Message message)
 {
+    std::lock_guard<std::mutex> guard(lock);
     bool firstCommand = true;
     CommandChain result;
+
+    CommandCreator::EnsureUserExists(QString::fromStdString(message.author.ID), QString::fromStdString(message.author.username));
+    An<Users> users;
+    auto user = users->GetUser(QString::fromStdString(message.author.ID.string()));
+    if(user->secsSinceLastsEasyQuery() < 3)
+    {
+        Command command;
+        command.type = Command::ct_timeout_ative;
+        command.ids.push_back(3-user->secsSinceLastsEasyQuery());
+        command.variantHash["reason"] = "One command can be issued each 3 seconds. Please wait %1 more seconds.";
+        command.originalMessage = message;
+        result.Push(command);
+        result.stopExecution = true;
+        return result;
+    }
+
     for(auto& processor: commandProcessors)
     {
-        result += processor->ProcessInput(message, firstCommand);
+        processor->user = user;
+        auto newCommands = processor->ProcessInput(message, firstCommand);
+        result += newCommands;
+        if(newCommands.stopExecution == true)
+            break;
         if(firstCommand)
             firstCommand = false;
     }
+    result.AddUserToCommands(user);
     return result;
 }
 
@@ -300,8 +325,12 @@ CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message
 
 void SendMessageCommand::Invoke(Client * client)
 {
+
     if(embed.empty())
-        client->sendMessage(originalMessage.channelID, text.toStdString());
+    {
+        SleepyDiscord::Embed embed;
+        client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
+    }
     else
         client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
 }

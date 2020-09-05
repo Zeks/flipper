@@ -4,6 +4,7 @@
 #include <QSharedPointer>
 #include <QSet>
 #include <QQueue>
+#include <mutex>
 
 namespace discord {
 class TaskRunner;
@@ -23,6 +24,7 @@ public:
     QList<QSharedPointer<TaskRunner>> runners;
     QQueue<CommandChain> queue;
     Client* client = nullptr;
+    std::mutex lock;
 public slots:
     void OnTaskFinished();
 protected:

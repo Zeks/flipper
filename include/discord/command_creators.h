@@ -11,6 +11,7 @@
 #include "discord/command.h"
 #include "discord/limits.h"
 #include "discord/discord_user.h"
+#include <mutex>
 
 namespace discord{
 class Client;
@@ -32,14 +33,14 @@ public:
     virtual ~CommandCreator();
     virtual CommandChain ProcessInput(SleepyDiscord::Message, bool verifyUser = false);
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message) = 0;
-    void EnsureUserExists(QString, QString userName);
+    static void EnsureUserExists(QString, QString userName);
 
     QRegularExpression rx;
     QRegularExpressionMatchIterator matches;
     Command nullCommand;
     CommandChain result;
     QString userId;
-    QSharedPointer<User> user;
+    static QSharedPointer<User> user; // shitcode
 };
 
 
@@ -109,6 +110,7 @@ class CommandParser{
 public:
     CommandChain Execute(SleepyDiscord::Message);
     QList<QSharedPointer<CommandCreator>> commandProcessors;
+    std::mutex lock;
 };
 
 

@@ -59,9 +59,6 @@ public:
     void ResetFandomIgnores(QString userId);
     void ResetFicIgnores(QString userId);
     void FilterFandom(QString userId, int fandomId, bool allowCrossovers);
-    std::mutex dbMutex;
-    QSqlDatabase db;
-    QSharedPointer<database::IDBWrapper> portableDBInterface;
 };
 
 }

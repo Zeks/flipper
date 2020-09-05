@@ -1,4 +1,5 @@
 #include "discord/discord_user.h"
+#include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 
 using namespace std::chrono;
@@ -293,24 +294,19 @@ QSharedPointer<User> Users::GetUser(QString user)
 
 bool Users::LoadUser(QString name)
 {
-    auto user = database::discord_quries::GetUser(userInterface->db, name).data;
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    auto user = database::discord_quries::GetUser(dbToken->db, name).data;
     if(!user)
         return false;
 
-    user->SetFandomFilter(database::discord_quries::GetFilterList(userInterface->db, name).data);
-    user->SetIgnoredFandoms(database::discord_quries::GetFandomIgnoreList(userInterface->db, name).data);
-    user->SetIgnoredFics(database::discord_quries::GetFicIgnoreList(userInterface->db, name).data);
+    user->SetFandomFilter(database::discord_quries::GetFilterList(dbToken->db, name).data);
+    user->SetIgnoredFandoms(database::discord_quries::GetFandomIgnoreList(dbToken->db, name).data);
+    user->SetIgnoredFics(database::discord_quries::GetFicIgnoreList(dbToken->db, name).data);
 
     users[name] = user;
     return true;
 }
 
-void Users::InitInterface(QSqlDatabase db)
-{
-    QWriteLocker locker(&lock);
-    userInterface = QSharedPointer<interfaces::Users>{new interfaces::Users};
-    userInterface->db = db;
-}
 
 void Users::ClearInactiveUsers()
 {

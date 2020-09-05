@@ -17,6 +17,7 @@ public:
     UserFavouritesParser(QObject* parent = nullptr);
     void Reset();
     bool FetchDesktopUserPage(QString userId);
+    bool FetchDesktopUserPage(QString userId, QSqlDatabase);
     QuickParseResult QuickParseAvailable();
     void FetchFavouritesFromDesktopPage();
     void FetchFavouritesFromMobilePage(int startBoundary = 26);
@@ -25,6 +26,7 @@ public:
     QSet<QString> result;
     QString userId;
     QMetaObject::Connection connection;
+    QSqlDatabase cacheDbToUse;
 
 signals:
     void progress(int pagesRead, int totalPages);

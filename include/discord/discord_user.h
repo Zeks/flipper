@@ -98,12 +98,11 @@ struct Users{
     bool HasUser(QString);
     QSharedPointer<User> GetUser(QString);
     bool LoadUser(QString user);
-    void InitInterface(QSqlDatabase db);
     void ClearInactiveUsers();
     QHash<QString,QSharedPointer<User>> users;
     QReadWriteLock lock;
 
-    QSharedPointer<interfaces::Users> userInterface;
+    //QSharedPointer<interfaces::Users> userInterface;
 };
 }
 

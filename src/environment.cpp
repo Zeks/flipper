@@ -1345,12 +1345,24 @@ WebPage RequestPage(QString pageUrl, ECacheMode cacheMode, bool autoSaveToDB)
 {
     WebPage result;
     An<PageManager> pager;
-    pager->SetDatabase(QSqlDatabase::database());
+    pager->SetDatabase(QSqlDatabase::database("PageCache"));
     result = pager->GetPage(pageUrl, cacheMode);
     if(autoSaveToDB)
         pager->SavePageToDB(result);
     return result;
 }
+
+WebPage RequestPage(QString pageUrl, QSqlDatabase db, ECacheMode cacheMode,  bool autoSaveToDB)
+{
+    WebPage result;
+    An<PageManager> pager;
+    pager->SetDatabase(db);
+    result = pager->GetPage(pageUrl, cacheMode);
+    if(autoSaveToDB)
+        pager->SavePageToDB(result);
+    return result;
+}
+
 }
 
 

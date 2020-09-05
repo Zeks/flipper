@@ -257,5 +257,6 @@ signals:
 };
 namespace env {
     WebPage RequestPage(QString pageUrl, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
+    WebPage RequestPage(QString pageUrl, QSqlDatabase, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 }
 

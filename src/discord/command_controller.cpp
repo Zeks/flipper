@@ -6,6 +6,11 @@
 
 namespace discord {
 
+CommandController::CommandController(QObject *parent) : QObject(parent)
+{
+
+}
+
 void CommandController::Init(int runnerAmount)
 {
     for(int i =0; i < runnerAmount; i++){
@@ -17,6 +22,7 @@ void CommandController::Init(int runnerAmount)
 
 void CommandController::Push(CommandChain chain)
 {
+    std::lock_guard<std::mutex> guard(lock);
     const auto& message = chain.commands.first().originalMessage;
     auto userId = QString::fromStdString(message.author.ID.string());
     if(activeUsers.contains(userId))
@@ -45,6 +51,8 @@ QSharedPointer<TaskRunner> CommandController::FetchFreeRunner()
 
 void CommandController::OnTaskFinished()
 {
+    QLOG_INFO() << "task chain finished";
+    std::lock_guard<std::mutex> guard(lock);
     auto senderTask = dynamic_cast<TaskRunner*>(sender());
     auto result = senderTask->result;
     senderTask->ClearState();
@@ -59,6 +67,7 @@ void CommandController::OnTaskFinished()
 
 void CommandController::timerEvent(QTimerEvent *)
 {
+    std::lock_guard<std::mutex> guard(lock);
     forever{
         if(queue.size() == 0)
             break;

@@ -1,5 +1,6 @@
 #include "discord/actions.h"
 #include "discord/command_creators.h"
+#include "discord/db_vendor.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/fandoms.h"
@@ -29,7 +30,7 @@ template<typename T> QString GetHelpForCommandIfActive(){
 
 QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
 {
-    QString helpString = "!recs FFN_ID to create recommendations";
+    QString helpString = "Basic commands:\n`!recs FFN_ID` to create recommendations";
     helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
     helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
     helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
@@ -47,15 +48,12 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
 QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageCommand> action){
     QSet<QString> userFavourites;
 
-    QSqlDatabase pageCacheDb;
-    QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
-    auto uniqueId = QUuid::createUuid().toString();
-    pageCacheDb = pageCacheInterface->InitDatabase("PageCache" + uniqueId);
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("pageCache");
 
     TimedAction linkGet("Link fetch", [&](){
         QString url = "https://www.fanfiction.net/u/" + ffnId;
         parsers::ffn::UserFavouritesParser parser;
-        auto result = parser.FetchDesktopUserPage(ffnId);
+        auto result = parser.FetchDesktopUserPage(ffnId,dbToken->db);
         parsers::ffn::QuickParseResult quickResult;
         if(!result){
             action->errors.push_back("Could not load user page on FFN. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
@@ -74,13 +72,13 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
 
             if(!quickResult.canDoQuickParse)
             {
+                parser.cacheDbToUse = dbToken->db;
                 parser.FetchFavouritesFromMobilePage();
                 userFavourites = parser.result;
             }
         }
     });
     linkGet.run();
-    pageCacheDb.removeDatabase("PageCache" + uniqueId);
     return userFavourites;
 }
 
@@ -138,6 +136,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     // instantiating working set for user
     An<Users> users;
     command.user->SetFicList(recList->ficData);
+    command.user->SetFfnID(ffnId);
     action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
     return action;
 }
@@ -202,7 +201,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     QLOG_INFO() << "Fetched fics";
     SleepyDiscord::Embed embed;
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
-
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2\n\n").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
 

@@ -34,6 +34,22 @@ bool UserFavouritesParser::FetchDesktopUserPage(QString userId)
     return false;
 }
 
+bool UserFavouritesParser::FetchDesktopUserPage(QString userId, QSqlDatabase db)
+{
+    this->userId = userId;
+    QStringList result;
+    WebPage page;
+    QString pageUrl = QString("https://www.fanfiction.net/u/%1").arg(userId);
+    TimedAction fetchAction("Author page fetch", [&](){
+        page = env::RequestPage(pageUrl, db, ECacheMode::dont_use_cache);
+    });
+    fetchAction.run(false);
+    dektopPage = page;
+    if(page.isValid)
+        return true;
+    return false;
+}
+
 QuickParseResult UserFavouritesParser::QuickParseAvailable()
 {
     QuickParseResult result;
@@ -70,7 +86,10 @@ void UserFavouritesParser::FetchFavouritesFromMobilePage(int startBoundary)
     parser.pageToStartFrom = startBoundary;
 
     connection = connect(&parser, &MobileFavouritesFetcher::progress, this, &UserFavouritesParser::progress);
-    result+=parser.Execute();
+    if(cacheDbToUse.isOpen())
+        result+=parser.Execute(cacheDbToUse);
+    else
+        result+=parser.Execute();
 }
 
 

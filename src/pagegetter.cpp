@@ -112,7 +112,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-    auto db = QSqlDatabase::database("PageCache");
+//    auto db = QSqlDatabase::database("PageCache");
     bool dbOpen = db.isOpen();
     if(!dbOpen)
         return result;
@@ -191,7 +191,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    QSqlQuery q(QSqlDatabase::database("PageCache"));
+    QSqlQuery q(db);
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
