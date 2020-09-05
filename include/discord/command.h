@@ -52,6 +52,7 @@ struct Command{
 
     ResultingMessage result;
     std::function<ResultingMessage()> executor;
+    QString textForPreExecution;
 };
 
 struct CommandChain{

@@ -132,12 +132,14 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     An<interfaces::Users> usersDbInterface;
     usersDbInterface->DeleteUserList(command.user->UserID(), "");
     usersDbInterface->WriteUserList(command.user->UserID(), "", discord::elt_favourites, recList->minimumMatch, recList->maxUnmatchedPerMatch, recList->alwaysPickAt);
+    usersDbInterface->WriteUserFFNId(command.user->UserID(), command.ids.at(0));
 
     // instantiating working set for user
     An<Users> users;
     command.user->SetFicList(recList->ficData);
     command.user->SetFfnID(ffnId);
     action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
+
     return action;
 }
 
@@ -161,7 +163,7 @@ void FetchFicsForList(QSharedPointer<FicSourceGRPC> source,
 {
     core::StoryFilter filter;
     filter.recordPage = user->CurrentPage();
-    filter.ignoreAlreadyTagged = true;
+    filter.ignoreAlreadyTagged = false;
     filter.showOriginsInLists = false;
     filter.recordLimit = size;
     filter.sortMode = core::StoryFilter::sm_metascore;
@@ -192,9 +194,11 @@ void FetchFicsForList(QSharedPointer<FicSourceGRPC> source,
         filter.ignoreFandoms = true;
     UserData userData;
 
-    for(auto token: user->GetCurrentIgnoredFandoms().tokens)
+    auto ignoredFandoms =  user->GetCurrentIgnoredFandoms();
+    for(auto& token: ignoredFandoms.tokens)
         userData.ignoredFandoms[token.id] = token.includeCrossovers;
     userData.allTaggedFics = user->GetIgnoredFics();
+    QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
 
 
@@ -229,7 +233,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     int i = 0;
     for(auto fic: fics)
     {
-        positionToId[i] = fic.identity.web.GetPrimaryId();
+        positionToId[i+1] = fic.identity.id;
         i++;
         auto fandomsList=fic.fandoms;
 
@@ -298,6 +302,7 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     environment->fandoms->db = dbToken->db;
     auto fandomId = environment->fandoms->GetIDForName(fandom);
+
     auto withCrossovers = command.variantHash["with_crossovers"].toBool();
     An<interfaces::Users> usersDbInterface;
     if(command.variantHash.contains("reset"))
@@ -305,6 +310,12 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
         usersDbInterface->ResetFandomIgnores(command.user->UserID());
         command.user->ResetFandomIgnores();
         action->emptyAction = true;
+        return action;
+    }
+    if(fandomId == -1)
+    {
+        action->text = "`" + fandom  + "`" + " is not a valid fandom";
+        action->stopChain = true;
         return action;
     }
 
@@ -325,19 +336,24 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
 QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
     auto ficIds = command.ids;
+    if(command.variantHash.contains("everything"))
+        ficIds = {1,2,3,4,5,6,7,8,9,10};
+
     auto ignoredFics = command.user->GetIgnoredFics();
     An<interfaces::Users> usersDbInterface;
     for(auto positionalId : ficIds){
         //need to get ffn id from positional id
         auto ficId = command.user->GetFicIDFromPositionId(positionalId);
-        if(!ignoredFics.contains(ficId))
-        {
-            ignoredFics.insert(ficId);
-            usersDbInterface->TagFanfic(command.user->UserID(), "ignore",  ficId);
-        }
-        else{
-            ignoredFics.remove(ficId);
-            usersDbInterface->UnTagFanfic(command.user->UserID(), "ignore",  ficId);
+        if(ficId != -1){
+            if(!ignoredFics.contains(ficId))
+            {
+                ignoredFics.insert(ficId);
+                usersDbInterface->TagFanfic(command.user->UserID(), "ignored",  ficId);
+            }
+            else{
+                ignoredFics.remove(ficId);
+                usersDbInterface->UnTagFanfic(command.user->UserID(), "ignored",  ficId);
+            }
         }
     }
     command.user->SetIgnoredFics(ignoredFics);

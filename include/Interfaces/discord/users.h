@@ -42,6 +42,7 @@ public:
     virtual ~Users();
     QSharedPointer<discord::User> GetUser(QString);
     void WriteUser(QSharedPointer<discord::User>);
+    void WriteUserFFNId(QString user_id, int ffn_id);
     int WriteUserList(QString user_id,
                       QString list_name, discord::EListType list_type,
                       int min_match, int match_ratio, int always_at);

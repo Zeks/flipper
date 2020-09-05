@@ -20,6 +20,10 @@ void CommandController::Init(int runnerAmount)
     startTimer(300);
 }
 
+static std::string CreateMention(const std::string& string){
+    return "<@" + string + ">";
+}
+
 void CommandController::Push(CommandChain chain)
 {
     std::lock_guard<std::mutex> guard(lock);
@@ -27,12 +31,19 @@ void CommandController::Push(CommandChain chain)
     auto userId = QString::fromStdString(message.author.ID.string());
     if(activeUsers.contains(userId))
     {
-        client->sendMessage(message.channelID, "Your previous command is still executing, please wait");
+        client->sendMessage(message.channelID, CreateMention(message.author.ID.string())+ ", your previous command is still executing, please wait");
+        return;
+    }
+    if(chain.hasParseCommand && activeParseCommand)
+    {
+        client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
+        queue.push_back(chain);
         return;
     }
     activeUsers.insert(userId);
     auto runner = FetchFreeRunner();
     if(!runner){
+        client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", there are no free command runners, putting your command on the queue. Your position is: " + QString::number(queue.size()).toStdString());
         queue.push_back(chain);
         return;
     }

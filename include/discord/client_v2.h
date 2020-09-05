@@ -17,6 +17,7 @@
 #include <QSharedPointer>
 #include <QFuture>
 #include <QFutureWatcher>
+#include <regex>
 
 namespace  discord {
 class SendMessageCommand;
@@ -27,6 +28,7 @@ public:
     Client(const std::string token, const char numOfThreads = SleepyDiscord::USER_CONTROLED_THREADS, QObject* obj = nullptr);
     Client(QObject* obj = nullptr);
     void InitDefaultCommandSet();
+    void InitIdentifiersForCommands();
     void InitHelpForCommands();
     void InitCommandExecutor();
     using SleepyDiscord::DiscordClient::DiscordClient;
@@ -38,9 +40,10 @@ public:
         CommandState<T>::active = true;
     };
     CommandParser parser;
+    std::regex rxCommandIdentifier;
     QSharedPointer<CommandController> executor;
 protected:
-    virtual void timerEvent(QTimerEvent *);
+    virtual void timerEvent(QTimerEvent *) override;
 };
 
 }

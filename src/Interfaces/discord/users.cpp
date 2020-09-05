@@ -44,6 +44,12 @@ void Users::WriteUser(QSharedPointer<discord::User> user)
     database::discord_quries::WriteUser(dbToken->db, user);
 }
 
+void Users::WriteUserFFNId(QString user_id, int ffn_id)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    database::discord_quries::WriteUserFFNId(dbToken->db, user_id, ffn_id);
+}
+
 int Users::WriteUserList(QString user_id, QString list_name, discord::EListType list_type, int min_match, int match_ratio, int always_at)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");

@@ -21,12 +21,15 @@ template<typename T>
 struct CommandState{
     static bool active;
     static QString help;
+    static QString regexCommandIdentifier;
 };
 
 template<class T>
 bool CommandState<T>::active = false;
 template<class T>
 QString CommandState<T>::help;
+template<class T>
+QString CommandState<T>::regexCommandIdentifier;
 
 class CommandCreator{
 public:
@@ -110,6 +113,7 @@ class CommandParser{
 public:
     CommandChain Execute(SleepyDiscord::Message);
     QList<QSharedPointer<CommandCreator>> commandProcessors;
+    Client* client = nullptr;
     std::mutex lock;
 };
 
@@ -124,6 +128,7 @@ public:
     SleepyDiscord::Message originalMessage;
     QStringList errors;
     bool emptyAction = false;
+    bool stopChain = false;
 };
 
 }

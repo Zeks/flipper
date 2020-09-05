@@ -770,8 +770,11 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic
 
     auto* tags = userData->mutable_user_tags();
 
-    for(auto tag : this->userData.allTaggedFics)
-        tags->add_all_tags(tag);
+    for(auto fic : this->userData.allTaggedFics)
+    {
+        QLOG_INFO() << "adding fic ignore: " << fic;
+        tags->add_all_tags(fic);
+    }
 
     for(auto tag : this->userData.ficIDsForActivetags)
         tags->add_searched_tags(tag);

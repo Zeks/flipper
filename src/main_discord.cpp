@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
 
     discord::Client client(token);
     client.InitDefaultCommandSet();
+    client.InitIdentifiersForCommands();
     client.InitHelpForCommands();
     client.InitCommandExecutor();
     client.executor->Init(4);

@@ -28,7 +28,10 @@ void TaskRunner::run()
         result.performedParseCommand = true;
     for(auto command : chainToRun.commands){
         auto action = GetAction(command.type);
-        result.Push(action->Execute(environment, command));
+        auto actionResult = action->Execute(environment, command);
+        result.Push(actionResult);
+        if(actionResult->stopChain)
+            break;
     }
 }
 

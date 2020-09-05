@@ -221,6 +221,14 @@ DiagnosticSQLResult<bool> ResetFicIgnores(QSqlDatabase db, QString user_id)
     return ctx.result;
 }
 
+DiagnosticSQLResult<bool> WriteUserFFNId(QSqlDatabase db, QString user_id, int ffn_id)
+{
+    QString qs = "update discord_users set ffn_id = :ffn_id where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP2(user_id, ffn_id));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 
 
 

@@ -92,6 +92,7 @@ CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message
         createRecs.type = Command::ct_fill_recommendations;
         createRecs.ids.push_back(user->FfnID().toInt());
         createRecs.originalMessage = message;
+        createRecs.textForPreExecution = QString("Restoring recommendations for user %1 into an active set, please wait a bit").arg(user->FfnID());
         result.hasParseCommand = true;
         result.Push(createRecs);
     }
@@ -101,7 +102,7 @@ CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message
 RecsCreationCommand::RecsCreationCommand()
 {
 
-    rx = QRegularExpression("^!recs\\s(\\d{4,10})");
+    rx = QRegularExpression("^!recs\\s{1,}(\\d{4,10})");
 }
 
 CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -116,12 +117,12 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
         return result;
     }
 
-
     Command createRecs;
     createRecs.type = Command::ct_fill_recommendations;
     auto match = matches.next();
     createRecs.ids.push_back(match.captured(1).toUInt());
     createRecs.originalMessage = message;
+    createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(match.captured(1));
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
@@ -138,7 +139,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 PageChangeCommand::PageChangeCommand()
 {
-    rx = QRegularExpression("^!page\\s(\\d{1,10})");
+    rx = QRegularExpression("^!page\\s{1,}(\\d{1,10})");
 }
 
 CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -192,7 +193,7 @@ CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 SetFandomCommand::SetFandomCommand()
 {
-    rx = QRegularExpression("^!fandom(\\s#pure){0,1}(\\s#reset){0,1}(\\s[A-Za-z0-9\\s]{1,30}){,1}");
+    rx = QRegularExpression("^!fandom(\\s{1,}>pure){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){,1}");
 }
 
 CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -224,8 +225,7 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
 //                                          "\n!xfandom #reset X to unignore";
 IgnoreFandomCommand::IgnoreFandomCommand()
 {
-    rx = QRegularExpression("^!xfandom(\\s#full){0,1}(\\s#reset){0,1}(\\s[A-Za-z0-9\\s]{1,30}){0,1}");
-    //rx = QRegularExpression("^!xfandom(\\s[A-Za-z0-9\\s]{1,30}){0,1}");
+    rx = QRegularExpression("^!xfandom(\\s{1,}>full){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}");
 }
 
 CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -254,7 +254,7 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 IgnoreFicCommand::IgnoreFicCommand()
 {
-    rx = QRegularExpression("^!xfic\\s(\\d{1,15}){1,}");
+    rx = QRegularExpression("^!xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)");
 }
 
 CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -263,7 +263,15 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
     ignoredFics.type = Command::ct_ignore_fics;
     while(matches.hasNext()){
         auto match = matches.next();
-        ignoredFics.ids.push_back(match.captured(1).trimmed().toUInt());
+        if(!match.captured(3).isEmpty()){
+            ignoredFics.variantHash["everything"] = true;
+            ignoredFics.ids.clear();
+            break;
+        }
+        auto list = match.captured(1).split(" ");
+        list.removeAll("");
+        for(auto id : list)
+            ignoredFics.ids.push_back(id.trimmed().toUInt());
     }
     ignoredFics.originalMessage = message;
     result.Push(ignoredFics);
@@ -272,7 +280,7 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
 
 SetIdentityCommand::SetIdentityCommand()
 {
-    rx = QRegularExpression("^!me\\s(\\d{1,15})");
+    rx = QRegularExpression("^!me\\s{1,}(\\d{1,15})");
 }
 
 CommandChain SetIdentityCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -319,6 +327,10 @@ CommandChain CommandParser::Execute(SleepyDiscord::Message message)
             firstCommand = false;
     }
     result.AddUserToCommands(user);
+    for(auto command: result.commands){
+        if(!command.textForPreExecution.isEmpty())
+            client->sendMessage(command.originalMessage.channelID, command.textForPreExecution.toStdString());
+    }
     return result;
 }
 
