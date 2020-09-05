@@ -66,6 +66,7 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
                     action->errors.push_back("Could not read favourites from your FFN page. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
             }
         }
+        parser.cacheDbToUse = dbToken->db;
         if(action->errors.size() == 0)
         {
             parser.FetchFavouritesFromDesktopPage();
@@ -73,7 +74,6 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
 
             if(!quickResult.canDoQuickParse)
             {
-                parser.cacheDbToUse = dbToken->db;
                 parser.FetchFavouritesFromMobilePage();
                 userFavourites = parser.result;
             }

@@ -107,7 +107,7 @@ QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db)
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){
-            page = env::RequestPage(mobileUrl.trimmed(),  ECacheMode::dont_use_cache);
+            page = env::RequestPage(mobileUrl.trimmed(),  db, ECacheMode::dont_use_cache);
         });
         fetchAction.run(false);
         // need to fetch only story ids for now
