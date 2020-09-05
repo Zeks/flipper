@@ -193,7 +193,7 @@ CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 SetFandomCommand::SetFandomCommand()
 {
-    rx = QRegularExpression("^!fandom(\\s{1,}>pure){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){,1}");
+    rx = QRegularExpression("^!fandom(\\s{1,}>pure){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}");
 }
 
 CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)

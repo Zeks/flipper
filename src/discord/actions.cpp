@@ -269,8 +269,12 @@ QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<T
         action->emptyAction = true;
         return action;
     }
-
-
+    if(fandomId == -1)
+    {
+        action->text = "`" + fandom  + "`" + " is not a valid fandom";
+        action->stopChain = true;
+        return action;
+    }
     if(currentFilter.fandoms.contains(fandomId))
     {
         currentFilter.RemoveFandom(fandomId);
