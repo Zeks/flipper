@@ -86,9 +86,8 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
 QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnId)
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
-    list->minimumMatch = 6;
+    list->minimumMatch = 1;
     list->maxUnmatchedPerMatch = 50;
-    list->alwaysPickAt = 9999;
     list->isAutomatic = true;
     list->useWeighting = true;
     list->useMoodAdjustment = true;
