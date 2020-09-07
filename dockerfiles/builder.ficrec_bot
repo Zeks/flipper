@@ -40,7 +40,6 @@ ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
 ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 
-ENV cacheBUSTER v0.0
 
 RUN   apt-get -y install git cmake ninja-build libssl-dev curl libcurl4-openssl-dev
 RUN --mount=type=ssh \
@@ -56,15 +55,20 @@ RUN --mount=type=ssh \
     && ninja  \
     && cp sleepy_discord/libsleepy-discord.a /usr/lib \ 
     && cp lib/libcpr.a /usr/lib/libcpr.a \
-    && cd ../../../ \
-    && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
+    && cd ../../../ 
 
-ENV cacheBUSTER v1.0
+ARG CACHEBUSTER
+
+RUN --mount=type=cache,target=/root/.cache/qbs \
+    cd $PACKAGE_DIR/flipper  \ 
+    && git checkout discord_new \
+    && git pull origin discord_new \
+    && git submodule update --init \
+    && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
 
 RUN cd $PACKAGE_DIR/flipper  \
     && chmod +x shell/deploy_bot.sh \
     && shell/deploy_bot.sh
-
 
 FROM ubuntu:latest as bot_runner
 SHELL ["bash", "-l", "-c"]
