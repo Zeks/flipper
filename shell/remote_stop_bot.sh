@@ -1,5 +1,8 @@
 #!/bin/bash
-bot_name=$RECS_BOT_NAME
-#echo "using bot name " $RECS_BOT_NAME
-docker stop ${RECS_BOT_NAME}
-
+variableName="RECS_BOT_NAME"
+botname=${!variableName}
+echo "using bot name " $botname
+containerName=$(docker ps -q --filter ancestor=$botname)
+echo "using container name " $containerName
+docker stop $containerName
+docker rm $containerName
