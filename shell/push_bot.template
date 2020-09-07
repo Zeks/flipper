@@ -1,0 +1,12 @@
+#!/bin/bash
+variableName="RECS_BOT_NAME"
+oldVariableValue=${!variableName}
+
+echo $variableName
+echo $oldVariableValue
+sed -i 's/RECS_BOT_NAME='"$oldVariableValue"'/RECS_BOT_NAME=BOTNAME/g' /home/PRODUCTIONUSER/.bashenv
+echo "loading new bot into docker"
+docker load -i /discord/BOTNAME.tar.gz
+echo "launching new bot"
+docker run -d --mount type=bind,source=/discord/database,target=/root/database --mount type=bind,source=/discord/settings,target=/root/settings BOTNAME
+

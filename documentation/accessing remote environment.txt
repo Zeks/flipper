@@ -1,0 +1,23 @@
+This is a reminder for myself about deploying the bot to production server.
+It needs access to remote environment variable to know which docker container to stop.
+
+Bash docs have this for remote scritp execution:
+
+ When  bash  is  started  non-interactively, to run a shell
+       script, for example, it looks for the variable BASH_ENV in
+       the  environment,  expands  its value if it appears there,
+       and uses the expanded value as the name of a file to  read
+       and  execute.   Bash  behaves  as if the following command
+       were executed:
+              if [ -n "$BASH_ENV" ]; then . "$BASH_ENV"; fi
+       but the value of the PATH variable is not used  to  search
+       for the file name.
+
+
+This needs to be set in /etc/profile of the server like this
+export BASH_ENV=~/.bashenv
+
+For whatever reason exporting ~/.bashrc here doesn't work and I don't want to figure out what's going on with that.
+Sourced .bashenv in .bashrc instead
+
+
