@@ -660,6 +660,7 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
 
     grpc::Status status = stub_->GetStatus(&context, task, response.data());
 
@@ -695,6 +696,7 @@ bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::Identity> * ficList)
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
 
     for(core::Identity& fic : *ficList)
     {
@@ -729,6 +731,7 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
 
     for(core::Identity& fic : *ficList)
     {
@@ -765,6 +768,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
     controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
     controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
@@ -822,6 +826,7 @@ void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fanfic> *fics, core::
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
     task.set_id(ficId);
     if(idType == core::StoryFilter::EUseThisFicType::utf_ffn_id)
         task.set_id_type(ProtoSpace::SearchByFFNIDTask::ffn);
@@ -850,6 +855,7 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
     controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
     controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
@@ -892,6 +898,7 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     task.mutable_controls()->set_user_token(proto_converters::TS(userDbToken));
+    task.mutable_controls()->set_sub_user_token(proto_converters::TS(userSubToken));
 
     grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
 
@@ -1019,6 +1026,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
 
     grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
     if(!status.ok())
@@ -1049,6 +1057,7 @@ core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationLi
 
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
 
     grpc::Status status = stub_->DiagnosticRecommendationListCreation(&context, task, response.data());
 
@@ -1136,6 +1145,7 @@ core::FavListDetails FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identit
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
 
     for(core::Identity& fic : ficList)
     {
@@ -1172,6 +1182,7 @@ QHash<uint32_t, uint32_t> FicSourceGRPCImpl::GetAuthorsForFicList(QSet<int> ficL
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
 
     for(auto fic : ficList)
     {
@@ -1205,6 +1216,7 @@ QSet<int> FicSourceGRPCImpl::GetAuthorsForFicInRecList(int sourceFic, QString au
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
     task.set_fic_id(sourceFic);
     task.set_author_list(authors.toStdString());
 
@@ -1309,6 +1321,7 @@ QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStat
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
     controls->set_user_token(proto_converters::TS(userDbToken));
+    controls->set_sub_user_token(proto_converters::TS(userSubToken));
     for(auto snoozeInfo : data)
     {
         auto snooze = task.add_snoozes();
