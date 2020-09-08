@@ -89,6 +89,7 @@ public:
     QSet<int> GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus>);
 
     ServerStatus GetStatus();
+    void SetUserSubToken(QString token);
 
     QString userToken;
     QSharedPointer<FicSourceGRPCImpl> impl;

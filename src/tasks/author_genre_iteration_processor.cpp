@@ -55,16 +55,10 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
 
     QList<IteratorTask> iteratorTasks;
     int processingThreads = QThread::idealThreadCount()-1;
-    //int processingThreads = 1;
     int chunkSize = inputAuthorData.size()/processingThreads;
     int i = 0;
     for(; i < processingThreads; i++)
-    {
-        iteratorTasks.push_back({inputAuthorData.begin()+i*chunkSize,
-                                 (i + 1) == processingThreads ? inputAuthorData.end() : inputAuthorData.begin()+(i+1)*chunkSize});
-    }
-//    if(inputAuthorData.size()%processingThreads != 0)
-//        iteratorTasks.push_back({inputAuthorData.begin()+i*chunkSize,inputAuthorData.end()});
+        iteratorTasks.push_back({std::next(inputAuthorData.begin(), i*chunkSize), (i + 1) == processingThreads ? inputAuthorData.end() : std::next(inputAuthorData.begin(), (i+1)*chunkSize)});
 
     sink.tokens.reserve(inputAuthorData.size());
     auto processor = [](IteratorTask task, const QHash<int, QList<genre_stats::GenreBit>> inputFicData) -> QList<GenreResult> {
