@@ -102,7 +102,7 @@ bool RecCalculatorImplBase::CollectVotes()
     int maxValue = 0;
     int maxId = -1;
 
-    int negativeSum = 0;
+    uint32_t negativeSum = 0;
     for(auto author: filteredAuthors)
         negativeSum+=allAuthors[author].negativeMatches;
     negativeAverage = negativeSum/filteredAuthors.size();
@@ -121,7 +121,7 @@ bool RecCalculatorImplBase::CollectVotes()
     qDebug() << "Max pure votes: " << maxValue;
     qDebug() << "Max id: " << maxId;
     result.recommendations.clear();
-    int negativeMatchCutoff = negativeAverage/3;
+    uint32_t negativeMatchCutoff = negativeAverage/3;
 
     std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this, negativeMatchCutoff](int author){
         for(auto fic: inputs.faves[author])
@@ -158,13 +158,11 @@ bool RecCalculatorImplBase::CollectVotes()
             if(doTrashCounting &&  ownMajorNegatives.cardinality() > startOfTrashCounting){
                 if(allAuthors[author].negativeToPositiveMatches > (averageNegativeToPositiveMatches*2))
                 {
-                    double originalVote = vote;
                     vote = vote / (1 + (allAuthors[author].negativeToPositiveMatches - averageNegativeToPositiveMatches));
                     //if(allAuthors[author].negativeToPositiveMatches > averageNegativeToPositiveMatches*2)
                         //QLOG_INFO() << "reducing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
                 else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/2.)){
-                    double originalVote = vote;
                     vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors[author].negativeToPositiveMatches)*3);
                     //QLOG_INFO() << "increasing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
@@ -331,7 +329,8 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     });
     ignoresCreation.run();
 
-    auto sourceFics = QSet<uint32_t>::fromList(fetchedFics.keys());
+    auto keys = fetchedFics.keys();
+    auto sourceFics = QSet<uint32_t>(keys.begin(),keys.end());
 
     for(auto bit : sourceFics)
         ownFavourites.add(bit);

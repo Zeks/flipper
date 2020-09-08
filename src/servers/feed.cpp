@@ -182,7 +182,8 @@ UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
     for(auto recommender: filter.usedRecommenders)
     {
         auto* userThreadData = ThreadData::GetUserData();
-        userThreadData->ficsForAuthorSearch += QSet<int>::fromList(reqContext.dbContext.authors->GetAllAuthorRecommendationIDs(recommender));
+        const auto& list = reqContext.dbContext.authors->GetAllAuthorRecommendationIDs(recommender);
+        userThreadData->ficsForAuthorSearch += QSet<int>(list.begin(), list.end());
     }
 
     result.filter = filter;

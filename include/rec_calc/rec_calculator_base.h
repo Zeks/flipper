@@ -117,17 +117,17 @@ public:
     virtual void AdjustRatioForAutomaticParams();
 
     int ownProfileId = -1;
-    int matchSum = 0;
-    int negativeAverage = 0;
+    uint32_t matchSum = 0;
+    uint32_t negativeAverage = 0;
     RecInputVectors inputs;
     QSharedPointer<RecommendationList> params;
     //QList<int> matchedAuthors;
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
     QHash<int, AuthorResult> allAuthors;
-    int maximumMatches = 0;
-    int prevMaximumMatches = 0;
+    uint32_t maximumMatches = 0;
+    uint32_t prevMaximumMatches = 0;
     double averageNegativeToPositiveMatches = 0;
-    int startOfTrashCounting = 200;
+    uint32_t startOfTrashCounting = 200;
     bool doTrashCounting = true;
     QList<int> filteredAuthors;
     Roaring ownFavourites;

@@ -81,7 +81,7 @@ RecCalculatorImplWeighted::FilterListType RecCalculatorImplWeighted::GetFilterLi
 RecCalculatorImplBase::ActionListType RecCalculatorImplWeighted::GetActionList(){
     auto ratioAccumulator = [ratioSum = std::reference_wrapper<double>(this->ratioSum)](RecCalculatorImplBase* calc,AuthorResult & author)
     {
-        if(calc->ownProfileId != author.id)
+        if(calc->ownProfileId != static_cast<int>(author.id))
             ratioSum+=author.ratio;
     };
     return {authorAccumulator, ratioAccumulator};
