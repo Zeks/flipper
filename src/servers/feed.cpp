@@ -1048,8 +1048,11 @@ RequestContext::RequestContext(QString requestName, const ProtoSpace::ControlInf
 {
     userToken = QString::fromStdString(control.user_token());
     applicationToken = QString::fromStdString(control.application_token());
-    QLOG_INFO() << "Received request: " << requestName << " from: " << applicationToken;
-    if(applicationToken != userToken)
+    if(applicationToken.isEmpty())
+        QLOG_INFO() << "Received request: " << requestName << " from: " << applicationToken;
+    else
+        QLOG_INFO() << "Received request: " << requestName << " from: " << userToken;
+    if(applicationToken != userToken && !applicationToken.isEmpty())
         QLOG_INFO() << "Discord user: " << userToken;
 
     this->server = server;

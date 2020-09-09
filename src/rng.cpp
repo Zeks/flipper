@@ -47,7 +47,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
     {
         QWriteLocker locker(&rngData->lock);
         RemoveOutdatedRngSequences();
-        RemoveOlderRngSequencesPastTheLimit(1);
+        RemoveOlderRngSequencesPastTheLimit(200);
 
         QLOG_INFO() << "GENERATING RANDOM SEQUENCE";
         auto idList = portableDBInterface->GetIdListForQuery(query);
@@ -57,6 +57,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         rngData->randomIdLists[where] = newList;
         rngData->randomIdLists[where]->ids = idList;
         rngData->randomIdLists[where]->sequenceIdentifier = where;
+        rngData->randomIdLists[where]->lastAccessTimestamp = QDateTime::currentDateTimeUtc();
         rngData->randomIdLists[where]->generationTimestamp = QDateTime::currentDateTimeUtc();
         rngData->queue.push(newList);
     }
@@ -94,25 +95,26 @@ void DefaultRNGgenerator::RemoveOutdatedRngSequences()
 
 void DefaultRNGgenerator::RemoveOlderRngSequencesPastTheLimit(uint32_t limit)
 {
-    rngData->Log("pre");
     if(rngData->randomIdLists.size() < static_cast<int>(limit))
         return;
+    //rngData->Log("pre");
     // HACK this resorts the queue
     RNGData::ListPtr newList(new RNGData::ListPtr::Type);
     newList->lastAccessTimestamp = QDateTime::currentDateTime().addYears(-1);
     rngData->queue.push(newList);
+    auto item = rngData->queue.top();
     rngData->queue.pop();
     // HACK END
-    while(rngData->queue.size() > limit){
+    while(rngData->queue.size() >= limit){
         auto item = rngData->queue.top();
         rngData->randomIdLists.remove(item->sequenceIdentifier);
         rngData->queue.pop();
     }
-    rngData->Log("post");
+    //rngData->Log("post");
 }
 
 RNGData::RNGData(): queue([](ListPtr i1,ListPtr i2)->bool{
-    return i1->lastAccessTimestamp < i2->lastAccessTimestamp;
+    return i1->lastAccessTimestamp > i2->lastAccessTimestamp;
 })
 {
 
