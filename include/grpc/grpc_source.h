@@ -40,6 +40,7 @@ class FavListDetails;
 class RecommendationListCreationRequest;
 class AuthorsForFicsResponse;
 class ResponseInfo;
+class ControlInfo;
 }
 
 
@@ -89,7 +90,7 @@ public:
     QSet<int> GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus>);
 
     ServerStatus GetStatus();
-    void SetUserSubToken(QString token);
+    void SetUserToken(QString token);
 
     QString userToken;
     QSharedPointer<FicSourceGRPCImpl> impl;

@@ -7,6 +7,7 @@
 #include <QSqlDatabase>
 #include <QWriteLocker>
 #include <QHash>
+#include <QUuid>
 #include <chrono>
 #include "core/section.h"
 #include "discord/fandom_filter_token.h"
@@ -41,6 +42,7 @@ struct User{
     void SetFfnID(QString id);
     void SetUserID(QString id);
     void SetUserName(QString name);
+    void SetUuid(QString);
     //void ToggleFandomIgnores(QSet<int>);
     void SetFandomFilter(int, bool displayCrossovers);
     void SetFandomFilter(FandomFilter );
@@ -61,6 +63,7 @@ struct User{
     QString FfnID()  const;
     QString UserName()  const;
     QString UserID()  const;
+    QString GetUuid()  const;
     bool ReadsSlash();
     bool HasActiveSet();
     void SetFicList(core::RecommendationListFicData);
@@ -72,6 +75,7 @@ struct User{
 private:
     QString userID;
     QString userName;
+    QUuid uuid;
     QString ffnID;
     int page = 0;
     int listId= 0;

@@ -636,14 +636,14 @@ public:
     QHash<int, core::FavouritesMatchResult > GetMatchesForUsers(int sourceUser, QList<int> users);
     QHash<int, core::FavouritesMatchResult> GetMatchesForUsers(InputsForMatches data, QList<int> users);
     QSet<int> GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus> data);
-
+    void FillControlStruct(ProtoSpace::ControlInfo *controls);
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
     bool hasErrors = false;
     int deadline = 60;
-    QString userDbToken;
-    QString userSubToken;
+    QString userToken;
+    QString applicationToken;
     UserData userData;
 };
 #define TO_STR2(x) #x
@@ -658,9 +658,8 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
+
 
     grpc::Status status = stub_->GetStatus(&context, task, response.data());
 
@@ -694,9 +693,7 @@ bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::Identity> * ficList)
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
 
     for(core::Identity& fic : *ficList)
     {
@@ -729,10 +726,7 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
-
+    FillControlStruct(task.mutable_controls());
     for(core::Identity& fic : *ficList)
     {
         task.mutable_ids()->add_db_ids(fic.id);
@@ -767,8 +761,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(controls);
     controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
     controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
@@ -824,9 +817,7 @@ void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fanfic> *fics, core::
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
     task.set_id(ficId);
     if(idType == core::StoryFilter::EUseThisFicType::utf_ffn_id)
         task.set_id_type(ProtoSpace::SearchByFFNIDTask::ffn);
@@ -854,8 +845,7 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
     task.set_allocated_filter(&protoFilter);
 
     auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(controls);
     controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
     controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
@@ -897,8 +887,8 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    task.mutable_controls()->set_user_token(proto_converters::TS(userDbToken));
-    task.mutable_controls()->set_sub_user_token(proto_converters::TS(userSubToken));
+    task.mutable_controls()->set_user_token(proto_converters::TS(userToken));
+    task.mutable_controls()->set_application_token(proto_converters::TS(applicationToken));
 
     grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
 
@@ -1024,9 +1014,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     context.set_deadline(deadline);
     paramToTaskFiller(task, recList);
 
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
 
     grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
     if(!status.ok())
@@ -1055,9 +1043,7 @@ core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationLi
     context.set_deadline(deadline);
     paramToTaskFiller(task, recList);
 
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
 
     grpc::Status status = stub_->DiagnosticRecommendationListCreation(&context, task, response.data());
 
@@ -1143,9 +1129,7 @@ core::FavListDetails FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identit
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
 
     for(core::Identity& fic : ficList)
     {
@@ -1180,9 +1164,7 @@ QHash<uint32_t, uint32_t> FicSourceGRPCImpl::GetAuthorsForFicList(QSet<int> ficL
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
 
     for(auto fic : ficList)
     {
@@ -1214,9 +1196,7 @@ QSet<int> FicSourceGRPCImpl::GetAuthorsForFicInRecList(int sourceFic, QString au
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
     task.set_fic_id(sourceFic);
     task.set_author_list(authors.toStdString());
 
@@ -1319,9 +1299,7 @@ QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStat
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userDbToken));
-    controls->set_sub_user_token(proto_converters::TS(userSubToken));
+    FillControlStruct(task.mutable_controls());
     for(auto snoozeInfo : data)
     {
         auto snooze = task.add_snoozes();
@@ -1344,11 +1322,18 @@ QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStat
 
 }
 
+void FicSourceGRPCImpl::FillControlStruct(ProtoSpace::ControlInfo *controls)
+{
+    controls->set_user_token(proto_converters::TS(userToken));
+    controls->set_application_token(proto_converters::TS(applicationToken));
+}
+
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
                              QString userToken,
                              int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
 {
-    impl->userDbToken = userToken;
+    impl->userToken = userToken;
+    impl->applicationToken = userToken;
 }
 
 FicSourceGRPC::~FicSourceGRPC()
@@ -1460,10 +1445,12 @@ ServerStatus FicSourceGRPC::GetStatus()
     return impl->GetStatus();
 }
 
-void FicSourceGRPC::SetUserSubToken(QString token)
+void FicSourceGRPC::SetUserToken(QString token)
 {
-    impl->userSubToken = token;
+    impl->userToken = token;
 }
+
+
 
 bool VerifyString(const std::string& s, uint maxSize = 200){
     if(s.length() > maxSize)

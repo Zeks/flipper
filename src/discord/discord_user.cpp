@@ -136,6 +136,11 @@ void User::SetUserName(QString name)
     this->userName = name;
 }
 
+void User::SetUuid(QString value)
+{
+    uuid = QUuid::fromString(value);
+}
+
 //void User::ToggleFandomIgnores(QSet<int> set)
 //{
 //    QWriteLocker locker(&lock);
@@ -242,6 +247,11 @@ QString User::UserID() const
     return userID;
 }
 
+QString User::GetUuid() const
+{
+    return uuid.toString();
+}
+
 bool User::ReadsSlash()
 {
     QReadLocker locker(&lock);
@@ -295,13 +305,13 @@ QSharedPointer<User> Users::GetUser(QString user)
 bool Users::LoadUser(QString name)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
-    auto user = database::discord_quries::GetUser(dbToken->db, name).data;
+    auto user = database::discord_queries::GetUser(dbToken->db, name).data;
     if(!user)
         return false;
 
-    user->SetFandomFilter(database::discord_quries::GetFilterList(dbToken->db, name).data);
-    user->SetIgnoredFandoms(database::discord_quries::GetFandomIgnoreList(dbToken->db, name).data);
-    user->SetIgnoredFics(database::discord_quries::GetFicIgnoreList(dbToken->db, name).data);
+    user->SetFandomFilter(database::discord_queries::GetFilterList(dbToken->db, name).data);
+    user->SetIgnoredFandoms(database::discord_queries::GetFandomIgnoreList(dbToken->db, name).data);
+    user->SetIgnoredFics(database::discord_queries::GetFicIgnoreList(dbToken->db, name).data);
 
     users[name] = user;
     return true;

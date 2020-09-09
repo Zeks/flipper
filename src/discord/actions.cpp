@@ -18,6 +18,7 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     action->user = command.user;
     if(command.type != Command::ECommandType::ct_timeout_active)
         command.user->initNewEasyQuery();
+    environment->ficSource->SetUserToken(command.user->GetUuid());
     return ExecuteImpl(environment, command);
 
 }

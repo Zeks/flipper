@@ -38,7 +38,7 @@ bool NullPtrGuard(T item)
 //#define BP3(X, Y, Z) {{"X", X}, {"Y", Y},{"Z", Z}}
 
 namespace database {
-namespace discord_quries{
+namespace discord_queries{
 
 
 
@@ -53,6 +53,7 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetFfnID(q.value("ffn_id").toString());
         user->SetCurrentListId(q.value("current_list").toInt());
         user->SetBanned(q.value("banned").toBool());
+        user->SetUuid(q.value("uuid").toString());
         ctx.result.data = user;
     });
     return ctx.result;
@@ -227,6 +228,22 @@ DiagnosticSQLResult<bool> WriteUserFFNId(QSqlDatabase db, QString user_id, int f
     SqlContext<bool> ctx(db, qs, BP2(user_id, ffn_id));
     ctx.ExecAndCheck(true);
     return ctx.result;
+}
+
+DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
+{
+    QString qs = QString("select user_id from discord_users where uuid is null");
+
+    SqlContext<QSet<int>> userFetcher(db, qs);
+    userFetcher.FetchLargeSelectIntoList<int64_t>("user_id",qs);
+    auto list = userFetcher.result.data;
+
+    for(auto user_id : list){
+        qs = QString("update discord_users set uuid = :uuid where user_id = user_id");
+        auto uuid = QUuid::createUuid().toString();
+        SqlContext<QSet<int>> userUpdater(db, qs, BP2(uuid, user_id));
+        userUpdater.ExecAndCheck(true);
+    }
 }
 
 

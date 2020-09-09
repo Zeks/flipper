@@ -1047,7 +1047,11 @@ void FeederService::OnPrintStatistics()
 RequestContext::RequestContext(QString requestName, const ProtoSpace::ControlInfo & control, FeederService *server)
 {
     userToken = QString::fromStdString(control.user_token());
-    QLOG_INFO() << "Received requst: " << requestName << " from: " << userToken;
+    applicationToken = QString::fromStdString(control.application_token());
+    QLOG_INFO() << "Received request: " << requestName << " from: " << applicationToken;
+    if(applicationToken != userToken)
+        QLOG_INFO() << "Discord user: " << userToken;
+
     this->server = server;
     recsData = ThreadData::GetRecommendationData();
 }

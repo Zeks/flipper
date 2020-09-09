@@ -17,7 +17,7 @@
 #include "sqlcontext.h"
 namespace database {
 using namespace puresql;
-namespace discord_quries{
+namespace discord_queries{
 
     DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QString);
     DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString userId);
@@ -41,6 +41,7 @@ namespace discord_quries{
     DiagnosticSQLResult<bool> ResetFandomFilter(QSqlDatabase db, QString user_id);
     DiagnosticSQLResult<bool> ResetFandomIgnores(QSqlDatabase db, QString user_id);
     DiagnosticSQLResult<bool> ResetFicIgnores(QSqlDatabase db, QString user_id);
+    DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db);
     DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool allow_crossovers);
  }
 }

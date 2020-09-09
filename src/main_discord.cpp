@@ -3,6 +3,7 @@
 #include "discord/discord_user.h"
 #include "discord/command_controller.h"
 #include "discord/db_vendor.h"
+#include "sql/discord/discord_queries.h"
 
 #include "include/grpc/grpc_source.h"
 #include "include/sqlitefunctions.h"
@@ -101,6 +102,8 @@ int main(int argc, char *argv[]) {
     if(fandoms.size() > 0)
         fandomsInterface->UploadFandomsIntoDatabase(fandoms);
     QSqlDatabase::removeDatabase("DiscordDB");
+    database::discord_queries::FillUserUids(fandomsInterface->db);
+
 
     discord::Client client(token);
     client.InitDefaultCommandSet();
