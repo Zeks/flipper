@@ -101,8 +101,8 @@ int main(int argc, char *argv[]) {
     ficSource->GetFandomListFromServer(lastFandomId, &fandoms);
     if(fandoms.size() > 0)
         fandomsInterface->UploadFandomsIntoDatabase(fandoms);
-    QSqlDatabase::removeDatabase("DiscordDB");
     database::discord_queries::FillUserUids(fandomsInterface->db);
+    QSqlDatabase::removeDatabase("DiscordDB");
 
 
     discord::Client client(token);

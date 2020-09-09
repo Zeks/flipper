@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "sql/discord/discord_queries.h"
+#include "logger/QsLog.h"
 
 template <typename T>
 bool NullPtrGuard(T item)
@@ -234,13 +235,14 @@ DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
 {
     QString qs = QString("select user_id from discord_users where uuid is null");
 
-    SqlContext<QSet<int>> userFetcher(db, qs);
-    userFetcher.FetchLargeSelectIntoList<int64_t>("user_id",qs);
+    SqlContext<QSet<QString>> userFetcher(db, qs);
+    userFetcher.FetchLargeSelectIntoList<QString>("user_id",qs);
     auto list = userFetcher.result.data;
 
     for(auto user_id : list){
-        qs = QString("update discord_users set uuid = :uuid where user_id = user_id");
+        qs = QString("update discord_users set uuid = :uuid where user_id = :user_id");
         auto uuid = QUuid::createUuid().toString();
+        QLOG_INFO() << "Updating user: " << user_id << " with uuid: " << uuid;
         SqlContext<QSet<int>> userUpdater(db, qs, BP2(uuid, user_id));
         userUpdater.ExecAndCheck(true);
     }
