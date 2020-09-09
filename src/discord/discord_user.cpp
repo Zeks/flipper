@@ -124,6 +124,18 @@ void User::SetFfnID(QString id)
     this->ffnID = id;
 }
 
+void User::SetPerfectRngFics(QSet<int> perfectRngFics)
+{
+    QWriteLocker locker(&lock);
+    this->perfectRngFics = perfectRngFics;
+}
+
+void User::SetGoodRngFics(QSet<int> goodRngFics)
+{
+    QWriteLocker locker(&lock);
+    this->goodRngFics = goodRngFics;
+}
+
 void User::SetUserID(QString id)
 {
     QWriteLocker locker(&lock);
@@ -208,6 +220,18 @@ void User::SetIgnoredFics(QSet<int> fics)
 {
     QWriteLocker locker(&lock);
     ignoredFics = fics;
+}
+
+QSet<int> User::GetPerfectRngFics()
+{
+    QReadLocker locker(&lock);
+    return perfectRngFics;
+}
+
+QSet<int> User::GetGoodRngFics()
+{
+    QReadLocker locker(&lock);
+    return goodRngFics;
 }
 
 void User::ResetFandomFilter()

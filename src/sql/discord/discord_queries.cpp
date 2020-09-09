@@ -244,6 +244,9 @@ DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
         SqlContext<QSet<int>> userUpdater(db, qs, BP2(uuid, user_id));
         userUpdater.ExecAndCheck(true);
     }
+    DiagnosticSQLResult<bool> result;
+    result.data = true;
+    return result;
 }
 
 
@@ -253,5 +256,7 @@ DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
 
 
 
+
 }
 }
+

@@ -58,6 +58,7 @@ public:
 
     QSqlDatabase GetDatabase() {return db;}
     void SetDatabase(QSqlDatabase db) {this->db = db;}
+
     QString userToken;
 protected:
     QSqlDatabase db;

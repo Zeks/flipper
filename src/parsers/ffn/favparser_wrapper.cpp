@@ -34,14 +34,17 @@ bool UserFavouritesParser::FetchDesktopUserPage(QString userId)
     return false;
 }
 
-bool UserFavouritesParser::FetchDesktopUserPage(QString userId, QSqlDatabase db)
+bool UserFavouritesParser::FetchDesktopUserPage(QString userId, QSqlDatabase db, bool useCache)
 {
     this->userId = userId;
     QStringList result;
     WebPage page;
     QString pageUrl = QString("https://www.fanfiction.net/u/%1").arg(userId);
     TimedAction fetchAction("Author page fetch", [&](){
-        page = env::RequestPage(pageUrl, db, ECacheMode::dont_use_cache);
+        if(useCache)
+            page = env::RequestPage(pageUrl, db, ECacheMode::use_cache);
+        else
+            page = env::RequestPage(pageUrl, db, ECacheMode::dont_use_cache);
     });
     fetchAction.run(false);
     dektopPage = page;

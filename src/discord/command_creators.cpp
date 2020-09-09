@@ -36,7 +36,7 @@ CommandCreator::~CommandCreator()
 
 }
 
-CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool verifyUser)
+CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool )
 {
     result.Reset();
     matches = rx.globalMatch(QString::fromStdString(message.content));
@@ -67,7 +67,7 @@ RecommendationsCommand::RecommendationsCommand()
 
 }
 
-CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message, bool verifyUser)
+CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message, bool)
 {
     result.Reset();
     matches = rx.globalMatch(QString::fromStdString(message.content));
@@ -359,6 +359,22 @@ void SendMessageCommand::Invoke(Client * client)
     }
     else
         client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
+}
+
+RngCommand::RngCommand()
+{
+    rx = QRegularExpression("^!rng\\s(perfect|good|all)");
+}
+
+CommandChain RngCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_display_rng;
+    auto match = matches.next();
+    command.variantHash["quality"] = match.captured(1);
+    command.originalMessage = message;
+    result.Push(command);
+    return result;
 }
 
 

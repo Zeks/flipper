@@ -40,6 +40,8 @@ struct User{
     void SetCurrentListId(int listId);
     void SetBanned(bool banned);
     void SetFfnID(QString id);
+    void SetPerfectRngFics(QSet<int>);
+    void SetGoodRngFics(QSet<int>);
     void SetUserID(QString id);
     void SetUserName(QString name);
     void SetUuid(QString);
@@ -55,6 +57,9 @@ struct User{
     int GetFicIDFromPositionId(int) const;
     QSet<int> GetIgnoredFics()  const;
     void SetIgnoredFics(QSet<int>);
+
+    QSet<int> GetPerfectRngFics();
+    QSet<int> GetGoodRngFics();
 
     void ResetFandomFilter();
     void ResetFandomIgnores();
@@ -89,6 +94,8 @@ private:
     std::chrono::system_clock::time_point timeoutLimit;
 
     QSharedPointer<core::RecommendationListFicData> fics;
+    QSet<int> perfectRngFics;
+    QSet<int> goodRngFics;
     QSet<int> ignoredFics;
     FandomFilter filteredFandoms;
     FandomFilter ignoredFandoms;

@@ -37,7 +37,7 @@ QSqlDatabase DatabaseVendor::InstantiateDatabase(const SqliteConnectionToken & t
     db = QSqlDatabase::addDatabase("QSQLITE", token.databaseName + QUuid::createUuid().toString());
     QString filename = token.folder.isEmpty() ? token.databaseName : token.folder + "/" + token.databaseName;
     db.setDatabaseName(filename + ".sqlite");
-    auto opened = db.open();
+    db.open();
     return db;
 }
 

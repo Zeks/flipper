@@ -33,6 +33,7 @@ struct Command{
         ct_display_invalid_command = 12,
         ct_timeout_active = 13,
         ct_no_user_ffn = 14,
+        ct_display_rng = 15,
     };
     enum EOperandType{
         ot_unspecified = 0,

@@ -103,6 +103,12 @@ public:
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
 };
 
+class RngCommand: public RecommendationsCommand{
+public:
+    RngCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+};
+
 class SetIdentityCommand: public CommandCreator{
 public:
     SetIdentityCommand();

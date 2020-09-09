@@ -46,6 +46,12 @@ public:
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
 
+class DisplayRngAction : public ActionBase{
+public:
+    DisplayRngAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
 class SetFandomAction : public ActionBase{
 public:
     SetFandomAction(){}
