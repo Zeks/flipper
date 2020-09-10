@@ -9,6 +9,7 @@
 #include "grpc/grpc_source.h"
 #include "timeutils.h"
 #include <QUuid>
+#include <QRegExp>
 #include <QSettings>
 namespace discord {
 
@@ -85,6 +86,17 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
     return userFavourites;
 }
 
+//QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
+//params->minimumMatch = 1;
+//params->maxUnmatchedPerMatch = 50;
+//params->alwaysPickAt = 9999;
+//params->isAutomatic = true;
+//params->useWeighting = true;
+//params->useMoodAdjustment = true;
+//params->name = "Recommendations";
+//params->assignLikedToSources = true;
+//params->userFFNId = env->interfaces.recs->GetUserProfile();
+
 QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnId)
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
@@ -92,10 +104,10 @@ QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnI
     list->maxUnmatchedPerMatch = 50;
     list->isAutomatic = true;
     list->useWeighting = true;
+    list->alwaysPickAt = 9999;
     list->useMoodAdjustment = true;
     list->name = "Recommendations";
     list->assignLikedToSources = true;
-    list->name = "generic";
     list->userFFNId = ffnId.toInt();
     return list;
 }
@@ -141,6 +153,14 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
     QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
     int count = 0;
+    if(!recList->ficData.matchCounts.size())
+    {
+        command.user->SetFfnID(ffnId);
+        action->text = "Couldn't create recommendations. Recommendations server is not available? Ping the author: zekses#3495";
+        action->stopChain = true;
+        return action;
+
+    }
     for(int i = 0; i < recList->ficData.fics.size(); i++){
         if(recList->ficData.matchCounts.at(i) > 1)
         {
@@ -154,32 +174,35 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     auto keys = matchFicToScore.keys();
     std::sort(keys.begin(), keys.end());
     std::reverse(keys.begin(), keys.end());
-    int currentFront = 0, previousFront = 0;
+    int currentFront = 0, previousFront = 0, previousKey = 0;
     QSet<int> perfectRngFics, goodRngFics;
     for(auto key : keys){
+        previousKey = key;
         previousFront = currentFront;
         currentFront += matchFicToScore[key].size();
         if(currentFront > perfectRange && perfectCutoff == 0)
-            perfectCutoff = previousFront;
+            perfectCutoff = key;
         else if(currentFront  < perfectRange){
             perfectRngFics += matchFicToScore[key];
         }
         goodRngFics += matchFicToScore[key];
         if(currentFront > goodRange && goodCutoff == 0)
         {
-            goodCutoff = previousFront;
+            goodCutoff = key;
             break;
         }
     }
     if(goodCutoff == 0)
-        goodCutoff=count;
+        goodCutoff=2;
 
     QLOG_INFO() << "Total fic count: " << count << " Perfect Fics: " << perfectRngFics.size() << " Good Fics: " << goodRngFics.size();
 
 
     command.user->SetFfnID(ffnId);
-    command.user->SetPerfectRngFics(perfectRngFics);
-    command.user->SetGoodRngFics(goodRngFics);
+    //command.user->SetPerfectRngFics(perfectRngFics);
+    //command.user->SetGoodRngFics(goodRngFics);
+    command.user->SetPerfectRngScoreCutoff(perfectCutoff);
+    command.user->SetGoodRngScoreCutoff(goodCutoff);
     action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
 
     return action;
@@ -211,9 +234,13 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     QLOG_TRACE() << "Fetching fics";
 
     FetchFicsForDisplayPageCommand(environment->ficSource, command.user, 10, &fics);
+    auto userFics = command.user->FicList();
+    for(auto& fic : fics)
+        fic.score = userFics->ficToScore[fic.identity.id];
     QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
+    QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
@@ -229,14 +256,17 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
         embed.description += QString("ID#: " + QString::number(i)).rightJustified(2, ' ').toStdString();
         embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
-
+        embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
+        //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
+        embed.description += QString("\nStatus:  ").toHtmlEscaped().toStdString();
         if(fic.complete)
             embed.description += QString(" `Complete  `  ").toStdString();
         else
             embed.description += QString(" `Incomplete`").toStdString();
         embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
-        embed.description += QString(" Fandom: `" + fandomsList.join(" & ") + "`\n").rightJustified(20, ' ').toStdString();
-        embed.description += "\n";
+        embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
+        embed.description += QString("\nGenre: `" + fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "") + "`").toStdString();
+        embed.description += "\n\n";
     }
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
@@ -248,15 +278,24 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     auto quality = command.variantHash["quality"].toString().trimmed();
-    QSet<int> filteringFicSet;
-    if(quality == "perfect")
-        filteringFicSet = command.user->GetPerfectRngFics();
-    if(quality == "good")
-        filteringFicSet = command.user->GetGoodRngFics();
-
     QVector<core::Fanfic> fics;
+
+
+    QSet<int> filteringFicSet;
+    int scoreCutoff = 1;
+    if(quality == "perfect")    {
+        scoreCutoff= command.user->GetPerfectRngScoreCutoff();
+    }
+    if(quality == "good"){
+        scoreCutoff= command.user->GetGoodRngScoreCutoff();
+    }
+
     QLOG_TRACE() << "Fetching fics for rng";
-    FetchFicsForDisplayRngCommand(3, environment->ficSource, command.user, &fics, filteringFicSet);
+    FetchFicsForDisplayRngCommand(3, environment->ficSource, command.user, &fics, scoreCutoff);
+    auto userFics = command.user->FicList();
+    for(auto& fic : fics)
+        fic.score = userFics->ficToScore[fic.identity.id];
+
     QLOG_TRACE() << "Fetched fics for rng";
 
     // fetching fandoms for selected fics
@@ -277,15 +316,17 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         auto fandomsList=fic.fandoms;
 
         embed.description += QString("ID#: " + QString::number(i)).rightJustified(2, ' ').toStdString();
-        embed.description += QString(" " + urlProto.arg(fic.title.replace("'", "\\'")).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
+        embed.description += QString(" " + urlProto.arg(fic.title.replace("'", "\'")).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
+        embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\'") + "`").rightJustified(20, ' ').toStdString();
 
-
+        embed.description += "\nStatus:  ";
         if(fic.complete)
             embed.description += QString(" `Complete  `  ").toStdString();
         else
             embed.description += QString(" `Incomplete`").toStdString();
         embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
-        embed.description += QString(" Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`\n").rightJustified(20, ' ').toStdString();
+        embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
+        embed.description += QString("\nGenre: `" + fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "") + "` ").toStdString();
         embed.description += (QString("```") + fic.summary + QString("```")).toStdString();
         embed.description += "\n";
     }

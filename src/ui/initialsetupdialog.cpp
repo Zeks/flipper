@@ -81,7 +81,7 @@ bool InitialSetupDialog::CreateRecommendationsFromProfile()
     auto sourceFicsSet = env->LoadAuthorFicIdsForRecCreation(url, ui->lblStatus);
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-    params->minimumMatch = 6;
+    params->minimumMatch = 1;
     params->maxUnmatchedPerMatch = 50;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
@@ -105,7 +105,7 @@ bool InitialSetupDialog::CreateRecommendationsFromUrls(QVector<int> ids)
     QCoreApplication::processEvents();
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-    params->minimumMatch = 6;
+    params->minimumMatch = 1;
     params->maxUnmatchedPerMatch = 50;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;

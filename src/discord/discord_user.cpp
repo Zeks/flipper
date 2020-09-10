@@ -136,6 +136,18 @@ void User::SetGoodRngFics(QSet<int> goodRngFics)
     this->goodRngFics = goodRngFics;
 }
 
+void User::SetPerfectRngScoreCutoff(int perfectRngScoreCutoff)
+{
+    QWriteLocker locker(&lock);
+    this->perfectRngScoreCutoff = perfectRngScoreCutoff;
+}
+
+void User::SetGoodRngScoreCutoff(int goodRngScoreCutoff)
+{
+    QWriteLocker locker(&lock);
+    this->goodRngScoreCutoff = goodRngScoreCutoff;
+}
+
 void User::SetUserID(QString id)
 {
     QWriteLocker locker(&lock);
@@ -232,6 +244,18 @@ QSet<int> User::GetGoodRngFics()
 {
     QReadLocker locker(&lock);
     return goodRngFics;
+}
+
+int User::GetPerfectRngScoreCutoff() const
+{
+    QReadLocker locker(&lock);
+    return perfectRngScoreCutoff;
+}
+
+int User::GetGoodRngScoreCutoff() const
+{
+    QReadLocker locker(&lock);
+    return goodRngScoreCutoff;
 }
 
 void User::ResetFandomFilter()

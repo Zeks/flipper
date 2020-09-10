@@ -16,7 +16,7 @@ void FetchFicsForDisplayRngCommand(int size,
                                    QSharedPointer<FicSourceGRPC> source,
                                    QSharedPointer<discord::User> user,
                                    QVector<core::Fanfic>* fics,
-                                   QSet<int> usedRngSequence);
+                                   int qualityCutoff = 1);
 
 
 }

@@ -25,6 +25,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
             continue;
         filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
     }
+    userFics->ficToScore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
@@ -53,7 +54,11 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
 
 }
 
-void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, QVector<core::Fanfic> *fics, QSet<int> usedRngSequence)
+
+
+
+
+void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, QVector<core::Fanfic> *fics, int qualityCutoff)
 {
     core::StoryFilter filter;
     filter.recordPage = user->CurrentPage();
@@ -65,20 +70,24 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     filter.mode = core::StoryFilter::filtering_in_fics;
     filter.randomizeResults = true;
     filter.maxFics = size;
+    filter.minRecommendations = qualityCutoff;
+    filter.listOpenMode = true;
     //filter.mode = core::StoryFilter::filtering_in_recommendations;
     filter.slashFilter.excludeSlash = true;
     filter.slashFilter.includeSlash = false;
     filter.slashFilter.slashFilterLevel = 1;
     filter.slashFilter.slashFilterEnabled = true;
+    filter.rngDisambiguator += user->UserID();
     auto userFics = user->FicList();
+
     for(int i = 0; i < userFics->fics.size(); i++)
     {
         if(userFics->sourceFics.contains(userFics->fics[i]))
             continue;
-        if(!usedRngSequence.isEmpty() && !usedRngSequence.contains(userFics->fics[i]))
-            continue;
-        filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
+        if(userFics->matchCounts[i]>=qualityCutoff)
+            filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
     }
+    userFics->ficToScore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;

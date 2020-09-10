@@ -131,6 +131,7 @@ struct StoryFilter{
     bool descendingDirection = true;
     bool displayPurgedFics = false;
     bool displaySnoozedFics = false;
+    bool wipeRngSequence = false;;
 
     SlashFilterState slashFilter;
 
@@ -189,6 +190,7 @@ struct StoryFilter{
     QHash<int, int> recsHash; // for use on the server
     QHash<int, int> scoresHash; // for use on the server
     QString userToken;
+    QString rngDisambiguator;
 };
 
 struct ReclistFilter{

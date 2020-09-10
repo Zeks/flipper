@@ -25,25 +25,24 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
 {
     QString where = userToken + query->str;
     QStringList result;
-    bool containsWhere = false;
+    bool listIsOutdated = false, containsList = false;
     for(auto bind: query->bindings)
         where += bind.key + bind.value.toString().left(30);
     where += "Minrecs: " + QString::number(filter.minRecommendations);
     where += "Rated: " + QString::number(filter.rating);
     where += "Active tags: " + filter.activeTags.join(",");
     where += "Displaying purged:" + QString::number(filter.displayPurgedFics);
+    where += "Disambiguator: " + filter.rngDisambiguator;
     {
         // locking to make sure it's not modified when we search
         QReadLocker locker(&rngData->lock);
-        bool containsList = false, listIsOutdated = false;
         containsList = rngData->randomIdLists.contains(where);
         if(containsList)
             listIsOutdated = rngData->randomIdLists[where]->generationTimestamp < QDateTime::currentDateTimeUtc().addDays(-1);
-        containsWhere = containsList && !listIsOutdated;
     }
 
     QLOG_INFO() << "RANDOM USING WHERE:" << where;
-    if(!containsWhere)
+    if(!containsList || listIsOutdated || filter.wipeRngSequence)
     {
         QWriteLocker locker(&rngData->lock);
         RemoveOutdatedRngSequences();
@@ -53,13 +52,21 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         auto idList = portableDBInterface->GetIdListForQuery(query);
         if(idList.size() == 0)
             idList.push_back("-1");
-        RNGData::ListPtr newList(new RNGData::ListPtr::Type);
-        rngData->randomIdLists[where] = newList;
-        rngData->randomIdLists[where]->ids = idList;
-        rngData->randomIdLists[where]->sequenceIdentifier = where;
-        rngData->randomIdLists[where]->lastAccessTimestamp = QDateTime::currentDateTimeUtc();
-        rngData->randomIdLists[where]->generationTimestamp = QDateTime::currentDateTimeUtc();
-        rngData->queue.push(newList);
+        RNGData::ListPtr usedList;
+        if(!containsList)
+        {
+            RNGData::ListPtr newList(new RNGData::ListPtr::Type);
+            rngData->randomIdLists[where] = newList;
+            usedList = newList;
+            usedList->sequenceIdentifier = where;
+        }
+        else
+            usedList = rngData->randomIdLists[where];
+        usedList->ids = idList;
+        usedList->lastAccessTimestamp = QDateTime::currentDateTimeUtc();
+        usedList->generationTimestamp = QDateTime::currentDateTimeUtc();
+        if(!containsList)
+            rngData->queue.push(usedList);
     }
     else
         QLOG_INFO() << "USING CACHED RANDOM SEQUENCE";

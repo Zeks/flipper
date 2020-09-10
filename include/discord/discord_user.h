@@ -42,6 +42,8 @@ struct User{
     void SetFfnID(QString id);
     void SetPerfectRngFics(QSet<int>);
     void SetGoodRngFics(QSet<int>);
+    void SetPerfectRngScoreCutoff(int);
+    void SetGoodRngScoreCutoff(int);
     void SetUserID(QString id);
     void SetUserName(QString name);
     void SetUuid(QString);
@@ -60,6 +62,8 @@ struct User{
 
     QSet<int> GetPerfectRngFics();
     QSet<int> GetGoodRngFics();
+    int GetPerfectRngScoreCutoff() const;
+    int GetGoodRngScoreCutoff() const;
 
     void ResetFandomFilter();
     void ResetFandomIgnores();
@@ -96,6 +100,8 @@ private:
     QSharedPointer<core::RecommendationListFicData> fics;
     QSet<int> perfectRngFics;
     QSet<int> goodRngFics;
+    int perfectRngScoreCutoff;
+    int goodRngScoreCutoff;
     QSet<int> ignoredFics;
     FandomFilter filteredFandoms;
     FandomFilter ignoredFandoms;

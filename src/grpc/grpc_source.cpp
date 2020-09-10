@@ -131,6 +131,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
     auto* randomizer = result.mutable_randomizer();
     randomizer->set_randomize_results(filter.randomizeResults);
+    randomizer->set_sequence_name(filter.rngDisambiguator.toStdString());
+    randomizer->set_rebuild_random_sequence(filter.wipeRngSequence);
 
     auto* contentFilter = result.mutable_content_filter();
     contentFilter->set_fandom(filter.fandom);
@@ -220,6 +222,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     core::StoryFilter result;
     result.randomizeResults = filter.randomizer().randomize_results();
+    result.rngDisambiguator = QString::fromStdString(filter.randomizer().sequence_name());
+    result.wipeRngSequence = filter.randomizer().rebuild_random_sequence();
     result.useRealGenres = filter.genre_filter().use_implied_genre();
     result.displayPurgedFics = filter.recommendations().display_purged_fics();
     if(filter.sort_direction() == ::ProtoSpace::Filter_ESortDirection::Filter_ESortDirection_sd_ascending)

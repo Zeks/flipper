@@ -40,6 +40,7 @@ struct RecommendationListFicData
     QVector<double> noTrashScores;
     QVector<int> authorIds;
     QHash<int, int> matchReport;
+    QHash<int, int> ficToScore;
     QHash<int, core::MatchBreakdown> breakdowns;
 };
 
