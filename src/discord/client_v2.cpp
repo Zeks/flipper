@@ -35,7 +35,7 @@ void Client::InitHelpForCommands(){
     CommandState<IgnoreFicCommand>::help = "\nFanfic commands:\n`!xfic X` will ignore a fic (you need input position in the last output), X Y Z to ignore multiple"
                                            "\n`!xfic >all` will ignore the whole page";
                                            //"\n`!xfic >reset` resets the fic ignores";
-    CommandState<RngCommand>::help = "`!rng perfect/good/all` will display a set of 3 random fics from witin a selected range in the recommendations.";
+    CommandState<RngCommand>::help = "`!roll best/good/all` will display a set of 3 random fics from within a selected range in the recommendations.";
     CommandState<DisplayHelpCommand>::help = "`!help` display this text";
 }
 template<typename T> QString GetRegexForCommandIfActive(){
