@@ -54,7 +54,7 @@ void Client::InitIdentifiersForCommands(){
     CommandState<IgnoreFandomCommand>::regexCommandIdentifier = "xfandom";
     CommandState<IgnoreFicCommand>::regexCommandIdentifier = "xfic";
     CommandState<DisplayHelpCommand>::regexCommandIdentifier = "help";
-    CommandState<RngCommand>::regexCommandIdentifier = "rng";
+    CommandState<RngCommand>::regexCommandIdentifier = "roll";
 
     QString pattern = "^!(%1)";
     QStringList list;

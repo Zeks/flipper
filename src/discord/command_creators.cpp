@@ -363,7 +363,7 @@ void SendMessageCommand::Invoke(Client * client)
 
 RngCommand::RngCommand()
 {
-    rx = QRegularExpression("^!rng\\s(perfect|good|all)");
+    rx = QRegularExpression("^!roll\\s(best|good|all)");
 }
 
 CommandChain RngCommand::ProcessInputImpl(SleepyDiscord::Message message)
