@@ -283,7 +283,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     QSet<int> filteringFicSet;
     int scoreCutoff = 1;
-    if(quality == "perfect")    {
+    if(quality == "best")    {
         scoreCutoff= command.user->GetPerfectRngScoreCutoff();
     }
     if(quality == "good"){
