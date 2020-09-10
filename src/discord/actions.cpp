@@ -265,7 +265,10 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
             embed.description += QString(" `Incomplete`").toStdString();
         embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
         embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
-        embed.description += QString("\nGenre: `" + fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "") + "`").toStdString();
+        QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "");
+        if(genre.isEmpty())
+            genre = fic.genreString;
+        embed.description += QString("\nGenre: `" + genre + "`").toStdString();
         embed.description += "\n\n";
     }
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
