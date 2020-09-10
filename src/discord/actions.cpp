@@ -42,7 +42,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
     helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
     helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
-
+    helpString +=  GetHelpForCommandIfActive<RngCommand>();
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
     action->text = helpString;
@@ -492,6 +492,7 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 
 
 }
+
 
 
 
