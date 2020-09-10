@@ -270,6 +270,9 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
             genre = fic.genreString;
         embed.description += QString("\nGenre: `" + genre + "`").toStdString();
         embed.description += "\n\n";
+        auto temp =  QString::fromStdString(embed.description);
+        temp = temp.replace("````", "```");
+        embed.description = temp.toStdString();
     }
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
@@ -332,9 +335,13 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "");
         if(genre.isEmpty())
             genre = fic.genreString;
+        genre= genre.replace("`", "");
         embed.description += QString("\nGenre: `" + genre + "`").toStdString();
-        embed.description += (QString("```") + fic.summary + QString("```")).toStdString();
+        embed.description += (QString("\n```") + fic.summary + QString("```")).toStdString();
         embed.description += "\n";
+        auto temp =  QString::fromStdString(embed.description);
+        temp = temp.replace("````", "```");
+        embed.description = temp.toStdString();
     }
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
