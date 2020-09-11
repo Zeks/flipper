@@ -40,6 +40,7 @@ App{
         "include/discord/task.h",
         "include/discord/task_environment.h",
         "include/discord/task_runner.h",
+        "include/discord/type_strings.h",
         "include/environment.h",
         "include/page_utils.h",
         "include/pageconsumer.h",

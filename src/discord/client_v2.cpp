@@ -1,5 +1,6 @@
 #include "discord/client_v2.h"
 #include "discord/command_controller.h"
+#include "discord/command_creators.h"
 #include "discord/command.h"
 #include "discord/discord_server.h"
 #include "discord/discord_init.h"
@@ -9,13 +10,15 @@
 #include <QRegularExpression>
 #include <string_view>
 #include <QSharedPointer>
+#include "third_party/str_concat.h"
+#include "third_party/ctre.hpp"
+#include "discord/type_strings.h"
 
 namespace discord {
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
     SleepyDiscord::DiscordClient(token, numOfThreads)
 {
     qRegisterMetaType<QSharedPointer<core::RecommendationListFicData>>("QSharedPointer<core::RecommendationListFicData>");
-    startTimer(60000);
     parser.reset(new CommandParser);
     parser->client = this;
 
@@ -66,6 +69,10 @@ void Client::InitCommandExecutor()
     executor->client = this;
 }
 
+static constexpr auto pattern = join_v<TypeStringHolder<RecsCreationCommand>::prefixlessPattern,TypeStringHolder<RecsCreationCommand>::prefixlessPattern>;
+constexpr auto match(std::string_view sv) noexcept {
+    return ctre::match<pattern>(sv);
+}
 void Client::onMessage(SleepyDiscord::Message message) {
     if(message.author.bot)
         return;
@@ -82,7 +89,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(sv.substr(0, server->GetCommandPrefix().length()) != server->GetCommandPrefix().toStdString())
         return;
     sv.remove_prefix(server->GetCommandPrefix().length());
-    if(!message.content.size() || (message.content.size() && !std::regex_search(sv, server->GetQuickCommandIdentifier())))
+    if(!message.content.size() || (message.content.size() /*&& !std::regex_search(sv, server->GetQuickCommandIdentifier())*/))
         return;
     auto commands = parser->Execute(server, message);
     if(commands.Size() == 0)

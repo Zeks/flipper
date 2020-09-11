@@ -1,7 +1,5 @@
 #include "discord/discord_init.h"
 #include "discord/command_creators.h"
-#include "third_party/str_concat.h"
-#include "third_party/pcre/ctre.hpp"
 #include <regex>
 namespace discord {
 
