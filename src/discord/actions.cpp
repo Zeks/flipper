@@ -1,5 +1,6 @@
 #include "discord/actions.h"
 #include "discord/command_creators.h"
+#include "discord/discord_init.h"
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 #include "discord/discord_server.h"
@@ -484,6 +485,8 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
     if(command.variantHash.contains("prefix")){
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
         command.server->SetCommandPrefix(command.variantHash["prefix"].toString());
+        auto regex = GetSimpleCommandIdentifierPrefixless();
+        command.server->SetQuickCommandIdentifier(std::regex((command.server->GetCommandPrefix() + regex).toStdString()));
         database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), command.server->GetCommandPrefix());
         action->text = "Prefix has been changed";
     }

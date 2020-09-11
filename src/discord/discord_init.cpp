@@ -1,5 +1,7 @@
 #include "discord/discord_init.h"
 #include "discord/command_creators.h"
+#include "third_party/str_concat.h"
+#include "third_party/pcre/ctre.hpp"
 #include <regex>
 namespace discord {
 
@@ -15,6 +17,7 @@ namespace discord {
         //RegisterCommand<SetIdentityCommand>(parser);
         RegisterCommand<DisplayHelpCommand>(parser);
         RegisterCommand<RngCommand>(parser);
+        RegisterCommand<ChangeServerPrefixCommand>(parser);
     }
 
     template<typename T> QString GetRegexForCommandIfActive(){
@@ -23,6 +26,7 @@ namespace discord {
             result = CommandState<T>::regexCommandIdentifier;
         return result;
     }
+
     QString GetSimpleCommandIdentifierPrefixless(){
         CommandState<RecsCreationCommand>::regexCommandIdentifier= "recs";
         CommandState<NextPageCommand>::regexCommandIdentifier = "next";
@@ -66,6 +70,7 @@ namespace discord {
                                                //"\n`!xfic >reset` resets the fic ignores";
         CommandState<RngCommand>::help = "`\n!roll best/good/all` will display a set of 3 random fics from within a selected range in the recommendations.";
         CommandState<DisplayHelpCommand>::help = "`!help` display this text";
+        CommandState<DisplayHelpCommand>::help = "\nBot management commands:\n`!prefix new prefix` changes the comamnd prefix for this server(admin only)";
     }
 
     void InitPrefixlessRegularExpressions()
@@ -79,7 +84,10 @@ namespace discord {
         CommandState<IgnoreFicCommand>::regexWithoutPrefix = "xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)";
         CommandState<DisplayHelpCommand>::regexWithoutPrefix = "help";
         CommandState<RngCommand>::regexWithoutPrefix = "roll\\s(best|good|all)";
+        CommandState<ChangeServerPrefixCommand>::regexWithoutPrefix = "prefix(\\s.+)";
     }
 
 
 }
+
+

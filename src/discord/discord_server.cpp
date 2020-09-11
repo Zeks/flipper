@@ -202,7 +202,8 @@ namespace discord {
         if(!server)
             return false;
         auto regex = GetSimpleCommandIdentifierPrefixless();
-        server->SetQuickCommandIdentifier(std::regex((server->GetCommandPrefix() + regex).toStdString()));
+        auto prefix = server->GetCommandPrefix();
+        server->SetQuickCommandIdentifier(std::regex((prefix + regex).toStdString()));
 
         servers[server_id] = server;
         return true;

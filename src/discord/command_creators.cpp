@@ -386,14 +386,17 @@ CommandChain RngCommand::ProcessInputImpl(SleepyDiscord::Message message)
 
 ChangeServerPrefixCommand::ChangeServerPrefixCommand()
 {
+    pattern = "prefix(\\s.+)";
 }
 
 CommandChain ChangeServerPrefixCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
-    std::list<SleepyDiscord::ServerMember>::iterator member = sleepyServer.findMember(message.author.ID);
+    //std::list<SleepyDiscord::ServerMember>::iterator member = sleepyServer.findMember(message.author.ID);
+    const auto& member = client->getMember(this->server->GetServerId(), message.author.ID).cast();
     bool isAdmin = false;
-    for(auto roleId : (*member).roles){
+    auto roles = member.roles;
+    for(auto& roleId : roles){
         std::list<SleepyDiscord::Role>::iterator role = sleepyServer.findRole(roleId);
         auto permissions = role->permissions;
         if(SleepyDiscord::hasPremission(permissions, SleepyDiscord::ADMINISTRATOR))

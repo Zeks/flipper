@@ -1,13 +1,16 @@
 #include "discord/client_v2.h"
 #include "discord/command_controller.h"
+#include "discord/command.h"
 #include "discord/discord_server.h"
 #include "discord/discord_init.h"
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 #include "logger/QsLog.h"
 #include <QRegularExpression>
-namespace discord {
+#include <string_view>
+#include <QSharedPointer>
 
+namespace discord {
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
     SleepyDiscord::DiscordClient(token, numOfThreads)
 {
@@ -30,7 +33,6 @@ void Client::InitClient()
     auto regex = GetSimpleCommandIdentifierPrefixless();
     fictionalDMServer.reset(new discord::Server());
     fictionalDMServer->SetQuickCommandIdentifier(std::regex((fictionalDMServer->GetCommandPrefix() + regex).toStdString()));
-
     discord::InitDefaultCommandSet(this->parser);
     std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
     for(auto server : sleepyServers){
@@ -63,6 +65,7 @@ void Client::InitCommandExecutor()
     executor.reset(new CommandController());
     executor->client = this;
 }
+
 void Client::onMessage(SleepyDiscord::Message message) {
     if(message.author.bot)
         return;
@@ -75,9 +78,11 @@ void Client::onMessage(SleepyDiscord::Message message) {
     }
     else
         server = fictionalDMServer;
-
-
-    if(!message.content.size() || (message.content.size() && !std::regex_search(message.content, server->GetQuickCommandIdentifier())))
+    std::string_view sv (message.content);
+    if(sv.substr(0, server->GetCommandPrefix().length()) != server->GetCommandPrefix().toStdString())
+        return;
+    sv.remove_prefix(server->GetCommandPrefix().length());
+    if(!message.content.size() || (message.content.size() && !std::regex_search(sv, server->GetQuickCommandIdentifier())))
         return;
     auto commands = parser->Execute(server, message);
     if(commands.Size() == 0)
