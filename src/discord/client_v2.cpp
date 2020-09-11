@@ -27,6 +27,10 @@ Client::Client(QObject *obj):QObject(obj), SleepyDiscord::DiscordClient()
 
 void Client::InitClient()
 {
+    auto regex = GetSimpleCommandIdentifierPrefixless();
+    fictionalDMServer.reset(new discord::Server());
+    fictionalDMServer->SetQuickCommandIdentifier(std::regex((fictionalDMServer->GetCommandPrefix() + regex).toStdString()));
+
     discord::InitDefaultCommandSet(this->parser);
     std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
     for(auto server : sleepyServers){
@@ -41,10 +45,10 @@ QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDisco
         auto inDatabase= servers->LoadServer(serverId);
         if(!inDatabase)
         {
-            SleepyDiscord::Server sleepyServer = getServer(serverId);
+            auto sleepyServer = getServer(serverId);
             QSharedPointer<discord::Server> server(new discord::Server());
             server->SetServerId(serverId);
-            server->SetServerName(QString::fromStdString(sleepyServer.name));
+            server->SetServerName(QString::fromStdString(sleepyServer.cast().name));
             auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
             database::discord_queries::WriteServer(dbToken->db, server);
             servers->LoadServer(serverId);
@@ -63,9 +67,15 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(message.author.bot)
         return;
     Log(message);
-    auto server = InitDiscordServerIfNecessary(message.serverID);
-    if(!server)
-        return;
+
+    QSharedPointer<discord::Server> server;
+    auto channel = getChannel(message.channelID);
+    if(channel.cast().type != SleepyDiscord::Channel::DM){
+        server = InitDiscordServerIfNecessary(message.serverID);
+    }
+    else
+        server = fictionalDMServer;
+
 
     if(!message.content.size() || (message.content.size() && !std::regex_search(message.content, server->GetQuickCommandIdentifier())))
         return;

@@ -491,7 +491,11 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
         action->text = "Prefix wasn't changed because of an error";
     return action;
 }
-
+QSharedPointer<SendMessageCommand> InsufficientPermissionsAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+{
+    action->text = "You don't have required permissions on the server to run this command.";
+    return action;
+}
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
     switch(type){
@@ -515,10 +519,14 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new DisplayRngAction());
         case Command::ECommandType::ct_change_server_prefix:
             return QSharedPointer<ActionBase>(new ChangePrefixAction());
+        case Command::ECommandType::ct_insufficient_permissions:
+            return QSharedPointer<ActionBase>(new InsufficientPermissionsAction());
     default:
         return QSharedPointer<ActionBase>();
     }
 }
+
+
 
 
 

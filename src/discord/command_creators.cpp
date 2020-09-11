@@ -37,9 +37,10 @@ CommandCreator::~CommandCreator()
 
 }
 
-CommandChain CommandCreator::ProcessInput(QSharedPointer<discord::Server> server,SleepyDiscord::Message message , bool )
+CommandChain CommandCreator::ProcessInput(Client* client, QSharedPointer<discord::Server> server, SleepyDiscord::Message message , bool )
 {
     result.Reset();
+    this->client = client;
     this->server = server;
     QRegularExpression rx("^" + server->GetCommandPrefix() + pattern);
     matches = rx.globalMatch(QString::fromStdString(message.content));
@@ -70,9 +71,10 @@ RecommendationsCommand::RecommendationsCommand()
 
 }
 
-CommandChain RecommendationsCommand::ProcessInput(QSharedPointer<discord::Server> server, SleepyDiscord::Message message, bool)
+CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer<discord::Server> server, SleepyDiscord::Message message, bool)
 {
     result.Reset();
+    this->client = client;
     this->server = server;
     QRegularExpression rx("^" + server->GetCommandPrefix() + pattern);
     matches = rx.globalMatch(QString::fromStdString(message.content));
@@ -324,7 +326,7 @@ CommandChain CommandParser::Execute(QSharedPointer<discord::Server> server,Sleep
     for(auto& processor: commandProcessors)
     {
         processor->user = user;
-        auto newCommands = processor->ProcessInput(server, message, firstCommand);
+        auto newCommands = processor->ProcessInput(client, server, message, firstCommand);
         result += newCommands;
         if(newCommands.stopExecution == true)
             break;
@@ -388,15 +390,39 @@ ChangeServerPrefixCommand::ChangeServerPrefixCommand()
 
 CommandChain ChangeServerPrefixCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
-    Command command;
-    command.type = Command::ct_change_server_prefix;
-    command.originalMessage = message;
-    auto match = matches.next();
-    auto newPrefix = match.captured(1);
-    command.variantHash["prefix"] = newPrefix;
-    command.textForPreExecution = "Changed prefix for this server to: " + newPrefix;
-    command.server = this->server;
-    result.Push(command);
+    SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
+    std::list<SleepyDiscord::ServerMember>::iterator member = sleepyServer.findMember(message.author.ID);
+    bool isAdmin = false;
+    for(auto roleId : (*member).roles){
+        std::list<SleepyDiscord::Role>::iterator role = sleepyServer.findRole(roleId);
+        auto permissions = role->permissions;
+        if(SleepyDiscord::hasPremission(permissions, SleepyDiscord::ADMINISTRATOR))
+        {
+            isAdmin = true;
+            break;
+        }
+    }
+    if(isAdmin || sleepyServer.ownerID == message.author.ID)
+    {
+        Command command;
+        command.type = Command::ct_change_server_prefix;
+        command.originalMessage = message;
+        auto match = matches.next();
+        auto newPrefix = match.captured(1);
+        command.variantHash["prefix"] = newPrefix;
+        command.textForPreExecution = "Changing prefix for this server to: " + newPrefix;
+        command.server = this->server;
+        result.Push(command);
+    }
+    else
+    {
+        Command command;
+        command.type = Command::ct_insufficient_permissions;
+        command.originalMessage = message;
+        command.server = this->server;
+        result.Push(command);
+    }
+    return result;
 }
 
 

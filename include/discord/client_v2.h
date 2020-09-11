@@ -38,6 +38,7 @@ public:
     QSharedPointer<CommandParser> parser;
     std::regex rxCommandIdentifier;
     QSharedPointer<CommandController> executor;
+    QSharedPointer<discord::Server> fictionalDMServer;
 protected:
     virtual void timerEvent(QTimerEvent *) override;
 };

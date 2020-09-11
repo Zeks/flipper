@@ -87,6 +87,12 @@ public:
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
 
+class InsufficientPermissionsAction : public ActionBase{
+public:
+    InsufficientPermissionsAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}
     int Size(){return actions.size();}

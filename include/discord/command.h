@@ -36,6 +36,7 @@ struct Command{
         ct_no_user_ffn = 14,
         ct_display_rng = 15,
         ct_change_server_prefix = 16,
+        ct_insufficient_permissions = 17,
     };
     enum EOperandType{
         ot_unspecified = 0,

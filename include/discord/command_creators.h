@@ -38,7 +38,7 @@ QString CommandState<T>::regexWithoutPrefix;
 class CommandCreator{
 public:
     virtual ~CommandCreator();
-    virtual CommandChain ProcessInput( QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
+    virtual CommandChain ProcessInput(Client*, QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message) = 0;
     static void EnsureUserExists(QString, QString userName);
 
@@ -48,6 +48,7 @@ public:
     Command nullCommand;
     CommandChain result;
     QString userId;
+    Client* client = nullptr;
     QSharedPointer<discord::Server> server;
     static QSharedPointer<User> user; // shitcode
 };
@@ -64,7 +65,7 @@ public:
 class RecommendationsCommand: public CommandCreator{
 public:
     RecommendationsCommand();
-    virtual CommandChain ProcessInput(QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
+    virtual CommandChain ProcessInput(Client*, QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
 };
 
 class RecsCreationCommand : public CommandCreator{
