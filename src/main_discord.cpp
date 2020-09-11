@@ -1,6 +1,7 @@
 //#include "discord/client.h"
 #include "discord/client_v2.h"
 #include "discord/discord_user.h"
+#include "discord/discord_init.h"
 #include "discord/command_controller.h"
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
@@ -104,11 +105,9 @@ int main(int argc, char *argv[]) {
     database::discord_queries::FillUserUids(fandomsInterface->db);
     QSqlDatabase::removeDatabase("DiscordDB");
 
-
+    discord::InitHelpForCommands();
     discord::Client client(token);
-    client.InitDefaultCommandSet();
-    client.InitIdentifiersForCommands();
-    client.InitHelpForCommands();
+    client.InitClient();
     client.InitCommandExecutor();
     client.executor->Init(4);
     auto serverSetup = [&](){

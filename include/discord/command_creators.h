@@ -15,6 +15,7 @@
 
 namespace discord{
 class Client;
+class Server;
 struct Command;
 
 template<typename T>
@@ -22,6 +23,7 @@ struct CommandState{
     static bool active;
     static QString help;
     static QString regexCommandIdentifier;
+    static QString regexWithoutPrefix;
 };
 
 template<class T>
@@ -30,19 +32,23 @@ template<class T>
 QString CommandState<T>::help;
 template<class T>
 QString CommandState<T>::regexCommandIdentifier;
+template<class T>
+QString CommandState<T>::regexWithoutPrefix;
 
 class CommandCreator{
 public:
     virtual ~CommandCreator();
-    virtual CommandChain ProcessInput(SleepyDiscord::Message, bool verifyUser = false);
+    virtual CommandChain ProcessInput( QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message) = 0;
     static void EnsureUserExists(QString, QString userName);
 
-    QRegularExpression rx;
+    //QRegularExpression rx;
+    QString pattern;
     QRegularExpressionMatchIterator matches;
     Command nullCommand;
     CommandChain result;
     QString userId;
+    QSharedPointer<discord::Server> server;
     static QSharedPointer<User> user; // shitcode
 };
 
@@ -58,7 +64,7 @@ public:
 class RecommendationsCommand: public CommandCreator{
 public:
     RecommendationsCommand();
-    virtual CommandChain ProcessInput(SleepyDiscord::Message, bool verifyUser = false);
+    virtual CommandChain ProcessInput(QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
 };
 
 class RecsCreationCommand : public CommandCreator{
@@ -115,9 +121,15 @@ public:
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
 };
 
+class ChangeServerPrefixCommand: public CommandCreator{
+public:
+    ChangeServerPrefixCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+};
+
 class CommandParser{
 public:
-    CommandChain Execute(SleepyDiscord::Message);
+    CommandChain Execute(QSharedPointer<Server> server, SleepyDiscord::Message);
     QList<QSharedPointer<CommandCreator>> commandProcessors;
     Client* client = nullptr;
     std::mutex lock;

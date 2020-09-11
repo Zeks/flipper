@@ -1,6 +1,7 @@
 #include "discord/command_creators.h"
 #include "discord/client_v2.h"
 #include "discord/discord_user.h"
+#include "discord/discord_server.h"
 #include "Interfaces/discord/users.h"
 #include "include/grpc/grpc_source.h"
 #include "logger/QsLog.h"
@@ -36,9 +37,11 @@ CommandCreator::~CommandCreator()
 
 }
 
-CommandChain CommandCreator::ProcessInput(SleepyDiscord::Message message , bool )
+CommandChain CommandCreator::ProcessInput(QSharedPointer<discord::Server> server,SleepyDiscord::Message message , bool )
 {
     result.Reset();
+    this->server = server;
+    QRegularExpression rx("^" + server->GetCommandPrefix() + pattern);
     matches = rx.globalMatch(QString::fromStdString(message.content));
     //QLOG_INFO() << "testing pattern: " << rx.pattern();
     if(!matches.hasNext())
@@ -67,9 +70,11 @@ RecommendationsCommand::RecommendationsCommand()
 
 }
 
-CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message, bool)
+CommandChain RecommendationsCommand::ProcessInput(QSharedPointer<discord::Server> server, SleepyDiscord::Message message, bool)
 {
     result.Reset();
+    this->server = server;
+    QRegularExpression rx("^" + server->GetCommandPrefix() + pattern);
     matches = rx.globalMatch(QString::fromStdString(message.content));
     //QLOG_INFO() << "checking pattern: " << rx.pattern();
     if(!matches.hasNext())
@@ -102,7 +107,7 @@ CommandChain RecommendationsCommand::ProcessInput(SleepyDiscord::Message message
 RecsCreationCommand::RecsCreationCommand()
 {
 
-    rx = QRegularExpression("^!recs\\s{1,}(\\d{4,10})");
+    pattern = "recs\\s{1,}(\\d{4,10})";
 }
 
 CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -139,7 +144,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 PageChangeCommand::PageChangeCommand()
 {
-    rx = QRegularExpression("^!page\\s{1,}(\\d{1,10})");
+    pattern = "page\\s{1,}(\\d{1,10})";
 }
 
 CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -155,7 +160,7 @@ CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
 
 NextPageCommand::NextPageCommand()
 {
-    rx = QRegularExpression("^!next");
+    pattern = "next";
 }
 
 CommandChain NextPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -174,7 +179,7 @@ CommandChain NextPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
 
 PreviousPageCommand::PreviousPageCommand()
 {
-    rx = QRegularExpression("^!prev");
+    pattern = "prev";
 }
 
 CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -193,7 +198,7 @@ CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 SetFandomCommand::SetFandomCommand()
 {
-    rx = QRegularExpression("^!fandom(\\s{1,}>pure){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}");
+    pattern = "fandom(\\s{1,}>pure){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}";
 }
 
 CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -225,7 +230,7 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
 //                                          "\n!xfandom #reset X to unignore";
 IgnoreFandomCommand::IgnoreFandomCommand()
 {
-    rx = QRegularExpression("^!xfandom(\\s{1,}>full){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}");
+    pattern = "xfandom(\\s{1,}>full){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}";
 }
 
 CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -254,7 +259,7 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
 IgnoreFicCommand::IgnoreFicCommand()
 {
-    rx = QRegularExpression("^!xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)");
+    pattern = "xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)";
 }
 
 CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -280,7 +285,7 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
 
 SetIdentityCommand::SetIdentityCommand()
 {
-    rx = QRegularExpression("^!me\\s{1,}(\\d{1,15})");
+    pattern = "me\\s{1,}(\\d{1,15})";
 }
 
 CommandChain SetIdentityCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -294,7 +299,7 @@ CommandChain SetIdentityCommand::ProcessInputImpl(SleepyDiscord::Message message
     return result;
 }
 
-CommandChain CommandParser::Execute(SleepyDiscord::Message message)
+CommandChain CommandParser::Execute(QSharedPointer<discord::Server> server,SleepyDiscord::Message message)
 {
     std::lock_guard<std::mutex> guard(lock);
     bool firstCommand = true;
@@ -319,7 +324,7 @@ CommandChain CommandParser::Execute(SleepyDiscord::Message message)
     for(auto& processor: commandProcessors)
     {
         processor->user = user;
-        auto newCommands = processor->ProcessInput(message, firstCommand);
+        auto newCommands = processor->ProcessInput(server, message, firstCommand);
         result += newCommands;
         if(newCommands.stopExecution == true)
             break;
@@ -336,7 +341,7 @@ CommandChain CommandParser::Execute(SleepyDiscord::Message message)
 
 DisplayHelpCommand::DisplayHelpCommand()
 {
-    rx = QRegularExpression("^!help");
+    pattern = "help";
 }
 
 CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -363,7 +368,7 @@ void SendMessageCommand::Invoke(Client * client)
 
 RngCommand::RngCommand()
 {
-    rx = QRegularExpression("^!roll\\s(best|good|all)");
+    pattern = "roll\\s(best|good|all)";
 }
 
 CommandChain RngCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -375,6 +380,23 @@ CommandChain RngCommand::ProcessInputImpl(SleepyDiscord::Message message)
     command.originalMessage = message;
     result.Push(command);
     return result;
+}
+
+ChangeServerPrefixCommand::ChangeServerPrefixCommand()
+{
+}
+
+CommandChain ChangeServerPrefixCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_change_server_prefix;
+    command.originalMessage = message;
+    auto match = matches.next();
+    auto newPrefix = match.captured(1);
+    command.variantHash["prefix"] = newPrefix;
+    command.textForPreExecution = "Changed prefix for this server to: " + newPrefix;
+    command.server = this->server;
+    result.Push(command);
 }
 
 

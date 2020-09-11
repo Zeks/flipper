@@ -50,3 +50,20 @@ CREATE INDEX if not exists I_FURL_ID ON fandomurls (global_id ASC);
 CREATE INDEX if not exists I_FURL_URL ON fandomurls (url ASC);
 CREATE INDEX if not exists I_FURL_CUSTOM ON fandomurls (custom ASC);
 CREATE INDEX if not exists I_FURL_WEBSITE ON fandomurls (website ASC);
+
+
+CREATE TABLE if not exists discord_servers(
+server_id varchar unique PRIMARY KEY, -- discord server id. I don't think I need to assign my own uuid to the server
+owner_id varchar, -- server owner or a person that manages the bot on that server
+dedicated_channel_id varchar, -- bot will only answer in this channel
+command_prefix varchar default '!', -- make it a regex for multiple options
+server_name varchar, -- do I really need to update this?
+server_banned integer default 0, --bot will explicitly say that requests are not allowed 
+server_silenced integer default 0, -- bot will ignore requests on this server
+bot_answers_in_pm integer default 0, -- bot will forward answers to the user's PM even in public channels
+parse_request_limit integer default 0, -- how many parse requests per day are allowed per user
+active_since DATETIME, -- date when the bot first received a request from that particular server
+last_request DATETIME, -- will update with some period, not on every request
+total_requests integer -- updated once every 50 times
+);
+CREATE INDEX if not exists I_SERVER_ID ON discord_servers (server_id ASC);

@@ -35,6 +35,7 @@ bool NullPtrGuard(T item)
 #define BP1(A) {COMMAND(A)}
 #define BP2(A, B) {COMMAND(A), COMMAND(B)}
 #define BP3(A, B, C) {COMMAND(A), COMMAND(B), COMMAND(C)}
+#define BP4(A, B, C, D) {COMMAND(A), COMMAND(B), COMMAND(C), COMMAND(D)}
 #define BP8(A, B, C, D, E, F, G, H) {COMMAND(A), COMMAND(B), COMMAND(C),COMMAND(D), COMMAND(E), COMMAND(F), COMMAND(G), COMMAND(H)}
 //#define BP3(X, Y, Z) {{"X", X}, {"Y", Y},{"Z", Z}}
 
@@ -59,6 +60,37 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
     });
     return ctx.result;
 }
+
+DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(QSqlDatabase db, const std::string& serverId){
+    QString qs = QString("select * from discord_servers where server_id = :server_id");
+
+    QString server_id = QString::fromStdString(serverId);
+    SqlContext<QSharedPointer<discord::Server>> ctx(db, qs, BP1(server_id));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        QSharedPointer<discord::Server> server(new discord::Server);
+        server->SetServerId(serverId);
+
+        server->SetBanned(q.value("server_banned").toBool());
+        server->SetSilenced(q.value("server_silenced").toBool());
+        server->SetAnswerInPm(q.value("bot_answers_in_pm").toBool());
+
+        server->SetParserRequestLimit(q.value("parse_request_limit").toInt());
+        server->SetTotalRequests(q.value("total_requests").toInt());
+
+        server->SetFirstActive(q.value("active_since").toDateTime());
+        server->SetLastActive(q.value("last_request").toDateTime());
+
+
+        server->SetOwnerId(q.value("owner_id").toString());
+        server->SetCommandPrefix(q.value("command_prefix").toString());
+        server->SetServerName(q.value("server_name").toString());
+
+        ctx.result.data = server;
+    });
+    return ctx.result;
+}
+
+
 
 DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString user_id){
     QString qs = QString("select * from ignored_fandoms where user_id = :user_id");
@@ -101,6 +133,29 @@ DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::Use
     ctx.ExecAndCheck(false);
     return ctx.result;
 }
+
+DiagnosticSQLResult<bool> WriteServer(QSqlDatabase db, QSharedPointer<discord::Server> server)
+{
+    QString qs = "INSERT INTO discord_servers(server_id, server_name, active_since, last_request) "
+                 "values(:server_id, :server_name, :active_since, :last_request)";
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("server_id", QString::fromStdString(server->GetServerId()));
+    ctx.bindValue("server_name", server->GetServerName());
+    ctx.bindValue("active_since", server->GetFirstActive());
+    ctx.bindValue("last_request", server->GetLastActive());
+    ctx.ExecAndCheck(false);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> WriteServerPrefix(QSqlDatabase db, const std::string& serverId, QString new_prefix)
+{
+    QString qs = "update discord_servers set command_prefix = :new_prefix where server_id = :server_id";
+    QString server_id = QString::fromStdString(serverId);
+    SqlContext<bool> ctx(db, qs, BP2(server_id, new_prefix));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id, QString list_name,
                                        discord::EListType list_type,
                                        int min_match, int match_ratio, int always_at)
@@ -250,6 +305,9 @@ DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
     result.data = true;
     return result;
 }
+
+
+
 
 
 

@@ -81,6 +81,11 @@ public:
     NoUserInformationAction(){}
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
+class ChangePrefixAction : public ActionBase{
+public:
+    ChangePrefixAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

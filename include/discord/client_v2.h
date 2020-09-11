@@ -22,24 +22,20 @@
 namespace  discord {
 class SendMessageCommand;
 class CommandController;
+class Server;
 class Client: public QObject , public SleepyDiscord::DiscordClient {
     Q_OBJECT
 public:
     Client(const std::string token, const char numOfThreads = SleepyDiscord::USER_CONTROLED_THREADS, QObject* obj = nullptr);
     Client(QObject* obj = nullptr);
-    void InitDefaultCommandSet();
-    void InitIdentifiersForCommands();
-    void InitHelpForCommands();
+    void InitClient();
+    QSharedPointer<discord::Server> InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId);
     void InitCommandExecutor();
     using SleepyDiscord::DiscordClient::DiscordClient;
     void onMessage(SleepyDiscord::Message message) override;
     void Log(const SleepyDiscord::Message);
-    template <typename T>
-    auto RegisterCommand(){
-        parser.commandProcessors.push_back(QSharedPointer<T>(new T()));
-        CommandState<T>::active = true;
-    };
-    CommandParser parser;
+
+    QSharedPointer<CommandParser> parser;
     std::regex rxCommandIdentifier;
     QSharedPointer<CommandController> executor;
 protected:
