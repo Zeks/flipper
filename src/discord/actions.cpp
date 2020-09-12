@@ -1,6 +1,9 @@
 #include "discord/actions.h"
 #include "discord/command_creators.h"
+#include "discord/discord_init.h"
 #include "discord/db_vendor.h"
+#include "sql/discord/discord_queries.h"
+#include "discord/discord_server.h"
 #include "discord/fetch_filters.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "Interfaces/interface_sqlite.h"
@@ -477,6 +480,29 @@ QSharedPointer<SendMessageCommand> NoUserInformationAction::ExecuteImpl(QSharedP
     return action;
 }
 
+QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
+{
+    if(command.variantHash.contains("prefix")){
+        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+        command.server->SetCommandPrefix(command.variantHash["prefix"].toString().trimmed());
+        auto regex = GetSimpleCommandIdentifierPrefixless();
+        command.server->SetQuickCommandIdentifier(std::regex((command.server->GetCommandPrefix().trimmed() + regex).toStdString()));
+        database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), command.server->GetCommandPrefix().trimmed());
+        action->text = "Prefix has been changed";
+    }
+    else
+        action->text = "Prefix wasn't changed because of an error";
+    return action;
+}
+QSharedPointer<SendMessageCommand> InsufficientPermissionsAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+{
+    action->text = "You don't have required permissions on the server to run this command.";
+    return action;
+}
+QSharedPointer<SendMessageCommand> NullAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+{
+    return action;
+}
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
     switch(type){
@@ -498,10 +524,20 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new NoUserInformationAction());
     case Command::ECommandType::ct_display_rng:
         return QSharedPointer<ActionBase>(new DisplayRngAction());
+        case Command::ECommandType::ct_change_server_prefix:
+            return QSharedPointer<ActionBase>(new ChangePrefixAction());
+        case Command::ECommandType::ct_insufficient_permissions:
+            return QSharedPointer<ActionBase>(new InsufficientPermissionsAction());
     default:
-        return QSharedPointer<ActionBase>();
+        return QSharedPointer<ActionBase>(new NullAction());
     }
 }
+
+
+
+
+
+
 
 
 }

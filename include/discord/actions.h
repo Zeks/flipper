@@ -81,6 +81,23 @@ public:
     NoUserInformationAction(){}
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
+class ChangePrefixAction : public ActionBase{
+public:
+    ChangePrefixAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
+class InsufficientPermissionsAction : public ActionBase{
+public:
+    InsufficientPermissionsAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
+class NullAction : public ActionBase{
+public:
+    NullAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

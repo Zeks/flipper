@@ -12,6 +12,7 @@
 
 
 namespace discord {
+    class Server;
 
 struct ResultingMessage{
     QString text;
@@ -34,6 +35,9 @@ struct Command{
         ct_timeout_active = 13,
         ct_no_user_ffn = 14,
         ct_display_rng = 15,
+        ct_change_server_prefix = 16,
+        ct_insufficient_permissions = 17,
+        ct_null_command = 18,
     };
     enum EOperandType{
         ot_unspecified = 0,
@@ -50,6 +54,7 @@ struct Command{
     QHash<QString, QVariant> variantHash;
     SleepyDiscord::Message originalMessage;
     QSharedPointer<User> user;
+    QSharedPointer<Server> server;
 
     ResultingMessage result;
     std::function<ResultingMessage()> executor;

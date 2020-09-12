@@ -2,6 +2,7 @@
 botname=$1
 remote_user=""
 remote_server=""
+branch="discord_new"
 
 if [ -z $2 ]; then 
     remote_user=$PRODUCTION_USER
@@ -15,9 +16,14 @@ else
     remote_server=$3
 fi
 
+
+if [ ! -z $4 ]; then 
+    branch=$4
+fi
+
 echo "will use params: " $remote_user $remote_server
 echo "building bot"
-DOCKER_BUILDKIT=1 docker build --build-arg CACHEBUSTER=$(date +%s) -f $FLIPPER_REPO_FOLDER/dockerfiles/builder.ficrec_bot --target bot_runner -t $botname .
+DOCKER_BUILDKIT=1 docker build --build-arg CACHEBUSTER=$(date +%s) --build-arg BRANCH=$branch -f $FLIPPER_REPO_FOLDER/dockerfiles/builder.ficrec_bot --target bot_runner -t $botname .
 echo "saving bot"
 docker save -o $BOT_SAVE_FOLDER/$botname.tar.gz $botname
 echo "copying bot files to remote server"

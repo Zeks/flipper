@@ -58,11 +58,12 @@ RUN --mount=type=ssh \
     && cd ../../../ 
 
 ARG CACHEBUSTER
+ARG BRANCH
 
 RUN --mount=type=cache,target=/root/.cache/qbs \
     cd $PACKAGE_DIR/flipper  \ 
-    && git checkout discord_new \
-    && git pull origin discord_new \
+    && git checkout $BRANCH \
+    && git pull origin $BRANCH \
     && git submodule update --init \
     && qbs build -d build/bot  -f discord_proj.qbs qbs.defaultBuildVariant:release profile:defaultqt
 
