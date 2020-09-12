@@ -8,6 +8,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     core::StoryFilter filter;
     filter.recordPage = user->CurrentPage();
     filter.ignoreAlreadyTagged = false;
+    filter.crossoversOnly = false;
     filter.showOriginsInLists = false;
     filter.recordLimit = size;
     filter.sortMode = core::StoryFilter::sm_metascore;
@@ -29,11 +30,9 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
-        filter.includeCrossovers = fandomFilter.tokens.at(0).includeCrossovers;
     }
     if(fandomFilter.tokens.size() > 1){
         filter.secondFandom = fandomFilter.tokens.at(1).id;
-        filter.includeCrossovers = true;
     }
     if(user->GetCurrentIgnoredFandoms().fandoms.size() > 0)
         filter.ignoreFandoms = true;
@@ -41,7 +40,10 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
 
     auto ignoredFandoms =  user->GetCurrentIgnoredFandoms();
     for(auto& token: ignoredFandoms.tokens)
-        userData.ignoredFandoms[token.id] = token.includeCrossovers;
+    {
+        if(!fandomFilter.fandoms.contains(token.id))
+            userData.ignoredFandoms[token.id] = token.includeCrossovers;
+    }
     userData.allTaggedFics = user->GetIgnoredFics();
     QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
@@ -64,6 +66,7 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     filter.recordPage = user->CurrentPage();
     filter.ignoreAlreadyTagged = false;
     filter.showOriginsInLists = false;
+    filter.crossoversOnly = false;
     filter.recordLimit = size;
     filter.sortMode = core::StoryFilter::sm_metascore;
     filter.reviewBias = core::StoryFilter::bias_none;
@@ -103,7 +106,8 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
 
     auto ignoredFandoms =  user->GetCurrentIgnoredFandoms();
     for(auto& token: ignoredFandoms.tokens)
-        userData.ignoredFandoms[token.id] = token.includeCrossovers;
+        if(!fandomFilter.fandoms.contains(token.id))
+            userData.ignoredFandoms[token.id] = token.includeCrossovers;
     userData.allTaggedFics = user->GetIgnoredFics();
     QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 

@@ -56,7 +56,7 @@ bool Fandoms::EnsureFandom(QString name)
     name = core::Fandom::ConvertName(name.trimmed());
     if(name.contains("'"))
         name = core::Fandom::ConvertName(name.trimmed());
-    if(nameIndex.contains(name) || LoadFandom(name))
+    if(nameIndex.contains(name.toLower()) || LoadFandom(name))
         return true;
     return false;
 }
@@ -93,8 +93,8 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
         for(auto fandom : fic->fandoms)
         {
             fandom = core::Fandom::ConvertName(fandom.trimmed());
-            if(nameIndex.contains(fandom))
-                fic->fandomIds.push_back(nameIndex[fandom]->id);
+            if(nameIndex.contains(fandom.toLower()))
+                fic->fandomIds.push_back(nameIndex[fandom.toLower()]->id);
         }
     }
     return uniqueFandoms;
@@ -136,7 +136,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom,
 
     // getting empty node if its not there which is not a problem since we are
     // supposed to fill it at the end
-    auto current = nameIndex[fandom->GetName()];
+    auto current = nameIndex[fandom->GetName().toLower()];
     if(current && current->id != -1)
         return true;
     database::Transaction transaction(db);
@@ -175,7 +175,7 @@ core::FandomPtr Fandoms::GetFandom(QString name)
     core::FandomPtr result;
     name = core::Fandom::ConvertName(name);
     if(!name.trimmed().isEmpty() && EnsureFandom(name))
-        result = nameIndex[name];
+        result = nameIndex[name.toLower()];
 
     return result;
 }
@@ -240,7 +240,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
     }
     if(!foundIterating)
     {
-        auto fandomPtr = nameIndex[fandom];
+        auto fandomPtr = nameIndex[fandom.toLower()];
         recentFandoms.push_back(fandomPtr);
         fandomPtr->idInRecentFandoms = 0;
     }
@@ -328,7 +328,7 @@ bool Fandoms::Load()
             hadErrors = true;
 
         if(fandomPresent)
-            this->recentFandoms.push_back(nameIndex[bit]);
+            this->recentFandoms.push_back(nameIndex[bit.toLower()]);
     }
     auto result = database::puresql::GetFandomCountInDatabase(db);
     fandomCount = result.data;
@@ -347,7 +347,7 @@ void Fandoms::ReloadRecentFandoms()
             fandomPresent = true;
 
         if(fandomPresent)
-            this->recentFandoms.push_back(nameIndex[bit]);
+            this->recentFandoms.push_back(nameIndex[bit.toLower()]);
     }
 }
 
@@ -369,7 +369,7 @@ bool Fandoms::LoadTrackedFandoms(bool forced)
     {
         bool localResult = EnsureFandom(bit);
         if(localResult)
-            trackedFandoms.push_back(nameIndex[bit]);
+            trackedFandoms.push_back(nameIndex[bit.toLower()]);
         result = result && localResult;
     }
     return result;
@@ -399,7 +399,7 @@ bool Fandoms::IsTracked(QString fandom)
     fandom = core::Fandom::ConvertName(fandom.trimmed());
     if(!EnsureFandom(fandom))
         return false;
-    return nameIndex[fandom]->tracked;
+    return nameIndex[fandom.toLower()]->tracked;
 }
 
 bool Fandoms::IgnoreFandom(QString name, bool includeCrossovers)
@@ -515,7 +515,7 @@ void Fandoms::AddToIndex(core::FandomPtr fandom)
 {
     if(!fandom)
         return;
-    nameIndex[fandom->GetName()] = fandom;
+    nameIndex[fandom->GetName().toLower()] = fandom;
     idIndex[fandom->id] = fandom;
     fandomsList.push_back(fandom->GetName());
     if(fandom->tracked)
@@ -527,7 +527,7 @@ bool Fandoms::WipeFandom(QString name)
     name = core::Fandom::ConvertName(name.trimmed());
     if(!EnsureFandom(name))
         return false;
-    return database::puresql::CleanupFandom(nameIndex[name]->id, db).success;
+    return database::puresql::CleanupFandom(nameIndex[name.toLower()]->id, db).success;
 }
 
 int Fandoms::GetFandomCount()
@@ -550,7 +550,7 @@ int Fandoms::GetIDForName(QString fandom)
     fandom = core::Fandom::ConvertName(fandom.trimmed());
     int result = -1;
     if(EnsureFandom(fandom))
-        result = nameIndex[fandom]->id;
+        result = nameIndex[fandom.toLower()]->id;
     return result;
 }
 
@@ -570,18 +570,18 @@ void Fandoms::SetTracked(QString fandom, bool value, bool immediate)
 
     if(immediate)
     {
-        auto id = nameIndex[fandom]->id;
+        auto id = nameIndex[fandom.toLower()]->id;
         database::puresql::SetFandomTracked(id, value, db);
     }
     else
-        nameIndex[fandom]->hasChanges = nameIndex[fandom]->tracked == false;
+        nameIndex[fandom.toLower()]->hasChanges = nameIndex[fandom.toLower()]->tracked == false;
 
-    nameIndex[fandom]->tracked = value;
+    nameIndex[fandom.toLower()]->tracked = value;
     if(value == true)
-        trackedFandoms.push_back(nameIndex[fandom]);
+        trackedFandoms.push_back(nameIndex[fandom.toLower()]);
     else
     {
-        int id = nameIndex[fandom]->id;
+        int id = nameIndex[fandom.toLower()]->id;
         auto it = std::find_if(std::begin(trackedFandoms), std::end(trackedFandoms), [id](core::FandomPtr ptr){
                 if(ptr && ptr->id == id)
                 return true;
@@ -640,7 +640,7 @@ bool Fandoms::AssignTagToFandom(QString fandom, QString tag, bool includeCrosses
     if(!EnsureFandom(fandom))
         return false;
 
-    auto id = nameIndex[fandom]->id;
+    auto id = nameIndex[fandom.toLower()]->id;
     database::puresql::AssignTagToFandom(tag, id, db, includeCrosses);
     return true;
 }

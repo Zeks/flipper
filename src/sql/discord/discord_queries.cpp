@@ -123,6 +123,17 @@ DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(QSqlDatabase db, QString user_id
     return ctx.result;
 }
 
+DiagnosticSQLResult<int> GetCurrentPage(QSqlDatabase db, QString user_id)
+{
+    QString qs = QString("select at_page from user_lists where user_id = :user_id");
+
+    SqlContext<int> ctx(db, qs, BP1(user_id));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ctx.result.data = q.value("at_page").toInt();
+    });
+    return ctx.result;
+}
+
 DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User> user){
     QString qs = "INSERT INTO discord_users(user_id, user_name, ffn_id, reads_slash, current_list, banned) values(:user_id, :user_name, :ffn_id, :reads_slash, 0, 0)";
     SqlContext<bool> ctx(db, qs);
@@ -184,6 +195,7 @@ DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QStri
 
 
 DiagnosticSQLResult<bool> IgnoreFandom(QSqlDatabase db, QString user_id, int fandom_id, bool including_crossovers){
+    UnignoreFandom(db, user_id, fandom_id);
     QString qs = "INSERT INTO ignored_fandoms(user_id, fandom_id,including_crossovers) values(:user_id, :fandom_id, :including_crossovers)";
     SqlContext<bool> ctx(db, qs, BP3(user_id, fandom_id, including_crossovers));
     ctx.ExecAndCheck(false);
@@ -246,10 +258,10 @@ DiagnosticSQLResult<bool> UnfilterFandom(QSqlDatabase db, QString user_id, int f
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool allow_crossovers)
+DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool including_crossovers)
 {
-    QString qs = "insert into from filtered_fandoms(user_id, fandom_id, allow_crossovers) values(:user_id, :fandom_id, :allow_crossovers)";
-    SqlContext<bool> ctx(db, qs, BP3(user_id, fandom_id, allow_crossovers));
+    QString qs = "insert into filtered_fandoms(user_id, fandom_id, including_crossovers) values(:user_id, :fandom_id, :including_crossovers)";
+    SqlContext<bool> ctx(db, qs, BP3(user_id, fandom_id, including_crossovers));
     ctx.ExecAndCheck(true);
     return ctx.result;
 }
@@ -305,6 +317,7 @@ DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
     result.data = true;
     return result;
 }
+
 
 
 

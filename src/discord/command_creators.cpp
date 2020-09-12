@@ -91,6 +91,7 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
         createRecs.type = Command::ct_fill_recommendations;
         createRecs.ids.push_back(user->FfnID().toInt());
         createRecs.originalMessage = message;
+        createRecs.variantHash["refresh"] = "yes";
         createRecs.textForPreExecution = QString("Restoring recommendations for user %1 into an active set, please wait a bit").arg(user->FfnID());
         result.hasParseCommand = true;
         result.Push(createRecs);
@@ -118,12 +119,12 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
         result.Push(nullCommand);
         return result;
     }
-    auto rxResult = matchCommand<RecsCreationCommand>(message.content);
+    auto match = matchCommand<RecsCreationCommand>(message.content);
     Command createRecs;
     createRecs.type = Command::ct_fill_recommendations;
-    createRecs.ids.push_back(rxResult.get<1>());
+    createRecs.ids.push_back(std::stoi(match.get<1>().to_string()));
     createRecs.originalMessage = message;
-    createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(rxResult.get<1>());
+    createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(QString::fromStdString(match.get<1>().to_string()));
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
@@ -261,9 +262,9 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message messag
     auto fandom = match.get<3>().to_string();
 
     if(full.length() > 0)
-        ignoredFandoms.variantHash["allow_crossovers"] = false;
+        ignoredFandoms.variantHash["with_crossovers"] = true;
     else
-        ignoredFandoms.variantHash["allow_crossovers"] = true;
+        ignoredFandoms.variantHash["with_crossovers"] = false;
     if(reset.length() > 0)
         ignoredFandoms.variantHash["reset"] = true;
     ignoredFandoms.variantHash["fandom"] = QString::fromStdString(fandom).trimmed();

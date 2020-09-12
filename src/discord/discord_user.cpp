@@ -360,6 +360,7 @@ bool Users::LoadUser(QString name)
     user->SetFandomFilter(database::discord_queries::GetFilterList(dbToken->db, name).data);
     user->SetIgnoredFandoms(database::discord_queries::GetFandomIgnoreList(dbToken->db, name).data);
     user->SetIgnoredFics(database::discord_queries::GetFicIgnoreList(dbToken->db, name).data);
+    user->SetPage(database::discord_queries::GetCurrentPage(dbToken->db, name).data);
 
     users[name] = user;
     return true;

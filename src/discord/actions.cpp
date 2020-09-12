@@ -119,11 +119,12 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
 {
     command.user->initNewRecsQuery();
     auto ffnId = QString::number(command.ids.at(0));
+    bool refreshing = command.variantHash.contains("refresh");
     core::RecommendationListFicData fics;
     QSharedPointer<core::RecommendationList> listParams;
     QString error;
 
-    QSet<QString> userFavourites = FetchUserFavourites(ffnId, action);
+    QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing);
     auto recList = CreateRecommendationParams(ffnId);
 
     QVector<core::Identity> pack;
@@ -206,7 +207,8 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     //command.user->SetGoodRngFics(goodRngFics);
     command.user->SetPerfectRngScoreCutoff(perfectCutoff);
     command.user->SetGoodRngScoreCutoff(goodCutoff);
-    action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
+    if(!refreshing)
+        action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
 
     return action;
 }
@@ -223,6 +225,9 @@ QSharedPointer<SendMessageCommand> ActionChain::Pop()
     return action;
 }
 
+static std::string CreateMention(const std::string& string){
+    return "<@" + string + ">";
+}
 
 
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
@@ -247,6 +252,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
+    action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2\n\n").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
 
     QHash<int, int> positionToId;
@@ -256,7 +262,6 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         positionToId[i+1] = fic.identity.id;
         i++;
         auto fandomsList=fic.fandoms;
-
         embed.description += QString("ID#: " + QString::number(i)).rightJustified(2, ' ').toStdString();
         embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
         embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
@@ -277,6 +282,17 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         temp = temp.replace("````", "```");
         embed.description = temp.toStdString();
     }
+
+    auto filter = command.user->GetCurrentFandomFilter();
+    if(filter.fandoms.size() > 0){
+        embed.description += "\nDisplayed recommendations are for fandom filter:\n";
+        for(auto fandom: filter.fandoms)
+        {
+            if(fandom != -1)
+                embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
+        }
+    }
+
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
     QLOG_INFO() << "Created page results";
@@ -346,6 +362,15 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         temp = temp.replace("````", "```");
         embed.description = temp.toStdString();
     }
+    auto filter = command.user->GetCurrentFandomFilter();
+    if(filter.fandoms.size() > 0){
+        embed.description += "\nDisplayed recommendations are for fandom filter:\n";
+        for(auto fandom: filter.fandoms)
+        {
+            if(fandom != -1)
+                embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
+        }
+    }
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
     QLOG_INFO() << "Created page results";
@@ -407,6 +432,7 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     environment->fandoms->db = dbToken->db;
     auto fandomId = environment->fandoms->GetIDForName(fandom);
+    auto properNameForFandom = environment->fandoms->GetNameForID(fandomId);
 
     auto withCrossovers = command.variantHash["with_crossovers"].toBool();
     An<interfaces::Users> usersDbInterface;
@@ -425,16 +451,35 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
     }
 
     auto currentIgnores = command.user->GetCurrentIgnoredFandoms();
-    if(currentIgnores.fandoms.contains(fandomId)){
-        usersDbInterface->UnignoreFandom(command.user->UserID(), fandomId);
-        currentIgnores.RemoveFandom(fandomId);
-    }
-    else{
+    auto ignoreFandom = [&](){
         usersDbInterface->IgnoreFandom(command.user->UserID(), fandomId, withCrossovers);
         currentIgnores.AddFandom(fandomId, withCrossovers);
+        action->text = "Adding fandom: " + properNameForFandom + " to ignores";
+        if(withCrossovers)
+            action->text += ".Will also exclude crossovers from now on.";
+        else
+            action->text += ".";
+    };
+
+    if(currentIgnores.fandoms.contains(fandomId)){
+        auto token = currentIgnores.GetToken(fandomId);
+        if(!token.includeCrossovers && withCrossovers)
+        {
+            currentIgnores.RemoveFandom(fandomId);
+            ignoreFandom();
+        }
+        else{
+            usersDbInterface->UnignoreFandom(command.user->UserID(), fandomId);
+            currentIgnores.RemoveFandom(fandomId);
+            action->text = "Removing fandom: " + properNameForFandom + " from ignores";
+        }
+    }
+    else{
+        ignoreFandom();
+
     }
     command.user->SetIgnoredFandoms(currentIgnores);
-    action->emptyAction = true;
+    //action->emptyAction = true;
     return action;
 }
 

@@ -113,8 +113,8 @@ struct StoryFilter{
     //QString ficCategory;
     bool isValid = true;
     bool includeCrossovers = true;
-    bool ignoreAlreadyTagged = false;
     bool crossoversOnly = false;
+    bool ignoreAlreadyTagged = false;
     bool ignoreFandoms = false;
     bool randomizeResults = false;
     bool ensureCompleted = false;

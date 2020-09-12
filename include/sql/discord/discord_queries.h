@@ -25,6 +25,7 @@ namespace discord_queries{
     DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString userId);
     DiagnosticSQLResult<discord::FandomFilter> GetFilterList(QSqlDatabase db, QString userId);
     DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(QSqlDatabase db, QString userId);
+    DiagnosticSQLResult<int> GetCurrentPage(QSqlDatabase db, QString userId);
 
     DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User>);
     DiagnosticSQLResult<bool> WriteServer(QSqlDatabase db, QSharedPointer<discord::Server>);

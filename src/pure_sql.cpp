@@ -2021,7 +2021,7 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, bool loadFandomSt
 
     QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
                          " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
-                         " where name = :fandom ");
+                         " where lower(name) = lower(:fandom) ");
     SqlContext<core::FandomPtr> ctx(db, qs, BP1(fandom));
 
     ctx.ForEachInSelect([&](QSqlQuery& q){

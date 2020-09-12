@@ -4,6 +4,7 @@
 namespace discord {
 
 struct FandomFilterToken{
+    FandomFilterToken(){};
     FandomFilterToken(int id, bool includeCrossovers){
         this->id = id;
         this->includeCrossovers = includeCrossovers;
@@ -20,15 +21,22 @@ struct FandomFilter{
         {
             if(token.id != id)
                 newTokens.push_back(token);
-            tokens =newTokens;
         }
+        tokens =newTokens;
     }
     void AddFandom(int id, bool inludeCrossovers){
         fandoms.insert(id);
         tokens.push_back({id, inludeCrossovers});
     }
+    FandomFilterToken GetToken(int id){
+        for(auto& token : tokens)
+            if(token.id == id)
+                return token;
+        return nullToken;
+    }
 
     QSet<int> fandoms;
     QList<FandomFilterToken> tokens;
+    FandomFilterToken nullToken;
 };
 }
