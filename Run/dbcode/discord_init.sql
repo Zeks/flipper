@@ -50,3 +50,20 @@ CREATE INDEX if not exists I_FURL_ID ON fandomurls (global_id ASC);
 CREATE INDEX if not exists I_FURL_URL ON fandomurls (url ASC);
 CREATE INDEX if not exists I_FURL_CUSTOM ON fandomurls (custom ASC);
 CREATE INDEX if not exists I_FURL_WEBSITE ON fandomurls (website ASC);
+
+
+CREATE TABLE if not exists discord_servers(
+server_id varchar unique PRIMARY KEY,
+owner_id varchar, 
+dedicated_channel_id varchar,
+command_prefix varchar default '!', 
+server_name varchar,
+server_banned integer default 0,
+server_silenced integer default 0,
+bot_answers_in_pm integer default 0, 
+parse_request_limit integer default 0, 
+active_since DATETIME, 
+last_request DATETIME, 
+total_requests integer 
+);
+CREATE INDEX if not exists I_SERVER_ID ON discord_servers (server_id ASC);
