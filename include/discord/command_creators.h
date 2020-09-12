@@ -11,6 +11,8 @@
 #include "discord/command.h"
 #include "discord/limits.h"
 #include "discord/discord_user.h"
+
+
 #include <mutex>
 
 namespace discord{
@@ -40,11 +42,9 @@ public:
     virtual ~CommandCreator();
     virtual CommandChain ProcessInput(Client*, QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message) = 0;
+    virtual bool IsThisCommand(const std::string&) = 0;
     static void EnsureUserExists(QString, QString userName);
-
     //QRegularExpression rx;
-    QString pattern;
-    QRegularExpressionMatchIterator matches;
     Command nullCommand;
     CommandChain result;
     QString userId;
@@ -59,6 +59,7 @@ class DisplayHelpCommand: public CommandCreator{
 public:
     DisplayHelpCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 // requires active recommendation set to work
@@ -66,71 +67,82 @@ class RecommendationsCommand: public CommandCreator{
 public:
     RecommendationsCommand();
     virtual CommandChain ProcessInput(Client*, QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class RecsCreationCommand : public CommandCreator{
 public:
     RecsCreationCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class PageChangeCommand : public RecommendationsCommand{
 public:
     PageChangeCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class NextPageCommand : public RecommendationsCommand{
 public:
     NextPageCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class PreviousPageCommand : public RecommendationsCommand{
 public:
     PreviousPageCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class SetFandomCommand : public RecommendationsCommand{
 public:
     SetFandomCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class IgnoreFandomCommand : public RecommendationsCommand{
 public:
     IgnoreFandomCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class IgnoreFicCommand: public RecommendationsCommand{
 public:
     IgnoreFicCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class RngCommand: public RecommendationsCommand{
 public:
     RngCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class SetIdentityCommand: public CommandCreator{
 public:
     SetIdentityCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class ChangeServerPrefixCommand: public CommandCreator{
 public:
     ChangeServerPrefixCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
 };
 
 class CommandParser{
 public:
-    CommandChain Execute(QSharedPointer<Server> server, SleepyDiscord::Message);
+    CommandChain Execute(std::string command, QSharedPointer<Server> server, SleepyDiscord::Message);
     QList<QSharedPointer<CommandCreator>> commandProcessors;
     Client* client = nullptr;
     std::mutex lock;

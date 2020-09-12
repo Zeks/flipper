@@ -37,6 +37,7 @@ struct Command{
         ct_display_rng = 15,
         ct_change_server_prefix = 16,
         ct_insufficient_permissions = 17,
+        ct_null_command = 18,
     };
     enum EOperandType{
         ot_unspecified = 0,

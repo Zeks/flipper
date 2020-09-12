@@ -5,6 +5,8 @@
 #include "Interfaces/discord/users.h"
 #include "include/grpc/grpc_source.h"
 #include "logger/QsLog.h"
+#include "discord/type_functions.h"
+
 #include <QSettings>
 namespace discord{
 QSharedPointer<User> CommandCreator::user;
@@ -42,11 +44,6 @@ CommandChain CommandCreator::ProcessInput(Client* client, QSharedPointer<discord
     result.Reset();
     this->client = client;
     this->server = server;
-    QRegularExpression rx("^" + server->GetCommandPrefix() + pattern);
-    matches = rx.globalMatch(QString::fromStdString(message.content));
-    //QLOG_INFO() << "testing pattern: " << rx.pattern();
-    if(!matches.hasNext())
-        return result;
     return ProcessInputImpl(message);
 }
 
@@ -76,11 +73,6 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
     result.Reset();
     this->client = client;
     this->server = server;
-    QRegularExpression rx("^" + server->GetCommandPrefix() + pattern);
-    matches = rx.globalMatch(QString::fromStdString(message.content));
-    //QLOG_INFO() << "checking pattern: " << rx.pattern();
-    if(!matches.hasNext())
-        return result;
 
     An<Users> users;
     auto user = users->GetUser(QString::fromStdString(message.author.ID));
@@ -106,10 +98,13 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
     return ProcessInputImpl(message);
 }
 
+bool RecommendationsCommand::IsThisCommand(const std::string &)
+{
+    return false; //cmd == TypeStringHolder<RecommendationsCommand>::name;
+}
+
 RecsCreationCommand::RecsCreationCommand()
 {
-
-    pattern = "recs\\s{1,}(\\d{4,10})";
 }
 
 CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -123,13 +118,12 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
         result.Push(nullCommand);
         return result;
     }
-
+    auto rxResult = matchCommand<RecsCreationCommand>(message.content);
     Command createRecs;
     createRecs.type = Command::ct_fill_recommendations;
-    auto match = matches.next();
-    createRecs.ids.push_back(match.captured(1).toUInt());
+    createRecs.ids.push_back(rxResult.get<1>());
     createRecs.originalMessage = message;
-    createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(match.captured(1));
+    createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(rxResult.get<1>());
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
@@ -140,29 +134,37 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
     return result;
 }
 
+bool RecsCreationCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<RecsCreationCommand>::name;
+}
+
 
 
 
 
 PageChangeCommand::PageChangeCommand()
 {
-    pattern = "page\\s{1,}(\\d{1,10})";
 }
 
 CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command command;
     command.type = Command::ct_display_page;
-    auto match = matches.next();
-    command.ids.push_back(match.captured(1).toUInt());
+    auto match = matchCommand<PageChangeCommand>(message.content);
+    command.ids.push_back(std::stoi(match.get<1>().to_string()));
     command.originalMessage = message;
     result.Push(command);
     return result;
 }
 
+bool PageChangeCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<PageChangeCommand>::name;
+}
+
 NextPageCommand::NextPageCommand()
 {
-    pattern = "next";
 }
 
 CommandChain NextPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -179,9 +181,13 @@ CommandChain NextPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
     return result;
 }
 
+bool NextPageCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<NextPageCommand>::name;
+}
+
 PreviousPageCommand::PreviousPageCommand()
 {
-    pattern = "prev";
 }
 
 CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -198,25 +204,32 @@ CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message messag
     return result;
 }
 
+bool PreviousPageCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<PreviousPageCommand>::name;
+}
+
 SetFandomCommand::SetFandomCommand()
 {
-    pattern = "fandom(\\s{1,}>pure){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}";
 }
 
 CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command filteredFandoms;
     filteredFandoms.type = Command::ct_set_fandoms;
-    while(matches.hasNext()){
-        auto match = matches.next();
-        if(match.captured(1).size() > 0)
-            filteredFandoms.variantHash["allow_crossovers"] = false;
-        else
-            filteredFandoms.variantHash["allow_crossovers"] = true;
-        if(match.captured(2).size() > 0)
-            filteredFandoms.variantHash["reset"] = true;
-        filteredFandoms.variantHash["fandom"] = match.captured(3);
-    }
+    auto match = matchCommand<SetFandomCommand>(message.content);
+    auto pure = match.get<1>().to_string();
+    auto reset = match.get<2>().to_string();
+    auto fandom = match.get<3>().to_string();
+
+    if(pure.length() > 0)
+        filteredFandoms.variantHash["allow_crossovers"] = false;
+    else
+        filteredFandoms.variantHash["allow_crossovers"] = true;
+    if(reset.length() > 0)
+        filteredFandoms.variantHash["reset"] = true;
+    filteredFandoms.variantHash["fandom"] = QString::fromStdString(fandom).trimmed();
+
     filteredFandoms.originalMessage = message;
     result.Push(filteredFandoms);
     Command displayRecs;
@@ -227,28 +240,33 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
     return result;
 }
 
-//CommandState<IgnoreFandomCommand>::help = "!xfandom X to permanently ignore fics just from this fandom"
-//                                          "\n!xfandom #full X to also ignore crossovers from this fandom,"
-//                                          "\n!xfandom #reset X to unignore";
+bool SetFandomCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<SetFandomCommand>::name;
+}
+
 IgnoreFandomCommand::IgnoreFandomCommand()
 {
-    pattern = "xfandom(\\s{1,}>full){0,1}(\\s{1,}>reset){0,1}(\\s{1,}.+){0,1}";
 }
 
 CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command ignoredFandoms;
     ignoredFandoms.type = Command::ct_ignore_fandoms;
-    while(matches.hasNext()){
-        auto match = matches.next();
-        if(match.captured(1).size() > 0)
-            ignoredFandoms.variantHash["with_crossovers"] = true;
-        else
-            ignoredFandoms.variantHash["with_crossovers"] = false;
-        if(match.captured(2).size() > 0)
-            ignoredFandoms.variantHash["reset"] = true;
-        ignoredFandoms.variantHash["fandom"] = match.captured(3);
-    }
+
+
+    auto match = matchCommand<IgnoreFandomCommand>(message.content);
+    auto full = match.get<1>().to_string();
+    auto reset = match.get<2>().to_string();
+    auto fandom = match.get<3>().to_string();
+
+    if(full.length() > 0)
+        ignoredFandoms.variantHash["allow_crossovers"] = false;
+    else
+        ignoredFandoms.variantHash["allow_crossovers"] = true;
+    if(reset.length() > 0)
+        ignoredFandoms.variantHash["reset"] = true;
+    ignoredFandoms.variantHash["fandom"] = QString::fromStdString(fandom).trimmed();
     ignoredFandoms.originalMessage = message;
     result.Push(ignoredFandoms);
     Command displayRecs;
@@ -259,49 +277,76 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message messag
     return result;
 }
 
+bool IgnoreFandomCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<IgnoreFandomCommand>::name;
+}
+
 IgnoreFicCommand::IgnoreFicCommand()
 {
-    pattern = "xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)";
 }
 
 CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command ignoredFics;
     ignoredFics.type = Command::ct_ignore_fics;
-    while(matches.hasNext()){
-        auto match = matches.next();
-        if(!match.captured(3).isEmpty()){
-            ignoredFics.variantHash["everything"] = true;
-            ignoredFics.ids.clear();
-            break;
+    auto match = ctre::search<TypeStringHolder<IgnoreFicCommand>::patternAll>(message.content);
+    auto full = match.get<1>().to_string();
+    if(full.length() > 0){
+        ignoredFics.variantHash["everything"] = true;
+        ignoredFics.ids.clear();
+    }
+    else{
+        for(auto match : ctre::range<TypeStringHolder<IgnoreFicCommand>::patternNum>(message.content)){
+            auto result = match.get<0>().to_string();
+            if(result == ">all"){
+                ignoredFics.variantHash["everything"] = true;
+                ignoredFics.ids.clear();
+                break;
+            }
+            ignoredFics.ids.push_back(std::stoi(std::string(result)));
         }
-        auto list = match.captured(1).split(" ");
-        list.removeAll("");
-        for(auto id : list)
-            ignoredFics.ids.push_back(id.trimmed().toUInt());
+    }
+    if(ignoredFics.variantHash.size() > 0 || ignoredFics.ids.size() > 0)
+    {
+        Command displayRecs;
+        displayRecs.type = Command::ct_display_page;
+        displayRecs.ids.push_back(0);
+        displayRecs.originalMessage = message;
+        result.Push(displayRecs);
+
     }
     ignoredFics.originalMessage = message;
     result.Push(ignoredFics);
     return result;
 }
 
+bool IgnoreFicCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<IgnoreFicCommand>::name;
+}
+
 SetIdentityCommand::SetIdentityCommand()
 {
-    pattern = "me\\s{1,}(\\d{1,15})";
 }
 
 CommandChain SetIdentityCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
-    Command command;
-    command.type = Command::ct_set_identity;
-    auto match = matches.next();
-    command.ids.push_back(match.captured(1).toUInt());
-    command.originalMessage = message;
-    result.Push(command);
+//    Command command;
+//    command.type = Command::ct_set_identity;
+//    auto match = matches.next();
+//    command.ids.push_back(match.captured(1).toUInt());
+//    command.originalMessage = message;
+//    result.Push(command);
     return result;
 }
 
-CommandChain CommandParser::Execute(QSharedPointer<discord::Server> server,SleepyDiscord::Message message)
+bool SetIdentityCommand::IsThisCommand(const std::string &)
+{
+    return false;//cmd == TypeStringHolder<SetIdentityCommand>::name;
+}
+
+CommandChain CommandParser::Execute(std::string command, QSharedPointer<discord::Server> server,SleepyDiscord::Message message)
 {
     std::lock_guard<std::mutex> guard(lock);
     bool firstCommand = true;
@@ -325,6 +370,9 @@ CommandChain CommandParser::Execute(QSharedPointer<discord::Server> server,Sleep
 
     for(auto& processor: commandProcessors)
     {
+        if(!processor->IsThisCommand(command))
+            continue;
+
         processor->user = user;
         auto newCommands = processor->ProcessInput(client, server, message, firstCommand);
         result += newCommands;
@@ -332,6 +380,7 @@ CommandChain CommandParser::Execute(QSharedPointer<discord::Server> server,Sleep
             break;
         if(firstCommand)
             firstCommand = false;
+        break;
     }
     result.AddUserToCommands(user);
     for(auto command: result.commands){
@@ -343,7 +392,6 @@ CommandChain CommandParser::Execute(QSharedPointer<discord::Server> server,Sleep
 
 DisplayHelpCommand::DisplayHelpCommand()
 {
-    pattern = "help";
 }
 
 CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -353,6 +401,11 @@ CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message
     command.originalMessage = message;
     result.Push(command);
     return result;
+}
+
+bool DisplayHelpCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<DisplayHelpCommand>::name;
 }
 
 void SendMessageCommand::Invoke(Client * client)
@@ -370,23 +423,26 @@ void SendMessageCommand::Invoke(Client * client)
 
 RngCommand::RngCommand()
 {
-    pattern = "roll\\s(best|good|all)";
 }
 
 CommandChain RngCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command command;
     command.type = Command::ct_display_rng;
-    auto match = matches.next();
-    command.variantHash["quality"] = match.captured(1);
+    auto match = ctre::search<TypeStringHolder<RngCommand>::pattern>(message.content);
+    command.variantHash["quality"] = QString::fromStdString(match.get<1>().to_string()).trimmed();
     command.originalMessage = message;
     result.Push(command);
     return result;
 }
 
+bool RngCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<RngCommand>::name;
+}
+
 ChangeServerPrefixCommand::ChangeServerPrefixCommand()
 {
-    pattern = "prefix(\\s.+)";
 }
 
 CommandChain ChangeServerPrefixCommand::ProcessInputImpl(SleepyDiscord::Message message)
@@ -410,8 +466,16 @@ CommandChain ChangeServerPrefixCommand::ProcessInputImpl(SleepyDiscord::Message 
         Command command;
         command.type = Command::ct_change_server_prefix;
         command.originalMessage = message;
-        auto match = matches.next();
-        auto newPrefix = match.captured(1);
+        auto match = ctre::search<TypeStringHolder<ChangeServerPrefixCommand>::pattern>(message.content);
+        auto newPrefix = QString::fromStdString(match.get<1>().to_string()).trimmed();
+        if(newPrefix.isEmpty())
+        {
+            command.type = Command::ct_null_command;
+            command.textForPreExecution = "prefix cannot be empty";
+            command.server = this->server;
+            result.Push(command);
+            return result;
+        }
         command.variantHash["prefix"] = newPrefix;
         command.textForPreExecution = "Changing prefix for this server to: " + newPrefix;
         command.server = this->server;
@@ -426,6 +490,11 @@ CommandChain ChangeServerPrefixCommand::ProcessInputImpl(SleepyDiscord::Message 
         result.Push(command);
     }
     return result;
+}
+
+bool ChangeServerPrefixCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ChangeServerPrefixCommand>::name;
 }
 
 

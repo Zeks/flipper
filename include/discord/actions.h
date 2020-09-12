@@ -93,6 +93,12 @@ public:
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
 
+class NullAction : public ActionBase{
+public:
+    NullAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}
     int Size(){return actions.size();}

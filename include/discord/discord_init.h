@@ -1,7 +1,7 @@
 #pragma once
 #include "discord/command_creators.h"
-#include <QSharedPointer>
 
+#include <QSharedPointer>
 
 namespace discord {
     class CommandParser;

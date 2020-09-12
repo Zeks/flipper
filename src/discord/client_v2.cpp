@@ -4,15 +4,15 @@
 #include "discord/command.h"
 #include "discord/discord_server.h"
 #include "discord/discord_init.h"
+#include "discord/type_functions.h"
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 #include "logger/QsLog.h"
 #include <QRegularExpression>
 #include <string_view>
 #include <QSharedPointer>
-#include "third_party/str_concat.h"
+//#include "third_party/str_concat.h"
 #include "third_party/ctre.hpp"
-#include "discord/type_strings.h"
 
 namespace discord {
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
@@ -69,13 +69,15 @@ void Client::InitCommandExecutor()
     executor->client = this;
 }
 
-static constexpr auto pattern = join_v<TypeStringHolder<RecsCreationCommand>::prefixlessPattern,TypeStringHolder<RecsCreationCommand>::prefixlessPattern>;
-constexpr auto match(std::string_view sv) noexcept {
+static constexpr auto pattern = discord::GetSimplePatternChecker();
+constexpr auto matchSimple(std::string_view sv) noexcept {
     return ctre::match<pattern>(sv);
 }
+
 void Client::onMessage(SleepyDiscord::Message message) {
     if(message.author.bot)
         return;
+    //QLOG_INFO() << QString::fromStdString(std::string(discord::GetSimplePatternChecker()));
     Log(message);
 
     QSharedPointer<discord::Server> server;
@@ -89,9 +91,13 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(sv.substr(0, server->GetCommandPrefix().length()) != server->GetCommandPrefix().toStdString())
         return;
     sv.remove_prefix(server->GetCommandPrefix().length());
-    if(!message.content.size() || (message.content.size() /*&& !std::regex_search(sv, server->GetQuickCommandIdentifier())*/))
+
+    auto result = ctre::search<pattern>(sv);;
+    if(!message.content.size() || (message.content.size() && !result.matched()))
         return;
-    auto commands = parser->Execute(server, message);
+    std::string cap = result.get<0>().to_string();
+
+    auto commands = parser->Execute(cap, server, message);
     if(commands.Size() == 0)
         return;
     executor->Push(commands);

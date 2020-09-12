@@ -484,10 +484,10 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
 {
     if(command.variantHash.contains("prefix")){
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
-        command.server->SetCommandPrefix(command.variantHash["prefix"].toString());
+        command.server->SetCommandPrefix(command.variantHash["prefix"].toString().trimmed());
         auto regex = GetSimpleCommandIdentifierPrefixless();
-        command.server->SetQuickCommandIdentifier(std::regex((command.server->GetCommandPrefix() + regex).toStdString()));
-        database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), command.server->GetCommandPrefix());
+        command.server->SetQuickCommandIdentifier(std::regex((command.server->GetCommandPrefix().trimmed() + regex).toStdString()));
+        database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), command.server->GetCommandPrefix().trimmed());
         action->text = "Prefix has been changed";
     }
     else
@@ -497,6 +497,10 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
 QSharedPointer<SendMessageCommand> InsufficientPermissionsAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
 {
     action->text = "You don't have required permissions on the server to run this command.";
+    return action;
+}
+QSharedPointer<SendMessageCommand> NullAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+{
     return action;
 }
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
@@ -525,9 +529,11 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         case Command::ECommandType::ct_insufficient_permissions:
             return QSharedPointer<ActionBase>(new InsufficientPermissionsAction());
     default:
-        return QSharedPointer<ActionBase>();
+        return QSharedPointer<ActionBase>(new NullAction());
     }
 }
+
+
 
 
 
