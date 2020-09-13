@@ -262,7 +262,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         positionToId[i+1] = fic.identity.id;
         i++;
         auto fandomsList=fic.fandoms;
-        embed.description += QString("ID#: " + QString::number(i)).rightJustified(2, ' ').toStdString();
+        embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
         embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
         embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
         //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
@@ -340,7 +340,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         i++;
         auto fandomsList=fic.fandoms;
 
-        embed.description += QString("ID#: " + QString::number(i)).rightJustified(2, ' ').toStdString();
+        embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
         embed.description += QString(" " + urlProto.arg(fic.title.replace("'", "\'")).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
         embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\'") + "`").rightJustified(20, ' ').toStdString();
 
@@ -360,6 +360,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         embed.description += "\n";
         auto temp =  QString::fromStdString(embed.description);
         temp = temp.replace("````", "```");
+        //temp = temp.replace("'", "\'");
         embed.description = temp.toStdString();
     }
     auto filter = command.user->GetCurrentFandomFilter();

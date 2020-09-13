@@ -412,6 +412,7 @@ bool DisplayHelpCommand::IsThisCommand(const std::string &cmd)
 void SendMessageCommand::Invoke(Client * client)
 {
 
+    try{
     if(embed.empty())
     {
         SleepyDiscord::Embed embed;
@@ -420,6 +421,11 @@ void SendMessageCommand::Invoke(Client * client)
     }
     else
         client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        QLOG_INFO() << error;
+        QLOG_INFO() << QString::fromStdString(this->embed.description);
+    }
 }
 
 RngCommand::RngCommand()
