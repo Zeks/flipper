@@ -5,6 +5,7 @@
 #include "sql/discord/discord_queries.h"
 #include "discord/discord_server.h"
 #include "discord/fetch_filters.h"
+#include "discord/type_strings.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "Interfaces/interface_sqlite.h"
 #include "Interfaces/fandoms.h"
@@ -31,13 +32,14 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
 template<typename T> QString GetHelpForCommandIfActive(){
     QString result;
     if(CommandState<T>::active)
-        result = "\n" + CommandState<T>::help;
+        result = "\n" + QString::fromStdString(std::string(TypeStringHolder<T>::help));
     return result;
 }
 
 QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
 {
-    QString helpString = "Basic commands:\n`!recs FFN_ID` to create recommendations";
+    QString helpString;
+    helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
     helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
     helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
     helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
@@ -46,6 +48,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
     helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
     helpString +=  GetHelpForCommandIfActive<RngCommand>();
+    helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
     action->text = helpString;

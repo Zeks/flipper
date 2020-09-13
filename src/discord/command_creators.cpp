@@ -6,6 +6,7 @@
 #include "include/grpc/grpc_source.h"
 #include "logger/QsLog.h"
 #include "discord/type_functions.h"
+#include <stdexcept>
 
 #include <QSettings>
 namespace discord{
@@ -122,6 +123,12 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
     auto match = matchCommand<RecsCreationCommand>(message.content);
     Command createRecs;
     createRecs.type = Command::ct_fill_recommendations;
+    auto id = match.get<1>().to_string();
+    if(id.length() == 0){
+        createRecs.textForPreExecution = QString("Not a valid ID.");
+        createRecs.type = Command::ct_null_command;
+        return result;
+    }
     createRecs.ids.push_back(std::stoi(match.get<1>().to_string()));
     createRecs.originalMessage = message;
     createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(QString::fromStdString(match.get<1>().to_string()));
@@ -305,9 +312,16 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
                 ignoredFics.ids.clear();
                 break;
             }
-            ignoredFics.ids.push_back(std::stoi(std::string(result)));
+            auto id = std::string(result);
+            if(id.length() != 0){
+                ignoredFics.ids.push_back(std::stoi(id));
+            }
+
         }
     }
+
+    ignoredFics.originalMessage = message;
+    result.Push(ignoredFics);
     if(ignoredFics.variantHash.size() > 0 || ignoredFics.ids.size() > 0)
     {
         Command displayRecs;
@@ -317,8 +331,6 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
         result.Push(displayRecs);
 
     }
-    ignoredFics.originalMessage = message;
-    result.Push(ignoredFics);
     return result;
 }
 

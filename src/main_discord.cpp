@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     database::discord_queries::FillUserUids(fandomsInterface->db);
     QSqlDatabase::removeDatabase("DiscordDB");
 
-    discord::InitHelpForCommands();
+    //discord::InitHelpForCommands();
     discord::Client client(token);
     client.InitClient();
     client.InitCommandExecutor();
