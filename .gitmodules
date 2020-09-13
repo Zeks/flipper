@@ -1,6 +1,6 @@
 [submodule "third_party/sleepy-discord"]
 	path = third_party/sleepy-discord
-	url = git@github.com:Zeks/sleepy-discord.git
+	url = https://github.com/Zeks/sleepy-discord.git
 [submodule "proto"]
 	path = proto
 	url = https://github.com/Zeks/flipper-proto.git
