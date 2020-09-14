@@ -75,7 +75,7 @@ struct User{
     QString GetUuid()  const;
     bool ReadsSlash();
     bool HasActiveSet();
-    void SetFicList(core::RecommendationListFicData);
+    void SetFicList(QSharedPointer<core::RecommendationListFicData>);
     QSharedPointer<core::RecommendationListFicData> FicList();
     std::chrono::system_clock::time_point LastActive();
 

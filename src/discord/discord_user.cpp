@@ -312,10 +312,10 @@ bool User::HasActiveSet()
     return fics->matchCounts.size() > 0;
 }
 
-void User::SetFicList(core::RecommendationListFicData fics)
+void User::SetFicList(QSharedPointer<core::RecommendationListFicData> fics)
 {
     QWriteLocker locker(&lock);
-    *this->fics = fics;
+    this->fics = fics;
 }
 
 QSharedPointer<core::RecommendationListFicData> User::FicList()

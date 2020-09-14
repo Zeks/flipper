@@ -78,8 +78,8 @@ public:
     virtual int GetFicCount(core::StoryFilter filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
 
-    core::DiagnosticsForReclist GetDiagnosticsForRecListFromServer(core::RecommendationList recList);
-    bool GetRecommendationListFromServer(core::RecommendationList &recList);
+    core::DiagnosticsForReclist GetDiagnosticsForRecListFromServer(QSharedPointer<core::RecommendationList> recList);
+    bool GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
     bool GetInternalIDsForFics(QVector<core::Identity>*);
     bool GetFFNIDsForFics(QVector<core::Identity>*);
     std::optional<core::FavListDetails> GetStatsForFicList(QVector<core::Identity>);
@@ -91,6 +91,7 @@ public:
 
     ServerStatus GetStatus();
     void SetUserToken(QString token);
+    void ClearUserData();
 
     QString userToken;
     QSharedPointer<FicSourceGRPCImpl> impl;

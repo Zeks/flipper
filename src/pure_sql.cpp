@@ -1235,7 +1235,7 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.bindValue("use_dislikes",list->useDislikes);
     ctx.bindValue("use_dead_fic_ignore",list->useDeadFicIgnore);
     QStringList authors;
-    for(auto id : list->ficData.authorIds)
+    for(auto id : list->ficData->authorIds)
         authors.push_back(QString::number(id));
     ctx.bindValue("sources",authors.join(","));
     ctx.bindValue("name",list->name);
@@ -3910,14 +3910,14 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
 
 //alter table RecommendationListData add column breakdown_available integer default 0;
 
-static QHash<int, int> RecastFicScoresIntoPedestalSet(const core::RecommendationListFicData& ficData){
+static QHash<int, int> RecastFicScoresIntoPedestalSet(QSharedPointer<core::RecommendationListFicData> ficData){
     int position = 1;
     QSet<int> scoresSet;
     QList<int> scoresList;
     QHash<int, int> scorePositions;
-    QVector ficsCopy = ficData.fics;
-    for(int i = 0; i < ficData.fics.size(); i++)
-        scoresSet.insert(ficData.matchCounts[i]);
+    QVector ficsCopy = ficData->fics;
+    for(int i = 0; i < ficData->fics.size(); i++)
+        scoresSet.insert(ficData->matchCounts[i]);
 
     scoresList = scoresSet.values();
     std::sort(scoresList.begin(), scoresList.end());
@@ -3928,19 +3928,19 @@ static QHash<int, int> RecastFicScoresIntoPedestalSet(const core::Recommendation
     return scorePositions;
 }
 
-static QHash<int, int> CreateFicPositions(const core::RecommendationListFicData& ficData){
+static QHash<int, int> CreateFicPositions(QSharedPointer<core::RecommendationListFicData> ficData){
 
     // first we need to fill the hash of scores per fic
     QHash<int, int> scores;
     QHash<int, int> positions;
-    QVector ficsCopy = ficData.fics;
-    for(int i = 0; i < ficData.fics.size(); i++)
-        scores[ficData.fics[i]] = ficData.matchCounts[i];
+    QVector ficsCopy = ficData->fics;
+    for(int i = 0; i < ficData->fics.size(); i++)
+        scores[ficData->fics[i]] = ficData->matchCounts[i];
 
     std::sort(ficsCopy.begin(), ficsCopy.end(), [&](const int& fic1, const int& fic2){
         return scores[fic1] > scores[fic2] ;
     });
-    for(int i = 0; i < ficData.fics.size(); i++){
+    for(int i = 0; i < ficData->fics.size(); i++){
         positions[ficsCopy[i]] = i+1;
     }
     return positions;
@@ -3968,32 +3968,32 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
     auto scorePedestalPositions = RecastFicScoresIntoPedestalSet(list->ficData);
     auto ficPositionsInList = CreateFicPositions(list->ficData);
 
-    for(int i = 0; i < list->ficData.fics.size(); i++)
+    for(int i = 0; i < list->ficData->fics.size(); i++)
     {
 
-        int ficId = list->ficData.fics.at(i);
+        int ficId = list->ficData->fics.at(i);
 
         ctx.bindValue("ficId", ficId);
         ctx.bindValue("position", ficPositionsInList[ficId]);
-        ctx.bindValue("pedestal", scorePedestalPositions[list->ficData.matchCounts.at(i)]);
+        ctx.bindValue("pedestal", scorePedestalPositions[list->ficData->matchCounts.at(i)]);
 
-        ctx.bindValue("matchCount", list->ficData.matchCounts.at(i));
-        ctx.bindValue("no_trash_score", list->ficData.noTrashScores.at(i));
-        bool isOrigin = list->ficData.sourceFics.contains(list->ficData.fics.at(i));
+        ctx.bindValue("matchCount", list->ficData->matchCounts.at(i));
+        ctx.bindValue("no_trash_score", list->ficData->noTrashScores.at(i));
+        bool isOrigin = list->ficData->sourceFics.contains(list->ficData->fics.at(i));
         //QLOG_INFO() << "Writing fic: " << ficId << " isOrigin: " << isOrigin;
         ctx.bindValue("is_origin", isOrigin);
         ctx.bindValue("breakdown_available", true);
 
-        ctx.bindValue("votes_common", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::common]);
-        ctx.bindValue("votes_uncommon", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::uncommon]);
-        ctx.bindValue("votes_rare", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::rare]);
-        ctx.bindValue("votes_unique", list->ficData.breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::unique]);
+        ctx.bindValue("votes_common", list->ficData->breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::common]);
+        ctx.bindValue("votes_uncommon", list->ficData->breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::uncommon]);
+        ctx.bindValue("votes_rare", list->ficData->breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::rare]);
+        ctx.bindValue("votes_unique", list->ficData->breakdowns[ficId].authorTypes[core::AuthorWeightingResult::EAuthorType::unique]);
 
-        ctx.bindValue("value_common", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::common]);
-        ctx.bindValue("value_uncommon", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::uncommon]);
-        ctx.bindValue("value_rare", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::rare]);
-        ctx.bindValue("value_unique", list->ficData.breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::unique]);
-        ctx.bindValue("purged", list->ficData.purges.at(i));
+        ctx.bindValue("value_common", list->ficData->breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::common]);
+        ctx.bindValue("value_uncommon", list->ficData->breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::uncommon]);
+        ctx.bindValue("value_rare", list->ficData->breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::rare]);
+        ctx.bindValue("value_unique", list->ficData->breakdowns[ficId].authorTypeVotes[core::AuthorWeightingResult::EAuthorType::unique]);
+        ctx.bindValue("purged", list->ficData->purges.at(i));
         if(!ctx.ExecAndCheck())
         {
             ctx.result.success = false;

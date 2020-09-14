@@ -37,4 +37,18 @@ void core::RecommendationList::PassSetupParamsInto(RecommendationList &other)
     other.maxUnmatchedPerMatch = maxUnmatchedPerMatch;
     other.name = name;
 }
+
+void RecommendationListFicData::Clear()
+{
+    sourceFics.clear();
+    fics.clear();
+    purges.clear();
+    matchCounts.clear();
+    noTrashScores.clear();
+    authorIds.clear();
+    matchReport.clear();
+    ficToScore.clear();
+    breakdowns.clear();
+}
+
 }

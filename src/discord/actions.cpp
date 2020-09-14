@@ -123,12 +123,12 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     command.user->initNewRecsQuery();
     auto ffnId = QString::number(command.ids.at(0));
     bool refreshing = command.variantHash.contains("refresh");
-    core::RecommendationListFicData fics;
     QSharedPointer<core::RecommendationList> listParams;
     QString error;
 
     QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing);
     auto recList = CreateRecommendationParams(ffnId);
+    recList->requiresBreakdowns = false;
 
     QVector<core::Identity> pack;
     pack.resize(userFavourites.size());
@@ -138,15 +138,17 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
         pack[i].web.ffn = source.toInt();
         i++;
     }
+
+    environment->ficSource->ClearUserData();
     environment->ficSource->GetInternalIDsForFics(&pack);
 
     for(auto source: pack)
     {
-        recList->ficData.sourceFics+=source.id;
-        recList->ficData.fics+=source.web.ffn;
+        recList->ficData->sourceFics+=source.id;
+        recList->ficData->fics+=source.web.ffn;
     }
     //QLOG_INFO() << "Getting fics";
-    environment->ficSource->GetRecommendationListFromServer(*recList);
+    environment->ficSource->GetRecommendationListFromServer(recList);
     //QLOG_INFO() << "Got fics";
     // refreshing the currently saved recommendation list params for user
     An<interfaces::Users> usersDbInterface;
@@ -160,7 +162,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
     QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
     int count = 0;
-    if(!recList->ficData.matchCounts.size())
+    if(!recList->ficData->matchCounts.size())
     {
         command.user->SetFfnID(ffnId);
         action->text = "Couldn't create recommendations. Recommendations server is not available? Ping the author: zekses#3495";
@@ -168,10 +170,10 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
         return action;
 
     }
-    for(int i = 0; i < recList->ficData.fics.size(); i++){
-        if(recList->ficData.matchCounts.at(i) > 1)
+    for(int i = 0; i < recList->ficData->fics.size(); i++){
+        if(recList->ficData->matchCounts.at(i) > 1)
         {
-            matchFicToScore[recList->ficData.matchCounts.at(i)].insert(recList->ficData.fics.at(i));
+            matchFicToScore[recList->ficData->matchCounts.at(i)].insert(recList->ficData->fics.at(i));
             count++;
         }
     }
@@ -212,7 +214,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     command.user->SetGoodRngScoreCutoff(goodCutoff);
     if(!refreshing)
         action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
-
+    environment->ficSource->ClearUserData();
     return action;
 }
 
@@ -236,6 +238,7 @@ static std::string CreateMention(const std::string& string){
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     QLOG_TRACE() << "Creating page results";
+    environment->ficSource->ClearUserData();
     auto page = command.ids.at(0);
     command.user->SetPage(page);
     An<interfaces::Users> usersDbInterface;
@@ -298,6 +301,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
+    environment->ficSource->ClearUserData();
     QLOG_INFO() << "Created page results";
     return action;
 }

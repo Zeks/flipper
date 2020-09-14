@@ -111,7 +111,10 @@ RecsCreationCommand::RecsCreationCommand()
 
 CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
-    if(user->secsSinceLastsRecQuery() < 60)
+    QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
+    auto ownerId = settings.value("Login/ownerId").toString().toStdString();
+
+    if(user->secsSinceLastsRecQuery() < 60 && message.author.ID.string() != ownerId)
     {
         nullCommand.type = Command::ct_timeout_active;
         nullCommand.ids.push_back(60-user->secsSinceLastsEasyQuery());

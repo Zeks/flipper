@@ -631,8 +631,8 @@ public:
     void FetchFic(int ficId, QVector<core::Fanfic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
     int GetFicCount(core::StoryFilter filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
-    bool GetRecommendationListFromServer(core::RecommendationList &recList);
-    core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList);
+    bool GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
+    core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
     void ProcessStandardError(grpc::Status status);
     core::FavListDetails GetStatsForFicList(QVector<core::Identity> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
@@ -911,104 +911,106 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
     return true;
 }
 
-static const auto paramToTaskFiller = [](auto& task, core::RecommendationList& recList){
+static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::RecommendationList> recList){
     auto* data = task.mutable_data();
     auto* ffn = data->mutable_id_packs();
     auto* params = data->mutable_general_params();
 
-    //std::sort(std::begin(recList.ficData.fics), std::end(recList.ficData.fics));
+    //std::sort(std::begin(recList->ficData.fics), std::end(recList->ficData.fics));
     //qDebug() << "Source fics  for list: ";
-    for(auto fic: recList.ficData.fics)
+    for(auto fic: recList->ficData->fics)
     {
         //qDebug() << fic;
         ffn->add_ffn_ids(fic);
     }
-    data->set_list_name(proto_converters::TS(recList.name));
-    params->set_always_pick_at(recList.alwaysPickAt);
-    params->set_is_automatic(recList.isAutomatic);
-    params->set_use_dislikes(recList.useDislikes);
-    params->set_use_dead_fic_ignore(recList.useDeadFicIgnore);
-    params->set_min_fics_to_match(recList.minimumMatch);
-    params->set_max_unmatched_to_one_matched(static_cast<int>(recList.maxUnmatchedPerMatch));
-    params->set_use_weighting(recList.useWeighting);
-    params->set_use_mood_filtering(recList.useMoodAdjustment);
-    params->set_users_ffn_profile_id(recList.userFFNId);
-    QLOG_INFO() << "passing user id to server: " << recList.userFFNId;
+    data->set_list_name(proto_converters::TS(recList->name));
+    params->set_always_pick_at(recList->alwaysPickAt);
+    params->set_is_automatic(recList->isAutomatic);
+    params->set_use_dislikes(recList->useDislikes);
+    params->set_use_dead_fic_ignore(recList->useDeadFicIgnore);
+    params->set_min_fics_to_match(recList->minimumMatch);
+    params->set_max_unmatched_to_one_matched(static_cast<int>(recList->maxUnmatchedPerMatch));
+    params->set_use_weighting(recList->useWeighting);
+    params->set_use_mood_filtering(recList->useMoodAdjustment);
+    params->set_users_ffn_profile_id(recList->userFFNId);
+    QLOG_INFO() << "passing user id to server: " << recList->userFFNId;
 
     auto userData = data->mutable_user_data();
     auto ignores = userData->mutable_ignored_fandoms();
-    for(auto ignore: recList.ignoredFandoms)
+    for(auto ignore: recList->ignoredFandoms)
         ignores->add_fandom_ids(ignore);
     //auto likedAuthors = userData->mutable_liked_authors();
-    for(auto authorId: recList.likedAuthors)
+    for(auto authorId: recList->likedAuthors)
         userData->add_liked_authors(authorId);
 
-    for(auto vote: recList.majorNegativeVotes)
+    for(auto vote: recList->majorNegativeVotes)
         userData->mutable_negative_feedback()->add_strongnegatives(vote);
-    for(auto fic: recList.ignoredDeadFics)
+    for(auto fic: recList->ignoredDeadFics)
         userData->add_ignored_fics(fic);
 
 };
 
 
-static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationListData& response, core::RecommendationList& recList){
+static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationListData& response, QSharedPointer<core::RecommendationList> recList){
 
-    recList.ficData.fics.clear();
-    recList.ficData.fics.reserve(response.fic_ids_size());
-    recList.ficData.purges.reserve(response.fic_ids_size());
-    recList.ficData.matchCounts.reserve(response.fic_ids_size());
-    recList.ficData.noTrashScores.reserve(response.fic_ids_size());
+   recList->ficData->fics.clear();
+   recList->ficData->fics.reserve(response.fic_ids_size());
+   recList->ficData->purges.reserve(response.fic_ids_size());
+   recList->ficData->matchCounts.reserve(response.fic_ids_size());
+   recList->ficData->noTrashScores.reserve(response.fic_ids_size());
 
     for(int i = 0; i < response.fic_ids_size(); i++)
     {
-        recList.ficData.fics.push_back(response.fic_ids(i));
-        recList.ficData.matchCounts.push_back(response.fic_matches(i));
-        recList.ficData.purges.push_back(response.purged(i));
-        recList.ficData.noTrashScores.push_back(response.no_trash_score(i));
+       recList->ficData->fics.push_back(response.fic_ids(i));
+       recList->ficData->matchCounts.push_back(response.fic_matches(i));
+       recList->ficData->purges.push_back(response.purged(i));
+       recList->ficData->noTrashScores.push_back(response.no_trash_score(i));
     }
 
     for(int i = 0; i < response.author_ids_size(); i++)
-        recList.ficData.authorIds.push_back(response.author_ids(i));
+       recList->ficData->authorIds.push_back(response.author_ids(i));
 
     auto it = response.match_report().begin();
     while(it != response.match_report().end())
     {
-        recList.ficData.matchReport[it->first] = it->second;
+       recList->ficData->matchReport[it->first] = it->second;
         ++it;
     }
     using core::AuthorWeightingResult;
-    for(int i = 0; i < response.breakdowns_size(); i++)
-    {
-        auto ficid= response.breakdowns(i).id();
-        recList.ficData.breakdowns[ficid].ficId = static_cast<uint32_t>(ficid);
-        auto&  breakdown = recList.ficData.breakdowns[response.breakdowns(i).id()];
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
-                            response.breakdowns(i).counts_common(),
-                            response.breakdowns(i).votes_common());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::uncommon,
-                            response.breakdowns(i).counts_uncommon(),
-                            response.breakdowns(i).votes_uncommon());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
-                            response.breakdowns(i).counts_rare(),
-                            response.breakdowns(i).votes_rare());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::unique,
-                            response.breakdowns(i).counts_unique(),
-                            response.breakdowns(i).votes_unique());
+    if(recList->requiresBreakdowns){
+        for(int i = 0; i < response.breakdowns_size(); i++)
+        {
+            auto ficid= response.breakdowns(i).id();
+            recList->ficData->breakdowns[ficid].ficId = static_cast<uint32_t>(ficid);
+            auto&  breakdown =recList->ficData->breakdowns[response.breakdowns(i).id()];
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
+                                      response.breakdowns(i).counts_common(),
+                                      response.breakdowns(i).votes_common());
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::uncommon,
+                                      response.breakdowns(i).counts_uncommon(),
+                                      response.breakdowns(i).votes_uncommon());
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
+                                      response.breakdowns(i).counts_rare(),
+                                      response.breakdowns(i).votes_rare());
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::unique,
+                                      response.breakdowns(i).counts_unique(),
+                                      response.breakdowns(i).votes_unique());
+        }
     }
     // need to fill the params for the list as they were adjusted on the server
-    recList.isAutomatic = response.used_params().is_automatic();
-    recList.useDislikes = response.used_params().use_dislikes();
-    recList.useDeadFicIgnore= response.used_params().use_dead_fic_ignore();
-    recList.minimumMatch = response.used_params().min_fics_to_match();
-    recList.maxUnmatchedPerMatch = response.used_params().max_unmatched_to_one_matched();
-    recList.alwaysPickAt = response.used_params().always_pick_at();
-    recList.useWeighting = response.used_params().use_weighting();
-    recList.useMoodAdjustment = response.used_params().use_mood_filtering();
-    recList.success = response.success();
+   recList->isAutomatic = response.used_params().is_automatic();
+   recList->useDislikes = response.used_params().use_dislikes();
+   recList->useDeadFicIgnore= response.used_params().use_dead_fic_ignore();
+   recList->minimumMatch = response.used_params().min_fics_to_match();
+   recList->maxUnmatchedPerMatch = response.used_params().max_unmatched_to_one_matched();
+   recList->alwaysPickAt = response.used_params().always_pick_at();
+   recList->useWeighting = response.used_params().use_weighting();
+   recList->useMoodAdjustment = response.used_params().use_mood_filtering();
+   recList->success = response.success();
 
 };
 
-bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList& recList)
+bool FicSourceGRPCImpl::GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     grpc::ClientContext context;
     ProtoSpace::RecommendationListCreationRequest task;
@@ -1034,7 +1036,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
 }
 
 
-core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList)
+core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     core::DiagnosticsForReclist result;
 
@@ -1374,14 +1376,14 @@ bool FicSourceGRPC::GetFandomListFromServer(int lastFandomID, QVector<core::Fand
     return impl->GetFandomListFromServer(lastFandomID, fandoms);
 }
 
-core::DiagnosticsForReclist FicSourceGRPC::GetDiagnosticsForRecListFromServer(core::RecommendationList recList)
+core::DiagnosticsForReclist FicSourceGRPC::GetDiagnosticsForRecListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     if(!impl)
         return {};
     return impl->GetDiagnosticsForRecommendationListFromServer(recList);
 }
 
-bool FicSourceGRPC::GetRecommendationListFromServer(core::RecommendationList &recList)
+bool FicSourceGRPC::GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     if(!impl)
         return false;
@@ -1452,6 +1454,11 @@ ServerStatus FicSourceGRPC::GetStatus()
 void FicSourceGRPC::SetUserToken(QString token)
 {
     impl->userToken = token;
+}
+
+void FicSourceGRPC::ClearUserData()
+{
+    impl->userData.Clear();
 }
 
 

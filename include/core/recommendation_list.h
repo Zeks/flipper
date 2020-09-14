@@ -32,6 +32,7 @@ typedef QSharedPointer<RecommendationList> RecPtr;
 
 struct RecommendationListFicData
 {
+    void Clear();
     int id = -1;
     QSet<int> sourceFics;
     QVector<int> fics;
@@ -47,6 +48,9 @@ struct RecommendationListFicData
 
 class RecommendationList : public DBEntity{
 public:
+    RecommendationList(){
+        ficData.reset(new RecommendationListFicData());
+    }
     static RecPtr NewRecList() { return QSharedPointer<RecommendationList>(new RecommendationList);}
     void Log();
     void PassSetupParamsInto(RecommendationList& other);
@@ -58,6 +62,7 @@ public:
     bool useDislikes = false;
     bool useDeadFicIgnore= false;
     bool assignLikedToSources = false;
+    bool requiresBreakdowns = true;
 
     int id = -1;
     int ficCount =-1;
@@ -79,7 +84,7 @@ public:
     QSet<int> minorNegativeVotes;
     QSet<int> majorNegativeVotes;
     QDateTime created;
-    RecommendationListFicData ficData;
+    QSharedPointer<RecommendationListFicData> ficData;
 
     QStringList errors;
 };
