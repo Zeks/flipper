@@ -329,6 +329,8 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
     }
     if(command.user->GetUseLikedAuthorsOnly())
         embed.description += "Liked authors filter is active.";
+    if(command.user->GetSortFreshFirst())
+        embed.description += "Fresh recommendations sorting is active.";
 }
 
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
