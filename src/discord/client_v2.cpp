@@ -77,7 +77,7 @@ constexpr auto matchSimple(std::string_view sv) noexcept {
 void Client::onMessage(SleepyDiscord::Message message) {
     if(message.author.bot)
         return;
-    //QLOG_INFO() << QString::fromStdString(std::string(discord::GetSimplePatternChecker()));
+
     Log(message);
 
     QSharedPointer<discord::Server> server;
@@ -88,6 +88,10 @@ void Client::onMessage(SleepyDiscord::Message message) {
     else
         server = fictionalDMServer;
     std::string_view sv (message.content);
+
+    if(sv == "<@!" + getID().string() + "> prefix")
+        sendMessage(message.channelID, "Prefix for this server is: " + server->GetCommandPrefix().toStdString());
+
     if(sv.substr(0, server->GetCommandPrefix().length()) != server->GetCommandPrefix().toStdString())
         return;
     sv.remove_prefix(server->GetCommandPrefix().length());

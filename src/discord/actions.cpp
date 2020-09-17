@@ -240,6 +240,75 @@ static std::string CreateMention(const std::string& string){
 }
 
 
+void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i){
+    QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
+    QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
+    auto fandomsList=fic.fandoms;
+    embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
+    embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
+    embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
+    //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
+    embed.description += QString("\nStatus:  ").toHtmlEscaped().toStdString();
+    if(fic.complete)
+        embed.description += QString(" `Complete  `  ").toStdString();
+    else
+        embed.description += QString(" `Incomplete`").toStdString();
+    embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
+    embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
+    QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "");
+    if(genre.isEmpty())
+        genre = fic.genreString;
+    embed.description += QString("\nGenre: `" + genre + "`").toStdString();
+    embed.description += "\n\n";
+    auto temp =  QString::fromStdString(embed.description);
+    temp = temp.replace("````", "```");
+    embed.description = temp.toStdString();
+}
+
+
+void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i){
+    QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
+    QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
+    auto fandomsList=fic.fandoms;
+    embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
+    embed.description += QString(" " + urlProto.arg(fic.title.replace("'", "\'")).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
+    embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\'") + "`").rightJustified(20, ' ').toStdString();
+
+    embed.description += "\nStatus:  ";
+    if(fic.complete)
+        embed.description += QString(" `Complete  `  ").toStdString();
+    else
+        embed.description += QString(" `Incomplete`").toStdString();
+    embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
+    embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
+    QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "");
+    if(genre.isEmpty())
+        genre = fic.genreString;
+    genre= genre.replace("`", "");
+    embed.description += QString("\nGenre: `" + genre + "`").toStdString();
+    embed.description += (QString("\n```") + fic.summary + QString("```")).toStdString();
+    embed.description += "\n";
+    auto temp =  QString::fromStdString(embed.description);
+    temp = temp.replace("````", "```");
+    //temp = temp.replace("'", "\'");
+    embed.description = temp.toStdString();
+}
+
+
+void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
+    auto filter = command.user->GetCurrentFandomFilter();
+    if(filter.fandoms.size() > 0){
+        embed.description += "\nDisplayed recommendations are for fandom filter:\n";
+        for(auto fandom: filter.fandoms)
+        {
+            if(fandom != -1)
+                embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
+        }
+    }
+    if(command.user->GetUseLikedAuthorsOnly())
+        embed.description += "Liked authors filter is active.";
+}
+
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     QLOG_TRACE() << "Creating page results";
@@ -272,39 +341,10 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     {
         positionToId[i+1] = fic.identity.id;
         i++;
-        auto fandomsList=fic.fandoms;
-        embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
-        embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
-        embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
-        //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
-        embed.description += QString("\nStatus:  ").toHtmlEscaped().toStdString();
-        if(fic.complete)
-            embed.description += QString(" `Complete  `  ").toStdString();
-        else
-            embed.description += QString(" `Incomplete`").toStdString();
-        embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
-        embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
-        QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "");
-        if(genre.isEmpty())
-            genre = fic.genreString;
-        embed.description += QString("\nGenre: `" + genre + "`").toStdString();
-        embed.description += "\n\n";
-        auto temp =  QString::fromStdString(embed.description);
-        temp = temp.replace("````", "```");
-        embed.description = temp.toStdString();
+        FillListEmbedForFic(embed, fic, i);
     }
+    FillActiveFilterPartInEmbed(embed, environment, command);
 
-    auto filter = command.user->GetCurrentFandomFilter();
-    if(filter.fandoms.size() > 0){
-        embed.description += "\nDisplayed recommendations are for fandom filter:\n";
-        for(auto fandom: filter.fandoms)
-        {
-            if(fandom != -1)
-                embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
-        }
-    }
-    if(command.user->GetUseLikedAuthorsOnly())
-        embed.description += "Liked authors filter is active.";
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
@@ -352,43 +392,9 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     {
         positionToId[i+1] = fic.identity.id;
         i++;
-        auto fandomsList=fic.fandoms;
-
-        embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
-        embed.description += QString(" " + urlProto.arg(fic.title.replace("'", "\'")).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
-        embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\'") + "`").rightJustified(20, ' ').toStdString();
-
-        embed.description += "\nStatus:  ";
-        if(fic.complete)
-            embed.description += QString(" `Complete  `  ").toStdString();
-        else
-            embed.description += QString(" `Incomplete`").toStdString();
-        embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
-        embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
-        QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "");
-        if(genre.isEmpty())
-            genre = fic.genreString;
-        genre= genre.replace("`", "");
-        embed.description += QString("\nGenre: `" + genre + "`").toStdString();
-        embed.description += (QString("\n```") + fic.summary + QString("```")).toStdString();
-        embed.description += "\n";
-        auto temp =  QString::fromStdString(embed.description);
-        temp = temp.replace("````", "```");
-        //temp = temp.replace("'", "\'");
-        embed.description = temp.toStdString();
+        FillDetailedEmbedForFic(embed, fic, i);
     }
-    auto filter = command.user->GetCurrentFandomFilter();
-    if(filter.fandoms.size() > 0){
-        embed.description += "\nDisplayed recommendations are for fandom filter:\n";
-        for(auto fandom: filter.fandoms)
-        {
-            if(fandom != -1)
-                embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
-        }
-    }
-
-    if(command.user->GetUseLikedAuthorsOnly())
-        embed.description += "Liked authors filter is active.";
+    FillActiveFilterPartInEmbed(embed, environment, command);
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
