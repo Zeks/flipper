@@ -318,6 +318,14 @@ DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
     return result;
 }
 
+DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id, int forced_min_matches, int forced_ratio)
+{
+    QString qs = "update discord_users set forced_min_matches = :forced_min_matches, forced_ratio = :forced_ratio where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP3(user_id, forced_min_matches, forced_ratio));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 
 
 

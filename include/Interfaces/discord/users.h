@@ -46,6 +46,7 @@ public:
     int WriteUserList(QString user_id,
                       QString list_name, discord::EListType list_type,
                       int min_match, int match_ratio, int always_at);
+    bool WriteForcedListParams(QString user_id, int forceMinMatches, int forcedRatio);
     bool DeleteUserList(QString user_id,
                    QString list_name);
     void IgnoreFandom(QString userId, int fandomId, bool ignoreCrosses);

@@ -86,5 +86,13 @@ struct TypeStringHolder<discord::ChangeServerPrefixCommand>{
         static constexpr std::string_view help = "\nBot management commands:\n`!prefix new prefix` changes the comamnd prefix for this server(admin only)";
 };
 
+template <>
+struct TypeStringHolder<discord::ForceListParamsCommand>{
+        static constexpr std::string_view name = "force";
+        static constexpr std::string_view prefixlessPattern = "?<force>force";
+        static constexpr std::string_view pattern = "force(\\s\\d{1,2})(\\s\\d{1,2})";
+        static constexpr std::string_view help = "";
+};
+
 
 

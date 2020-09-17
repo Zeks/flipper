@@ -140,6 +140,14 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class ForceListParamsCommand: public CommandCreator{
+public:
+    ForceListParamsCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+
 class CommandParser{
 public:
     CommandChain Execute(std::string command, QSharedPointer<Server> server, SleepyDiscord::Message);

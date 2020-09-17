@@ -128,6 +128,10 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
 
     QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing);
     auto recList = CreateRecommendationParams(ffnId);
+    if(command.user->GetForcedMinMatch() != 0){
+         recList->minimumMatch = command.user->GetForcedMinMatch();
+         recList->maxUnmatchedPerMatch = command.user->GetForcedRatio();
+    }
     recList->requiresBreakdowns = false;
 
     QVector<core::Identity> pack;
@@ -556,6 +560,19 @@ QSharedPointer<SendMessageCommand> NullAction::ExecuteImpl(QSharedPointer<TaskEn
 {
     return action;
 }
+
+QSharedPointer<SendMessageCommand> SetForcedListParamsAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
+    An<interfaces::Users> usersDbInterface;
+    usersDbInterface->WriteForcedListParams(command.user->UserID(), command.variantHash["min"].toUInt(), command.variantHash["ratio"].toUInt());
+    command.user->SetForcedMinMatch(command.variantHash["min"].toUInt());
+    command.user->SetForcedRatio(command.variantHash["ratio"].toUInt());
+    return action;
+}
+
+
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
     switch(type){
@@ -577,14 +594,17 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new NoUserInformationAction());
     case Command::ECommandType::ct_display_rng:
         return QSharedPointer<ActionBase>(new DisplayRngAction());
-        case Command::ECommandType::ct_change_server_prefix:
-            return QSharedPointer<ActionBase>(new ChangePrefixAction());
-        case Command::ECommandType::ct_insufficient_permissions:
-            return QSharedPointer<ActionBase>(new InsufficientPermissionsAction());
+    case Command::ECommandType::ct_change_server_prefix:
+        return QSharedPointer<ActionBase>(new ChangePrefixAction());
+    case Command::ECommandType::ct_insufficient_permissions:
+        return QSharedPointer<ActionBase>(new InsufficientPermissionsAction());
+    case Command::ECommandType::ct_force_list_params:
+        return QSharedPointer<ActionBase>(new SetForcedListParamsAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }
 }
+
 
 
 

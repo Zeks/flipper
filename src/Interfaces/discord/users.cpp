@@ -56,6 +56,12 @@ int Users::WriteUserList(QString user_id, QString list_name, discord::EListType 
     return database::discord_queries::WriteUserList(dbToken->db, user_id, list_name, list_type, min_match, match_ratio, always_at).data;
 }
 
+bool Users::WriteForcedListParams(QString user_id, int forceMinMatches, int forcedRatio)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    return database::discord_queries::WriteForcedListParams(dbToken->db, user_id, forceMinMatches, forcedRatio).data;
+}
+
 bool Users::DeleteUserList(QString user_id, QString list_name)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");

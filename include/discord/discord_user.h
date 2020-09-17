@@ -79,6 +79,11 @@ struct User{
     QSharedPointer<core::RecommendationListFicData> FicList();
     std::chrono::system_clock::time_point LastActive();
 
+    int GetForcedMinMatch() const;
+    void SetForcedMinMatch(int value);
+
+    int GetForcedRatio() const;
+    void SetForcedRatio(int value);
 
     bool isValid = false;
 private:
@@ -91,6 +96,8 @@ private:
     bool banned = false;
     bool readsSlash = false;
     bool hasUnfinishedRecRequest = false;
+    int forcedMinMatch = 0;
+    int forcedRatio = 0;
 
     std::chrono::system_clock::time_point lastRecsQuery;
     std::chrono::system_clock::time_point lastEasyQuery;

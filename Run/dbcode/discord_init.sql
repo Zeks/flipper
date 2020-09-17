@@ -9,6 +9,8 @@ reads_slash integer default 0,
 current_list integer default 0,
 banned interger default 0);
 alter table discord_users add column uuid varchar;
+alter table discord_users add column forced_min_matches integer default 0;
+alter table discord_users add column forced_ratio integer default 0;
 
 CREATE INDEX if not exists I_discord_users ON discord_users (user_id ASC);  
 

@@ -35,6 +35,8 @@ namespace discord_queries{
     DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id,
                                            QString list_name, discord::EListType list_type,
                                            int min_match, int match_ratio, int always_at);
+    DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id, int forceMinMatches, int forcedRatio);
+
     DiagnosticSQLResult<bool> IgnoreFandom(QSqlDatabase db, QString user_id, int fandom_id, bool including_crossovers);
     DiagnosticSQLResult<bool> UnignoreFandom(QSqlDatabase db, QString userId, int fandomId);
     DiagnosticSQLResult<bool> TagFanfic(QSqlDatabase db, QString user_id, int fic_id, QString fic_tag);

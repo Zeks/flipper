@@ -38,6 +38,10 @@ struct Command{
         ct_change_server_prefix = 16,
         ct_insufficient_permissions = 17,
         ct_null_command = 18,
+        ct_force_list_params = 19,
+        ct_filter_liked_authors = 20,
+        ct_filter_fresh = 21,
+        ct_filter_out_dead= 22,
     };
     enum EOperandType{
         ot_unspecified = 0,

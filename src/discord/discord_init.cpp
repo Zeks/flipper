@@ -16,6 +16,7 @@ namespace discord {
         RegisterCommand<DisplayHelpCommand>(parser);
         RegisterCommand<RngCommand>(parser);
         RegisterCommand<ChangeServerPrefixCommand>(parser);
+        RegisterCommand<ForceListParamsCommand>(parser);
     }
 
     template<typename T> QString GetRegexForCommandIfActive(){
@@ -46,6 +47,8 @@ namespace discord {
         list.push_back(GetRegexForCommandIfActive<IgnoreFicCommand>());
         list.push_back(GetRegexForCommandIfActive<DisplayHelpCommand>());
         list.push_back(GetRegexForCommandIfActive<RngCommand>());
+        list.push_back(GetRegexForCommandIfActive<ChangeServerPrefixCommand>());
+        list.push_back(GetRegexForCommandIfActive<ForceListParamsCommand>());
         list.removeAll("");
         return list.join("|");
     }

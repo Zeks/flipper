@@ -24,7 +24,8 @@ namespace discord {
                 TypeStringHolder<IgnoreFicCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<DisplayHelpCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<RngCommand>::prefixlessPattern,str::separator,
-                TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::rightBrace>;
+                TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace>;
     }
 
 template<typename T>

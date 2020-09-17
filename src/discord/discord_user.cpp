@@ -328,6 +328,30 @@ system_clock::time_point User::LastActive()
 {
     return lastRecsQuery > lastEasyQuery ? lastRecsQuery : lastEasyQuery;
 }
+
+int User::GetForcedMinMatch() const
+{
+    QReadLocker locker(&lock);
+    return forcedMinMatch;
+}
+
+void User::SetForcedMinMatch(int value)
+{
+    QWriteLocker locker(&lock);
+    forcedMinMatch = value;
+}
+
+int User::GetForcedRatio() const
+{
+    QReadLocker locker(&lock);
+    return forcedRatio;
+}
+
+void User::SetForcedRatio(int value)
+{
+    QWriteLocker locker(&lock);
+    forcedRatio = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

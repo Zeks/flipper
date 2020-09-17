@@ -519,6 +519,59 @@ bool ChangeServerPrefixCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<ChangeServerPrefixCommand>::name;
 }
 
+ForceListParamsCommand::ForceListParamsCommand()
+{
+
+}
+
+CommandChain ForceListParamsCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_force_list_params;
+    auto match = ctre::search<TypeStringHolder<ForceListParamsCommand>::pattern>(message.content);
+    auto min = match.get<1>().to_string();
+    auto ratio = match.get<2>().to_string();
+    if(min.length() == 0 || ratio.length() == 0)
+        return result;
+
+    An<Users> users;
+    auto user = users->GetUser(QString::fromStdString(message.author.ID));
+    if(user->FfnID().isEmpty() || user->FfnID() == "-1")
+    {
+        Command createRecs;
+        createRecs.type = Command::ct_no_user_ffn;
+        createRecs.originalMessage = message;
+        result.Push(createRecs);
+        result.stopExecution = true;
+        return result;
+    }
+
+    command.variantHash["min"] = std::stoi(min);
+    command.variantHash["ratio"] = std::stoi(ratio);
+    command.originalMessage = message;
+    result.Push(command);
+
+    Command createRecs;
+    createRecs.type = Command::ct_fill_recommendations;
+    createRecs.ids.push_back(user->FfnID().toInt());
+    createRecs.originalMessage = message;
+    createRecs.variantHash["refresh"] = "yes";
+    createRecs.textForPreExecution = QString("Recreating recommendations for user %1 with new settings, please wait a bit").arg(user->FfnID());
+    result.hasParseCommand = true;
+    result.Push(createRecs);
+    Command displayRecs;
+    displayRecs.type = Command::ct_display_page;
+    displayRecs.ids.push_back(0);
+    displayRecs.originalMessage = message;
+    result.Push(displayRecs);
+    return result;
+}
+
+bool ForceListParamsCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ForceListParamsCommand>::name;
+}
+
 
 
 

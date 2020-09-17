@@ -87,6 +87,12 @@ public:
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
 
+class SetForcedListParamsAction : public ActionBase{
+public:
+    SetForcedListParamsAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
 class InsufficientPermissionsAction : public ActionBase{
 public:
     InsufficientPermissionsAction(){}
