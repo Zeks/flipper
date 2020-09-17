@@ -346,7 +346,7 @@ SetIdentityCommand::SetIdentityCommand()
 {
 }
 
-CommandChain SetIdentityCommand::ProcessInputImpl(SleepyDiscord::Message message)
+CommandChain SetIdentityCommand::ProcessInputImpl(SleepyDiscord::Message )
 {
 //    Command command;
 //    command.type = Command::ct_set_identity;

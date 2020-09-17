@@ -188,11 +188,9 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     auto keys = matchFicToScore.keys();
     std::sort(keys.begin(), keys.end());
     std::reverse(keys.begin(), keys.end());
-    int currentFront = 0, previousFront = 0, previousKey = 0;
+    int currentFront = 0;
     QSet<int> perfectRngFics, goodRngFics;
     for(auto key : keys){
-        previousKey = key;
-        previousFront = currentFront;
         currentFront += matchFicToScore[key].size();
         if(currentFront > perfectRange && perfectCutoff == 0)
             perfectCutoff = key;
@@ -585,7 +583,7 @@ QSharedPointer<SendMessageCommand> SetForcedListParamsAction::ExecuteImpl(QShare
     return action;
 }
 
-QSharedPointer<SendMessageCommand> SetForceLikedAuthorsAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+QSharedPointer<SendMessageCommand> SetForceLikedAuthorsAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     An<interfaces::Users> usersDbInterface;
@@ -637,7 +635,7 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 
 QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
 {
-
+    return {};
 }
 
 
