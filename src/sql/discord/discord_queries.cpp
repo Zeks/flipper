@@ -56,6 +56,8 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetCurrentListId(q.value("current_list").toInt());
         user->SetBanned(q.value("banned").toBool());
         user->SetUuid(q.value("uuid").toString());
+        user->SetForcedMinMatch(q.value("forced_min_matches").toInt());
+        user->SetForcedRatio(q.value("forced_ratio").toInt());
         ctx.result.data = user;
     });
     return ctx.result;
