@@ -36,7 +36,7 @@ template<typename T> QString GetHelpForCommandIfActive(){
     return result;
 }
 
-QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
     QString helpString;
     helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
@@ -48,10 +48,12 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<IgnoreFicCommand>();
     helpString +=  GetHelpForCommandIfActive<DisplayHelpCommand>();
     helpString +=  GetHelpForCommandIfActive<RngCommand>();
+    helpString +=  GetHelpForCommandIfActive<FilterLikedAuthorsCommand>();
+    helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
-    action->text = helpString;
+    action->text = helpString.arg(command.server->GetCommandPrefix());
     return action;
 }
 

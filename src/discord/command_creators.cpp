@@ -425,6 +425,7 @@ CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message
     Command command;
     command.type = Command::ct_display_help;
     command.originalMessage = message;
+    command.server = this->server;
     result.Push(command);
     return result;
 }

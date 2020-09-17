@@ -24,10 +24,10 @@ namespace discord {
                 TypeStringHolder<IgnoreFicCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<DisplayHelpCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<RngCommand>::prefixlessPattern,str::separator,
-                TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<FilterLikedAuthorsCommand>::prefixlessPattern, str::separator,
-                TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ShowFreshRecsCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace>;
     }
 
