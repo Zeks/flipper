@@ -601,6 +601,24 @@ bool FilterLikedAuthorsCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<FilterLikedAuthorsCommand>::name;
 }
 
+CommandChain ShowFullFavouritesCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_show_favs;
+    auto match = ctre::search<TypeStringHolder<ShowFullFavouritesCommand>::pattern>(message.content);
+    if(match)
+    {
+        command.originalMessage = message;
+        result.Push(command);
+    }
+    return result;
+}
+
+bool ShowFullFavouritesCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ShowFullFavouritesCommand>::name;
+}
+
 
 
 

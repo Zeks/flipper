@@ -102,5 +102,15 @@ struct TypeStringHolder<discord::FilterLikedAuthorsCommand>{
         static constexpr std::string_view help = "";
 };
 
+template <>
+struct TypeStringHolder<discord::ShowFullFavouritesCommand>{
+        static constexpr std::string_view name = "favs";
+        static constexpr std::string_view prefixlessPattern = "?<favs>favs";
+        static constexpr std::string_view pattern = "favs";
+        static constexpr std::string_view help = "";
+};
+
+
+
 
 

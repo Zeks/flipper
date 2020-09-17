@@ -154,6 +154,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class ShowFullFavouritesCommand: public CommandCreator{
+public:
+    ShowFullFavouritesCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 class CommandParser{
 public:

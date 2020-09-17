@@ -131,6 +131,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     if(command.user->GetForcedMinMatch() != 0){
          recList->minimumMatch = command.user->GetForcedMinMatch();
          recList->maxUnmatchedPerMatch = command.user->GetForcedRatio();
+         recList->isAutomatic = false;
     }
     recList->requiresBreakdowns = false;
 
@@ -621,9 +622,16 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new SetForcedListParamsAction());
     case Command::ECommandType::ct_filter_liked_authors:
         return QSharedPointer<ActionBase>(new SetForceLikedAuthorsAction());
+    case Command::ECommandType::ct_show_favs:
+        return QSharedPointer<ActionBase>(new ShowFullFavouritesAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }
+}
+
+QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+{
+
 }
 
 
