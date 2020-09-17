@@ -249,13 +249,50 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i,
     embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
     embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
     //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
-    embed.description += QString("\nStatus:  ").toHtmlEscaped().toStdString();
-    if(fic.complete)
-        embed.description += QString(" `Complete  `  ").toStdString();
-    else
-        embed.description += QString(" `Incomplete`").toStdString();
-    embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
+    embed.description += QString("\nLength: `" + fic.wordCount + "`").toStdString();
     embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
+    embed.description += QString(" Status:  ").toHtmlEscaped().toStdString();
+    if(fic.complete)
+        embed.description += QString(" `Complete`  ").rightJustified(12).toStdString();
+    else
+    {
+        int years = 0;
+        int months = 0;
+        int days = 0;
+        QDate beginDate= fic.published.date();
+        QDate endDate= QDateTime::currentDateTimeUtc().date();
+        if(beginDate.daysTo(endDate) >= 0)
+        {
+            years=endDate.year()-beginDate.year();
+            if((months=endDate.month()-beginDate.month())<0)
+            {
+                years--;
+                months+=12;
+            }
+            if((days=endDate.day()-beginDate.day())<0)
+            {
+                if(--months < 0)
+                {
+                    years--;
+                    months+=12;
+                }
+                days+=beginDate.daysInMonth();
+            }
+          }
+
+        QStringList dates;
+        if(years > 0)
+            dates += QString::number(years) + "y";
+        if(months > 0)
+            dates += QString::number(months) + "m";
+        if(days > 0)
+            dates += QString::number(days) + "d";
+
+        if(dates.size())
+            embed.description += (" `Incomplete: " + dates.join(" ") + "`").rightJustified(12).toStdString();
+        else
+            embed.description += QString(" `Incomplete`").rightJustified(12).toStdString();
+    }
     QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("#c#"),"+").replace(QRegExp("#p#"),"=").replace(QRegExp("#b#"),"~");
     if(genre.isEmpty())
         genre = fic.genreString;
@@ -665,6 +702,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 
