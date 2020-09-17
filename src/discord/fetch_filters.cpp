@@ -45,6 +45,10 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
             userData.ignoredFandoms[token.id] = token.includeCrossovers;
     }
     userData.allTaggedFics = user->GetIgnoredFics();
+    if(user->GetUseLikedAuthorsOnly()){
+        filter.tagsAreUsedForAuthors = true;
+        userData.ficIDsForActivetags = user->FicList()->sourceFics;
+    }
     QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
 
@@ -108,6 +112,10 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     for(auto& token: ignoredFandoms.tokens)
         if(!fandomFilter.fandoms.contains(token.id))
             userData.ignoredFandoms[token.id] = token.includeCrossovers;
+    if(user->GetUseLikedAuthorsOnly()){
+        filter.tagsAreUsedForAuthors = true;
+        userData.ficIDsForActivetags = user->FicList()->sourceFics;
+    }
     userData.allTaggedFics = user->GetIgnoredFics();
     QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 

@@ -62,6 +62,12 @@ bool Users::WriteForcedListParams(QString user_id, int forceMinMatches, int forc
     return database::discord_queries::WriteForcedListParams(dbToken->db, user_id, forceMinMatches, forcedRatio).data;
 }
 
+bool Users::WriteForceLikedAuthors(QString user_id, bool forceLikedAuthors)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    return database::discord_queries::WriteForceLikedAuthors(dbToken->db, user_id, forceLikedAuthors).data;
+}
+
 bool Users::DeleteUserList(QString user_id, QString list_name)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");

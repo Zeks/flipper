@@ -93,6 +93,12 @@ public:
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
 };
 
+class SetForceLikedAuthorsAction: public ActionBase{
+public:
+    SetForceLikedAuthorsAction(){}
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
+};
+
 class InsufficientPermissionsAction : public ActionBase{
 public:
     InsufficientPermissionsAction(){}

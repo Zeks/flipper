@@ -55,6 +55,7 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetFfnID(q.value("ffn_id").toString());
         user->SetCurrentListId(q.value("current_list").toInt());
         user->SetBanned(q.value("banned").toBool());
+        user->SetUseLikedAuthorsOnly(q.value("use_liked_authors_only").toBool());
         user->SetUuid(q.value("uuid").toString());
         user->SetForcedMinMatch(q.value("forced_min_matches").toInt());
         user->SetForcedRatio(q.value("forced_ratio").toInt());
@@ -324,6 +325,14 @@ DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id
 {
     QString qs = "update discord_users set forced_min_matches = :forced_min_matches, forced_ratio = :forced_ratio where user_id = :user_id";
     SqlContext<bool> ctx(db, qs, BP3(user_id, forced_min_matches, forced_ratio));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString user_id, bool use_liked_authors_only)
+{
+    QString qs = "update discord_users set use_liked_authors_only = :use_liked_authors_only where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP2(user_id, use_liked_authors_only));
     ctx.ExecAndCheck(true);
     return ctx.result;
 }

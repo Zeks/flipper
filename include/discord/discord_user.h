@@ -85,7 +85,11 @@ struct User{
     int GetForcedRatio() const;
     void SetForcedRatio(int value);
 
+    bool GetUseLikedAuthorsOnly() const;
+    void SetUseLikedAuthorsOnly(bool value);
+
     bool isValid = false;
+
 private:
     QString userID;
     QString userName;
@@ -96,6 +100,7 @@ private:
     bool banned = false;
     bool readsSlash = false;
     bool hasUnfinishedRecRequest = false;
+    bool useLikedAuthorsOnly = false;
     int forcedMinMatch = 0;
     int forcedRatio = 0;
 

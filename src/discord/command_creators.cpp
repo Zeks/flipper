@@ -572,6 +572,35 @@ bool ForceListParamsCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<ForceListParamsCommand>::name;
 }
 
+FilterLikedAuthorsCommand::FilterLikedAuthorsCommand()
+{
+
+}
+
+CommandChain FilterLikedAuthorsCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_filter_liked_authors;
+    auto match = ctre::search<TypeStringHolder<FilterLikedAuthorsCommand>::pattern>(message.content);
+    if(match)
+    {
+        command.variantHash["liked"] = true;
+        command.originalMessage = message;
+        result.Push(command);
+        Command displayRecs;
+        displayRecs.type = Command::ct_display_page;
+        displayRecs.ids.push_back(0);
+        displayRecs.originalMessage = message;
+        result.Push(displayRecs);
+    }
+    return result;
+}
+
+bool FilterLikedAuthorsCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<FilterLikedAuthorsCommand>::name;
+}
+
 
 
 

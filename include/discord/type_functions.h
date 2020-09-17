@@ -25,6 +25,7 @@ namespace discord {
                 TypeStringHolder<DisplayHelpCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<RngCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<FilterLikedAuthorsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace>;
     }
 

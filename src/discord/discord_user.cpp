@@ -352,6 +352,18 @@ void User::SetForcedRatio(int value)
     QWriteLocker locker(&lock);
     forcedRatio = value;
 }
+
+bool User::GetUseLikedAuthorsOnly() const
+{
+    QReadLocker locker(&lock);
+    return useLikedAuthorsOnly;
+}
+
+void User::SetUseLikedAuthorsOnly(bool value)
+{
+    QWriteLocker locker(&lock);
+    useLikedAuthorsOnly = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

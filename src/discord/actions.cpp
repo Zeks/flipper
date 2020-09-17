@@ -250,7 +250,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
     QVector<core::Fanfic> fics;
     QLOG_TRACE() << "Fetching fics";
-
+    environment->ficSource->ClearUserData();
     FetchFicsForDisplayPageCommand(environment->ficSource, command.user, 10, &fics);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
@@ -302,6 +302,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
                 embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
         }
     }
+    if(command.user->GetUseLikedAuthorsOnly())
+        embed.description += "Liked authors filter is active.";
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
@@ -383,6 +385,10 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
                 embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
         }
     }
+
+    if(command.user->GetUseLikedAuthorsOnly())
+        embed.description += "Liked authors filter is active.";
+
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
     QLOG_INFO() << "Created page results";
@@ -572,6 +578,19 @@ QSharedPointer<SendMessageCommand> SetForcedListParamsAction::ExecuteImpl(QShare
     return action;
 }
 
+QSharedPointer<SendMessageCommand> SetForceLikedAuthorsAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    An<interfaces::Users> usersDbInterface;
+    if(command.user->GetUseLikedAuthorsOnly())
+        usersDbInterface->WriteForceLikedAuthors(command.user->UserID(), false);
+    else
+        usersDbInterface->WriteForceLikedAuthors(command.user->UserID(), true);
+    command.user->SetUseLikedAuthorsOnly(!command.user->GetUseLikedAuthorsOnly());
+
+    return action;
+}
+
 
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
@@ -600,6 +619,8 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new InsufficientPermissionsAction());
     case Command::ECommandType::ct_force_list_params:
         return QSharedPointer<ActionBase>(new SetForcedListParamsAction());
+    case Command::ECommandType::ct_filter_liked_authors:
+        return QSharedPointer<ActionBase>(new SetForceLikedAuthorsAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

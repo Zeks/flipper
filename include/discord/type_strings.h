@@ -94,5 +94,13 @@ struct TypeStringHolder<discord::ForceListParamsCommand>{
         static constexpr std::string_view help = "";
 };
 
+template <>
+struct TypeStringHolder<discord::FilterLikedAuthorsCommand>{
+        static constexpr std::string_view name = "liked";
+        static constexpr std::string_view prefixlessPattern = "?<liked>liked";
+        static constexpr std::string_view pattern = "liked";
+        static constexpr std::string_view help = "";
+};
+
 
 

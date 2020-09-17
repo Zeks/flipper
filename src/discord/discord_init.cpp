@@ -17,6 +17,7 @@ namespace discord {
         RegisterCommand<RngCommand>(parser);
         RegisterCommand<ChangeServerPrefixCommand>(parser);
         RegisterCommand<ForceListParamsCommand>(parser);
+        RegisterCommand<FilterLikedAuthorsCommand>(parser);
     }
 
     template<typename T> QString GetRegexForCommandIfActive(){
@@ -49,6 +50,7 @@ namespace discord {
         list.push_back(GetRegexForCommandIfActive<RngCommand>());
         list.push_back(GetRegexForCommandIfActive<ChangeServerPrefixCommand>());
         list.push_back(GetRegexForCommandIfActive<ForceListParamsCommand>());
+        list.push_back(GetRegexForCommandIfActive<FilterLikedAuthorsCommand>());
         list.removeAll("");
         return list.join("|");
     }
@@ -90,5 +92,6 @@ namespace discord {
 
 
 }
+
 
 

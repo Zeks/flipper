@@ -147,6 +147,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class FilterLikedAuthorsCommand: public RecommendationsCommand{
+public:
+    FilterLikedAuthorsCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 class CommandParser{
 public:
