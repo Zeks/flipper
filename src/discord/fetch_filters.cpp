@@ -11,7 +11,13 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     filter.crossoversOnly = false;
     filter.showOriginsInLists = false;
     filter.recordLimit = size;
-    filter.sortMode = core::StoryFilter::sm_metascore;
+
+    if(user->GetSortFreshFirst()){
+        filter.listOpenMode = true;
+        filter.sortMode = core::StoryFilter::sm_publisdate;
+    }else
+        filter.sortMode = core::StoryFilter::sm_metascore;
+
     filter.reviewBias = core::StoryFilter::bias_none;
     filter.mode = core::StoryFilter::filtering_in_fics;
     //filter.mode = core::StoryFilter::filtering_in_recommendations;
@@ -24,6 +30,8 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     {
         if(userFics->sourceFics.contains(userFics->fics[i]))
             continue;
+        if(!user->GetStrictFreshSort()
+                || (user->GetStrictFreshSort() && userFics->matchCounts[i]>1))
         filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
     }
     userFics->ficToScore = filter.recsHash;

@@ -162,6 +162,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class ShowFreshRecsCommand: public RecommendationsCommand{
+public:
+    ShowFreshRecsCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 class CommandParser{
 public:

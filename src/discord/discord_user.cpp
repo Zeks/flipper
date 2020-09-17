@@ -364,6 +364,30 @@ void User::SetUseLikedAuthorsOnly(bool value)
     QWriteLocker locker(&lock);
     useLikedAuthorsOnly = value;
 }
+
+bool User::GetSortFreshFirst() const
+{
+    QReadLocker locker(&lock);
+    return sortFreshFirst;
+}
+
+void User::SetSortFreshFirst(bool value)
+{
+    QWriteLocker locker(&lock);
+    sortFreshFirst = value;
+}
+
+bool User::GetStrictFreshSort() const
+{
+    QReadLocker locker(&lock);
+    return strictFreshSort;
+}
+
+void User::SetStrictFreshSort(bool value)
+{
+    QWriteLocker locker(&lock);
+    strictFreshSort = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

@@ -257,6 +257,7 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i,
     QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("#c#"),"+").replace(QRegExp("#p#"),"=").replace(QRegExp("#b#"),"~");
     if(genre.isEmpty())
         genre = fic.genreString;
+
     embed.description += QString("\nGenre: `" + genre + "`").toStdString();
     if(addNewlines)
         embed.description += "\n\n";
@@ -584,6 +585,32 @@ QSharedPointer<SendMessageCommand> SetForceLikedAuthorsAction::ExecuteImpl(QShar
 }
 
 
+QSharedPointer<SendMessageCommand> ShowFreshRecommendationsAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
+    An<interfaces::Users> usersDbInterface;
+    bool strict = command.variantHash.contains("strict");
+    if(!command.user->GetSortFreshFirst() ||
+            (strict && command.user->GetSortFreshFirst() && !command.user->GetStrictFreshSort())){
+        usersDbInterface->WriteFreshSortingParams(command.user->UserID(), true, strict);
+        action->text = "Fresh sorting mode turned on, to disable use the same command again.";
+        if(command.user->GetSortFreshFirst())
+            action->text = "Enabling strict mode for fresh sort.";
+        command.user->SetSortFreshFirst(true);
+        command.user->SetStrictFreshSort(strict);
+    }
+    else{
+        usersDbInterface->WriteFreshSortingParams(command.user->UserID(), false, false);
+        command.user->SetSortFreshFirst(false);
+        command.user->SetStrictFreshSort(false);
+        action->text = "Disabling fresh sort.";
+    }
+    return action;
+}
+
+
+
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
     switch(type){
@@ -615,6 +642,8 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new SetForceLikedAuthorsAction());
     case Command::ECommandType::ct_show_favs:
         return QSharedPointer<ActionBase>(new ShowFullFavouritesAction());
+    case Command::ECommandType::ct_filter_fresh:
+        return QSharedPointer<ActionBase>(new ShowFreshRecommendationsAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

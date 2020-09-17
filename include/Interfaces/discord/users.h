@@ -48,6 +48,8 @@ public:
                       int min_match, int match_ratio, int always_at);
     bool WriteForcedListParams(QString user_id, int forceMinMatches, int forcedRatio);
     bool WriteForceLikedAuthors(QString user_id, bool);
+    bool WriteFreshSortingParams(QString user_id, bool, bool);
+
     bool DeleteUserList(QString user_id,
                    QString list_name);
     void IgnoreFandom(QString userId, int fandomId, bool ignoreCrosses);

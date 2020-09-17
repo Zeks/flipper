@@ -26,96 +26,28 @@ public:
     QSharedPointer<SendMessageCommand> action;
 };
 
+#define ACTION(X) class X : public ActionBase{ \
+public: \
+    X(){} \
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command); \
+}
 
-
-class HelpAction : public ActionBase{
-public:
-    HelpAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class RecsCreationAction : public ActionBase{
-public:
-    RecsCreationAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class DisplayPageAction : public ActionBase{
-public:
-    DisplayPageAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class DisplayRngAction : public ActionBase{
-public:
-    DisplayRngAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class SetFandomAction : public ActionBase{
-public:
-    SetFandomAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class IgnoreFandomAction : public ActionBase{
-public:
-    IgnoreFandomAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class IgnoreFicAction : public ActionBase{
-public:
-    IgnoreFicAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class TimeoutActiveAction : public ActionBase{
-public:
-    TimeoutActiveAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class NoUserInformationAction : public ActionBase{
-public:
-    NoUserInformationAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-class ChangePrefixAction : public ActionBase{
-public:
-    ChangePrefixAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class SetForcedListParamsAction : public ActionBase{
-public:
-    SetForcedListParamsAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class SetForceLikedAuthorsAction: public ActionBase{
-public:
-    SetForceLikedAuthorsAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class InsufficientPermissionsAction : public ActionBase{
-public:
-    InsufficientPermissionsAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class NullAction : public ActionBase{
-public:
-    NullAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
-
-class ShowFullFavouritesAction : public ActionBase{
-public:
-    ShowFullFavouritesAction(){}
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command);
-};
+ACTION(HelpAction);
+ACTION(RecsCreationAction);
+ACTION(DisplayPageAction);
+ACTION(DisplayRngAction);
+ACTION(SetFandomAction);
+ACTION(IgnoreFandomAction);
+ACTION(IgnoreFicAction);
+ACTION(TimeoutActiveAction);
+ACTION(NoUserInformationAction);
+ACTION(ChangePrefixAction);
+ACTION(SetForcedListParamsAction);
+ACTION(SetForceLikedAuthorsAction);
+ACTION(InsufficientPermissionsAction);
+ACTION(NullAction);
+ACTION(ShowFullFavouritesAction);
+ACTION(ShowFreshRecommendationsAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

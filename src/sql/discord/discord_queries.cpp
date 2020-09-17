@@ -59,6 +59,8 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetUuid(q.value("uuid").toString());
         user->SetForcedMinMatch(q.value("forced_min_matches").toInt());
         user->SetForcedRatio(q.value("forced_ratio").toInt());
+        user->SetSortFreshFirst(q.value("use_fresh_sorting").toInt());
+        user->SetStrictFreshSort(q.value("strict_fresh_sorting").toInt());
         ctx.result.data = user;
     });
     return ctx.result;
@@ -333,6 +335,14 @@ DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString user_i
 {
     QString qs = "update discord_users set use_liked_authors_only = :use_liked_authors_only where user_id = :user_id";
     SqlContext<bool> ctx(db, qs, BP2(user_id, use_liked_authors_only));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_id, bool use_fresh_sorting, bool strict_fresh_sorting)
+{
+    QString qs = "update discord_users set use_fresh_sorting = :use_fresh_sorting, strict_fresh_sorting = :strict_fresh_sorting where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP3(user_id, use_fresh_sorting, strict_fresh_sorting));
     ctx.ExecAndCheck(true);
     return ctx.result;
 }

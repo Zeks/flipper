@@ -18,6 +18,7 @@ namespace discord {
         RegisterCommand<ChangeServerPrefixCommand>(parser);
         RegisterCommand<ForceListParamsCommand>(parser);
         RegisterCommand<FilterLikedAuthorsCommand>(parser);
+        RegisterCommand<ShowFreshRecsCommand>(parser);
         // this command requires actually implementing full mobile parser
         // RegisterCommand<ShowFullFavouritesCommand>(parser);
     }

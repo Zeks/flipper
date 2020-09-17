@@ -112,6 +112,14 @@ struct TypeStringHolder<discord::ShowFullFavouritesCommand>{
 };
 
 
+template <>
+struct TypeStringHolder<discord::ShowFreshRecsCommand>{
+        static constexpr std::string_view name = "fresh";
+        static constexpr std::string_view prefixlessPattern = "?<fresh>fresh";
+        static constexpr std::string_view pattern = "fresh(?<strict>\\s>strict)";
+        static constexpr std::string_view help = "Will toggle sorting on published date to see fresh recommendations. Add >strict to display only recommendations with score>1";
+};
+
 
 
 

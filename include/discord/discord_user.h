@@ -88,8 +88,13 @@ struct User{
     bool GetUseLikedAuthorsOnly() const;
     void SetUseLikedAuthorsOnly(bool value);
 
-    bool isValid = false;
+    bool GetSortFreshFirst() const;
+    void SetSortFreshFirst(bool value);
 
+    bool GetStrictFreshSort() const;
+    void SetStrictFreshSort(bool value);
+
+    bool isValid = false;
 private:
     QString userID;
     QString userName;
@@ -101,6 +106,8 @@ private:
     bool readsSlash = false;
     bool hasUnfinishedRecRequest = false;
     bool useLikedAuthorsOnly = false;
+    bool sortFreshFirst = false;
+    bool strictFreshSort = false;
     int forcedMinMatch = 0;
     int forcedRatio = 0;
 

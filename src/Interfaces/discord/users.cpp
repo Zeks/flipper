@@ -68,6 +68,12 @@ bool Users::WriteForceLikedAuthors(QString user_id, bool forceLikedAuthors)
     return database::discord_queries::WriteForceLikedAuthors(dbToken->db, user_id, forceLikedAuthors).data;
 }
 
+bool Users::WriteFreshSortingParams(QString user_id, bool useFreshSorting, bool strictFreshSorting)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    return database::discord_queries::WriteFreshSortingParams(dbToken->db, user_id, useFreshSorting, strictFreshSorting).data;
+}
+
 bool Users::DeleteUserList(QString user_id, QString list_name)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");

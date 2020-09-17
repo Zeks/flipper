@@ -163,9 +163,18 @@ CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
     Command command;
     command.type = Command::ct_display_page;
     auto match = matchCommand<PageChangeCommand>(message.content);
-    command.ids.push_back(std::stoi(match.get<1>().to_string()));
     command.originalMessage = message;
-    result.Push(command);
+    if(match.get<1>().to_string().length() > 0)
+    {
+        command.ids.push_back(std::stoi(match.get<1>().to_string()));
+        result.Push(command);
+    }
+    else
+    {
+        command.ids.push_back(0);
+        result.Push(command);
+    }
+
     return result;
 }
 
@@ -618,6 +627,34 @@ CommandChain ShowFullFavouritesCommand::ProcessInputImpl(SleepyDiscord::Message 
 bool ShowFullFavouritesCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<ShowFullFavouritesCommand>::name;
+}
+
+ShowFreshRecsCommand::ShowFreshRecsCommand()
+{
+
+}
+
+CommandChain ShowFreshRecsCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_filter_fresh;
+    auto match = ctre::search<TypeStringHolder<ShowFreshRecsCommand>::pattern>(message.content);
+    auto strict = match.get<1>().to_string();
+    if(strict.length() > 0)
+        command.variantHash["strict"] = true;
+    result.Push(command);
+
+    Command displayRecs;
+    displayRecs.type = Command::ct_display_page;
+    displayRecs.ids.push_back(0);
+    displayRecs.originalMessage = message;
+    result.Push(displayRecs);
+    return result;
+}
+
+bool ShowFreshRecsCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ShowFreshRecsCommand>::name;
 }
 
 
