@@ -58,8 +58,8 @@ struct TypeStringHolder<discord::IgnoreFicCommand>{
         static constexpr std::string_view name = "xfic";
         static constexpr std::string_view prefixlessPattern = "?<xfic>xfic";
         static constexpr std::string_view pattern = "xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)";
-        static constexpr std::string_view patternAll = "xfic\\s{1,}(>all){1,}";
-        static constexpr std::string_view patternNum = "\\d{1,2}\\s?";
+        static constexpr std::string_view patternCommand = "xfic\\s{1,}(>all){1,}";
+        static constexpr std::string_view patternNum = "(?<silent>silent\\s){0,1}(?<ids>\\d{1,2}\\s?)";
         static constexpr std::string_view help = "\nFanfic commands:\n`!xfic X` will ignore a fic (you need input position in the last output), X Y Z to ignore multiple"
                                                  "\n`!xfic >all` will ignore the whole page";
                                                  //"\n`!xfic >reset` resets the fic ignores";

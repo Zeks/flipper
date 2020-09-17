@@ -498,6 +498,8 @@ QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<T
 
     auto ignoredFics = command.user->GetIgnoredFics();
     An<interfaces::Users> usersDbInterface;
+    QStringList ignoredIds;
+
     for(auto positionalId : ficIds){
         //need to get ffn id from positional id
         auto ficId = command.user->GetFicIDFromPositionId(positionalId);
@@ -506,6 +508,7 @@ QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<T
             {
                 ignoredFics.insert(ficId);
                 usersDbInterface->TagFanfic(command.user->UserID(), "ignored",  ficId);
+                ignoredIds.push_back(QString::number(positionalId));
             }
             else{
                 ignoredFics.remove(ficId);
@@ -514,7 +517,7 @@ QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<T
         }
     }
     command.user->SetIgnoredFics(ignoredFics);
-    action->emptyAction = true;
+    action->text = "Ignored fics: " + ignoredIds.join(" ");
     return action;
 }
 

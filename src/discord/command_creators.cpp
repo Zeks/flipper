@@ -301,23 +301,24 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command ignoredFics;
     ignoredFics.type = Command::ct_ignore_fics;
-    auto match = ctre::search<TypeStringHolder<IgnoreFicCommand>::patternAll>(message.content);
+    auto match = ctre::search<TypeStringHolder<IgnoreFicCommand>::patternCommand>(message.content);
     auto full = match.get<1>().to_string();
+    bool silent = false;
     if(full.length() > 0){
         ignoredFics.variantHash["everything"] = true;
         ignoredFics.ids.clear();
     }
     else{
         for(auto match : ctre::range<TypeStringHolder<IgnoreFicCommand>::patternNum>(message.content)){
-            auto result = match.get<0>().to_string();
-            if(result == ">all"){
-                ignoredFics.variantHash["everything"] = true;
-                ignoredFics.ids.clear();
-                break;
-            }
-            auto id = std::string(result);
-            if(id.length() != 0){
-                ignoredFics.ids.push_back(std::stoi(id));
+            auto silentStr = match.get<1>().to_string();
+            if(silentStr.length() != 0)
+                silent = true;
+            auto numbers = QString::fromStdString(match.get<2>().to_string()).split(" ");
+            for(auto number : numbers){
+                auto id = number.toInt();
+                if(number != 0){
+                    ignoredFics.ids.push_back(id);
+                }
             }
 
         }
@@ -325,7 +326,7 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
 
     ignoredFics.originalMessage = message;
     result.Push(ignoredFics);
-    if(ignoredFics.variantHash.size() > 0 || ignoredFics.ids.size() > 0)
+    if(!silent && (ignoredFics.variantHash.size() > 0 || ignoredFics.ids.size() > 0))
     {
         Command displayRecs;
         displayRecs.type = Command::ct_display_page;
