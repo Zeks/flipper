@@ -238,7 +238,8 @@ static std::string CreateMention(const std::string& string){
 }
 
 
-void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i){
+
+void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool addNewlines = true){
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
     QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
     auto fandomsList=fic.fandoms;
@@ -257,7 +258,8 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i)
     if(genre.isEmpty())
         genre = fic.genreString;
     embed.description += QString("\nGenre: `" + genre + "`").toStdString();
-    embed.description += "\n\n";
+    if(addNewlines)
+        embed.description += "\n\n";
     auto temp =  QString::fromStdString(embed.description);
     temp = temp.replace("````", "```");
     embed.description = temp.toStdString();
@@ -265,25 +267,7 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i)
 
 
 void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i){
-    QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
-    QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
-    auto fandomsList=fic.fandoms;
-    embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
-    embed.description += QString(" " + urlProto.arg(fic.title.replace("'", "\'")).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
-    embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\'") + "`").rightJustified(20, ' ').toStdString();
-
-    embed.description += "\nStatus:  ";
-    if(fic.complete)
-        embed.description += QString(" `Complete  `  ").toStdString();
-    else
-        embed.description += QString(" `Incomplete`").toStdString();
-    embed.description += QString(" Length: `" + fic.wordCount + "`").toStdString();
-    embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
-    QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("(c|b|p)#"),"").replace("#", "");
-    if(genre.isEmpty())
-        genre = fic.genreString;
-    genre= genre.replace("`", "");
-    embed.description += QString("\nGenre: `" + genre + "`").toStdString();
+    FillListEmbedForFic(embed, fic, i, false);
     embed.description += (QString("\n```") + fic.summary + QString("```")).toStdString();
     embed.description += "\n";
     auto temp =  QString::fromStdString(embed.description);
