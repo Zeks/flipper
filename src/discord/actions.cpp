@@ -259,7 +259,7 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i,
         int years = 0;
         int months = 0;
         int days = 0;
-        QDate beginDate= fic.published.date();
+        QDate beginDate= fic.updated.date();
         QDate endDate= QDateTime::currentDateTimeUtc().date();
         if(beginDate.daysTo(endDate) >= 0)
         {
