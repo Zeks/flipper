@@ -59,8 +59,9 @@ struct TypeStringHolder<discord::IgnoreFicCommand>{
         static constexpr std::string_view prefixlessPattern = "?<xfic>xfic";
         static constexpr std::string_view pattern = "xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)";
         static constexpr std::string_view patternCommand = "xfic\\s{1,}(>all){1,}";
-        static constexpr std::string_view patternNum = "(?<silent>silent\\s){0,1}(?<ids>\\d{1,2}\\s?)";
-        static constexpr std::string_view help = "\nFanfic commands:\n`!xfic X` will ignore a fic (you need input position in the last output), X Y Z to ignore multiple"
+        static constexpr std::string_view patternNum = "(?<silent>>silent\\s){0,1}(?<ids>\\d{1,2}\\s?)";
+        static constexpr std::string_view help = "\nFanfic commands:\n`!xfic X` will ignore a fic (you need input position in the last output), X Y Z to ignore multiple\n"
+                                                 "Add >silent if you don't want the bot to repost the list (xfic >silent 1 2 ...)"
                                                  "\n`!xfic >all` will ignore the whole page";
                                                  //"\n`!xfic >reset` resets the fic ignores";
 };
@@ -99,7 +100,7 @@ struct TypeStringHolder<discord::FilterLikedAuthorsCommand>{
         static constexpr std::string_view name = "liked";
         static constexpr std::string_view prefixlessPattern = "?<liked>liked";
         static constexpr std::string_view pattern = "liked";
-        static constexpr std::string_view help = "";
+        static constexpr std::string_view help = "\nLiked will enable a filter to show only fics from the authors whose fics you've liked in the list. Repeat to disable.";
 };
 
 template <>
