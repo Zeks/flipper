@@ -161,18 +161,6 @@ namespace discord {
         lastActive = value;
     }
 
-    const std::regex& Server::GetQuickCommandIdentifier() const
-    {
-        QReadLocker locker(&lock);
-        return commandIdentifier;
-    }
-
-    void Server::SetQuickCommandIdentifier(const std::regex& value)
-    {
-        QWriteLocker locker(&lock);
-        commandIdentifier = value;
-    }
-
     void Servers::AddServer(QSharedPointer<Server> server)
     {
         QWriteLocker locker(&lock);
@@ -201,9 +189,6 @@ namespace discord {
         auto server = database::discord_queries::GetServer(dbToken->db, server_id).data;
         if(!server)
             return false;
-        auto regex = GetSimpleCommandIdentifierPrefixless();
-        auto prefix = server->GetCommandPrefix();
-        server->SetQuickCommandIdentifier(std::regex((prefix + regex).toStdString()));
 
         servers[server_id] = server;
         return true;

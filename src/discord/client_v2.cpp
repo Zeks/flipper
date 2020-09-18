@@ -33,9 +33,7 @@ Client::Client(QObject *obj):QObject(obj), SleepyDiscord::DiscordClient()
 
 void Client::InitClient()
 {
-    auto regex = GetSimpleCommandIdentifierPrefixless();
     fictionalDMServer.reset(new discord::Server());
-    fictionalDMServer->SetQuickCommandIdentifier(std::regex((fictionalDMServer->GetCommandPrefix() + regex).toStdString()));
     discord::InitDefaultCommandSet(this->parser);
     std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
     for(auto server : sleepyServers){

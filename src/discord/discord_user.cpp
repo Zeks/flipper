@@ -388,6 +388,30 @@ void User::SetStrictFreshSort(bool value)
     QWriteLocker locker(&lock);
     strictFreshSort = value;
 }
+
+bool User::GetShowCompleteOnly() const
+{
+    QReadLocker locker(&lock);
+    return showCompleteOnly;
+}
+
+void User::SetShowCompleteOnly(bool value)
+{
+    QWriteLocker locker(&lock);
+    showCompleteOnly = value;
+}
+
+bool User::GetHideDead() const
+{
+    QReadLocker locker(&lock);
+    return hideDead;
+}
+
+void User::SetHideDead(bool value)
+{
+    QWriteLocker locker(&lock);
+    hideDead = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

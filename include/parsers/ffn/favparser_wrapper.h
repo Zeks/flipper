@@ -17,7 +17,7 @@ public:
     UserFavouritesParser(QObject* parent = nullptr);
     void Reset();
     bool FetchDesktopUserPage(QString userId);
-    bool FetchDesktopUserPage(QString userId, QSqlDatabase, bool useCache);
+    bool FetchDesktopUserPage(QString userId, QSqlDatabase, ECacheMode cacheMode = ECacheMode::dont_use_cache);
     QuickParseResult QuickParseAvailable();
     void FetchFavouritesFromDesktopPage();
     void FetchFavouritesFromMobilePage(int startBoundary = 26);

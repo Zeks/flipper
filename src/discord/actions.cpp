@@ -50,6 +50,8 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<RngCommand>();
     helpString +=  GetHelpForCommandIfActive<FilterLikedAuthorsCommand>();
     helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
+    helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
+    helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
@@ -57,7 +59,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     return action;
 }
 
-QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageCommand> action, bool useCache = true){
+QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageCommand> action, ECacheMode cacheMode = ECacheMode::use_only_cache){
     QSet<QString> userFavourites;
 
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("pageCache");
@@ -65,7 +67,7 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
     TimedAction linkGet("Link fetch", [&](){
         QString url = "https://www.fanfiction.net/u/" + ffnId;
         parsers::ffn::UserFavouritesParser parser;
-        auto result = parser.FetchDesktopUserPage(ffnId,dbToken->db, useCache);
+        auto result = parser.FetchDesktopUserPage(ffnId,dbToken->db, cacheMode);
         parsers::ffn::QuickParseResult quickResult;
         if(!result){
             action->errors.push_back("Could not load user page on FFN. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
@@ -128,7 +130,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     QSharedPointer<core::RecommendationList> listParams;
     QString error;
 
-    QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing);
+    QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing ? ECacheMode::dont_use_cache : ECacheMode::use_only_cache);
     auto recList = CreateRecommendationParams(ffnId);
     if(command.user->GetForcedMinMatch() != 0){
          recList->minimumMatch = command.user->GetForcedMinMatch();
@@ -379,6 +381,10 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
         embed.description += "\nLiked authors filter is active.";
     if(command.user->GetSortFreshFirst())
         embed.description += "\nFresh recommendations sorting is active.";
+    if(command.user->GetShowCompleteOnly())
+        embed.description += "\nOnly showing fics that are complete.";
+    if(command.user->GetHideDead())
+        embed.description += "\nOnly showing fics that are not dead.";
 }
 
 void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
@@ -476,7 +482,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     SleepyDiscord::Embed embed;
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
-
+    action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
 
     QHash<int, int> positionToId;
     int i = 0;
@@ -650,8 +656,6 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
     if(command.variantHash.contains("prefix")){
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
         command.server->SetCommandPrefix(command.variantHash["prefix"].toString().trimmed());
-        auto regex = GetSimpleCommandIdentifierPrefixless();
-        command.server->SetQuickCommandIdentifier(std::regex((command.server->GetCommandPrefix().trimmed() + regex).toStdString()));
         database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), command.server->GetCommandPrefix().trimmed());
         action->text = "Prefix has been changed";
     }
@@ -720,6 +724,42 @@ QSharedPointer<SendMessageCommand> ShowFreshRecommendationsAction::ExecuteImpl(Q
 
 
 
+QSharedPointer<SendMessageCommand> ShowCompleteAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
+    An<interfaces::Users> usersDbInterface;
+    auto user = command.user;
+    if(!user->GetShowCompleteOnly()){
+        usersDbInterface->SetCompleteFilter(command.user->UserID(), true);
+        user->SetShowCompleteOnly(true);
+    }
+    else{
+        usersDbInterface->SetCompleteFilter(command.user->UserID(), false);
+        user->SetShowCompleteOnly(false);
+    }
+    return action;
+}
+
+
+QSharedPointer<SendMessageCommand> HideDeadAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
+    An<interfaces::Users> usersDbInterface;
+    auto user = command.user;
+    if(!user->GetHideDead()){
+        usersDbInterface->SetHideDeadFilter(command.user->UserID(), true);
+        user->SetHideDead(true);
+    }
+    else{
+        usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
+        user->SetHideDead(false);
+    }
+    return action;
+}
+
+
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
     switch(type){
@@ -753,6 +793,10 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new ShowFullFavouritesAction());
     case Command::ECommandType::ct_filter_fresh:
         return QSharedPointer<ActionBase>(new ShowFreshRecommendationsAction());
+    case Command::ECommandType::ct_filter_complete:
+        return QSharedPointer<ActionBase>(new ShowCompleteAction());
+    case Command::ECommandType::ct_filter_out_dead:
+        return QSharedPointer<ActionBase>(new HideDeadAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

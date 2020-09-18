@@ -120,6 +120,24 @@ struct TypeStringHolder<discord::ShowFreshRecsCommand>{
         static constexpr std::string_view help = "`%1fresh` Will toggle sorting on published date to see fresh recommendations. Add >strict to display only recommendations with score>1";
 };
 
+template <>
+struct TypeStringHolder<discord::ShowCompletedCommand>{
+        static constexpr std::string_view name = "complete";
+        static constexpr std::string_view prefixlessPattern = "?<complete>complete";
+        static constexpr std::string_view pattern = "complete";
+        static constexpr std::string_view help = "`%1complete` Will filter out all incomplete fics.";
+};
+
+template <>
+struct TypeStringHolder<discord::HideDeadCommand>{
+        static constexpr std::string_view name = "dead";
+        static constexpr std::string_view prefixlessPattern = "?<dead>dead";
+        static constexpr std::string_view pattern = "dead";
+        static constexpr std::string_view help = "`%1dead` Will filter out all dead fics (not updated in a year)";
+};
+
+
+
 
 
 

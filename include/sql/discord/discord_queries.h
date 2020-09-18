@@ -38,6 +38,9 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id, int forceMinMatches, int forcedRatio);
     DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString , bool);
     DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_id, bool, bool);
+    DiagnosticSQLResult<bool> SetHideDeadFilter(QSqlDatabase db, QString , bool);
+    DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString , bool);
+
 
     DiagnosticSQLResult<bool> IgnoreFandom(QSqlDatabase db, QString user_id, int fandom_id, bool including_crossovers);
     DiagnosticSQLResult<bool> UnignoreFandom(QSqlDatabase db, QString userId, int fandomId);

@@ -57,6 +57,10 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
         filter.tagsAreUsedForAuthors = true;
         userData.ficIDsForActivetags = user->FicList()->sourceFics;
     }
+    if(user->GetShowCompleteOnly())
+        filter.ensureCompleted = true;
+    if(user->GetHideDead())
+        filter.ensureActive= true;
     QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
 

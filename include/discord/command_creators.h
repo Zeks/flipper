@@ -24,19 +24,11 @@ struct Command;
 template<typename T>
 struct CommandState{
     static bool active;
-    static QString help;
-    static QString regexCommandIdentifier;
-    static QString regexWithoutPrefix;
 };
 
 template<class T>
 bool CommandState<T>::active = false;
-template<class T>
-QString CommandState<T>::help;
-template<class T>
-QString CommandState<T>::regexCommandIdentifier;
-template<class T>
-QString CommandState<T>::regexWithoutPrefix;
+
 
 class CommandCreator{
 public:
@@ -165,6 +157,21 @@ public:
 class ShowFreshRecsCommand: public RecommendationsCommand{
 public:
     ShowFreshRecsCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+class ShowCompletedCommand: public RecommendationsCommand{
+public:
+    ShowCompletedCommand(){}
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+
+class HideDeadCommand: public RecommendationsCommand{
+public:
+    HideDeadCommand(){}
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
     virtual bool IsThisCommand(const std::string& cmd);
 };

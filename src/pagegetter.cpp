@@ -88,11 +88,12 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
     {
         result = GetPageFromDB(url);
-        if(result.isValid && result.generated > QDateTime::currentDateTime().addDays(-7))
+        if(result.isValid)
         {
-            result.isFromCache = true;
+            if(useCache == ECacheMode::use_only_cache || result.generated > QDateTime::currentDateTime().addDays(-7))
+                result.isFromCache = true;
         }
-        else if(useCache == ECacheMode::use_cache)
+        else
         {
             result = GetPageFromNetwork(url);
             qDebug() << "From network";

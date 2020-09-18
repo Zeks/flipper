@@ -64,16 +64,12 @@ struct Server{
     QDateTime GetLastActive() const;
     void SetLastActive(const QDateTime& value);
 
-    const std::regex& GetQuickCommandIdentifier() const;
-    void SetQuickCommandIdentifier(const std::regex& value);
-
     private:
     std::string serverId;
     QString serverName;
     QString ownerId;
     QString dedicatedChannelId;
     QString commandPrefix = "!";
-    std::regex commandIdentifier;
 
     bool isValid = false;
     bool banned = false;

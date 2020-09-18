@@ -347,6 +347,22 @@ DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_
     return ctx.result;
 }
 
+DiagnosticSQLResult<bool> SetHideDeadFilter(QSqlDatabase db, QString user_id, bool show_complete_only)
+{
+    QString qs = "update discord_users set show_complete_only = :show_complete_only where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP2(user_id, show_complete_only));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString user_id, bool hide_dead)
+{
+    QString qs = "update discord_users set hide_dead = :hide_dead where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP2(user_id, hide_dead));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 
 
 

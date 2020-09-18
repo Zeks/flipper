@@ -658,6 +658,46 @@ bool ShowFreshRecsCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<ShowFreshRecsCommand>::name;
 }
 
+CommandChain ShowCompletedCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_filter_complete;
+    command.originalMessage = message;
+    result.Push(command);
+
+    Command displayRecs;
+    displayRecs.type = Command::ct_display_page;
+    displayRecs.ids.push_back(0);
+    displayRecs.originalMessage = message;
+    result.Push(displayRecs);
+    return result;
+}
+
+bool ShowCompletedCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ShowCompletedCommand>::name;
+}
+
+CommandChain HideDeadCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_filter_out_dead;
+    command.originalMessage = message;
+    result.Push(command);
+
+    Command displayRecs;
+    displayRecs.type = Command::ct_display_page;
+    displayRecs.ids.push_back(0);
+    displayRecs.originalMessage = message;
+    result.Push(displayRecs);
+    return result;
+}
+
+bool HideDeadCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<HideDeadCommand>::name;
+}
+
 
 
 

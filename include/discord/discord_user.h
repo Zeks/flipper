@@ -94,7 +94,15 @@ struct User{
     bool GetStrictFreshSort() const;
     void SetStrictFreshSort(bool value);
 
+
+    bool GetShowCompleteOnly() const;
+    void SetShowCompleteOnly(bool value);
+
+    bool GetHideDead() const;
+    void SetHideDead(bool value);
+
     bool isValid = false;
+
 private:
     QString userID;
     QString userName;
@@ -107,6 +115,8 @@ private:
     bool hasUnfinishedRecRequest = false;
     bool useLikedAuthorsOnly = false;
     bool sortFreshFirst = false;
+    bool showCompleteOnly = false;
+    bool hideDead = false;
     bool strictFreshSort = false;
     int forcedMinMatch = 0;
     int forcedRatio = 0;

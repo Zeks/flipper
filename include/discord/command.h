@@ -43,7 +43,8 @@ struct Command{
         ct_filter_liked_authors = 20,
         ct_filter_fresh = 21,
         ct_filter_out_dead= 22,
-        ct_show_favs = 23,
+        ct_filter_complete = 23,
+        ct_show_favs = 24,
     };
     enum EOperandType{
         ot_unspecified = 0,

@@ -74,6 +74,18 @@ bool Users::WriteFreshSortingParams(QString user_id, bool useFreshSorting, bool 
     return database::discord_queries::WriteFreshSortingParams(dbToken->db, user_id, useFreshSorting, strictFreshSorting).data;
 }
 
+bool Users::SetHideDeadFilter(QString user_id, bool value)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    return database::discord_queries::SetHideDeadFilter(dbToken->db, user_id, value).data;
+}
+
+bool Users::SetCompleteFilter(QString user_id, bool value)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    return database::discord_queries::SetCompleteFilter(dbToken->db, user_id, value).data;
+}
+
 bool Users::DeleteUserList(QString user_id, QString list_name)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");

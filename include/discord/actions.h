@@ -48,6 +48,8 @@ ACTION(InsufficientPermissionsAction);
 ACTION(NullAction);
 ACTION(ShowFullFavouritesAction);
 ACTION(ShowFreshRecommendationsAction);
+ACTION(ShowCompleteAction);
+ACTION(HideDeadAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}
