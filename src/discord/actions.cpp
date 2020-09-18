@@ -239,82 +239,130 @@ static std::string CreateMention(const std::string& string){
     return "<@" + string + ">";
 }
 
-
-
-void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool addNewlines = true){
-    QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
-    QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
-    auto fandomsList=fic.fandoms;
-    embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
-    embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
-    embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
-    //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
-    embed.description += QString("\nLength: `" + fic.wordCount + "`").toStdString();
-    embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
-    embed.description += QString(" Status:  ").toHtmlEscaped().toStdString();
-    if(fic.complete)
-        embed.description += QString(" `Complete`  ").rightJustified(12).toStdString();
-    else
+auto ExtractAge(QDateTime toDate){
+    int years = 0;
+    int months = 0;
+    int days = 0;
+    QDate beginDate= toDate.date();
+    QDate endDate= QDateTime::currentDateTimeUtc().date();
+    if(beginDate.daysTo(endDate) >= 0)
     {
-        int years = 0;
-        int months = 0;
-        int days = 0;
-        QDate beginDate= fic.updated.date();
-        QDate endDate= QDateTime::currentDateTimeUtc().date();
-        if(beginDate.daysTo(endDate) >= 0)
+        years=endDate.year()-beginDate.year();
+        if((months=endDate.month()-beginDate.month())<0)
         {
-            years=endDate.year()-beginDate.year();
-            if((months=endDate.month()-beginDate.month())<0)
+            years--;
+            months+=12;
+        }
+        if((days=endDate.day()-beginDate.day())<0)
+        {
+            if(--months < 0)
             {
                 years--;
                 months+=12;
             }
-            if((days=endDate.day()-beginDate.day())<0)
-            {
-                if(--months < 0)
-                {
-                    years--;
-                    months+=12;
-                }
-                days+=beginDate.daysInMonth();
-            }
-          }
+            days+=beginDate.daysInMonth();
+        }
+      }
 
-        QStringList dates;
-        if(years > 0)
-            dates += QString::number(years) + "y";
-        if(months > 0)
-            dates += QString::number(months) + "m";
-        if(days > 0)
-            dates += QString::number(days) + "d";
+    QStringList dates;
+    if(years > 0)
+        dates += QString::number(years) + "y";
+    if(months > 0)
+        dates += QString::number(months) + "m";
+    if(days > 0)
+        dates += QString::number(days) + "d";
+    return dates;
+}
 
-        if(dates.size())
-            embed.description += (" `Incomplete: " + dates.join(" ") + "`").rightJustified(12).toStdString();
-        else
-            embed.description += QString(" `Incomplete`").rightJustified(12).toStdString();
-    }
+void  FillListEmbedForFicAsFields(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool addNewlines = true){
+    QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
+    QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
+    auto fandomsList=fic.fandoms;
+    SleepyDiscord::EmbedField field;
+    field.isInline = true;
+    field.name = QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
+    field.value += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
+    field.value += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
+    //field.value += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
+    //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
+    field.value += QString("Length: `" + fic.wordCount + "`").toStdString();
+    field.value += QString("\nScore: `" + QString::number(fic.score) + "`").toStdString();
+    //field.value += QString("n").toHtmlEscaped().toStdString();
     QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("#c#"),"+").replace(QRegExp("#p#"),"=").replace(QRegExp("#b#"),"~");
     if(genre.isEmpty())
         genre = fic.genreString;
 
-    embed.description += QString("\nGenre: `" + genre + "`").toStdString();
+    field.value  += QString("\nGenre: `" + genre + "`").toStdString();
+    if(fic.complete)
+        field.value  += QString("\nComplete").rightJustified(12).toStdString();
+    else
+    {
+        auto dates = ExtractAge(fic.updated);
+        if(dates.size())
+            field.value  += ("\nIncomplete: `" + dates.join(" ") + "`").rightJustified(12).toStdString();
+        else
+            field.value  += QString("\nIncomplete:`").rightJustified(12).toStdString();
+    }
+
     if(addNewlines)
-        embed.description += "\n\n";
-    auto temp =  QString::fromStdString(embed.description);
+        field.value  += "\n\n";
+    auto temp =  QString::fromStdString(field.value);
     temp = temp.replace("````", "```");
-    embed.description = temp.toStdString();
+    field.value  = temp.toStdString();
+    embed.fields.push_back(field);
 }
 
 
-void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i){
-    FillListEmbedForFic(embed, fic, i, false);
-    embed.description += (QString("\n```") + fic.summary + QString("```")).toStdString();
-    embed.description += "\n";
-    auto temp =  QString::fromStdString(embed.description);
-    temp = temp.replace("````", "```");
-    //temp = temp.replace("'", "\'");
-    embed.description = temp.toStdString();
+void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool addNewlines = true){
+    QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
+       QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";
+       auto fandomsList=fic.fandoms;
+       embed.description += QString("ID: " + QString::number(i)).rightJustified(2, ' ').toStdString();
+       embed.description += QString(" " + urlProto.arg(fic.title).arg(QString::number(fic.identity.web.GetPrimaryId()))+"\n").toStdString();
+       embed.description += QString("Fandom: `" + fandomsList.join(" & ").replace("'", "\\'") + "`").rightJustified(20, ' ').toStdString();
+       //embed.description += " by: "  + QString(" " + authorUrlProto.arg(fic.author).arg(QString::number(fic.author_id))+"\n").toStdString();
+       embed.description += QString("\nLength: `" + fic.wordCount + "`").toStdString();
+       embed.description += QString(" Score: `" + QString::number(fic.score) + "`").toStdString();
+       embed.description += QString(" Status:  ").toHtmlEscaped().toStdString();
+       if(fic.complete)
+           embed.description += QString(" `Complete`  ").rightJustified(12).toStdString();
+       else
+       {
+           auto dates = ExtractAge(fic.updated);
+           if(dates.size())
+               embed.description += (" `Incomplete: " + dates.join(" ") + "`").rightJustified(12).toStdString();
+           else
+               embed.description += QString(" `Incomplete`").rightJustified(12).toStdString();
+       }
+       QString genre = fic.statistics.realGenreString.split(",").join("/").replace(QRegExp("#c#"),"+").replace(QRegExp("#p#"),"=").replace(QRegExp("#b#"),"~");
+       if(genre.isEmpty())
+           genre = fic.genreString;
+
+       embed.description += QString("\nGenre: `" + genre + "`").toStdString();
+       if(addNewlines)
+           embed.description += "\n\n";
+       auto temp =  QString::fromStdString(embed.description);
+       temp = temp.replace("````", "```");
+       embed.description = temp.toStdString();
 }
+
+
+
+void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool asFields){
+    if(asFields)
+        FillListEmbedForFicAsFields(embed, fic, i);
+    else{
+        FillListEmbedForFic(embed, fic, i, false);
+        embed.description += (QString("\n```") + fic.summary + QString("```")).toStdString();
+        embed.description += "\n";
+        auto temp =  QString::fromStdString(embed.description);
+        temp = temp.replace("````", "```");
+        //temp = temp.replace("'", "\'");
+        embed.description = temp.toStdString();
+    }
+}
+
+
 
 
 void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
@@ -333,6 +381,26 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
         embed.description += "\nFresh recommendations sorting is active.";
 }
 
+void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
+    auto filter = command.user->GetCurrentFandomFilter();
+    SleepyDiscord::EmbedField field;
+    field.isInline = false;
+    field.name = "Active filters:";
+    if(filter.fandoms.size() > 0){
+        field.value += "\nDisplayed recommendations are for fandom filter:\n";
+        for(auto fandom: filter.fandoms)
+        {
+            if(fandom != -1)
+                field.value += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
+        }
+    }
+    if(command.user->GetUseLikedAuthorsOnly())
+        field.value += "\nLiked authors filter is active.";
+    if(command.user->GetSortFreshFirst())
+        field.value += "\nFresh recommendations sorting is active.";
+    embed.fields.push_back(field);
+}
+
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     QLOG_TRACE() << "Creating page results";
@@ -345,7 +413,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     QVector<core::Fanfic> fics;
     QLOG_TRACE() << "Fetching fics";
     environment->ficSource->ClearUserData();
-    FetchFicsForDisplayPageCommand(environment->ficSource, command.user, 10, &fics);
+    FetchFicsForDisplayPageCommand(environment->ficSource, command.user, 9, &fics);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
         fic.score = userFics->ficToScore[fic.identity.id];
@@ -357,7 +425,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
     action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
-    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2\n\n").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
+    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
+    FillActiveFilterPartInEmbed(embed, environment, command);
 
     QHash<int, int> positionToId;
     int i = 0;
@@ -365,9 +434,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     {
         positionToId[i+1] = fic.identity.id;
         i++;
-        FillListEmbedForFic(embed, fic, i);
+        FillListEmbedForFicAsFields(embed, fic, i);
     }
-    FillActiveFilterPartInEmbed(embed, environment, command);
 
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
@@ -416,7 +484,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     {
         positionToId[i+1] = fic.identity.id;
         i++;
-        FillDetailedEmbedForFic(embed, fic, i);
+        FillDetailedEmbedForFic(embed, fic, i,false);
     }
     FillActiveFilterPartInEmbed(embed, environment, command);
 
