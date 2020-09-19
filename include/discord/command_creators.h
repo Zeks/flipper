@@ -176,6 +176,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class PurgeCommand: public CommandCreator{
+public:
+    PurgeCommand(){}
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 class CommandParser{
 public:

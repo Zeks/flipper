@@ -53,6 +53,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
     helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
+    helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
     action->text = helpString.arg(command.server->GetCommandPrefix());
@@ -762,6 +763,21 @@ QSharedPointer<SendMessageCommand> HideDeadAction::ExecuteImpl(QSharedPointer<Ta
 }
 
 
+QSharedPointer<SendMessageCommand> PurgeAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
+    An<interfaces::Users> usersDbInterface;
+    auto user = command.user;
+    An<Users> users;
+    users->RemoveUserData(user);
+    usersDbInterface->CompletelyRemoveUser(user->UserID());
+    action->text = "Acknowledged: removing all your data from the database";
+    return action;
+}
+
+
+
 QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
 {
     switch(type){
@@ -799,6 +815,8 @@ QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
         return QSharedPointer<ActionBase>(new ShowCompleteAction());
     case Command::ECommandType::ct_filter_out_dead:
         return QSharedPointer<ActionBase>(new HideDeadAction());
+    case Command::ECommandType::ct_purge:
+        return QSharedPointer<ActionBase>(new PurgeAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

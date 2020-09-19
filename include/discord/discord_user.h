@@ -141,6 +141,7 @@ private:
 
 struct Users{
     void AddUser(QSharedPointer<User>);
+    void RemoveUserData(QSharedPointer<User>);
     bool HasUser(QString);
     QSharedPointer<User> GetUser(QString);
     bool LoadUser(QString user);

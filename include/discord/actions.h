@@ -50,6 +50,7 @@ ACTION(ShowFullFavouritesAction);
 ACTION(ShowFreshRecommendationsAction);
 ACTION(ShowCompleteAction);
 ACTION(HideDeadAction);
+ACTION(PurgeAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

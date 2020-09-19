@@ -136,6 +136,14 @@ struct TypeStringHolder<discord::HideDeadCommand>{
         static constexpr std::string_view help = "`%1dead` Will filter out all dead fics (not updated in a year)";
 };
 
+template <>
+struct TypeStringHolder<discord::PurgeCommand>{
+        static constexpr std::string_view name = "purge";
+        static constexpr std::string_view prefixlessPattern = "?<purge>purge";
+        static constexpr std::string_view pattern = "xxxpurge";
+        static constexpr std::string_view help = "`%1purge` will purge ALL your data from the bot.";
+};
+
 
 
 

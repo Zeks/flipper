@@ -164,6 +164,12 @@ void Users::FilterFandom(QString userId, int fandomId, bool allowCrossovers)
     database::discord_queries::FilterFandom(dbToken->db, userId, fandomId, allowCrossovers);
 }
 
+void Users::CompletelyRemoveUser(QString userId)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    database::discord_queries::CompletelyRemoveUser(dbToken->db, userId);
+}
+
 
 
 }

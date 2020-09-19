@@ -418,6 +418,12 @@ void Users::AddUser(QSharedPointer<User> user)
     users[user->UserID()] = user;
 }
 
+void Users::RemoveUserData(QSharedPointer<User> user)
+{
+    QWriteLocker locker(&lock);
+    users.remove(user->UserID());
+}
+
 bool Users::HasUser(QString user)
 {
     QReadLocker locker(&lock);

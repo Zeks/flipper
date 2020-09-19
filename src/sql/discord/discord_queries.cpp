@@ -363,6 +363,39 @@ DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString user_id, bo
     return ctx.result;
 }
 
+DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id)
+{
+    if(user_id.isEmpty()){
+        DiagnosticSQLResult<bool> falseResult;
+        return falseResult;
+    }
+    {
+        QString qs = "delete from discord_users where user_id = :user_id";
+        SqlContext<bool> ctx(db, qs, BP1(user_id));
+        ctx.ExecAndCheck(true);
+    }
+    {
+        QString qs = "delete from fic_tags where user_id = :user_id";
+        SqlContext<bool> ctx(db, qs, BP1(user_id));
+        ctx.ExecAndCheck(true);
+    }
+    {
+        QString qs = "delete from filtered_fandoms  where user_id = :user_id";
+        SqlContext<bool> ctx(db, qs, BP1(user_id));
+        ctx.ExecAndCheck(true);
+    }
+    {
+        QString qs = "delete from ignored_fandoms where user_id = :user_id";
+        SqlContext<bool> ctx(db, qs, BP1(user_id));
+        ctx.ExecAndCheck(true);
+    }
+
+    QString qs = "delete from user_lists where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP1(user_id));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 
 
 

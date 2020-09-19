@@ -45,6 +45,7 @@ struct Command{
         ct_filter_out_dead= 22,
         ct_filter_complete = 23,
         ct_show_favs = 24,
+        ct_purge = 25,
     };
     enum EOperandType{
         ot_unspecified = 0,

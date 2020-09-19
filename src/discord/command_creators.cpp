@@ -700,6 +700,20 @@ bool HideDeadCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<HideDeadCommand>::name;
 }
 
+CommandChain PurgeCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command;
+    command.type = Command::ct_purge;
+    command.originalMessage = message;
+    result.Push(command);
+    return result;
+}
+
+bool PurgeCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<PurgeCommand>::name;
+}
+
 
 
 

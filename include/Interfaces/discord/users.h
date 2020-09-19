@@ -66,6 +66,7 @@ public:
     void ResetFandomIgnores(QString userId);
     void ResetFicIgnores(QString userId);
     void FilterFandom(QString userId, int fandomId, bool allowCrossovers);
+    void CompletelyRemoveUser(QString userId);
 };
 
 }

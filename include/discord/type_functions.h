@@ -30,6 +30,7 @@ namespace discord {
                 TypeStringHolder<HideDeadCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<PurgeCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace>;
     }
 
