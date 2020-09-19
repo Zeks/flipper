@@ -645,9 +645,9 @@ QSharedPointer<SendMessageCommand> TimeoutActiveAction::ExecuteImpl(QSharedPoint
     return action;
 }
 
-QSharedPointer<SendMessageCommand> NoUserInformationAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+QSharedPointer<SendMessageCommand> NoUserInformationAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
-    action->text = "You need to call !recs FFN_ID first";
+    action->text = QString("You need to call %1recs FFN_ID first").arg(command.server->GetCommandPrefix());
     return action;
 }
 

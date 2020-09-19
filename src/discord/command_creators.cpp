@@ -83,6 +83,7 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
             Command createRecs;
             createRecs.type = Command::ct_no_user_ffn;
             createRecs.originalMessage = message;
+            createRecs.server = server;
             result.Push(createRecs);
             result.stopExecution = true;
             return result;
@@ -552,6 +553,7 @@ CommandChain ForceListParamsCommand::ProcessInputImpl(SleepyDiscord::Message mes
         Command createRecs;
         createRecs.type = Command::ct_no_user_ffn;
         createRecs.originalMessage = message;
+        createRecs.server = this->server;
         result.Push(createRecs);
         result.stopExecution = true;
         return result;
