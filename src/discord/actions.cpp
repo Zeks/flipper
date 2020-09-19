@@ -299,7 +299,8 @@ void  FillListEmbedForFicAsFields(SleepyDiscord::Embed& embed, core::Fanfic& fic
         field.value  += QString("\nComplete").rightJustified(12).toStdString();
     else
     {
-        auto dates = ExtractAge(fic.updated);
+        QDateTime date = fic.updated.isValid() && fic.updated.date().year() != 1970 ? fic.updated : fic.published;
+        auto dates = ExtractAge(date);
         if(dates.size())
             field.value  += ("\nIncomplete: `" + dates.join(" ") + "`").rightJustified(12).toStdString();
         else
@@ -330,7 +331,8 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i,
            embed.description += QString(" `Complete`  ").rightJustified(12).toStdString();
        else
        {
-           auto dates = ExtractAge(fic.updated);
+           QDateTime date = fic.updated.isValid() && fic.updated.date().year() != 1970 ? fic.updated : fic.published;
+           auto dates = ExtractAge(date);
            if(dates.size())
                embed.description += (" `Incomplete: " + dates.join(" ") + "`").rightJustified(12).toStdString();
            else
