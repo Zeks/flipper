@@ -70,19 +70,14 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
         parsers::ffn::UserFavouritesParser parser;
         auto result = parser.FetchDesktopUserPage(ffnId,dbToken->db, cacheMode);
         parsers::ffn::QuickParseResult quickResult;
+
         if(!result){
             action->errors.push_back("Could not load user page on FFN. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
-
-            if(action->errors.size() == 0)
-            {
-                quickResult = parser.QuickParseAvailable();
-                if(!quickResult.validFavouritesCount)
-                    action->errors.push_back("Could not read favourites from your FFN page. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
-            }
         }
         parser.cacheDbToUse = dbToken->db;
         if(action->errors.size() == 0)
         {
+            quickResult = parser.QuickParseAvailable();
             parser.FetchFavouritesFromDesktopPage();
             userFavourites = parser.result;
 
@@ -90,7 +85,12 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
             {
                 parser.FetchFavouritesFromMobilePage();
                 userFavourites = parser.result;
+                if(userFavourites.size() == 0)
+                {
+                    action->errors.push_back("Could not read favourites from your FFN page. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
+                }
             }
+
         }
     });
     linkGet.run();
