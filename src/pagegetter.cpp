@@ -78,7 +78,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     auto temp = GetPageFromDB(url);
     if(temp.isValid)
         QLOG_INFO() << "Version from cache was generated: " << temp.generated;
-    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
+    if(useCache != ECacheMode::dont_use_cache && autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
     {
         result = temp;
         qDebug() << "pickign cache version";
