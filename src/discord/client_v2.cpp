@@ -107,7 +107,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
 
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
 
-    QLOG_INFO() << QString::fromStdString(userID.string()) << " " << QString::fromStdString(channelID.string()) << " " << QString::fromStdString(messageID.string()) << " " << QString::fromStdString(emoji.name);
+    //QLOG_INFO() << QString::fromStdString(userID.string()) << " " << QString::fromStdString(channelID.string()) << " " << QString::fromStdString(messageID.string()) << " " << QString::fromStdString(emoji.name);
     An<Users> users;
     auto user = users->GetUser(QString::fromStdString(userID.string()));
     if(!user)

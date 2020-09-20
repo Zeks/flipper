@@ -131,7 +131,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     QSharedPointer<core::RecommendationList> listParams;
     QString error;
 
-    QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing ? ECacheMode::dont_use_cache : ECacheMode::use_only_cache);
+    QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache);
     auto recList = CreateRecommendationParams(ffnId);
     if(command.user->GetForcedMinMatch() != 0){
          recList->minimumMatch = command.user->GetForcedMinMatch();
