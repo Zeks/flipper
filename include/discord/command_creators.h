@@ -192,18 +192,20 @@ public:
     std::mutex lock;
 };
 
-
 class SendMessageCommand{
 public:
     static QSharedPointer<SendMessageCommand> Create() {return QSharedPointer<SendMessageCommand>(new SendMessageCommand);}
     void Invoke(discord::Client*);
     SleepyDiscord::Embed embed;
     QString text;
+    QStringList reactionsToAdd;
     QSharedPointer<User> user;
     SleepyDiscord::Message originalMessage;
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
     QStringList errors;
     bool emptyAction = false;
     bool stopChain = false;
 };
-
+CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message );
 }
+

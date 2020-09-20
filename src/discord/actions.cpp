@@ -458,8 +458,10 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     auto quality = command.variantHash["quality"].toString().trimmed();
+    if(quality.length() == 0)
+        quality = "all";
     QVector<core::Fanfic> fics;
-
+    command.user->SetLastUsedRoll(quality);
 
     QSet<int> filteringFicSet;
     int scoreCutoff = 1;
@@ -485,7 +487,10 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     SleepyDiscord::Embed embed;
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
-    action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+    if(command.targetMessage.string().length() == 0)
+        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+    else
+        action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
 
     QHash<int, int> positionToId;
     int i = 0;
@@ -499,6 +504,8 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
+    action->reactionsToAdd.push_back("%f0%9f%94%81");
+    action->targetMessage = command.targetMessage;
     QLOG_INFO() << "Created page results";
     return action;
 

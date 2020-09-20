@@ -67,6 +67,7 @@ struct Command{
     ResultingMessage result;
     std::function<ResultingMessage()> executor;
     QString textForPreExecution;
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
 };
 
 struct CommandChain{

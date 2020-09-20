@@ -103,6 +103,10 @@ struct User{
 
     bool isValid = false;
 
+
+    QString GetLastUsedRoll() const;
+    void SetLastUsedRoll(const QString &value);
+
 private:
     QString userID;
     QString userName;
@@ -120,6 +124,8 @@ private:
     bool strictFreshSort = false;
     int forcedMinMatch = 0;
     int forcedRatio = 0;
+
+    QString lastUsedRoll = "all";
 
     std::chrono::system_clock::time_point lastRecsQuery;
     std::chrono::system_clock::time_point lastEasyQuery;

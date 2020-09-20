@@ -34,6 +34,8 @@ public:
     void InitCommandExecutor();
     using SleepyDiscord::DiscordClient::DiscordClient;
     void onMessage(SleepyDiscord::Message message) override;
+    void onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji) override;
+
     void Log(const SleepyDiscord::Message);
 
     QSharedPointer<CommandParser> parser;
