@@ -412,6 +412,18 @@ void User::SetHideDead(bool value)
     QWriteLocker locker(&lock);
     hideDead = value;
 }
+
+QString User::GetLastUsedRoll() const
+{
+    QReadLocker locker(&lock);
+    return lastUsedRoll;
+}
+
+void User::SetLastUsedRoll(const QString &value)
+{
+    QWriteLocker locker(&lock);
+    lastUsedRoll = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

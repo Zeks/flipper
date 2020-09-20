@@ -440,19 +440,31 @@ void SendMessageCommand::Invoke(Client * client)
 {
 
     try{
-    if(embed.empty())
-    {
-        SleepyDiscord::Embed embed;
-        if(text.length() > 0)
-            client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
-    }
-    else
-        client->sendMessage(originalMessage.channelID, text.toStdString(), embed);
+        auto addReaction = [&](SleepyDiscord::ObjectResponse<SleepyDiscord::Message> newMessage){
+            for(auto reaction: reactionsToAdd)
+                client->addReaction(originalMessage.channelID, newMessage.cast().ID, reaction.toStdString());
+        };
+        if(targetMessage.string().length() == 0){
+            if(embed.empty())
+            {
+                SleepyDiscord::Embed embed;
+                if(text.length() > 0)
+                {
+                    addReaction(client->sendMessage(originalMessage.channelID, text.toStdString(), embed));
+                }
+            }
+            else
+                addReaction(client->sendMessage(originalMessage.channelID, text.toStdString(), embed));
+        }
+        else{
+            client->editMessage(originalMessage.channelID, targetMessage, text.toStdString(), embed);
+        }
     }
     catch (const SleepyDiscord::ErrorCode& error){
         QLOG_INFO() << error;
         QLOG_INFO() << QString::fromStdString(this->embed.description);
     }
+
 }
 
 RngCommand::RngCommand()
@@ -715,7 +727,21 @@ bool PurgeCommand::IsThisCommand(const std::string &cmd)
 }
 
 
+CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server> server, SleepyDiscord::Message message){
+    CommandChain result;
+    Command command;
+    command.type = Command::ct_display_rng;
+    command.variantHash["quality"] = user->GetLastUsedRoll();
+    command.originalMessage = message;
+    command.targetMessage = message;
+    command.user = user;
+    command.server = server;
+    result.Push(command);
+    return result;
+}
+
 
 
 }
+
 

@@ -105,6 +105,31 @@ void Client::onMessage(SleepyDiscord::Message message) {
     executor->Push(commands);
 }
 
+void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
+
+    QLOG_INFO() << QString::fromStdString(userID.string()) << " " << QString::fromStdString(channelID.string()) << " " << QString::fromStdString(messageID.string()) << " " << QString::fromStdString(emoji.name);
+    An<Users> users;
+    auto user = users->GetUser(QString::fromStdString(userID.string()));
+    if(!user)
+        return;
+
+    auto message = getMessage(channelID, messageID);
+    QSharedPointer<discord::Server> server;
+    auto channel = getChannel(channelID);
+    if(channel.cast().type != SleepyDiscord::Channel::DM){
+        server = InitDiscordServerIfNecessary(channel.cast().serverID);
+    }
+    else
+        server = fictionalDMServer;
+
+
+    if(emoji.name == "🔁" && QString::fromStdString(message.cast().content).contains(QString::fromStdString(userID.string())))
+    {
+        auto newRoll = CreateRollCommand(user,server, message);
+        executor->Push(newRoll);
+    }
+}
+
 void Client::Log(const SleepyDiscord::Message message)
 {
     QLOG_INFO() << " " << message.channelID.number() << " " << QString::fromStdString(message.author.username) << QString::number(message.author.ID.number()) << " " << QString::fromStdString(message.content);
