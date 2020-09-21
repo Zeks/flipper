@@ -433,7 +433,11 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
-    action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+    //action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+    if(command.targetMessage.string().length() == 0)
+        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+    else
+        action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
     FillActiveFilterPartInEmbed(embed, environment, command);
 
@@ -451,6 +455,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     action->embed = embed;
     action->reactionsToAdd.push_back("%f0%9f%91%88");
     action->reactionsToAdd.push_back("%f0%9f%91%89");
+    action->targetMessage = command.targetMessage;
     environment->ficSource->ClearUserData();
     QLOG_INFO() << "Created page results";
     return action;

@@ -27,6 +27,8 @@ static std::string CreateMention(const std::string& string){
 void CommandController::Push(CommandChain chain)
 {
     std::lock_guard<std::mutex> guard(lock);
+    if(chain.commands.size() == 0 )
+        return;
     const auto& message = chain.commands.first().originalMessage;
     auto userId = QString::fromStdString(message.author.ID.string());
     if(activeUsers.contains(userId))

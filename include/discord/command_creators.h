@@ -207,5 +207,6 @@ public:
     bool stopChain = false;
 };
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message );
+CommandChain CreateChangePageCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message , bool shiftRight = true);
 }
 

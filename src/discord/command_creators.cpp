@@ -740,6 +740,26 @@ CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server>
     return result;
 }
 
+CommandChain CreateChangePageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, SleepyDiscord::Message message,bool shiftRight)
+{
+    CommandChain result;
+    Command command;
+    command.type = Command::ct_display_page;
+    if(shiftRight)
+        command.ids.push_back(user->CurrentPage() + 1);
+    else if(user->CurrentPage() != 0)
+        command.ids.push_back(user->CurrentPage() - 1);
+    else
+        return result;
+
+    command.originalMessage = message;
+    command.targetMessage = message;
+    command.user = user;
+    command.server = server;
+    result.Push(command);
+    return result;
+}
+
 
 
 }

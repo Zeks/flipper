@@ -123,10 +123,21 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         server = fictionalDMServer;
 
 
-    if(emoji.name == "🔁" && QString::fromStdString(message.cast().content).contains(QString::fromStdString(userID.string())))
-    {
-        auto newRoll = CreateRollCommand(user,server, message);
-        executor->Push(newRoll);
+    bool isOriginalUser = QString::fromStdString(message.cast().content).contains(QString::fromStdString(userID.string()));
+    if(isOriginalUser){
+        if(emoji.name == "🔁")
+        {
+            auto newRoll = CreateRollCommand(user,server, message);
+            executor->Push(newRoll);
+        }
+        if(emoji.name == "👈"){
+            auto changePage = CreateChangePageCommand(user,server, message, false);
+            executor->Push(changePage);
+        }
+        if(emoji.name == "👉"){
+            auto changePage = CreateChangePageCommand(user,server, message, true);
+            executor->Push(changePage);
+        }
     }
 }
 
