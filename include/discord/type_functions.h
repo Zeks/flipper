@@ -9,7 +9,7 @@ namespace str {
     static constexpr std::string_view separator = ")|(";
     static constexpr std::string_view leftBrace= "(";
     static constexpr std::string_view rightBrace = ")";
-    static constexpr std::string_view stringStart = "^";
+    static constexpr std::string_view stringStart = "^(";
 }
 
 namespace discord {
@@ -31,7 +31,7 @@ namespace discord {
                 TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<PurgeCommand>::prefixlessPattern, str::separator,
-                TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace>;
+                TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace, str::rightBrace>;
     }
 
 template<typename T>

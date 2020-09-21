@@ -293,6 +293,7 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message messag
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
+    displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.originalMessage = message;
     result.Push(displayRecs);
     return result;
@@ -341,6 +342,7 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
         Command displayRecs;
         displayRecs.type = Command::ct_display_page;
         displayRecs.ids.push_back(0);
+        displayRecs.variantHash["refresh_previous"] = true;
         displayRecs.originalMessage = message;
         result.Push(displayRecs);
 
@@ -440,9 +442,9 @@ void SendMessageCommand::Invoke(Client * client)
 {
 
     try{
-        auto addReaction = [&](SleepyDiscord::ObjectResponse<SleepyDiscord::Message> newMessage){
+        auto addReaction = [&](const SleepyDiscord::Message& newMessage){
             for(auto reaction: reactionsToAdd)
-                client->addReaction(originalMessage.channelID, newMessage.cast().ID, reaction.toStdString());
+                client->addReaction(originalMessage.channelID, newMessage.ID, reaction.toStdString());
         };
         if(targetMessage.string().length() == 0){
             if(embed.empty())
@@ -450,15 +452,22 @@ void SendMessageCommand::Invoke(Client * client)
                 SleepyDiscord::Embed embed;
                 if(text.length() > 0)
                 {
-                    addReaction(client->sendMessage(originalMessage.channelID, text.toStdString(), embed));
+                    auto resultingMessage = client->sendMessage(originalMessage.channelID, text.toStdString(), embed).cast();
+                    addReaction(resultingMessage);
                 }
             }
-            else
-                addReaction(client->sendMessage(originalMessage.channelID, text.toStdString(), embed));
+            else{
+                auto resultingMessage = client->sendMessage(originalMessage.channelID, text.toStdString(), embed).cast();
+                if(originalCommandType == Command::ct_display_page)
+                    this->user->SetLastPageMessage(resultingMessage);
+                addReaction(resultingMessage);
+            }
         }
         else{
             client->editMessage(originalMessage.channelID, targetMessage, text.toStdString(), embed);
         }
+        if(!diagnosticText.isEmpty())
+            client->sendMessage(originalMessage.channelID, diagnosticText.toStdString());
     }
     catch (const SleepyDiscord::ErrorCode& error){
         QLOG_INFO() << error;

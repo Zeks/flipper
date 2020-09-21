@@ -14,6 +14,14 @@
 
 #include "GlobalHeaders/SingletonHolder.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#include "sleepy_discord/message.h"
+#pragma GCC diagnostic pop
+
+
 namespace interfaces{
 class Users;
 }
@@ -101,11 +109,15 @@ struct User{
     bool GetHideDead() const;
     void SetHideDead(bool value);
 
-    bool isValid = false;
 
 
     QString GetLastUsedRoll() const;
     void SetLastUsedRoll(const QString &value);
+
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastPageMessage() const;
+    void SetLastPageMessage(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
+
+    bool isValid = false;
 
 private:
     QString userID;
@@ -141,6 +153,7 @@ private:
     FandomFilter filteredFandoms;
     FandomFilter ignoredFandoms;
     QHash<int, int> positionToId;
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastPageMessage;
     mutable QReadWriteLock lock;
 };
 

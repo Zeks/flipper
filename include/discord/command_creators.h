@@ -198,10 +198,12 @@ public:
     void Invoke(discord::Client*);
     SleepyDiscord::Embed embed;
     QString text;
+    QString diagnosticText;
     QStringList reactionsToAdd;
     QSharedPointer<User> user;
     SleepyDiscord::Message originalMessage;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
+    Command::ECommandType originalCommandType = Command::ct_none;
     QStringList errors;
     bool emptyAction = false;
     bool stopChain = false;

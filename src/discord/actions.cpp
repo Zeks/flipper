@@ -22,6 +22,7 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     action = SendMessageCommand::Create();
     action->originalMessage = command.originalMessage;
     action->user = command.user;
+    action->originalCommandType = command.type;
     if(command.type != Command::ECommandType::ct_timeout_active)
         command.user->initNewEasyQuery();
     environment->ficSource->SetUserToken(command.user->GetUuid());
@@ -433,11 +434,22 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
-    //action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
-    if(command.targetMessage.string().length() == 0)
+    auto editPreviousPageIfPossible = command.variantHash["refresh_previous"].toBool();
+
+    if(command.targetMessage.string().length() == 0){
         action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
-    else
-        action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
+    }
+    else{
+        auto previousPage = command.user->GetLastPageMessage();
+        if(editPreviousPageIfPossible && previousPage.string().length() > 0)
+        {
+            action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
+            action->diagnosticText = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", done. Updating your previous results with new data." );
+            action->targetMessage = previousPage;
+        }
+        else
+            action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
+    }
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
     FillActiveFilterPartInEmbed(embed, environment, command);
 
@@ -450,12 +462,12 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         FillListEmbedForFicAsFields(embed, fic, i);
     }
 
-
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
     action->reactionsToAdd.push_back("%f0%9f%91%88");
     action->reactionsToAdd.push_back("%f0%9f%91%89");
-    action->targetMessage = command.targetMessage;
+    if(command.targetMessage.string().length() > 0)
+        action->targetMessage = command.targetMessage;
     environment->ficSource->ClearUserData();
     QLOG_INFO() << "Created page results";
     return action;

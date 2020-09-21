@@ -424,6 +424,18 @@ void User::SetLastUsedRoll(const QString &value)
     QWriteLocker locker(&lock);
     lastUsedRoll = value;
 }
+
+SleepyDiscord::Snowflake<SleepyDiscord::Message> User::GetLastPageMessage() const
+{
+    QReadLocker locker(&lock);
+    return lastPageMessage;
+}
+
+void User::SetLastPageMessage(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value)
+{
+    QWriteLocker locker(&lock);
+    lastPageMessage = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

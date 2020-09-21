@@ -93,7 +93,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(sv.substr(0, server->GetCommandPrefix().length()) != server->GetCommandPrefix().toStdString())
         return;
     sv.remove_prefix(server->GetCommandPrefix().length());
-
+    qDebug() << QString::fromStdString(std::string(pattern));
     auto result = ctre::search<pattern>(sv);;
     if(!message.content.size() || (message.content.size() && !result.matched()))
         return;
@@ -115,9 +115,9 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
     auto message = getMessage(channelID, messageID);
     QSharedPointer<discord::Server> server;
-    auto channel = getChannel(channelID);
-    if(channel.cast().type != SleepyDiscord::Channel::DM){
-        server = InitDiscordServerIfNecessary(channel.cast().serverID);
+    auto channel = getChannel(channelID).cast();
+    if(channel.type != SleepyDiscord::Channel::DM){
+        server = InitDiscordServerIfNecessary(channel.serverID);
     }
     else
         server = fictionalDMServer;
