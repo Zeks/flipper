@@ -383,6 +383,9 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
                 result += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n");
         }
     }
+
+    if(command.user->GetLastPageType() == ct_display_rng)
+        result += QString("\nRolling in range: %1.").arg(command.user->GetLastUsedRoll());
     if(command.user->GetUseLikedAuthorsOnly())
         result += "\nLiked authors filter is active.";
     if(command.user->GetSortFreshFirst())
@@ -429,6 +432,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     QLOG_TRACE() << "Fetching fics";
     environment->ficSource->ClearUserData();
     FetchFicsForDisplayPageCommand(environment->ficSource, command.user, 9, &fics);
+    int pageCount = FetchPageCountForFilterCommand(environment->ficSource, command.user, 9);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
         fic.score = userFics->ficToScore[fic.identity.id];
@@ -456,7 +460,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
             action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
         //        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     }
-    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
+
+    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3").arg(command.user->FfnID()).arg(command.user->CurrentPage()).arg(QString::number(pageCount)).toStdString();
     FillActiveFilterPartInEmbed(embed, environment, command);
 
     QHash<int, int> positionToId;
@@ -538,10 +543,10 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         i++;
         FillDetailedEmbedForFic(embed, fic, i,false);
     }
-    FillActiveFilterPartInEmbed(embed, environment, command);
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     command.user->SetLastPageType(ct_display_rng);
+    FillActiveFilterPartInEmbed(embed, environment, command);
 
     action->embed = embed;
     action->reactionsToAdd.push_back("%f0%9f%94%81");

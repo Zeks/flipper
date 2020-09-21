@@ -12,6 +12,10 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
                                     int size,
                                     QVector<core::Fanfic>* fics);
 
+int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source,
+                                    QSharedPointer<discord::User> user,
+                                    int size);
+
 void FetchFicsForDisplayRngCommand(int size,
                                    QSharedPointer<FicSourceGRPC> source,
                                    QSharedPointer<discord::User> user,
