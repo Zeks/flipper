@@ -30,6 +30,8 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
         where += bind.key + bind.value.toString().left(30);
     where += "Minrecs: " + QString::number(filter.minRecommendations);
     where += "Rated: " + QString::number(filter.rating);
+    where += "Complete: " + QString::number(filter.ensureCompleted);
+    where += "Dead: " + QString::number(filter.allowUnfinished);
     where += "Active tags: " + filter.activeTags.join(",");
     where += "Displaying purged:" + QString::number(filter.displayPurgedFics);
     where += "Disambiguator: " + filter.rngDisambiguator;

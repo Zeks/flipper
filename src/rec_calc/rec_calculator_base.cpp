@@ -294,7 +294,7 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
 
             int count = 0;
             bool inIgnored = false;
-            if(params->ficData.sourceFics.contains(fic->id))
+            if(params->ficData->sourceFics.contains(fic->id))
                 continue;
 
             if(params->ignoredDeadFics.contains(fic->id) && !params->majorNegativeVotes.contains(fic->id))
