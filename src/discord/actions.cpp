@@ -449,6 +449,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
     action->embed = embed;
+    action->reactionsToAdd.push_back("%f0%9f%91%88");
+    action->reactionsToAdd.push_back("%f0%9f%91%89");
     environment->ficSource->ClearUserData();
     QLOG_INFO() << "Created page results";
     return action;
@@ -843,6 +845,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 
