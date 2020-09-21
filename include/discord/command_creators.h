@@ -203,7 +203,7 @@ public:
     QSharedPointer<User> user;
     SleepyDiscord::Message originalMessage;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
-    Command::ECommandType originalCommandType = Command::ct_none;
+    ECommandType originalCommandType = ct_none;
     QStringList errors;
     bool emptyAction = false;
     bool stopChain = false;

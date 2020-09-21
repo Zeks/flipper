@@ -436,6 +436,18 @@ void User::SetLastPageMessage(const SleepyDiscord::Snowflake<SleepyDiscord::Mess
     QWriteLocker locker(&lock);
     lastPageMessage = value;
 }
+
+ECommandType User::GetLastPageType() const
+{
+    QReadLocker locker(&lock);
+    return lastPageType;
+}
+
+void User::SetLastPageType(const ECommandType &value)
+{
+    QWriteLocker locker(&lock);
+    lastPageType = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

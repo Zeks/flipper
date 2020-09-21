@@ -65,7 +65,7 @@ struct ActionChain{
     bool performedParseCommand = false;
 };
 
-QSharedPointer<ActionBase> GetAction(Command::ECommandType);
+QSharedPointer<ActionBase> GetAction(ECommandType);
 
 
 }

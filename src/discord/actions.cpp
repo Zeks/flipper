@@ -23,7 +23,7 @@ QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnviro
     action->originalMessage = command.originalMessage;
     action->user = command.user;
     action->originalCommandType = command.type;
-    if(command.type != Command::ECommandType::ct_timeout_active)
+    if(command.type != ECommandType::ct_timeout_active)
         command.user->initNewEasyQuery();
     environment->ficSource->SetUserToken(command.user->GetUuid());
     return ExecuteImpl(environment, command);
@@ -469,6 +469,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     }
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
+    command.user->SetLastPageType(ct_display_page);
     action->embed = embed;
     action->reactionsToAdd.push_back("%f0%9f%91%88");
     action->reactionsToAdd.push_back("%f0%9f%91%89");
@@ -484,7 +485,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 {
     auto quality = command.variantHash["quality"].toString().trimmed();
     if(quality.length() == 0)
-        quality = "all";
+        quality = command.user->GetLastUsedRoll().isEmpty() ? "all " : command.user->GetLastUsedRoll();
     QVector<core::Fanfic> fics;
     command.user->SetLastUsedRoll(quality);
 
@@ -512,10 +513,22 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     SleepyDiscord::Embed embed;
     QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
-    if(command.targetMessage.string().length() == 0)
-        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
-    else
+    auto editPreviousPageIfPossible = command.variantHash["refresh_previous"].toBool();
+    if(command.targetMessage.string().length() != 0)
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
+    else {
+        auto previousPage = command.user->GetLastPageMessage();
+        if(editPreviousPageIfPossible && previousPage.string().length() > 0)
+        {
+            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+            action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", your previous results have been updated with new data." );
+            action->targetMessage = previousPage;
+        }
+        else
+            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+    }
+
+
 
     QHash<int, int> positionToId;
     int i = 0;
@@ -528,9 +541,12 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     FillActiveFilterPartInEmbed(embed, environment, command);
 
     command.user->SetPositionsToIdsForCurrentPage(positionToId);
+    command.user->SetLastPageType(ct_display_rng);
+
     action->embed = embed;
     action->reactionsToAdd.push_back("%f0%9f%94%81");
-    action->targetMessage = command.targetMessage;
+    if(command.targetMessage.string().length() > 0)
+        action->targetMessage = command.targetMessage;
     QLOG_INFO() << "Created page results";
     return action;
 
@@ -810,44 +826,44 @@ QSharedPointer<SendMessageCommand> PurgeAction::ExecuteImpl(QSharedPointer<TaskE
 
 
 
-QSharedPointer<ActionBase> GetAction(Command::ECommandType type)
+QSharedPointer<ActionBase> GetAction(ECommandType type)
 {
     switch(type){
-    case Command::ECommandType::ct_ignore_fics:
+    case ECommandType::ct_ignore_fics:
         return QSharedPointer<ActionBase>(new IgnoreFicAction());
-    case Command::ECommandType::ct_ignore_fandoms:
+    case ECommandType::ct_ignore_fandoms:
         return QSharedPointer<ActionBase>(new IgnoreFandomAction());
-    case Command::ECommandType::ct_set_fandoms:
+    case ECommandType::ct_set_fandoms:
         return QSharedPointer<ActionBase>(new SetFandomAction());
-    case Command::ECommandType::ct_display_help:
+    case ECommandType::ct_display_help:
         return QSharedPointer<ActionBase>(new HelpAction());
-    case Command::ECommandType::ct_display_page:
+    case ECommandType::ct_display_page:
         return QSharedPointer<ActionBase>(new DisplayPageAction());
-    case Command::ECommandType::ct_timeout_active:
+    case ECommandType::ct_timeout_active:
         return QSharedPointer<ActionBase>(new TimeoutActiveAction());
-    case Command::ECommandType::ct_fill_recommendations:
+    case ECommandType::ct_fill_recommendations:
         return QSharedPointer<ActionBase>(new RecsCreationAction());
-    case Command::ECommandType::ct_no_user_ffn:
+    case ECommandType::ct_no_user_ffn:
         return QSharedPointer<ActionBase>(new NoUserInformationAction());
-    case Command::ECommandType::ct_display_rng:
+    case ECommandType::ct_display_rng:
         return QSharedPointer<ActionBase>(new DisplayRngAction());
-    case Command::ECommandType::ct_change_server_prefix:
+    case ECommandType::ct_change_server_prefix:
         return QSharedPointer<ActionBase>(new ChangePrefixAction());
-    case Command::ECommandType::ct_insufficient_permissions:
+    case ECommandType::ct_insufficient_permissions:
         return QSharedPointer<ActionBase>(new InsufficientPermissionsAction());
-    case Command::ECommandType::ct_force_list_params:
+    case ECommandType::ct_force_list_params:
         return QSharedPointer<ActionBase>(new SetForcedListParamsAction());
-    case Command::ECommandType::ct_filter_liked_authors:
+    case ECommandType::ct_filter_liked_authors:
         return QSharedPointer<ActionBase>(new SetForceLikedAuthorsAction());
-    case Command::ECommandType::ct_show_favs:
+    case ECommandType::ct_show_favs:
         return QSharedPointer<ActionBase>(new ShowFullFavouritesAction());
-    case Command::ECommandType::ct_filter_fresh:
+    case ECommandType::ct_filter_fresh:
         return QSharedPointer<ActionBase>(new ShowFreshRecommendationsAction());
-    case Command::ECommandType::ct_filter_complete:
+    case ECommandType::ct_filter_complete:
         return QSharedPointer<ActionBase>(new ShowCompleteAction());
-    case Command::ECommandType::ct_filter_out_dead:
+    case ECommandType::ct_filter_out_dead:
         return QSharedPointer<ActionBase>(new HideDeadAction());
-    case Command::ECommandType::ct_purge:
+    case ECommandType::ct_purge:
         return QSharedPointer<ActionBase>(new PurgeAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());

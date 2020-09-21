@@ -11,6 +11,7 @@
 #include <chrono>
 #include "core/section.h"
 #include "discord/fandom_filter_token.h"
+#include "discord/command_types.h"
 
 #include "GlobalHeaders/SingletonHolder.h"
 
@@ -117,6 +118,9 @@ struct User{
     SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastPageMessage() const;
     void SetLastPageMessage(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
 
+    ECommandType GetLastPageType() const;
+    void SetLastPageType(const ECommandType &value);
+
     bool isValid = false;
 
 private:
@@ -153,6 +157,7 @@ private:
     FandomFilter filteredFandoms;
     FandomFilter ignoredFandoms;
     QHash<int, int> positionToId;
+    ECommandType lastPageType = ct_display_page;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> lastPageMessage;
     mutable QReadWriteLock lock;
 };
