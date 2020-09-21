@@ -374,22 +374,26 @@ void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, in
 
 void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
     auto filter = command.user->GetCurrentFandomFilter();
+    QString result;
     if(filter.fandoms.size() > 0){
-        embed.description += "\nDisplayed recommendations are for fandom filter:\n";
+        result += "\nDisplayed recommendations are for fandom filter:\n";
         for(auto fandom: filter.fandoms)
         {
             if(fandom != -1)
-                embed.description += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n").toStdString();
+                result += ( " - " + environment->fandoms->GetNameForID(fandom) + "\n");
         }
     }
     if(command.user->GetUseLikedAuthorsOnly())
-        embed.description += "\nLiked authors filter is active.";
+        result += "\nLiked authors filter is active.";
     if(command.user->GetSortFreshFirst())
-        embed.description += "\nFresh recommendations sorting is active.";
+        result += "\nFresh recommendations sorting is active.";
     if(command.user->GetShowCompleteOnly())
-        embed.description += "\nOnly showing fics that are complete.";
+        result += "\nOnly showing fics that are complete.";
     if(command.user->GetHideDead())
-        embed.description += "\nOnly showing fics that are not dead.";
+        result += "\nOnly showing fics that are not dead.";
+    if(!result.isEmpty())
+        result += "\nTo disable any active filters, repeat the command that activates them.";
+    embed.description += result.toStdString();
 }
 
 void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){

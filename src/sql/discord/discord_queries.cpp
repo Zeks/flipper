@@ -60,6 +60,8 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetForcedMinMatch(q.value("forced_min_matches").toInt());
         user->SetForcedRatio(q.value("forced_ratio").toInt());
         user->SetSortFreshFirst(q.value("use_fresh_sorting").toInt());
+        user->SetHideDead(q.value("hide_dead").toInt());
+        user->SetShowCompleteOnly(q.value("show_complete_only").toInt());
         user->SetStrictFreshSort(q.value("strict_fresh_sorting").toInt());
         ctx.result.data = user;
     });

@@ -256,6 +256,7 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
+    displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.originalMessage = message;
     result.Push(displayRecs);
     return result;
@@ -595,6 +596,7 @@ CommandChain ForceListParamsCommand::ProcessInputImpl(SleepyDiscord::Message mes
     result.Push(createRecs);
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
+    displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.ids.push_back(0);
     displayRecs.originalMessage = message;
     result.Push(displayRecs);
@@ -624,6 +626,7 @@ CommandChain FilterLikedAuthorsCommand::ProcessInputImpl(SleepyDiscord::Message 
         Command displayRecs;
         displayRecs.type = Command::ct_display_page;
         displayRecs.ids.push_back(0);
+        displayRecs.variantHash["refresh_previous"] = true;
         displayRecs.originalMessage = message;
         result.Push(displayRecs);
     }
@@ -671,6 +674,7 @@ CommandChain ShowFreshRecsCommand::ProcessInputImpl(SleepyDiscord::Message messa
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
+    displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.originalMessage = message;
     result.Push(displayRecs);
     return result;
@@ -691,6 +695,7 @@ CommandChain ShowCompletedCommand::ProcessInputImpl(SleepyDiscord::Message messa
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
+    displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.originalMessage = message;
     result.Push(displayRecs);
     return result;
@@ -711,6 +716,7 @@ CommandChain HideDeadCommand::ProcessInputImpl(SleepyDiscord::Message message)
     Command displayRecs;
     displayRecs.type = Command::ct_display_page;
     displayRecs.ids.push_back(0);
+    displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.originalMessage = message;
     result.Push(displayRecs);
     return result;
