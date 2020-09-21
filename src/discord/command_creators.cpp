@@ -124,16 +124,21 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
         result.Push(nullCommand);
         return result;
     }
+
     auto match = matchCommand<RecsCreationCommand>(message.content);
+    auto refresh = match.get<1>().to_string();
+    auto id = match.get<2>().to_string();
+
     Command createRecs;
     createRecs.type = ct_fill_recommendations;
-    auto id = match.get<1>().to_string();
     if(id.length() == 0){
         createRecs.textForPreExecution = QString("Not a valid ID.");
         createRecs.type = ct_null_command;
         return result;
     }
-    createRecs.ids.push_back(std::stoi(match.get<1>().to_string()));
+    createRecs.ids.push_back(std::stoi(match.get<2>().to_string()));
+    if(refresh.length() == 0)
+        createRecs.variantHash["refresh"] = true;
     createRecs.originalMessage = message;
     createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(QString::fromStdString(match.get<1>().to_string()));
     Command displayRecs;

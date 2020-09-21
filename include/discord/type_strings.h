@@ -10,8 +10,9 @@ template <>
 struct TypeStringHolder<discord::RecsCreationCommand> {
         static constexpr std::string_view name = "recs";
         static constexpr std::string_view prefixlessPattern = "?<recs>recs";
-        static constexpr std::string_view pattern = "recs\\s{1,}(\\d{4,10})";
-        static constexpr std::string_view help = "Basic commands:\n`%1recs FFN_ID` to create recommendations. FFN_ID is the id of your fanfiction.net profile";
+        static constexpr std::string_view pattern = "recs(\\s{1,}>refresh){0,1}(\\s{1,}\\d{4,10})";
+        static constexpr std::string_view help = "Basic commands:\n`%1recs FFN_ID` to create recommendations. FFN_ID is the id of your fanfiction.net profile"
+                                                 "\n`%1recs >refresh FFN_ID` if you've added new stuff to your favourites and want the bot to re-read your list.";
 };
 template <>
 struct TypeStringHolder<discord::NextPageCommand>{
