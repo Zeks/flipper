@@ -87,7 +87,7 @@ void UserFavouritesParser::FetchFavouritesFromMobilePage(int startBoundary)
 
     connection = connect(&parser, &MobileFavouritesFetcher::progress, this, &UserFavouritesParser::progress);
     if(cacheDbToUse.isOpen())
-        result+=parser.Execute(cacheDbToUse);
+        result+=parser.Execute(cacheDbToUse, cacheMode);
     else
         result+=parser.Execute();
 }

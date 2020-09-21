@@ -84,6 +84,7 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
 
             if(!quickResult.canDoQuickParse)
             {
+                parser.cacheMode = cacheMode;
                 parser.FetchFavouritesFromMobilePage();
                 userFavourites = parser.result;
                 if(userFavourites.size() == 0)
@@ -436,19 +437,20 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     environment->fandoms->FetchFandomsForFics(&fics);
     auto editPreviousPageIfPossible = command.variantHash["refresh_previous"].toBool();
 
-    if(command.targetMessage.string().length() == 0){
-        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+    if(command.targetMessage.string().length() != 0){
+        action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
     }
     else{
         auto previousPage = command.user->GetLastPageMessage();
         if(editPreviousPageIfPossible && previousPage.string().length() > 0)
         {
-            action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
-            action->diagnosticText = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", done. Updating your previous results with new data." );
+            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+            action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", your previous results have been updated with new data." );
             action->targetMessage = previousPage;
         }
         else
-            action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
+            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+        //        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     }
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2").arg(command.user->FfnID()).arg(command.user->CurrentPage()).toStdString();
     FillActiveFilterPartInEmbed(embed, environment, command);

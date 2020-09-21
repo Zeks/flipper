@@ -69,7 +69,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     return urlResult;
 }
 
-QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db)
+QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db, ECacheMode cacheMode)
 {
     // first we need to create an m. link
     QString url = QString("https://m.fanfiction.net/u/%1//?a=fs").arg(userId);
@@ -78,7 +78,7 @@ QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db)
 
     WebPage page;
     TimedAction fetchAction("Author initial mobile page fetch", [&](){
-        page = env::RequestPage(prototype.trimmed(), db, ECacheMode::dont_use_cache);
+        page = env::RequestPage(prototype.trimmed(), db, cacheMode);
     });
     fetchAction.run(false);
 
@@ -107,7 +107,7 @@ QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db)
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){
-            page = env::RequestPage(mobileUrl.trimmed(),  db, ECacheMode::dont_use_cache);
+            page = env::RequestPage(mobileUrl.trimmed(),  db, cacheMode);
         });
         fetchAction.run(false);
         // need to fetch only story ids for now

@@ -1,4 +1,5 @@
 #pragma once
+#include "ECacheMode.h"
 #include <QObject>
 #include <QSqlDatabase>
 
@@ -10,7 +11,7 @@ class MobileFavouritesFetcher : public QObject{
 public:
     MobileFavouritesFetcher(QObject* parent = nullptr);
     QSet<QString> Execute();
-    QSet<QString> Execute(QSqlDatabase);
+    QSet<QString> Execute(QSqlDatabase, ECacheMode cacheMode = ECacheMode::dont_use_cache);
     QString userId;
     int pageToStartFrom = 0;
     int timeout = 500;

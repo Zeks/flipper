@@ -26,6 +26,7 @@ public:
     QSet<QString> result;
     QString userId;
     QMetaObject::Connection connection;
+    ECacheMode cacheMode = ECacheMode::dont_use_cache;
     QSqlDatabase cacheDbToUse;
 
 signals:
