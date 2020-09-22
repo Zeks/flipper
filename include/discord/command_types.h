@@ -26,6 +26,7 @@ namespace discord {
             ct_filter_complete = 23,
             ct_show_favs = 24,
             ct_purge = 25,
+            ct_reset_filters = 26,
         };
 
 }

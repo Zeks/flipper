@@ -10,7 +10,7 @@
 #pragma GCC diagnostic pop
 
 #include "discord/limits.h"
-#include "discord/command_creators.h"
+#include "discord/command_generators.h"
 #include "discord/discord_user.h"
 #include "core/section.h"
 #include <QString>

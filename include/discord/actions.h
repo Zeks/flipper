@@ -51,6 +51,7 @@ ACTION(ShowFreshRecommendationsAction);
 ACTION(ShowCompleteAction);
 ACTION(HideDeadAction);
 ACTION(PurgeAction);
+ACTION(ResetFiltersAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

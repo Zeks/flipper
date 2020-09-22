@@ -1,5 +1,5 @@
 #pragma once
-#include "discord/command_creators.h"
+#include "discord/command_generators.h"
 #include "discord/type_strings.h"
 #include "third_party/str_concat.h"
 #include "third_party/ctre.hpp"
@@ -31,6 +31,7 @@ namespace discord {
                 TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<PurgeCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ResetFiltersCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace, str::rightBrace>;
     }
 

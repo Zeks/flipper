@@ -1,5 +1,5 @@
 #include "discord/actions.h"
-#include "discord/command_creators.h"
+#include "discord/command_generators.h"
 #include "discord/discord_init.h"
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
@@ -53,8 +53,10 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
     helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
     helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
+    helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
     helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
+
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
     action->text = helpString.arg(command.server->GetCommandPrefix());
@@ -179,7 +181,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     if(!recList->ficData->matchCounts.size())
     {
         command.user->SetFfnID(ffnId);
-        action->text = "Couldn't create recommendations. Recommendations server is not available? Ping the author: zekses#3495";
+        action->text = "Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495";
         action->stopChain = true;
         return action;
 
@@ -851,6 +853,30 @@ QSharedPointer<SendMessageCommand> PurgeAction::ExecuteImpl(QSharedPointer<TaskE
     return action;
 }
 
+QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    environment->fandoms->db = dbToken->db;
+    An<interfaces::Users> usersDbInterface;
+    auto user = command.user;
+    user->SetHideDead(false);
+    user->SetShowCompleteOnly(false);
+    user->SetSortFreshFirst(false);
+    user->SetStrictFreshSort(false);
+    user->SetUseLikedAuthorsOnly(false);
+    {
+        usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
+        usersDbInterface->SetCompleteFilter(command.user->UserID(), false);
+        usersDbInterface->WriteFreshSortingParams(command.user->UserID(), false, false);
+        usersDbInterface->WriteForceLikedAuthors(command.user->UserID(), false);
+        auto currentFilter = command.user->GetCurrentFandomFilter();
+        for(auto fandomId : currentFilter.fandoms)
+            usersDbInterface->UnfilterFandom(command.user->UserID(), fandomId);
+    }
+    user->SetFandomFilter({});
+    action->text = "Done, filter has been reset.";
+    return action;
+}
 
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
@@ -892,6 +918,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new HideDeadAction());
     case ECommandType::ct_purge:
         return QSharedPointer<ActionBase>(new PurgeAction());
+    case ECommandType::ct_reset_filters:
+        return QSharedPointer<ActionBase>(new ResetFiltersAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

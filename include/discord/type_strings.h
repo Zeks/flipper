@@ -1,5 +1,5 @@
 #pragma once
-#include "discord/command_creators.h"
+#include "discord/command_generators.h"
 
 template <typename T>
 struct TypeStringHolder{
@@ -160,7 +160,14 @@ struct TypeStringHolder<discord::PurgeCommand>{
         static constexpr std::string_view tips = "If you want the bot to reset all your data post `%1purge` command";
 };
 
-
+template <>
+struct TypeStringHolder<discord::ResetFiltersCommand>{
+        static constexpr std::string_view name = "xfilters";
+        static constexpr std::string_view prefixlessPattern = "?<xfilters>xfilters";
+        static constexpr std::string_view pattern = "xfilters";
+        static constexpr std::string_view help = "`%1xfilters` will reset all active filters.";
+        static constexpr std::string_view tips = "If you want to reset all active filters use`%1xfilters` command";
+};
 
 
 

@@ -1,5 +1,5 @@
 #include "discord/discord_init.h"
-#include "discord/command_creators.h"
+#include "discord/command_generators.h"
 #include "discord/actions.h"
 #include "discord/type_strings.h"
 #include <regex>
@@ -24,6 +24,7 @@ namespace discord {
         RegisterCommand<ShowCompletedCommand>(parser);
         RegisterCommand<HideDeadCommand>(parser);
         RegisterCommand<PurgeCommand>(parser);
+        RegisterCommand<ResetFiltersCommand>(parser);
         // this command requires actually implementing full mobile parser
         // RegisterCommand<ShowFullFavouritesCommand>(parser);
     }
@@ -50,6 +51,7 @@ namespace discord {
         helpString +=  GetTipsForCommandIfActive<ShowCompletedCommand>();
         helpString +=  GetTipsForCommandIfActive<HideDeadCommand>();
         helpString +=  GetTipsForCommandIfActive<PurgeCommand>();
+        helpString +=  GetTipsForCommandIfActive<ResetFiltersCommand>();
         helpString +=  "If you would like to support the bot, you can do it on https://www.patreon.com/Zekses";
         SendMessageCommand::tips = helpString;
     }

@@ -1,5 +1,5 @@
 #pragma once
-#include "discord/command_creators.h"
+#include "discord/command_generators.h"
 #include "discord/actions.h"
 #include <QSet>
 #include <QThread>

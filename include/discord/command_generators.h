@@ -183,6 +183,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class ResetFiltersCommand: public RecommendationsCommand{
+public:
+    ResetFiltersCommand(){}
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 class CommandParser{
 public:
@@ -191,6 +198,7 @@ public:
     Client* client = nullptr;
     std::mutex lock;
 };
+
 
 class SendMessageCommand{
 public:

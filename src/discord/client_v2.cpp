@@ -1,6 +1,6 @@
 #include "discord/client_v2.h"
 #include "discord/command_controller.h"
-#include "discord/command_creators.h"
+#include "discord/command_generators.h"
 #include "discord/command.h"
 #include "discord/discord_server.h"
 #include "discord/discord_init.h"
