@@ -36,7 +36,7 @@ struct TypeStringHolder<discord::PageChangeCommand>{
         static constexpr std::string_view name = "page";
         static constexpr std::string_view prefixlessPattern = "?<page>page";
         static constexpr std::string_view pattern = "page\\s{1,}(\\d{1,10})";
-        static constexpr std::string_view help = "`%1page X` to navigate to a differnt page in recommendation results";
+        static constexpr std::string_view help = "`%1page X` to navigate to a differnt page in recommendation results. `%1page` without a number will repost the last one.";
         static constexpr std::string_view tips = "You can navigate to an exact page of recommendations with `%1page X`";
 };
 template <>

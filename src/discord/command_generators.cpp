@@ -176,7 +176,7 @@ CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
     }
     else
     {
-        command.ids.push_back(0);
+        command.ids.push_back(user->CurrentPage());
         result.Push(command);
     }
     return result;
