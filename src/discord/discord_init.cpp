@@ -52,7 +52,15 @@ namespace discord {
         helpString +=  GetTipsForCommandIfActive<HideDeadCommand>();
         helpString +=  GetTipsForCommandIfActive<PurgeCommand>();
         helpString +=  GetTipsForCommandIfActive<ResetFiltersCommand>();
-        helpString +=  "If you would like to support the bot, you can do it on https://www.patreon.com/Zekses";
+        helpString +=  "If the genres you see in the list have + = and ~ next to them, they are auto-deduced."
+                       "\n+ means main genre"
+                       "\n= means there's a sufficient amount of this genre in the fic."
+                       "\n~ means there's only a tiny bit of it.";
+        helpString +=  "Auto-deduced genres often differ from the genres the author has set, but they are typically more correct.";
+        helpString +=  "Your recommendations will be better if you remove fics you no longer consider good and fandoms you no longer read from your favourites.";
+        helpString +=  "Your recommendations are created by merging favourites of other users on ffn who have a bunch of favourite fics in common with you.";
+        helpString +=  "Socrates' fic database is updated approximately once a month by fetching new stuff from favourite lists.As such it only knows of about 40% (most relevant) of fics on fanfiction.net ";
+        helpString +=  "Once your favourite list has been fetched, further `%1recs` commands will use the cached version of the page and will be fast.";
         SendMessageCommand::tips = helpString;
     }
 

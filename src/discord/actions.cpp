@@ -469,20 +469,26 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3").arg(command.user->FfnID()).arg(command.user->CurrentPage()).arg(QString::number(pageCount)).toStdString();
     auto& tips = SendMessageCommand::tips;
     int tipNumber =  rand() % tips.size();
+    bool showAppOrPatreon = rand() % 7 == 0;
     SleepyDiscord::EmbedFooter footer;
-    bool patreon = false;
-    if(tips.size() > 0)
-    {
-        auto temp = tips.at(tipNumber);
-        if(temp.contains("%1"))
-            temp =temp.arg(command.server->GetCommandPrefix());
-        if(temp.contains("support"))
-            patreon = true;
-        footer.text = temp .toStdString();
+    if(showAppOrPatreon){
+        QStringList appPromo =  {"Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest",
+                                 "If you would like to support the bot, you can do it on https://www.patreon.com/Zekses"};
+        int shownId = rand() %2 == 0;
+        footer.text = appPromo.at(shownId).toStdString();
+        if(shownId == 1)
+            footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
+        else
+            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
     }
-    if(patreon)
-    {
-        footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
+    else{
+        if(tips.size() > 0)
+        {
+            auto temp = tips.at(tipNumber);
+            if(temp.contains("%1"))
+                temp =temp.arg(command.server->GetCommandPrefix());
+            footer.text = temp .toStdString();
+        }
     }
     embed.footer = footer;
 
