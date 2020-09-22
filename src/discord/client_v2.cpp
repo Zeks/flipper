@@ -106,6 +106,11 @@ void Client::onMessage(SleepyDiscord::Message message) {
     executor->Push(commands);
 }
 
+static std::string CreateMention(const std::string& string){
+    return "<@" + string + ">";
+}
+
+
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
 
     //QLOG_INFO() << QString::fromStdString(userID.string()) << " " << QString::fromStdString(channelID.string()) << " " << QString::fromStdString(messageID.string()) << " " << QString::fromStdString(emoji.name);
@@ -139,6 +144,9 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
             auto changePage = CreateChangePageCommand(user,server, message, true);
             executor->Push(changePage);
         }
+    }
+    else{
+        sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` command or spawn a new list with your own FFN id.");
     }
 }
 
