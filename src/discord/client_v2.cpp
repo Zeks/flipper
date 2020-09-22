@@ -39,6 +39,7 @@ void Client::InitClient()
     for(auto server : sleepyServers){
         InitDiscordServerIfNecessary(server.ID);
     }
+    InitTips();
 }
 
 QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId)

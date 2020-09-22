@@ -61,6 +61,8 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     return action;
 }
 
+
+
 QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageCommand> action, ECacheMode cacheMode = ECacheMode::use_only_cache){
     QSet<QString> userFavourites;
 
@@ -422,6 +424,7 @@ void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPoi
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     QLOG_TRACE() << "Creating page results";
+
     environment->ficSource->ClearUserData();
     auto page = command.ids.at(0);
     command.user->SetPage(page);
@@ -462,6 +465,25 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     }
 
     embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3").arg(command.user->FfnID()).arg(command.user->CurrentPage()).arg(QString::number(pageCount)).toStdString();
+    auto& tips = SendMessageCommand::tips;
+    int tipNumber =  rand() % tips.size();
+    SleepyDiscord::EmbedFooter footer;
+    bool patreon = false;
+    if(tips.size() > 0)
+    {
+        auto temp = tips.at(tipNumber);
+        if(temp.contains("%1"))
+            temp =temp.arg(command.server->GetCommandPrefix());
+        if(temp.contains("support"))
+            patreon = true;
+        footer.text = temp .toStdString();
+    }
+    if(patreon)
+    {
+        footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
+    }
+    embed.footer = footer;
+
     FillActiveFilterPartInEmbed(embed, environment, command);
 
     QHash<int, int> positionToId;

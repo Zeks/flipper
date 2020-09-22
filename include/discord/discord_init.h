@@ -11,6 +11,7 @@ namespace discord {
         CommandState<T>::active = true;
     };
     void InitDefaultCommandSet(QSharedPointer<CommandParser> parser);
+    void InitTips();
     void InitHelpForCommands();
     QString GetSimpleCommandIdentifierPrefixless();
     void InitPrefixlessRegularExpressions();

@@ -207,7 +207,9 @@ public:
     QStringList errors;
     bool emptyAction = false;
     bool stopChain = false;
+    static QStringList tips;
 };
+
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message );
 CommandChain CreateChangePageCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message , bool shiftRight = true);
 }

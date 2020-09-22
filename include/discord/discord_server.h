@@ -82,7 +82,7 @@ struct Server{
     QDateTime lastActive;
 
 
-    mutable QReadWriteLock lock;
+    mutable QReadWriteLock lock = QReadWriteLock(QReadWriteLock::Recursive);
 };
 
 

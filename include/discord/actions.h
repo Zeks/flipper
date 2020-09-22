@@ -62,6 +62,7 @@ struct ActionChain{
         return *this;
     };
     QQueue<QSharedPointer<SendMessageCommand>> actions;
+
     bool performedParseCommand = false;
 };
 

@@ -10,6 +10,7 @@
 
 #include <QSettings>
 namespace discord{
+QStringList SendMessageCommand::tips = {};
 QSharedPointer<User> CommandCreator::user;
 void CommandChain::Push(Command command)
 {
@@ -145,6 +146,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
     displayRecs.type = ct_display_page;
     displayRecs.ids.push_back(0);
     displayRecs.originalMessage = message;
+    displayRecs.server = server;
     result.Push(createRecs);
     result.Push(displayRecs);
     result.hasParseCommand = true;
@@ -170,6 +172,7 @@ CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
     command.type = ct_display_page;
     auto match = matchCommand<PageChangeCommand>(message.content);
     command.originalMessage = message;
+    command.server = server;
     if(match.get<1>().to_string().length() > 0)
     {
         command.ids.push_back(std::stoi(match.get<1>().to_string()));
@@ -180,7 +183,6 @@ CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
         command.ids.push_back(0);
         result.Push(command);
     }
-
     return result;
 }
 

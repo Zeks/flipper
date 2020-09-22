@@ -1,5 +1,7 @@
 #include "discord/discord_init.h"
 #include "discord/command_creators.h"
+#include "discord/actions.h"
+#include "discord/type_strings.h"
 #include <regex>
 namespace discord {
 
@@ -26,12 +28,32 @@ namespace discord {
         // RegisterCommand<ShowFullFavouritesCommand>(parser);
     }
 
-    template<typename T> QString GetRegexForCommandIfActive(){
+    template<typename T> QString GetTipsForCommandIfActive(){
         QString result;
         if(CommandState<T>::active)
-            result = CommandState<T>::regexCommandIdentifier;
+            result = "\n" + QString::fromStdString(std::string(TypeStringHolder<T>::tips));
         return result;
     }
+
+    void InitTips(){
+        QStringList helpString;
+        helpString +=  GetTipsForCommandIfActive<RecsCreationCommand>();
+        helpString +=  GetTipsForCommandIfActive<NextPageCommand>();
+        helpString +=  GetTipsForCommandIfActive<PageChangeCommand>();
+        helpString +=  GetTipsForCommandIfActive<SetFandomCommand>();
+        helpString +=  GetTipsForCommandIfActive<IgnoreFandomCommand>();
+        helpString +=  GetTipsForCommandIfActive<IgnoreFicCommand>();
+        helpString +=  GetTipsForCommandIfActive<DisplayHelpCommand>();
+        helpString +=  GetTipsForCommandIfActive<RngCommand>();
+        helpString +=  GetTipsForCommandIfActive<FilterLikedAuthorsCommand>();
+        helpString +=  GetTipsForCommandIfActive<ShowFreshRecsCommand>();
+        helpString +=  GetTipsForCommandIfActive<ShowCompletedCommand>();
+        helpString +=  GetTipsForCommandIfActive<HideDeadCommand>();
+        helpString +=  GetTipsForCommandIfActive<PurgeCommand>();
+        helpString +=  "If you would like to support the bot, you can do it on https://www.patreon.com/Zekses";
+        SendMessageCommand::tips = helpString;
+    }
+
 }
 
 
