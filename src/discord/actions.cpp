@@ -53,9 +53,11 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
     helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
     helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
+    helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
     helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
     helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
+
 
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
@@ -103,17 +105,6 @@ QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageComma
     return userFavourites;
 }
 
-//QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-//params->minimumMatch = 1;
-//params->maxUnmatchedPerMatch = 50;
-//params->alwaysPickAt = 9999;
-//params->isAutomatic = true;
-//params->useWeighting = true;
-//params->useMoodAdjustment = true;
-//params->name = "Recommendations";
-//params->assignLikedToSources = true;
-//params->userFFNId = env->interfaces.recs->GetUserProfile();
-
 QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnId)
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
@@ -128,6 +119,23 @@ QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnI
     list->userFFNId = ffnId.toInt();
     return list;
 }
+
+
+QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
+{
+    QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
+    list->minimumMatch = 1;
+    list->maxUnmatchedPerMatch = 5000;
+    list->isAutomatic = false;
+    list->useWeighting = false;
+    list->alwaysPickAt = 9999;
+    list->useMoodAdjustment = false;
+    list->name = "Recommendations";
+    list->assignLikedToSources = true;
+    list->userFFNId = -1;
+    return list;
+}
+
 
 QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
@@ -144,7 +152,7 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
          recList->maxUnmatchedPerMatch = command.user->GetForcedRatio();
          recList->isAutomatic = false;
     }
-    recList->requiresBreakdowns = false;
+    recList->ignoreBreakdowns= true;
 
     QVector<core::Identity> pack;
     pack.resize(userFavourites.size());
@@ -378,7 +386,10 @@ void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, in
 
 void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
     auto filter = command.user->GetCurrentFandomFilter();
+
     QString result;
+    if(command.user->GetSimilarFicsId() != 0)
+        result += QString("\nDisplaying similarity list for fic: %1.").arg(command.user->GetSimilarFicsId());
     if(filter.fandoms.size() > 0){
         result += "\nDisplayed recommendations are for fandom filter:\n";
         for(auto fandom: filter.fandoms)
@@ -400,6 +411,7 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
         result += "\nOnly showing fics that are not dead.";
     if(!result.isEmpty())
         result += "\nTo disable any active filters, repeat the command that activates them.";
+
     embed.description += result.toStdString();
 }
 
@@ -885,6 +897,49 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
 }
 
 
+QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    command.user->initNewEasyQuery();
+    auto ficId = command.ids.at(0);
+    QSharedPointer<core::RecommendationList> listParams;
+    QString error;
+
+    auto recList = CreateSimilarFicParams();
+    recList->ignoreBreakdowns= true;
+
+    QVector<core::Identity> pack;
+    pack.resize(1);
+    pack[0].web.ffn = ficId;
+    environment->ficSource->ClearUserData();
+    environment->ficSource->GetInternalIDsForFics(&pack);
+
+    for(auto source: pack)
+    {
+        recList->ficData->sourceFics+=source.id;
+        recList->ficData->fics+=source.web.ffn;
+    }
+    environment->ficSource->GetRecommendationListFromServer(recList);
+
+    // instantiating working set for user
+    An<Users> users;
+    command.user->SetFicList(recList->ficData);
+    QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
+    QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
+
+    if(!recList->ficData->matchCounts.size())
+    {
+        action->text = "Couldn't create the list. Recommendations server is not available or server doesn't have any data for fic ID you supplied.";
+        action->stopChain = true;
+        return action;
+    }
+
+    action->text = "Created similarity list FFN ID: " + QString::number(command.ids.at(0));
+    environment->ficSource->ClearUserData();
+    return action;
+}
+
+
+
 QSharedPointer<ActionBase> GetAction(ECommandType type)
 {
     switch(type){
@@ -926,6 +981,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new PurgeAction());
     case ECommandType::ct_reset_filters:
         return QSharedPointer<ActionBase>(new ResetFiltersAction());
+    case ECommandType::ct_create_similar_fics_list:
+        return QSharedPointer<ActionBase>(new CreateSimilarFicListAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

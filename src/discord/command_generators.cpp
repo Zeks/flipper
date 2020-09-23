@@ -468,6 +468,7 @@ CommandChain RngCommand::ProcessInputImpl(SleepyDiscord::Message message)
     auto match = ctre::search<TypeStringHolder<RngCommand>::pattern>(message.content);
     command.variantHash["quality"] = QString::fromStdString(match.get<1>().to_string()).trimmed();
     result.Push(command);
+    user->SetSimilarFicsId(0);
     return result;
 }
 
@@ -727,6 +728,44 @@ CommandChain CreateChangePageCommand(QSharedPointer<User> user, QSharedPointer<S
     command.user = user;
     result.Push(command);
     return result;
+}
+
+CommandChain SimilarFicsCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    CommandChain result;
+    Command command = NewCommand(server, message,ct_create_similar_fics_list);
+
+    auto match = matchCommand<SimilarFicsCommand>(message.content);
+    auto ficId = match.get<1>().to_string();
+    if(ficId.length() == 0)
+    {
+        if(user->GetSimilarFicsId() != 0){
+            user->SetSimilarFicsId(0);
+
+            Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+            createRecs.ids.push_back(user->FfnID().toUInt());
+            createRecs.variantHash["refresh"] = true;
+            createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(user->FfnID());
+            result.Push(createRecs);
+            Command displayRecs = NewCommand(server, message,ct_display_page);
+            displayRecs.ids.push_back(0);
+            result.Push(displayRecs);
+            return result;
+        }
+    }
+    user->SetSimilarFicsId(std::stoi(match.get<1>().to_string()));
+    command.ids.push_back(std::stoi(match.get<1>().to_string()));
+    result.Push(command);
+    Command displayRecs = NewCommand(server, message,ct_display_page);
+    displayRecs.ids.push_back(0);
+    result.Push(displayRecs);
+    return result;
+
+}
+
+bool SimilarFicsCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<SimilarFicsCommand>::name;
 }
 
 

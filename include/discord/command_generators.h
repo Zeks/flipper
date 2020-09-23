@@ -190,6 +190,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class SimilarFicsCommand: public RecommendationsCommand{
+public:
+    SimilarFicsCommand(){}
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 class CommandParser{
 public:

@@ -448,6 +448,18 @@ void User::SetLastPageType(const ECommandType &value)
     QWriteLocker locker(&lock);
     lastPageType = value;
 }
+
+int User::GetSimilarFicsId() const
+{
+    QReadLocker locker(&lock);
+    return similarFicsId;
+}
+
+void User::SetSimilarFicsId(int value)
+{
+    QWriteLocker locker(&lock);
+    similarFicsId = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

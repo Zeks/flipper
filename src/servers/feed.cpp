@@ -610,31 +610,34 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 targetList->add_purged(0);
             }
             targetList->add_fic_matches(adjustedVotes);
-            targetList->add_no_trash_score(list.sumNegativeVotesForFic[key]);
+            if(!task->data().response_data_controls().ignore_breakdowns())
+                targetList->add_no_trash_score(list.sumNegativeVotesForFic[key]);
 
             targetList->add_fic_ids(key);
             //targetList->add_fic_matches(list.recommendations[key]/100);
             //targetList->add_fic_matches(list.recommendations[key]);
             auto* target = targetList->add_breakdowns();
             target->set_id(key);
-            target->set_votes_common(list.breakdowns[key].authorTypeVotes[EAuthorType::common]);
-            target->set_votes_uncommon(list.breakdowns[key].authorTypeVotes[EAuthorType::uncommon]);
-            target->set_votes_rare(list.breakdowns[key].authorTypeVotes[EAuthorType::rare]);
-            target->set_votes_unique(list.breakdowns[key].authorTypeVotes[EAuthorType::unique]);
+            if(!task->data().response_data_controls().ignore_breakdowns()){
+                target->set_votes_common(list.breakdowns[key].authorTypeVotes[EAuthorType::common]);
+                target->set_votes_uncommon(list.breakdowns[key].authorTypeVotes[EAuthorType::uncommon]);
+                target->set_votes_rare(list.breakdowns[key].authorTypeVotes[EAuthorType::rare]);
+                target->set_votes_unique(list.breakdowns[key].authorTypeVotes[EAuthorType::unique]);
 
-            target->set_counts_common(list.breakdowns[key].authorTypes[EAuthorType::common]);
-            target->set_counts_uncommon(list.breakdowns[key].authorTypes[EAuthorType::uncommon]);
-            target->set_counts_rare(list.breakdowns[key].authorTypes[EAuthorType::rare]);
-            target->set_counts_unique(list.breakdowns[key].authorTypes[EAuthorType::unique]);
+                target->set_counts_common(list.breakdowns[key].authorTypes[EAuthorType::common]);
+                target->set_counts_uncommon(list.breakdowns[key].authorTypes[EAuthorType::uncommon]);
+                target->set_counts_rare(list.breakdowns[key].authorTypes[EAuthorType::rare]);
+                target->set_counts_unique(list.breakdowns[key].authorTypes[EAuthorType::unique]);
+            }
         }
         qDebug() << "Match report will contain: " << list.matchReport.keys().size() << " fics";
         for(auto author: list.authors)
             response->mutable_list()->add_author_ids(author);
 
-        for(int key: list.matchReport.keys())
-        {
-            (*targetList->mutable_match_report())[key] = list.matchReport[key];
-        }
+        if(!task->data().response_data_controls().ignore_breakdowns())
+            for(int key: list.matchReport.keys())
+                (*targetList->mutable_match_report())[key] = list.matchReport[key];
+
         response->mutable_list()->mutable_used_params()->set_is_automatic(recommendationsCreationParams->isAutomatic);
         response->mutable_list()->mutable_used_params()->set_min_fics_to_match(recommendationsCreationParams->minimumMatch);
         response->mutable_list()->mutable_used_params()->set_max_unmatched_to_one_matched(recommendationsCreationParams->maxUnmatchedPerMatch);

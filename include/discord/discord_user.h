@@ -121,7 +121,13 @@ struct User{
     ECommandType GetLastPageType() const;
     void SetLastPageType(const ECommandType &value);
 
+    int GetSimilarFicsId() const;
+    void SetSimilarFicsId(int value);
+
     bool isValid = false;
+
+
+
 
 private:
     QString userID;
@@ -138,6 +144,7 @@ private:
     bool showCompleteOnly = false;
     bool hideDead = false;
     bool strictFreshSort = false;
+    int similarFicsId = 0;
     int forcedMinMatch = 0;
     int forcedRatio = 0;
 

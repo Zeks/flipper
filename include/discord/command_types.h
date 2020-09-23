@@ -27,6 +27,7 @@ namespace discord {
             ct_show_favs = 24,
             ct_purge = 25,
             ct_reset_filters = 26,
+            ct_create_similar_fics_list = 27,
         };
 
 }

@@ -52,6 +52,7 @@ ACTION(ShowCompleteAction);
 ACTION(HideDeadAction);
 ACTION(PurgeAction);
 ACTION(ResetFiltersAction);
+ACTION(CreateSimilarFicListAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

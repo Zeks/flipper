@@ -62,7 +62,7 @@ public:
     bool useDislikes = false;
     bool useDeadFicIgnore= false;
     bool assignLikedToSources = false;
-    bool requiresBreakdowns = true;
+    bool ignoreBreakdowns = false;
 
     int id = -1;
     int ficCount =-1;

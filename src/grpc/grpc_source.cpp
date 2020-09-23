@@ -923,6 +923,7 @@ static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::Recomm
         //qDebug() << fic;
         ffn->add_ffn_ids(fic);
     }
+    data->mutable_response_data_controls()->set_ignore_breakdowns(recList->ignoreBreakdowns);
     data->set_list_name(proto_converters::TS(recList->name));
     params->set_always_pick_at(recList->alwaysPickAt);
     params->set_is_automatic(recList->isAutomatic);
@@ -960,12 +961,14 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
    recList->ficData->noTrashScores.reserve(response.fic_ids_size());
 
     for(int i = 0; i < response.fic_ids_size(); i++)
-    {
        recList->ficData->fics.push_back(response.fic_ids(i));
-       recList->ficData->matchCounts.push_back(response.fic_matches(i));
-       recList->ficData->purges.push_back(response.purged(i));
-       recList->ficData->noTrashScores.push_back(response.no_trash_score(i));
-    }
+    for(int i = 0; i < response.fic_matches_size(); i++)
+        recList->ficData->matchCounts.push_back(response.fic_matches(i));
+    for(int i = 0; i < response.purged_size(); i++)
+        recList->ficData->purges.push_back(response.purged(i));
+    for(int i = 0; i < response.no_trash_score_size(); i++)
+        recList->ficData->noTrashScores.push_back(response.no_trash_score(i));
+
 
     for(int i = 0; i < response.author_ids_size(); i++)
        recList->ficData->authorIds.push_back(response.author_ids(i));
@@ -977,7 +980,7 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
         ++it;
     }
     using core::AuthorWeightingResult;
-    if(recList->requiresBreakdowns){
+    if(!recList->ignoreBreakdowns){
         for(int i = 0; i < response.breakdowns_size(); i++)
         {
             auto ficid= response.breakdowns(i).id();
