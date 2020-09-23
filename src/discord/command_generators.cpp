@@ -102,7 +102,6 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
         result.hasParseCommand = true;
         result.Push(createRecs);
     }
-    user->SetSimilarFicsId(0);
     return ProcessInputImpl(message);
 }
 
