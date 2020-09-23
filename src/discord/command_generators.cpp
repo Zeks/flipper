@@ -102,6 +102,7 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
         result.hasParseCommand = true;
         result.Push(createRecs);
     }
+    user->SetSimilarFicsId(0);
     return ProcessInputImpl(message);
 }
 
@@ -140,6 +141,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
         createRecs.type = ct_null_command;
         return result;
     }
+    user->SetSimilarFicsId(0);
     createRecs.ids.push_back(std::stoi(match.get<2>().to_string()));
     if(refresh.length() == 0)
         createRecs.variantHash["refresh"] = true;
