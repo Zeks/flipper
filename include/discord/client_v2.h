@@ -24,6 +24,24 @@ namespace  discord {
 class SendMessageCommand;
 class CommandController;
 class Server;
+
+struct BotMessageSet{
+    inline void push(int64_t messageId, int64_t userId){
+        QWriteLocker locker(&lock);
+        hash.insert(messageId, userId);
+    }
+    inline bool contains(int64_t messageId){
+        QReadLocker locker(&lock);
+        return hash.contains(messageId);
+    }
+    inline bool same_user(int64_t messageId, int64_t userId){
+        QReadLocker locker(&lock);
+        return hash.value(messageId) == userId;
+    }
+    QHash<int64_t,int64_t> hash;
+    QReadWriteLock lock;
+};
+
 class Client: public QObject , public SleepyDiscord::DiscordClient {
     Q_OBJECT
 public:
@@ -32,6 +50,7 @@ public:
     void InitClient();
     QSharedPointer<discord::Server> InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId);
     void InitCommandExecutor();
+    QSharedPointer<discord::Server> GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID);
     using SleepyDiscord::DiscordClient::DiscordClient;
     void onMessage(SleepyDiscord::Message message) override;
     void onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji) override;
@@ -42,6 +61,8 @@ public:
     std::regex rxCommandIdentifier;
     QSharedPointer<CommandController> executor;
     QSharedPointer<discord::Server> fictionalDMServer;
+    QSet<std::string> actionableEmoji;
+    BotMessageSet messageHash;
 protected:
     virtual void timerEvent(QTimerEvent *) override;
 };

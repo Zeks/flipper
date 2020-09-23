@@ -40,6 +40,8 @@ void Client::InitClient()
         InitDiscordServerIfNecessary(server.ID);
     }
     InitTips();
+
+    actionableEmoji = {"🔁","👈","👉"};
 }
 
 QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId)
@@ -68,6 +70,18 @@ void Client::InitCommandExecutor()
     executor->client = this;
 }
 
+QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID)
+{
+    QSharedPointer<discord::Server> server;
+    auto channel = getChannel(channelID).cast();
+    if(channel.type != SleepyDiscord::Channel::DM){
+        server = InitDiscordServerIfNecessary(channel.serverID);
+    }
+    else
+        server = fictionalDMServer;
+    return server;
+}
+
 static constexpr auto pattern = discord::GetSimplePatternChecker();
 constexpr auto matchSimple(std::string_view sv) noexcept {
     return ctre::match<pattern>(sv);
@@ -79,13 +93,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
 
     Log(message);
 
-    QSharedPointer<discord::Server> server;
-    auto channel = getChannel(message.channelID);
-    if(channel.cast().type != SleepyDiscord::Channel::DM){
-        server = InitDiscordServerIfNecessary(message.serverID);
-    }
-    else
-        server = fictionalDMServer;
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID);
     std::string_view sv (message.content);
 
     if(sv == "<@!" + getID().string() + "> prefix")
@@ -112,25 +120,23 @@ static std::string CreateMention(const std::string& string){
 
 
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
-
-    //QLOG_INFO() << QString::fromStdString(userID.string()) << " " << QString::fromStdString(channelID.string()) << " " << QString::fromStdString(messageID.string()) << " " << QString::fromStdString(emoji.name);
-    An<Users> users;
-    auto user = users->GetUser(QString::fromStdString(userID.string()));
-    if(!user)
+    if(!actionableEmoji.contains(emoji.name))
+        return;
+    if(!messageHash.contains(messageID.number()))
         return;
 
+
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID);
     auto message = getMessage(channelID, messageID);
-    QSharedPointer<discord::Server> server;
-    auto channel = getChannel(channelID).cast();
-    if(channel.type != SleepyDiscord::Channel::DM){
-        server = InitDiscordServerIfNecessary(channel.serverID);
-    }
-    else
-        server = fictionalDMServer;
 
 
-    bool isOriginalUser = QString::fromStdString(message.cast().content).contains(QString::fromStdString(userID.string()));
+    bool isOriginalUser = messageHash.same_user(messageID.number(), userID.number());
     if(isOriginalUser){
+        An<Users> users;
+        auto user = users->GetUser(QString::fromStdString(userID.string()));
+        if(!user)
+            return;
+
         if(emoji.name == "🔁")
         {
             auto newRoll = CreateRollCommand(user,server, message);

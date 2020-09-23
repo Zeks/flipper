@@ -423,7 +423,6 @@ bool DisplayHelpCommand::IsThisCommand(const std::string &cmd)
 
 void SendMessageCommand::Invoke(Client * client)
 {
-
     try{
         auto addReaction = [&](const SleepyDiscord::Message& newMessage){
             for(auto reaction: reactionsToAdd)
@@ -436,17 +435,23 @@ void SendMessageCommand::Invoke(Client * client)
                 if(text.length() > 0)
                 {
                     auto resultingMessage = client->sendMessage(originalMessage.channelID, text.toStdString(), embed).cast();
-                    addReaction(resultingMessage);
+                    // I don't need to add reactions or hash messages without filled embeds
                 }
             }
             else{
                 auto resultingMessage = client->sendMessage(originalMessage.channelID, text.toStdString(), embed).cast();
-                if(originalCommandType == ct_display_page || originalCommandType == ct_display_rng)
+
+                // I only need to hash messages that the user can later react to
+                // meaning page and rng commands
+                if(originalCommandType == ct_display_page || originalCommandType == ct_display_rng){
                     this->user->SetLastPageMessage(resultingMessage);
-                addReaction(resultingMessage);
+                    client->messageHash.push(resultingMessage.ID.number(),originalMessage.author.ID.number());
+                    addReaction(resultingMessage);
+                }
             }
         }
         else{
+            // editing message doesn't change its Id so rehashing isn't required
             client->editMessage(originalMessage.channelID, targetMessage, text.toStdString(), embed);
         }
         if(!diagnosticText.isEmpty())
