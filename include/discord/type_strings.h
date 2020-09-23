@@ -173,7 +173,7 @@ template <>
 struct TypeStringHolder<discord::SimilarFicsCommand>{
         static constexpr std::string_view name = "similar";
         static constexpr std::string_view prefixlessPattern = "?<similar>similar";
-        static constexpr std::string_view pattern = "similar(\\s\\d{1,15})";
+        static constexpr std::string_view pattern = "similar(\\s{1,}\\d{1,15})";
         static constexpr std::string_view help = "`%1similar` will show fics most favourited with the provided FFN fic id.";
         static constexpr std::string_view tips = "`%1similar X` command doesn't necessarily display similar fics, just the ones most favourited with the provided one.";
 };

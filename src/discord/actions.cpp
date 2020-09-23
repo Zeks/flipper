@@ -913,11 +913,21 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
     environment->ficSource->ClearUserData();
     environment->ficSource->GetInternalIDsForFics(&pack);
 
+    bool hasValidId = false;
     for(auto source: pack)
     {
+        if(source.id > 0 )
+            hasValidId = true;
         recList->ficData->sourceFics+=source.id;
         recList->ficData->fics+=source.web.ffn;
     }
+    if(!hasValidId)
+    {
+        action->text = "Couldn't create the list. Server doesn't have any data for fic ID you supplied, either it's too new or too unpopular.";
+        action->stopChain = true;
+        return action;
+    }
+
     environment->ficSource->GetRecommendationListFromServer(recList);
 
     // instantiating working set for user
@@ -928,7 +938,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
 
     if(!recList->ficData->matchCounts.size())
     {
-        action->text = "Couldn't create the list. Recommendations server is not available or server doesn't have any data for fic ID you supplied.";
+        action->text = "Couldn't create the list. Recommendations server is not available?";
         action->stopChain = true;
         return action;
     }
