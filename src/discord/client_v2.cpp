@@ -70,15 +70,21 @@ void Client::InitCommandExecutor()
     executor->client = this;
 }
 
-QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID)
+QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, int64_t serverID)
 {
     QSharedPointer<discord::Server> server;
-    auto channel = getChannel(channelID).cast();
-    if(channel.type != SleepyDiscord::Channel::DM){
-        server = InitDiscordServerIfNecessary(channel.serverID);
+    if(nonPmChannels.contains(channelID.number())){
+        server = InitDiscordServerIfNecessary(serverID);
     }
-    else
-        server = fictionalDMServer;
+    else{
+        auto channel = getChannel(channelID).cast();
+        if(channel.type != SleepyDiscord::Channel::DM){
+            nonPmChannels.push(channelID.number());
+            server = InitDiscordServerIfNecessary(channel.serverID);
+        }
+        else
+            server = fictionalDMServer;
+    }
     return server;
 }
 
@@ -88,29 +94,34 @@ constexpr auto matchSimple(std::string_view sv) noexcept {
 }
 
 void Client::onMessage(SleepyDiscord::Message message) {
-    if(message.author.bot)
+    if(message.author.bot || !message.content.size())
+        return;
+
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.number());
+    std::string_view sv (message.content);
+
+    const auto commandPrefix = server->GetCommandPrefix();
+    if(sv == botPrefixRequest)
+        sendMessage(message.channelID, "Prefix for this server is: " + commandPrefix);
+
+    if(sv.substr(0, commandPrefix.length()) != commandPrefix)
         return;
 
     Log(message);
+    sv.remove_prefix(commandPrefix.length());
 
-    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID);
-    std::string_view sv (message.content);
-
-    if(sv == "<@!" + getID().string() + "> prefix")
-        sendMessage(message.channelID, "Prefix for this server is: " + server->GetCommandPrefix().toStdString());
-
-    if(sv.substr(0, server->GetCommandPrefix().length()) != server->GetCommandPrefix().toStdString())
-        return;
-    sv.remove_prefix(server->GetCommandPrefix().length());
-    qDebug() << QString::fromStdString(std::string(pattern));
     auto result = ctre::search<pattern>(sv);;
-    if(!message.content.size() || (message.content.size() && !result.matched()))
+    if(!result.matched())
         return;
-    std::string cap = result.get<0>().to_string();
 
-    auto commands = parser->Execute(cap, server, message);
+    auto commands = parser->Execute(result.get<0>().to_string(), server, message);
     if(commands.Size() == 0)
         return;
+
+    // instantiating channel -> server pairing if necessary to avoid hitting the api in onReaction needlessly
+    if(!channelToServerHash.contains(message.channelID.number())){
+        channelToServerHash.push(message.channelID.number(), message.serverID.number());
+    }
     executor->Push(commands);
 }
 
@@ -122,43 +133,43 @@ static std::string CreateMention(const std::string& string){
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
     if(!actionableEmoji.contains(emoji.name))
         return;
-    if(!messageHash.contains(messageID.number()))
+    if(!messageToUserHash.contains(messageID.number()))
         return;
 
 
-    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID);
-    auto message = getMessage(channelID, messageID);
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, channelToServerHash.value(channelID.number()));
 
-
-    bool isOriginalUser = messageHash.same_user(messageID.number(), userID.number());
+    bool isOriginalUser = messageToUserHash.same_user(messageID.number(), userID.number());
     if(isOriginalUser){
         An<Users> users;
         auto user = users->GetUser(QString::fromStdString(userID.string()));
         if(!user)
             return;
 
-        if(emoji.name == "🔁")
-        {
-            auto newRoll = CreateRollCommand(user,server, message);
-            executor->Push(newRoll);
-        }
-        if(emoji.name == "👈"){
-            auto changePage = CreateChangePageCommand(user,server, message, false);
-            executor->Push(changePage);
-        }
+        auto message = getMessage(channelID, messageID);
         if(emoji.name == "👉"){
             auto changePage = CreateChangePageCommand(user,server, message, true);
             executor->Push(changePage);
         }
+        else if(emoji.name == "🔁")
+        {
+            auto newRoll = CreateRollCommand(user,server, message);
+            executor->Push(newRoll);
+        }
+        else if (emoji.name == "👈"){
+            auto changePage = CreateChangePageCommand(user,server, message, false);
+            executor->Push(changePage);
+        }
+
     }
     else{
         sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` command or spawn a new list with your own FFN id.");
     }
 }
 
-void Client::Log(const SleepyDiscord::Message message)
+void Client::Log(const SleepyDiscord::Message& message)
 {
-    QLOG_INFO() << " " << message.channelID.number() << " " << QString::fromStdString(message.author.username) << QString::number(message.author.ID.number()) << " " << QString::fromStdString(message.content);
+    QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content);
 }
 
 void Client::timerEvent(QTimerEvent *)
@@ -167,7 +178,13 @@ void Client::timerEvent(QTimerEvent *)
     users->ClearInactiveUsers();
 }
 
+void discord::Client::onReady(SleepyDiscord::Ready )
+{
+    botPrefixRequest = "<@!" + getID().string() + "> prefix";
 }
+}
+
+
 
 
 

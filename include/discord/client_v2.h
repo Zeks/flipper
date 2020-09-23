@@ -25,22 +25,41 @@ class SendMessageCommand;
 class CommandController;
 class Server;
 
-struct BotMessageSet{
-    inline void push(int64_t messageId, int64_t userId){
+struct BotIdentityMatchingHash{
+    inline void push(int64_t keyId, int64_t valueId){
         QWriteLocker locker(&lock);
-        hash.insert(messageId, userId);
+        hash.insert(keyId, valueId);
     }
-    inline bool contains(int64_t messageId){
+    inline bool contains(int64_t keyId){
         QReadLocker locker(&lock);
-        return hash.contains(messageId);
+        return hash.contains(keyId);
     }
-    inline bool same_user(int64_t messageId, int64_t userId){
+    inline bool same_user(int64_t keyId, int64_t valueId){
         QReadLocker locker(&lock);
-        return hash.value(messageId) == userId;
+        return hash.value(keyId) == valueId;
+    }
+    int64_t value(int64_t keyId){
+        QReadLocker locker(&lock);
+        return hash.value(keyId);
     }
     QHash<int64_t,int64_t> hash;
     QReadWriteLock lock;
 };
+
+
+struct ChannelSet{
+    inline void push(int64_t channelId){
+        QWriteLocker locker(&lock);
+        set.insert(channelId);
+    }
+    inline bool contains(int64_t channelId){
+        QReadLocker locker(&lock);
+        return set.contains(channelId);
+    }
+    QSet<int64_t> set;
+    QReadWriteLock lock;
+};
+
 
 class Client: public QObject , public SleepyDiscord::DiscordClient {
     Q_OBJECT
@@ -50,19 +69,23 @@ public:
     void InitClient();
     QSharedPointer<discord::Server> InitDiscordServerIfNecessary(SleepyDiscord::Snowflake<SleepyDiscord::Server> serverId);
     void InitCommandExecutor();
-    QSharedPointer<discord::Server> GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID);
+    QSharedPointer<discord::Server> GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel>, int64_t);
     using SleepyDiscord::DiscordClient::DiscordClient;
     void onMessage(SleepyDiscord::Message message) override;
     void onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji) override;
+    void onReady (SleepyDiscord::Ready readyData) override;
 
-    void Log(const SleepyDiscord::Message);
+    void Log(const SleepyDiscord::Message&);
 
     QSharedPointer<CommandParser> parser;
     std::regex rxCommandIdentifier;
     QSharedPointer<CommandController> executor;
     QSharedPointer<discord::Server> fictionalDMServer;
     QSet<std::string> actionableEmoji;
-    BotMessageSet messageHash;
+    BotIdentityMatchingHash messageToUserHash;
+    BotIdentityMatchingHash channelToServerHash;
+    std::string botPrefixRequest;
+    ChannelSet nonPmChannels;
 protected:
     virtual void timerEvent(QTimerEvent *) override;
 };

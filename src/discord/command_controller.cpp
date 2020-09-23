@@ -26,17 +26,18 @@ static std::string CreateMention(const std::string& string){
 
 void CommandController::Push(CommandChain chain)
 {
-    std::lock_guard<std::mutex> guard(lock);
     if(chain.commands.size() == 0 )
         return;
     const auto& message = chain.commands.first().originalMessage;
     auto userId = QString::fromStdString(message.author.ID.string());
+
+    std::lock_guard<std::mutex> guard(lock);
     if(activeUsers.contains(userId))
     {
         client->sendMessage(message.channelID, CreateMention(message.author.ID.string())+ ", your previous command is still executing, please wait");
         return;
     }
-    if(chain.hasParseCommand && activeParseCommand)
+    else if(chain.hasParseCommand && activeParseCommand)
     {
         client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
         queue.push_back(chain);
@@ -70,11 +71,12 @@ void CommandController::OnTaskFinished()
     auto result = senderTask->result;
     senderTask->ClearState();
     const auto& message = result.actions.first()->originalMessage;
-    auto userId = QString::fromStdString(message.author.ID.string());
-    for(auto command : result.actions)
+    for(auto& command : result.actions)
         command->Invoke(client);
     if(activeParseCommand && result.performedParseCommand)
         activeParseCommand = false;
+
+    auto userId = QString::fromStdString(message.author.ID.string());
     activeUsers.remove(userId);
 }
 

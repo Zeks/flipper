@@ -445,7 +445,7 @@ void SendMessageCommand::Invoke(Client * client)
                 // meaning page and rng commands
                 if(originalCommandType == ct_display_page || originalCommandType == ct_display_rng){
                     this->user->SetLastPageMessage(resultingMessage);
-                    client->messageHash.push(resultingMessage.ID.number(),originalMessage.author.ID.number());
+                    client->messageToUserHash.push(resultingMessage.ID.number(),originalMessage.author.ID.number());
                     addReaction(resultingMessage);
                 }
             }

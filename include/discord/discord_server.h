@@ -37,8 +37,8 @@ struct Server{
     QString GetDedicatedChannelId() const;
     void SetDedicatedChannelId(const QString& value);
 
-    QString GetCommandPrefix() const;
-    void SetCommandPrefix(const QString& value);
+    std::string GetCommandPrefix() const;
+    void SetCommandPrefix(const std::string& value);
 
     bool GetIsValid() const;
     void SetIsValid(bool value);
@@ -69,7 +69,7 @@ struct Server{
     QString serverName;
     QString ownerId;
     QString dedicatedChannelId;
-    QString commandPrefix = "!";
+    std::string commandPrefix = "!";
 
     bool isValid = false;
     bool banned = false;

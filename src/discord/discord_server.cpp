@@ -53,13 +53,13 @@ namespace discord {
         dedicatedChannelId = value;
     }
 
-    QString Server::GetCommandPrefix() const
+    std::string Server::GetCommandPrefix() const
     {
         QReadLocker locker(&lock);
         return commandPrefix;
     }
 
-    void Server::SetCommandPrefix(const QString& value)
+    void Server::SetCommandPrefix(const std::string& value)
     {
         QWriteLocker locker(&lock);
         commandPrefix = value;
