@@ -94,6 +94,9 @@ constexpr auto matchSimple(std::string_view sv) noexcept {
 }
 
 void Client::onMessage(SleepyDiscord::Message message) {
+    Log(message);
+    forever{}
+
     if(message.author.bot || !message.content.size())
         return;
 
@@ -107,7 +110,6 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(sv.substr(0, commandPrefix.length()) != commandPrefix)
         return;
 
-    Log(message);
     sv.remove_prefix(commandPrefix.length());
 
     auto result = ctre::search<pattern>(sv);;

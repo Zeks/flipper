@@ -89,7 +89,7 @@ DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(QSqlDatabase db, 
 
 
         server->SetOwnerId(q.value("owner_id").toString());
-        server->SetCommandPrefix(q.value("command_prefix").toString());
+        server->SetCommandPrefix(q.value("command_prefix").toString().toStdString());
         server->SetServerName(q.value("server_name").toString());
 
         ctx.result.data = server;

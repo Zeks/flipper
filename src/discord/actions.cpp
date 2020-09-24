@@ -41,8 +41,8 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
 {
     QString helpString;
     helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
-    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
-    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
+//    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
+//    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
     helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
     helpString +=  GetHelpForCommandIfActive<SetFandomCommand>();
     helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
@@ -61,7 +61,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
 
     //"\n!status to display the status of your recommentation list"
     //"\n!status fandom/fic X displays the status for fandom or a fic (liked, ignored)"
-    action->text = helpString.arg(command.server->GetCommandPrefix());
+    action->text = helpString.arg(QString::fromStdString(command.server->GetCommandPrefix()));
     return action;
 }
 
@@ -498,7 +498,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         {
             auto temp = tips.at(tipNumber);
             if(temp.contains("%1"))
-                temp =temp.arg(command.server->GetCommandPrefix());
+                temp =temp.arg(QString::fromStdString(command.server->GetCommandPrefix()));
             footer.text = temp .toStdString();
         }
     }
@@ -745,7 +745,7 @@ QSharedPointer<SendMessageCommand> TimeoutActiveAction::ExecuteImpl(QSharedPoint
 
 QSharedPointer<SendMessageCommand> NoUserInformationAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
-    action->text = QString("You need to call %1recs FFN_ID first").arg(command.server->GetCommandPrefix());
+    action->text = QString("You need to call %1recs FFN_ID first").arg(QString::fromStdString(command.server->GetCommandPrefix()));
     return action;
 }
 
@@ -753,8 +753,8 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
 {
     if(command.variantHash.contains("prefix")){
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
-        command.server->SetCommandPrefix(command.variantHash["prefix"].toString().trimmed());
-        database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), command.server->GetCommandPrefix().trimmed());
+        command.server->SetCommandPrefix(command.variantHash["prefix"].toString().trimmed().toStdString());
+        database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), QString::fromStdString(command.server->GetCommandPrefix()).trimmed());
         action->text = "Prefix has been changed";
     }
     else

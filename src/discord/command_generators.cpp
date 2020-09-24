@@ -188,47 +188,47 @@ bool PageChangeCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<PageChangeCommand>::name;
 }
 
-NextPageCommand::NextPageCommand()
-{
-}
+//NextPageCommand::NextPageCommand()
+//{
+//}
 
-CommandChain NextPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
-{
-    An<Users> users;
-    auto user = users->GetUser(QString::fromStdString(message.author.ID));
+//CommandChain NextPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
+//{
+//    An<Users> users;
+//    auto user = users->GetUser(QString::fromStdString(message.author.ID));
 
-    Command displayRecs = NewCommand(server, message,ct_display_page);
-    displayRecs.ids.push_back(user->CurrentPage()+1);
-    result.Push(displayRecs);
-    user->AdvancePage(1);
-    return result;
-}
+//    Command displayRecs = NewCommand(server, message,ct_display_page);
+//    displayRecs.ids.push_back(user->CurrentPage()+1);
+//    result.Push(displayRecs);
+//    user->AdvancePage(1);
+//    return result;
+//}
 
-bool NextPageCommand::IsThisCommand(const std::string &cmd)
-{
-    return cmd == TypeStringHolder<NextPageCommand>::name;
-}
+//bool NextPageCommand::IsThisCommand(const std::string &cmd)
+//{
+//    return cmd == TypeStringHolder<NextPageCommand>::name;
+//}
 
-PreviousPageCommand::PreviousPageCommand()
-{
-}
+//PreviousPageCommand::PreviousPageCommand()
+//{
+//}
 
-CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
-{
-    An<Users> users;
-    auto user = users->GetUser(QString::fromStdString(message.author.ID));
+//CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
+//{
+//    An<Users> users;
+//    auto user = users->GetUser(QString::fromStdString(message.author.ID));
 
-    Command displayRecs = NewCommand(server, message,ct_display_page);
-    auto newPage = user->CurrentPage()-1 < 0 ? 0 : user->CurrentPage()-1;
-    displayRecs.ids.push_back(newPage);
-    result.Push(displayRecs);
-    return result;
-}
+//    Command displayRecs = NewCommand(server, message,ct_display_page);
+//    auto newPage = user->CurrentPage()-1 < 0 ? 0 : user->CurrentPage()-1;
+//    displayRecs.ids.push_back(newPage);
+//    result.Push(displayRecs);
+//    return result;
+//}
 
-bool PreviousPageCommand::IsThisCommand(const std::string &cmd)
-{
-    return cmd == TypeStringHolder<PreviousPageCommand>::name;
-}
+//bool PreviousPageCommand::IsThisCommand(const std::string &cmd)
+//{
+//    return cmd == TypeStringHolder<PreviousPageCommand>::name;
+//}
 
 SetFandomCommand::SetFandomCommand()
 {
