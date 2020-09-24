@@ -95,7 +95,6 @@ constexpr auto matchSimple(std::string_view sv) noexcept {
 
 void Client::onMessage(SleepyDiscord::Message message) {
     Log(message);
-    forever{}
 
     if(message.author.bot || !message.content.size())
         return;
