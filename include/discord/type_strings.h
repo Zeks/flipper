@@ -6,23 +6,23 @@ struct TypeStringHolder{
     typedef T Type;
 };
 
-// those are disabled because emoji covers it
-//template <>
-//struct TypeStringHolder<discord::NextPageCommand>{
-//    static constexpr std::string_view name = "next";
-//        static constexpr std::string_view prefixlessPattern = "?<next>next";
-//        static constexpr std::string_view pattern = "next";
-//        static constexpr std::string_view help = "`%1next` to navigate to the next page of the recommendation results";
-//        static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
-//};
-//template <>
-//struct TypeStringHolder<discord::PreviousPageCommand>{
-//    static constexpr std::string_view name = "prev";
-//        static constexpr std::string_view prefixlessPattern = "?<prev>prev";
-//        static constexpr std::string_view pattern = "prev";
-//        static constexpr std::string_view help = "`%1prev` to navigate to the previous page of the recommendation results";
-//        static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
-//};
+
+template <>
+struct TypeStringHolder<discord::NextPageCommand>{
+    static constexpr std::string_view name = "next";
+        static constexpr std::string_view prefixlessPattern = "?<next>next";
+        static constexpr std::string_view pattern = "next";
+        static constexpr std::string_view help = "`%1next` to navigate to the next page of the recommendation results";
+        static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
+};
+template <>
+struct TypeStringHolder<discord::PreviousPageCommand>{
+    static constexpr std::string_view name = "prev";
+        static constexpr std::string_view prefixlessPattern = "?<prev>prev";
+        static constexpr std::string_view pattern = "prev";
+        static constexpr std::string_view help = "`%1prev` to navigate to the previous page of the recommendation results";
+        static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
+};
 
 template <>
 struct TypeStringHolder<discord::RecsCreationCommand> {

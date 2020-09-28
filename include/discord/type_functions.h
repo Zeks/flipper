@@ -16,8 +16,8 @@ namespace discord {
     constexpr std::string_view GetSimplePatternChecker()
     {
         return join_v<str::stringStart, str::leftBrace,TypeStringHolder<RecsCreationCommand>::prefixlessPattern,str::separator,
-                //TypeStringHolder<NextPageCommand>::prefixlessPattern,str::separator,
-                //TypeStringHolder<PreviousPageCommand>::prefixlessPattern,str::separator,
+                TypeStringHolder<NextPageCommand>::prefixlessPattern,str::separator,
+                TypeStringHolder<PreviousPageCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<PageChangeCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<SetFandomCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<IgnoreFandomCommand>::prefixlessPattern,str::separator,

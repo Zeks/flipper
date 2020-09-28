@@ -77,19 +77,19 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
-//class NextPageCommand : public RecommendationsCommand{
-//public:
-//    NextPageCommand();
-//    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
-//    virtual bool IsThisCommand(const std::string& cmd);
-//};
+class NextPageCommand : public RecommendationsCommand{
+public:
+    NextPageCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
 
-//class PreviousPageCommand : public RecommendationsCommand{
-//public:
-//    PreviousPageCommand();
-//    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
-//    virtual bool IsThisCommand(const std::string& cmd);
-//};
+class PreviousPageCommand : public RecommendationsCommand{
+public:
+    PreviousPageCommand();
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
 
 class SetFandomCommand : public RecommendationsCommand{
 public:

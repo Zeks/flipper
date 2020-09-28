@@ -9,8 +9,8 @@ namespace discord {
     {
         RegisterCommand<RecsCreationCommand>(parser);
         RegisterCommand<PageChangeCommand>(parser);
-//        RegisterCommand<NextPageCommand>(parser);
-//        RegisterCommand<PreviousPageCommand>(parser);
+        RegisterCommand<NextPageCommand>(parser);
+        RegisterCommand<PreviousPageCommand>(parser);
         RegisterCommand<SetFandomCommand>(parser);
         RegisterCommand<IgnoreFandomCommand>(parser);
         RegisterCommand<IgnoreFicCommand>(parser);
@@ -40,7 +40,7 @@ namespace discord {
     void InitTips(){
         QStringList helpString;
         helpString +=  GetTipsForCommandIfActive<RecsCreationCommand>();
-        //helpString +=  GetTipsForCommandIfActive<NextPageCommand>();
+        helpString +=  GetTipsForCommandIfActive<NextPageCommand>();
         helpString +=  GetTipsForCommandIfActive<PageChangeCommand>();
         helpString +=  GetTipsForCommandIfActive<SetFandomCommand>();
         helpString +=  GetTipsForCommandIfActive<IgnoreFandomCommand>();

@@ -70,7 +70,19 @@ void Client::InitCommandExecutor()
     executor->client = this;
 }
 
-QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, int64_t serverID)
+
+QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID)
+{
+    QSharedPointer<discord::Server> server;
+    if(serverID.string().length() == 0)
+        server = fictionalDMServer;
+    else
+        server = GetServerInstanceForChannel(channelID,serverID.number());
+
+    return server;
+}
+
+QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, int serverID)
 {
     QSharedPointer<discord::Server> server;
     if(nonPmChannels.contains(channelID.number())){
@@ -99,7 +111,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(message.author.bot || !message.content.size())
         return;
 
-    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.number());
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
     std::string_view sv (message.content);
 
     const auto commandPrefix = server->GetCommandPrefix();
@@ -120,7 +132,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         return;
 
     // instantiating channel -> server pairing if necessary to avoid hitting the api in onReaction needlessly
-    if(!channelToServerHash.contains(message.channelID.number())){
+    if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
         channelToServerHash.push(message.channelID.number(), message.serverID.number());
     }
     executor->Push(commands);

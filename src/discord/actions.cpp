@@ -41,8 +41,8 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
 {
     QString helpString;
     helpString +=  GetHelpForCommandIfActive<RecsCreationCommand>();
-//    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
-//    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
+    helpString +=  GetHelpForCommandIfActive<NextPageCommand>();
+    helpString +=  GetHelpForCommandIfActive<PreviousPageCommand>();
     helpString +=  GetHelpForCommandIfActive<PageChangeCommand>();
     helpString +=  GetHelpForCommandIfActive<SetFandomCommand>();
     helpString +=  GetHelpForCommandIfActive<IgnoreFandomCommand>();
