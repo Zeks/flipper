@@ -82,10 +82,12 @@ QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowfl
     return server;
 }
 
-QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, int serverID)
+QSharedPointer<Server> Client::GetServerInstanceForChannel(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, uint64_t serverID)
 {
     QSharedPointer<discord::Server> server;
-    if(nonPmChannels.contains(channelID.number())){
+    if(serverID == -1)
+        server = fictionalDMServer;
+    else if(nonPmChannels.contains(channelID.number())){
         server = InitDiscordServerIfNecessary(serverID);
     }
     else{
@@ -135,6 +137,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
         channelToServerHash.push(message.channelID.number(), message.serverID.number());
     }
+
     executor->Push(commands);
 }
 
@@ -150,7 +153,9 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         return;
 
 
-    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, channelToServerHash.value(channelID.number()));
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
+                                                                         channelToServerHash.contains(channelID.number())
+                                                                         ? channelToServerHash.value(channelID.number()) : -1);
 
     bool isOriginalUser = messageToUserHash.same_user(messageID.number(), userID.number());
     if(isOriginalUser){
