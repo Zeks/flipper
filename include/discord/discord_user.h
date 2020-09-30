@@ -126,8 +126,8 @@ struct User{
 
     bool isValid = false;
 
-
-
+    bool GetRngBustScheduled() const;
+    void SetRngBustScheduled(bool value);
 
 private:
     QString userID;
@@ -144,6 +144,7 @@ private:
     bool showCompleteOnly = false;
     bool hideDead = false;
     bool strictFreshSort = false;
+    bool rngBustScheduled = false;
     int similarFicsId = 0;
     int forcedMinMatch = 0;
     int forcedRatio = 0;

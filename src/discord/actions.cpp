@@ -226,6 +226,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     if(!refreshing)
         action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
     environment->ficSource->ClearUserData();
+    command.user->SetRngBustScheduled(true);
     //qDebug() << "after clearing user data";
     return action;
 }
@@ -280,6 +281,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     if(!refreshing)
         action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
+    command.user->SetRngBustScheduled(true);
     environment->ficSource->ClearUserData();
     return action;
 }
@@ -685,6 +687,7 @@ QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<T
         usersDbInterface->FilterFandom(command.user->UserID(), fandomId, command.variantHash["allow_crossovers"].toBool());
         currentFilter.AddFandom(fandomId, command.variantHash["allow_crossovers"].toBool());
     }
+    command.user->SetRngBustScheduled(true);
     command.user->SetFandomFilter(currentFilter);
     action->emptyAction = true;
     return action;
@@ -742,6 +745,7 @@ QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointe
         ignoreFandom();
 
     }
+    command.user->SetRngBustScheduled(true);
     command.user->SetIgnoredFandoms(currentIgnores);
     //action->emptyAction = true;
     return action;
@@ -879,6 +883,7 @@ QSharedPointer<SendMessageCommand> ShowCompleteAction::ExecuteImpl(QSharedPointe
         usersDbInterface->SetCompleteFilter(command.user->UserID(), false);
         user->SetShowCompleteOnly(false);
     }
+    user->SetRngBustScheduled(true);
     return action;
 }
 
@@ -897,6 +902,7 @@ QSharedPointer<SendMessageCommand> HideDeadAction::ExecuteImpl(QSharedPointer<Ta
         usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
         user->SetHideDead(false);
     }
+    user->SetRngBustScheduled(true);
     return action;
 }
 
@@ -935,6 +941,7 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
             usersDbInterface->UnfilterFandom(command.user->UserID(), fandomId);
     }
     user->SetFandomFilter({});
+    user->SetRngBustScheduled(true);
     action->text = "Done, filter has been reset.";
     return action;
 }
@@ -943,6 +950,7 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
 QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     command.user->initNewEasyQuery();
+    command.user->SetRngBustScheduled(true);
     auto ficId = command.ids.at(0);
     QSharedPointer<core::RecommendationList> listParams;
     QString error;
@@ -985,6 +993,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
         action->stopChain = true;
         return action;
     }
+
 
     action->text = "Created similarity list FFN ID: " + QString::number(command.ids.at(0));
     environment->ficSource->ClearUserData();

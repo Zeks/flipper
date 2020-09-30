@@ -6,7 +6,11 @@ Product{
     cpp.debugInformation: true
     cpp.cxxLanguageVersion: "c++17"
 
-    cpp.cxxFlags: ["-Wno-unused-function"]
+    // I literally can't do anything about deprecated copy warning within sleepy-discord
+    // have to shitcode here to see actual relevant warnings in my code
+    // and not a shitton of deprecations warnings I can do nothing about
+    cpp.cxxFlags: ["-Wno-unused-function", "-Wno-deprecated-copy"]
+    //cpp.cxxFlags: ["-Wno-unused-function"]
     destinationDirectory: {
         var path = project.rootFolder
         path += qbs.buildVariant == "release" ? "/release" : "/debug"

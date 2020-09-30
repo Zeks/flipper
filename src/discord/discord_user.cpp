@@ -460,6 +460,18 @@ void User::SetSimilarFicsId(int value)
     QWriteLocker locker(&lock);
     similarFicsId = value;
 }
+
+bool User::GetRngBustScheduled() const
+{
+    QReadLocker locker(&lock);
+    return rngBustScheduled;
+}
+
+void User::SetRngBustScheduled(bool value)
+{
+    QWriteLocker locker(&lock);
+    rngBustScheduled = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

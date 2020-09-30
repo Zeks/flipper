@@ -97,6 +97,7 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     filter.slashFilter.slashFilterLevel = 1;
     filter.slashFilter.slashFilterEnabled = true;
     filter.rngDisambiguator += user->UserID();
+    filter.wipeRngSequence = user->GetRngBustScheduled();
     auto userFics = user->FicList();
 
     for(int i = 0; i < userFics->fics.size(); i++)

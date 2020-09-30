@@ -31,6 +31,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
     where += "Minrecs: " + QString::number(filter.minRecommendations);
     where += "Rated: " + QString::number(filter.rating);
     where += "Complete: " + QString::number(filter.ensureCompleted);
+    where += "Liked: " + QString::number(filter.likedAuthorsEnabled);
     where += "Dead: " + QString::number(filter.allowUnfinished);
     where += "Active tags: " + filter.activeTags.join(",");
     where += "Displaying purged:" + QString::number(filter.displayPurgedFics);

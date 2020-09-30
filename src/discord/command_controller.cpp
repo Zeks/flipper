@@ -13,7 +13,7 @@ CommandController::CommandController(QObject *parent) : QObject(parent)
 
 void CommandController::Init(int runnerAmount)
 {
-    auto timerId = startTimer(300);
+    startTimer(300);
     for(int i =0; i < runnerAmount; i++){
         runners.push_back(QSharedPointer<TaskRunner>(new TaskRunner()));
         connect(runners.last().data(), &TaskRunner::finished, this, &CommandController::OnTaskFinished);
