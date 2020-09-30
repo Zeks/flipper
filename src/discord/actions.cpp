@@ -177,13 +177,13 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
 
     QLOG_INFO() << "Total fic count: " << count << " Perfect Fics: " << perfectRngFics.size() << " Good Fics: " << goodRngFics.size();
 
-
     command.user->SetFfnID(ffnId);
     //command.user->SetPerfectRngFics(perfectRngFics);
     //command.user->SetGoodRngFics(goodRngFics);
     command.user->SetPerfectRngScoreCutoff(perfectCutoff);
     command.user->SetGoodRngScoreCutoff(goodCutoff);
     environment->ficSource->ClearUserData();
+    return recList;
 }
 
 
@@ -212,7 +212,8 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         action->text = "Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.";
         return action;
     }
-    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
+    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
+    //qDebug() << "after filling";
 
     if(!recList->ficData->matchCounts.size())
     {
@@ -225,6 +226,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     if(!refreshing)
         action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
     environment->ficSource->ClearUserData();
+    //qDebug() << "after clearing user data";
     return action;
 }
 
