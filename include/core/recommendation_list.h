@@ -56,6 +56,7 @@ public:
     void PassSetupParamsInto(RecommendationList& other);
     bool success = false;
     bool isAutomatic = true;
+    bool adjusting = false;
     bool useWeighting = false;
     bool useMoodAdjustment = false;
     bool hasAuxDataFilled = false;

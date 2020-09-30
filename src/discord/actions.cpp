@@ -212,7 +212,18 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         action->text = "Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.";
         return action;
     }
+    bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
+    if(wasAutomatic && !recList->isAutomatic)
+    {
+        command.user->SetForcedMinMatch(recList->minimumMatch);
+        command.user->SetForcedRatio(recList->maxUnmatchedPerMatch);
+        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+        environment->fandoms->db = dbToken->db;
+        An<interfaces::Users> usersDbInterface;
+        usersDbInterface->WriteForcedListParams(command.user->UserID(), recList->minimumMatch,recList->maxUnmatchedPerMatch);
+    }
+
     //qDebug() << "after filling";
 
     if(!recList->ficData->matchCounts.size())
@@ -239,6 +250,17 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 {
     command.user->initNewRecsQuery();
     auto ffnId = QString::number(command.ids.at(0));
+
+    if(command.user->FfnID() != ffnId)
+    {
+        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+        environment->fandoms->db = dbToken->db;
+        An<interfaces::Users> usersDbInterface;
+        usersDbInterface->WriteForcedListParams(command.user->UserID(), 0,0);
+        command.user->SetForcedMinMatch(0);
+        command.user->SetForcedRatio(0);
+    }
+
     bool refreshing = command.variantHash.contains("refresh");
     QSharedPointer<core::RecommendationList> listParams;
     QString error;
@@ -269,7 +291,18 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         action->commandsToReemit.push_back(chain);
         return action;
     }
+    bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
+    if(wasAutomatic && !recList->isAutomatic)
+    {
+        command.user->SetForcedMinMatch(recList->minimumMatch);
+        command.user->SetForcedRatio(recList->maxUnmatchedPerMatch);
+        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+        environment->fandoms->db = dbToken->db;
+        An<interfaces::Users> usersDbInterface;
+        usersDbInterface->WriteForcedListParams(command.user->UserID(), recList->minimumMatch,recList->maxUnmatchedPerMatch);
+    }
+
 
     if(!recList->ficData->matchCounts.size())
     {

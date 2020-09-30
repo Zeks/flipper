@@ -26,13 +26,16 @@ namespace core {
 class RecCalculatorImplMoodAdjusted: public RecCalculatorImplWeighted{
 public:
     RecCalculatorImplMoodAdjusted(RecInputVectors input, genre_stats::GenreMoodData moodData);
-    std::optional<double> GetNeutralDiffForLists(uint32_t);
-    std::optional<double> GetTouchyDiffForLists(uint32_t);
+    std::optional<double> GetNeutralDiffForLists(uint32_t) override;
+    std::optional<double> GetTouchyDiffForLists(uint32_t) override;
     virtual FilterListType GetFilterList();
 
     QHash<uint32_t, ListMoodDifference> moodDiffs;
     genre_stats::GenreMoodData moodData;
 
+
+    void ResetAccumulatedData() override;
+    bool WeightingIsValid() const override;
 };
 
 

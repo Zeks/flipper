@@ -19,29 +19,62 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "timeutils.h"
 
 namespace core{
+void RecCalculatorImplBase::ResetAccumulatedData()
+{
+    matchSum = 0;
+    negativeAverage = 0;
+    maximumMatches = 0;
+    prevMaximumMatches = 0;
+    averageNegativeToPositiveMatches = 0;
+    startOfTrashCounting = 200;
+    filteredAuthors.clear();
+}
+
 bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
 
-    TimedAction relations("Fetching relations",[&](){
-        FetchAuthorRelations();
-    });
-    relations.run();
-    TimedAction filtering("Filtering data",[&](){
-        Filter(filters, actions);
-    });
-    filtering.run();
+    do
+    {
+        ResetAccumulatedData();
+        TimedAction relations("Fetching relations",[&](){
+            FetchAuthorRelations();
+        });
+        relations.run();
+        TimedAction filtering("Filtering data",[&](){
+            Filter(filters, actions);
+        });
+        filtering.run();
 
-    TimedAction resultAdjustment("adjusting results",[&](){
-        AutoAdjustRecommendationParamsAndFilter();
-        AdjustRatioForAutomaticParams();
-    });
-    resultAdjustment.run();
+        TimedAction resultAdjustment("adjusting results",[&](){
+            AutoAdjustRecommendationParamsAndFilter();
+            AdjustRatioForAutomaticParams();
+        });
+        resultAdjustment.run();
 
-    TimedAction weighting("weighting",[&](){
-        CalcWeightingParams();
-    });
-    weighting.run();
+        TimedAction weighting("weighting",[&](){
+            CalcWeightingParams();
+        });
+        weighting.run();
+        if(!params->isAutomatic && !params->adjusting)
+            break;
+
+        if(WeightingIsValid())
+            break;
+
+        params->adjusting = true;
+
+        if(params->minimumMatch-7 < 10 && params->maxUnmatchedPerMatch-7 < 10)
+            break;
+
+        if(params->maxUnmatchedPerMatch-7 > 10)
+            params->maxUnmatchedPerMatch-=7;
+        if(params->minimumMatch-7 > 10)
+            params->minimumMatch-=7;
+
+        params->isAutomatic = false;
+        QLOG_INFO() << "Dropping ratio to: " << params->maxUnmatchedPerMatch;
+    }while(params->adjusting);
 
     CalculateNegativeToPositiveRatio();
     bool succesfullyGotVotes = false;
@@ -188,7 +221,7 @@ bool RecCalculatorImplBase::CollectVotes()
 void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
 {
     // if the options were supplied manually, we just return what we got
-    if(!params->isAutomatic)
+    if(!params->isAutomatic && !params->adjusting)
         return;
     // else we try to adjust minimum mathes so that a set of conditionsa re met
     // 1) for the average of 3 numbers we take a differnece between it and the middle one
@@ -261,6 +294,8 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
     //QHash<int, AuthorResult> result;
     QList<int> result;
     params->minimumMatch = matches[stoppingIndex];
+    if(params->minimumMatch > 20)
+        params->minimumMatch = 20;
     for(auto matchCount : matches){
         if(matchCount < params->minimumMatch)
         {
@@ -659,6 +694,11 @@ void RecCalculatorImplBase::FillFilteredAuthorsForFics()
     }
     //QLOG_INFO() << "data at exit is: " << authorsForFics;
     QLOG_INFO() << "Finished filling authors for fics";
+}
+
+bool RecCalculatorImplDefault::WeightingIsValid() const
+{
+    return true;
 }
 
 

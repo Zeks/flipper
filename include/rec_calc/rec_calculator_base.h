@@ -92,6 +92,7 @@ public:
 
     virtual ~RecCalculatorImplBase(){}
 
+    virtual void ResetAccumulatedData();
     bool Calc();
     Roaring BuildIgnoreList();
     void FetchAuthorRelations();
@@ -104,6 +105,7 @@ public:
     void FillFilteredAuthorsForFics();
 
     virtual bool CollectVotes();
+    virtual bool WeightingIsValid() const = 0;
 
     virtual void CalcWeightingParams() = 0;
     virtual FilterListType GetFilterList() = 0;
@@ -165,18 +167,20 @@ static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & aut
 class RecCalculatorImplDefault: public RecCalculatorImplBase{
 public:
     RecCalculatorImplDefault(RecInputVectors input): RecCalculatorImplBase(input){}
-    virtual FilterListType GetFilterList(){
+    virtual FilterListType GetFilterList() override{
         return {matchesFilter, ratioFilter, negativeFilter};
     }
-    virtual ActionListType GetActionList(){
+    virtual ActionListType GetActionList() override{
         return {authorAccumulator};
     }
-    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc(){
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override{
         return [](AuthorResult&, int, int){return AuthorWeightingResult();};
     }
-    void CalcWeightingParams(){
+    void CalcWeightingParams() override{
         // does nothing
     }
+
+    bool WeightingIsValid() const override;
 };
 
 }

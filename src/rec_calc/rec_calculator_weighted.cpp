@@ -194,4 +194,20 @@ void RecCalculatorImplWeighted::AdjustRatioForAutomaticParams()
         ratioSum+=allAuthors[author].ratio;
 }
 
+void RecCalculatorImplWeighted::ResetAccumulatedData()
+{
+    RecCalculatorImplBase::ResetAccumulatedData();
+    ratioSum = 0;
+    ratioMedian = 0;
+    quad = 0;
+    sigma2Dist = 0;
+    counter2Sigma = 0;
+    counter17Sigma = 0;
+}
+
+bool RecCalculatorImplWeighted::WeightingIsValid() const
+{
+    return sigma2Dist > 1;
+}
+
 }

@@ -49,6 +49,16 @@ RecCalculatorImplWeighted::FilterListType RecCalculatorImplMoodAdjusted::GetFilt
     return {matchesFilter, ratioFilterMoodAdjusted, negativeFilter};
 }
 
+void RecCalculatorImplMoodAdjusted::ResetAccumulatedData()
+{
+    RecCalculatorImplWeighted::ResetAccumulatedData();
+}
+
+bool RecCalculatorImplMoodAdjusted::WeightingIsValid() const
+{
+    return RecCalculatorImplWeighted::WeightingIsValid();
+}
+
 RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors input, genre_stats::GenreMoodData moodData):
     RecCalculatorImplWeighted(input), moodData(moodData)
 {

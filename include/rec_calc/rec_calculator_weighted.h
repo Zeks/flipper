@@ -55,11 +55,9 @@ public:
     int counter2Sigma = 0;
     int counter17Sigma = 0;
 
-
-
-    // RecCalculatorImplBase interface
-public:
     void AdjustRatioForAutomaticParams() override;
+    void ResetAccumulatedData() override;
+    bool WeightingIsValid() const override;
 };
 
 
