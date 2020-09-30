@@ -2,7 +2,7 @@
 
 #include "GlobalHeaders/SingletonHolder.h"
 
-#include <QSqlDatabase>
+#include "database.h"
 #include <mutex>
 
 namespace discord {
@@ -12,8 +12,8 @@ struct SqliteConnectionToken{
     QString folder;
 };
 
-struct LockedDatabase{
-    LockedDatabase(std::recursive_mutex& lock):lockGuard(lock){}
+struct LockedDatabase : public core::Database{
+    LockedDatabase(std::recursive_mutex& lock):core::Database(), lockGuard(lock){}
     ~LockedDatabase();
     std::lock_guard<std::recursive_mutex> lockGuard;
     QSqlDatabase db;

@@ -219,6 +219,7 @@ public:
     SleepyDiscord::Message originalMessage;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
     ECommandType originalCommandType = ct_none;
+    QList<CommandChain> commandsToReemit;
     QStringList errors;
     bool emptyAction = false;
     bool stopChain = false;
@@ -227,5 +228,6 @@ public:
 
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message );
 CommandChain CreateChangePageCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message , bool shiftRight = true);
+Command NewCommand(QSharedPointer<discord::Server> server, SleepyDiscord::Message message, ECommandType type);
 }
 

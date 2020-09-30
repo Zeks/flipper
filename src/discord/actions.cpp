@@ -5,6 +5,7 @@
 #include "sql/discord/discord_queries.h"
 #include "discord/discord_server.h"
 #include "discord/fetch_filters.h"
+#include "discord/favourites_fetching.h"
 #include "discord/type_strings.h"
 #include "parsers/ffn/favparser_wrapper.h"
 #include "Interfaces/interface_sqlite.h"
@@ -67,44 +68,6 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
 
 
 
-QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageCommand> action, ECacheMode cacheMode = ECacheMode::use_only_cache){
-    QSet<QString> userFavourites;
-
-    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("pageCache");
-
-    TimedAction linkGet("Link fetch", [&](){
-        QString url = "https://www.fanfiction.net/u/" + ffnId;
-        parsers::ffn::UserFavouritesParser parser;
-        auto result = parser.FetchDesktopUserPage(ffnId,dbToken->db, cacheMode);
-        parsers::ffn::QuickParseResult quickResult;
-
-        if(!result){
-            action->errors.push_back("Could not load user page on FFN. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
-        }
-        parser.cacheDbToUse = dbToken->db;
-        if(action->errors.size() == 0)
-        {
-            quickResult = parser.QuickParseAvailable();
-            parser.FetchFavouritesFromDesktopPage();
-            userFavourites = parser.result;
-
-            if(!quickResult.canDoQuickParse)
-            {
-                parser.cacheMode = cacheMode;
-                parser.FetchFavouritesFromMobilePage();
-                userFavourites = parser.result;
-                if(userFavourites.size() == 0)
-                {
-                    action->errors.push_back("Could not read favourites from your FFN page. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
-                }
-            }
-
-        }
-    });
-    linkGet.run();
-    return userFavourites;
-}
-
 QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnId)
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
@@ -136,16 +99,7 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
     return list;
 }
 
-
-QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
-{
-    command.user->initNewRecsQuery();
-    auto ffnId = QString::number(command.ids.at(0));
-    bool refreshing = command.variantHash.contains("refresh");
-    QSharedPointer<core::RecommendationList> listParams;
-    QString error;
-
-    QSet<QString> userFavourites = FetchUserFavourites(ffnId, action, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache);
+QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, QSet<QString> userFavourites, QSharedPointer<TaskEnvironment> environment, Command command){
     auto recList = CreateRecommendationParams(ffnId);
     if(command.user->GetForcedMinMatch() != 0){
          recList->minimumMatch = command.user->GetForcedMinMatch();
@@ -187,13 +141,8 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
     int count = 0;
     if(!recList->ficData->matchCounts.size())
-    {
-        command.user->SetFfnID(ffnId);
-        action->text = "Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495";
-        action->stopChain = true;
-        return action;
+        return recList;
 
-    }
     for(int i = 0; i < recList->ficData->fics.size(); i++){
         if(recList->ficData->matchCounts.at(i) > 1)
         {
@@ -234,11 +183,106 @@ QSharedPointer<SendMessageCommand> RecsCreationAction::ExecuteImpl(QSharedPointe
     //command.user->SetGoodRngFics(goodRngFics);
     command.user->SetPerfectRngScoreCutoff(perfectCutoff);
     command.user->SetGoodRngScoreCutoff(goodCutoff);
+    environment->ficSource->ClearUserData();
+}
+
+
+
+
+
+
+QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    command.user->initNewRecsQuery();
+    auto ffnId = QString::number(command.ids.at(0));
+    bool refreshing = command.variantHash.contains("refresh");
+    QSharedPointer<core::RecommendationList> listParams;
+    QString error;
+
+    FavouritesFetchResult userFavourites = FetchMobileFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache);
+    // here, we check that we were able to fetch favourites at all
+    if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)
+    {
+        action->text = userFavourites.errors.join("\n");
+        return action;
+    }
+    // here, we check that we were able to fetch all favourites with desktop link and reschedule the task otherwise
+    if(userFavourites.requiresFullParse)
+    {
+        action->text = "Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.";
+        return action;
+    }
+    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
+
+    if(!recList->ficData->matchCounts.size())
+    {
+        command.user->SetFfnID(ffnId);
+        action->text = "Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495";
+        action->stopChain = true;
+        return action;
+    }
+
     if(!refreshing)
         action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
     environment->ficSource->ClearUserData();
     return action;
 }
+
+static std::string CreateMention(const std::string& string){
+    return "<@" + string + ">";
+}
+
+QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
+{
+    command.user->initNewRecsQuery();
+    auto ffnId = QString::number(command.ids.at(0));
+    bool refreshing = command.variantHash.contains("refresh");
+    QSharedPointer<core::RecommendationList> listParams;
+    QString error;
+
+    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache);
+    // here, we check that we were able to fetch favourites at all
+    if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)
+    {
+        action->text = userFavourites.errors.join("\n");
+        return action;
+    }
+    // here, we check that we were able to fetch all favourites with desktop link and reschedule the task otherwise
+    if(userFavourites.requiresFullParse)
+    {
+        action->stopChain = true;
+        action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
+        command.type = ct_create_recs_from_mobile_page;
+        command.variantHash = command.variantHash;
+        Command displayRecs = NewCommand(command.server, command.originalMessage, ct_display_page);
+        displayRecs.variantHash["refresh_previous"] = true;
+        displayRecs.user = command.user;
+        displayRecs.ids.push_back(0);
+        CommandChain chain;
+        chain.commands += command;
+        chain.commands += displayRecs;
+        chain.hasFullParseCommand = true;
+        chain.user = command.user;
+        action->commandsToReemit.push_back(chain);
+        return action;
+    }
+    auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
+
+    if(!recList->ficData->matchCounts.size())
+    {
+        command.user->SetFfnID(ffnId);
+        action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495");
+        action->stopChain = true;
+        return action;
+    }
+
+    if(!refreshing)
+        action->text = "Recommendation list has been created for FFN ID: " + QString::number(command.ids.at(0));
+    environment->ficSource->ClearUserData();
+    return action;
+}
+
+
 
 void ActionChain::Push(QSharedPointer<SendMessageCommand> action)
 {
@@ -252,9 +296,6 @@ QSharedPointer<SendMessageCommand> ActionChain::Pop()
     return action;
 }
 
-static std::string CreateMention(const std::string& string){
-    return "<@" + string + ">";
-}
 
 auto ExtractAge(QDateTime toDate){
     int years = 0;
@@ -966,7 +1007,7 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
     case ECommandType::ct_timeout_active:
         return QSharedPointer<ActionBase>(new TimeoutActiveAction());
     case ECommandType::ct_fill_recommendations:
-        return QSharedPointer<ActionBase>(new RecsCreationAction());
+        return QSharedPointer<ActionBase>(new DesktopRecsCreationAction());
     case ECommandType::ct_no_user_ffn:
         return QSharedPointer<ActionBase>(new NoUserInformationAction());
     case ECommandType::ct_display_rng:
@@ -993,6 +1034,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new ResetFiltersAction());
     case ECommandType::ct_create_similar_fics_list:
         return QSharedPointer<ActionBase>(new CreateSimilarFicListAction());
+    case ECommandType::ct_create_recs_from_mobile_page:
+        return QSharedPointer<ActionBase>(new MobileRecsCreationAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

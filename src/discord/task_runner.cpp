@@ -26,6 +26,8 @@ void TaskRunner::run()
 {
     if(chainToRun.hasParseCommand)
         result.performedParseCommand = true;
+    if(chainToRun.hasFullParseCommand)
+        result.performedFullParseCommand = true;
     for(auto command : chainToRun.commands){
         auto action = GetAction(command.type);
         auto actionResult = action->Execute(environment, command);

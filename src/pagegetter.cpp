@@ -241,21 +241,6 @@ void PageGetterPrivate::WipeAllCache()
         qDebug() << "Error wiping cache: "  << q.lastError();
 }
 
-//void PageGetterPrivate::OnNetworkReply(QNetworkReply * reply)
-//{
-//    FuncCleanup f([&](){waitLoop.quit();});
-//    QByteArray data=reply->readAll();
-//    error = reply->error();
-//    reply->deleteLater();
-//    if(error != QNetworkReply::NoError)
-//        return;
-//    //QString str(data);
-//    result.content = data;
-//    result.isValid = true;
-//    result.url = currentRequest.url().toString();
-//    result.source = EPageSource::network;
-//}
-
 PageManager::PageManager() : d(new PageGetterPrivate)
 {
 

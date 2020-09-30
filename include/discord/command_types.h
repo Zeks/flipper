@@ -28,6 +28,7 @@ namespace discord {
             ct_purge = 25,
             ct_reset_filters = 26,
             ct_create_similar_fics_list = 27,
+            ct_create_recs_from_mobile_page = 28,
         };
 
 }

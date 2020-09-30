@@ -391,6 +391,8 @@ CommandChain CommandParser::Execute(std::string command, QSharedPointer<discord:
         processor->user = user;
         auto newCommands = processor->ProcessInput(client, server, message, firstCommand);
         result += newCommands;
+        if(newCommands.hasParseCommand)
+            result.hasParseCommand = true;
         if(newCommands.stopExecution == true)
             break;
         if(firstCommand)

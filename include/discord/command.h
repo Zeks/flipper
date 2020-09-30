@@ -62,7 +62,9 @@ struct CommandChain{
         stopExecution = false;
     };
     QList<Command> commands;
+    QSharedPointer<User> user;
     bool hasParseCommand = false;
+    bool hasFullParseCommand = false;
     bool stopExecution = false;
 };
 

@@ -10,6 +10,13 @@ namespace discord {
 class TaskRunner;
 class Client;
 
+
+enum ECommandParseRequirement{
+    cpr_none = 0,
+    cpr_quick = 1,
+    cpr_full = 2,
+};
+
 class CommandController : public QObject{
 Q_OBJECT
 public:
@@ -17,14 +24,15 @@ public:
     void Init(int runnerAmount);
     void Push(CommandChain);
 
-    QSharedPointer<TaskRunner> FetchFreeRunner();
+    QSharedPointer<TaskRunner> FetchFreeRunner(ECommandParseRequirement = cpr_none);
 
     bool activeParseCommand = false;
+    bool activeFullParseCommand = false;
     QSet<QString> activeUsers;
     QList<QSharedPointer<TaskRunner>> runners;
     QQueue<CommandChain> queue;
     Client* client = nullptr;
-    std::mutex lock;
+    std::recursive_mutex lock;
 public slots:
     void OnTaskFinished();
 protected:
@@ -32,3 +40,4 @@ protected:
 };
 
 }
+

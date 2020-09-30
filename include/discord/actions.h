@@ -33,7 +33,8 @@ public: \
 }
 
 ACTION(HelpAction);
-ACTION(RecsCreationAction);
+ACTION(DesktopRecsCreationAction);
+ACTION(MobileRecsCreationAction);
 ACTION(DisplayPageAction);
 ACTION(DisplayRngAction);
 ACTION(SetFandomAction);
@@ -66,6 +67,7 @@ struct ActionChain{
     QQueue<QSharedPointer<SendMessageCommand>> actions;
 
     bool performedParseCommand = false;
+    bool performedFullParseCommand = false;
 };
 
 QSharedPointer<ActionBase> GetAction(ECommandType);
