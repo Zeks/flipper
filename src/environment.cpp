@@ -1247,7 +1247,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     auto sourceFicsSet = LoadAuthorFicIdsForRecCreation(url, nullptr, true);
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
-    params->minimumMatch = 6;
+    params->minimumMatch = 1;
     params->maxUnmatchedPerMatch = 50;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
