@@ -95,20 +95,20 @@ std::function<AuthorWeightingResult(AuthorResult&, int, int)> RecCalculatorImplW
 }
 
 void RecCalculatorImplWeighted::CalcWeightingParams(){
+    auto authorList = filteredAuthors.values();
     QLOG_INFO() << "inputs to weighting:";
     QLOG_INFO() << "matchsum:" << matchSum;
     QLOG_INFO() << "inputs.faves.size():" << inputs.faves.size();
     QLOG_INFO() << "ratioSum:" << ratioSum;
-    QLOG_INFO() << "filteredAuthors.size():" << filteredAuthors.size();
-
+    QLOG_INFO() << "filteredAuthors.size():" << authorList.size();
 
     int matchMedian = matchSum/inputs.faves.size();
 
-    ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(filteredAuthors.size());
+    ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(authorList.size());
 
-    double normalizer = 1./static_cast<double>(filteredAuthors.size()-1.);
+    double normalizer = 1./static_cast<double>(authorList.size()-1.);
     double sum = 0;
-    for(auto author: filteredAuthors)
+    for(auto author: authorList)
     {
         sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
     }
@@ -124,24 +124,24 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
         return allAuthors[i1].matches < allAuthors[i2].matches;
     });
 
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(),[&](const int& i1, const int& i2){
+    std::sort(authorList.begin(), authorList.end(),[&](const int& i1, const int& i2){
         return allAuthors[i1].ratio < allAuthors[i2].ratio;
     });
 
-    auto ratioMedianIt = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& ){
+    auto ratioMedianIt = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
         return allAuthors[i1].ratio < ratioMedian;
     });
-    auto dist = ratioMedianIt - filteredAuthors.begin();
+    auto dist = ratioMedianIt - authorList.begin();
     qDebug() << "distance to median is: " << dist;
-    qDebug() << "vector size is: " << filteredAuthors.size();
+    qDebug() << "vector size is: " << authorList.size();
 
     qDebug() << "sigma: " << quad;
     qDebug() << "2 sigma: " << quad * 2;
 
-    auto ratioSigma2 = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& ){
+    auto ratioSigma2 = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
         return allAuthors[i1].ratio < (ratioMedian - quad*2);
     });
-    sigma2Dist = ratioSigma2 - filteredAuthors.begin();
+    sigma2Dist = ratioSigma2 - authorList.begin();
     qDebug() << "distance to sigma15 is: " << sigma2Dist;
 
     QLOG_INFO() << "outputs from weighting:";

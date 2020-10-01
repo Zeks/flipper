@@ -41,7 +41,7 @@ struct RecommendationListResult{
     QHash<int, int> sumNegativeMatchesForFic;
     QHash<int, int> sumNegativeVotesForFic;
     QHash<int, double> noTrashScore;
-    QList<int> authors;
+    QSet<int> authors;
 };
 
 struct DiagnosticRecommendationListResult{
@@ -80,6 +80,10 @@ struct RecInputVectors{
     const core::AuthorMoodDistributions& moods;
 };
 
+struct AutoAdjustmentAndFilteringResult{
+    bool performedFiltering = false;
+    QSet<int> authors;
+};
 
 
 class RecCalculatorImplBase
@@ -94,10 +98,12 @@ public:
 
     virtual void ResetAccumulatedData();
     bool Calc();
+    void RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, FilterListType filters, ActionListType actions);
     Roaring BuildIgnoreList();
     void FetchAuthorRelations();
     void CollectFicMatchQuality();
-    void Filter(QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
+    void Filter(QSharedPointer<RecommendationList> params,
+                QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
                 QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> actions);
 
     void CalculateNegativeToPositiveRatio();
@@ -115,8 +121,9 @@ public:
     virtual std::optional<double> GetNeutralDiffForLists(uint32_t){return {};}
     virtual std::optional<double> GetTouchyDiffForLists(uint32_t){return {};}
 
-    virtual void AutoAdjustRecommendationParamsAndFilter();
+    virtual AutoAdjustmentAndFilteringResult AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList>);
     virtual void AdjustRatioForAutomaticParams();
+    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>);
 
     int ownProfileId = -1;
     uint32_t matchSum = 0;
@@ -131,7 +138,7 @@ public:
     double averageNegativeToPositiveMatches = 0;
     uint32_t startOfTrashCounting = 200;
     bool doTrashCounting = true;
-    QList<int> filteredAuthors;
+    QSet<int> filteredAuthors;
     Roaring ownFavourites;
     Roaring ownMajorNegatives;
     RecommendationListResult result;
@@ -159,7 +166,7 @@ static auto negativeFilter = [](AuthorResult& author, QSharedPointer<Recommendat
 
 static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author)
 {
-    ptr->filteredAuthors.push_back(author.id);
+    ptr->filteredAuthors+=author.id;
 };
 
 

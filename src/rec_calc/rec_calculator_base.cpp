@@ -33,48 +33,23 @@ void RecCalculatorImplBase::ResetAccumulatedData()
 bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
+    RunMatchingAndWeighting(params, filters, actions);
+    QLOG_INFO() << "filtered authors after default pass:" << filteredAuthors.size();
 
-    do
-    {
-        ResetAccumulatedData();
-        TimedAction relations("Fetching relations",[&](){
-            FetchAuthorRelations();
-        });
-        relations.run();
-        TimedAction filtering("Filtering data",[&](){
-            Filter(filters, actions);
-        });
-        filtering.run();
-
-        TimedAction resultAdjustment("adjusting results",[&](){
-            AutoAdjustRecommendationParamsAndFilter();
-            AdjustRatioForAutomaticParams();
-        });
-        resultAdjustment.run();
-
-        TimedAction weighting("weighting",[&](){
-            CalcWeightingParams();
-        });
-        weighting.run();
-        if(!params->isAutomatic && !params->adjusting)
-            break;
-
-        if(WeightingIsValid())
-            break;
-
-        params->adjusting = true;
-
-        if(params->minimumMatch-7 < 10 && params->maxUnmatchedPerMatch-7 < 10)
-            break;
-
-        if(params->maxUnmatchedPerMatch-7 > 10)
-            params->maxUnmatchedPerMatch-=7;
-        if(params->minimumMatch-7 > 10)
-            params->minimumMatch-=7;
-
-        params->isAutomatic = false;
-        QLOG_INFO() << "Dropping ratio to: " << params->maxUnmatchedPerMatch;
-    }while(params->adjusting);
+    // at this point we have initial weighting figured out
+    // now, if we ended up with minmatches over 10 we might want to adjust more
+    // to brind into recommendations stuff from people with less than minimal amount of matches
+    // but exceptional match counts (basically, smaller lists)
+    // to do this we clone the params and do another non automatic pass
+//    if(params->minimumMatch > 10){
+//        QSharedPointer<RecommendationList> params(new RecommendationList());
+//        params->maxUnmatchedPerMatch = this->params->maxUnmatchedPerMatch*0.75;
+//        params->minimumMatch = this->params->minimumMatch/2;
+//        TimedAction filtering("Filtering data",[&](){
+//            Filter(params, filters, actions);
+//        });
+//        QLOG_INFO() << "filtered authors after second pass:" << filteredAuthors.size();
+//    }
 
     CalculateNegativeToPositiveRatio();
     bool succesfullyGotVotes = false;
@@ -95,6 +70,45 @@ bool RecCalculatorImplBase::Calc(){
     if(needsDiagnosticData)
         FillFilteredAuthorsForFics();
     return true;
+}
+
+void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, FilterListType filters, ActionListType actions)
+{
+    do
+    {
+        ResetAccumulatedData();
+        TimedAction relations("Fetching relations",[&](){
+            FetchAuthorRelations();
+        });
+        relations.run();
+        TimedAction filtering("Filtering data",[&](){
+            Filter(params, filters, actions);
+        });
+        filtering.run();
+
+        TimedAction resultAdjustment("adjusting results",[&](){
+            auto adjustmentResult = AutoAdjustRecommendationParamsAndFilter(params);
+            if(adjustmentResult.performedFiltering)
+                filteredAuthors = adjustmentResult.authors;
+            AdjustRatioForAutomaticParams(); // todo check if moodlist even goes there
+        });
+        resultAdjustment.run();
+
+        TimedAction weighting("weighting",[&](){
+            CalcWeightingParams();
+        });
+        weighting.run();
+        if(!params->isAutomatic && !params->adjusting)
+            break;
+
+        if(WeightingIsValid())
+            break;
+
+        if(!AdjustParamsToHaveExceptionalLists(params))
+            break;
+
+        QLOG_INFO() << "Dropping ratio to: " << params->maxUnmatchedPerMatch;
+    }while(params->adjusting);
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -218,11 +232,12 @@ bool RecCalculatorImplBase::CollectVotes()
     //}
 }
 
-void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
+AutoAdjustmentAndFilteringResult RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList> params)
 {
+    AutoAdjustmentAndFilteringResult result;
     // if the options were supplied manually, we just return what we got
     if(!params->isAutomatic && !params->adjusting)
-        return;
+        return result;
     // else we try to adjust minimum mathes so that a set of conditionsa re met
     // 1) for the average of 3 numbers we take a differnece between it and the middle one
     //    divide by the middle one and check to see if it's >0.05
@@ -292,7 +307,7 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
     stoppingIndex = stoppingIndex < 0 ? 0 : stoppingIndex;
     QLOG_INFO() << "Adjustment stopped at: " << stoppingIndex;
     //QHash<int, AuthorResult> result;
-    QList<int> result;
+    result.performedFiltering = true;
     params->minimumMatch = matches[stoppingIndex];
     if(params->minimumMatch > 20)
         params->minimumMatch = 20;
@@ -303,15 +318,29 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
             continue;
         }
         //QLOG_INFO() << "adding authors for match count: " << matchCount << " amount:" << authorsByMatches[matchCount].size();
-        result += authorsByMatches[matchCount];
-
+        result.authors += QSet<int>(authorsByMatches[matchCount].begin(), authorsByMatches[matchCount].end());
     }
-    filteredAuthors = result;
+    return result;
 }
 
 void RecCalculatorImplBase::AdjustRatioForAutomaticParams()
 {
     // intentionally does nothing
+}
+
+bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList> params)
+{
+    if(params->minimumMatch-7 < 10 && params->maxUnmatchedPerMatch-7 < 10)
+        return false;
+
+    if(params->maxUnmatchedPerMatch-7 > 10)
+        params->maxUnmatchedPerMatch-=7;
+    if(params->minimumMatch-7 > 10)
+        params->minimumMatch-=7;
+
+    params->isAutomatic = false;
+    params->adjusting = true;
+    return true;
 }
 
 Roaring RecCalculatorImplBase::BuildIgnoreList()
@@ -549,10 +578,9 @@ void RecCalculatorImplBase::CollectFicMatchQuality()
 
 }
 
-void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSharedPointer<RecommendationList>)> > filters,
+void RecCalculatorImplBase::Filter(QSharedPointer<RecommendationList> params, QList<std::function<bool (AuthorResult &, QSharedPointer<RecommendationList>)> > filters,
                                    QList<std::function<void (RecCalculatorImplBase *, AuthorResult &)> > actions)
 {
-    auto params = this->params;
     auto thisPtr = this;
 
     std::for_each(allAuthors.begin(), allAuthors.end(), [this, filters, actions, params,thisPtr](AuthorResult& author){
@@ -588,56 +616,68 @@ void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
 void RecCalculatorImplBase::ReportNegativeResults()
 {
 
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
+    auto authorList = filteredAuthors.values();
+
+    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
         return allAuthors[id1].ratio < allAuthors[id2].ratio;
     });
 
-    int limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
+    int limit = authorList.size() > 50 ? 50 : authorList.size();
     QLOG_INFO() << "RATIO REPORT";
-    for(int i = 0; i < limit; i++){
-        QLOG_INFO() << Qt::endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << Qt::endl
-                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
-                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
+    int i = 0;
+    for(auto& author : authorList){
+        if(i > limit)
+            break;
+        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+                       << " negative matches: " <<  allAuthors[author].negativeMatches
+                       << " negative ratio: " <<  allAuthors[author].negativeRatio
         << Qt::endl
-                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
-                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
-
+                << " positive matches: " <<  allAuthors[author].matches
+                << " positive ratio: " <<  allAuthors[author].ratio;
+        i++;
     }
 
     QLOG_INFO() << "MATCH REPORT";
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
+    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
         return allAuthors[id1].matches > allAuthors[id2].matches;
     });
-    limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
-    for(int i = 0; i < limit; i++){
-        QLOG_INFO() << Qt::endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << Qt::endl
-                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
-                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
+    limit = authorList.size() > 50 ? 50 : authorList.size();
+    i = 0;
+    for(auto& author : authorList){
+        if(i > limit)
+            break;
+        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+                       << " negative matches: " <<  allAuthors[author].negativeMatches
+                       << " negative ratio: " <<  allAuthors[author].negativeRatio
         << Qt::endl
-                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
-                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
-
+                << " positive matches: " <<  allAuthors[author].matches
+                << " positive ratio: " <<  allAuthors[author].ratio;
+        i++;
     }
 
     QLOG_INFO() << "NEGATIVE REPORT";
     QList<int> zeroAuthors;
-    for(auto author : filteredAuthors)
+    for(auto author : authorList)
     {
         if(allAuthors[author].negativeMatches == 0)
             zeroAuthors.push_back(author);
     }
 
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
+    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
         return allAuthors[id1].negativeMatches < allAuthors[id2].negativeMatches ;
     });
-    limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
-    for(int i = 0; i < limit; i++){
-        QLOG_INFO() << Qt::endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << Qt::endl
-                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
-                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
+    limit = authorList.size() > 50 ? 50 : authorList.size();
+    i = 0;
+    for(auto& author : authorList){
+        if(i > limit)
+            break;
+        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+                       << " negative matches: " <<  allAuthors[author].negativeMatches
+                       << " negative ratio: " <<  allAuthors[author].negativeRatio
         << Qt::endl
-                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
-                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
+                << " positive matches: " <<  allAuthors[author].matches
+                << " positive ratio: " <<  allAuthors[author].ratio;
+        i++;
 
     }
 }
