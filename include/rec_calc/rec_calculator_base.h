@@ -139,6 +139,7 @@ public:
     uint32_t startOfTrashCounting = 200;
     bool doTrashCounting = true;
     QSet<int> filteredAuthors;
+    //QSet<int> initialFilteredAuthors;
     Roaring ownFavourites;
     Roaring ownMajorNegatives;
     RecommendationListResult result;
@@ -183,7 +184,7 @@ public:
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override{
         return [](AuthorResult&, int, int){return AuthorWeightingResult();};
     }
-    void CalcWeightingParams(double sigmaMultiplier) override{
+    void CalcWeightingParams(double) override{
         // does nothing
     }
 

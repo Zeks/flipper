@@ -110,7 +110,7 @@ void RecCalculatorImplWeighted::CalcWeightingParams(double deviationMultiplier){
     double sum = 0;
     for(auto author: authorList)
     {
-        auto& authorPtr = allAuthors[author];
+        //auto& authorPtr = allAuthors[author];
         if(allAuthors[author].ratio > 45)
             sum+=0;
         sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);

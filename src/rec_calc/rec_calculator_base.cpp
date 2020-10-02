@@ -24,20 +24,49 @@ namespace core{
 void RecCalculatorImplBase::ResetAccumulatedData()
 {
     matchSum = 0;
-    negativeAverage = 0;
-    maximumMatches = 0;
-    prevMaximumMatches = 0;
-    averageNegativeToPositiveMatches = 0;
-    startOfTrashCounting = 200;
     filteredAuthors.clear();
 }
+
+auto threadedIntListProcessor = [](QString taskName, int threadsToUse, QList<int> list, auto worker, auto resultingDataProcessor){
+    QList<std::pair<QList<int>::const_iterator,QList<int>::const_iterator>> iterators;
+    int chunkSize = list.size()/threadsToUse;
+    int listSize = list.size();
+    int  i = 0;
+    while(i*chunkSize < listSize)
+    {
+        QList<int>::const_iterator begin = list.begin();
+        QList<int>::const_iterator end = list.begin();
+        std::advance(begin, i*chunkSize);
+        int rightBorder = i*chunkSize + chunkSize;
+        if(rightBorder < list.size())
+            std::advance(end, rightBorder);
+        else
+            end = list.end();
+        iterators.push_back({begin, end});
+        i++;
+    }
+    typedef std::pair<QList<int>::const_iterator,QList<int>::const_iterator> PairType;
+    TimedAction task(taskName,[&](){
+
+        //typedef  typename std::result_of<>::type WorkerType;
+        QVector<QFuture<decltype(worker(std::declval<PairType>()))>> futures;
+        for(int i = 0; i < iterators.size(); i++)
+            futures.push_back(QtConcurrent::run(std::bind(worker,iterators.at(i))));
+        for(auto future: futures)
+            future.waitForFinished();
+        for(auto future: futures)
+            resultingDataProcessor(future.result());
+    });
+    task.run();
+};
 
 bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
-
-
-
+    TimedAction relations("Fetching relations",[&](){
+        FetchAuthorRelations();
+    });
+    relations.run();
 
     RunMatchingAndWeighting(params, filters, actions);
     QLOG_INFO() << "filtered authors after default pass:" << filteredAuthors.size();
@@ -107,10 +136,6 @@ void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<Recommendatio
     do
     {
         ResetAccumulatedData();
-        TimedAction relations("Fetching relations",[&](){
-            FetchAuthorRelations();
-        });
-        relations.run();
         TimedAction filtering("Filtering data",[&](){
             Filter(params, filters, actions);
         });
@@ -373,29 +398,13 @@ bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<Re
     return true;
 }
 
+
 Roaring RecCalculatorImplBase::BuildIgnoreList()
 {
     QLOG_INFO() << "Building ignore list";
     QLOG_INFO() << "Ignored fics size:" << params->ignoredDeadFics.size();
-    auto  threadsToUse = QThread::idealThreadCount() - 3;
+    Roaring fullIgnores;
     auto ficKeys = inputs.fics.keys();
-    QList<std::pair<QList<int>::const_iterator,QList<int>::const_iterator>> iterators;
-    int chunkSize = ficKeys.size()/threadsToUse;
-    int listSize = ficKeys.size();
-    int  i = 0;
-    while(i*chunkSize < listSize)
-    {
-        QList<int>::const_iterator begin = ficKeys.begin();
-        QList<int>::const_iterator end = ficKeys.begin();
-        std::advance(begin, i*chunkSize);
-        int rightBorder = i*chunkSize + chunkSize;
-        if(rightBorder < ficKeys.size())
-            std::advance(end, rightBorder);
-        else
-            end = ficKeys.end();
-        iterators.push_back({begin, end});
-        i++;
-    }
 
     auto worker = [&](std::pair<QList<int>::const_iterator,QList<int>::const_iterator> beginEnd){
             auto itCurrent = beginEnd.first;
@@ -403,13 +412,12 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
             Roaring ignores;
             while(itCurrent < itEnd)
             {
-                auto& fic = inputs.fics.value(*itCurrent);
+                auto& fic = inputs.fics[*itCurrent];
                 itCurrent++;
 
                 if(!fic)
                     continue;
 
-                int count = 0;
                 bool inIgnored = false;
                 // we don't ignore fics that are soruces for the recommednation list
                 if(params->ficData->sourceFics.contains(fic->id))
@@ -425,9 +433,7 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
 
                 for(auto fandom: fic->fandoms)
                 {
-                    if(fandom != -1)
-                        count++;
-                    if(params->ignoredFandoms.contains(fandom) && fandom > 1)
+                    if(params->ignoredFandoms.contains(fandom) && fandom >= 1)
                         inIgnored = true;
                 }
                 if(inIgnored)
@@ -436,92 +442,86 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
             QLOG_INFO() << "returning ignored fics of size: " << ignores.cardinality();
             return ignores;
         };
-        Roaring fullIgnores;
-        TimedAction ignoresCreation("Building ignores",[&](){
-            QVector<QFuture<Roaring>> futures;
-            for(int i = 0; i < iterators.size(); i++)
-                futures.push_back(QtConcurrent::run(std::bind(worker,iterators.at(i))));
-            for(auto future: futures)
-                future.waitForFinished();
-            for(auto future: futures)
-                fullIgnores= fullIgnores | future.result();
-        });
-        ignoresCreation.run();
 
-        QLOG_INFO() << "fanfic ignore list is of size: " << fullIgnores.cardinality();
-        return fullIgnores;
+    threadedIntListProcessor("Creation of ignore list", QThread::idealThreadCount() - 3,ficKeys,  worker, [&fullIgnores](const Roaring& data){
+        fullIgnores= fullIgnores | data;
+    });
+    QLOG_INFO() << "fanfic ignore list is of size: " << fullIgnores.cardinality();
+    return fullIgnores;
+
+
 }
+
+struct AuthorRelationsResult{
+    uint maximumMatches = 0;
+    uint matchSum = 0;
+};
 
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
     qDebug() << "faves is of size: " << inputs.faves.size();
     allAuthors.reserve(inputs.faves.size());
+
     Roaring ignores = BuildIgnoreList();
 
-    auto keys = fetchedFics.keys();
-    auto sourceFics = QSet<uint32_t>(keys.begin(),keys.end());
-
-    for(auto bit : sourceFics)
+    for(auto bit : fetchedFics.keys())
         ownFavourites.add(bit);
     qDebug() << "finished creating roaring";
     QLOG_INFO() << "user's FFN id: " << params->userFFNId;
+
     ownProfileId = params->userFFNId;
-    int minMatches;
-    minMatches =  params->minimumMatch;
-    maximumMatches = minMatches;
+    maximumMatches = params->minimumMatch;
+    AuthorRelationsResult funcResult;
     TimedAction action("Relations Creation",[&](){
-        auto it = inputs.faves.begin();
-        while (it != inputs.faves.end())
-        {
-            if(params->userFFNId == it.key())
+        auto worker = [&](std::pair<QList<int>::const_iterator,QList<int>::const_iterator> beginEnd){
+            AuthorRelationsResult tempResult;
+            tempResult.maximumMatches = params->minimumMatch;
+            auto itCurrent = beginEnd.first;
+            auto itEnd= beginEnd.second;
+            while(itCurrent < itEnd)
             {
-                QLOG_INFO() << "Skipping user's own list: " << params->userFFNId;
-                it++;
-                continue;
+                auto& author = allAuthors[*itCurrent];
+                author.id = *itCurrent;
+                author.matches = 0;
+                Roaring ignoredTemp = inputs.faves[author.id];
+                ignoredTemp = ignoredTemp & ignores;
+
+                author.fullListSize = inputs.faves[author.id].cardinality();
+                Roaring temp = ownFavourites;
+                // first we need to remove ignored fics
+                auto unignoredSize = inputs.faves[author.id].xor_cardinality(ignoredTemp);
+                temp = temp & inputs.faves[author.id];
+                author.matches = temp.cardinality();
+
+                Roaring negative = ownMajorNegatives;
+                negative = negative & inputs.faves[author.id];
+                author.negativeMatches = negative.cardinality();
+
+                author.sizeAfterIgnore = unignoredSize;
+                if(ignores.cardinality() == 0)
+                    author.sizeAfterIgnore = author.fullListSize;
+                if(tempResult.maximumMatches < author.matches)
+                {
+                    prevMaximumMatches = tempResult.maximumMatches;
+                    tempResult.maximumMatches = author.matches;
+                }
+                tempResult.matchSum+=author.matches;
+                itCurrent++;
             }
+            return tempResult;
+        };
 
-            auto& author = allAuthors[it.key()];
-            author.id = it.key();
-            author.matches = 0;
-            //QLOG_INFO
-            //these are the fics from the current fav list that are ignored
 
-            //bool hasIgnoredMatches = false;
-            Roaring ignoredTemp = it.value();
-            ignoredTemp = ignoredTemp & ignores;
-
-            if(ignoredTemp.cardinality() > 0)
-            {
-                //hasIgnoredMatches = true;
-                //                QLOG_INFO() << "ficl list size is: " << it.value().cardinality();
-                //                QLOG_INFO() << "of those ignored are: " << ignoredTemp.cardinality();
-            }
-            author.fullListSize = it.value().cardinality();
-            Roaring temp = ownFavourites;
-            // first we need to remove ignored fics
-            auto unignoredSize = it.value().xor_cardinality(ignoredTemp);
-            //            if(hasIgnoredMatches)
-            //                QLOG_INFO() << "this leaves unignored: " << unignoredSize;
-            temp = temp & it.value();
-            author.matches = temp.cardinality();
-
-            Roaring negative = ownMajorNegatives;
-            negative = negative & it.value();
-            author.negativeMatches = negative.cardinality();
-
-            author.sizeAfterIgnore = unignoredSize;
-            if(ignores.cardinality() == 0)
-                author.sizeAfterIgnore = author.fullListSize;
-            if(maximumMatches < author.matches)
-            {
-                prevMaximumMatches = maximumMatches;
-                maximumMatches = author.matches;
-            }
-            matchSum+=author.matches;
-            it++;
-        }
+        threadedIntListProcessor("Creation of author relations", QThread::idealThreadCount() - 3,inputs.faves.keys(),  worker, [&funcResult](const AuthorRelationsResult& data){
+            if(funcResult.maximumMatches < data.maximumMatches)
+                funcResult.maximumMatches = data.maximumMatches;
+            funcResult.matchSum+=data.matchSum;
+        });
     });
     action.run();
+    matchSum = funcResult.matchSum;
+    maximumMatches = funcResult.maximumMatches;
+    QLOG_INFO() << "At the end of author processing maximumMatches: " << maximumMatches << " matchsum: " << matchSum;
 }
 
 void RecCalculatorImplBase::CollectFicMatchQuality()
