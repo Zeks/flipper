@@ -94,7 +94,7 @@ std::function<AuthorWeightingResult(AuthorResult&, int, int)> RecCalculatorImplW
                      std::placeholders::_3);
 }
 
-void RecCalculatorImplWeighted::CalcWeightingParams(double deviationMultiplier){
+void RecCalculatorImplWeighted::CalcWeightingParams(){
     auto authorList = filteredAuthors.values();
     QLOG_INFO() << "inputs to weighting:";
     QLOG_INFO() << "matchsum:" << matchSum;
@@ -109,18 +109,12 @@ void RecCalculatorImplWeighted::CalcWeightingParams(double deviationMultiplier){
     double normalizer = 1./static_cast<double>(authorList.size()-1.);
     double sum = 0;
     for(auto author: authorList)
-    {
-        //auto& authorPtr = allAuthors[author];
-        if(allAuthors[author].ratio > 45)
-            sum+=0;
         sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
-    }
-    quad = std::sqrt(normalizer * sum);
-    quad *= deviationMultiplier;
 
+    quadraticDeviation = std::sqrt(normalizer * sum);
 
-    qDebug () << "median value is: " << matchMedian;
-    qDebug () << "median ratio is: " << ratioMedian;
+    qDebug () << "median of match value is: " << matchMedian;
+    qDebug () << "median of ratio is: " << ratioMedian;
 
     auto keysRatio = inputs.faves.keys();
     auto keysMedian = inputs.faves.keys();
@@ -135,33 +129,33 @@ void RecCalculatorImplWeighted::CalcWeightingParams(double deviationMultiplier){
     auto ratioMedianIt = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
         return allAuthors[i1].ratio < ratioMedian;
     });
-    auto dist = ratioMedianIt - authorList.begin();
-    qDebug() << "distance to median is: " << dist;
+    auto beginningOfQuadraticToMedianRange = ratioMedianIt - authorList.begin();
+    qDebug() << "distance to median is: " << beginningOfQuadraticToMedianRange;
     qDebug() << "vector size is: " << authorList.size();
 
-    qDebug() << "sigma: " << quad;
-    qDebug() << "2 sigma: " << quad * 2;
+    qDebug() << "sigma: " << quadraticDeviation;
+    qDebug() << "2 sigma: " << quadraticDeviation * 2;
 
     auto ratioSigma2 = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
-        return allAuthors[i1].ratio < (ratioMedian - quad*2);
+        return allAuthors[i1].ratio < (ratioMedian - quadraticDeviation*2);
     });
-    sigma2Dist = ratioSigma2 - authorList.begin();
-    qDebug() << "distance to sigma15 is: " << sigma2Dist;
-    if(sigma2Dist == 0)
+    endOfUniqueAuthorRange = ratioSigma2 - authorList.begin();
+    qDebug() << "distance to sigma15 is: " << endOfUniqueAuthorRange;
+    if(endOfUniqueAuthorRange == 0)
         needsRangeAdjustment = true;
 
     QLOG_INFO() << "outputs from weighting:";
-    QLOG_INFO() << "quad:" << quad;
-    QLOG_INFO() << "sigma2Dist:" << sigma2Dist;
+    QLOG_INFO() << "quad:" << quadraticDeviation;
+    QLOG_INFO() << "sigma2Dist:" << endOfUniqueAuthorRange;
     QLOG_INFO() << "ratioMedian:" << ratioMedian;
 }
 
 AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches){
     AuthorWeightingResult result;
     result.isValid = true;
-    bool gtSigma = (ratioMedian - quad) >= author.ratio;
-    bool gtSigma2 = (ratioMedian - 2 * quad) >= author.ratio;
-    bool gtSigma17 = (ratioMedian - 1.7 * quad) >= author.ratio;
+    bool gtSigma = (ratioMedian - quadraticDeviation) >= author.ratio;
+    bool gtSigma2 = (ratioMedian - 2 * quadraticDeviation) >= author.ratio;
+    bool gtSigma17 = (ratioMedian - 1.7 * quadraticDeviation) >= author.ratio;
     if(needsRangeAdjustment){
         double adjustedQuad = (ratioMedian - 4.)/2.;
         gtSigma = (ratioMedian - adjustedQuad) >= author.ratio;
@@ -175,19 +169,19 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
         result.authorType = AuthorWeightingResult::EAuthorType::unique;
         counter2Sigma++;
         //result.value = quadratic_coef(author.ratio,ratioMedian, quad, authorSize/10, authorSize/20, authorSize);
-        result.value = quadratic_coef(author.ratio,ratioMedian, quad, authorSize, maximumMatches, ECalcType::close);
+        result.value = quadratic_coef(author.ratio,ratioMedian, quadraticDeviation, authorSize, maximumMatches, ECalcType::close);
     }
     else if(gtSigma17)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::rare;
         counter17Sigma++;
         //result.value  = quadratic_coef(author.ratio,ratioMedian,  quad,authorSize/20, authorSize/40, authorSize);
-        result.value  = quadratic_coef(author.ratio,ratioMedian,  quad,  authorSize, maximumMatches, ECalcType::near);
+        result.value  = quadratic_coef(author.ratio,ratioMedian,  quadraticDeviation,  authorSize, maximumMatches, ECalcType::near);
     }
     else if(gtSigma)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::uncommon;
-        result.value  = quadratic_coef(author.ratio, ratioMedian, quad,  authorSize, maximumMatches, ECalcType::uncommon);
+        result.value  = quadratic_coef(author.ratio, ratioMedian, quadraticDeviation,  authorSize, maximumMatches, ECalcType::uncommon);
     }
     else
     {
@@ -211,15 +205,15 @@ void RecCalculatorImplWeighted::ResetAccumulatedData()
     RecCalculatorImplBase::ResetAccumulatedData();
     ratioSum = 0;
     ratioMedian = 0;
-    quad = 0;
-    sigma2Dist = 0;
+    quadraticDeviation = 0;
+    endOfUniqueAuthorRange = 0;
     counter2Sigma = 0;
     counter17Sigma = 0;
 }
 
 bool RecCalculatorImplWeighted::WeightingIsValid() const
 {
-    return sigma2Dist > 1;
+    return endOfUniqueAuthorRange > 1;
 }
 
 }

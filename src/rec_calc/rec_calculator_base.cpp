@@ -47,8 +47,6 @@ auto threadedIntListProcessor = [](QString taskName, int threadsToUse, QList<int
     }
     typedef std::pair<QList<int>::const_iterator,QList<int>::const_iterator> PairType;
     TimedAction task(taskName,[&](){
-
-        //typedef  typename std::result_of<>::type WorkerType;
         QVector<QFuture<decltype(worker(std::declval<PairType>()))>> futures;
         for(int i = 0; i < iterators.size(); i++)
             futures.push_back(QtConcurrent::run(std::bind(worker,iterators.at(i))));
@@ -102,7 +100,7 @@ bool RecCalculatorImplBase::Calc(){
         filtering.run();
         //double newAuthorSize = filteredAuthors.size();
         TimedAction weighting("Second round of weighting",[&](){
-            CalcWeightingParams(1);
+            CalcWeightingParams();
         });
         weighting.run();
         filteredAuthors+=authors;
@@ -150,7 +148,7 @@ void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<Recommendatio
         resultAdjustment.run();
 
         TimedAction weighting("weighting",[&](){
-            CalcWeightingParams(1.);
+            CalcWeightingParams();
         });
         weighting.run();
         if(!params->isAutomatic && !params->adjusting)

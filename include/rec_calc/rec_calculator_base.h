@@ -113,7 +113,7 @@ public:
     virtual bool CollectVotes();
     virtual bool WeightingIsValid() const = 0;
 
-    virtual void CalcWeightingParams(double sigmaMultiplier) = 0;
+    virtual void CalcWeightingParams() = 0;
     virtual FilterListType GetFilterList() = 0;
     virtual ActionListType  GetActionList() = 0;
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() = 0;
@@ -139,7 +139,6 @@ public:
     uint32_t startOfTrashCounting = 200;
     bool doTrashCounting = true;
     QSet<int> filteredAuthors;
-    //QSet<int> initialFilteredAuthors;
     Roaring ownFavourites;
     Roaring ownMajorNegatives;
     RecommendationListResult result;
@@ -171,7 +170,6 @@ static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & aut
 };
 
 
-//auto ratioAccumulator = [&ratioSum](RecCalculatorImplBase* ,AuthorResult & author){ratioSum+=author.ratio;};
 class RecCalculatorImplDefault: public RecCalculatorImplBase{
 public:
     RecCalculatorImplDefault(RecInputVectors input): RecCalculatorImplBase(input){}
@@ -184,7 +182,7 @@ public:
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override{
         return [](AuthorResult&, int, int){return AuthorWeightingResult();};
     }
-    void CalcWeightingParams(double) override{
+    void CalcWeightingParams() override{
         // does nothing
     }
 

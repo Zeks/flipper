@@ -125,9 +125,9 @@ DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationLis
     action.run();
     actualCalculator->result.authors = actualCalculator->filteredAuthors;
     result.recs = actualCalculator->result;
-    result.quad = actualCalculator->quad;
+    result.quad = actualCalculator->quadraticDeviation;
     result.ratioMedian = actualCalculator->ratioMedian;
-    result.sigma2Dist = actualCalculator->sigma2Dist;
+    result.sigma2Dist = actualCalculator->endOfUniqueAuthorRange;
     //result.authorData = actualCalculator->
     for(auto author : actualCalculator->filteredAuthors){
         result.authorData.push_back(actualCalculator->allAuthors[author]);
