@@ -558,6 +558,13 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         QLOG_INFO() << "setting list ready to true";
         using core::AuthorWeightingResult;
         typedef core::AuthorWeightingResult::EAuthorType EAuthorType;
+
+        auto dataSize = list.recommendations.keys().size();
+        targetList->mutable_fic_matches()->Reserve(dataSize);
+        targetList->mutable_breakdowns()->Reserve(dataSize);
+        if(!task->data().response_data_controls().ignore_breakdowns())
+            targetList->mutable_no_trash_score()->Reserve(dataSize);
+
         for(int key: list.recommendations.keys())
         {
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
