@@ -35,21 +35,45 @@ bool RecCalculatorImplBase::Calc(){
     auto actions = GetActionList();
     RunMatchingAndWeighting(params, filters, actions);
     QLOG_INFO() << "filtered authors after default pass:" << filteredAuthors.size();
+    double previousAuthorSize = filteredAuthors.size();
 
     // at this point we have initial weighting figured out
     // now, if we ended up with minmatches over 10 we might want to adjust more
     // to brind into recommendations stuff from people with less than minimal amount of matches
     // but exceptional match counts (basically, smaller lists)
     // to do this we clone the params and do another non automatic pass
-//    if(params->minimumMatch > 10){
-//        QSharedPointer<RecommendationList> params(new RecommendationList());
-//        params->maxUnmatchedPerMatch = this->params->maxUnmatchedPerMatch*0.75;
-//        params->minimumMatch = this->params->minimumMatch/2;
-//        TimedAction filtering("Filtering data",[&](){
-//            Filter(params, filters, actions);
-//        });
-//        QLOG_INFO() << "filtered authors after second pass:" << filteredAuthors.size();
-//    }
+    if(params->minimumMatch > 10){
+        QSharedPointer<RecommendationList> params(new RecommendationList());
+        params->maxUnmatchedPerMatch = this->params->maxUnmatchedPerMatch*0.75;
+        params->alwaysPickAt = 9999;
+        params->minimumMatch = this->params->minimumMatch/2;
+        params->userFFNId = this->params->userFFNId;
+        params->isAutomatic = false;
+        params->adjusting = false;
+        params->useWeighting = this->params->useWeighting;
+        params->useMoodAdjustment = this->params->useMoodAdjustment;
+        params->useDislikes =  this->params->useDislikes;
+        auto authors = filteredAuthors;
+        auto matchSum = this->matchSum;
+        ResetAccumulatedData();
+        //filteredAuthors=authors;
+        this->matchSum = matchSum;
+
+        auto filters = GetFilterList();
+        auto actions = GetActionList();
+        TimedAction filtering("Second round of filtering data",[&](){
+            Filter(params, filters, actions);
+        });
+        filtering.run();
+        double newAuthorSize = filteredAuthors.size();
+        TimedAction weighting("Second round of weighting",[&](){
+            CalcWeightingParams(1);
+        });
+        weighting.run();
+        filteredAuthors+=authors;
+        //RunMatchingAndWeighting(params, filters, actions);
+        QLOG_INFO() << "filtered authors after second pass:" << filteredAuthors.size();
+    }
 
     CalculateNegativeToPositiveRatio();
     bool succesfullyGotVotes = false;
@@ -95,7 +119,7 @@ void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<Recommendatio
         resultAdjustment.run();
 
         TimedAction weighting("weighting",[&](){
-            CalcWeightingParams();
+            CalcWeightingParams(1.);
         });
         weighting.run();
         if(!params->isAutomatic && !params->adjusting)
@@ -745,3 +769,4 @@ bool RecCalculatorImplDefault::WeightingIsValid() const
 
 
 }
+

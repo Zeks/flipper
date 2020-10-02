@@ -94,14 +94,14 @@ std::function<AuthorWeightingResult(AuthorResult&, int, int)> RecCalculatorImplW
                      std::placeholders::_3);
 }
 
-void RecCalculatorImplWeighted::CalcWeightingParams(){
+void RecCalculatorImplWeighted::CalcWeightingParams(double deviationMultiplier){
     auto authorList = filteredAuthors.values();
     QLOG_INFO() << "inputs to weighting:";
     QLOG_INFO() << "matchsum:" << matchSum;
     QLOG_INFO() << "inputs.faves.size():" << inputs.faves.size();
     QLOG_INFO() << "ratioSum:" << ratioSum;
     QLOG_INFO() << "filteredAuthors.size():" << authorList.size();
-
+    needsRangeAdjustment = false;
     int matchMedian = matchSum/inputs.faves.size();
 
     ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(authorList.size());
@@ -110,9 +110,13 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     double sum = 0;
     for(auto author: authorList)
     {
+        auto& authorPtr = allAuthors[author];
+        if(allAuthors[author].ratio > 45)
+            sum+=0;
         sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
     }
     quad = std::sqrt(normalizer * sum);
+    quad *= deviationMultiplier;
 
 
     qDebug () << "median value is: " << matchMedian;
@@ -143,6 +147,8 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     });
     sigma2Dist = ratioSigma2 - authorList.begin();
     qDebug() << "distance to sigma15 is: " << sigma2Dist;
+    if(sigma2Dist == 0)
+        needsRangeAdjustment = true;
 
     QLOG_INFO() << "outputs from weighting:";
     QLOG_INFO() << "quad:" << quad;
@@ -156,6 +162,12 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
     bool gtSigma = (ratioMedian - quad) >= author.ratio;
     bool gtSigma2 = (ratioMedian - 2 * quad) >= author.ratio;
     bool gtSigma17 = (ratioMedian - 1.7 * quad) >= author.ratio;
+    if(needsRangeAdjustment){
+        double adjustedQuad = (ratioMedian - 4.)/2.;
+        gtSigma = (ratioMedian - adjustedQuad) >= author.ratio;
+        gtSigma2 = (ratioMedian - 2 * adjustedQuad) >= author.ratio;
+        gtSigma17 = (ratioMedian - 1.7 * adjustedQuad) >= author.ratio;
+    }
 
     if(gtSigma2)
     {

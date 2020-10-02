@@ -113,7 +113,7 @@ public:
     virtual bool CollectVotes();
     virtual bool WeightingIsValid() const = 0;
 
-    virtual void CalcWeightingParams() = 0;
+    virtual void CalcWeightingParams(double sigmaMultiplier) = 0;
     virtual FilterListType GetFilterList() = 0;
     virtual ActionListType  GetActionList() = 0;
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() = 0;
@@ -183,7 +183,7 @@ public:
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override{
         return [](AuthorResult&, int, int){return AuthorWeightingResult();};
     }
-    void CalcWeightingParams() override{
+    void CalcWeightingParams(double sigmaMultiplier) override{
         // does nothing
     }
 

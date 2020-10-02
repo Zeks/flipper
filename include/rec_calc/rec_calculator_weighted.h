@@ -45,15 +45,22 @@ public:
     virtual FilterListType GetFilterList() override;
     virtual ActionListType GetActionList() override;
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override;
-    void CalcWeightingParams() override;
+    void CalcWeightingParams(double sigmaMultiplier) override;
     AuthorWeightingResult CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches);
 
     double ratioSum = 0;
     double ratioMedian = 0;
     double quad = 0;
+
+    double uniqueRangeEnd = 0;
+    double rareRangeEnd = 0;
+    double uncommonRangeEnd = 0;
+
     int sigma2Dist = 0;
     int counter2Sigma = 0;
     int counter17Sigma = 0;
+
+    bool needsRangeAdjustment = false;
 
     void AdjustRatioForAutomaticParams() override;
     void ResetAccumulatedData() override;
