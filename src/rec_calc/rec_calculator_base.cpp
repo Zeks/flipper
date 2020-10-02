@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/rec_calc/rec_calculator_base.h"
 #include "timeutils.h"
+#include <QFuture>
+#include <QtConcurrent>
 
 namespace core{
 void RecCalculatorImplBase::ResetAccumulatedData()
@@ -33,9 +35,13 @@ void RecCalculatorImplBase::ResetAccumulatedData()
 bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
+
+
+
+
     RunMatchingAndWeighting(params, filters, actions);
     QLOG_INFO() << "filtered authors after default pass:" << filteredAuthors.size();
-    double previousAuthorSize = filteredAuthors.size();
+    //double previousAuthorSize = filteredAuthors.size();
 
     // at this point we have initial weighting figured out
     // now, if we ended up with minmatches over 10 we might want to adjust more
@@ -65,7 +71,7 @@ bool RecCalculatorImplBase::Calc(){
             Filter(params, filters, actions);
         });
         filtering.run();
-        double newAuthorSize = filteredAuthors.size();
+        //double newAuthorSize = filteredAuthors.size();
         TimedAction weighting("Second round of weighting",[&](){
             CalcWeightingParams(1);
         });
@@ -369,53 +375,88 @@ bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<Re
 
 Roaring RecCalculatorImplBase::BuildIgnoreList()
 {
-    Roaring ignores;
-    //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
     QLOG_INFO() << "Building ignore list";
     QLOG_INFO() << "Ignored fics size:" << params->ignoredDeadFics.size();
+    auto  threadsToUse = QThread::idealThreadCount() - 3;
+    auto ficKeys = inputs.fics.keys();
+    QList<std::pair<QList<int>::const_iterator,QList<int>::const_iterator>> iterators;
+    int chunkSize = ficKeys.size()/threadsToUse;
+    int listSize = ficKeys.size();
+    int  i = 0;
+    while(i*chunkSize < listSize)
+    {
+        QList<int>::const_iterator begin = ficKeys.begin();
+        QList<int>::const_iterator end = ficKeys.begin();
+        std::advance(begin, i*chunkSize);
+        int rightBorder = i*chunkSize + chunkSize;
+        if(rightBorder < ficKeys.size())
+            std::advance(end, rightBorder);
+        else
+            end = ficKeys.end();
+        iterators.push_back({begin, end});
+        i++;
+    }
 
-    TimedAction ignoresCreation("Building ignores",[&](){
-        for(auto fic: inputs.fics)
-        {
-            if(!fic)
-                continue;
-
-            int count = 0;
-            bool inIgnored = false;
-            if(params->ficData->sourceFics.contains(fic->id))
-                continue;
-
-            if(params->ignoredDeadFics.contains(fic->id) && !params->majorNegativeVotes.contains(fic->id))
-                inIgnored = true;
-
-            for(auto fandom: fic->fandoms)
+    auto worker = [&](std::pair<QList<int>::const_iterator,QList<int>::const_iterator> beginEnd){
+            auto itCurrent = beginEnd.first;
+            auto itEnd= beginEnd.second;
+            Roaring ignores;
+            while(itCurrent < itEnd)
             {
-                if(fandom != -1)
-                    count++;
-                if(params->ignoredFandoms.contains(fandom) && fandom > 1)
-                    inIgnored = true;
-            }
-            if(/*count == 1 && */inIgnored)
-                ignores.add(fic->id);
+                auto& fic = inputs.fics.value(*itCurrent);
+                itCurrent++;
 
-        }
-    });
-    ignoresCreation.run();
-    QLOG_INFO() << "fanfic ignore list is of size: " << ignores.cardinality();
-    return ignores;
+                if(!fic)
+                    continue;
+
+                int count = 0;
+                bool inIgnored = false;
+                // we don't ignore fics that are soruces for the recommednation list
+                if(params->ficData->sourceFics.contains(fic->id))
+                    continue;
+
+                // we don't ignore fics that user pressed negative tag on for weighting
+                if(params->majorNegativeVotes.contains(fic->id))
+                    continue;
+
+                // the fics that were maked as "Limbo"
+                if(params->ignoredDeadFics.contains(fic->id))
+                    inIgnored = true;
+
+                for(auto fandom: fic->fandoms)
+                {
+                    if(fandom != -1)
+                        count++;
+                    if(params->ignoredFandoms.contains(fandom) && fandom > 1)
+                        inIgnored = true;
+                }
+                if(inIgnored)
+                    ignores.add(fic->id);
+            }
+            QLOG_INFO() << "returning ignored fics of size: " << ignores.cardinality();
+            return ignores;
+        };
+        Roaring fullIgnores;
+        TimedAction ignoresCreation("Building ignores",[&](){
+            QVector<QFuture<Roaring>> futures;
+            for(int i = 0; i < iterators.size(); i++)
+                futures.push_back(QtConcurrent::run(std::bind(worker,iterators.at(i))));
+            for(auto future: futures)
+                future.waitForFinished();
+            for(auto future: futures)
+                fullIgnores= fullIgnores | future.result();
+        });
+        ignoresCreation.run();
+
+        QLOG_INFO() << "fanfic ignore list is of size: " << fullIgnores.cardinality();
+        return fullIgnores;
 }
 
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
     qDebug() << "faves is of size: " << inputs.faves.size();
     allAuthors.reserve(inputs.faves.size());
-    Roaring ignores;
-    //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
-
-    TimedAction ignoresCreation("Building ignores",[&](){
-        ignores = BuildIgnoreList();
-    });
-    ignoresCreation.run();
+    Roaring ignores = BuildIgnoreList();
 
     auto keys = fetchedFics.keys();
     auto sourceFics = QSet<uint32_t>(keys.begin(),keys.end());
@@ -769,4 +810,5 @@ bool RecCalculatorImplDefault::WeightingIsValid() const
 
 
 }
+
 

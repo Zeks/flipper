@@ -79,6 +79,8 @@ public:
     QString name;
     QString tagToUse;
 
+    // this needs to take into account if the fandom is ignored fully
+    // but for now lets leave it as is
     QSet<int> ignoredFandoms;
     QSet<int> ignoredDeadFics;
     QSet<int> likedAuthors;
