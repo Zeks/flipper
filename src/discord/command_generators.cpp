@@ -143,7 +143,15 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
     user->SetSimilarFicsId(0);
     createRecs.ids.push_back(std::stoi(match.get<2>().to_string()));
     if(refresh.length() == 0)
+    {
         createRecs.variantHash["refresh"] = true;
+    }
+    else{
+        Command command = NewCommand(server, message,ct_force_list_params);
+        command.variantHash["min"] = 0;
+        command.variantHash["ratio"] = 0;
+        result.Push(command);
+    }
     createRecs.textForPreExecution = QString("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.").arg(QString::fromStdString(match.get<2>().to_string()));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);

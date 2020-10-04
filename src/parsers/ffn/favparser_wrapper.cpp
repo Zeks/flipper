@@ -54,6 +54,7 @@ QuickParseResult UserFavouritesParser::QuickParseAvailable()
 {
     QuickParseResult result;
     QRegularExpression rx("Favorite\\sStories\\s<span\\sclass=badge>(\\d{1,3})</span>");
+    //QLOG_INFO() << dektopPage.content;
     auto match = rx.match(dektopPage.content);
     if(!match.hasMatch())
     {

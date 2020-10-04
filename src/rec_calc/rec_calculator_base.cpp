@@ -324,7 +324,7 @@ AutoAdjustmentAndFilteringResult RecCalculatorImplBase::AutoAdjustRecommendation
         return totalMatches - sum;
 
     };
-    if(matches.size() > 3)
+    if(matches.size() && matches.last() >= params->maxUnmatchedPerMatch/2)
     {
         for(int i = 0; i < matches.count() - 2; i ++){
 
@@ -362,6 +362,7 @@ AutoAdjustmentAndFilteringResult RecCalculatorImplBase::AutoAdjustRecommendation
     //QHash<int, AuthorResult> result;
     result.performedFiltering = true;
     params->minimumMatch = matches[stoppingIndex];
+
     if(params->minimumMatch > 20)
         params->minimumMatch = 20;
     for(auto matchCount : matches){
@@ -384,6 +385,9 @@ void RecCalculatorImplBase::AdjustRatioForAutomaticParams()
 bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList> params)
 {
     if(params->minimumMatch-7 < 10 && params->maxUnmatchedPerMatch-7 < 10)
+        return false;
+
+    if(params->maxUnmatchedPerMatch-7 < 10 && params->minimumMatch == 20)
         return false;
 
     if(params->maxUnmatchedPerMatch-7 > 10)

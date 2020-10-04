@@ -213,7 +213,7 @@ void RecCalculatorImplWeighted::ResetAccumulatedData()
 
 bool RecCalculatorImplWeighted::WeightingIsValid() const
 {
-    return endOfUniqueAuthorRange > 1;
+    return endOfUniqueAuthorRange >= 1;
 }
 
 }

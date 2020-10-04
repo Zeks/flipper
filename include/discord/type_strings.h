@@ -108,7 +108,7 @@ template <>
 struct TypeStringHolder<discord::ForceListParamsCommand>{
         static constexpr std::string_view name = "force";
         static constexpr std::string_view prefixlessPattern = "?<force>force";
-        static constexpr std::string_view pattern = "force(\\s\\d{1,2})(\\s\\d{1,2})";
+        static constexpr std::string_view pattern = "force(\\s+\\d{1,2})(\\s+\\d{1,2})";
         static constexpr std::string_view help = "";
 };
 
