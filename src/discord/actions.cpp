@@ -204,6 +204,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)
     {
         action->text = userFavourites.errors.join("\n");
+        action->stopChain = true;
         return action;
     }
     // here, we check that we were able to fetch all favourites with desktop link and reschedule the task otherwise
@@ -249,27 +250,33 @@ static std::string CreateMention(const std::string& string){
 QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command command)
 {
     command.user->initNewRecsQuery();
-    auto ffnId = QString::number(command.ids.at(0));
 
-    if(command.user->FfnID() != ffnId)
-    {
-        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
-        environment->fandoms->db = dbToken->db;
-        An<interfaces::Users> usersDbInterface;
-        usersDbInterface->WriteForcedListParams(command.user->UserID(), 0,0);
-        command.user->SetForcedMinMatch(0);
-        command.user->SetForcedRatio(0);
+    QString ffnId;
+    bool isId = true;
+    if(!command.variantHash.contains("url")){
+        ffnId = QString::number(command.ids.at(0));
+        isId = true;
+    }
+    else{
+        isId = false;
+        ffnId = command.variantHash["url"].toString();
     }
 
     bool refreshing = command.variantHash.contains("refresh");
     QSharedPointer<core::RecommendationList> listParams;
     QString error;
 
-    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache);
+    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
+    ffnId = userFavourites.ffnId;
+    command.ids.clear();
+    command.ids.push_back(userFavourites.ffnId.toUInt());
+
+
     // here, we check that we were able to fetch favourites at all
     if(!userFavourites.hasFavourites || userFavourites.errors.size() > 0)
     {
         action->text = userFavourites.errors.join("\n");
+        action->stopChain = true;
         return action;
     }
     // here, we check that we were able to fetch all favourites with desktop link and reschedule the task otherwise
@@ -667,7 +674,6 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     }
 
 
-
     QHash<int, int> positionToId;
     int i = 0;
     for(auto fic: fics)
@@ -859,8 +865,10 @@ QSharedPointer<SendMessageCommand> InsufficientPermissionsAction::ExecuteImpl(QS
     action->text = "You don't have required permissions on the server to run this command.";
     return action;
 }
-QSharedPointer<SendMessageCommand> NullAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command)
+QSharedPointer<SendMessageCommand> NullAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
+    if(command.variantHash.contains("reason"))
+        action->text = command.variantHash["reason"].toString();
     return action;
 }
 

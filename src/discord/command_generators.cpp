@@ -152,12 +152,33 @@ CommandChain RecsCreationCommand::ProcessInputImpl(SleepyDiscord::Message messag
 
     Command createRecs = NewCommand(server, message,ct_fill_recommendations);
     if(id.length() == 0){
-        createRecs.textForPreExecution = QString("Not a valid ID.");
-        createRecs.type = ct_null_command;
+        nullCommand.type = ct_null_command;
+        nullCommand.variantHash["reason"] = QString("Not a valid ID or user url.");
+        nullCommand.originalMessage = message;
+        nullCommand.server = this->server;
+        result.Push(nullCommand);
         return result;
     }
     user->SetSimilarFicsId(0);
-    createRecs.ids.push_back(std::stoi(match.get<2>().to_string()));
+
+    bool isNumConvertible = true;
+    try
+    {
+        std::stoi(id);
+    }
+    catch (const std::invalid_argument& e)
+    {
+        isNumConvertible = false;
+    }
+    catch (const std::out_of_range& e)
+    {
+        isNumConvertible = false;
+    }
+    if(isNumConvertible)
+        createRecs.ids.push_back(std::stoi(id));
+    else
+        createRecs.variantHash["url"] = QString::fromStdString(id);
+
     if(refresh.length() == 0)
     {
         createRecs.variantHash["refresh"] = true;

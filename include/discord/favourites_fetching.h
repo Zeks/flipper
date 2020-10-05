@@ -18,7 +18,7 @@ struct FavouritesFetchResult{
     QString ffnId;
 };
 
-FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cacheMode = ECacheMode::use_only_cache);
+FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cacheMode = ECacheMode::use_only_cache, bool isId = true);
 FavouritesFetchResult FetchMobileFavourites(QString ffnId, ECacheMode cacheMode = ECacheMode::use_only_cache);
 
 QSet<QString> FetchUserFavourites(QString ffnId, QSharedPointer<SendMessageCommand> action, ECacheMode cacheMode = ECacheMode::use_only_cache);

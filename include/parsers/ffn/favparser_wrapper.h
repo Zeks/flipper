@@ -10,6 +10,7 @@ namespace ffn{
 struct QuickParseResult{
     bool validFavouritesCount = false;
     bool canDoQuickParse = false;
+    QString mobileUserId;
 };
 class UserFavouritesParser : public QObject{
 Q_OBJECT
@@ -17,7 +18,7 @@ public:
     UserFavouritesParser(QObject* parent = nullptr);
     void Reset();
     bool FetchDesktopUserPage(QString userId);
-    bool FetchDesktopUserPage(QString userId, QSqlDatabase, ECacheMode cacheMode = ECacheMode::dont_use_cache);
+    bool FetchDesktopUserPage(QString userId, QSqlDatabase, ECacheMode cacheMode = ECacheMode::dont_use_cache, bool isId = true);
     QuickParseResult QuickParseAvailable();
     void FetchFavouritesFromDesktopPage();
     void FetchFavouritesFromMobilePage(int startBoundary = 26);

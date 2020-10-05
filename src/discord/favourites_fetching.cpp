@@ -6,7 +6,7 @@
 #include "timeutils.h"
 namespace discord {
 
-FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cacheMode)
+FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cacheMode, bool isId)
 {
     FavouritesFetchResult resultingData;
     resultingData.ffnId = ffnId;
@@ -14,9 +14,8 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("pageCache");
 
     TimedAction linkGet("Link fetch", [&](){
-        QString url = "https://www.fanfiction.net/u/" + ffnId;
         parsers::ffn::UserFavouritesParser parser;
-        auto result = parser.FetchDesktopUserPage(ffnId, dbToken->db, cacheMode);
+        auto result = parser.FetchDesktopUserPage(ffnId, dbToken->db, cacheMode,isId);
         parsers::ffn::QuickParseResult quickResult;
 
         if(!result)
@@ -26,6 +25,7 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
         if(resultingData.errors.size() == 0)
         {
             quickResult = parser.QuickParseAvailable();
+            resultingData.ffnId = quickResult.mobileUserId;
             if(!quickResult.validFavouritesCount){
                 resultingData.hasFavourites = false;
                 resultingData.errors.push_back("Could not load favourites from provided user profile.");
