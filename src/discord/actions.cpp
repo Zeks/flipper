@@ -119,13 +119,19 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
 
     environment->ficSource->ClearUserData();
     environment->ficSource->GetInternalIDsForFics(&pack);
+    UserData userData;
+
+    auto ignoredFandoms =  command.user->GetCurrentIgnoredFandoms();
+    for(auto& token: ignoredFandoms.tokens)
+        recList->ignoredFandoms.insert(token.id);
 
     for(auto source: pack)
     {
         recList->ficData->sourceFics+=source.id;
         recList->ficData->fics+=source.web.ffn;
     }
-    //QLOG_INFO() << "Getting fics";
+
+    environment->ficSource->userData = userData;
     environment->ficSource->GetRecommendationListFromServer(recList);
     //QLOG_INFO() << "Got fics";
     // refreshing the currently saved recommendation list params for user
