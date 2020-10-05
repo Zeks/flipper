@@ -425,16 +425,16 @@ void User::SetLastUsedRoll(const QString &value)
     lastUsedRoll = value;
 }
 
-SleepyDiscord::Snowflake<SleepyDiscord::Message> User::GetLastPageMessage() const
+LastPageCommandMemo User::GetLastPageMessage() const
 {
     QReadLocker locker(&lock);
-    return lastPageMessage;
+    return lastPageCommandMemo;
 }
 
-void User::SetLastPageMessage(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value)
+void User::SetLastPageMessage(const LastPageCommandMemo &value)
 {
     QWriteLocker locker(&lock);
-    lastPageMessage = value;
+    lastPageCommandMemo = value;
 }
 
 ECommandType User::GetLastPageType() const

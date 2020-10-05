@@ -558,11 +558,11 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     }
     else{
         auto previousPage = command.user->GetLastPageMessage();
-        if(editPreviousPageIfPossible && previousPage.string().length() > 0)
+        if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessage.channelID)
         {
             action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
             action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", your previous results have been updated with new data." );
-            action->targetMessage = previousPage;
+            action->targetMessage = previousPage.message;
         }
         else
             action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
@@ -656,11 +656,11 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
     else {
         auto previousPage = command.user->GetLastPageMessage();
-        if(editPreviousPageIfPossible && previousPage.string().length() > 0)
+        if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessage.channelID)
         {
             action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
             action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", your previous results have been updated with new data." );
-            action->targetMessage = previousPage;
+            action->targetMessage = previousPage.message;
         }
         else
             action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");

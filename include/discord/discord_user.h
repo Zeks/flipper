@@ -34,6 +34,10 @@ struct WordcountFilter{
     uint64_t firstLimit = 0;
     uint64_t secondLimit = 0;
 };
+struct LastPageCommandMemo{
+    SleepyDiscord::Snowflake<SleepyDiscord::Message> message;
+    SleepyDiscord::Snowflake<SleepyDiscord::Channel> channel;
+};
 
 struct User{
     User(){InitFicsPtr();}
@@ -120,8 +124,8 @@ struct User{
     QString GetLastUsedRoll() const;
     void SetLastUsedRoll(const QString &value);
 
-    SleepyDiscord::Snowflake<SleepyDiscord::Message> GetLastPageMessage() const;
-    void SetLastPageMessage(const SleepyDiscord::Snowflake<SleepyDiscord::Message> &value);
+    LastPageCommandMemo GetLastPageMessage() const;
+    void SetLastPageMessage(const LastPageCommandMemo &value);
 
     ECommandType GetLastPageType() const;
     void SetLastPageType(const ECommandType &value);
@@ -181,7 +185,7 @@ private:
     FandomFilter ignoredFandoms;
     QHash<int, int> positionToId;
     ECommandType lastPageType = ct_display_page;
-    SleepyDiscord::Snowflake<SleepyDiscord::Message> lastPageMessage;
+    LastPageCommandMemo lastPageCommandMemo;
     mutable QReadWriteLock lock;
 };
 

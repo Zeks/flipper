@@ -470,7 +470,7 @@ void SendMessageCommand::Invoke(Client * client)
                 // I only need to hash messages that the user can later react to
                 // meaning page and rng commands
                 if(originalCommandType == ct_display_page || originalCommandType == ct_display_rng){
-                    this->user->SetLastPageMessage(resultingMessage);
+                    this->user->SetLastPageMessage({resultingMessage, originalMessage.channelID});
                     client->messageToUserHash.push(resultingMessage.ID.number(),originalMessage.author.ID.number());
                     addReaction(resultingMessage);
                 }
