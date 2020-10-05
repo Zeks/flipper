@@ -477,6 +477,15 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
         }
     }
 
+    auto wordcountFilter = command.user->GetWordcountFilter();
+    if(wordcountFilter.firstLimit !=0 && wordcountFilter.secondLimit/1000 == 99999999)
+        result += QString("\nShowing fics with > %1k words.").arg(QString::number(wordcountFilter.firstLimit/1000));
+    if(wordcountFilter.firstLimit == 0 && wordcountFilter.secondLimit != 0)
+        result += QString("\nShowing fics with < %1k words.").arg(QString::number(wordcountFilter.secondLimit/1000));
+    if(wordcountFilter.firstLimit != 0 && wordcountFilter.secondLimit != 0  && wordcountFilter.secondLimit/1000 != 99999999)
+        result += QString("\nShowing fics between %1k and %2k words.").arg(QString::number(wordcountFilter.firstLimit/1000)).arg(QString::number(wordcountFilter.secondLimit/1000));
+
+
     if(command.user->GetLastPageType() == ct_display_rng)
         result += QString("\nRolling in range: %1.").arg(command.user->GetLastUsedRoll());
     if(command.user->GetUseLikedAuthorsOnly())

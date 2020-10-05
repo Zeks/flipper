@@ -31,8 +31,8 @@ class Users;
 namespace discord{
 
 struct WordcountFilter{
-    int firstLimit = 0;
-    int secondLimit = 0;
+    uint64_t firstLimit = 0;
+    uint64_t secondLimit = 0;
 };
 
 struct User{

@@ -34,7 +34,7 @@ struct Command{
     EOperandType operand = EOperandType::ot_unspecified;
     bool requiresThread = false;
 
-    QList<int> ids;
+    QList<uint64_t> ids;
     QHash<QString, QVariant> variantHash;
     SleepyDiscord::Message originalMessage;
     QSharedPointer<User> user;

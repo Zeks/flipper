@@ -831,12 +831,15 @@ CommandChain WordcountCommand::ProcessInputImpl(SleepyDiscord::Message message)
         command.ids.push_back(0);
     }
     result.Push(command);
-    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
-    createRecs.ids.push_back(user->FfnID().toInt());
-    createRecs.variantHash["refresh"] = "yes";
-    createRecs.textForPreExecution = QString("Recreating recommendations for user %1 with new settings, please wait a bit").arg(user->FfnID());
-    result.hasParseCommand = true;
-    result.Push(createRecs);
+    if(!this->user->HasActiveSet())
+    {
+        Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+        createRecs.ids.push_back(user->FfnID().toInt());
+        createRecs.variantHash["refresh"] = "yes";
+        createRecs.textForPreExecution = QString("Recreating recommendations for user %1 with new settings, please wait a bit").arg(user->FfnID());
+        result.hasParseCommand = true;
+        result.Push(createRecs);
+    }
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.ids.push_back(0);
