@@ -49,6 +49,7 @@ struct Command{
 struct CommandChain{
     int Size(){return commands.size();}
     void Push(Command);
+    void PushFront(Command);
     void AddUserToCommands(QSharedPointer<User>);
     Command Pop();
     void RemoveEmptyCommands();

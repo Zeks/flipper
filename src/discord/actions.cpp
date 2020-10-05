@@ -934,15 +934,24 @@ QSharedPointer<SendMessageCommand> HideDeadAction::ExecuteImpl(QSharedPointer<Ta
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
     environment->fandoms->db = dbToken->db;
-    An<interfaces::Users> usersDbInterface;
     auto user = command.user;
-    if(!user->GetHideDead()){
+    An<interfaces::Users> usersDbInterface;
+    if(command.variantHash.contains("days")){
+        int days = command.variantHash["days"].toUInt();
+        user->SetDeadFicDaysRange(days);
+        usersDbInterface->SetDeadFicDaysRange(command.user->UserID(), days);
         usersDbInterface->SetHideDeadFilter(command.user->UserID(), true);
         user->SetHideDead(true);
     }
     else{
-        usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
-        user->SetHideDead(false);
+        if(!user->GetHideDead()){
+            usersDbInterface->SetHideDeadFilter(command.user->UserID(), true);
+            user->SetHideDead(true);
+        }
+        else{
+            usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
+            user->SetHideDead(false);
+        }
     }
     user->SetRngBustScheduled(true);
     return action;
@@ -973,11 +982,13 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
     user->SetSortFreshFirst(false);
     user->SetStrictFreshSort(false);
     user->SetUseLikedAuthorsOnly(false);
+    user->SetWordcountFilter({0,0});
     {
         usersDbInterface->SetHideDeadFilter(command.user->UserID(), false);
         usersDbInterface->SetCompleteFilter(command.user->UserID(), false);
         usersDbInterface->WriteFreshSortingParams(command.user->UserID(), false, false);
         usersDbInterface->WriteForceLikedAuthors(command.user->UserID(), false);
+        usersDbInterface->SetWordcountFilter(command.user->UserID(), {0,0});
         auto currentFilter = command.user->GetCurrentFandomFilter();
         for(auto fandomId : currentFilter.fandoms)
             usersDbInterface->UnfilterFandom(command.user->UserID(), fandomId);

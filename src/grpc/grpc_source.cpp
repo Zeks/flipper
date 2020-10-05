@@ -102,6 +102,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
 
     basicFilters->set_ensure_active(filter.ensureActive);
+    basicFilters->set_last_active_days(filter.deadFicDaysRange);
     basicFilters->set_ensure_completed(filter.ensureCompleted);
 
     result.set_filtering_mode(static_cast<ProtoSpace::Filter::EFilterMode>(filter.mode));
@@ -248,6 +249,9 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.allowNoGenre = filter.genre_filter().allow_no_genre();
 
     result.ensureActive = filter.basic_filters().ensure_active();
+    result.deadFicDaysRange= filter.basic_filters().last_active_days();
+    if(result.deadFicDaysRange == 0)
+        result.deadFicDaysRange = 365;
     result.ensureCompleted = filter.basic_filters().ensure_completed();
 
     result.mode = static_cast<core::StoryFilter::EFilterMode>(filter.filtering_mode());

@@ -152,9 +152,9 @@ template <>
 struct TypeStringHolder<discord::HideDeadCommand>{
         static constexpr std::string_view name = "dead";
         static constexpr std::string_view prefixlessPattern = "?<dead>dead";
-        static constexpr std::string_view pattern = "dead";
-        static constexpr std::string_view help = "`%1dead` Will filter out all dead fics (not updated in a year)";
-        static constexpr std::string_view tips = "You can remove fics not updated in a year with `%1dead`";
+        static constexpr std::string_view pattern = "dead(\\s{0,}\\d+)";
+        static constexpr std::string_view help = "`%1dead` Will filter out all dead fics (not updated in a year),alternatively you can use it as `%1dead X` to set the \"death\" interval in days";
+        static constexpr std::string_view tips = "You can remove fics not updated within a certain interval with `%1dead` or `%1dead X`";
 };
 
 template <>

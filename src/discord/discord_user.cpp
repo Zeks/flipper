@@ -475,12 +475,26 @@ void User::SetRngBustScheduled(bool value)
 
 WordcountFilter User::GetWordcountFilter() const
 {
+    QReadLocker locker(&lock);
     return wordcountFilter;
 }
 
 void User::SetWordcountFilter(const WordcountFilter &value)
 {
+    QWriteLocker locker(&lock);
     wordcountFilter = value;
+}
+
+int User::GetDeadFicDaysRange() const
+{
+    QReadLocker locker(&lock);
+    return deadFicDaysRange;
+}
+
+void User::SetDeadFicDaysRange(int value)
+{
+    QWriteLocker locker(&lock);
+    deadFicDaysRange = value;
 }
 void Users::AddUser(QSharedPointer<User> user)
 {

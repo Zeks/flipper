@@ -17,6 +17,11 @@ void CommandChain::Push(Command command)
     commands.push_back(command);
 }
 
+void CommandChain::PushFront(Command command)
+{
+    commands.push_front(command);
+}
+
 void CommandChain::AddUserToCommands(QSharedPointer<User> user)
 {
     for(auto& command : commands)
@@ -46,6 +51,17 @@ CommandChain CommandCreator::ProcessInput(Client* client, QSharedPointer<discord
     this->client = client;
     this->server = server;
     return ProcessInputImpl(message);
+}
+
+void CommandCreator::AddFilterCommand(Command command)
+{
+    if(currentOperationRestoresActiveSet)
+    {
+        result.PushFront(command);
+        currentOperationRestoresActiveSet = false;
+    }
+    else
+        result.Push(command);
 }
 
 void CommandCreator::EnsureUserExists(QString userId, QString userName)
@@ -93,6 +109,7 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
             result.stopExecution = true;
             return result;
         }
+        currentOperationRestoresActiveSet = true;
 
         Command createRecs = NewCommand(server, message,ct_fill_recommendations);
         createRecs.ids.push_back(user->FfnID().toInt());
@@ -257,7 +274,7 @@ CommandChain SetFandomCommand::ProcessInputImpl(SleepyDiscord::Message message)
         filteredFandoms.variantHash["reset"] = true;
     filteredFandoms.variantHash["fandom"] = QString::fromStdString(fandom).trimmed();
 
-    result.Push(filteredFandoms);
+    AddFilterCommand(filteredFandoms);
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
     displayRecs.variantHash["refresh_previous"] = true;
@@ -290,7 +307,7 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(SleepyDiscord::Message messag
     if(reset.length() > 0)
         ignoredFandoms.variantHash["reset"] = true;
     ignoredFandoms.variantHash["fandom"] = QString::fromStdString(fandom).trimmed();
-    result.Push(ignoredFandoms);
+    AddFilterCommand(ignoredFandoms);
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
     displayRecs.variantHash["refresh_previous"] = true;
@@ -333,7 +350,7 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
         }
     }
 
-    result.Push(ignoredFics);
+    AddFilterCommand(ignoredFics);
     if(!silent && (ignoredFics.variantHash.size() > 0 || ignoredFics.ids.size() > 0))
     {
         Command displayRecs = NewCommand(server, message,user->GetLastPageType());
@@ -567,14 +584,7 @@ CommandChain ForceListParamsCommand::ProcessInputImpl(SleepyDiscord::Message mes
 
     command.variantHash["min"] = std::stoi(min);
     command.variantHash["ratio"] = std::stoi(ratio);
-    result.Push(command);
-
-    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
-    createRecs.ids.push_back(user->FfnID().toInt());
-    createRecs.variantHash["refresh"] = "yes";
-    createRecs.textForPreExecution = QString("Recreating recommendations for user %1 with new settings, please wait a bit").arg(user->FfnID());
-    result.hasParseCommand = true;
-    result.Push(createRecs);
+    AddFilterCommand(command);
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.ids.push_back(0);
@@ -599,7 +609,7 @@ CommandChain FilterLikedAuthorsCommand::ProcessInputImpl(SleepyDiscord::Message 
     if(match)
     {
         command.variantHash["liked"] = true;
-        result.Push(command);
+        AddFilterCommand(command);
         Command displayRecs = NewCommand(server, message,user->GetLastPageType());
         displayRecs.ids.push_back(0);
         displayRecs.variantHash["refresh_previous"] = true;
@@ -639,7 +649,7 @@ CommandChain ShowFreshRecsCommand::ProcessInputImpl(SleepyDiscord::Message messa
     auto strict = match.get<1>().to_string();
     if(strict.length() > 0)
         command.variantHash["strict"] = true;
-    result.Push(command);
+    AddFilterCommand(command);
 
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
@@ -656,7 +666,7 @@ bool ShowFreshRecsCommand::IsThisCommand(const std::string &cmd)
 CommandChain ShowCompletedCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command command = NewCommand(server, message,ct_filter_complete);
-    result.Push(command);
+    AddFilterCommand(command);
 
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
@@ -673,7 +683,30 @@ bool ShowCompletedCommand::IsThisCommand(const std::string &cmd)
 CommandChain HideDeadCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command command = NewCommand(server, message,ct_filter_out_dead);
-    result.Push(command);
+    auto match = ctre::search<TypeStringHolder<HideDeadCommand>::pattern>(message.content);
+    auto strict = match.get<1>().to_string();
+    if(strict.length() > 0)
+    {
+        auto number = std::stoi(match.get<1>().to_string());
+        if(number > 0)
+        {
+            // 100 years should be enough, lmao
+            if(number > 36500)
+                number = 36500;
+            command.variantHash["days"] = number;
+        }
+        else
+        {
+            nullCommand.type = ct_null_command;
+            nullCommand.variantHash["reason"] = "Number of days must be greater than 0";
+            nullCommand.originalMessage = message;
+            nullCommand.server = this->server;
+            result.Push(nullCommand);
+            return result;
+        }
+    }
+
+    AddFilterCommand(command);
 
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
@@ -703,7 +736,7 @@ bool PurgeCommand::IsThisCommand(const std::string &cmd)
 CommandChain ResetFiltersCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command command = NewCommand(server, message,ct_reset_filters);
-    result.Push(command);
+    AddFilterCommand(command);
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
     displayRecs.variantHash["refresh_previous"] = true;
@@ -830,16 +863,7 @@ CommandChain WordcountCommand::ProcessInputImpl(SleepyDiscord::Message message)
         command.ids.push_back(0);
         command.ids.push_back(0);
     }
-    result.Push(command);
-    if(!this->user->HasActiveSet())
-    {
-        Command createRecs = NewCommand(server, message,ct_fill_recommendations);
-        createRecs.ids.push_back(user->FfnID().toInt());
-        createRecs.variantHash["refresh"] = "yes";
-        createRecs.textForPreExecution = QString("Recreating recommendations for user %1 with new settings, please wait a bit").arg(user->FfnID());
-        result.hasParseCommand = true;
-        result.Push(createRecs);
-    }
+    AddFilterCommand(command);
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.variantHash["refresh_previous"] = true;
     displayRecs.ids.push_back(0);

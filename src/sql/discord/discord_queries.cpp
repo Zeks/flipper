@@ -413,6 +413,14 @@ DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, di
     return ctx.result;
 }
 
+DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString user_id, int dead_fic_days_range)
+{
+    QString qs = "update discord_users set dead_fic_days_range = :dead_fic_days_range where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs, BP2(user_id, dead_fic_days_range));
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 
 }
 }

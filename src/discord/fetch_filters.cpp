@@ -14,6 +14,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     auto userWordcountFilter = user->GetWordcountFilter();
     filter.minWords = userWordcountFilter.firstLimit;
     filter.maxWords = userWordcountFilter.secondLimit;
+    filter.deadFicDaysRange = user->GetDeadFicDaysRange();
 
     if(user->GetSortFreshFirst()){
         filter.listOpenMode = true;
@@ -104,6 +105,8 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     auto userWordcountFilter = user->GetWordcountFilter();
     filter.minWords = userWordcountFilter.firstLimit;
     filter.maxWords = userWordcountFilter.secondLimit;
+    filter.deadFicDaysRange = user->GetDeadFicDaysRange();
+
     auto userFics = user->FicList();
 
     for(int i = 0; i < userFics->fics.size(); i++)

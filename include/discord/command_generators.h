@@ -36,6 +36,7 @@ public:
     virtual CommandChain ProcessInput(Client*, QSharedPointer<discord::Server>, SleepyDiscord::Message, bool verifyUser = false);
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message) = 0;
     virtual bool IsThisCommand(const std::string&) = 0;
+    void AddFilterCommand(Command);
     static void EnsureUserExists(QString, QString userName);
     //QRegularExpression rx;
     Command nullCommand;
@@ -43,6 +44,7 @@ public:
     QString userId;
     Client* client = nullptr;
     QSharedPointer<discord::Server> server;
+    bool currentOperationRestoresActiveSet = false;
     static QSharedPointer<User> user; // shitcode
 };
 
@@ -133,7 +135,7 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
-class ForceListParamsCommand: public CommandCreator{
+class ForceListParamsCommand: public RecommendationsCommand{
 public:
     ForceListParamsCommand();
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
@@ -197,7 +199,7 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
-class WordcountCommand: public CommandCreator{
+class WordcountCommand: public RecommendationsCommand{
 public:
     WordcountCommand(){}
     virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);

@@ -68,6 +68,7 @@ public:
     void FilterFandom(QString userId, int fandomId, bool allowCrossovers);
     void CompletelyRemoveUser(QString userId);
     void SetWordcountFilter(QString userId, discord::WordcountFilter);
+    void SetDeadFicDaysRange(QString userId, int);
 };
 
 }

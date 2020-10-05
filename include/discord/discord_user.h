@@ -129,23 +129,23 @@ struct User{
     int GetSimilarFicsId() const;
     void SetSimilarFicsId(int value);
 
-    bool isValid = false;
 
     bool GetRngBustScheduled() const;
     void SetRngBustScheduled(bool value);
 
-
-public:
     WordcountFilter GetWordcountFilter() const;
     void SetWordcountFilter(const WordcountFilter &value);
 
+    int GetDeadFicDaysRange() const;
+    void SetDeadFicDaysRange(int value);
+
+    bool isValid = false;
 private:
     QString userID;
     QString userName;
     QUuid uuid;
     QString ffnID;
-    int page = 0;
-    int listId= 0;
+
     bool banned = false;
     bool readsSlash = false;
     bool hasUnfinishedRecRequest = false;
@@ -155,6 +155,10 @@ private:
     bool hideDead = false;
     bool strictFreshSort = false;
     bool rngBustScheduled = false;
+
+    int page = 0;
+    int listId= 0;
+    int deadFicDaysRange = 365;
     int similarFicsId = 0;
     int forcedMinMatch = 0;
     int forcedRatio = 0;

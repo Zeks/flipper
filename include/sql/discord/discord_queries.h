@@ -57,5 +57,7 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool allow_crossovers);
     DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id);
     DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, discord::WordcountFilter);
+    DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString userId, int days);
+
  }
 }

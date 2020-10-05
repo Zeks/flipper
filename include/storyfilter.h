@@ -157,6 +157,7 @@ struct StoryFilter{
     int useThisFic = -1;
     int protocolMajorVersion = 2;
     int protocolMinorVersion = 0;
+    int deadFicDaysRange = 365;
 
     QList<int> usedRecommenders;
     ESortMode sortMode;
