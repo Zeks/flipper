@@ -11,6 +11,9 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     filter.crossoversOnly = false;
     filter.showOriginsInLists = false;
     filter.recordLimit = size;
+    auto userWordcountFilter = user->GetWordcountFilter();
+    filter.minWords = userWordcountFilter.firstLimit;
+    filter.maxWords = userWordcountFilter.secondLimit;
 
     if(user->GetSortFreshFirst()){
         filter.listOpenMode = true;
@@ -98,6 +101,9 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     filter.slashFilter.slashFilterEnabled = true;
     filter.rngDisambiguator += user->UserID();
     filter.wipeRngSequence = user->GetRngBustScheduled();
+    auto userWordcountFilter = user->GetWordcountFilter();
+    filter.minWords = userWordcountFilter.firstLimit;
+    filter.maxWords = userWordcountFilter.secondLimit;
     auto userFics = user->FicList();
 
     for(int i = 0; i < userFics->fics.size(); i++)

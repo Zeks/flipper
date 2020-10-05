@@ -56,5 +56,6 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db);
     DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool allow_crossovers);
     DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id);
+    DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, discord::WordcountFilter);
  }
 }

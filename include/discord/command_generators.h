@@ -197,6 +197,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class WordcountCommand: public CommandCreator{
+public:
+    WordcountCommand(){}
+    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 class CommandParser{
 public:

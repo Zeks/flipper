@@ -26,6 +26,7 @@ namespace discord {
         RegisterCommand<PurgeCommand>(parser);
         RegisterCommand<ResetFiltersCommand>(parser);
         RegisterCommand<SimilarFicsCommand>(parser);
+        RegisterCommand<WordcountCommand>(parser);
         // this command requires actually implementing full mobile parser
         // RegisterCommand<ShowFullFavouritesCommand>(parser);
     }
@@ -54,6 +55,7 @@ namespace discord {
         helpString +=  GetTipsForCommandIfActive<PurgeCommand>();
         helpString +=  GetTipsForCommandIfActive<ResetFiltersCommand>();
         helpString +=  GetTipsForCommandIfActive<SimilarFicsCommand>();
+        helpString +=  GetTipsForCommandIfActive<WordcountCommand>();
         helpString +=  "If the genres you see in the list have + = and ~ next to them, they are auto-deduced."
                        "\n+ means main genre"
                        "\n= means there's a sufficient amount of this genre in the fic."

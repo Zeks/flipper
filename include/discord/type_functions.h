@@ -25,6 +25,7 @@ namespace discord {
                 TypeStringHolder<DisplayHelpCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<RngCommand>::prefixlessPattern,str::separator,
                 TypeStringHolder<FilterLikedAuthorsCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<WordcountCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ShowFreshRecsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ShowCompletedCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<HideDeadCommand>::prefixlessPattern, str::separator,

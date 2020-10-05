@@ -184,6 +184,15 @@ struct TypeStringHolder<discord::SimilarFicsCommand>{
         static constexpr std::string_view tips = "`%1similar X` command doesn't necessarily display similar fics, just the ones most favourited with the provided one.";
 };
 
+template <>
+struct TypeStringHolder<discord::WordcountCommand>{
+        static constexpr std::string_view name = "words";
+        static constexpr std::string_view prefixlessPattern = "?<words>words";
+        static constexpr std::string_view pattern = "words(\\s{1,}>(less|more|between)(\\s{1,}\\d{1,5})(\\s{1,}\\d{1,5}){0,1}){0,1}";
+        static constexpr std::string_view help = "`%1words` Allows filtering on fic size. Options are:\n`%1words >less X`\n`%1words >more X`\n`%1words >words X Y`\nWhere X and Y are lenghts in thousands of words.";
+        static constexpr std::string_view tips = "`%1words >less` command with added 'socomplete' filter allows separating smaller finished fics recommended for you from larger ones which otherwise tend to get higher score based on traction alone.";
+};
+
 
 
 

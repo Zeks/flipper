@@ -38,7 +38,6 @@ void CommandChain::RemoveEmptyCommands()
 
 CommandCreator::~CommandCreator()
 {
-
 }
 
 CommandChain CommandCreator::ProcessInput(Client* client, QSharedPointer<discord::Server> server, SleepyDiscord::Message message , bool )
@@ -782,6 +781,72 @@ CommandChain SimilarFicsCommand::ProcessInputImpl(SleepyDiscord::Message message
 bool SimilarFicsCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<SimilarFicsCommand>::name;
+}
+
+
+CommandChain WordcountCommand::ProcessInputImpl(SleepyDiscord::Message message)
+{
+    Command command = NewCommand(server, message,ct_set_wordcount_limit);
+    auto match = ctre::search<TypeStringHolder<WordcountCommand>::pattern>(message.content);
+    auto filterType = match.get<2>().to_string();
+    auto rangeBegin = match.get<3>().to_string();
+    auto rangeEnd = match.get<4>().to_string();
+
+    if(filterType.length() == 0)
+        filterType = "reset";
+
+    auto pushNullCommand = [&](QString reason){
+        nullCommand.type = ct_null_command;
+        nullCommand.variantHash["reason"] = reason;
+        nullCommand.originalMessage = message;
+        nullCommand.server = this->server;
+        result.Push(nullCommand);
+    };
+    if((filterType == "less" || filterType == "more") && rangeBegin.length() == 0)
+    {
+        pushNullCommand("`less` and `more` commands require a desired wordcount after them.");
+        return result;
+    }
+    if(filterType == "between" && (rangeBegin.length() == 0 || rangeEnd.length() == 0))
+    {
+        pushNullCommand("`between` command requires both being and end of the desied wordcount range.");
+        return result;
+    }
+
+    if(filterType == "less"){
+        command.ids.push_back(0);
+        command.ids.push_back(std::stoi(rangeBegin));
+    }
+    else if(filterType == "more")
+    {
+        command.ids.push_back(std::stoi(rangeBegin));
+        command.ids.push_back(99999999);
+    }
+    else if(filterType == "between"){
+        command.ids.push_back(std::stoi(rangeBegin));
+        command.ids.push_back(std::stoi(rangeEnd));
+    }
+    else{
+        command.ids.push_back(0);
+        command.ids.push_back(0);
+    }
+    result.Push(command);
+    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+    createRecs.ids.push_back(user->FfnID().toInt());
+    createRecs.variantHash["refresh"] = "yes";
+    createRecs.textForPreExecution = QString("Recreating recommendations for user %1 with new settings, please wait a bit").arg(user->FfnID());
+    result.hasParseCommand = true;
+    result.Push(createRecs);
+    Command displayRecs = NewCommand(server, message,ct_display_page);
+    displayRecs.variantHash["refresh_previous"] = true;
+    displayRecs.ids.push_back(0);
+    result.Push(displayRecs);
+    return result;
+}
+
+bool WordcountCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<WordcountCommand>::name;
 }
 
 

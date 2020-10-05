@@ -19,6 +19,7 @@ void TaskRunner::AddTask(CommandChain chain)
 void TaskRunner::ClearState()
 {
     result.Clear();
+    chainToRun = {};
     busy = false;
 }
 

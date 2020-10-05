@@ -1033,6 +1033,15 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
     return action;
 }
 
+QSharedPointer<SendMessageCommand> SetWordcountLimitAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
+{
+    auto ficIds = command.ids;
+    command.user->SetWordcountFilter({command.ids.at(0)*1000,command.ids.at(1)*1000});
+    An<interfaces::Users> usersDbInterface;
+    usersDbInterface->SetWordcountFilter(command.user->UserID(),command.user->GetWordcountFilter());
+    return action;
+}
+
 
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
@@ -1080,6 +1089,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new CreateSimilarFicListAction());
     case ECommandType::ct_create_recs_from_mobile_page:
         return QSharedPointer<ActionBase>(new MobileRecsCreationAction());
+    case ECommandType::ct_set_wordcount_limit:
+        return QSharedPointer<ActionBase>(new SetWordcountLimitAction());
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

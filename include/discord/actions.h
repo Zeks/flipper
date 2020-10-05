@@ -54,6 +54,7 @@ ACTION(HideDeadAction);
 ACTION(PurgeAction);
 ACTION(ResetFiltersAction);
 ACTION(CreateSimilarFicListAction);
+ACTION(SetWordcountLimitAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

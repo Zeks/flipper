@@ -30,6 +30,11 @@ class Users;
 
 namespace discord{
 
+struct WordcountFilter{
+    int firstLimit = 0;
+    int secondLimit = 0;
+};
+
 struct User{
     User(){InitFicsPtr();}
     User(QString userID, QString ffnID, QString name);
@@ -129,6 +134,11 @@ struct User{
     bool GetRngBustScheduled() const;
     void SetRngBustScheduled(bool value);
 
+
+public:
+    WordcountFilter GetWordcountFilter() const;
+    void SetWordcountFilter(const WordcountFilter &value);
+
 private:
     QString userID;
     QString userName;
@@ -163,6 +173,7 @@ private:
     int goodRngScoreCutoff;
     QSet<int> ignoredFics;
     FandomFilter filteredFandoms;
+    WordcountFilter wordcountFilter;
     FandomFilter ignoredFandoms;
     QHash<int, int> positionToId;
     ECommandType lastPageType = ct_display_page;

@@ -472,6 +472,16 @@ void User::SetRngBustScheduled(bool value)
     QWriteLocker locker(&lock);
     rngBustScheduled = value;
 }
+
+WordcountFilter User::GetWordcountFilter() const
+{
+    return wordcountFilter;
+}
+
+void User::SetWordcountFilter(const WordcountFilter &value)
+{
+    wordcountFilter = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

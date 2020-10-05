@@ -82,6 +82,7 @@ void CommandController::OnTaskFinished()
 {
     QLOG_TRACE() << "task chain finished";
     std::lock_guard<std::recursive_mutex> guard(lock);
+
     auto senderTask = dynamic_cast<TaskRunner*>(sender());
     auto result = senderTask->result;
     senderTask->ClearState();
@@ -101,6 +102,7 @@ void CommandController::OnTaskFinished()
 
     auto userId = QString::fromStdString(message.author.ID.string());
     activeUsers.remove(userId);
+
     for(auto& command : newCommands)
         Push(command);
 }

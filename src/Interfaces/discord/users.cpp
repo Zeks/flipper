@@ -170,6 +170,12 @@ void Users::CompletelyRemoveUser(QString userId)
     database::discord_queries::CompletelyRemoveUser(dbToken->db, userId);
 }
 
+void Users::SetWordcountFilter(QString userId, discord::WordcountFilter filter)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    database::discord_queries::SetWordcountFilter(dbToken->db, userId, filter);
+}
+
 
 
 }

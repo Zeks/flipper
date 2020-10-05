@@ -17,6 +17,8 @@ alter table discord_users add column strict_fresh_sorting integer default 0;
 alter table discord_users add column show_complete_only integer default 0;
 alter table discord_users add column hide_dead integer default 0;
 alter table discord_users add column similar_fics_id integer default 0;
+alter table discord_users add column words_filter_range_begin integer default 0;
+alter table discord_users add column words_filter_range_end integer default 0;
 
 CREATE INDEX if not exists I_discord_users ON discord_users (user_id ASC);  
 

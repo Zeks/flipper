@@ -61,6 +61,10 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetForcedRatio(q.value("forced_ratio").toInt());
         user->SetSortFreshFirst(q.value("use_fresh_sorting").toInt());
         user->SetHideDead(q.value("hide_dead").toInt());
+
+        int minWords = q.value("words_filter_range_begin").toInt();
+        int maxWords = q.value("words_filter_range_end").toInt();
+        user->SetWordcountFilter({minWords, maxWords});
         user->SetShowCompleteOnly(q.value("show_complete_only").toInt());
         user->SetStrictFreshSort(q.value("strict_fresh_sorting").toInt());
         ctx.result.data = user;
@@ -398,16 +402,16 @@ DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id)
     return ctx.result;
 }
 
-
-
-
-
-
-
-
-
-
-
+DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, discord::WordcountFilter filter)
+{
+    QString qs = "update discord_users set words_filter_range_begin = :words_filter_range_begin, words_filter_range_end = :words_filter_range_end where user_id = :user_id";
+    SqlContext<bool> ctx(db, qs);
+    ctx.bindValue("user_id", userId);
+    ctx.bindValue("words_filter_range_begin", filter.firstLimit);
+    ctx.bindValue("words_filter_range_end", filter.secondLimit);
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
 
 
 }
