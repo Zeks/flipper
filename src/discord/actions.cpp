@@ -497,7 +497,11 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
     if(command.user->GetHideDead())
         result += "\nOnly showing fics that are not dead.";
     if(!result.isEmpty())
-        result += "\nTo disable any active filters, repeat the command that activates them.";
+    {
+        QString temp = "\nTo disable any active filters, repeat the command that activates them,\nor issue %2xfilter to remove them all.";
+        temp = temp.arg(QString::fromStdString(command.server->GetCommandPrefix()));
+        result += temp;
+    }
 
     embed.description += result.toStdString();
 }
