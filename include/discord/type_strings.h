@@ -12,7 +12,7 @@ struct TypeStringHolder<discord::NextPageCommand>{
     static constexpr std::string_view name = "next";
         static constexpr std::string_view prefixlessPattern = "?<next>next";
         static constexpr std::string_view pattern = "next";
-        static constexpr std::string_view help = "`%1next` to navigate to the next page of the recommendation results";
+        static constexpr std::string_view help = "`%1next` to navigate to the next page";
         static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
 };
 template <>
@@ -20,7 +20,7 @@ struct TypeStringHolder<discord::PreviousPageCommand>{
     static constexpr std::string_view name = "prev";
         static constexpr std::string_view prefixlessPattern = "?<prev>prev";
         static constexpr std::string_view pattern = "prev";
-        static constexpr std::string_view help = "`%1prev` to navigate to the previous page of the recommendation results";
+        static constexpr std::string_view help = "`%1prev` to navigate to the previous page";
         static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
 };
 
@@ -29,8 +29,8 @@ struct TypeStringHolder<discord::RecsCreationCommand> {
         static constexpr std::string_view name = "recs";
         static constexpr std::string_view prefixlessPattern = "?<recs>recs";
         static constexpr std::string_view pattern = "recs(\\s{1,}>refresh){0,1}((\\s{1,}\\d{4,10})|(\\s{1,}https:.{1}.{1}www.fanfiction.net.{1}.{1,100}))";
-        static constexpr std::string_view help = "Basic commands:\n`%1recs FFN_ID(or an url to your user page)` to create recommendations. FFN_ID is the id of your fanfiction.net profile"
-                                                 "\n`%1recs >refresh FFN_ID` if you've added new stuff to your favourites and want the bot to re-read your list.";
+        static constexpr std::string_view help = "Basic commands:\n`%1recs USER_FFN_ID(or an url to your user page)` to create recommendations."
+                                                 "\n`%1recs >refresh FFN_ID` if you want the bot to re-read your favourites.";
 
         static constexpr std::string_view modularHelp = "`%1recs FFN_ID` to create recommendations. FFN_ID is the id of your fanfiction.net profile"
                                                  "\n`%1recs >refresh FFN_ID` if you've added new stuff to your favourites and want the bot to re-read your list.";
