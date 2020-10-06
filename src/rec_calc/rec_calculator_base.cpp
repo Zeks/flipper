@@ -132,6 +132,8 @@ bool RecCalculatorImplBase::Calc(){
 
 void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, FilterListType filters, ActionListType actions)
 {
+    int  i = 0;
+    AutoAdjustmentAndFilteringResult firstAdjustmentResult;
     do
     {
         ResetAccumulatedData();
@@ -142,6 +144,8 @@ void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<Recommendatio
 
         TimedAction resultAdjustment("adjusting results",[&](){
             auto adjustmentResult = AutoAdjustRecommendationParamsAndFilter(params);
+            if(i == 0)
+                firstAdjustmentResult = adjustmentResult;
             if(adjustmentResult.performedFiltering)
                 filteredAuthors = adjustmentResult.authors;
             AdjustRatioForAutomaticParams(); // todo check if moodlist even goes there
@@ -158,10 +162,11 @@ void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<Recommendatio
         if(WeightingIsValid())
             break;
 
-        if(!AdjustParamsToHaveExceptionalLists(params))
+        if(!AdjustParamsToHaveExceptionalLists(params, firstAdjustmentResult))
             break;
 
         QLOG_INFO() << "Dropping ratio to: " << params->maxUnmatchedPerMatch;
+        i++;
     }while(params->adjusting);
     QLOG_INFO() << "Ratio after adjustment: " << params->maxUnmatchedPerMatch;
     QLOG_INFO() << "Min after adjustment: " << params->minimumMatch;
@@ -327,15 +332,21 @@ AutoAdjustmentAndFilteringResult RecCalculatorImplBase::AutoAdjustRecommendation
         return totalMatches - sum;
 
     };
+
     if(matches.size() && matches.last() >= params->maxUnmatchedPerMatch/2)
     {
         for(int i = 0; i < matches.count() - 2; i ++){
+            if(i > 0)
+                result.adjustmentStoppedAtFirstIteration = false;
 
             QLOG_INFO() << "starting processing of: " << i;
             int firstCount = authorsByMatches[matches[i]].count();
             int secondCount = authorsByMatches[matches[i+1]].count();
             int thirdCount = authorsByMatches[matches[i+2]].count();
             QLOG_INFO() << firstCount << secondCount << thirdCount;
+            result.sizes[0] = firstCount;
+            result.sizes[1] = secondCount;
+            result.sizes[2] = thirdCount;
             double average = static_cast<double>(firstCount + secondCount + thirdCount)/3.;
             //QLOG_INFO() << "average is: " << average;
 
@@ -385,10 +396,22 @@ void RecCalculatorImplBase::AdjustRatioForAutomaticParams()
     // intentionally does nothing
 }
 
-bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList> params)
+bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList> params, AutoAdjustmentAndFilteringResult adjustmentResult)
 {
     int dropMinimum = 1;
     int dropRatio = 1;
+    if(adjustmentResult.adjustmentStoppedAtFirstIteration && adjustmentResult.sizes[2]*6 > params->maxUnmatchedPerMatch)
+    {
+        params->isAutomatic = false;
+        params->adjusting = false;
+        return false;
+    }
+    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch == 11)
+    {
+        params->isAutomatic = false;
+        params->adjusting = false;
+        return false;
+    }
     if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch-dropRatio < 10)
     {
         // we've failed to find exceptional lists, better to just fall back to higher ratio

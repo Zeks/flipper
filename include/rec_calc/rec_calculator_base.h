@@ -82,7 +82,9 @@ struct RecInputVectors{
 
 struct AutoAdjustmentAndFilteringResult{
     bool performedFiltering = false;
+    bool adjustmentStoppedAtFirstIteration = true;
     QSet<int> authors;
+    std::vector<int> sizes = {0,0,0};
 };
 
 
@@ -123,7 +125,7 @@ public:
 
     virtual AutoAdjustmentAndFilteringResult AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList>);
     virtual void AdjustRatioForAutomaticParams();
-    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>);
+    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>, AutoAdjustmentAndFilteringResult adjustmentResult);
 
     int ownProfileId = -1;
     uint32_t matchSum = 0;
