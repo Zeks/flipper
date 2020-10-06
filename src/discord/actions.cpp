@@ -101,11 +101,6 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
 
 QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, QSet<QString> userFavourites, QSharedPointer<TaskEnvironment> environment, Command command){
     auto recList = CreateRecommendationParams(ffnId);
-    if(command.user->GetForcedMinMatch() != 0){
-         recList->minimumMatch = command.user->GetForcedMinMatch();
-         recList->maxUnmatchedPerMatch = command.user->GetForcedRatio();
-         recList->isAutomatic = false;
-    }
     recList->ignoreBreakdowns= true;
 
     QVector<core::Identity> pack;

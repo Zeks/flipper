@@ -163,6 +163,8 @@ void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<Recommendatio
 
         QLOG_INFO() << "Dropping ratio to: " << params->maxUnmatchedPerMatch;
     }while(params->adjusting);
+    QLOG_INFO() << "Ratio after adjustment: " << params->maxUnmatchedPerMatch;
+    QLOG_INFO() << "Min after adjustment: " << params->minimumMatch;
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -385,16 +387,30 @@ void RecCalculatorImplBase::AdjustRatioForAutomaticParams()
 
 bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList> params)
 {
-    if(params->minimumMatch-7 < 10 && params->maxUnmatchedPerMatch-7 < 10)
+    int dropMinimum = 1;
+    int dropRatio = 1;
+    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch-dropRatio < 10)
+    {
+        // we've failed to find exceptional lists, better to just fall back to higher ratio
+        //params->maxUnmatchedPerMatch*=2;
+        params->isAutomatic = false;
+        params->adjusting = false;
         return false;
+    }
 
-    if(params->maxUnmatchedPerMatch-7 < 10 && params->minimumMatch == 20)
+    if(params->maxUnmatchedPerMatch-dropRatio < 10 && params->minimumMatch == 20)
+    {
+        // we've failed to find exceptional lists, better to just fall back to higher ratio
+        //params->maxUnmatchedPerMatch*=2;
+        params->isAutomatic = false;
+        params->adjusting = false;
         return false;
+    }
 
-    if(params->maxUnmatchedPerMatch-7 > 10)
-        params->maxUnmatchedPerMatch-=7;
-    if(params->minimumMatch-7 > 10)
-        params->minimumMatch-=7;
+    if(params->maxUnmatchedPerMatch-dropRatio > 10)
+        params->maxUnmatchedPerMatch-=dropRatio;
+    if(params->minimumMatch-dropMinimum > 10)
+        params->minimumMatch-=dropMinimum;
 
     params->isAutomatic = false;
     params->adjusting = true;
@@ -696,12 +712,12 @@ void RecCalculatorImplBase::ReportNegativeResults()
     for(auto& author : authorList){
         if(i > limit)
             break;
-        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
-                       << " negative matches: " <<  allAuthors[author].negativeMatches
-                       << " negative ratio: " <<  allAuthors[author].negativeRatio
-        << Qt::endl
-                << " positive matches: " <<  allAuthors[author].matches
-                << " positive ratio: " <<  allAuthors[author].ratio;
+//        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+//                       << " negative matches: " <<  allAuthors[author].negativeMatches
+//                       << " negative ratio: " <<  allAuthors[author].negativeRatio
+//        << Qt::endl
+//                << " positive matches: " <<  allAuthors[author].matches
+//                << " positive ratio: " <<  allAuthors[author].ratio;
         i++;
     }
 
@@ -714,12 +730,12 @@ void RecCalculatorImplBase::ReportNegativeResults()
     for(auto& author : authorList){
         if(i > limit)
             break;
-        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
-                       << " negative matches: " <<  allAuthors[author].negativeMatches
-                       << " negative ratio: " <<  allAuthors[author].negativeRatio
-        << Qt::endl
-                << " positive matches: " <<  allAuthors[author].matches
-                << " positive ratio: " <<  allAuthors[author].ratio;
+//        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+//                       << " negative matches: " <<  allAuthors[author].negativeMatches
+//                       << " negative ratio: " <<  allAuthors[author].negativeRatio
+//        << Qt::endl
+//                << " positive matches: " <<  allAuthors[author].matches
+//                << " positive ratio: " <<  allAuthors[author].ratio;
         i++;
     }
 
@@ -739,12 +755,12 @@ void RecCalculatorImplBase::ReportNegativeResults()
     for(auto& author : authorList){
         if(i > limit)
             break;
-        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
-                       << " negative matches: " <<  allAuthors[author].negativeMatches
-                       << " negative ratio: " <<  allAuthors[author].negativeRatio
-        << Qt::endl
-                << " positive matches: " <<  allAuthors[author].matches
-                << " positive ratio: " <<  allAuthors[author].ratio;
+//        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+//                       << " negative matches: " <<  allAuthors[author].negativeMatches
+//                       << " negative ratio: " <<  allAuthors[author].negativeRatio
+//        << Qt::endl
+//                << " positive matches: " <<  allAuthors[author].matches
+//                << " positive ratio: " <<  allAuthors[author].ratio;
         i++;
 
     }
