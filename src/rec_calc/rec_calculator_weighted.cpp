@@ -109,7 +109,10 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     double normalizer = 1./static_cast<double>(authorList.size()-1.);
     double sum = 0;
     for(auto author: authorList)
-        sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
+    {
+        if(this->ownProfileId != static_cast<int>(allAuthors[author].id))
+            sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
+    }
 
     quadraticDeviation = std::sqrt(normalizer * sum);
 
@@ -161,6 +164,15 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
         gtSigma = (ratioMedian - adjustedQuad) >= author.ratio;
         gtSigma2 = (ratioMedian - 2 * adjustedQuad) >= author.ratio;
         gtSigma17 = (ratioMedian - 1.7 * adjustedQuad) >= author.ratio;
+    }
+
+    if(this->ownProfileId == static_cast<int>(author.id))
+    {
+        result.value = 0;
+        result.ownProfile = true;
+        result.authorType = AuthorWeightingResult::EAuthorType::common;
+        author.authorMatchCloseness = result.authorType;
+        return result;
     }
 
     if(gtSigma2)

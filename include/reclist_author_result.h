@@ -40,10 +40,14 @@ struct AuthorWeightingResult
     AuthorWeightingResult(double value, EAuthorType type): isValid(true), value(value), authorType(type){}
     bool isValid = false;
     double GetCoefficient(){
+        if(ownProfile == true)
+            return 0;
+
         if(!isValid)
             return 1;
         return 1 + value;
     }
+    bool ownProfile = false;;
     double value = 0;
     EAuthorType authorType;
 };

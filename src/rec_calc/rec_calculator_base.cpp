@@ -119,7 +119,8 @@ bool RecCalculatorImplBase::Calc(){
 
     TimedAction report("writing match report",[&](){
         for(auto& author: filteredAuthors)
-            result.matchReport[allAuthors[author].matches]++;
+            if(author != ownProfileId)
+                result.matchReport[allAuthors[author].matches]++;
     });
 
     report.run();
