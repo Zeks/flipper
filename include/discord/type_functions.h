@@ -29,12 +29,11 @@ namespace discord {
                 TypeStringHolder<ShowFreshRecsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ShowCompletedCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<HideDeadCommand>::prefixlessPattern, str::separator,
-                TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
+                //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<SimilarFicsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<PurgeCommand>::prefixlessPattern, str::separator,
-                TypeStringHolder<ResetFiltersCommand>::prefixlessPattern, str::separator,
-                TypeStringHolder<ForceListParamsCommand>::prefixlessPattern, str::rightBrace, str::rightBrace>;
+                TypeStringHolder<ResetFiltersCommand>::prefixlessPattern, str::rightBrace, str::rightBrace>;
     }
 
 template<typename T>

@@ -18,7 +18,7 @@ namespace discord {
         RegisterCommand<DisplayHelpCommand>(parser);
         RegisterCommand<RngCommand>(parser);
         RegisterCommand<ChangeServerPrefixCommand>(parser);
-        RegisterCommand<ForceListParamsCommand>(parser);
+        //RegisterCommand<ForceListParamsCommand>(parser);
         RegisterCommand<FilterLikedAuthorsCommand>(parser);
         RegisterCommand<ShowFreshRecsCommand>(parser);
         RegisterCommand<ShowCompletedCommand>(parser);

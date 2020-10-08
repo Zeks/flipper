@@ -14,6 +14,7 @@ struct TypeStringHolder<discord::NextPageCommand>{
         static constexpr std::string_view pattern = "next";
         static constexpr std::string_view help = "`%1next` to navigate to the next page";
         static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
+        static constexpr std::string_view shorthand = "`%1next`- displays next page of recommendations";
 };
 template <>
 struct TypeStringHolder<discord::PreviousPageCommand>{
@@ -22,6 +23,7 @@ struct TypeStringHolder<discord::PreviousPageCommand>{
         static constexpr std::string_view pattern = "prev";
         static constexpr std::string_view help = "`%1prev` to navigate to the previous page";
         static constexpr std::string_view tips = "You can navigate through recommendations with `%1next`,`%1prev` or clicking on emoji";
+        static constexpr std::string_view shorthand = "`%1prev`- displays previous page of recommendations";
 };
 
 template <>
@@ -35,6 +37,7 @@ struct TypeStringHolder<discord::RecsCreationCommand> {
         static constexpr std::string_view modularHelp = "`%1recs FFN_ID` to create recommendations. FFN_ID is the id of your fanfiction.net profile"
                                                  "\n`%1recs >refresh FFN_ID` if you've added new stuff to your favourites and want the bot to re-read your list.";
         static constexpr std::string_view tips = "if you've added more fics to your favourites, refresh with the bot using `%1recs >refresh ffn_id`";
+        static constexpr std::string_view shorthand = "`%1recs`- displays recommendations ";
 };
 
 template <>
@@ -44,6 +47,7 @@ struct TypeStringHolder<discord::PageChangeCommand>{
         static constexpr std::string_view pattern = "page\\s{1,}(\\d{1,10})";
         static constexpr std::string_view help = "`%1page X` to navigate to a differnt page in recommendation results. `%1page` without a number will repost the last one.";
         static constexpr std::string_view tips = "You can navigate to an exact page of recommendations with `%1page X`";
+        static constexpr std::string_view shorthand = "`%1page` - displays exact page of recommendations";
 };
 template <>
 struct TypeStringHolder<discord::SetFandomCommand>{
@@ -55,6 +59,7 @@ struct TypeStringHolder<discord::SetFandomCommand>{
                                                  "\n`%1fandom` a second time with a diffent fandom if you want to search for exact crossover"
                                                  "\n`%1fandom >reset` to reset fandom filter";
         static constexpr std::string_view tips = "You can get recs from a specific fandom with `%1fandom fandom name`";
+        static constexpr std::string_view shorthand = "`%1fandom` - shows fics from specific fandom";
 
 };
 template <>
@@ -66,6 +71,7 @@ struct TypeStringHolder<discord::IgnoreFandomCommand>{
                                                  "\n`%1xfandom >full X` to also ignore crossovers from this fandom,"
                                                  "\n`%1xfandom >reset` to reset fandom ignore list";
         static constexpr std::string_view tips = "You can ignore fics from a specific fandom with `%1xfandom fandom name` or '%1xfandom >full fandom name' to also remove crossovers";
+        static constexpr std::string_view shorthand = "`%1xfandom` - ignores fics from a fandom";
 };
 template <>
 struct TypeStringHolder<discord::IgnoreFicCommand>{
@@ -79,6 +85,7 @@ struct TypeStringHolder<discord::IgnoreFicCommand>{
                                                  "\n`%1xfic >all` will ignore the whole page";
                                                  //"\n`%1xfic >reset` resets the fic ignores";
         static constexpr std::string_view tips = "You can exclude fics from appearing in your lists with `%1xfic X` where X is a fic ID in the results.";
+        static constexpr std::string_view shorthand = "`%1xfic` - hides individual fics from further display";
 };
 template <>
 struct TypeStringHolder<discord::DisplayHelpCommand>{
@@ -95,6 +102,7 @@ struct TypeStringHolder<discord::RngCommand>{
         static constexpr std::string_view pattern = "roll\\s(best|good|all)";
         static constexpr std::string_view help = "`\n%1roll best/good/all` will display a set of 3 random fics from within a selected range in the recommendations.";
         static constexpr std::string_view tips = "You can roll fics from your recommendations gatcha style using `%1roll best` (or `%1roll good` or `%1roll all`).";
+        static constexpr std::string_view shorthand = "`%1roll` - rolls fics from your recommendations gatcha style";
 };
 template <>
 struct TypeStringHolder<discord::ChangeServerPrefixCommand>{
@@ -102,15 +110,16 @@ struct TypeStringHolder<discord::ChangeServerPrefixCommand>{
         static constexpr std::string_view prefixlessPattern = "?<pref>prefix";
         static constexpr std::string_view pattern = "prefix(\\s.+)";
         static constexpr std::string_view help = "\nBot management commands:\n`%1prefix new prefix` changes the comamnd prefix for this server(admin only)";
+        static constexpr std::string_view shorthand = "%1prefix so";
 };
 
-template <>
-struct TypeStringHolder<discord::ForceListParamsCommand>{
-        static constexpr std::string_view name = "force";
-        static constexpr std::string_view prefixlessPattern = "?<force>force";
-        static constexpr std::string_view pattern = "force(\\s+\\d{1,2})(\\s+\\d{1,2})";
-        static constexpr std::string_view help = "";
-};
+//template <>
+//struct TypeStringHolder<discord::ForceListParamsCommand>{
+//        static constexpr std::string_view name = "force";
+//        static constexpr std::string_view prefixlessPattern = "?<force>force";
+//        static constexpr std::string_view pattern = "force(\\s+\\d{1,2})(\\s+\\d{1,2})";
+//        static constexpr std::string_view help = "";
+//};
 
 template <>
 struct TypeStringHolder<discord::FilterLikedAuthorsCommand>{
@@ -119,15 +128,16 @@ struct TypeStringHolder<discord::FilterLikedAuthorsCommand>{
         static constexpr std::string_view pattern = "liked";
         static constexpr std::string_view help = "\nFanfic filter commands:\n`%1liked` will enable a filter to show only fics from the authors whose fics you've liked in the list. Repeat to disable.";
         static constexpr std::string_view tips = "You can display only fics from the authors whose fics you have liked already with `%1liked`";
+        static constexpr std::string_view shorthand = "`%1liked` - shows only fics from the authors whose fics you've liked";
 };
 
-template <>
-struct TypeStringHolder<discord::ShowFullFavouritesCommand>{
-        static constexpr std::string_view name = "favs";
-        static constexpr std::string_view prefixlessPattern = "?<favs>favs";
-        static constexpr std::string_view pattern = "favs";
-        static constexpr std::string_view help = "";
-};
+//template <>
+//struct TypeStringHolder<discord::ShowFullFavouritesCommand>{
+//        static constexpr std::string_view name = "favs";
+//        static constexpr std::string_view prefixlessPattern = "?<favs>favs";
+//        static constexpr std::string_view pattern = "favs";
+//        static constexpr std::string_view help = "";
+//};
 
 
 template <>
@@ -137,6 +147,7 @@ struct TypeStringHolder<discord::ShowFreshRecsCommand>{
         static constexpr std::string_view pattern = "fresh(?<strict>\\s>strict)";
         static constexpr std::string_view help = "`%1fresh` Will toggle sorting on published date to see fresh recommendations. Add >strict to display only recommendations with score>1";
         static constexpr std::string_view tips = "You can display fresh recommendations recently posted on FFN with `%1fresh` or `%1fresh >strict`.Strict version removes everything that doesn't have at least two votes. ";
+        static constexpr std::string_view shorthand = "`%1fresh` - displays fresh recommendations instead of top ones";
 };
 
 template <>
@@ -146,6 +157,7 @@ struct TypeStringHolder<discord::ShowCompletedCommand>{
         static constexpr std::string_view pattern = "complete";
         static constexpr std::string_view help = "`%1complete` Will filter out all incomplete fics.";
         static constexpr std::string_view tips = "You can display only completed fics with `%1complete`";
+        static constexpr std::string_view shorthand = "`%1complete` - shows only complete fics";
 };
 
 template <>
@@ -155,6 +167,7 @@ struct TypeStringHolder<discord::HideDeadCommand>{
         static constexpr std::string_view pattern = "dead(\\s{0,}\\d+)";
         static constexpr std::string_view help = "`%1dead` Will filter out all dead fics (not updated in a year),alternatively you can use it as `%1dead X` to set the \"death\" interval in days";
         static constexpr std::string_view tips = "You can remove fics not updated within a certain interval with `%1dead` or `%1dead X`";
+        static constexpr std::string_view shorthand = "`%1dead` - hides dead fics";
 };
 
 template <>
@@ -164,6 +177,7 @@ struct TypeStringHolder<discord::PurgeCommand>{
         static constexpr std::string_view pattern = "xxxpurge";
         static constexpr std::string_view help = "`%1purge` will purge ALL your data from the bot.";
         static constexpr std::string_view tips = "If you want the bot to reset all your data post `%1purge` command";
+        static constexpr std::string_view shorthand = "`%1purge`";
 };
 
 template <>
@@ -182,6 +196,7 @@ struct TypeStringHolder<discord::SimilarFicsCommand>{
         static constexpr std::string_view pattern = "similar(\\s{1,}\\d{1,15})";
         static constexpr std::string_view help = "`%1similar` will show fics most favourited with the provided FFN fic id.";
         static constexpr std::string_view tips = "`%1similar X` command doesn't necessarily display similar fics, just the ones most favourited with the provided one.";
+        static constexpr std::string_view shorthand = "`%1similar` - displays similar fics to other fics";
 };
 
 template <>
@@ -191,6 +206,7 @@ struct TypeStringHolder<discord::WordcountCommand>{
         static constexpr std::string_view pattern = "words(\\s{1,}>{0,}\\s{0,}(less|more|between)(\\s{1,}\\d{1,5})(\\s{1,}\\d{1,5}){0,1}){0,1}";
         static constexpr std::string_view help = "`%1words` Allows filtering on fic size. Options are:\n`%1words >less X`\n`%1words >more X`\n`%1words >words X Y`\nWhere X and Y are lenghts in thousands of words.";
         static constexpr std::string_view tips = "`%1words >less` command with added 'socomplete' filter allows separating smaller finished fics recommended for you from larger ones which otherwise tend to get higher score based on traction alone.";
+        static constexpr std::string_view shorthand = "`%1words` - limits the size of the fics displayed";
 };
 
 

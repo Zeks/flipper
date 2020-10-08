@@ -32,6 +32,7 @@ public: \
     virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command); \
 }
 
+ACTION(GeneralHelpAction);
 ACTION(HelpAction);
 ACTION(DesktopRecsCreationAction);
 ACTION(MobileRecsCreationAction);

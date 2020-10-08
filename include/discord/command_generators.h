@@ -135,12 +135,12 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
-class ForceListParamsCommand: public RecommendationsCommand{
-public:
-    ForceListParamsCommand();
-    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
-    virtual bool IsThisCommand(const std::string& cmd);
-};
+//class ForceListParamsCommand: public RecommendationsCommand{
+//public:
+//    ForceListParamsCommand();
+//    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+//    virtual bool IsThisCommand(const std::string& cmd);
+//};
 
 class FilterLikedAuthorsCommand: public RecommendationsCommand{
 public:
@@ -149,12 +149,12 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
-class ShowFullFavouritesCommand: public CommandCreator{
-public:
-    ShowFullFavouritesCommand();
-    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
-    virtual bool IsThisCommand(const std::string& cmd);
-};
+//class ShowFullFavouritesCommand: public CommandCreator{
+//public:
+//    ShowFullFavouritesCommand();
+//    virtual CommandChain ProcessInputImpl(SleepyDiscord::Message);
+//    virtual bool IsThisCommand(const std::string& cmd);
+//};
 
 class ShowFreshRecsCommand: public RecommendationsCommand{
 public:

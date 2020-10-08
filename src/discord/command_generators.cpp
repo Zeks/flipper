@@ -579,44 +579,44 @@ bool ChangeServerPrefixCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<ChangeServerPrefixCommand>::name;
 }
 
-ForceListParamsCommand::ForceListParamsCommand()
-{
+//ForceListParamsCommand::ForceListParamsCommand()
+//{
 
-}
+//}
 
-CommandChain ForceListParamsCommand::ProcessInputImpl(SleepyDiscord::Message message)
-{
-    Command command = NewCommand(server, message,ct_force_list_params);
-    auto match = ctre::search<TypeStringHolder<ForceListParamsCommand>::pattern>(message.content);
-    auto min = match.get<1>().to_string();
-    auto ratio = match.get<2>().to_string();
-    if(min.length() == 0 || ratio.length() == 0)
-        return result;
+//CommandChain ForceListParamsCommand::ProcessInputImpl(SleepyDiscord::Message message)
+//{
+//    Command command = NewCommand(server, message,ct_force_list_params);
+//    auto match = ctre::search<TypeStringHolder<ForceListParamsCommand>::pattern>(message.content);
+//    auto min = match.get<1>().to_string();
+//    auto ratio = match.get<2>().to_string();
+//    if(min.length() == 0 || ratio.length() == 0)
+//        return result;
 
-    An<Users> users;
-    auto user = users->GetUser(QString::fromStdString(message.author.ID));
-    if(user->FfnID().isEmpty() || user->FfnID() == "-1")
-    {
-        Command createRecs = NewCommand(server, message,ct_no_user_ffn);
-        result.Push(createRecs);
-        result.stopExecution = true;
-        return result;
-    }
+//    An<Users> users;
+//    auto user = users->GetUser(QString::fromStdString(message.author.ID));
+//    if(user->FfnID().isEmpty() || user->FfnID() == "-1")
+//    {
+//        Command createRecs = NewCommand(server, message,ct_no_user_ffn);
+//        result.Push(createRecs);
+//        result.stopExecution = true;
+//        return result;
+//    }
 
-    command.variantHash["min"] = std::stoi(min);
-    command.variantHash["ratio"] = std::stoi(ratio);
-    AddFilterCommand(command);
-    Command displayRecs = NewCommand(server, message,ct_display_page);
-    displayRecs.variantHash["refresh_previous"] = true;
-    displayRecs.ids.push_back(0);
-    result.Push(displayRecs);
-    return result;
-}
+//    command.variantHash["min"] = std::stoi(min);
+//    command.variantHash["ratio"] = std::stoi(ratio);
+//    AddFilterCommand(command);
+//    Command displayRecs = NewCommand(server, message,ct_display_page);
+//    displayRecs.variantHash["refresh_previous"] = true;
+//    displayRecs.ids.push_back(0);
+//    result.Push(displayRecs);
+//    return result;
+//}
 
-bool ForceListParamsCommand::IsThisCommand(const std::string &cmd)
-{
-    return cmd == TypeStringHolder<ForceListParamsCommand>::name;
-}
+//bool ForceListParamsCommand::IsThisCommand(const std::string &cmd)
+//{
+//    return cmd == TypeStringHolder<ForceListParamsCommand>::name;
+//}
 
 FilterLikedAuthorsCommand::FilterLikedAuthorsCommand()
 {
@@ -644,19 +644,19 @@ bool FilterLikedAuthorsCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<FilterLikedAuthorsCommand>::name;
 }
 
-CommandChain ShowFullFavouritesCommand::ProcessInputImpl(SleepyDiscord::Message message)
-{
-    Command command = NewCommand(server, message,ct_show_favs);
-    auto match = ctre::search<TypeStringHolder<ShowFullFavouritesCommand>::pattern>(message.content);
-    if(match)
-        result.Push(command);
-    return result;
-}
+//CommandChain ShowFullFavouritesCommand::ProcessInputImpl(SleepyDiscord::Message message)
+//{
+//    Command command = NewCommand(server, message,ct_show_favs);
+//    auto match = ctre::search<TypeStringHolder<ShowFullFavouritesCommand>::pattern>(message.content);
+//    if(match)
+//        result.Push(command);
+//    return result;
+//}
 
-bool ShowFullFavouritesCommand::IsThisCommand(const std::string &cmd)
-{
-    return cmd == TypeStringHolder<ShowFullFavouritesCommand>::name;
-}
+//bool ShowFullFavouritesCommand::IsThisCommand(const std::string &cmd)
+//{
+//    return cmd == TypeStringHolder<ShowFullFavouritesCommand>::name;
+//}
 
 ShowFreshRecsCommand::ShowFreshRecsCommand()
 {
