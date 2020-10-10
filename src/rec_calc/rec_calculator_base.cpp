@@ -400,44 +400,43 @@ bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<Re
 {
     int dropMinimum = 1;
     int dropRatio = 1;
+    auto stopAdjusting = [&](){
+        params->isAutomatic = false;
+        params->adjusting = false;
+        return false;
+    };
     if(adjustmentResult.adjustmentStoppedAtFirstIteration && adjustmentResult.sizes[2]*6 > params->maxUnmatchedPerMatch)
-    {
-        params->isAutomatic = false;
-        params->adjusting = false;
-        return false;
-    }
-    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch == 11)
-    {
-        params->isAutomatic = false;
-        params->adjusting = false;
-        return false;
-    }
-    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch-dropRatio < 10)
+        return stopAdjusting();
+    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch - dropRatio <= 10)
+        return stopAdjusting();
+    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch-dropRatio <= 10)
     {
         // we've failed to find exceptional lists, better to just fall back to higher ratio
         //params->maxUnmatchedPerMatch*=2;
-        params->isAutomatic = false;
-        params->adjusting = false;
-        return false;
+        return stopAdjusting();
     }
 
     if(params->maxUnmatchedPerMatch-dropRatio < 10 && params->minimumMatch == 20)
     {
         // we've failed to find exceptional lists, better to just fall back to higher ratio
         //params->maxUnmatchedPerMatch*=2;
-        params->isAutomatic = false;
-        params->adjusting = false;
-        return false;
+        return stopAdjusting();
     }
 
-    if(params->maxUnmatchedPerMatch-dropRatio > 10)
-        params->maxUnmatchedPerMatch-=dropRatio;
-    if(params->minimumMatch-dropMinimum > 10)
-        params->minimumMatch-=dropMinimum;
+    bool canDropRatio = params->maxUnmatchedPerMatch-dropRatio > 10;
+    bool canDropMin = params->minimumMatch-dropMinimum > 10;
+    if(canDropRatio  || canDropMin ){
+        if(canDropRatio)
+            params->maxUnmatchedPerMatch-=dropRatio;
+        if(canDropMin )
+            params->minimumMatch-=dropMinimum;
+        params->isAutomatic = false;
+        params->adjusting = true;
+        QLOG_INFO() << "params after adjustment: " <<  params->minimumMatch << " " << params->maxUnmatchedPerMatch;
+        return true;
+    }
 
-    params->isAutomatic = false;
-    params->adjusting = true;
-    return true;
+    return stopAdjusting();
 }
 
 
