@@ -37,6 +37,7 @@ App{
         "include/discord/discord_user.h",
         "include/discord/fandom_filter_token.h",
         "include/discord/fetch_filters.h",
+        "include/discord/help_generator.h",
         "include/discord/limits.h",
         "include/discord/task.h",
         "include/discord/task_environment.h",
@@ -72,6 +73,7 @@ App{
         "src/discord/fandom_filter_token.cpp",
         "src/discord/favourites_fetching.cpp",
         "src/discord/fetch_filters.cpp",
+        "src/discord/help_generator.cpp",
         "src/discord/limits.cpp",
         "src/discord/task.cpp",
         "src/discord/task_environment.cpp",
@@ -146,6 +148,7 @@ App{
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
     ]
+    cpp.defines: base.concat(["FMT_HEADER_ONLY"])
     Group{
     name: "sqlite"
     files: [
@@ -171,6 +174,7 @@ App{
         sourceDirectory + "/third_party/zlib",
         sourceDirectory + "/libs/Logger/include",
         sourceDirectory + "/third_party",
+        sourceDirectory + "/third_party/fmt/include",
         sourceDirectory + "/third_party/sleepy-discord/include",
         sourceDirectory + "/third_party/sleepy-discord/deps",
         sourceDirectory + "/third_party/sleepy-discord/deps/asio/asio/include",
