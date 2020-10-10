@@ -806,13 +806,21 @@ CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPoint
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_help);
+    int maxHelpPages = 4;
+    int newPage;
     if(shiftRight)
-        command.ids.push_back(user->GetCurrentHelpPage() + 1);
-    else if(user->GetCurrentHelpPage() != 0)
-        command.ids.push_back(user->GetCurrentHelpPage() - 1);
-    else
-        return result;
+    {
+        newPage = user->GetCurrentHelpPage() + 1;
+        if(newPage == maxHelpPages)
+            newPage = 0;
+    }
+    else {
+        newPage = user->GetCurrentHelpPage() - 1;
+        if(newPage < 0)
+            newPage = maxHelpPages - 1;
 
+    }
+    command.ids.push_back(newPage);
     command.targetMessage = message;
     command.user = user;
     result.Push(command);

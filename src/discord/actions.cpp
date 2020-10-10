@@ -71,9 +71,11 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
 QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
     auto prefix = command.server->GetCommandPrefix();
-    command.user->SetCurrentHelpPage(0);
     auto embed = GetHelpPage(command.ids.at(0), command.server->GetCommandPrefix());
     action->embed = embed;
+    command.user->SetCurrentHelpPage(command.ids.at(0));
+    if(command.targetMessage.string().length() > 0)
+        action->targetMessage = command.targetMessage;
     action->reactionsToAdd.push_back("%f0%9f%91%88");
     action->reactionsToAdd.push_back("%f0%9f%91%89");
 

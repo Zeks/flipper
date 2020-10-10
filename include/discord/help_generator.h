@@ -10,4 +10,7 @@
 namespace discord {
     SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string serverPrefix);
     SleepyDiscord::Embed  GetTopLevelHelpPage(std::string serverPrefix);
+    SleepyDiscord::Embed  GetListNavigationPage(std::string serverPrefix);
+    SleepyDiscord::Embed  GetListModesPage(std::string serverPrefix);
+    SleepyDiscord::Embed  GetRecsHelpPage(std::string serverPrefix);
 }
