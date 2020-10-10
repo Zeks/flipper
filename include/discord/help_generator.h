@@ -17,4 +17,6 @@ namespace discord {
     SleepyDiscord::Embed  GetRollHelpPage(std::string serverPrefix);
     SleepyDiscord::Embed  GetFanficFiltersHelpPage(std::string serverPrefix);
     SleepyDiscord::Embed  GetFandomFiltersHelpPage(std::string serverPrefix);
+
+    int GetHelpPage(std::string_view argument);
 }

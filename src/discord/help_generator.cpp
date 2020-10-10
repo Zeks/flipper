@@ -1,5 +1,6 @@
 #include "discord/help_generator.h"
 #include "discord/type_strings.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include "fmt/format.h"
 
 namespace discord {
@@ -32,7 +33,7 @@ SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string serverPrefix)
 SleepyDiscord::Embed GetTopLevelHelpPage(std::string serverPrefix)
 {
     SleepyDiscord::Embed embed;
-    std::string header = "To start using the bot you will need to do `{0}recs X` where X is your profile id on fanfiction.net or url to that.\n"
+    std::string header = "To start using the bot you will need to do `{0}recs X` where X is your profile id on fanfiction.net or url to that which you can get [here](https://www.fanfiction.net/account/settings.php)\n"
                      "\nYou will also need to fill favourites on your profile for the bot to recommend something to you."
                      "Once the results are displayed you can navigate them with the emoji underneath the message or `next`, `prev` and `page` commands.";
                      //"Additionally, you can use these commands to filter and change the displayed recommendations in various ways: ";
@@ -451,6 +452,23 @@ SleepyDiscord::Embed GetFandomFiltersHelpPage(std::string serverPrefix)
 
     embed.color = 0xff0000;
     return embed;
+}
+
+int GetHelpPage(std::string_view argument)
+{
+    if(argument * in("recs"))
+        return 3;
+    if(argument * in("next", "prev", "page"))
+        return 1;
+    if(argument * in("fresh"))
+        return 4;
+    if(argument * in("roll"))
+        return 5;
+    if(argument * in("complete", "dead", "liked", "xfic", "words"))
+        return 6;
+    if(argument * in("fandom", "xfandom"))
+        return 7;
+    return 0;
 }
 
 }

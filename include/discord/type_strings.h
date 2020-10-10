@@ -91,7 +91,7 @@ template <>
 struct TypeStringHolder<discord::DisplayHelpCommand>{
         static constexpr std::string_view name = "help";
         static constexpr std::string_view prefixlessPattern = "?<help>help";
-        static constexpr std::string_view pattern = "help";
+        static constexpr std::string_view pattern = "help(\\s([A-Za-z]+)){0,1}";
         static constexpr std::string_view help = "`%1help` display this text";
         static constexpr std::string_view tips = "Enter `%1help` to see full help.";
 };

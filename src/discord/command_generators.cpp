@@ -1,6 +1,7 @@
 #include "discord/command_generators.h"
 #include "discord/client_v2.h"
 #include "discord/discord_user.h"
+#include "discord/help_generator.h"
 #include "discord/discord_server.h"
 #include "Interfaces/discord/users.h"
 #include "include/grpc/grpc_source.h"
@@ -460,7 +461,17 @@ DisplayHelpCommand::DisplayHelpCommand()
 CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command command = NewCommand(server, message,ct_display_help);
-    command.ids.push_back(0);
+
+    auto match = ctre::search<TypeStringHolder<DisplayHelpCommand>::pattern>(message.content);
+    auto helpTarget = match.get<2>().to_string();
+    auto view = std::string_view(helpTarget);
+    auto prefix = server->GetCommandPrefix();
+    if(view.substr(0, prefix.length()) == prefix)
+        view.remove_prefix(server->GetCommandPrefix().length());
+    if(view.length() > 0)
+        command.ids.push_back(GetHelpPage(view));
+    else
+        command.ids.push_back(0);
     result.Push(command);
     return result;
 }

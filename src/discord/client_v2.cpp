@@ -183,7 +183,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         }
     }
     else if(userID != getID()){
-        sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` command or spawn a new list with your own FFN id.");
+        sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` or `sohelp` command or spawn a new list with your own FFN id.");
     }
 }
 
