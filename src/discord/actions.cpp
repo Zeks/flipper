@@ -70,6 +70,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
 QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command command)
 {
     auto prefix = command.server->GetCommandPrefix();
+    command.user->SetCurrentHelpPage(0);
     SleepyDiscord::Embed embed;
     QString header = "To start using the bot you will need to do `%1recs X` where X is your profile id on fanfiction.net or url to that.\n"
                      "\nYou will also need to fill favourites on your profile for the bot to recommend something to you."
@@ -145,7 +146,8 @@ QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer
     SleepyDiscord::EmbedField supportField;
     supportField.isInline = false;
     supportField.name = "Support:";
-    QString supportText = "If you need help with the bot itself, join its [official server](https://discord.gg/dpAnunJ) ";
+    QString supportText = "If you need help with the bot itself, join its [official server](https://discord.gg/dpAnunJ)\n";
+    supportText  +="If you want to support the bot's development and hosting you can do it on [Patreon](https://www.patreon.com/zekses)";
 
     supportText=supportText.arg(QString::fromStdString(prefix));
     supportField.value = supportText.toStdString();
@@ -165,6 +167,8 @@ QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer
     embed.footer = footer;
     embed.color = 0xff0000;
     action->embed = embed;
+    action->reactionsToAdd.push_back("%f0%9f%91%88");
+    action->reactionsToAdd.push_back("%f0%9f%91%89");
 
     return action;
 }

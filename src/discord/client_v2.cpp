@@ -152,7 +152,6 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
     if(!messageToUserHash.contains(messageID.number()))
         return;
 
-
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
                                                                          channelToServerHash.contains(channelID.number())
                                                                          ? channelToServerHash.value(channelID.number()) : 0);

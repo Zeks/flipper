@@ -6,6 +6,7 @@
 #include "include/grpc/grpc_source.h"
 #include "logger/QsLog.h"
 #include "discord/type_functions.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include <stdexcept>
 
 #include <QSettings>
@@ -489,10 +490,11 @@ void SendMessageCommand::Invoke(Client * client)
                 auto resultingMessage = client->sendMessage(originalMessage.channelID, text.toStdString(), embed).cast();
 
                 // I only need to hash messages that the user can later react to
-                // meaning page and rng commands
-                if(originalCommandType == ct_display_page || originalCommandType == ct_display_rng){
-                    this->user->SetLastPageMessage({resultingMessage, originalMessage.channelID});
-                    client->messageToUserHash.push(resultingMessage.ID.number(),originalMessage.author.ID.number());
+                // meaning page, rng and help commands
+                if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
+                    if(originalCommandType *in(ct_display_page, ct_display_rng))
+                        this->user->SetLastPageMessage({resultingMessage, originalMessage.channelID});
+                    client->messageToUserHash.push(resultingMessage.ID.number(),{originalMessage.author.ID.number(), originalCommandType});
                     addReaction(resultingMessage);
                 }
             }

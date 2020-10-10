@@ -143,8 +143,15 @@ struct User{
     int GetDeadFicDaysRange() const;
     void SetDeadFicDaysRange(int value);
 
-    bool isValid = false;
+
+    int GetCurrentHelpPage() const;
+    void SetCurrentHelpPage(int value);
+
+    bool GetIsValid() const;
+    void SetIsValid(bool value);
+
 private:
+    bool isValid = false;
     QString userID;
     QString userName;
     QUuid uuid;
@@ -160,7 +167,8 @@ private:
     bool strictFreshSort = false;
     bool rngBustScheduled = false;
 
-    int page = 0;
+    int currentRecsPage = 0;
+    int currentHelpPage = 0;
     int listId= 0;
     int deadFicDaysRange = 365;
     int similarFicsId = 0;

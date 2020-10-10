@@ -12,6 +12,8 @@
 #include "discord/limits.h"
 #include "discord/command_generators.h"
 #include "discord/discord_user.h"
+#include "discord/identity_hash.h"
+#include "discord/cached_message_source.h"
 #include "core/section.h"
 #include <QString>
 #include <QRegularExpression>
@@ -24,27 +26,6 @@ namespace  discord {
 class SendMessageCommand;
 class CommandController;
 class Server;
-
-struct BotIdentityMatchingHash{
-    inline void push(int64_t keyId, int64_t valueId){
-        QWriteLocker locker(&lock);
-        hash.insert(keyId, valueId);
-    }
-    inline bool contains(int64_t keyId){
-        QReadLocker locker(&lock);
-        return hash.contains(keyId);
-    }
-    inline bool same_user(int64_t keyId, int64_t valueId){
-        QReadLocker locker(&lock);
-        return hash.value(keyId) == valueId;
-    }
-    int64_t value(int64_t keyId){
-        QReadLocker locker(&lock);
-        return hash.value(keyId);
-    }
-    QHash<int64_t,int64_t> hash;
-    QReadWriteLock lock;
-};
 
 
 struct ChannelSet{
@@ -83,8 +64,8 @@ public:
     QSharedPointer<CommandController> executor;
     QSharedPointer<discord::Server> fictionalDMServer;
     QSet<std::string> actionableEmoji;
-    BotIdentityMatchingHash messageToUserHash;
-    BotIdentityMatchingHash channelToServerHash;
+    BotIdentityMatchingHash<CachedMessageSource> messageToUserHash;
+    BotIdentityMatchingHash<int64_t> channelToServerHash;
     std::string botPrefixRequest;
     ChannelSet nonPmChannels;
 protected:

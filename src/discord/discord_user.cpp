@@ -30,7 +30,7 @@ User& User::operator=(const User &user)
         return *this;
     this->userID = user.userID;
     this->ffnID = user.ffnID;
-    this->page = user.page;
+    this->currentRecsPage = user.currentRecsPage;
     this->banned = user.banned;
     this->lastRecsQuery = user.lastRecsQuery;
     this->lastEasyQuery = user.lastEasyQuery;
@@ -76,22 +76,22 @@ void User::initNewEasyQuery()
 int User::CurrentPage() const
 {
     QReadLocker locker(&lock);
-    return page;
+    return currentRecsPage;
 }
 
 void User::SetPage(int newPage)
 {
     QWriteLocker locker(&lock);
-    page = newPage;
+    currentRecsPage = newPage;
 }
 
 void User::AdvancePage(int value)
 {
     QWriteLocker locker(&lock);
     lastEasyQuery = std::chrono::system_clock::now();
-    page += value;
-    if(page < 0)
-        page = 0;
+    currentRecsPage += value;
+    if(currentRecsPage < 0)
+        currentRecsPage = 0;
 }
 
 bool User::HasUnfinishedRecRequest() const
@@ -495,6 +495,30 @@ void User::SetDeadFicDaysRange(int value)
 {
     QWriteLocker locker(&lock);
     deadFicDaysRange = value;
+}
+
+int User::GetCurrentHelpPage() const
+{
+    QReadLocker locker(&lock);
+    return currentHelpPage;
+}
+
+void User::SetCurrentHelpPage(int value)
+{
+    QWriteLocker locker(&lock);
+    currentHelpPage = value;
+}
+
+bool User::GetIsValid() const
+{
+    QReadLocker locker(&lock);
+    return isValid;
+}
+
+void User::SetIsValid(bool value)
+{
+    QWriteLocker locker(&lock);
+    isValid = value;
 }
 void Users::AddUser(QSharedPointer<User> user)
 {
