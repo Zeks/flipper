@@ -73,7 +73,7 @@ void User::initNewEasyQuery()
     lastEasyQuery = std::chrono::system_clock::now();
 }
 
-int User::CurrentPage() const
+int User::CurrentRecommendationsPage() const
 {
     QReadLocker locker(&lock);
     return currentRecsPage;

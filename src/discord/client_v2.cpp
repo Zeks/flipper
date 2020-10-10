@@ -8,6 +8,7 @@
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 #include "logger/QsLog.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include <QRegularExpression>
 #include <string_view>
 #include <QSharedPointer>
@@ -149,14 +150,14 @@ static std::string CreateMention(const std::string& string){
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
     if(!actionableEmoji.contains(emoji.name))
         return;
-    if(!messageToUserHash.contains(messageID.number()))
+    if(!messageSourceAndTypeHash.contains(messageID.number()))
         return;
 
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
                                                                          channelToServerHash.contains(channelID.number())
                                                                          ? channelToServerHash.value(channelID.number()) : 0);
 
-    bool isOriginalUser = messageToUserHash.same_user(messageID.number(), userID.number());
+    bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
     if(isOriginalUser){
         An<Users> users;
         auto user = users->GetUser(QString::fromStdString(userID.string()));
@@ -164,20 +165,22 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
             return;
 
         auto message = getMessage(channelID, messageID);
-        if(emoji.name == "👉"){
-            auto changePage = CreateChangePageCommand(user,server, message, true);
-            executor->Push(changePage);
+
+        if(emoji.name *in("👉", "👈")){
+            bool scrollDirection = emoji.name == "👉" ? true : false;
+            auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
+            CommandChain command;
+            if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
+                command = CreateChangeRecommendationsPageCommand(user,server, message, scrollDirection);
+            else
+                command = CreateChangeHelpPageCommand(user,server, message, scrollDirection);
+            executor->Push(command);
         }
         else if(emoji.name == "🔁")
         {
             auto newRoll = CreateRollCommand(user,server, message);
             executor->Push(newRoll);
         }
-        else if (emoji.name == "👈"){
-            auto changePage = CreateChangePageCommand(user,server, message, false);
-            executor->Push(changePage);
-        }
-
     }
     else if(userID != getID()){
         sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` command or spawn a new list with your own FFN id.");

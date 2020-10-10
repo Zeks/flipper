@@ -6,7 +6,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
                       QVector<core::Fanfic>* fics)
 {
     core::StoryFilter filter;
-    filter.recordPage = user->CurrentPage();
+    filter.recordPage = user->CurrentRecommendationsPage();
     filter.ignoreAlreadyTagged = false;
     filter.crossoversOnly = false;
     filter.showOriginsInLists = false;
@@ -83,7 +83,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
 void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, QVector<core::Fanfic> *fics, int qualityCutoff)
 {
     core::StoryFilter filter;
-    filter.recordPage = user->CurrentPage();
+    filter.recordPage = user->CurrentRecommendationsPage();
     filter.ignoreAlreadyTagged = false;
     filter.showOriginsInLists = false;
     filter.crossoversOnly = false;
@@ -156,7 +156,7 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
 int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, int size)
 {
     core::StoryFilter filter;
-    filter.recordPage = user->CurrentPage();
+    filter.recordPage = user->CurrentRecommendationsPage();
     filter.ignoreAlreadyTagged = false;
     filter.crossoversOnly = false;
     filter.showOriginsInLists = false;

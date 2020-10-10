@@ -1,6 +1,7 @@
 #include "discord/actions.h"
 #include "discord/command_generators.h"
 #include "discord/discord_init.h"
+#include "discord/help_generator.h"
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 #include "discord/discord_server.h"
@@ -71,101 +72,7 @@ QSharedPointer<SendMessageCommand> GeneralHelpAction::ExecuteImpl(QSharedPointer
 {
     auto prefix = command.server->GetCommandPrefix();
     command.user->SetCurrentHelpPage(0);
-    SleepyDiscord::Embed embed;
-    QString header = "To start using the bot you will need to do `%1recs X` where X is your profile id on fanfiction.net or url to that.\n"
-                     "\nYou will also need to fill favourites on your profile for the bot to recommend something to you."
-                     "Once the results are displayed you can navigate them with the emoji underneath the message or `next`, `prev` and `page` commands.";
-                     //"Additionally, you can use these commands to filter and change the displayed recommendations in various ways: ";
-    header=header.arg(QString::fromStdString(prefix));
-    //action->text = header;
-
-
-    SleepyDiscord::EmbedField headerField;
-
-    headerField.isInline = false;
-    headerField.name = "Using the bot:";
-    headerField.value = header.toStdString();
-
-
-    SleepyDiscord::EmbedField navigationField;
-    QString navigationText;
-    navigationText += QString::fromStdString(std::string(TypeStringHolder<PageChangeCommand>::shorthand)) + "\n";
-    navigationText += QString::fromStdString(std::string(TypeStringHolder<NextPageCommand>::shorthand)) + "\n";
-    navigationText += QString::fromStdString(std::string(TypeStringHolder<PreviousPageCommand>::shorthand)) + "\n";
-    navigationText=navigationText.arg(QString::fromStdString(prefix));
-
-    navigationField.isInline = true;
-    navigationField.name = "Navigating the list:";
-    navigationField.value = navigationText.toStdString();
-
-
-    SleepyDiscord::EmbedField fanficField;
-    QString fanficText;
-    fanficText += QString::fromStdString(std::string(TypeStringHolder<ShowCompletedCommand>::shorthand)) + "\n";
-    fanficText += QString::fromStdString(std::string(TypeStringHolder<HideDeadCommand>::shorthand)) + "\n";
-    fanficText += QString::fromStdString(std::string(TypeStringHolder<FilterLikedAuthorsCommand>::shorthand)) + "\n";
-    fanficText += QString::fromStdString(std::string(TypeStringHolder<WordcountCommand>::shorthand)) + "\n";
-    fanficText += QString::fromStdString(std::string(TypeStringHolder<IgnoreFicCommand>::shorthand));
-    fanficText=fanficText.arg(QString::fromStdString(prefix));
-    fanficField.isInline = true;
-    fanficField.name = "Filtering fanfics:";
-    fanficField.value = fanficText.toStdString();
-
-    SleepyDiscord::EmbedField listTypesField;
-    listTypesField.isInline = true;
-    listTypesField.name = "Changing types of displayed list:";
-    QString listTypesText;
-    listTypesText += QString::fromStdString(std::string(TypeStringHolder<RecsCreationCommand>::shorthand)) + "\n";
-    listTypesText += QString::fromStdString(std::string(TypeStringHolder<ShowFreshRecsCommand>::shorthand)) + "\n";
-    listTypesText += QString::fromStdString(std::string(TypeStringHolder<RngCommand>::shorthand)) + "\n";
-    listTypesText += QString::fromStdString(std::string(TypeStringHolder<SimilarFicsCommand>::shorthand)) + "\n";
-    listTypesText=listTypesText.arg(QString::fromStdString(prefix));
-    listTypesField.value = listTypesText.toStdString();
-
-    SleepyDiscord::EmbedField fandomField;
-    fandomField.isInline = true;
-    fandomField.name = "Filtering fandoms:";
-    QString fandomText;
-    fandomText += QString::fromStdString(std::string(TypeStringHolder<SetFandomCommand>::shorthand)) + "\n";
-    fandomText += QString::fromStdString(std::string(TypeStringHolder<IgnoreFandomCommand>::shorthand));
-    fandomText=fandomText.arg(QString::fromStdString(prefix));
-    fandomField.value = fandomText.toStdString();
-
-    SleepyDiscord::EmbedField paddingField;
-    paddingField.isInline = false;
-    paddingField.name = "List filters:";
-    QString paddingText = "Use the next commands to apply filters to displayed recommendations."
-                         "To get detailed help for each of them use `%1help commandname`\n"
-            "Most of them have additional optional parameters you might want to use."
-            "\n\nTo reset any filter repeat its command without arguments or issue '%1xfilter' command to reset everything at the same time.";
-
-    paddingText=paddingText.arg(QString::fromStdString(prefix));
-    paddingField.value = paddingText.toStdString();
-
-
-    SleepyDiscord::EmbedField supportField;
-    supportField.isInline = false;
-    supportField.name = "Support:";
-    QString supportText = "If you need help with the bot itself, join its [official server](https://discord.gg/dpAnunJ)\n";
-    supportText  +="If you want to support the bot's development and hosting you can do it on [Patreon](https://www.patreon.com/zekses)";
-
-    supportText=supportText.arg(QString::fromStdString(prefix));
-    supportField.value = supportText.toStdString();
-
-    embed.fields.push_back(headerField);
-    embed.fields.push_back(navigationField);
-    embed.fields.push_back(listTypesField);
-    embed.fields.push_back(paddingField);
-    embed.fields.push_back(fanficField);
-    embed.fields.push_back(fandomField);
-    embed.fields.push_back(supportField);
-
-    SleepyDiscord::EmbedFooter footer;
-    QString footerText = "To reset all your data in the bot, issue `%1purge`";
-    footerText=footerText.arg(QString::fromStdString(prefix));
-    footer.text = footerText.toStdString();
-    embed.footer = footer;
-    embed.color = 0xff0000;
+    auto embed = GetHelpPage(command.ids.at(0), command.server->GetCommandPrefix());
     action->embed = embed;
     action->reactionsToAdd.push_back("%f0%9f%91%88");
     action->reactionsToAdd.push_back("%f0%9f%91%89");
@@ -683,7 +590,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         //        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     }
 
-    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3").arg(command.user->FfnID()).arg(command.user->CurrentPage()).arg(QString::number(pageCount)).toStdString();
+    embed.description = QString("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3").arg(command.user->FfnID()).arg(command.user->CurrentRecommendationsPage()).arg(QString::number(pageCount)).toStdString();
     auto& tips = SendMessageCommand::tips;
     int tipNumber =  rand() % tips.size();
     bool showAppOrPatreon = rand() % 7 == 0;

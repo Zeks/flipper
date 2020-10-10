@@ -236,7 +236,8 @@ public:
 };
 
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message );
-CommandChain CreateChangePageCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message , bool shiftRight = true);
+CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message , bool shiftRight = true);
+CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , SleepyDiscord::Message , bool shiftRight = true);
 Command NewCommand(QSharedPointer<discord::Server> server, SleepyDiscord::Message message, ECommandType type);
 }
 

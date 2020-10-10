@@ -64,7 +64,7 @@ public:
     QSharedPointer<CommandController> executor;
     QSharedPointer<discord::Server> fictionalDMServer;
     QSet<std::string> actionableEmoji;
-    BotIdentityMatchingHash<CachedMessageSource> messageToUserHash;
+    BotIdentityMatchingHash<CachedMessageSource> messageSourceAndTypeHash;
     BotIdentityMatchingHash<int64_t> channelToServerHash;
     std::string botPrefixRequest;
     ChannelSet nonPmChannels;

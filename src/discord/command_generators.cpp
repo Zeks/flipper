@@ -223,7 +223,7 @@ CommandChain PageChangeCommand::ProcessInputImpl(SleepyDiscord::Message message)
     }
     else
     {
-        command.ids.push_back(user->CurrentPage());
+        command.ids.push_back(user->CurrentRecommendationsPage());
         result.Push(command);
     }
     return result;
@@ -244,7 +244,7 @@ CommandChain NextPageCommand::ProcessInputImpl(SleepyDiscord::Message message)
     auto user = users->GetUser(QString::fromStdString(message.author.ID));
 
     Command displayRecs = NewCommand(server, message,ct_display_page);
-    displayRecs.ids.push_back(user->CurrentPage()+1);
+    displayRecs.ids.push_back(user->CurrentRecommendationsPage()+1);
     result.Push(displayRecs);
     user->AdvancePage(1);
     return result;
@@ -265,7 +265,7 @@ CommandChain PreviousPageCommand::ProcessInputImpl(SleepyDiscord::Message messag
     auto user = users->GetUser(QString::fromStdString(message.author.ID));
 
     Command displayRecs = NewCommand(server, message,ct_display_page);
-    auto newPage = user->CurrentPage()-1 < 0 ? 0 : user->CurrentPage()-1;
+    auto newPage = user->CurrentRecommendationsPage()-1 < 0 ? 0 : user->CurrentRecommendationsPage()-1;
     displayRecs.ids.push_back(newPage);
     result.Push(displayRecs);
     return result;
@@ -460,6 +460,7 @@ DisplayHelpCommand::DisplayHelpCommand()
 CommandChain DisplayHelpCommand::ProcessInputImpl(SleepyDiscord::Message message)
 {
     Command command = NewCommand(server, message,ct_display_help);
+    command.ids.push_back(0);
     result.Push(command);
     return result;
 }
@@ -494,7 +495,7 @@ void SendMessageCommand::Invoke(Client * client)
                 if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
                     if(originalCommandType *in(ct_display_page, ct_display_rng))
                         this->user->SetLastPageMessage({resultingMessage, originalMessage.channelID});
-                    client->messageToUserHash.push(resultingMessage.ID.number(),{originalMessage.author.ID.number(), originalCommandType});
+                    client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessage.author.ID.number(), originalCommandType});
                     addReaction(resultingMessage);
                 }
             }
@@ -784,14 +785,31 @@ CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server>
     return result;
 }
 
-CommandChain CreateChangePageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, SleepyDiscord::Message message,bool shiftRight)
+CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, SleepyDiscord::Message message,bool shiftRight)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_page);
     if(shiftRight)
-        command.ids.push_back(user->CurrentPage() + 1);
-    else if(user->CurrentPage() != 0)
-        command.ids.push_back(user->CurrentPage() - 1);
+        command.ids.push_back(user->CurrentRecommendationsPage() + 1);
+    else if(user->CurrentRecommendationsPage() != 0)
+        command.ids.push_back(user->CurrentRecommendationsPage() - 1);
+    else
+        return result;
+
+    command.targetMessage = message;
+    command.user = user;
+    result.Push(command);
+    return result;
+}
+
+CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, SleepyDiscord::Message message, bool shiftRight)
+{
+    CommandChain result;
+    Command command = NewCommand(server, message,ct_display_help);
+    if(shiftRight)
+        command.ids.push_back(user->GetCurrentHelpPage() + 1);
+    else if(user->GetCurrentHelpPage() != 0)
+        command.ids.push_back(user->GetCurrentHelpPage() - 1);
     else
         return result;
 
@@ -898,6 +916,8 @@ bool WordcountCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<WordcountCommand>::name;
 }
+
+
 
 
 

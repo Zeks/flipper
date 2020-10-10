@@ -50,7 +50,7 @@ struct User{
     int secsSinceLastsQuery();
     void initNewRecsQuery();
     void initNewEasyQuery();
-    int CurrentPage() const;
+    int CurrentRecommendationsPage() const;
     void SetPage(int newPage);
     void AdvancePage(int value);
     bool HasUnfinishedRecRequest() const;
