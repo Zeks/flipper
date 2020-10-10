@@ -78,11 +78,11 @@ struct TypeStringHolder<discord::IgnoreFicCommand>{
         static constexpr std::string_view name = "xfic";
         static constexpr std::string_view prefixlessPattern = "?<xfic>xfic";
         static constexpr std::string_view pattern = "xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)";
-        static constexpr std::string_view patternCommand = "xfic\\s{1,}(>all){1,}";
+        static constexpr std::string_view patternCommand = "xfic\\s{1,}(all){1,}";
         static constexpr std::string_view patternNum = "(?<silent>>silent\\s){0,1}(?<ids>\\d{1,2}\\s?)";
         static constexpr std::string_view help = "\nFanfic commands:\n`%1xfic X` will ignore a fic (you need input position in the last output), X Y Z to ignore multiple\n"
                                                  "Add >silent if you don't want the bot to repost the list (xfic >silent 1 2 ...)"
-                                                 "\n`%1xfic >all` will ignore the whole page";
+                                                 "\n`%1xfic all` will ignore the whole page";
                                                  //"\n`%1xfic >reset` resets the fic ignores";
         static constexpr std::string_view tips = "You can exclude fics from appearing in your lists with `%1xfic X` where X is a fic ID in the results.";
         static constexpr std::string_view shorthand = "`{0}xfic` - hides individual fics from further display";

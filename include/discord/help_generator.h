@@ -13,4 +13,8 @@ namespace discord {
     SleepyDiscord::Embed  GetListNavigationPage(std::string serverPrefix);
     SleepyDiscord::Embed  GetListModesPage(std::string serverPrefix);
     SleepyDiscord::Embed  GetRecsHelpPage(std::string serverPrefix);
+    SleepyDiscord::Embed  GetFreshHelpPage(std::string serverPrefix);
+    SleepyDiscord::Embed  GetRollHelpPage(std::string serverPrefix);
+    SleepyDiscord::Embed  GetFanficFiltersHelpPage(std::string serverPrefix);
+    SleepyDiscord::Embed  GetFandomFiltersHelpPage(std::string serverPrefix);
 }

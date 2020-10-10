@@ -15,6 +15,14 @@ SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string serverPrefix)
         return GetListModesPage(serverPrefix);
     case 3:
         return GetRecsHelpPage(serverPrefix);
+    case 4:
+        return GetFreshHelpPage(serverPrefix);
+    case 5:
+        return GetRollHelpPage(serverPrefix);
+    case 6:
+        return GetFanficFiltersHelpPage(serverPrefix);
+    case 7:
+        return GetFandomFiltersHelpPage(serverPrefix);
 
     default:
         return GetTopLevelHelpPage(serverPrefix);
@@ -67,7 +75,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string serverPrefix)
     listTypesText += std::string(TypeStringHolder<RecsCreationCommand>::shorthand) + "\n";
     listTypesText += std::string(TypeStringHolder<ShowFreshRecsCommand>::shorthand) + "\n";
     listTypesText += std::string(TypeStringHolder<RngCommand>::shorthand) + "\n";
-    listTypesText += std::string(TypeStringHolder<SimilarFicsCommand>::shorthand) + "\n";
+    //listTypesText += std::string(TypeStringHolder<SimilarFicsCommand>::shorthand) + "\n";
     listTypesText=fmt::format(listTypesText, serverPrefix);
     listTypesField.value = listTypesText;
 
@@ -258,6 +266,192 @@ SleepyDiscord::Embed GetRecsHelpPage(std::string serverPrefix)
     return embed;
 }
 
+SleepyDiscord::Embed GetFreshHelpPage(std::string serverPrefix)
+{
+    SleepyDiscord::Embed embed;
+
+    SleepyDiscord::EmbedField freshRecsField;
+    freshRecsField.isInline = false;
+    freshRecsField.name = "Fresh recommendations mode usage:";
+    std::string fieldText = "`{0}fresh` is used to switch your recommedations to display recent fics that have been favourited by people with the same tates as you."
+                            " These fics typically have nowhere near enough traction to appear at the top of recommendations but you might find them just as interesting. "
+                            " Ideally you want more than one recommendation from other people for such a fic, which is why >strict option exists."
+                            "\n\nExamples:"
+                            "\n`{0}fresh`"
+                            "\n`{0}fresh >strict`"
+                            "\n\nTo switch the bot back to top recommendations display, repeat `{0}fresh` command";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    freshRecsField.value = fieldText;
+
+    embed.fields.push_back(freshRecsField);
+
+    embed.color = 0xff0000;
+    return embed;
+}
+
+SleepyDiscord::Embed GetRollHelpPage(std::string serverPrefix)
+{
+    SleepyDiscord::Embed embed;
+
+    SleepyDiscord::EmbedField rollRecsField;
+    rollRecsField.isInline = false;
+    rollRecsField.name = "Rolling random fics from recommendations:";
+    std::string fieldText = "`{0}roll` is used to display a set of 3 random fics from generated recommendations."
+                            " It's an alternative way of fic discovery that is more lenient to how much score fics have for you to see them."
+                            " Rolling can be done within the whole of recommendation list or within certain ranges from the top of it that can be supplied with additional parameter to roll command."
+                            " The options you have are:"
+                            " `all` the same as when `roll` is used without an argument"
+                            " `good` will roll within 15% best scores in the list "
+                            " `best` will roll within 5% best scores in the list "
+                            "\n\nExamples:"
+                            "\n`{0}roll`"
+                            "\n`{0}roll all`"
+                            "\n`{0}roll good`"
+                            "\n`{0}roll best`"
+                            "\n\nTo roll a new set of 3 fics either repeat roll command or click on emoji below bot's response."
+                            "To switch the bot back to top recommendations display, issue `{0}recs` or {0}page command";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    rollRecsField.value = fieldText;
+    embed.fields.push_back(rollRecsField);
+
+    embed.color = 0xff0000;
+    return embed;
+}
+
+SleepyDiscord::Embed GetFanficFiltersHelpPage(std::string serverPrefix)
+{
+    SleepyDiscord::Embed embed;
+
+    SleepyDiscord::EmbedField rollRecsField;
+    rollRecsField.isInline = false;
+    rollRecsField.name = "Applying filters to fanfics in displayed results:";
+    std::string fieldText = "You have a couple options to control which fics are displayed in your recommendations. "
+                            "You can hide incomplete and dead fics, show only fics with specific wordcounts, "
+                            "show only fics from authors whose fics you've liked already and exclude individual fics from results forever."
+                            "These filters can be combined with each other and are controlled with commands below.";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    rollRecsField.value = fieldText;
+
+    SleepyDiscord::EmbedField completeField;
+    completeField.isInline = true;
+    completeField.name = "Show only complete fics:";
+    fieldText = "`{0}complete` will exclude all of the incomplete fics from your recommendations. This command has no parameters";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    completeField.value = fieldText;
+
+    SleepyDiscord::EmbedField deadField;
+    deadField.isInline = true;
+    deadField.name = "Hide dead fics:";
+    fieldText = "`{0}dead` will exclude all dead fics from your recommendations. You can supply additional number of days to tell the bot what you consider a `dead` fic."
+                "\n\nExamples:\n`{0}dead`\n`{0}dead 400`";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    deadField.value = fieldText;
+
+
+    SleepyDiscord::EmbedField xficField;
+    xficField.isInline = false;
+    xficField.name = "Hide certain fics:";
+    fieldText = "`{0}xfic` allows you to exclude individual fics from further display in your recommendations. It accepts two kinds of arguments:"
+                "\nID of the fic(s) in the currently displayed list (NOT id on fanfiction.net)"
+                "\n`>all` to permanently ignore all fics on the current page"
+                "\n\nExamples:"
+                "\n`{0}xfic 1`"
+                "\n`{0}xfic 3 5 7`"
+                "\n`{0}xfic all`";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    xficField.value = fieldText;
+
+
+    SleepyDiscord::EmbedField wordsField;
+    wordsField.isInline = true;
+    wordsField.name = "Set wordcount limits:";
+    fieldText = "`{0}words` command allows you to limit wordcount of shown fics. The options you have are `less`, `more` and `between`. The supplied numbers are in thousands of words so `{0}words less 10` means less than 10000 words."
+                "\n\nExamples:"
+                "\n`{0}words less 50`"
+                "\n`{0}words more 100`"
+                "\n`{0}words between 50 100`";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    wordsField.value = fieldText;
+
+    SleepyDiscord::EmbedField likedField;
+    likedField.isInline = true;
+    likedField.name = "Show fics from trusted authors:";
+    fieldText = "`{0}liked` command switches your recommendations to show only fics from authors whose fics you have already favourited. It has no parameters.";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    likedField.value = fieldText;
+
+
+    SleepyDiscord::EmbedField resetField;
+    resetField.isInline = false;
+    resetField.name = "Resetting filters:";
+    fieldText = "To reset any currently enabled filter issue `{0}xfilter` command.";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    resetField.value = fieldText;
+
+
+    embed.fields.push_back(rollRecsField);
+    embed.fields.push_back(deadField);
+    embed.fields.push_back(wordsField);
+    embed.fields.push_back(xficField);
+    embed.fields.push_back(completeField);
+    embed.fields.push_back(likedField);
+    embed.fields.push_back(resetField);
+
+    embed.color = 0xff0000;
+    return embed;
+}
+
+SleepyDiscord::Embed GetFandomFiltersHelpPage(std::string serverPrefix)
+{
+    SleepyDiscord::Embed embed;
+
+    SleepyDiscord::EmbedField descriptionField;
+    descriptionField.isInline = false;
+    descriptionField.name = "Fandom controls:";
+    std::string fieldText = "You can control fandoms of displayed fics in two ways : you can permanently ignore fandoms or set fandom of currently displayed fics. "
+                            "These options are controlled with `{0}xfandom` and `{0}fandom` commands respectively.";
+
+    fieldText=fmt::format(fieldText, serverPrefix);
+    descriptionField.value = fieldText;
+
+    SleepyDiscord::EmbedField ignoreFandomField;
+    ignoreFandomField.isInline = false;
+    ignoreFandomField.name = "Ignoring fandoms:";
+    fieldText = "`{0}xfandom` allows you to ignore a fandom and exclude it from show recommendations. You also have an option to ignore crossovers with this fandom."
+                " Fandom names are case insensitive but need written exactly the same as the bot displays them to you (i.e. without japanese letters and weird symbols."
+                "\nRepeating the fandom ignore command resets ignore for this fandom."
+                "\nUsing `>reset` as an optional parameter clears your whole fandom ignore list."
+                "\n\nExamples:"
+                "\n`{0}xfandom harry potter`"
+                "\n`{0}xfandom >full harry potter`"
+                "\n`{0}xfandom >reset`";
+
+
+    fieldText=fmt::format(fieldText, serverPrefix);
+    ignoreFandomField.value = fieldText;
+
+    SleepyDiscord::EmbedField filterFandomField;
+    filterFandomField.isInline = false;
+    filterFandomField.name = "Filtering fandoms:";
+    fieldText = "You can display only fics from specific fandom with `{0}fandom` command. "
+                "\nRepeating `{0}fandom` with another fandom will display exact crossovers."
+                "Using `>reset` instead of fandom name will reset the fandom filter."
+                "\n\nExamples:"
+                "\n`{0}fandom harry potter`"
+                "\n`{0}fandom fairy tail`"
+                "\n`{0}fandom >reset`";
+
+    fieldText=fmt::format(fieldText, serverPrefix);
+    filterFandomField.value = fieldText;
+
+
+    embed.fields.push_back(descriptionField);
+    embed.fields.push_back(ignoreFandomField);
+    embed.fields.push_back(filterFandomField);
+
+    embed.color = 0xff0000;
+    return embed;
+}
 
 }
 

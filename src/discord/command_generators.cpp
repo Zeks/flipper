@@ -806,7 +806,7 @@ CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPoint
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_help);
-    int maxHelpPages = 4;
+    int maxHelpPages = 8;
     int newPage;
     if(shiftRight)
     {
