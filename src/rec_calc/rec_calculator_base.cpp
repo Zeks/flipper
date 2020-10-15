@@ -571,17 +571,17 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         tempSummary.totalFicEntries+=funcResult.ratioInfo[key].totalFicEntries;
         tempSummary.averageListSize = tempSummary.totalFicEntries/tempSummary.authors;
 
-
-        funcResult.ratioSumInfo[key].ratio = key;
-        funcResult.ratioSumInfo[key].lastFicsAdded = tempSummary.fics.cardinality() - tempCardinality;
-        funcResult.ratioSumInfo[key].fics = tempSummary.fics;
-        funcResult.ratioSumInfo[key].totalFicEntries = tempSummary.totalFicEntries;
-        funcResult.ratioSumInfo[key].averageListSize = tempSummary.averageListSize;
-        funcResult.ratioSumInfo[key].authors = tempSummary.authors;
-        funcResult.ratioSumInfo[key].minListSize = funcResult.ratioInfo[key].minListSize;
-        funcResult.ratioSumInfo[key].maxListSize= funcResult.ratioInfo[key].maxListSize;
-        if(funcResult.ratioSumInfo[key].totalFicEntries > ownFavourites.cardinality() * 200)
-            ratioCutoff = funcResult.ratioSumInfo[key].ratio;
+        auto& sumratio = funcResult.ratioSumInfo[key];
+        sumratio.ratio = key;
+        sumratio.lastFicsAdded = tempSummary.fics.cardinality() - tempCardinality;
+        sumratio.fics = tempSummary.fics;
+        sumratio.totalFicEntries = tempSummary.totalFicEntries;
+        sumratio.averageListSize = tempSummary.averageListSize;
+        sumratio.authors = tempSummary.authors;
+        sumratio.minListSize = funcResult.ratioInfo[key].minListSize;
+        sumratio.maxListSize= funcResult.ratioInfo[key].maxListSize;
+        if(ratioCutoff == 0 && (sumratio.fics.cardinality() > (ownFavourites.cardinality() * 200)))
+            ratioCutoff = key;
     }
     //Save(funcResult.ratioInfo);
     //Save(funcResult.ratioSumInfo);
