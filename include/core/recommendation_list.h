@@ -72,6 +72,7 @@ public:
     int maxUnmatchedPerMatch = -1;
     int userFFNId = -1;
     int sigma2Distance = -1;
+    uint8_t ratioCutoff = std::numeric_limits<uint8_t>::max();
 
     double quadraticDeviation = -1;
     double ratioMedian = -1;

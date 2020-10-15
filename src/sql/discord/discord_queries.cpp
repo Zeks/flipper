@@ -57,8 +57,8 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetBanned(q.value("banned").toBool());
         user->SetUseLikedAuthorsOnly(q.value("use_liked_authors_only").toBool());
         user->SetUuid(q.value("uuid").toString());
-        user->SetForcedMinMatch(q.value("forced_min_matches").toInt());
-        user->SetForcedRatio(q.value("forced_ratio").toInt());
+//        user->SetForcedMinMatch(q.value("forced_min_matches").toInt());
+//        user->SetForcedRatio(q.value("forced_ratio").toInt());
         user->SetSortFreshFirst(q.value("use_fresh_sorting").toInt());
         user->SetHideDead(q.value("hide_dead").toInt());
 

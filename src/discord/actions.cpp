@@ -233,8 +233,8 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
     if(wasAutomatic && !recList->isAutomatic)
     {
-        command.user->SetForcedMinMatch(recList->minimumMatch);
-        command.user->SetForcedRatio(recList->maxUnmatchedPerMatch);
+//        command.user->SetForcedMinMatch(recList->minimumMatch);
+//        command.user->SetForcedRatio(recList->maxUnmatchedPerMatch);
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
         environment->fandoms->db = dbToken->db;
         An<interfaces::Users> usersDbInterface;
