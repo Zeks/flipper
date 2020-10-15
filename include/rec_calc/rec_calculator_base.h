@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 
 #include <QList>
+#include <limits>
 
 #include "include/data_code/data_holders.h"
 #include "include/data_code/rec_calc_data.h"
@@ -87,6 +88,62 @@ struct AutoAdjustmentAndFilteringResult{
     std::vector<int> sizes = {0,0,0};
 };
 
+struct RatioInfo{
+    int totalFicEntries = 0;
+    uint16_t authors = 0;
+    uint16_t ratio = 0;
+    uint16_t minMatches = std::numeric_limits<uint16_t>::max();
+    Roaring fics;
+    RatioInfo& operator+=(const RatioInfo& rhs){
+
+        this->authors += rhs.authors;
+        this->totalFicEntries+= rhs.totalFicEntries;
+        this->ratio = rhs.ratio;
+        if(this->minMatches > rhs.minMatches)
+            this->minMatches = rhs.minMatches;
+        this->fics |= rhs.fics;
+        return *this;
+    }
+
+};
+
+struct RatioSumInfo{
+    uint16_t authors = 0;
+    uint16_t ratio = 0;
+    uint16_t minMatches = std::numeric_limits<uint16_t>::max();
+    uint16_t averageListSize = 0;
+    int totalFicEntries = 0;
+    int lastFicsAdded = 0;
+    Roaring fics;
+
+    //    RatioSumInfo& operator+=(const RatioSumInfo& rhs){
+
+    //        this->authors += rhs.authors;
+    //        this->ratio = rhs.ratio;
+    //        if(this->minMatches > rhs.minMatches)
+    //            this->minMatches = rhs.minMatches;
+    //        this->fics = this->fics | rhs.fics;
+    //          return *this;
+    //    }
+    //    void IncrementAuthors(){
+    //        QWriteLocker locker(&lock);
+    //        authors++;
+    //    };
+    //    void SetRatio(int ratio){
+    //        QWriteLocker locker(&lock);
+    //        this->ratio = ratio;
+    //    };
+    //    void UpdateMinMatches(int matches){
+    //        QWriteLocker locker(&lock);
+    //        if(minMatches > matches)
+    //            minMatches = matches;
+    //    };
+    //    void MergeFics(const Roaring& newFics){
+    //        QWriteLocker locker(&lock);
+    //        fics|=newFics;
+    //    };
+    //    QReadWriteLock lock;
+};
 
 class RecCalculatorImplBase
 {
@@ -145,6 +202,7 @@ public:
     Roaring ownMajorNegatives;
     RecommendationListResult result;
     QHash<uint32_t, QVector<uint32_t>> authorsForFics;
+    QHash<uint16_t, RatioInfo> ratioInfo;
     bool needsDiagnosticData = false;
 
     int votesBase = 1;
@@ -192,3 +250,4 @@ public:
 };
 
 }
+

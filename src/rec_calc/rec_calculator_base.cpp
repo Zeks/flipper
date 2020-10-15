@@ -493,10 +493,48 @@ Roaring RecCalculatorImplBase::BuildIgnoreList()
 
 }
 
+struct RatioHash{
+    void AddToken(int token){
+        QWriteLocker locker(&lock);
+        ratioSumInfo[token].ratio = token;
+    };
+    RatioSumInfo& GetToken(int token){
+        QReadLocker locker(&lock);
+        return ratioSumInfo[token];
+    };
+    QMap<uint32_t, RatioSumInfo> ratioSumInfo;
+    QReadWriteLock lock;
+};
+
 struct AuthorRelationsResult{
     uint maximumMatches = 0;
     uint matchSum = 0;
+    QMap<uint32_t, RatioInfo> ratioInfo;
+    QMap<uint32_t, RatioSumInfo> ratioSumInfo;
 };
+template <typename T>
+void Save( const QMap<uint32_t, T>& data )
+{
+    auto saveToFile = [&](QString fileName, auto getterFirst, auto getterSecond, auto getterThird){
+        QFile file(fileName);
+        if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
+            QTextStream stream(&file);
+           for (auto key: data.keys())
+                stream << data[key].ratio
+                       << "," << getterFirst(data[key])
+                       << "," << getterSecond(data[key])
+                          << "," << getterThird(data[key])
+                       << Qt::endl;
+        }
+    };
+    saveToFile("_data.txt", [](const T& data){return data.authors;},
+    [](const T& data){return data.averageListSize;},
+    [](const T& data){return data.lastFicsAdded;});
+    //saveToFile("_ficCounts.txt", [](const T& data){return data.fics.cardinality();});
+    //saveToFile("_minimums.txt", [](const T& data){return data.minMatches;});
+
+}
+
 
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
@@ -513,6 +551,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     ownProfileId = params->userFFNId;
     maximumMatches = params->minimumMatch;
     AuthorRelationsResult funcResult;
+    RatioHash ratioHash;
     TimedAction action("Relations Creation",[&](){
         auto worker = [&](std::pair<QList<int>::const_iterator,QList<int>::const_iterator> beginEnd){
             AuthorRelationsResult tempResult;
@@ -523,6 +562,11 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             {
                 auto& author = allAuthors[*itCurrent];
                 author.id = *itCurrent;
+                if(ownProfileId == author.id)
+                {
+                    itCurrent++;
+                    continue;
+                }
                 author.matches = 0;
                 Roaring ignoredTemp = inputs.faves[author.id];
                 ignoredTemp = ignoredTemp & ignores;
@@ -539,6 +583,18 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 author.negativeMatches = negative.cardinality();
 
                 author.sizeAfterIgnore = unignoredSize;
+                uint32_t ratio = author.sizeAfterIgnore/author.matches;
+                // not interested with lists that don't add anything new
+                // also not very interested with listsizes of less than 10 because their ratio will be too skewed
+                if(author.matches > 0 && ratio > 1 && author.sizeAfterIgnore < 10){
+                    ratioHash.AddToken(ratio);
+                    tempResult.ratioInfo[ratio].ratio = ratio;
+                    tempResult.ratioInfo[ratio].authors++;
+                    tempResult.ratioInfo[ratio].totalFicEntries+=author.sizeAfterIgnore;
+                    if(tempResult.ratioInfo[ratio].minMatches > author.matches)
+                        tempResult.ratioInfo[ratio].minMatches = author.matches;
+                    tempResult.ratioInfo[ratio].fics|=inputs.faves[author.id];
+                }
                 if(ignores.cardinality() == 0)
                     author.sizeAfterIgnore = author.fullListSize;
                 if(tempResult.maximumMatches < author.matches)
@@ -557,11 +613,35 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             if(funcResult.maximumMatches < data.maximumMatches)
                 funcResult.maximumMatches = data.maximumMatches;
             funcResult.matchSum+=data.matchSum;
+            for(auto key: data.ratioInfo.keys()){
+                funcResult.ratioInfo[key]+=data.ratioInfo[key];
+            }
+//            for(auto key: data.ratioSumInfo.keys()){
+//                funcResult.ratioSumInfo[key]+=data.ratioSumInfo[key];
+//            }
         });
     });
     action.run();
     matchSum = funcResult.matchSum;
     maximumMatches = funcResult.maximumMatches;
+    RatioSumInfo tempSummary;
+    for(auto key: funcResult.ratioInfo.keys()){
+        int tempCardinality = tempSummary.fics.cardinality();
+        tempSummary.authors += funcResult.ratioInfo[key].authors;
+        tempSummary.fics |= funcResult.ratioInfo[key].fics;
+        tempSummary.totalFicEntries+=funcResult.ratioInfo[key].totalFicEntries;
+        tempSummary.averageListSize = tempSummary.totalFicEntries/tempSummary.authors;
+
+
+        funcResult.ratioSumInfo[key].ratio = key;
+        funcResult.ratioSumInfo[key].lastFicsAdded = tempSummary.fics.cardinality() - tempCardinality;
+        funcResult.ratioSumInfo[key].fics = tempSummary.fics;
+        funcResult.ratioSumInfo[key].totalFicEntries = tempSummary.totalFicEntries;
+        funcResult.ratioSumInfo[key].averageListSize = tempSummary.averageListSize;
+        funcResult.ratioSumInfo[key].authors = tempSummary.authors;
+    }
+    //Save(funcResult.ratioInfo);
+    Save(funcResult.ratioSumInfo);
     QLOG_INFO() << "At the end of author processing maximumMatches: " << maximumMatches << " matchsum: " << matchSum;
 }
 
@@ -690,19 +770,34 @@ void RecCalculatorImplBase::Filter(QSharedPointer<RecommendationList> params, QL
     auto thisPtr = this;
 
     std::for_each(allAuthors.begin(), allAuthors.end(), [this, filters, actions, params,thisPtr](AuthorResult& author){
-        author.ratio = author.matches != 0 ? static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches) : 999999;
-        author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : 999999;
-        author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
-        author.listDiff.neutralDifference = GetNeutralDiffForLists(author.id);
-        bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
+        auto setInvalid = [](auto& author){
+            author.ratio = 99999;
+            author.similarityPercentage = 0;
+        };
+        if(author.matches == 0 || author.sizeAfterIgnore < 10){
+            setInvalid(author);
+        }
+        else{
+            author.similarityPercentage = author.matches/(static_cast<double>(author.sizeAfterIgnore)/100.);
+            author.ratio = static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches);
+            author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : 999999;
+            author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
+            author.listDiff.neutralDifference = GetNeutralDiffForLists(author.id);
+            bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
                 return filter(author, params) == 0;
-    });
-        if(fail)
-            return;
 
-        std::for_each(actions.begin(), actions.end(), [thisPtr, &author](decltype(actions)::value_type action){
-            action(thisPtr, author);
-        });
+            });
+            if(author.ratio == 1){
+                setInvalid(author);
+                fail = true;
+            }
+            if(fail)
+                return;
+
+            std::for_each(actions.begin(), actions.end(), [thisPtr, &author](decltype(actions)::value_type action){
+                action(thisPtr, author);
+            });
+        }
 
     });
 }
@@ -851,5 +946,6 @@ bool RecCalculatorImplDefault::WeightingIsValid() const
 
 
 }
+
 
 

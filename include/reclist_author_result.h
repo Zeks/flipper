@@ -62,6 +62,7 @@ struct AuthorResult{
     uint32_t usedMinimumMatrch= 0;
 
     double ratio = 0;
+    double similarityPercentage = 0;
     double negativeRatio = 0;
     double negativeToPositiveMatches = 0;
     double distance = 0;
