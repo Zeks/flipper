@@ -41,12 +41,12 @@ double quadratic_coef(double ratio,
     double result = 0;
     switch(type)
     {
-    case ECalcType::close:
+    case ECalcType::unique:
         //qDebug() << "casting max vote: " << "matches: " << maximumMatches << " value: " << 0.2*static_cast<double>(maximumMatches);
         result =  0.2*static_cast<double>(maximumMatches);
 
         break;
-    case ECalcType::near:
+    case ECalcType::rare:
 
         result = 0.05*static_cast<double>(maximumMatches);
 
@@ -147,24 +147,61 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     if(endOfUniqueAuthorRange == 0)
         needsRangeAdjustment = true;
 
+    // okay, I need to find the limits for deviation that pull a certain % of lists into rarity ranges
+    int uncommonAuthorCount = (authorList.size()/100.)*8.;
+    int rareAuthorCount = (authorList.size()/100.)*2.5;
+    int uniqueAuthorCount = (authorList.size()/100.)*0.5;
+    int seenAuthorCount = 0;
+
+    for(auto authorId: authorList){
+        seenAuthorCount++;
+        if(seenAuthorCount == uncommonAuthorCount){
+            auto ratio = allAuthors[authorId].ratio;
+            auto currentRange = ratioMedian - ratio;
+            uncommonRange = currentRange;
+        }else if(seenAuthorCount == rareAuthorCount){
+            auto ratio = allAuthors[authorId].ratio;
+            auto currentRange = ratioMedian - ratio;
+            rareRange = currentRange;
+        }else if(seenAuthorCount == uniqueAuthorCount){
+            auto ratio = allAuthors[authorId].ratio;
+            auto currentRange = ratioMedian - ratio;
+            uniqueRange = currentRange;
+        }
+    }
+
+    for(auto authorId: authorList){
+        auto ratio = allAuthors[authorId].ratio;
+        if(ratioMedian - ratio > uniqueRange)
+            this->uniqueAuthors++;
+        else if(ratioMedian - ratio > rareRange)
+            this->rareAuthors++;
+        else if(ratioMedian - ratio > uncommonRange)
+            this->uncommonAuthors++;
+    }
+
+
     QLOG_INFO() << "outputs from weighting:";
     QLOG_INFO() << "quad:" << quadraticDeviation;
     QLOG_INFO() << "sigma2Dist:" << endOfUniqueAuthorRange;
     QLOG_INFO() << "ratioMedian:" << ratioMedian;
+
+    QLOG_INFO() << "uncommon:" << uncommonRange;
+    QLOG_INFO() << "rare:" << rareRange;
+    QLOG_INFO() << "unique:" << uniqueRange;
+
+    QLOG_INFO() << "uncommon authors:" << uncommonAuthors;
+    QLOG_INFO() << "rare authors:" << rareAuthors;
+    QLOG_INFO() << "unique authors:" << uniqueAuthors;
 }
 
 AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches){
     AuthorWeightingResult result;
     result.isValid = true;
-    bool gtSigma = (ratioMedian - quadraticDeviation) >= author.ratio;
-    bool gtSigma2 = (ratioMedian - 2 * quadraticDeviation) >= author.ratio;
-    bool gtSigma17 = (ratioMedian - 1.7 * quadraticDeviation) >= author.ratio;
-    if(needsRangeAdjustment){
-        double adjustedQuad = (ratioMedian - 4.)/2.;
-        gtSigma = (ratioMedian - adjustedQuad) >= author.ratio;
-        gtSigma2 = (ratioMedian - 2 * adjustedQuad) >= author.ratio;
-        gtSigma17 = (ratioMedian - 1.7 * adjustedQuad) >= author.ratio;
-    }
+
+    bool uncommon = uncommonRange <= (ratioMedian - author.ratio);
+    bool rare = rareRange <= (ratioMedian - author.ratio);
+    bool unique = uniqueRange <= (ratioMedian - author.ratio);
 
     if(this->ownProfileId == static_cast<int>(author.id))
     {
@@ -175,22 +212,19 @@ AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorRe
         return result;
     }
 
-    if(gtSigma2)
+    if(unique)
     {
-
         result.authorType = AuthorWeightingResult::EAuthorType::unique;
         counter2Sigma++;
-        //result.value = quadratic_coef(author.ratio,ratioMedian, quad, authorSize/10, authorSize/20, authorSize);
-        result.value = quadratic_coef(author.ratio,ratioMedian, quadraticDeviation, authorSize, maximumMatches, ECalcType::close);
+        result.value = quadratic_coef(author.ratio,ratioMedian, quadraticDeviation, authorSize, maximumMatches, ECalcType::unique);
     }
-    else if(gtSigma17)
+    else if(rare)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::rare;
         counter17Sigma++;
-        //result.value  = quadratic_coef(author.ratio,ratioMedian,  quad,authorSize/20, authorSize/40, authorSize);
-        result.value  = quadratic_coef(author.ratio,ratioMedian,  quadraticDeviation,  authorSize, maximumMatches, ECalcType::near);
+        result.value  = quadratic_coef(author.ratio,ratioMedian,  quadraticDeviation,  authorSize, maximumMatches, ECalcType::rare);
     }
-    else if(gtSigma)
+    else if(uncommon)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::uncommon;
         result.value  = quadratic_coef(author.ratio, ratioMedian, quadraticDeviation,  authorSize, maximumMatches, ECalcType::uncommon);

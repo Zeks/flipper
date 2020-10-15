@@ -22,8 +22,8 @@ namespace core {
 enum class ECalcType{
     common,
     uncommon,
-    near,
-    close
+    rare,
+    unique
 };
 
 double quadratic_coef(double ratio,
@@ -51,6 +51,14 @@ public:
     double ratioSum = 0;
     double ratioMedian = 0;
     double quadraticDeviation = 0;
+
+    double uncommonRange = 0;
+    double rareRange = 0;
+    double uniqueRange = 0;
+
+    int uniqueAuthors = 0;
+    int rareAuthors = 0;
+    int uncommonAuthors = 0;
 
     int endOfUniqueAuthorRange = 0;
     int counter2Sigma = 0;
