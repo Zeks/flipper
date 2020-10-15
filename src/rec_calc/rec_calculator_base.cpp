@@ -65,48 +65,9 @@ bool RecCalculatorImplBase::Calc(){
         FetchAuthorRelations();
     });
     relations.run();
-
+    params->ratioCutoff = ratioCutoff;
     RunMatchingAndWeighting(params, filters, actions);
     QLOG_INFO() << "filtered authors after default pass:" << filteredAuthors.size();
-    //double previousAuthorSize = filteredAuthors.size();
-
-    // at this point we have initial weighting figured out
-    // now, if we ended up with minmatches over 10 we might want to adjust more
-    // to brind into recommendations stuff from people with less than minimal amount of matches
-    // but exceptional match counts (basically, smaller lists)
-    // to do this we clone the params and do another non automatic pass
-    if(params->minimumMatch > 10){
-        QSharedPointer<RecommendationList> params(new RecommendationList());
-        params->maxUnmatchedPerMatch = this->params->maxUnmatchedPerMatch*0.75;
-        params->alwaysPickAt = 9999;
-        params->minimumMatch = this->params->minimumMatch/2;
-        params->userFFNId = this->params->userFFNId;
-        params->isAutomatic = false;
-        params->adjusting = false;
-        params->useWeighting = this->params->useWeighting;
-        params->useMoodAdjustment = this->params->useMoodAdjustment;
-        params->useDislikes =  this->params->useDislikes;
-        auto authors = filteredAuthors;
-        auto matchSum = this->matchSum;
-        ResetAccumulatedData();
-        //filteredAuthors=authors;
-        this->matchSum = matchSum;
-
-        auto filters = GetFilterList();
-        auto actions = GetActionList();
-        TimedAction filtering("Second round of filtering data",[&](){
-            Filter(params, filters, actions);
-        });
-        filtering.run();
-        //double newAuthorSize = filteredAuthors.size();
-        TimedAction weighting("Second round of weighting",[&](){
-            CalcWeightingParams();
-        });
-        weighting.run();
-        filteredAuthors+=authors;
-        //RunMatchingAndWeighting(params, filters, actions);
-        QLOG_INFO() << "filtered authors after second pass:" << filteredAuthors.size();
-    }
 
     CalculateNegativeToPositiveRatio();
     bool succesfullyGotVotes = false;
@@ -142,34 +103,14 @@ void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<Recommendatio
         });
         filtering.run();
 
-        TimedAction resultAdjustment("adjusting results",[&](){
-            auto adjustmentResult = AutoAdjustRecommendationParamsAndFilter(params);
-            if(i == 0)
-                firstAdjustmentResult = adjustmentResult;
-            if(adjustmentResult.performedFiltering)
-                filteredAuthors = adjustmentResult.authors;
-            AdjustRatioForAutomaticParams(); // todo check if moodlist even goes there
-        });
-        resultAdjustment.run();
-
         TimedAction weighting("weighting",[&](){
             CalcWeightingParams();
         });
         weighting.run();
         if(!params->isAutomatic && !params->adjusting)
             break;
-
-        if(WeightingIsValid())
-            break;
-
-        if(!AdjustParamsToHaveExceptionalLists(params, firstAdjustmentResult))
-            break;
-
-        QLOG_INFO() << "Dropping ratio to: " << params->maxUnmatchedPerMatch;
         i++;
     }while(params->adjusting);
-    QLOG_INFO() << "Ratio after adjustment: " << params->maxUnmatchedPerMatch;
-    QLOG_INFO() << "Min after adjustment: " << params->minimumMatch;
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -515,24 +456,19 @@ struct AuthorRelationsResult{
 template <typename T>
 void Save( const QMap<uint32_t, T>& data )
 {
-    auto saveToFile = [&](QString fileName, auto getterFirst, auto getterSecond, auto getterThird){
-        QFile file(fileName);
-        if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
-            QTextStream stream(&file);
-           for (auto key: data.keys())
-                stream << data[key].ratio
-                       << "," << getterFirst(data[key])
-                       << "," << getterSecond(data[key])
-                          << "," << getterThird(data[key])
-                       << Qt::endl;
-        }
-    };
-    saveToFile("_data.txt", [](const T& data){return data.authors;},
-    [](const T& data){return data.averageListSize;},
-    [](const T& data){return data.lastFicsAdded;});
-    //saveToFile("_ficCounts.txt", [](const T& data){return data.fics.cardinality();});
-    //saveToFile("_minimums.txt", [](const T& data){return data.minMatches;});
-
+    QFile file("statistics/_data.txt");
+    if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
+        QTextStream stream(&file);
+       for (auto key: data.keys())
+            stream << QString::number(data[key].ratio).leftJustified(6, ' ')
+                    << " authors:    "<< QString::number(data[key].authors).leftJustified(5, ' ')
+                    << " avg size:   " << QString::number(data[key].averageListSize).leftJustified(5, ' ')
+                    << " fics added: " << QString::number(data[key].lastFicsAdded).leftJustified(5, ' ')
+                    << " min size:   " << QString::number(data[key].minListSize).leftJustified(5, ' ')
+                    << " max size:   " << QString::number(data[key].maxListSize).leftJustified(5, ' ')
+                    << " total size: " << QString::number(data[key].fics.cardinality()).leftJustified(5, ' ')
+                   << Qt::endl;
+    }
 }
 
 
@@ -583,10 +519,12 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 author.negativeMatches = negative.cardinality();
 
                 author.sizeAfterIgnore = unignoredSize;
-                uint32_t ratio = author.sizeAfterIgnore/author.matches;
+                auto ratio = std::numeric_limits<uint16_t>::max();
+                if(author.matches > 0)
+                    ratio = author.sizeAfterIgnore/author.matches;
                 // not interested with lists that don't add anything new
                 // also not very interested with listsizes of less than 10 because their ratio will be too skewed
-                if(author.matches > 0 && ratio > 1 && author.sizeAfterIgnore < 10){
+                if(author.matches > 0 && ratio > 1 && author.sizeAfterIgnore >= 10){
                     ratioHash.AddToken(ratio);
                     tempResult.ratioInfo[ratio].ratio = ratio;
                     tempResult.ratioInfo[ratio].authors++;
@@ -594,6 +532,10 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                     if(tempResult.ratioInfo[ratio].minMatches > author.matches)
                         tempResult.ratioInfo[ratio].minMatches = author.matches;
                     tempResult.ratioInfo[ratio].fics|=inputs.faves[author.id];
+                    if(tempResult.ratioInfo[ratio].minListSize > author.sizeAfterIgnore)
+                        tempResult.ratioInfo[ratio].minListSize = author.sizeAfterIgnore;
+                    if(tempResult.ratioInfo[ratio].maxListSize < author.sizeAfterIgnore)
+                        tempResult.ratioInfo[ratio].maxListSize = author.sizeAfterIgnore;
                 }
                 if(ignores.cardinality() == 0)
                     author.sizeAfterIgnore = author.fullListSize;
@@ -616,9 +558,6 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             for(auto key: data.ratioInfo.keys()){
                 funcResult.ratioInfo[key]+=data.ratioInfo[key];
             }
-//            for(auto key: data.ratioSumInfo.keys()){
-//                funcResult.ratioSumInfo[key]+=data.ratioSumInfo[key];
-//            }
         });
     });
     action.run();
@@ -639,9 +578,13 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         funcResult.ratioSumInfo[key].totalFicEntries = tempSummary.totalFicEntries;
         funcResult.ratioSumInfo[key].averageListSize = tempSummary.averageListSize;
         funcResult.ratioSumInfo[key].authors = tempSummary.authors;
+        funcResult.ratioSumInfo[key].minListSize = funcResult.ratioInfo[key].minListSize;
+        funcResult.ratioSumInfo[key].maxListSize= funcResult.ratioInfo[key].maxListSize;
+        if(funcResult.ratioSumInfo[key].totalFicEntries > ownFavourites.cardinality() * 200)
+            ratioCutoff = funcResult.ratioSumInfo[key].ratio;
     }
     //Save(funcResult.ratioInfo);
-    Save(funcResult.ratioSumInfo);
+    //Save(funcResult.ratioSumInfo);
     QLOG_INFO() << "At the end of author processing maximumMatches: " << maximumMatches << " matchsum: " << matchSum;
 }
 

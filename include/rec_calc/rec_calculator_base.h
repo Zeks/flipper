@@ -92,7 +92,10 @@ struct RatioInfo{
     int totalFicEntries = 0;
     uint16_t authors = 0;
     uint16_t ratio = 0;
+    uint16_t minListSize = std::numeric_limits<uint16_t>::max();
+    uint16_t maxListSize = 0;
     uint16_t minMatches = std::numeric_limits<uint16_t>::max();
+
     Roaring fics;
     RatioInfo& operator+=(const RatioInfo& rhs){
 
@@ -102,6 +105,10 @@ struct RatioInfo{
         if(this->minMatches > rhs.minMatches)
             this->minMatches = rhs.minMatches;
         this->fics |= rhs.fics;
+        if(this->minListSize > rhs.minListSize)
+            this->minListSize = rhs.minListSize;
+        if(this->maxListSize < rhs.maxListSize)
+            this->maxListSize = rhs.maxListSize;
         return *this;
     }
 
@@ -112,8 +119,10 @@ struct RatioSumInfo{
     uint16_t ratio = 0;
     uint16_t minMatches = std::numeric_limits<uint16_t>::max();
     uint16_t averageListSize = 0;
-    int totalFicEntries = 0;
+    uint32_t totalFicEntries = 0;
     int lastFicsAdded = 0;
+    uint16_t minListSize = std::numeric_limits<uint16_t>::max();
+    uint16_t maxListSize = 0;
     Roaring fics;
 
     //    RatioSumInfo& operator+=(const RatioSumInfo& rhs){
@@ -185,6 +194,7 @@ public:
     virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>, AutoAdjustmentAndFilteringResult adjustmentResult);
 
     int ownProfileId = -1;
+    uint8_t ratioCutoff = std::numeric_limits<uint8_t>::max();
     uint32_t matchSum = 0;
     uint32_t negativeAverage = 0;
     RecInputVectors inputs;
