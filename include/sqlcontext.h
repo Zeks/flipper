@@ -75,7 +75,7 @@ struct SqlContext
 
     SqlContext(QSqlDatabase db, QStringList queries) : q(db), transaction(db)
     {
-        for(auto query : queries)
+        for(const auto& query : queries)
         {
             Prepare(query);
             BindValues();
@@ -90,8 +90,9 @@ struct SqlContext
 
     SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) :  qs(qs), q(db),  transaction(db){
         Prepare(qs);
-        for(auto valName: hash.keys())
-            bindValue(valName, hash[valName]);
+
+        for(auto i = hash.begin(); i != hash.end(); i++)
+            bindValue(i.key(), i.value());
     }
 
     ~SqlContext(){
@@ -113,7 +114,7 @@ struct SqlContext
     }
 
     void ExecuteWithArgsSubstitution(QStringList keys){
-        for(auto key : keys)
+        for(const auto& key : keys)
         {
             QString newString = qs;
             newString = newString.arg(key);
@@ -307,7 +308,7 @@ struct SqlContext
 
     void ExecuteList(QStringList queries){
         bool execResult = true;
-        for(auto query : queries)
+        for(const auto& query : queries)
         {
             Prepare(query);
             BindValues();
@@ -321,7 +322,7 @@ struct SqlContext
     }
 
     void BindValues(){
-        for(auto bind : bindValues)
+        for(const auto& bind : std::as_const(bindValues))
         {
             q.bindValue(QString(":") + bind.key, bind.value);
         }

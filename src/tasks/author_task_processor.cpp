@@ -109,7 +109,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
         return parser;
     };
 
-    QList<QFuture<FavouriteStoryParser>> futures;
+    QVector<QFuture<FavouriteStoryParser>> futures;
     QList<FavouriteStoryParser> parsers;
 
     int cachedPages = 0;
@@ -117,7 +117,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
     bool breakerTriggered = false;
     StartPageWorker();
     bool breakTriggered = false;
-    for(auto subtask : task->subTasks)
+    for(const auto& subtask : std::as_const(task->subTasks))
     {
         if(pageInterface->IsForceStopActivated(task->id))
         {
@@ -214,8 +214,8 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
                 qDebug() << "processing page:" << webPage.pageIndex << " " << webPage.url;
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
                 auto splittings = page_utils::SplitJob(webPage.content);
-
-                for(auto part: splittings.parts)
+                futures.reserve(splittings.parts.size());
+                for(const auto& part: std::as_const(splittings.parts))
                 {
                     futures.push_back(QtConcurrent::run(job, webPage.url, part.data));
                 }
@@ -244,7 +244,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
                 FavouriteStoryParser::MergeStats(author,fandoms, parsers);
                 authors->UpdateAuthorRecord(author);
                 author = authors->GetByWebID("ffn", webId);
-                for(auto actualParser: parsers)
+                for(const auto& actualParser: std::as_const(parsers))
                     sumParser.processedStuff+=actualParser.processedStuff;
 
                 QString result;

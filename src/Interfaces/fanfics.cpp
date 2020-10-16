@@ -165,7 +165,7 @@ bool Fanfics::ReprocessFics(QString where, QString website, bool useDirectIds, s
         list = database::puresql::GetWebIdList(where, website, db).data;
     if(list.empty())
         return false;
-    for(auto id : list)
+    for(auto id : std::as_const(list))
     {
         f(id);
     }
@@ -340,7 +340,7 @@ QHash<int, core::FicWeightPtr> Fanfics::GetHashOfAllFicsWithEnoughFavesForWeight
 {
     QHash<int, core::FicWeightPtr> result;
     auto temp = GetAllFicsWithEnoughFavesForWeights(faves);
-    for(auto fic : temp)
+    for(const auto& fic : temp)
         result[fic->id] = fic;
     return result;
 }
@@ -440,7 +440,7 @@ void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
 
 void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fanfic>> fics)
 {
-    for(QSharedPointer<core::Fanfic> fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         if(!fic)
             continue;
@@ -459,7 +459,7 @@ void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fanfic>> fics)
 bool Fanfics::WriteRecommendations()
 {
     database::Transaction transaction(db);
-    for(auto recommendation: ficRecommendations)
+    for(auto recommendation: std::as_const(ficRecommendations))
     {
         if(!recommendation.IsValid() || !authorInterface->EnsureId(recommendation.author))
             continue;
@@ -491,7 +491,7 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fanfic>> fics, bo
     skippedCounter = 0;
     updatedCounter = 0;
     insertedCounter = 0;
-    for(QSharedPointer<core::Fanfic> fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         if(!fic)
             continue;
@@ -531,13 +531,13 @@ bool Fanfics::FlushDataQueues()
     int insertCounter = 0;
     int updateCounter = 0;
     bool hasFailures = false;
-    for(auto fic: insertQueue)
+    for(const auto& fic: std::as_const(insertQueue))
     {
         insertCounter++;
         bool writeResult = database::puresql::InsertIntoDB(fic, db).success;
         hasFailures = hasFailures && writeResult;
         fic->identity.id = GetIDFromWebID(fic->identity.web.ffn, "ffn");
-        for(auto fandom: fic->fandoms)
+        for(const auto& fandom: std::as_const(fic->fandoms))
         {
             bool result = database::puresql::AddFandomForFic(fic->identity.id, fandomInterface->GetIDForName(fandom), db).success;
             hasFailures = hasFailures && result;
@@ -555,7 +555,7 @@ bool Fanfics::FlushDataQueues()
     if(hasFailures)
         return false;
 
-    for(auto fic: updateQueue)
+    for(const auto& fic: std::as_const(updateQueue))
     {
         fic->identity.id = GetIDFromWebID(fic->identity.web.ffn, "ffn");
         auto result = database::puresql::UpdateInDB(fic, db).success;

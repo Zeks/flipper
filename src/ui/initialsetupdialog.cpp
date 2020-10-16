@@ -62,7 +62,7 @@ InitialSetupDialog::~InitialSetupDialog()
 
 void InitialSetupDialog::VerifyUserID()
 {
-    auto userID = ui->leUserFFNId->text();
+    //auto userID = ui->leUserFFNId->text();
     ui->lblStatus->setText("<font color=\"darkBlue\">Status: Verifying user ID.</font>");
     ui->lblStatus->setVisible(true);
 
@@ -91,7 +91,7 @@ bool InitialSetupDialog::CreateRecommendationsFromProfile()
     params->assignLikedToSources = true;
     params->userFFNId = env->interfaces.recs->GetUserProfile();
     QVector<int> sourceFics;
-    for(auto fic : sourceFicsSet)
+    for(const auto& fic : sourceFicsSet)
         sourceFics.push_back(fic.toInt());
 
     auto result = env->BuildRecommendations(params, sourceFics);
@@ -167,7 +167,7 @@ QVector<int> InitialSetupDialog::PickFicIDsFromString(QString str)
     QVector<int> sourceFics;
     QStringList lines = str.split("\n");
     QRegularExpression rx("https://www.fanfiction.net/s/(\\d+)");
-    for(auto line : lines)
+    for(const auto& line : lines)
     {
         if(!line.startsWith("http"))
             continue;

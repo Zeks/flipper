@@ -39,7 +39,7 @@ auto fileWrapperVector = [](DataKeeper* obj, int threadCount, int taskSize, int 
         {
             obj->fileCounter++;
             obj->data.close();
-            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase).arg(QString::number(obj->fileCounter)));
+            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase,QString::number(obj->fileCounter)));
             if(obj->data.open(QFile::WriteOnly | QFile::Truncate))
             {
                 obj->out.setDevice(&obj->data);
@@ -76,7 +76,7 @@ auto fileWrapperHash = [](DataKeeper* obj,int threadCount, QString nameBase, aut
         {
             obj->fileCounter++;
             obj->data.close();
-            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase).arg(QString::number(obj->fileCounter)));
+            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase,QString::number(obj->fileCounter)));
             if(obj->data.open(QFile::WriteOnly | QFile::Truncate))
             {
                 obj->out.setDevice(&obj->data);

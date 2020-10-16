@@ -380,7 +380,7 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
     pager->SetAutomaticCacheLimit(automaticCache);
     pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     int counter = 0;
-    for (auto url : urls)
+    for (const auto& url : urls)
     {
         qDebug() << "loading page: " << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
@@ -429,7 +429,7 @@ void PageThreadWorker::FandomTask(FandomParseTask task)
     QStringList voidPages;
     qDebug() << "reacquiring urls: " << failedPages;
     ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages, task.delay);
-    for(auto page : voidPages)
+    for(const auto& page : std::as_const(voidPages))
     {
         WebPage failedPage;
         failedPage.failedToAcquire = true;
@@ -499,7 +499,7 @@ QString PageThreadWorker::GetNext(QString text)
     nextUrl = CreateURL(text.mid(posHref+6, indexEnd - (posHref+6)));
     if(!nextUrl.contains("&p="))
         nextUrl = "";
-    indexEnd = rxEnd.indexIn(text);
+    //indexEnd = rxEnd.indexIn(text);
     return nextUrl;
 }
 
@@ -509,10 +509,10 @@ static QDate GetRealMinDate(QList<QDate> dates)
         return QDate();
     std::sort(std::begin(dates), std::end(dates));
     QDate medianDate = dates[dates.size()/2];
-    QHash<QDate, int> distances;
+    //QHash<QDate, int> distances;
     int counter = 0;
     int totalDistance = 0;
-    for(auto date : dates)
+    for(auto date : std::as_const(dates))
     {
         int distance = std::abs(date.daysTo(medianDate));
         totalDistance+=distance;
@@ -524,7 +524,7 @@ static QDate GetRealMinDate(QList<QDate> dates)
     double average = static_cast<double>(totalDistance)/static_cast<double>(counter);
 
     QDate minDate = medianDate;
-    for(auto date : dates)
+    for(auto date : std::as_const(dates))
     {
         if(date < minDate && std::abs(date.daysTo(medianDate)) <= average)
             minDate = date;

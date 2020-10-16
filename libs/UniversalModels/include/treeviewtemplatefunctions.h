@@ -437,7 +437,7 @@ void ApplyNodePathState(std::function<QVariant(DataType*)> dataAccessor,
         InterfaceType* childPointer = static_cast<InterfaceType*>(child.internalPointer());
         QString nextPath = path + GetPathFromIndex<InterfaceType,ItemType,DataType>(dataAccessor,childPointer);
         bool hasPath = false;
-        for(auto path : nodes)
+        for(const auto& path : nodes)
         {
             if(path.contains(nextPath))
                 hasPath = true;

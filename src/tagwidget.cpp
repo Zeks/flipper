@@ -55,14 +55,14 @@ void TagWidget::InitFromTags(int id, QList<QPair<QString, QString> > tags)
     currentId = id;
     QHash<QString, int> tagSizes;
     QStringList tagList;
-    for(auto pair : tags)
+    for(const auto& pair : tags)
         tagList.push_back(pair.second);
     if(ui->chkDisplayTagSize->isChecked())
         tagSizes = tagsInterface->GetTagSizes(tagList);
 
 
     ui->edtTags->clear();
-    for(auto tag: tags)
+    for(const auto& tag: tags)
     {
         QString toInsert ;
         QString label;
@@ -91,7 +91,7 @@ void TagWidget::InitEditFromTags(QStringList tags)
         tagSizes = tagsInterface->GetTagSizes(tags);
 
     ui->edtTags->clear();
-    for(auto tag: tags)
+    for(const auto& tag: std::as_const(tags))
     {
         QString label;
         if(ui->chkDisplayTagSize->isChecked())
@@ -210,7 +210,7 @@ void TagWidget::on_leTag_returnPressed()
 void TagWidget::SelectTags(QStringList tags)
 {
     QString text = ui->edtTags->toHtml();
-    for(auto tag: tags)
+    for(const auto& tag: std::as_const(tags))
     {
         text=text.replace("<a href=\"0 " + tag + " \"><span style=\" text-decoration: underline; color:#0000ff;\">",
                     "<a href=\"1 " + tag + " \"><span style=\" text-decoration: underline; color:#006400;\">");
@@ -266,7 +266,7 @@ void TagWidget::OnNewTag(QString tag, bool enabled)
     }
     allTags.push_back(tag);
     QList<QPair<QString, QString>> pairs;
-    for(auto tag : allTags)
+    for(const auto& tag : std::as_const(allTags))
     {
         if(selectedTags.contains(tag))
             pairs.push_back({"1", tag});

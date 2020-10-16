@@ -179,7 +179,7 @@ UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
         userThreadData->usedAuthors = reqContext.dbContext.authors->GetAuthorsForFics(userThreadData->ficIDsForActivetags);
     }
 
-    for(auto recommender: filter.usedRecommenders)
+    for(auto recommender: std::as_const(filter.usedRecommenders))
     {
         auto* userThreadData = ThreadData::GetUserData();
         const auto& list = reqContext.dbContext.authors->GetAllAuthorRecommendationIDs(recommender);
@@ -217,7 +217,7 @@ Status FeederService::Search(ServerContext* context, const ProtoSpace::SearchTas
 
     QLOG_INFO() << "Fetch performed in: " << action.ms;
     TimedAction convertAction("Converting data",[&](){
-        for(const auto& fic: data)
+        for(const auto& fic: std::as_const(data))
             proto_converters::LocalFicToProtoFic(fic, response->add_fanfics());
     });
     convertAction.run();
@@ -253,7 +253,7 @@ grpc::Status FeederService::SearchByFFNID(grpc::ServerContext *, const ProtoSpac
         ficSource->FetchData(filter, &data);
     });
     action.run();
-    for(const auto& fic: data)
+    for(const auto& fic: std::as_const(data))
         proto_converters::LocalFicToProtoFic(fic, response->mutable_fanfic());
     response->set_success(true);
     return Status::OK;
@@ -294,13 +294,15 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
     }
     QLOG_INFO() << "Responding";
     response->set_success(true);
-    for(auto user : fics.keys())
+
+    for(auto i = fics.begin(); i != fics.end(); i++)
     {
         auto match = response->add_matches();
-        match->set_user_id(user);
-        match->set_ratio(fics[user].ratio);
-        match->set_ratio_without_ignores(fics[user].ratioWithoutIgnores);
-        for(auto fic: fics[user].matches)
+        const auto& value = i.value();
+        match->set_user_id(i.key());
+        match->set_ratio(value.ratio);
+        match->set_ratio_without_ignores(value.ratioWithoutIgnores);
+        for(auto fic: std::as_const(value.matches))
             match->add_fic_id(fic);
     }
     return Status::OK;
@@ -321,7 +323,7 @@ Status FeederService::GetFicCount(ServerContext* context, const ProtoSpace::FicC
     if(!prepared.isValid)
         return Status::OK;
 
-    QVector<core::Fanfic> data;
+    //QVector<core::Fanfic> data;
     int count = 0;
     TimedAction ("Getting fic count",[&](){
         count = prepared.ficSource->GetFicCount(prepared.filter);
@@ -354,7 +356,7 @@ Status FeederService::SyncFandomList(ServerContext* context, const ProtoSpace::S
             response->set_needs_update(true);
             auto fandoms = fandomInterface->LoadAllFandomsAfter(task->last_fandom_id());
             QLOG_INFO() << "Sending new fandoms to the client:" << fandoms.size();
-            for(auto coreFandom: fandoms)
+            for(const auto& coreFandom: fandoms)
             {
                 auto* protoFandom = response->add_fandoms();
                 proto_converters::LocalFandomToProtoFandom(*coreFandom, protoFandom);
@@ -484,16 +486,16 @@ grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerCon
         targetList->set_quadratic_deviation(list.quad);
         targetList->set_ratio_median(list.ratioMedian);
         targetList->set_distance_to_double_sigma(list.sigma2Dist);
-        QLOG_INFO() << "passing authors for fics into data structures: " << list.authorsForFics.keys().size();
+        QLOG_INFO() << "passing authors for fics into data structures: " << list.authorsForFics.size();
         auto keys = list.authorsForFics.keys();
         for(auto fic : keys){
             auto* newMatch = targetList->add_matches();
             newMatch->set_fic_id(fic);
-            for(auto author : list.authorsForFics[fic])
+            for(auto author : std::as_const(list.authorsForFics[fic]))
                 newMatch->add_author_id(author);
         }
         QLOG_INFO() << "passing author stats into data: " << list.authorData.size();
-        for(auto author : list.authorData)
+        for(const auto& author : std::as_const(list.authorData))
         {
             auto* authorData  = targetList->add_author_params();
             authorData->set_author_id(author.id);
@@ -559,14 +561,16 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         using core::AuthorWeightingResult;
         typedef core::AuthorWeightingResult::EAuthorType EAuthorType;
 
-        auto dataSize = list.recommendations.keys().size();
+        auto dataSize = list.recommendations.size();
         targetList->mutable_fic_matches()->Reserve(dataSize);
         targetList->mutable_breakdowns()->Reserve(dataSize);
         if(!task->data().response_data_controls().ignore_breakdowns())
             targetList->mutable_no_trash_score()->Reserve(dataSize);
 
-        for(int key: list.recommendations.keys())
+        for(auto i = list.recommendations.begin(); i != list.recommendations.end(); i++)
         {
+            const auto& key = i.key();
+            const auto& value = i.value();
             //QLOG_INFO() << " n_fic_id: " << key << " n_matches: " << list[key];
             if(!recCalculator->holder.fics.contains(key))
             {
@@ -574,11 +578,11 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 continue;
             }
 
-            int adjustedVotes = list.recommendations[key]/(baseVotes);
+            int adjustedVotes = value/(baseVotes);
             if(adjustedVotes < 1)
                 adjustedVotes = 1;
             // purging based on mood
-            if((recommendationsCreationParams->useMoodAdjustment && (list.recommendations[key]/(baseVotes*list.pureMatches[key])) < 1) &&
+            if((recommendationsCreationParams->useMoodAdjustment && (value/(baseVotes*list.pureMatches[key])) < 1) &&
                     list.decentMatches[key] == 0 &&
                     !recommendationsCreationParams->likedAuthors.contains(recCalculator->holder.fics[key]->authorId))
             {
@@ -588,18 +592,18 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 QList<genre_stats::GenreBit>& refList = ref[key];
                 double maxValue = 0.;
                 // shit code, but I really don't want to refactor rn
-                for(auto genreBit: refList)
+                for(const auto& genreBit: refList)
                 {
                     if(genreBit.relevance > maxValue)
                         maxValue = genreBit.relevance;
                 }
 
-                for(auto genreBit: refList)
+                for(const auto& genreBit: refList)
                 {
                     //qDebug() << "genres: " << genreBit.genres << " relevance: " << genreBit.relevance;
                     if(genreBit.relevance/maxValue > 0.45)
                     {
-                        for(auto actualGenre : genreBit.genres)
+                        for(const auto& actualGenre : std::as_const(genreBit.genres))
                         {
                             auto mood = interfaces::Genres::MoodForGenre(actualGenre);
                             if(moodData.moodAxis.contains(mood))
@@ -637,13 +641,13 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 target->set_counts_unique(list.breakdowns[key].authorTypes[EAuthorType::unique]);
             }
         }
-        qDebug() << "Match report will contain: " << list.matchReport.keys().size() << " fics";
-        for(auto author: list.authors)
+        qDebug() << "Match report will contain: " << list.matchReport.size() << " fics";
+        for(const auto& author: std::as_const(list.authors))
             response->mutable_list()->add_author_ids(author);
 
         if(!task->data().response_data_controls().ignore_breakdowns())
-            for(int key: list.matchReport.keys())
-                (*targetList->mutable_match_report())[key] = list.matchReport[key];
+            for(auto i = list.matchReport.begin(); i != list.matchReport.end(); i++)
+                (*targetList->mutable_match_report())[i.key()] = i.value();
 
         response->mutable_list()->mutable_used_params()->set_is_automatic(recommendationsCreationParams->isAutomatic);
         response->mutable_list()->mutable_used_params()->set_min_fics_to_match(recommendationsCreationParams->minimumMatch);
@@ -689,12 +693,13 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
         return Status::OK;
     }
     response->set_success(true);
-    QLOG_INFO() << "Succesfully converted ids:" << idsToFill.keys().size();
-    for(int fic: idsToFill.keys())
+    QLOG_INFO() << "Succesfully converted ids:" << idsToFill.size();
+
+    for(auto i = idsToFill.begin(); i != idsToFill.end(); i ++)
     {
         //QLOG_INFO() << "Returning fic ids: " << "DB: " << idsToFill[fic] << " FFN: " << fic;
-        response->mutable_ids()->add_ffn_ids(fic);
-        response->mutable_ids()->add_db_ids(idsToFill[fic]);
+        response->mutable_ids()->add_ffn_ids(i.key());
+        response->mutable_ids()->add_db_ids(i.value());
     }
     return Status::OK;
 }
@@ -723,11 +728,12 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
         return Status::OK;
     }
     response->set_success(true);
-    for(int fic: idsToFill.keys())
+
+    for(auto i = idsToFill.begin(); i != idsToFill.end(); i ++)
     {
         //QLOG_INFO() << "Returning fic ids: " << "FFN: " << idsToFill[fic] << " DB: " << fic;
-        response->mutable_ids()->add_ffn_ids(idsToFill[fic]);
-        response->mutable_ids()->add_db_ids(fic);
+        response->mutable_ids()->add_db_ids(i.key());
+        response->mutable_ids()->add_ffn_ids(i.value());
     }
 
     return Status::OK;
@@ -768,10 +774,10 @@ grpc::Status FeederService::GetFavListDetails(grpc::ServerContext *context,
     genresInterface->db = reqContext.dbContext.dbInterface->GetDatabase();;
     interfaces::GenreConverter conv;
     An<interfaces::GenreIndex> genreIndex;
-    for(auto fic: fetchedFics)
+    for(const auto& fic: std::as_const(fetchedFics))
     {
         fic->genres = conv.GetFFNGenreList(fic->genreString);
-        for(auto genre: fic->genres)
+        for(const auto& genre: std::as_const(fic->genres))
         {
             if(auto genreObject = genreIndex->GenreByName(genre); genreObject.isValid)
             {
@@ -813,7 +819,7 @@ grpc::Status FeederService::GetAuthorsForFicList(grpc::ServerContext *context, c
 
     reqContext.dbContext.InitAuthors();
 
-    QHash<uint32_t, core::FicWeightPtr> fetchedFics;
+    //QHash<uint32_t, core::FicWeightPtr> fetchedFics;
     auto  sourceFics = ProcessIDPackIntoFfnFicSet(task->id_packs());
 
     if(sourceFics.size() == 0)
@@ -823,10 +829,11 @@ grpc::Status FeederService::GetAuthorsForFicList(grpc::ServerContext *context, c
     data->ficsForAuthorSearch = sourceFics;
     QLOG_INFO() << "Fetching authors";
     auto result = reqContext.dbContext.authors->GetHashAuthorsForFics(sourceFics);
-    for(auto fic : result.keys())
+
+    for(auto i = result.begin(); i != result.end(); i++)
     {
-        response->add_fics(fic);
-        response->add_authors(result[fic]);
+        response->add_fics(i.key());
+        response->add_authors(i.value());
     }
     response->set_success(true);
     return Status::OK;
@@ -847,7 +854,7 @@ grpc::Status FeederService::GetAuthorsFromRecListContainingFic(grpc::ServerConte
     auto allAuthors = reqContext.dbContext.authors->GetRecommendersForFics({task->fic_id()});
     auto recsAuthorsList = QString::fromStdString(task->author_list()).split(",", Qt::SkipEmptyParts);
     QSet<int> result;
-    for(auto author: recsAuthorsList)
+    for(const auto& author: std::as_const(recsAuthorsList))
     {
         if(allAuthors.contains(author.toInt()))
             result.insert(author.toInt());
@@ -894,8 +901,10 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
 
 
     auto* userThreadData = ThreadData::GetUserData();
-    for(auto snId : snoozes.keys())
-        userThreadData->ficsForSelection.insert(snId);
+
+    for(auto i = snoozes.begin();i != snoozes.end(); i++)
+        userThreadData->ficsForSelection.insert(i.key());
+
     qDebug() << "Selection is: " << userThreadData->ficsForSelection;
 
     auto snoozeInfo = reqContext.dbContext.fanfics->GetSnoozeInfo();
@@ -961,7 +970,7 @@ void FeederService::AddToRecStatistics(QString uuid)
 }
 void FeederService::CleaupOldTokens()
 {
-    QList<QString> toErase;
+    //QList<QString> toErase;
 }
 void FeederService::PrintStatistics(){
     // creating statistics message
@@ -1122,10 +1131,11 @@ void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicLi
         result.genreFactors[genre.name] = dataResult.result.genreRatios[i];
     }
 
-    for(auto fandom : dataResult.result.fandomRatios.keys())
-        result.fandomFactorsConverted[fandom] = dataResult.result.fandomRatios[fandom];
-    for(auto fandom : dataResult.fandomCounters.keys())
-        result.fandomsConverted[fandom] = dataResult.fandomCounters[fandom];
+    for(auto i = dataResult.result.fandomRatios.begin(); i != dataResult.result.fandomRatios.end(); i++)
+        result.fandomFactorsConverted[i.key()] = i.value();
+
+    for(auto i = dataResult.fandomCounters.begin(); i != dataResult.fandomCounters.end(); i++)
+        result.fandomsConverted[i.key()] = i.value();
 
     for(size_t i = 1; i < dataResult.result.sizeRatios.size(); i++)
         result.sizeFactors[i] = dataResult.result.sizeRatios[i];

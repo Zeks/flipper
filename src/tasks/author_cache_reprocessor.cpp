@@ -75,7 +75,7 @@ void AuthorCacheReprocessor::ReprocessAllAuthorsStats()
         statistics_utils::UserPageSource source;
         statistics_utils::UserPageSink<ParsedAuthorData> sink;
 
-        QHash<int, QList<WebPage>>pages;
+        //QHash<int, QList<WebPage>>pages;
         int counter = 1;
 
         int chunkSize = 500;
@@ -155,7 +155,7 @@ void AuthorCacheReprocessor::ReprocessAllAuthorsStats()
                 processSlash.run();
                 QThread::msleep(100);
                 qDebug() << "writing results, have " << sink.tokens.size() << " tokens to merge";
-                for(auto token: sink.tokens)
+                for(const auto& token: std::as_const(sink.tokens))
                 {
                     //qDebug() << "original new webid: " << token.parser->recommender.author->GetWebID("ffn");
                     authorsInterface->EnsureId(token.parser->recommender.author);

@@ -198,7 +198,7 @@ DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id, QString
 DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QString list_name)
 {
     QString qs = "delete from user_lists where user_id = :user_id and list_id = 0";
-    auto generated= QDateTime::currentDateTimeUtc();
+    //auto generated= QDateTime::currentDateTimeUtc();
     SqlContext<bool> ctx(db, qs, BP2(user_id, list_name));
     ctx.ExecAndCheck(false);
     return ctx.result;

@@ -6,16 +6,19 @@ namespace core {
 Fanfic::Fanfic(){
     author = QSharedPointer<Author>(new Author);
 }
-void core::Fanfic::LogUrls()
+void core::Fanfic::LogUrls() const
 {
     qDebug() << "Urls:" ;
-    for(auto key : urls.keys())
-    {
+    auto itTemp = urls.begin();
+    auto itEnd = urls.end();
+    while(itTemp != itEnd){
+        const auto key = itTemp.key();
         if(!key.trimmed().isEmpty())
-            qDebug() << key << " " << urls[key];
+            qDebug() << key  << " " << urls[key];
+        itTemp++;
     }
 }
-void core::Fanfic::LogWebIds()
+void core::Fanfic::LogWebIds() const
 {
     qDebug() << "WebIds:" ;
     qDebug() << "webId: " << identity.web.ffn;
@@ -118,7 +121,7 @@ void FanficDataForRecommendationCreation::Serialize(QDataStream &out)
     out << wordCount;
 
     out << fandoms.size();
-    for(auto fandom: fandoms)
+    for(auto fandom: std::as_const(fandoms))
         out << fandom;
 }
 void FanficDataForRecommendationCreation::Log()
@@ -138,7 +141,7 @@ void FanficDataForRecommendationCreation::Log()
     qDebug() << wordCount;
 
     qDebug() << fandoms.size();
-    for(auto fandom: fandoms)
+    for(auto fandom: std::as_const(fandoms))
         qDebug() << fandom;
 }
 

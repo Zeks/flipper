@@ -37,7 +37,7 @@ void Client::InitClient()
     fictionalDMServer.reset(new discord::Server());
     discord::InitDefaultCommandSet(this->parser);
     std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
-    for(auto server : sleepyServers){
+    for(const auto& server : sleepyServers){
         InitDiscordServerIfNecessary(server.ID);
     }
     InitTips();

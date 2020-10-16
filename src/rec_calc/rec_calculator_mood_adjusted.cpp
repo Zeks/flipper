@@ -70,10 +70,10 @@ RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors inp
     QStringList moodList;
     moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
 
-    for(auto authorKey: input.moods.keys())
+    for(auto i = input.moods.begin(); i != input.moods.end(); i++)
     {
         double neutralDifference = 0., touchyDifference = 0.;
-        auto authorData = input.moods[authorKey];
+        auto authorData = i.value();
         for(int i= 0; i < moodList.size(); i++)
         {
             auto userValue =  interfaces::Genres::ReadMoodValue(moodList[i], moodData.listMoodData);
@@ -82,17 +82,18 @@ RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors inp
                 touchyDifference += std::max(userValue, authorValue) - std::min(userValue, authorValue);
             neutralDifference += std::max(userValue, authorValue) - std::min(userValue, authorValue);
         }
-        if(authorKey == 77257)
+        if(i.key() == 77257)
         {
             qDebug() << "Logging user mood list";
             moodData.listMoodData.Log();
             qDebug() << "Logging author mood list";
             authorData.Log();
-            qDebug() << "between author: " << authorKey << " and user, neutral: " << neutralDifference;
-            qDebug() << "between author: " << authorKey << " and user, touchy: " << touchyDifference;
+            qDebug() << "between author: " << i.key() << " and user, neutral: " << neutralDifference;
+            qDebug() << "between author: " << i.key() << " and user, touchy: " << touchyDifference;
         }
-        moodDiffs[authorKey].neutralDifference =  neutralDifference;
-        moodDiffs[authorKey].touchyDifference =  touchyDifference;
+        auto& diff = moodDiffs[i.key()];
+        diff.neutralDifference =  neutralDifference;
+        diff.touchyDifference =  touchyDifference;
     }
     votesBase = 100;
 }
