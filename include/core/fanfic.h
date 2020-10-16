@@ -78,8 +78,8 @@ public:
     Fanfic& operator=(const Fanfic&) = default;
     ~Fanfic(){}
     void Log();
-    void LogUrls();
-    void LogWebIds();
+    void LogUrls() const;
+    void LogWebIds() const;
     static FicPtr NewFanfic() { return QSharedPointer<Fanfic>(new Fanfic);}
 
     bool isCrossover = false;

@@ -48,7 +48,7 @@ void RecommendationLists::ClearCache()
 void RecommendationLists::Reindex()
 {
     ClearIndex();
-    for(auto list: lists)
+    for(const auto& list: std::as_const(lists))
     {
         if(!list)
             continue;
@@ -264,10 +264,11 @@ void RecommendationLists::DeleteLocalList(int listId)
     ficsCacheForLists.remove(list->id);
     //grpcCacheForLists.remove(list->id);
     QList<QPair<int, int>> keysToRemove;
-    for(auto key: grpcCacheForLists.keys())
-    {
-        if(key.first == listId)
-            keysToRemove.push_back(key);
+
+
+    for(auto i = grpcCacheForLists.begin(); i != grpcCacheForLists.end(); i++){
+        if(i.key().first == listId)
+            keysToRemove.push_back(i.key());
     }
     for(auto key : keysToRemove)
         grpcCacheForLists.remove(key);
@@ -409,7 +410,7 @@ bool RecommendationLists::CreateRecommendationList(QString name, QHash<int, int>
 {
     QSharedPointer<core::RecommendationList> dummyParams(new core::RecommendationList);
     dummyParams->name = name;
-    dummyParams->ficCount = fics.keys().size();
+    dummyParams->ficCount = fics.size();
     dummyParams->created = QDateTime::currentDateTime();
     auto listId = GetListIdForName(name);
     dummyParams->id = listId;
@@ -441,7 +442,7 @@ bool RecommendationLists::LoadAuthorsForRecommendationList(int listId)
         return false;
     auto authors = opResult.data;
 
-    for(auto author: authors)
+    for(const auto& author: std::as_const(authors))
     {
         if(!author)
             continue;
@@ -522,7 +523,7 @@ void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fanfic> *f
 void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fanfic> *fics, core::ReclistFilter filter)
 {
     QHash<int, int> scores;
-    for(auto fic: *fics)
+    for(const auto& fic: std::as_const(*fics))
         scores[fic.identity.id] = 0;
 
     database::puresql::FetchRecommendationScoreForFics(scores, filter, db);

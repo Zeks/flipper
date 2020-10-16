@@ -17,7 +17,7 @@ struct FandomFilter{
     void RemoveFandom(int id){
         fandoms.remove(id);
         QList<FandomFilterToken> newTokens;
-        for(auto token: tokens)
+        for(auto token: qAsConst(tokens))
         {
             if(token.id != id)
                 newTokens.push_back(token);

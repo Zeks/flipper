@@ -70,27 +70,27 @@ bool Fandoms::EnsureFandom(int id)
 QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
 {
     QSet<QString> uniqueFandoms;
-    for(auto fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         if(!fic)
             continue;
-        for(auto fandom : fic->fandoms)
+        for(auto fandom : std::as_const(fic->fandoms))
         {
             fandom = core::Fandom::ConvertName(fandom.trimmed());
             if(!uniqueFandoms.contains(fandom))
                 uniqueFandoms.insert(fandom);
         }
     }
-    for(auto fandom: uniqueFandoms)
+    for(const auto& fandom: uniqueFandoms)
     {
         if(!EnsureFandom(fandom))
             CreateFandom(fandom);
     }
-    for(auto fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         if(!fic)
             continue;
-        for(auto fandom : fic->fandoms)
+        for(auto fandom : std::as_const(fic->fandoms))
         {
             fandom = core::Fandom::ConvertName(fandom.trimmed());
             if(nameIndex.contains(fandom.toLower()))
@@ -228,7 +228,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
         return false;
 
     bool foundIterating = false;
-    for(auto bit: recentFandoms)
+    for(auto& bit: std::as_const(recentFandoms))
     {
         if(bit->GetName() != fandom)
             bit->idInRecentFandoms = bit->idInRecentFandoms+1;
@@ -285,7 +285,7 @@ QList<core::FandomPtr> Fandoms::FilterFandoms(std::function<bool (core::FandomPt
         return result;
 
     result.reserve(fandoms.size()/2);
-    for(auto fandom: fandoms)
+    for(const auto& fandom: std::as_const(fandoms))
     {
         if(f(fandom))
             result.push_back(fandom);
@@ -319,7 +319,7 @@ bool Fandoms::Load()
     // there is no point in doing that until its actually necessary for
     // some service operation
     // need to access the recent ones for sure though
-    for(auto bit: recentFandoms)
+    for(const auto& bit: recentFandoms)
     {
         bool fandomPresent = false;
         if(EnsureFandom(bit))
@@ -340,7 +340,7 @@ void Fandoms::ReloadRecentFandoms()
     this->recentFandoms.clear();
     QStringList recentFandoms = portableDBInterface->FetchRecentFandoms();
     recentFandoms.removeAll("");
-    for(auto bit: recentFandoms)
+    for(const auto& bit: recentFandoms)
     {
         bool fandomPresent = false;
         if(EnsureFandom(bit))
@@ -365,7 +365,7 @@ bool Fandoms::LoadTrackedFandoms(bool forced)
 
     trackedFandoms.clear();
     trackedFandoms.reserve(trackedList.size());
-    for(auto bit : trackedList)
+    for(const auto& bit : trackedList)
     {
         bool localResult = EnsureFandom(bit);
         if(localResult)
@@ -382,7 +382,7 @@ bool Fandoms::LoadAllFandoms(bool forced)
         return true;
 
     fandoms = database::puresql::GetAllFandoms(db).data;
-    for(auto fandom: fandoms)
+    for(const auto& fandom: std::as_const(fandoms))
         indexFandomsById[fandom->id] = fandom->GetName();
     if(fandoms.empty())
         return false;
@@ -507,7 +507,7 @@ void Fandoms::Reindex()
     trackedFandoms.reserve(fandoms.size()/10);
     fandomsList.reserve(fandoms.size());
     idIndex.reserve(fandoms.size());
-    for(auto fandom : fandoms)
+    for(const auto& fandom : std::as_const(fandoms))
         AddToIndex(fandom);
 }
 
@@ -597,7 +597,7 @@ QStringList Fandoms::ListOfTrackedNames()
     QStringList names;
     if(!LoadTrackedFandoms())
         return names;
-    for(auto fandom: trackedFandoms)
+    for(const auto& fandom: std::as_const(trackedFandoms))
         if(fandom)
             names.push_back(fandom->GetName());
     return names;

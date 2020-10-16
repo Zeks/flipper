@@ -213,7 +213,7 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
         bool queueFull = queue.size() > 0;
         if(queueFull)
             mOutputStream << "Error level triggered, dumping full cycle" << Qt::endl;
-        for(auto string : queue)
+        for(auto& string : qAsConst(queue))
         {
             mOutputStream << string << Qt::endl;
         }

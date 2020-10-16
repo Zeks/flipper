@@ -41,6 +41,7 @@ App{
     Depends { name: "UniversalModels" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
+    Depends { name: "Environment" }
 
     cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
     cpp.includePaths: [
@@ -56,6 +57,7 @@ App{
         sourceDirectory +"/proto",
         sourceDirectory + "/third_party",
         "/home/zeks/grpc/third_party/protobuf/src",
+        Environment.sqliteFolder,
         sourceDirectory + "/../"]
     cpp.minimumWindowsVersion: "6.0"
     files: [

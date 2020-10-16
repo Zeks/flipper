@@ -100,7 +100,7 @@ Qt::ItemFlags ItemController<T>::flags(const QModelIndex & index) const
 {
     // Bouml preserved body begin 0021AFAA
     Qt::ItemFlags result;
-    for(auto func: flagsFunctors)
+    for(const auto& func: std::as_const(flagsFunctors))
     {
         result |= func(index);
     }
