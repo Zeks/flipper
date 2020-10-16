@@ -22,20 +22,20 @@ namespace url_utils{
 
 QString GetWebId(QString url, QString source)
 {
-    if(source == "ffn")
+    if(source == QStringLiteral("ffn"))
         return ffn::GetWebId(url);
     return "";
 }
 
 QString GetStoryUrlFromWebId(int id, QString source)
 {
-    if(source == "ffn")
+    if(source == QStringLiteral("ffn"))
         return ffn::GetStoryUrlFromWebId(id);
     return "";
 }
 QString GetAuthorUrlFromWebId(int id, QString source)
 {
-    if(source == "ffn")
+    if(source == QStringLiteral("ffn"))
         return ffn::GetAuthorUrlFromWebId(id);
     return "";
 }
@@ -45,7 +45,7 @@ QString GetWebId(QString url)
 {
 
     QString result;
-    thread_local QRegExp rxWebId("/(s|u)/(\\d+)");
+    thread_local QRegExp rxWebId(QStringLiteral("/(s|u)/(\\d+)"));
     auto indexWeb = rxWebId.indexIn(url);
     if(indexWeb != -1)
     {
@@ -65,7 +65,7 @@ QString GetAuthorUrlFromWebId(int id)
 
 int GetLastPageIndex(QString url)
 {
-    QRegularExpression rx("&p=(\\d+)");
+    QRegularExpression rx(QStringLiteral("&p=(\\d+)"));
     auto match = rx.match(url);
     if(!match.hasMatch())
         return 1;
@@ -77,14 +77,14 @@ int GetLastPageIndex(QString url)
 
 QString AppendBase(QString website, QString postfix)
 {
-    if(website == "ffn")
-        return "https://www.fanfiction.net" + postfix;
+    if(website == QStringLiteral("ffn"))
+        return QStringLiteral("https://www.fanfiction.net") + postfix;
     return postfix;
 }
 
 int GetLastPageIndex(QString url)
 {
-    if(url.contains("fanfiction.net"))
+    if(url.contains(QStringLiteral("fanfiction.net")))
         return ffn::GetLastPageIndex(url);
     return 1;
 }

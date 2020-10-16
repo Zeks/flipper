@@ -54,15 +54,15 @@ struct GenreConverter{
         QStringList genresList;
         bool hasHurt = false;
         QString fixedGenreString = genreString;
-        if(genreString.contains("Hurt/Comfort"))
+        if(genreString.contains(QStringLiteral("Hurt/Comfort")))
         {
             hasHurt = true;
-            fixedGenreString = fixedGenreString.replace("Hurt/Comfort", "");
+            fixedGenreString = fixedGenreString.replace(QStringLiteral("Hurt/Comfort"), QStringLiteral(""));
         }
 
-        genresList = fixedGenreString.split("/", Qt::SkipEmptyParts);
+        genresList = fixedGenreString.split(QStringLiteral("/"), Qt::SkipEmptyParts);
         if(hasHurt)
-            genresList.push_back("Hurt/Comfort");
+            genresList.push_back(QStringLiteral("Hurt/Comfort"));
         for(auto& genre: genresList)
             genre = genre.trimmed();
         return genresList;
@@ -131,7 +131,7 @@ public:
     bool WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics);
     bool WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fics);
     QHash<int, QList<genre_stats::GenreBit>> GetFullGenreList(bool useOriginalgenres = false);
-    static void LogGenreDistribution(std::array<double, 22>& data, QString target= "");
+    static void LogGenreDistribution(std::array<double, 22>& data, QString target= QStringLiteral(""));
     static QString MoodForGenre(QString genre);
     static void WriteMoodValue(QString mood,  float value, genre_stats::ListMoodData& );
     static float ReadMoodValue(QString mood, const genre_stats::ListMoodData& );
