@@ -101,11 +101,11 @@ struct FicGenreData
         QLOG_INFO() << "originals: " << originalGenres;
         QLOG_INFO() << "kept: " << genresToKeep;
         QLOG_INFO() << "dumping real genres:";
-        for(auto realGenre: realGenres)
+        for(auto realGenre: std::as_const(realGenres))
             realGenre.Log();
         QLOG_INFO() << " ";
         QLOG_INFO() << "dumping processed genres:";
-        for(auto genre: processedGenres)
+        for(auto genre: std::as_const(processedGenres))
             genre.Log();
         QLOG_INFO() << "strengthNeutralAdventure: " << strengthNeutralAdventure;
         QLOG_INFO() << "strengthNeutralComposite: " << strengthNeutralComposite;

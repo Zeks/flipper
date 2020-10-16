@@ -70,7 +70,7 @@ void SetupStatLogger()
 inline std::string CreateConnectString(QString ip,QString port)
 {
     QString server_address_proto("%1:%2");
-    std::string result = server_address_proto.arg(ip).arg(port).toStdString();
+    std::string result = server_address_proto.arg(ip,port).toStdString();
     return result;
 }
 

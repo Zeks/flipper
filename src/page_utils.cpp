@@ -30,15 +30,14 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
         threadCount = QThread::idealThreadCount();
     else
         threadCount = 50;
-    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
-    int index = rxStart.indexIn(data);
+    //thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
     //qDebug() << "RX fav fics:" << captured;
 
     thread_local QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
-    index = rxAuthorStories.indexIn(data);
+
     int capturedAuthorStories = data.count(rxAuthorStories);
     result.authorStoryCountInWhole = capturedAuthorStories;
     //qDebug() << "RX own fics:" << capturedAuthorStories;
@@ -46,7 +45,7 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
 
     int partSize = (captured+capturedAuthorStories)/(threadCount-1);
     //qDebug() << "In packs of "  << partSize;
-    index = 0;
+    int index = 0;
 
     if(partSize < 40)
         partSize = 40;

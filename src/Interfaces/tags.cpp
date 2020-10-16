@@ -138,7 +138,7 @@ QVector<core::Identity> Tags::GetAllFicsThatDontHaveDBID()
     auto result =  database::puresql::GetAllFicsThatDontHaveDBID(db).data;
     QVector<core::Identity> pack;
     pack.reserve(result.size());
-    for(auto id: result)
+    for(auto id: std::as_const(result))
     {
         core::Identity newIdentity;
         newIdentity.id = id;

@@ -59,7 +59,10 @@ App{
         sourceDirectory +"/proto",
         sourceDirectory + "/third_party",
         "/home/zeks/grpc/third_party/protobuf/src",
+        Environment.sqliteFolder,
         sourceDirectory + "/../"]
+
+
     cpp.minimumWindowsVersion: "6.0"
 
     files: [

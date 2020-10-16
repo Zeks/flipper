@@ -19,13 +19,16 @@ void core::Author::Log()
     qDebug() << "firstPublishedFic: " << firstPublishedFic;
 }
 
-void core::Author::LogWebIds()
+void core::Author::LogWebIds() const
 {
     qDebug() << "Author WebIds:" ;
-    for(auto key : webIds.keys())
-    {
+    auto itTemp = webIds.begin();
+    auto itEnd = webIds.end();
+    while(itTemp != itEnd){
+        const auto key = itTemp.key();
         if(!key.trimmed().isEmpty())
-            qDebug() << key << " " << webIds[key];
+            qDebug() << key  << " " << webIds[key];
+        itTemp++;
     }
 }
 

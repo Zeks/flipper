@@ -83,7 +83,7 @@ void CoreEnvironment::LoadData()
             UserData userData;
             userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
             // need to add non expired snoozes to tags if snooze show mode isn't selected
-            for(auto snoozedFic : snoozeInfo){
+            for(const auto& snoozedFic : snoozeInfo){
                 if(!snoozedFic.expired)
                     userData.allSnoozedFics.insert(snoozedFic.ficId);
                 else
@@ -124,7 +124,7 @@ void CoreEnvironment::LoadData()
 
             core::StoryFilter::EScoreType scoreType = filter.sortMode != core::StoryFilter::sm_minimize_dislikes ? core::StoryFilter::st_points : core::StoryFilter::st_minimal_dislikes;
 
-            QVector<int> recFics;
+            //QVector<int> recFics;
             core::ReclistFilter reclistFilter;
             reclistFilter.mainListId = interfaces.recs->GetCurrentRecommendationList();
             reclistFilter.minMatchCount = filter.minRecommendations;
@@ -225,7 +225,7 @@ void CoreEnvironment::WriteSettings()
 static inline QString CreateConnectString(QString ip,QString port)
 {
     QString server_address_proto("%1:%2");
-    QString server_address = server_address_proto.arg(ip).arg(port);
+    QString server_address = server_address_proto.arg(ip,port);
     return server_address;
 }
 
@@ -371,7 +371,7 @@ int CoreEnvironment::GetResultCount()
     userData.allTaggedFics = interfaces.tags->GetAllTaggedFics(tagFetcherSettings);
 
     auto snoozeInfo = interfaces.fanfics->GetUserSnoozeInfo();
-    for(auto snoozedFic : snoozeInfo){
+    for(const auto& snoozedFic : snoozeInfo){
         if(!snoozedFic.expired)
             userData.allSnoozedFics.insert(snoozedFic.ficId);
     }
@@ -385,7 +385,7 @@ int CoreEnvironment::GetResultCount()
     userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
     ficSource->userData = userData;
 
-    QVector<int> recFics;
+    //QVector<int> recFics;
     //filter.recsHash = interfaces.recs->GetAllFicsHash(interfaces.recs->GetCurrentRecommendationList(), filter.minRecommendations);
     core::StoryFilter::EScoreType scoreType = filter.sortMode != core::StoryFilter::sm_minimize_dislikes ? core::StoryFilter::st_points : core::StoryFilter::st_minimal_dislikes;
 
@@ -490,7 +490,7 @@ void CoreEnvironment::UpdateAllAuthorsWith(std::function<void(QSharedPointer<cor
     emit requestProgressbar(authors.size());
     An<PageManager> pager;
     int counter = 0;
-    for(auto author: authors)
+    for(const auto& author: authors)
     {
         auto webPage = pager->GetPage(author->url("ffn"), ECacheMode::use_only_cache);
         //qDebug() << "Page loaded in: " << webPage.LoadedIn();
@@ -617,7 +617,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
     QVector<core::Identity> pack;
     pack.resize(sourceFics.size());
     int i = 0;
-    for(auto source: sourceFics)
+    for(auto source: std::as_const(sourceFics))
     {
         pack[i].web.ffn = source;
         i++;
@@ -632,7 +632,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
 
     //    QSet<int> sourceSet;
     //    sourceSet.reserve(sourceFics.size());
-    for(auto identity: pack)
+    for(const auto& identity: std::as_const(pack))
         params->ficData->sourceFics.insert(identity.id);
 
 
@@ -669,7 +669,7 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
         if(params->assignLikedToSources)
         {
             QLOG_INFO() << "autolike is enabled";
-            for(auto fic: params->ficData->sourceFics)
+            for(auto fic: std::as_const(params->ficData->sourceFics))
             {
                 //QLOG_INFO() << "liking fic: "  << fic;
                 if(fic > 0)
@@ -722,7 +722,7 @@ int CoreEnvironment::BuildRecommendationsLocalVersion(QSharedPointer<core::Recom
     int counter = 0;
     int alLCounter = 0;
     int authorCounter = 0;
-    for(auto authorId: allAuthors)
+    for(auto authorId: std::as_const(allAuthors))
     {
         ++authorCounter;
         if(authorCounter%10 == 0)
@@ -776,7 +776,7 @@ int CoreEnvironment::BuildDiagnosticsForRecList(QSharedPointer<core::Recommendat
     QVector<core::Identity> pack;
     pack.resize(sourceFics.size());
     int i = 0;
-    for(auto source: sourceFics)
+    for(auto source: std::as_const(sourceFics))
     {
         pack[i].web.ffn = source;
         i++;
@@ -820,7 +820,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
         return false;
     auto tasks = interfaces.pageTask->GetUnfinishedTasks();
     TaskList tasksToResume;
-    for(auto task : tasks)
+    for(const auto& task : std::as_const(tasks))
     {
         QString diagnostics;
         diagnostics+= "Unfinished task:\n";
@@ -835,7 +835,7 @@ bool CoreEnvironment::ResumeUnfinishedTasks()
     // later this needs to be preceded by code that routes tasks based on their type.
     // hard coding for now to make sure base functionality works
     {
-        for(auto task : tasksToResume)
+        for(const auto& task : tasksToResume)
         {
             auto fullTask = interfaces.pageTask->GetTaskById(task->id);
             if(fullTask->type == 0)
@@ -895,7 +895,7 @@ QVector<int> CoreEnvironment::GetListSourceFFNIds(int listId)
         i++;
     }
     grpcSource->GetFFNIDsForFics(&pack);
-    for(auto identity : pack)
+    for(const auto& identity : std::as_const(pack))
         result.push_back(identity.web.ffn);
 
 
@@ -916,7 +916,7 @@ QVector<int> CoreEnvironment::GetFFNIds(QSet<int> sources)
         i++;
     }
     grpcSource->GetFFNIDsForFics(&pack);
-    for(auto id : pack)
+    for(const auto& id : std::as_const(pack))
         result.push_back(id.web.ffn);
 
     return result;
@@ -963,7 +963,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
 {
     auto result = LoadAuthorFics(url);
     QSet<QString> urlResult;
-    for(auto fic : result)
+    for(const auto& fic : result)
     {
         if(fic->ficSource != core::Fanfic::efs_own_works)
             urlResult.insert(QString::number(fic->identity.web.ffn));
@@ -1002,7 +1002,7 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     });
     fetchAction.run(false);
 
-    QString content;
+    //QString content;
     QRegularExpression rx("p[=](\\d+)['][>]Last[<][/]a[>]");
     auto match = rx.match(page.content);
     if(!match.hasMatch())
@@ -1019,11 +1019,11 @@ QSet<QString>  CoreEnvironment::LoadAuthorFicIdsForRecCreation(QString url, QLab
     for(int i = startOfUnreachablePart; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
-    QList<QString> mobileStories;
+    //QList<QString> mobileStories;
     QRegularExpression rxStoryId("/s/(\\d+)/1");
     emit requestProgressbar(amountOfPagesToGrab - 25);
     int counter = 1;
-    for(auto mobileUrl : mobileUrls)
+    for(const auto& mobileUrl : mobileUrls)
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){
@@ -1120,7 +1120,7 @@ PageTaskPtr CoreEnvironment::LoadTrackedFandoms(ForcedFandomUpdateDate forcedDat
     emit resetEditorText();
 
     QStringList nameList;
-    for(auto fandom : fandoms)
+    for(const auto& fandom : fandoms)
     {
         if(!fandom)
             continue;
@@ -1161,7 +1161,7 @@ QList<int> CoreEnvironment::GetDBIDsForFics(QVector<int> ids)
     auto* grpcSource = dynamic_cast<FicSourceGRPC*>(ficSource.data());
     grpcSource->GetInternalIDsForFics(&pack);
     QList<int> result;
-    for(auto source: pack)
+    for(const auto& source: std::as_const(pack))
     {
         result.push_back(source.id);
     }
@@ -1220,7 +1220,7 @@ void CoreEnvironment::BackupUserDatabase()
     uiSettings.setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     qDebug() << uiSettings.value("Settings/dbPath").toString();
-    QDir dbDir (uiSettings.value("Settings/dbPath").toString());
+    //QDir dbDir (uiSettings.value("Settings/dbPath").toString());
     QDir backupDir (QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/backups");
     backupDir.mkpath(backupDir.path());
 
@@ -1264,12 +1264,13 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
     params->name = "Recommendations";
     params->userFFNId = interfaces.recs->GetUserProfile();
     QVector<int> sourceFics;
-    for(auto fic : sourceFicsSet)
+    for(const auto& fic : sourceFicsSet)
         sourceFics.push_back(fic.toInt());
 
     auto ids = interfaces.fandoms->GetIgnoredFandomsIDs();
-    for(auto fandom: ids.keys())
-        params->ignoredFandoms.insert(fandom);
+
+    for(auto i = ids.begin(); i != ids.end(); i++)
+        params->ignoredFandoms.insert(i.key());
 
     auto result = BuildRecommendations(params, sourceFics);
     return result;

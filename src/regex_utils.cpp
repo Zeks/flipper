@@ -100,24 +100,24 @@ QString BouncingSearch(QString str, FieldSearcher finder)
     QStringRef directRef(&str);
     QStringRef reversedRef(&reversed);
     QStringRef currentString;
-    int lastPosition = 0;
-    Q_UNUSED(lastPosition);
+    //int lastPosition = 0;
+    //Q_UNUSED(lastPosition);
     int skip = 0;
     bool found = true;
     int originalSize;
-    for(auto token: tokens)
+    for(const auto& token: tokens)
     {
         QRegularExpression rx;
         if(token.forwardDirection)
         {
             currentString = directRef;
             rx.setPattern(token.regex);
-            lastPosition = reversedRef.size() - skip;
+            //lastPosition = reversedRef.size() - skip;
         }
         else{
             currentString = reversedRef;
             rx.setPattern(token.reversedRegex);
-            lastPosition = skip;
+            //lastPosition = skip;
         }
         auto match = rx.match(currentString);
         if(match.isValid())
@@ -250,20 +250,22 @@ void CommonRegex::Init()
     rxSmut.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
 
 
-    for(auto fandom : slashRegexPerFandom.keys())
+    for(auto i = slashRegexPerFandom.begin(); i != slashRegexPerFandom.end(); i++)
     {
-        rxHashSlashFandom[fandom].setPattern(slashRegexPerFandom[fandom]);
-        rxHashSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+        rxHashSlashFandom[i.key()].setPattern(i.value());
+        rxHashSlashFandom[i.key()].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
     }
-    for(auto fandom : characterSlashPerFandom.keys())
+
+    for(auto i = characterSlashPerFandom.begin(); i != characterSlashPerFandom.end(); i++)
     {
-        rxHashCharacterSlashFandom[fandom].setPattern(characterSlashPerFandom[fandom]);
-        rxHashCharacterSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+        rxHashCharacterSlashFandom[i.key()].setPattern(i.value());
+        rxHashCharacterSlashFandom[i.key()].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
     }
-    for(auto fandom : characterNotSlashPerFandom.keys())
+
+    for(auto i = characterNotSlashPerFandom.begin(); i != characterNotSlashPerFandom.end(); i++)
     {
-        rxHashCharacterNotSlashFandom[fandom].setPattern(characterNotSlashPerFandom[fandom]);
-        rxHashCharacterNotSlashFandom[fandom].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+        rxHashCharacterNotSlashFandom[i.key()].setPattern(i.value());
+        rxHashCharacterNotSlashFandom[i.key()].setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
     }
     initComplete = true;
 }
@@ -280,10 +282,11 @@ void CommonRegex::Log()
     qDebug().noquote() << "Smut: " << smut;
     qDebug().noquote() << "Not slash: " << notSlash;
     qDebug().noquote() << "US: " << universalSlashRegex;
-    for(auto fandom: slashRegexPerFandom.keys())
-        qDebug().noquote() << "FS: " << fandom << " " << slashRegexPerFandom[fandom];
-    for(auto fandom: characterSlashPerFandom.keys())
-        qDebug().noquote() << "FCS: " << fandom << " " << characterSlashPerFandom[fandom];
+
+    for(auto i =  slashRegexPerFandom.begin(); i != slashRegexPerFandom.end(); i++)
+        qDebug().noquote() << "FS: " << i.key() << " " << i.value();
+    for(auto i =  characterSlashPerFandom.begin(); i != characterSlashPerFandom.end(); i++)
+        qDebug().noquote() << "FCS: " << i.key() << " " << i.value();
 
 }
 
@@ -316,12 +319,12 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
     }
 
 
-    for(auto fandom : slashRegexPerFandom.keys())
+    for(auto i = slashRegexPerFandom.begin(); i != slashRegexPerFandom.end(); i++)
     {
         QRegularExpressionMatch match;
-        if(fandoms.contains(fandom))
+        if(fandoms.contains(i.key()))
         {
-            match = rxHashSlashFandom[fandom].match(summary);
+            match = rxHashSlashFandom[i.key()].match(summary);
         }
         containsSlash = containsSlash || match.hasMatch();
 //        if(containsSlash)
@@ -331,18 +334,19 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
 //        }
         if(doLogging && match.hasMatch())
         {
-            qDebug().noquote() << slashRegexPerFandom[fandom];
+            qDebug().noquote() << i.value();
             qDebug().noquote() << summary;
             qDebug() << match.capturedTexts();
             qDebug() << "end match";
         }
     }
-    for(auto fandom : characterSlashPerFandom.keys())
+
+    for(auto i = characterSlashPerFandom.begin(); i != characterSlashPerFandom.end(); i++)
     {
         QRegularExpressionMatch match;
-        if(fandoms.contains(fandom))
+        if(fandoms.contains(i.key()))
         {
-            match = rxHashCharacterSlashFandom[fandom].match(characters);
+            match = rxHashCharacterSlashFandom[i.key()].match(characters);
         }
         if(doLogging && match.hasMatch())
         {
@@ -364,12 +368,13 @@ SlashPresence CommonRegex::ContainsSlash(QString summary, QString characters, QS
         qDebug() << match.capturedTexts();\
         qDebug() << "end match";
     }
-    for(auto fandom : characterNotSlashPerFandom.keys())
+
+    for(auto i = characterNotSlashPerFandom.begin(); i != characterNotSlashPerFandom.end(); i++)
     {
         QRegularExpressionMatch match;
-        if(fandoms.contains(fandom))
+        if(fandoms.contains(i.key()))
         {
-            match = rxHashCharacterNotSlashFandom[fandom].match(characters);
+            match = rxHashCharacterNotSlashFandom[i.key()].match(characters);
         }
         if(doNotSlashCharacterLogging && match.hasMatch())
         {

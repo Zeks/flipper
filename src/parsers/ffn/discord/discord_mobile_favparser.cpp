@@ -31,7 +31,7 @@ QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECa
     });
     fetchAction.run(false);
 
-    QString content;
+    //QString content;
     QRegularExpression rx("p[=](\\d+)['][>]Last[<][/]a[>]");
     auto match = rx.match(mobilePage.content);
     QSet<QString> urlResult;
@@ -61,11 +61,11 @@ QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECa
     for(int i = pageToStartFrom; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
-    QList<QString> mobileStories;
+    //QList<QString> mobileStories;
     QRegularExpression rxStoryId("/s/(\\d+)/1");
     emit progress(0, amountOfPagesToGrab);
     int counter = 1;
-    for(auto mobileUrl : mobileUrls)
+    for(const auto& mobileUrl : mobileUrls)
     {
         TimedAction fetchAction("Author mobile page fetch", [&](){
             mobilePage = pageManager.GetPage(mobileUrl.trimmed(),  cacheMode);

@@ -89,9 +89,9 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                 QString log = "genres for fic: " +  QString::number(ficId) + " ";
                 QHash<QString, float> moodHashForFic;
                 moodHashForFic.clear();
-                for(auto genreBit: ficIt.value())
+                for(const auto& genreBit: ficIt.value())
                 {
-                    for(auto actualBit: genreBit.genres)
+                    for(auto actualBit: std::as_const(genreBit.genres))
                     {
 
                         actualBit = actualBit.trimmed();
@@ -113,20 +113,19 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
                         }
                     }
                 }
-                for(auto key : moodHashForFic.keys())
-                    interfaces::Genres::WriteMoodValue(key, moodHashForFic[key], moodData);
+
+                for(auto i = moodHashForFic.begin(); i != moodHashForFic.end(); i++)
+                    interfaces::Genres::WriteMoodValue(i.key(), i.value(), moodData);
 
                 //QLOG_INFO() << log;
 
             }
 
-            //QLOG_INFO() << "genre keeper: " << genreKeeper;
-
-            for(auto genre : genreKeeper.keys())
+            for(auto i = genreKeeper.begin(); i != genreKeeper.end(); i++)
             {
-                double factor = static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal);
+                double factor = static_cast<double>(i.value())/static_cast<double>(ficTotal);
                 //QLOG_INFO() << "Appending value of: " << genre << " " << factor;
-                data.genreFactors[genreIndex->IndexByFFNName(genre)] += factor;
+                data.genreFactors[genreIndex->IndexByFFNName(i.key())] += factor;
                 //interfaces::Genres::LogGenreDistribution(data.genreFactors);
             }
             //QLOG_INFO() << "Genre distribution for author: " << data.authorId;
@@ -139,7 +138,8 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
         return result;
     };
 
-    QList<QFuture<QList<GenreResult>>> futures;
+    QVector<QFuture<QList<GenreResult>>> futures;
+    futures.reserve(processingThreads);
     for(int i = 0; i < processingThreads; i++)
     {
         futures.push_back(QtConcurrent::run(processor, iteratorTasks[i], inputFicData));
@@ -148,9 +148,10 @@ void AuthorGenreIterationProcessor::ReprocessGenreStats(QHash<int, QList<genre_s
     {
         future.waitForFinished();
     }
-    for(auto future: futures)
+    for(const auto& future: futures)
     {
-        for(auto data : future.result())
+        const auto& result = future.result();
+        for(auto data : std::as_const(result))
         {
             resultingGenreAuthorData[data.genreData.authorId] = data.genreData.genreFactors;
             resultingMoodAuthorData [data.genreData.authorId] = data.moodData;
@@ -166,9 +167,10 @@ QHash<uint32_t, genre_stats::ListMoodData> AuthorGenreIterationProcessor::Create
 {
     QHash<uint32_t, genre_stats::ListMoodData>  result;
     An<interfaces::GenreIndex> genreIndex;
-    for(auto key: genres.keys())
+
+    for(auto i = genres.begin(); i != genres.end(); i++)
     {
-        auto& genreData = genres[key];
+        const auto& genreData = i.value();
         genre_stats::ListMoodData moodData;
         moodData.strengthBondy = static_cast<float>(
                     genreData[genreIndex->IndexByFFNName("Friendship")] + genreData[genreIndex->IndexByFFNName("Family")]
@@ -192,9 +194,9 @@ QHash<uint32_t, genre_stats::ListMoodData> AuthorGenreIterationProcessor::Create
         moodData.strengthDramatic = static_cast<float>(
                     genreData[genreIndex->IndexByFFNName("Drama")] + genreData[genreIndex->IndexByFFNName("Tragedy")] + genreData[genreIndex->IndexByFFNName("Angst")]
                 );
-        moodData.listId = key;
+        moodData.listId = i.key();
         //moodData.Log();
-        result[key] = moodData;
+        result[i.key()] = moodData;
     }
     return result;
 }

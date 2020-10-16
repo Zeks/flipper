@@ -92,7 +92,7 @@ void LoadDataForCalc(InterfaceType interface, ContainerType& container, QString 
 inline QString CreateConnectString(QString ip,QString port)
 {
     QString server_address_proto("%1:%2");
-    auto result = server_address_proto.arg(ip).arg(port);
+    auto result = server_address_proto.arg(ip,port);
     return result;
 }
 ServitorWindow::ServitorWindow(QWidget *parent) :
@@ -598,27 +598,28 @@ QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreD
                                                                           CutoffControls cutoff,
                                                                           bool userIterationForGenreProcessing, bool displayLog){
     QVector<genre_stats::FicGenreData> ficGenreDataList;
-    ficGenreDataList.reserve(input.ficsToUse.keys().size());
+    ficGenreDataList.reserve(input.ficsToUse.size());
     interfaces::GenreConverter genreConverter;
     int counter = 0;
 
-
-    for(auto fic : input.ficsToUse.keys())
+    for(auto i = input.ficsToUse.begin(); i != input.ficsToUse.end(); i++)
     {
-        if(!ui->leFicIdForGenre->text().isEmpty() && fic != ui->leFicIdForGenre->text().toInt())
+        auto key = i.key();
+        const auto& value = i.value();
+        if(!ui->leFicIdForGenre->text().isEmpty() && i.key() != ui->leFicIdForGenre->text().toInt())
             continue;
 
         if(counter%10000 == 0)
             qDebug() << "processing fic: " << counter;
 
         //gettting amount of funny lists
-        int64_t funny = std::count_if(std::begin(input.ficsToUse[fic]), std::end(input.ficsToUse[fic]), [&](int listId){
+        int64_t funny = std::count_if(std::begin(value), std::end(value), [&](int listId){
             return input.moodAuthorLists[listId].strengthFunny >= cutoff.funny;
         });
-        int64_t flirty = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+        int64_t flirty = std::count_if(value.begin(), value.end(), [&](int listId){
             return input.moodAuthorLists[listId].strengthFlirty >= cutoff.flirty;
         });
-        auto listSet = input.ficsToUse[fic];
+        auto listSet = value;
         int64_t neutralAdventure = 0;
         for(auto listId : listSet)
             if(input.genreAuthorLists[listId][3] >= cutoff.adventure)
@@ -626,25 +627,25 @@ QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreD
 
         //qDebug() << "Adventure list count: " << neutralAdventure;
 
-        int64_t hurty = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+        int64_t hurty = std::count_if(value.begin(), value.end(), [&](int listId){
             return input.moodAuthorLists[listId].strengthHurty >= cutoff.hurty;
         });
-        int64_t bondy = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+        int64_t bondy = std::count_if(value.begin(), value.end(), [&](int listId){
             return input.moodAuthorLists[listId].strengthBondy >= cutoff.bonds;
         });
 
-        int64_t neutral = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+        int64_t neutral = std::count_if(value.begin(), value.end(), [&](int listId){
             return input.moodAuthorLists[listId].strengthNeutral>= cutoff.adventure;
         });
-        int64_t dramatic = std::count_if(input.ficsToUse[fic].begin(), input.ficsToUse[fic].end(), [&](int listId){
+        int64_t dramatic = std::count_if(value.begin(), value.end(), [&](int listId){
             return input.moodAuthorLists[listId].strengthDramatic >= cutoff.drama;
         });
 
-        int64_t totalUsersForFic = input.ficsToUse[fic].size();
+        int64_t totalUsersForFic = value.size();
 
         genre_stats::FicGenreData genreData;
-        genreData.ficId = fic;
-        genreData.originalGenres =  genreConverter.GetFFNGenreList(input.originalFicGenres[fic]);
+        genreData.ficId = key;
+        genreData.originalGenres =  genreConverter.GetFFNGenreList(input.originalFicGenres[key]);
         genreData.totalLists = static_cast<int>(totalUsersForFic);
         genreData.strengthHumor = static_cast<float>(funny)/static_cast<float>(totalUsersForFic);
         genreData.strengthRomance = static_cast<float>(flirty)/static_cast<float>(totalUsersForFic);
@@ -667,13 +668,13 @@ QVector<genre_stats::FicGenreData> ServitorWindow::CreateGenreDataForFics(GenreD
     for(auto& fic : ficGenreDataList)
     {
         QStringList keptList;
-        for(auto genre: fic.processedGenres)
+        for(const auto& genre: std::as_const(fic.processedGenres))
         {
             if(genre.relevance < 0.1f)
                 keptList += genre.genres;
         }
 
-        for(auto genre : fic.processedGenres)
+        for(const auto& genre : std::as_const(fic.processedGenres))
         {
             QString writtenGenre = genre.genres.join(",");
             if(genre.relevance > fic.maxGenrePercent && !writtenGenre.isEmpty())
@@ -696,7 +697,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 
 
 
-    QVector<int> ficIds;
+    //QVector<int> ficIds;
     auto db = QSqlDatabase::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
@@ -714,9 +715,9 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
     QHash<int, QSet<int>> ficsToUse;
     auto& faves  = inputs.faves;
 
-    for(int key : faves.keys())
+    for(auto i = faves.begin(); i != faves.end(); i++)
     {
-        auto& set = faves[key];
+        const auto& set = i.value();
         //qDebug() <<  key << " set size is: " << set.size();
         if(set.cardinality() < minAuthorRecs)
             continue;
@@ -725,7 +726,7 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
         {
             //            if(fic != 38212)
             //                continue;
-            ficsToUse[fic].insert(key);
+            ficsToUse[fic].insert(i.key());
         }
     }
     qDebug() << "Finished author processing, resulting set is of size:" << ficsToUse.size();
@@ -733,18 +734,19 @@ void ServitorWindow::DetectGenres(int minAuthorRecs, int minFoundLists)
 
 
     QList<int> result;
-    for(auto key : ficsToUse.keys())
+    for(auto i = ficsToUse.begin(); i != ficsToUse.end(); i++)
     {
-        if(ficsToUse[key].size() >= minFoundLists)
-            result.push_back(key);
+        if(i.value().size() >= minFoundLists)
+            result.push_back(i.key());
 
     }
 
     QHash<int, QSet<int>> filteredFicsToUse;
-    for(auto key : ficsToUse.keys())
+
+    for(auto i = ficsToUse.begin(); i != ficsToUse.end(); i++)
     {
-        if(ficsToUse[key].size() >= minFoundLists)
-            filteredFicsToUse[key] = ficsToUse[key];
+        if(i.value().size() >= minFoundLists)
+            filteredFicsToUse[i.key()] = i.value();
 
     }
 
@@ -797,7 +799,7 @@ void SaveDataForCalc(ContainerType& container, QString storageFolder, QString su
         fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase());
     else
         fileBase = QString::fromStdString(core::DataHolderInfo<EnumType>::fileBase(suffix));
-    QDir dir(QDir::currentPath());
+    //QDir dir(QDir::currentPath());
     if(fileBase.isEmpty())
         return;
     //    dir.remove(fileBase + "*");
@@ -814,7 +816,7 @@ void ServitorWindow::CreateAdjustedGenresForAuthors()
 
     interfaces::GenreConverter converter;
 
-    QVector<int> ficIds;
+    //QVector<int> ficIds;
     auto db = QSqlDatabase::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
@@ -857,7 +859,7 @@ void ServitorWindow::CreateAdjustedGenresForAuthors()
 void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int minFoundLists)
 {
     InputForGenresIteration2 inputs;
-    QVector<int> ficIds;
+    //QVector<int> ficIds;
     auto db = QSqlDatabase::database();
     auto genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     auto fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
@@ -881,22 +883,23 @@ void ServitorWindow::CreateSecondIterationOfGenresForFics(int minAuthorRecs, int
     QHash<int, QSet<int>> ficsToUse;
     auto& faves  = inputs.faves;
 
-    for(int key : faves.keys())
+    for(auto i = faves.begin(); i != faves.end(); i++)
     {
-        auto& set = faves[key];
+        const auto& set = i.value();
         if(set.cardinality() < minAuthorRecs)
             continue;
         for(auto fic : set)
-            ficsToUse[fic].insert(key);
+            ficsToUse[fic].insert(i.key());
     }
     qDebug() << "Finished author processing, resulting set is of size:" << ficsToUse.size();
 
     QHash<int, QSet<int>> filteredFicsToUse;
-    for(auto key : ficsToUse.keys())
+    for(auto i = ficsToUse.begin(); i != ficsToUse.end(); i++)
     {
-        if(ficsToUse[key].size() >= minFoundLists)
+        if(i.value().size() >= minFoundLists)
         {
-            filteredFicsToUse[key] = ficsToUse[key];
+            const auto key = i.key();
+            filteredFicsToUse[key] = i.value();
             inputs.filteredFicGenresOriginal[key] = inputs.ficGenresOriginal[key];
             inputs.filteredFicGenresComposite[key] = inputs.ficGenresComposite[key];
         }
@@ -1053,7 +1056,7 @@ void ServitorWindow::on_pushButton_3_clicked()
         return parser;
     };
 
-    QList<QFuture<FavouriteStoryParser>> futures;
+    QVector<QFuture<FavouriteStoryParser>> futures;
     QList<FavouriteStoryParser> parsers;
 
 
@@ -1061,7 +1064,7 @@ void ServitorWindow::on_pushButton_3_clicked()
     database::Transaction transaction(db);
     WebPage data;
     int counter = 0;
-    for(auto author : authors)
+    for(const auto& author : authors)
     {
         if(counter%1000 == 0)
             QLOG_INFO() <<  counter;
@@ -1080,7 +1083,7 @@ void ServitorWindow::on_pushButton_3_clicked()
         //TimedAction pageProcessAction("Page processed in: ",[&](){
         auto splittings = page_utils::SplitJob(data.content);
 
-        for(auto part: splittings.parts)
+        for(const auto& part: std::as_const(splittings.parts))
         {
             futures.push_back(QtConcurrent::run(job, data.url, part.data));
         }
@@ -1093,7 +1096,7 @@ void ServitorWindow::on_pushButton_3_clicked()
         //});
         //pageProcessAction.run();
 
-        QSet<QString> fandoms;
+        //QSet<QString> fandoms;
         FavouriteStoryParser::MergeStats(author, fandomInterface, parsers);
         //TimedAction action("Author updated in: ",[&](){
         authorInterface->UpdateAuthorFavouritesUpdateDate(author);
@@ -1314,7 +1317,7 @@ void ServitorWindow::on_pbPCRescue_clicked()
 
     database::Transaction transaction(pcExDb);
 
-    for(auto author : authors)
+    for(const auto& author : authors)
     {
         //qDebug() << "Attempting to read url: " << author;
         readQuery.bindValue(":url", author);
@@ -1357,7 +1360,7 @@ void ServitorWindow::on_pbSlashCalc_clicked()
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
 
-    auto authors = authorInterface->GetAllAuthors("ffn");
+    //auto authors = authorInterface->GetAllAuthors("ffn");
 
 
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
@@ -1432,7 +1435,7 @@ void ServitorWindow::LoadDataForCalculation(CalcDataHolder& cdh)
     }
     transaction.finalize();
     QSet<int> ficSet;
-    for(auto fic : cdh.fics)
+    for(const auto& fic : std::as_const(cdh.fics))
         ficSet.insert(fic->id);
 
     qDebug() << "ficset is of size:" << ficSet.size();
@@ -1485,7 +1488,7 @@ struct FicPair{
 
 void ServitorWindow::ProcessCDHData(CalcDataHolder& cdh){
 
-    for(auto fav : cdh.filteredFavourites)
+    for(const auto& fav : std::as_const(cdh.filteredFavourites))
     {
         for(auto fic : fav.favourites)
         {
@@ -1494,12 +1497,12 @@ void ServitorWindow::ProcessCDHData(CalcDataHolder& cdh){
         }
     }
 
-    for(auto fic : cdh.fics)
+    for(const auto& fic : std::as_const(cdh.fics))
     {
         if(!ficsToFavLists.contains(fic->id))
             continue;
         ficData[fic->id] = fic;
-        for(auto fandom : fic->fandoms)
+        for(const auto& fandom : std::as_const(fic->fandoms))
             ficsForFandoms[fandom].insert(fic->id);
     }
     qDebug() << "Will work with: " << ficData.size() << " fics";
@@ -1596,7 +1599,7 @@ void ServitorWindow::CalcConstantMemory()
                                             &sink));
     }
     TimedAction action("processing data",[&](){
-        for(auto future: futures)
+        for(auto future: std::as_const(futures))
         {
             future.waitForFinished();
         }
@@ -1616,14 +1619,14 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     CalcDataHolder cdh;
     LoadDataForCalculation(cdh);
     ProcessCDHData(cdh);
-    QHash<int, core::FicWeightResult> result;
-    QSet<int> alreadyProcessed;
+    //QHash<int, core::FicWeightResult> result;
+    //QSet<int> alreadyProcessed;
 
-    QHash<QPair<int, int>, QSet<int>> meetingSet;
+    //QHash<QPair<int, int>, QSet<int>> meetingSet;
     QHash<QPair<uint32_t, uint32_t>, FicPair> ficsMeeting;
     QHash<QPair<uint32_t, uint32_t>, FicPair>::iterator ficsIterator;
     QHash<QPair<int, int>, QSet<int>>::iterator meetingIterator;
-    QHash<QPair<uint32_t, uint32_t>, Roaring> roaringSet;
+    //QHash<QPair<uint32_t, uint32_t>, Roaring> roaringSet;
     QHash<QPair<uint32_t, uint32_t>, Roaring>::iterator roaringIterator;
 
 
@@ -1666,7 +1669,7 @@ void ServitorWindow::on_pbCalcWeights_clicked()
         int counter = 0;
         QPair<uint32_t, uint32_t> pair;
         qDebug() << "full fav size: " << cdh.filteredFavourites.size();
-        for(auto fav : cdh.filteredFavourites)
+        for(const auto& fav : std::as_const(cdh.filteredFavourites))
         {
             auto values = fav.favourites.toList();
             if(counter%100 == 0)
@@ -1729,7 +1732,7 @@ void ServitorWindow::on_pbCalcWeights_clicked()
     int countPairs = 0;
     int countListRecords = 0;
 
-    for(auto edge: ficsMeeting)
+    for(const auto& edge: std::as_const(ficsMeeting))
     {
         countPairs++;
         countListRecords+=edge.r.cardinality();
@@ -1808,7 +1811,8 @@ void ServitorWindow::on_pbCompareGenres_clicked()
     InitGrpcSource();
     QLOG_INFO() << "on_pbCompareGenres_clicked 2";
     QList<int> otherUserIds;
-    for(auto user: otherUsers.split(QRegExp("[\\s,]"), QString::SkipEmptyParts))
+    const auto tempList = otherUsers.split(QRegExp("[\\s,]"), Qt::SkipEmptyParts);
+    for(const auto& user: tempList)
     {
         users.push_back(user.toInt());
         otherUserIds.push_back(user.toInt());
@@ -1831,18 +1835,20 @@ void ServitorWindow::on_pbCompareGenres_clicked()
     if(!ui->chkOver50->isChecked())
     {
         QList<int> toErase;
-        for(auto user : matchesForUsers.keys())
+
+        for(auto i = matchesForUsers.begin(); i != matchesForUsers.end(); i++)
         {
-            if(matchesForUsers[user].ratioWithoutIgnores > 50)
-                toErase.push_back(user);
+            if(i.value().ratioWithoutIgnores > 50)
+                toErase.push_back(i.key());
         }
         for(auto user : toErase)
         {
             matchesForUsers.remove(user);
         }
         users = {user1};
-        for(auto user : matchesForUsers.keys())
-            users.push_back(user);
+
+        for(auto i = matchesForUsers.begin(); i != matchesForUsers.end(); i++)
+            users.push_back(i.key());
 
     }
     QLOG_INFO() << "on_pbCompareGenres_clicked 4";
@@ -1878,7 +1884,7 @@ void ServitorWindow::on_pbCompareGenres_clicked()
         {
             AuthorGenreIterationProcessor iteratorProcessor;
             Roaring r;
-            for(auto fic : ficList)
+            for(const auto& fic : std::as_const(ficList))
                 r.add(fic.toInt());
 
             QHash<int, Roaring> favourites;
@@ -1911,13 +1917,11 @@ void ServitorWindow::FillFicsForUser(QString user)
     InitGrpcSource();
     auto fullMatchList = CreateSummaryMatches();
     QHash<int, core::Fanfic> fics;
-    //QVector<core::Fic> fics;
-    //for(auto fic: matchesForUsers[user.toInt()].matches)
-    for(auto fic: fullMatchList.keys())
+    for(auto i = fullMatchList.begin(); i != fullMatchList.end(); i++)
     {
         QVector<core::Fanfic> tempFics;
-        grpcSource->FetchFic(fic, &tempFics, core::StoryFilter::EUseThisFicType::utf_db_id);
-        fics[fic]=tempFics[0];
+        grpcSource->FetchFic(i.key(), &tempFics, core::StoryFilter::EUseThisFicType::utf_db_id);
+        fics[i.key()]=tempFics[0];
     }
     ui->edtFics->clear();
     ui->edtGenreBreakdown->clear();
@@ -1938,9 +1942,9 @@ void ServitorWindow::FillFicsForUser(QString user)
     {
         QString matches = QString::number(fullMatchList[fic]);
         QStringList genreList;
-        for(auto genre: inputs.ficGenresComposite[fic])
+        for(const auto& genre: std::as_const(inputs.ficGenresComposite[fic]))
         {
-            for(auto genreBit: genre.genres)
+            for(const auto& genreBit: std::as_const(genre.genres))
             {
                 if(matchesForUsers[user.toInt()].matches.contains(fic))
                     genreBreakdown[genreBit] += genre.relevance;
@@ -1948,7 +1952,7 @@ void ServitorWindow::FillFicsForUser(QString user)
                 genreList.push_back(genreBit);
             }
         }
-        QString genresJoined = genreList.join("/");
+        //QString genresJoined = genreList.join("/");
         QString str = QString("(%1)").arg(matches) + " " /*+ genresJoined.leftJustified(40, ' ') + " " */ + fics[fic].title;
         str = str.replace(" ", "&nbsp;");
         if(matchesForUsers[user.toInt()].matches.contains(fic))
@@ -1966,7 +1970,7 @@ void ServitorWindow::FillFicsForUser(QString user)
     ui->edtGenreBreakdown->append(QString("<html>Size: %1</html>").arg(matchesForUsers[user.toInt()].matches.size()));
 
     ui->edtGenreBreakdown->setVisible(false);
-    for(auto key : genreKeys)
+    for(const auto& key : genreKeys)
     {
         //QString str = key + " " + QString::number(genreBreakdown[key]);
         //ui->edtGenreBreakdown->append(QString("<html>%1</html>").arg(str));
@@ -1983,7 +1987,7 @@ void ServitorWindow::FillFicsForUser(QString user)
             return  combinedGenreBreakdown[k1] > combinedGenreBreakdown[k2];
         });
         ui->edtGenreBreakdown->setVisible(false);
-        for(auto key : genreKeys)
+        for(const auto& key : genreKeys)
         {
             //QString str = key + " " + QString::number(genreBreakdown[key]);
             //ui->edtGenreBreakdown->append(QString("<html>%1</html>").arg(str));
@@ -1995,7 +1999,7 @@ void ServitorWindow::FillFicsForUser(QString user)
         }
     }
     relativeMoodData.DivideByCount(matchesForUsers[user.toInt()].matches.size());
-    relativeCombinedMoodData.DivideByCount(fullMatchList.keys().size());
+    relativeCombinedMoodData.DivideByCount(fullMatchList.size());
     InitMatchingListChartView(relativeMoodData, relativeCombinedMoodData);
 
 }
@@ -2003,9 +2007,10 @@ void ServitorWindow::FillFicsForUser(QString user)
 QHash<int, int> ServitorWindow::CreateSummaryMatches()
 {
     QHash<int, int> result;
-    for(auto user: matchesForUsers.keys())
+
+    for(auto i = matchesForUsers.begin(); i != matchesForUsers.end(); i++)
     {
-        for(auto fic: matchesForUsers[user].matches)
+        for(auto fic: std::as_const(i.value().matches))
         {
             result[fic]++;
         }
@@ -2115,7 +2120,7 @@ void ServitorWindow::on_pbExtractDiscords_clicked()
         auto temp = QString::fromUtf8(qUncompress(testQuery.value("CONTENT").toByteArray()));
         QRegularExpression rxCapital("[A-Za-z0-9]{6,7}(\\s|$|[.])");
         QRegExp rxSmol("(discord|Discord)");
-        QRegExp rxPony("My\\sLittle\\sPony");
+        //QRegExp rxPony("My\\sLittle\\sPony");
 
         QRegExp begin ("Send\\sPrivate\\sMessage");
         auto indexBegin = begin.indexIn(temp);
@@ -2131,8 +2136,8 @@ void ServitorWindow::on_pbExtractDiscords_clicked()
             auto hasPony= temp.contains("My Little Pony");
             if(matchCapital.hasMatch() /*&& indexSmol == -1 && !hasPony*/)
             {
-
-                    for(auto text: matchCapital.capturedTexts())
+                    const auto list = matchCapital.capturedTexts();
+                    for(const auto& text: list)
                     {
                         if(!text.contains("Private") && !text.trimmed().isEmpty())
                         {
@@ -2144,7 +2149,8 @@ void ServitorWindow::on_pbExtractDiscords_clicked()
 //                qDebug() << "Caplength: " << matchCapital.capturedTexts().length();
 //                qDebug() << "Captext: " << matchCapital.capturedTexts();
                 bool found = false;
-                for(auto text: matchCapital.capturedTexts())
+                const auto tempList = matchCapital.capturedTexts();
+                for(const auto& text: tempList)
                 {
 
                     QRegularExpression rxCapitalSearch("[A-Z0-9]");

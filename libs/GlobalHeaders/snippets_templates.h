@@ -7,7 +7,7 @@ bool operator *(const T0& lhs, const std::array<T1, N>& rhs) {
     return std::find(begin(rhs), end(rhs), lhs) != end(rhs);
 }
 
-template<class T0, class...T> std::array<T0, 1+sizeof...(T)> in(T0 arg0, T...args) {
+template<class T0, class...T> constexpr std::array<T0, 1+sizeof...(T)> in(T0 arg0, T...args) {
     return {{arg0, args...}};
 }
 

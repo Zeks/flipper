@@ -94,7 +94,7 @@ RecommendationListResult RecCalculator::GetMatchedFicsForFavList(QHash<uint32_t,
     calculator->fetchedFics = fetchedFics;
     calculator->doTrashCounting = params->useDislikes;
     calculator->params = params;
-    for(auto fic : params->majorNegativeVotes)
+    for(auto fic : std::as_const(params->majorNegativeVotes))
         calculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));
     QLOG_INFO() << "Received negative votes: " << params->majorNegativeVotes.size();
     TimedAction action("Reclist Creation",[&](){
@@ -115,7 +115,7 @@ DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationLis
     actualCalculator->params = params;
     actualCalculator->needsDiagnosticData = true;
 
-    for(auto fic : params->majorNegativeVotes)
+    for(auto fic : std::as_const(params->majorNegativeVotes))
         actualCalculator->ownMajorNegatives.add(static_cast<uint32_t>(fic));
 
     TimedAction action("Reclist Creation",[&](){
@@ -129,7 +129,7 @@ DiagnosticRecommendationListResult RecCalculator::GetDiagnosticRecommendationLis
     result.ratioMedian = actualCalculator->ratioMedian;
     result.sigma2Dist = actualCalculator->endOfUniqueAuthorRange;
     //result.authorData = actualCalculator->
-    for(auto author : actualCalculator->filteredAuthors){
+    for(auto author : std::as_const(actualCalculator->filteredAuthors)){
         result.authorData.push_back(actualCalculator->allAuthors[author]);
     }
     result.authorsForFics = actualCalculator->authorsForFics;

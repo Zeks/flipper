@@ -148,8 +148,9 @@ void FandomLoadProcessor::Run(PageTaskPtr task)
         emit updateInfo(task->taskComment + "<br>");
 
     QStringList acquisitioFailures;
-    QList<SubTaskPtr> subsToInsert;
-    for(auto subtask : task->subTasks)
+    QVector<SubTaskPtr> subsToInsert;
+    subsToInsert.reserve(task->subTasks.size());
+    for(const auto& subtask : std::as_const(task->subTasks))
     {
         if(subtask->finished)
             continue;
@@ -201,7 +202,7 @@ void FandomLoadProcessor::Run(PageTaskPtr task)
         task->success = true;
     else
         task->success =false;
-    for(auto sub: subsToInsert )
+    for(const auto& sub: subsToInsert )
         task->subTasks.push_back(sub);
     task->finished = true;
 

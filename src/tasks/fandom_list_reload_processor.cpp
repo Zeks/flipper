@@ -54,9 +54,9 @@ void FandomListReloadProcessor::UpdateFandomList()
     FFNFandomParser fandomParser;
     FFNCrossoverFandomParser crossoverParser;
     QStringList categoryList = {"anime", "book", "cartoon", "comic", "game", "misc", "movie", "play", "tv"};
-    for(auto cat : categoryList)
+    for(const auto& cat : categoryList)
         UpdateCategory("/" + cat, &fandomParser, fandomsInterface);
-    for(auto cat : categoryList)
+    for(const auto& cat : std::as_const(categoryList))
         UpdateCategory("/crossovers/" + cat + "/", &crossoverParser, fandomsInterface);
 
 }
@@ -76,13 +76,14 @@ void FandomListReloadProcessor::UpdateCategory(QString cat,
         parser->Process();
         if(!parser->HadErrors())
         {
-            for(auto fandom : parser->results)
+            for(auto fandom : std::as_const(parser->results))
             {
                 fandom->section = cat;
                 bool exists = fandomInterface->EnsureFandom(fandom->GetName());
                 if(!exists)
                     fandomInterface->CreateFandom(fandom);
-                for(auto url : fandom->GetUrls())
+                const auto urls = fandom->GetUrls();
+                for(auto url : urls)
                 {
                     url.SetType(cat);
                     fandomInterface->AddFandomLink(fandom->GetName(), url);

@@ -143,17 +143,17 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     contentFilter->set_other_fandoms_mode(filter.otherFandomsMode);
     contentFilter->set_use_ignored_fandoms(filter.ignoreFandoms);
 
-    for(auto word : filter.wordExclusion)
+    for(const auto& word : filter.wordExclusion)
         contentFilter->add_word_exclusion(word.toStdString());
-    for(auto word : filter.wordInclusion)
+    for(const auto& word : filter.wordInclusion)
         contentFilter->add_word_inclusion(word.toStdString());
 
 
     auto* genreFilter = result.mutable_genre_filter();
 
-    for(auto genre : filter.genreExclusion)
+    for(const auto& genre : filter.genreExclusion)
         genreFilter->add_genre_exclusion(genre.toStdString());
-    for(auto genre : filter.genreInclusion)
+    for(const auto& genre : filter.genreInclusion)
         genreFilter->add_genre_inclusion(genre.toStdString());
     genreFilter->set_use_implied_genre(filter.useRealGenres);
 
@@ -187,15 +187,25 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     recommendations->set_min_recommendations(filter.minRecommendations);
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
     recommendations->set_display_purged_fics(filter.displayPurgedFics);
-    for(auto fic : filter.recsHash.keys())
     {
-        userData->mutable_recommendation_list()->add_list_of_fics(fic);
-        userData->mutable_recommendation_list()->add_list_of_matches(filter.recsHash[fic]);
+        auto it= filter.recsHash.begin();
+        auto itEnd = filter.recsHash.end();
+        while(it != itEnd)
+        {
+            userData->mutable_recommendation_list()->add_list_of_fics(it.key());
+            userData->mutable_recommendation_list()->add_list_of_matches(it.value());
+            it++;
+        }
     }
-    for(auto fic : filter.scoresHash.keys())
     {
-        userData->mutable_scores_list()->add_list_of_fics(fic);
-        userData->mutable_scores_list()->add_list_of_scores(filter.scoresHash[fic]);
+        auto it= filter.scoresHash.begin();
+        auto itEnd = filter.scoresHash.end();
+        while(it != itEnd)
+        {
+            userData->mutable_scores_list()->add_list_of_fics(it.key());
+            userData->mutable_scores_list()->add_list_of_scores(it.value());
+            it++;
+        }
     }
     return result;
 }
@@ -367,17 +377,18 @@ QString GenreDataToString(QList<genre_stats::GenreBit> data)
 {
     QStringList resultList;
     float maxValue = 0;
-    for(auto genre : data)
+    for(const auto& genre : data)
     {
         if(genre.relevance > maxValue)
             maxValue = genre.relevance;
     }
 
-    for(auto genre : data)
+    for(const auto& genre : data)
     {
-        for(auto genreBit : genre.genres)
+        for(const auto& genreBit : std::as_const(genre.genres))
         {
-            for(auto stringBit : genreBit.split(","))
+            const auto temp = genreBit.split(",");
+            for(const auto& stringBit : temp)
             {
                 if(std::abs(maxValue - genre.relevance) < 0.1f)
                     resultList+="#c#" + stringBit;
@@ -496,12 +507,12 @@ bool LocalFicToProtoFic(const core::Fanfic& coreFic, ProtoSpace::Fanfic* protoFi
     protoFic->set_characters(TS(coreFic.charactersFull));
 
 
-    for(auto fandom : coreFic.fandoms)
+    for(const auto& fandom : std::as_const(coreFic.fandoms))
         protoFic->add_fandoms(TS(fandom));
-    for(auto fandom : coreFic.fandomIds)
+    for(const auto& fandom : std::as_const(coreFic.fandomIds))
         protoFic->add_fandom_ids(fandom);
 
-    for(auto realGenre : coreFic.statistics.realGenreData)
+    for(const auto& realGenre : std::as_const(coreFic.statistics.realGenreData))
     {
         auto* genreData =  protoFic->add_real_genres();
         genreData->set_genre(TS(realGenre.genres.join(",")));
@@ -586,19 +597,20 @@ bool FavListLocalToProto(const core::FavListDetails &stats, ProtoSpace::FavListD
     protoStats->add_mood_rating(stats.moodNeutral);
     protoStats->add_mood_rating(stats.moodHappy);
 
-    for(auto size: stats.sizeFactors.keys())
-        protoStats->add_size_rating(stats.sizeFactors[size]);
 
-    for(auto genre: stats.genreFactors.keys())
+    for(auto i = stats.sizeFactors.begin(); i !=stats.sizeFactors.end(); i++)
+        protoStats->add_size_rating(i.value());
+
+    for(auto i = stats.genreFactors.begin(); i !=stats.genreFactors.end(); i++)
     {
-        protoStats->add_genres(TS(genre));
-        protoStats->add_genres_percentages(stats.genreFactors[genre]);
+        protoStats->add_genres(TS(i.key()));
+        protoStats->add_genres_percentages(i.value());
     }
 
-    for(auto fandom: stats.fandomsConverted.keys())
+    for(auto i = stats.fandomsConverted.begin(); i !=stats.fandomsConverted.end(); i++)
     {
-        protoStats->add_fandoms(fandom);
-        protoStats->add_fandoms_counts(stats.fandomsConverted[fandom]);
+        protoStats->add_fandoms(i.key());
+        protoStats->add_fandoms_counts(i.value());
     }
     return true;
 }
@@ -679,7 +691,7 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     }
     serverStatus.isValid = true;
     serverStatus.dbAttached = response->database_attached();
-    QString dbUpdate = proto_converters::FS(response->last_database_update());
+    //QString dbUpdate = proto_converters::FS(response->last_database_update());
     serverStatus.lastDBUpdate = QString::fromStdString(response->last_database_update());
     serverStatus.motd = proto_converters::FS(response->message_of_the_day());
     serverStatus.messageRequired = response->need_to_show_motd();
@@ -776,29 +788,31 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic
 
     auto* tags = userData->mutable_user_tags();
 
-    for(auto fic : this->userData.allTaggedFics)
+    for(auto fic : std::as_const(this->userData.allTaggedFics))
     {
         QLOG_INFO() << "adding fic ignore: " << fic;
         tags->add_all_tags(fic);
     }
 
-    for(auto tag : this->userData.ficIDsForActivetags)
+    for(auto tag : std::as_const(this->userData.ficIDsForActivetags))
         tags->add_searched_tags(tag);
-    for(auto snooze : this->userData.allSnoozedFics)
+    for(auto snooze : std::as_const(this->userData.allSnoozedFics))
         userData->add_snoozes(snooze);
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
-    for(auto key: this->userData.ignoredFandoms.keys())
+
+    for(auto i = this->userData.ignoredFandoms.begin(); i != this->userData.ignoredFandoms.end(); i++)
     {
-        QLOG_INFO() << "adding fandom ignore: " << key << " " <<this->userData.ignoredFandoms[key];
+        auto key = i.key();
+        QLOG_INFO() << "adding fandom ignore: " << key << " " << i.value();
         if(key==-1)
             continue;
         ignoredFandoms->add_fandom_ids(key);
-        ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+        ignoredFandoms->add_ignore_crossovers(i.value());
     }
 
     auto tagData = task.mutable_filter()->mutable_tag_filter();
-    for(auto tag: filter.activeTags)
+    for(const auto& tag: std::as_const(filter.activeTags))
         tagData->add_active_tags(tag.toStdString());
 
     grpc::Status status = stub_->Search(&context, task, response.data());
@@ -862,18 +876,19 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     auto* tags = userData->mutable_user_tags();
-    for(auto tag : this->userData.allTaggedFics)
+    for(const auto& tag : std::as_const(this->userData.allTaggedFics))
         tags->add_all_tags(tag);
-    for(auto tag : this->userData.ficIDsForActivetags)
+    for(const auto& tag : std::as_const(this->userData.ficIDsForActivetags))
         tags->add_searched_tags(tag);
-    for(auto snooze : this->userData.allSnoozedFics)
+    for(const auto& snooze : std::as_const(this->userData.allSnoozedFics))
         userData->add_snoozes(snooze);
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
-    for(auto key: this->userData.ignoredFandoms.keys())
+
+    for(auto i = this->userData.ignoredFandoms.begin(); i != this->userData.ignoredFandoms.end(); i++)
     {
-        ignoredFandoms->add_fandom_ids(key);
-        ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+        ignoredFandoms->add_fandom_ids(i.key());
+        ignoredFandoms->add_ignore_crossovers(i.value());
     }
 
     grpc::Status status = stub_->GetFicCount(&context, task, response.data());
@@ -922,7 +937,7 @@ static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::Recomm
 
     //std::sort(std::begin(recList->ficData.fics), std::end(recList->ficData.fics));
     //qDebug() << "Source fics  for list: ";
-    for(auto fic: recList->ficData->fics)
+    for(auto fic: std::as_const(recList->ficData->fics))
     {
         //qDebug() << fic;
         ffn->add_ffn_ids(fic);
@@ -942,15 +957,15 @@ static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::Recomm
 
     auto userData = data->mutable_user_data();
     auto ignores = userData->mutable_ignored_fandoms();
-    for(auto ignore: recList->ignoredFandoms)
+    for(auto ignore: std::as_const(recList->ignoredFandoms))
         ignores->add_fandom_ids(ignore);
     //auto likedAuthors = userData->mutable_liked_authors();
-    for(auto authorId: recList->likedAuthors)
+    for(auto authorId: std::as_const(recList->likedAuthors))
         userData->add_liked_authors(authorId);
 
-    for(auto vote: recList->majorNegativeVotes)
+    for(auto vote: std::as_const(recList->majorNegativeVotes))
         userData->mutable_negative_feedback()->add_strongnegatives(vote);
-    for(auto fic: recList->ignoredDeadFics)
+    for(auto fic: std::as_const(recList->ignoredDeadFics))
         userData->add_ignored_fics(fic);
 
 };
@@ -1276,9 +1291,9 @@ QHash<int, core::FavouritesMatchResult > FicSourceGRPCImpl::GetMatchesForUsers(I
     context.set_deadline(deadline);
 //    auto* controls = task.mutable_controls();
 //    controls->set_user_token(proto_converters::TS(userToken));
-    for(auto fic: data.userFics)
+    for(const auto& fic: std::as_const(data.userFics))
         task.add_user_fics(fic.toInt());
-    for(auto fic: data.userIgnores)
+    for(const auto& fic: std::as_const(data.userIgnores))
         task.add_fandom_ignores(fic.toInt());
     for(auto user: users)
         task.add_test_users(user);
@@ -1314,7 +1329,7 @@ QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStat
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     FillControlStruct(task.mutable_controls());
-    for(auto snoozeInfo : data)
+    for(const auto& snoozeInfo : data)
     {
         auto snooze = task.add_snoozes();
         snooze->set_fic_id(snoozeInfo.ficId);

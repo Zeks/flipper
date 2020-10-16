@@ -35,7 +35,7 @@ public:
     //FicSectionStats MergeStats(QList<AuthorPtr>);
     ~Author(){}
     void Log();
-    void LogWebIds();
+    void LogWebIds() const;
     void AssignId(int id){
         if(id == -1)
         {

@@ -87,7 +87,7 @@ Genres::Genres()
 bool interfaces::Genres::IsGenreList(QStringList list)
 {
     bool success = false;
-    for(auto token : list)
+    for(const auto& token : list)
         if(genres.contains(token))
         {
             success = true;
@@ -285,7 +285,7 @@ static QStringList GetSignificantKeptGenres(QStringList list)
 {
     QStringList result;
     QStringList keep = {"Horror", "General", "Poetry"};
-    for(auto genre : list)
+    for(const auto& genre : list)
     {
         if(keep.contains(genre))
             result.push_back(genre);
@@ -364,16 +364,17 @@ QVector<genre_stats::GenreBit>  FinalGenreProcessing(genre_stats::FicGenreData& 
         if(data.realGenres.at(i).relevance > 0)
             result.push_back(data.realGenres.at(i));
     }
-    for(auto kept: data.genresToKeep)
+    for(const auto& kept: std::as_const(data.genresToKeep))
         result.push_back({{kept}, 0});
     return result;
 }
 
 void GenreConverter::ProcessGenreResult(genre_stats::FicGenreData & genreData)
 {
-    QVector<genre_stats::GenreBit> result;
+    //QVector<genre_stats::GenreBit> result;
 
-    for(auto genre: GetSignificantKeptGenres(genreData.originalGenres))
+    const auto significantKeptGenres = GetSignificantKeptGenres(genreData.originalGenres);
+    for(const auto& genre: significantKeptGenres)
         genreData.realGenres.push_back({{genre}, 1});
 
     if(genreData.strengthNeutralAdventure >= 0.8f)
@@ -424,9 +425,9 @@ void GenreConverter::ProcessGenreResult(genre_stats::FicGenreData & genreData)
 
 void GenreConverter::ProcessGenreResultIteration2(genre_stats::FicGenreData & genreData)
 {
-    QVector<genre_stats::GenreBit> result;
-
-    for(auto genre: GetSignificantKeptGenres(genreData.originalGenres))
+    //QVector<genre_stats::GenreBit> result;
+    const auto significantKeptGenres = GetSignificantKeptGenres(genreData.originalGenres);
+    for(const auto& genre: significantKeptGenres)
         genreData.realGenres.push_back({{genre}, 1});
 
     if(genreData.strengthNeutralAdventure >= 0.8f)
@@ -538,7 +539,7 @@ void GenreConverter::DetectRealGenres(genre_stats::FicGenreData & data)
         data.realGenres.push_back({GetSignificantDramaTypes(data.originalGenres), data.strengthDrama*2});
 
 
-    QString adventureType;
+    //QString adventureType;
 
     if(data.strengthNeutralComposite >= 0.9f)
         data.realGenres.push_back({GetSignificantNeutralTypes(data.originalGenres), data.strengthNeutralComposite});

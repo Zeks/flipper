@@ -28,7 +28,7 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 typedef QSharedPointer<PageSubTask> SubTaskPtr;
 typedef QSharedPointer<PageTaskAction> PageTaskActionPtr;
 typedef QSharedPointer<PageFailure> PageFailurePtr;
-typedef QList<PageTaskPtr> TaskList;
+typedef QVector<PageTaskPtr> TaskList;
 typedef QList<SubTaskPtr> SubTaskList;
 typedef QList<PageFailurePtr> SubTaskErrors;
 typedef QList<PageTaskActionPtr> PageTaskActions;
