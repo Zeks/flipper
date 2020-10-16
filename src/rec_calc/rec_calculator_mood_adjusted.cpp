@@ -34,7 +34,7 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
     if(!firstPass)
         return false;
 
-    auto cleanRatio = author.matches != 0 ? static_cast<double>(author.fullListSize)/static_cast<double>(author.matches) : 999999;
+    auto cleanRatio = author.matches != 0 ? static_cast<double>(author.fullListSize)/static_cast<double>(author.matches) : std::numeric_limits<double>::max();
     if(author.listDiff.touchyDifference.has_value())
     {
         auto authorcoef = author.listDiff.touchyDifference.value();

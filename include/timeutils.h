@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 
 
 struct TimedAction{
-    TimedAction(QString name, std::function<void()> action)
+    TimedAction(QString name, const std::function<void()>& action)
     {
         this->actionName = name;this->action = action;
     }
@@ -49,7 +49,7 @@ struct TimedAction{
 
 struct TimeKeeper{
     TimeKeeper(){
-        times["start"] = std::chrono::high_resolution_clock::now();
+        times[QStringLiteral("start")] = std::chrono::high_resolution_clock::now();
     }
     void Log(QString value, QString startPoint,  bool inSeconds = false){
         times[value] = std::chrono::high_resolution_clock::now();

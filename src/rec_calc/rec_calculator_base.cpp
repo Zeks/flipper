@@ -728,7 +728,7 @@ void RecCalculatorImplBase::Filter(QSharedPointer<RecommendationList> params, QL
         else{
             author.similarityPercentage = author.matches/(static_cast<double>(author.sizeAfterIgnore)/100.);
             author.ratio = static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches);
-            author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : 999999;
+            author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : std::numeric_limits<double>::max();
             author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
             author.listDiff.neutralDifference = GetNeutralDiffForLists(author.id);
             bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){

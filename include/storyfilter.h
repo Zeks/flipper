@@ -45,7 +45,7 @@ struct StoryFilter{
     static QStringList ProcessDelimited(QString str, QString delimiter){
         if(str.contains(delimiter))
             return str.split(delimiter);
-        return str.split(" ");
+        return str.split(QStringLiteral(" "));
     }
     enum EScoreType
     {

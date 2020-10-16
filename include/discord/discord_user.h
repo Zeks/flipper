@@ -41,6 +41,7 @@ struct LastPageCommandMemo{
 
 struct User{
     User(){InitFicsPtr();}
+    ~User() = default;
     User(QString userID, QString ffnID, QString name);
     User(const User &user);
     void InitFicsPtr();
@@ -175,7 +176,7 @@ private:
     int forcedMinMatch = 0;
     int forcedRatio = 0;
 
-    QString lastUsedRoll = "all";
+    QString lastUsedRoll = QStringLiteral("all");
 
     std::chrono::system_clock::time_point lastRecsQuery;
     std::chrono::system_clock::time_point lastEasyQuery;

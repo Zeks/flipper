@@ -50,9 +50,9 @@ public:
     }
     AuthorIdStatus GetIdStatus() const {return idStatus;}
     void SetWebID(QString website, int id){webIds[website] = id;}
-    int GetWebID(QString website) {
+    int GetWebID(QString website) const {
         if(webIds.contains(website))
-            return webIds[website];
+            return webIds.value(website);
         return -1;
     }
     QString CreateAuthorUrl(QString urlType, int webId) const;
@@ -60,7 +60,7 @@ public:
     {
         if(webIds.contains(type))
             return CreateAuthorUrl(type, webIds[type]);
-        return "";
+        return QStringLiteral("");
     }
     QStringList GetWebsites() const;
 

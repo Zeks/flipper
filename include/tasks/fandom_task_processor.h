@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "include/core/fandom.h"
 struct FandomParseTask{
     FandomParseTask() = default;
-    FandomParseTask(QStringList parts,
+    FandomParseTask(const QStringList& parts,
                     QDate stopAt,
                     ECacheMode cacheMode,
                     int delay,

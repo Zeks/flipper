@@ -25,6 +25,7 @@ namespace database{
 class Transaction{
 public:
     Transaction(QSqlDatabase);
+    Transaction(const Transaction&) = default;
     ~Transaction();
     bool start();
     bool cancel();

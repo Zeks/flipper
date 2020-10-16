@@ -26,7 +26,7 @@ struct PageQueue{
 class  PageResult{
 public:
     PageResult() = default;
-    PageResult(WebPage page, bool _finished): finished(_finished),data(page){}
+    PageResult(const WebPage& page, bool _finished): finished(_finished),data(page){}
     bool finished = false;
     WebPage data;
 };

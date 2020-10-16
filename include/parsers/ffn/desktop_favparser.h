@@ -64,7 +64,7 @@ public:
     core::FicSectionStatsTemporaryToken statToken;
     FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;
-    QString currentTagMode = "core";
+    QString currentTagMode = QStringLiteral("core");
     QString authorName;
     QSet<QString> fandoms;
     core::AuthorPtr authorStats;

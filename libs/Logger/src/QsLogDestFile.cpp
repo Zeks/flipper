@@ -31,10 +31,7 @@
 #include <iostream>
 
 const int QsLogging::SizeRotationStrategy::MaxBackupCount = 10;
-//comment
-QsLogging::RotationStrategy::~RotationStrategy()
-{
-}
+
 
 QsLogging::SizeRotationStrategy::SizeRotationStrategy(bool _rotateOnInit)
     : mCurrentSizeInBytes(0)
@@ -72,7 +69,7 @@ void QsLogging::SizeRotationStrategy::rotate()
     }
 
     // 1. find the last existing backup than can be shifted up
-    const QString logNamePattern = mFileName + QString::fromUtf8(".%1");
+    const QString logNamePattern = mFileName + QStringLiteral(".%1");
     int lastExistingBackupIndex = 0;
     for (int i = 1;i <= mBackupsCount;++i) {
         const QString backupFileName = logNamePattern.arg(i);

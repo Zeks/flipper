@@ -89,7 +89,7 @@ public:
     int author_id = -1;
 
     QString urlFFN;
-    QString webSite = "ffn";
+    QString webSite = QStringLiteral("ffn");
 
     QString wordCount;
     QString chapters;
@@ -139,27 +139,27 @@ public:
         QStringList genresList;
         bool hasHurt = false;
         QString fixedGenreString = genreString;
-        if(website == "ffn" && genreString.contains("Hurt/Comfort"))
+        if(website == QStringLiteral("ffn") && genreString.contains(QStringLiteral("Hurt/Comfort")))
         {
             hasHurt = true;
-            fixedGenreString = fixedGenreString.replace("Hurt/Comfort", "");
+            fixedGenreString = fixedGenreString.replace(QStringLiteral("Hurt/Comfort"), QStringLiteral(""));
         }
 
-        if(website == "ffn")
-            genresList = fixedGenreString.split("/", Qt::SkipEmptyParts);
+        if(website == QStringLiteral("ffn"))
+            genresList = fixedGenreString.split(QStringLiteral("/"), Qt::SkipEmptyParts);
         if(hasHurt)
-            genresList.push_back("Hurt/Comfort");
+            genresList.push_back(QStringLiteral("Hurt/Comfort"));
         for(auto& genre: genresList)
             genre = genre.trimmed();
         genres = genresList;
 
 
     }
-    QString url(QString type)
+    QString url(QString type) const
     {
         if(urls.contains(type))
-            return urls[type];
-        return "";
+            return urls.value(type);
+        return QStringLiteral("");
     }
     void SetUrl(QString type, QString url);
 

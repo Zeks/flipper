@@ -31,7 +31,7 @@ class IDBWrapper;
 class Fandoms;
 class Authors {
 public:
-    virtual ~Authors();
+    virtual ~Authors() = default;
     void Reindex();
     void AddAuthorToIndex(core::AuthorPtr);
     void IndexAuthors();
@@ -40,7 +40,7 @@ public:
     void ClearIndex();
     void ClearCache();
 
-    void AddPreloadedAuthor(core::AuthorPtr);
+    void AddPreloadedAuthor(const core::AuthorPtr&);
 
     virtual bool EnsureId(core::AuthorPtr author) = 0;
     bool EnsureId(core::AuthorPtr author, QString website);
@@ -51,7 +51,7 @@ public:
     bool EnsureAuthorLoaded(int id);
 
     bool CreateAuthorRecord(core::AuthorPtr author);
-    bool UpdateAuthorRecord(core::AuthorPtr author);
+    bool UpdateAuthorRecord(const core::AuthorPtr &author);
     bool UpdateAuthorFavouritesUpdateDate(core::AuthorPtr author);
 
     bool LoadAuthors(QString website, bool forced = false);
@@ -80,11 +80,11 @@ public:
     QList<int> GetAllAuthorRecommendationIDs(int id);
     QList<int> GetAllAuthorIds();
     int GetFicCount(int authorId);
-    QList<int> GetFicList(core::AuthorPtr author) const;
+    QList<int> GetFicList(const core::AuthorPtr &author) const;
     int GetCountOfRecsForTag(int authorId, QString tag);
     QSharedPointer<core::AuthorRecommendationStats> GetStatsForTag(int authorId, QSharedPointer<core::RecommendationList> list);
     //bool UploadLinkedAuthorsForAuthor(int authorId, QStringList);
-    bool UploadLinkedAuthorsForAuthor(int authorId, QString , QList<int>);
+    bool UploadLinkedAuthorsForAuthor(int authorId, QString , const QList<int> &);
     bool DeleteLinkedAuthorsForAuthor(int authorId);
     QVector<int> GetAllUnprocessedLinkedAuthors();
 

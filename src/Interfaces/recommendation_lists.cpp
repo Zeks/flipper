@@ -319,7 +319,7 @@ core::AuhtorStatsPtr RecommendationLists::CreateAuthorRecommendationStatsForList
 
     result->matchesWithReference = opResult.data;
     if(result->matchesWithReference == 0)
-        result->matchRatio = 999999;
+        result->matchRatio = std::numeric_limits<double>::max();
     else
         result->matchRatio = static_cast<double>(result->totalRecommendations)/static_cast<double>(result->matchesWithReference);
     result->isValid = true;
