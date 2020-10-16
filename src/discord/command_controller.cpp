@@ -72,7 +72,7 @@ QSharedPointer<TaskRunner> CommandController::FetchFreeRunner(ECommandParseRequi
             || (parseType == cpr_quick && activeParseCommand) )
         return nullptr;
 
-    for(auto runner: runners)
+    for(auto runner: std::as_const(runners))
         if(!runner->busy)
             return runner;
     return nullptr;

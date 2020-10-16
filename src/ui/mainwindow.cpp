@@ -290,7 +290,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
         lblDBUpdateDate = new QLabel;
         ui->statusBar->addPermanentWidget(lblDBUpdateDate,0);
         QString prototype = "<b><font color=\"%1\">%2</font></b>";
-        lblDBUpdateDate->setText(prototype.arg(diff < 7 ? "darkGreen" : "darkBrown").arg(env->status.lastDBUpdate));
+        lblDBUpdateDate->setText(prototype.arg(diff < 7 ? "darkGreen" : "darkBrown", env->status.lastDBUpdate));
         lblDBUpdateDate->setStyle(new ImmediateTooltipProxyStyle());
         lblDBUpdateInfo->setStyle(new ImmediateTooltipProxyStyle());
 
@@ -768,7 +768,7 @@ void MainWindow::OnShuffleDisplayedData()
     if(selectedIndex >= 0)
     {
         int index = 0;
-        for(auto fic : env->fanfics)
+        for(const auto& fic : std::as_const(env->fanfics))
         {
             if(fic.GetIdInDatabase() == selectedFicId)
             {
@@ -952,7 +952,7 @@ void MainWindow::ProcessTagsIntoGui()
     auto tagList = env->interfaces.tags->ReadUserTags();
     QList<QPair<QString, QString>> tagPairs;
 
-    for(auto tag : tagList)
+    for(const auto& tag : tagList)
         tagPairs.push_back({ "0", tag });
     ui->wdgTagsPlaceholder->InitFromTags(-1, tagPairs);
 
@@ -1026,7 +1026,7 @@ void MainWindow::OnDoFormattedListByFandoms()
         auto fandoms = ficPtr->fandomIds;
         if(fandoms.size() == 0)
         {
-            auto fandom = ficPtr->fandom.trimmed();
+            //auto fandom = ficPtr->fandom.trimmed();
             qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">";
         }
         for(auto fandom: fandoms)
@@ -1038,24 +1038,26 @@ void MainWindow::OnDoFormattedListByFandoms()
     fandomnNames = env->interfaces.fandoms->GetFandomNamesForIDs(byFandoms.keys());
 
     result += "<ul>";
-    for(auto fandomKey : byFandoms.keys())
+
+    for(auto i = byFandoms.begin(); i != byFandoms.end(); i++)
     {
-        QString name = fandomnNames[fandomKey];
+        QString name = fandomnNames[i.key()];
         if(name.trimmed().isEmpty())
             continue;
         result+= "<li><a href=\"#" + name.toLower().replace(" ","_") +"\">" + name + "</a></li>";
     }
     An<PageManager> pager;
     pager->SetDatabase(QSqlDatabase::database());
-    for(auto fandomKey : byFandoms.keys())
+
+    for(auto i = byFandoms.begin(); i != byFandoms.end(); i++)
     {
-        QString name = fandomnNames[fandomKey];
+        QString name = fandomnNames[i.key()];
         if(name.trimmed().isEmpty())
             continue;
 
         result+="<h4 id=\""+ name.toLower().replace(" ","_") +  "\">" + name + "</h4>";
 
-        for(auto fic : byFandoms[fandomKey])
+        for(auto fic : std::as_const(i.value()))
         {
             auto* ficPtr = fic;
             QPair<QString, int> key = {name, fic->GetIdInDatabase()};
@@ -1064,7 +1066,7 @@ void MainWindow::OnDoFormattedListByFandoms()
                 continue;
             already.insert(key);
 
-            auto genreString = ficPtr->genreString;
+            //auto genreString = ficPtr->genreString;
             bool validGenre = true;
             if(validGenre)
             {
@@ -1073,9 +1075,9 @@ void MainWindow::OnDoFormattedListByFandoms()
                 QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
                 if(ficPtr->complete)
-                    result+=status.arg("green").arg("Complete<br>");
+                    result+=status.arg("green","Complete<br>");
                 else
-                    result+=status.arg("red").arg("Active<br>");
+                    result+=status.arg("red","Active<br>");
                 result+=ficPtr->summary + "<br><br>";
             }
 
@@ -1092,13 +1094,13 @@ void MainWindow::OnDoFormattedList()
     QList<int> ficIds;
     for(int i = 0; i < typetableModel->rowCount(); i ++)
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
-    QSet<QPair<QString, int>> already;
-    QMap<QString, QList<int>> byFandoms;
+    //QSet<QPair<QString, int>> already;
+    //QMap<QString, QList<int>> byFandoms;
     for(core::Fanfic& fic : env->fanfics)
     {
         //auto ficPtr = env->interfaces.fanfics->GetFicById(id);
         auto* ficPtr = &fic;
-        auto genreString = ficPtr->genreString;
+        //auto genreString = ficPtr->genreString;
         bool validGenre = true;
         if(validGenre)
         {
@@ -1107,9 +1109,9 @@ void MainWindow::OnDoFormattedList()
             QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
             if(ficPtr->complete)
-                result+=status.arg("green").arg("Complete<br>");
+                result+=status.arg("green","Complete<br>");
             else
-                result+=status.arg("red").arg("Active<br>");
+                result+=status.arg("red","Active<br>");
             result+=ficPtr->summary + "<br><br>";
         }
     }
@@ -1263,7 +1265,7 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
     QString result;
     if(ui->wdgTagsPlaceholder->DbIdsRequested())
     {
-        for(auto fic : fics)
+        for(auto fic : std::as_const(fics))
             result += QString::number(fic) + ",";
     }
     else
@@ -2049,7 +2051,7 @@ void MainWindow::FillRecommenderListView(bool forceRefresh)
     std::sort(std::begin(allStats),std::end(allStats), [](auto s1, auto s2){
         return s1->matchRatio < s2->matchRatio;
     });
-    for(auto stat : allStats)
+    for(const auto& stat : std::as_const(allStats))
         result.push_back(stat->authorName);
     recommendersModel->setStringList(result);
 }
@@ -2081,13 +2083,14 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     params->userFFNId = env->interfaces.recs->GetUserProfile();
     //params->majorNegativeVotes = env->GetFicsForNegativeTags();
 
-    QString storedList = ui->cbRecGroup->currentText();
+    //QString storedList = ui->cbRecGroup->currentText();
     auto storedLists = env->interfaces.recs->GetAllRecommendationListNames(true);
     QVector<int> sourceFics;
     sourceFics.push_back(id);
     auto ids = env->interfaces.fandoms->GetIgnoredFandomsIDs();
-    for(auto fandom: ids.keys())
-        params->ignoredFandoms.insert(fandom);
+
+    for(auto i = ids.begin(); i != ids.end(); i++)
+        params->ignoredFandoms.insert(i.key());
 
     //params->Log();
     auto result = env->BuildRecommendations(params, sourceFics);
@@ -2301,7 +2304,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
         filter.useThisAuthor = ui->leAuthorID->text().toInt();
     if(ui->cbIDMode->currentIndex() == 2 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
     {
-        for(auto id : ui->leAuthorID->text().split(",", QString::SkipEmptyParts))
+        const auto list = ui->leAuthorID->text().split(",", Qt::SkipEmptyParts);
+        for(const auto& id : list)
             filter.usedRecommenders.push_back(id.toInt());
     }
 
@@ -2533,7 +2537,7 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         ui->cbIDMode->setCurrentIndex(2);
         QStringList temp;
-        for(auto reccer : filter.usedRecommenders)
+        for(const auto& reccer : std::as_const(filter.usedRecommenders))
         {
             temp.push_back(QString::number(reccer));
         }
@@ -2968,8 +2972,9 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         params->assignLikedToSources = true;
 
     auto ids = env->interfaces.fandoms->GetIgnoredFandomsIDs();
-    for(auto fandom: ids.keys())
-        params->ignoredFandoms.insert(fandom);
+
+    for(auto i = ids.begin(); i != ids.end(); i++)
+        params->ignoredFandoms.insert(i.key());
     if(ui->chkIgnoreMarkedDeadFics->isChecked())
         params->ignoredDeadFics = env->GetIgnoredDeadFics();
     if(ui->chkUseDislikes->isChecked())
@@ -3366,7 +3371,7 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
 
     edit->setFont(font);
 
-    for(auto fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         edit->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
     }
@@ -3382,7 +3387,7 @@ QVector<int> MainWindow::PickFicIDsFromString(QString str)
     QVector<int> sourceFics;
     QStringList lines = str.split("\n");
     QRegularExpression rx("https://www.fanfiction.net/s/(\\d+)");
-    for(auto line : lines)
+    for(const auto& line : lines)
     {
         if(!line.startsWith("http"))
             continue;
@@ -3435,10 +3440,10 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     std::sort(std::begin(sizes), std::end(sizes), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
         return m1.value > m2.value;
     });
-    for(auto size : sizes)
+    for(const auto& size : std::as_const(sizes))
     {
         QString tmp = sizeTemplate;
-        tmp=tmp.arg(size.name).arg(QString::number(size.value*100));
+        tmp=tmp.arg(size.name, QString::number(size.value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
@@ -3454,17 +3459,18 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     std::sort(std::begin(moodsVec), std::end(moodsVec), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
         return m1.value > m2.value;
     });
-    for(auto mood : moodsVec)
+    for(const auto& mood : std::as_const(moodsVec))
     {
         QString tmp = moodTemplate;
-        tmp=tmp.arg(mood.name.rightJustified(8)).arg(QString::number(mood.value*100));
+        tmp=tmp.arg(mood.name.rightJustified(8),QString::number(mood.value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
 
     QVector<SortedBit<double>> genres;
-    for(auto genreKey : stats.genreFactors.keys())
-        genres.push_back({stats.genreFactors[genreKey],genreKey});
+
+    for(auto i = stats.genreFactors.begin(); i != stats.genreFactors.end(); i++)
+        genres.push_back({i.value(),i.key()});
     std::sort(std::begin(genres), std::end(genres), [](const SortedBit<double>& g1,const SortedBit<double>& g2){
         return g1.value > g2.value;
     });
@@ -3476,7 +3482,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     for(int i = 0; i < 10; i++)
     {
         QString tmp = genreTemplate;
-        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value*100));
+        tmp=tmp.arg(genres[i].name,QString::number(genres[i].value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
@@ -3486,11 +3492,11 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     //ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
     ui->edtAnalysisResults->insertHtml("Fandoms:<br>");
     QVector<SortedBit<int>> fandoms;
-    for(auto id : stats.fandomsConverted.keys())
+
+    for(auto i = stats.fandomsConverted.begin(); i != stats.fandomsConverted.end(); i++)
     {
-        QString name = env->interfaces.fandoms->GetNameForID(id);
-        int count = stats.fandomsConverted[id];
-        fandoms.push_back({count, name});
+        QString name = env->interfaces.fandoms->GetNameForID(i.key());
+        fandoms.push_back({i.value(), name});
     }
     std::sort(std::begin(fandoms), std::end(fandoms), [](const SortedBit<int>& g1,const SortedBit<int>& g2){
         return g1.value > g2.value;
@@ -3501,7 +3507,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
         QString tmp = fandomTemplate;
         if(i >= fandoms.size())
             break;
-        tmp=tmp.arg(fandoms[i].name).arg(QString::number(fandoms[i].value));
+        tmp=tmp.arg(fandoms[i].name, QString::number(fandoms[i].value));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults ->moveCursor (QTextCursor::Start) ;
@@ -3709,7 +3715,7 @@ void MainWindow::on_pbProfileCompare_clicked()
     // then query data for fics I have no information on
 
 
-    for(auto fic: result)
+    for(const auto& fic: std::as_const(result))
     {
         //        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
         //        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
@@ -4185,7 +4191,7 @@ void MainWindow::OnTagFromClipboard()
 
     auto ficIDs = env->GetDBIDsForFics(result.sources);
 
-    for(auto tag : tags){
+    for(const auto& tag : tags){
         for(auto fic : ficIDs){
             env->interfaces.tags->SetTagForFic(fic, tag);
         }

@@ -56,14 +56,14 @@ void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
         statistics_utils::UserPageSource source;
         statistics_utils::UserPageSink<core::FicSectionStatsTemporaryToken> sink;
 
-        QHash<int, QList<WebPage>>pages;
+        //QHash<int, QList<WebPage>>pages;
         int counter = 0;
 
         int chunkSize = 10001;
         source.Reserve(chunkSize);
         qDebug() << "loading pages";
         int authorsSize = authors.size();
-        for(auto author: authors)
+        for(const auto& author: authors)
         {
             counter++;
             if(!author)
@@ -101,8 +101,9 @@ void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
                         page_utils::SplitJobs splittings;
                         splittings = page_utils::SplitJob(result.page.content, false);
 
-                        QList<core::FicSectionStatsTemporaryToken> tokens;
-                        for(auto part: splittings.parts)
+                        QVector<core::FicSectionStatsTemporaryToken> tokens;
+                        tokens.reserve(splittings.parts.size());
+                        for(auto part: std::as_const(splittings.parts))
                         {
                             parser.ClearProcessed();
                             parser.ProcessPage(result.page.url, part.data);
@@ -110,7 +111,7 @@ void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
                         }
                         core::FicSectionStatsTemporaryToken resultingToken;
                         {
-                            for(auto statToken : tokens)
+                            for(const auto& statToken : std::as_const(tokens))
                             {
                                 resultingToken.chapterKeeper += statToken.chapterKeeper;
                                 resultingToken.ficCount+= statToken.ficCount;
@@ -162,7 +163,7 @@ void AuthorStatsProcessor::ReprocessAllAuthorsStats(ECacheMode cacheMode)
                 processSlash.run();
                 QThread::msleep(100);
                 qDebug() << "writing results, have " << sink.tokens.size() << " tokens to merge";
-                for(auto token: sink.tokens)
+                for(const auto& token: std::as_const(sink.tokens))
                 {
                     auto author = authorsInterface->GetById(token.authorId);
                     FavouriteStoryParser::MergeStats(author,fandomsInterface, {token});

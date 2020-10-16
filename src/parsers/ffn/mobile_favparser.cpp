@@ -23,7 +23,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     });
     fetchAction.run(false);
 
-    QString content;
+    //QString content;
     QRegularExpression rx("p[=](\\d+)['][>]Last[<][/]a[>]");
     auto match = rx.match(page.content);
     QSet<QString> urlResult;
@@ -40,11 +40,11 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     for(int i = pageToStartFrom; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
-    QList<QString> mobileStories;
+    //QList<QString> mobileStories;
     QRegularExpression rxStoryId("/s/(\\d+)/1");
     emit progress(0, amountOfPagesToGrab);
     int counter = 1;
-    for(auto mobileUrl : mobileUrls)
+    for(const auto& mobileUrl : mobileUrls)
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){
@@ -82,7 +82,7 @@ QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db, ECacheMode cache
     });
     fetchAction.run(false);
 
-    QString content;
+    //QString content;
     QRegularExpression rx("p[=](\\d+)['][>]Last[<][/]a[>]");
     auto match = rx.match(page.content);
     QSet<QString> urlResult;
@@ -99,11 +99,11 @@ QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db, ECacheMode cache
     for(int i = pageToStartFrom; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 
-    QList<QString> mobileStories;
+    //QList<QString> mobileStories;
     QRegularExpression rxStoryId("/s/(\\d+)/1");
     emit progress(0, amountOfPagesToGrab);
     int counter = 1;
-    for(auto mobileUrl : mobileUrls)
+    for(const auto& mobileUrl : mobileUrls)
     {
         WebPage page;
         TimedAction fetchAction("Author mobile page fetch", [&](){

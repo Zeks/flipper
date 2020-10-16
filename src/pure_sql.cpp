@@ -587,10 +587,10 @@ DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  Q
     SqlContext<bool> ctx(db);
     ctx.Prepare(qs);
     DiagnosticSQLResult<bool> result;
-    for(auto fic: data.keys())
+    for(auto i = data.begin(); i != data.end(); i++)
     {
-        ctx.bindValue("fic_id",fic);
-        ctx.bindValue("author_id",data[fic]);
+        ctx.bindValue("fic_id",i.key());
+        ctx.bindValue("author_id",i.value());
         ctx();
         if(!ctx.result.success)
         {
@@ -1012,7 +1012,7 @@ DiagnosticSQLResult<QList<core::AuhtorStatsPtr>> GetRecommenderStatsForList(int 
                          "r.name as name"
                          "  from RecommendationListAuthorStats rts, recommenders r "
                          " where rts.author_id = r.id and list_id = :list_id order by %1 %2");
-    qs=qs.arg(sortOn).arg(order);
+    qs=qs.arg(sortOn,order);
     SqlContext<QList<core::AuhtorStatsPtr>> ctx(db, qs, {{"list_id", listId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         core::AuhtorStatsPtr stats(new core::AuthorRecommendationStats);
@@ -1235,7 +1235,7 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     ctx.bindValue("use_dislikes",list->useDislikes);
     ctx.bindValue("use_dead_fic_ignore",list->useDeadFicIgnore);
     QStringList authors;
-    for(auto id : list->ficData->authorIds)
+    for(auto id : std::as_const(list->ficData->authorIds))
         authors.push_back(QString::number(id));
     ctx.bindValue("sources",authors.join(","));
     ctx.bindValue("name",list->name);
@@ -1331,9 +1331,9 @@ DiagnosticSQLResult<bool> IsGenreList(QStringList list, QString website, QSqlDat
 
 DiagnosticSQLResult<QVector<int>> GetWebIdList(QString where, QString website, QSqlDatabase db)
 {
-    QVector<int> result;
+    //QVector<int> result;
     QString fieldName = website + "_id";
-    QString qs = QString("select %1_id from fanfics %2").arg(website).arg(where);
+    QString qs = QString("select %1_id from fanfics %2").arg(website,where);
     SqlContext<QVector<int>> ctx(db, qs);
     ctx.FetchLargeSelectIntoList<int>(fieldName, qs);
     return ctx.result;
@@ -1600,9 +1600,10 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
 {
     SqlContext<int> ctx(db);
     QLOG_INFO() << "keys list:" << hash.keys();
-    for(int ffn_id: hash.keys())
+
+    for(auto i = hash.begin(); i != hash.end(); i++)
     {
-        ctx.bindValue("ffn_id", ffn_id);
+        ctx.bindValue("ffn_id", i.key());
         ctx.FetchSingleValue<int>("id", -1,false, "select id from fanfics where ffn_id = :ffn_id");
         QString error = ctx.result.oracleError;
         if(!error.isEmpty() && error != "no data to read")
@@ -1612,9 +1613,9 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
             break;
         }
         if(ctx.result.data != -1)
-            hash[ffn_id] = ctx.result.data;
+            i.value() = ctx.result.data; // todo check this iterator usage is valid
         else
-            hash.remove(ffn_id);
+            hash.remove(i.key());
     }
 
     QLOG_INFO() << "Resulting list:" << hash;
@@ -1628,10 +1629,10 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
 DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, QSqlDatabase db)
 {
     SqlContext<int> ctx(db);
-
-    for(int id: hash.keys())
-    {
-        ctx.bindValue("id", id);
+    QHash<int, int>::iterator it = hash.begin();
+    QHash<int, int>::iterator itEnd = hash.end();
+    while(it != itEnd){
+        ctx.bindValue("id", it.key());
         ctx.FetchSingleValue<int>("ffn_id", -1, true, "select ffn_id from fanfics where id = :id");
         QString error = ctx.result.oracleError;
         if(!error.isEmpty() && error != "no data to read")
@@ -1639,7 +1640,8 @@ DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, QSqlDatabase
             ctx.result.success = false;
             break;
         }
-        hash[id] = ctx.result.data;
+        it.value() = ctx.result.data; // todo check this iterator usage is valid
+        it++;
     }
 
     SqlContext<bool> ctx1(db);
@@ -1683,7 +1685,7 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
                          " max_genre_percent = :max_genre_percent,"
                          " kept_genres =:kept_genres where id = :fic_id" );
     SqlContext<bool> ctx(db, qs);
-    for(auto fic : fics)
+    for(const auto& fic : fics)
     {
         for(int i = 0; i < 3; i++)
         {
@@ -1742,7 +1744,7 @@ DiagnosticSQLResult<bool> WriteDetectedGenresIteration2(QVector<genre_stats::Fic
                          " :max_genre_percent"
                          ")");
     SqlContext<bool> ctx(db, qs);
-    for(auto fic : fics)
+    for(const auto& fic : fics)
     {
         for(int i = 0; i < 3; i++)
         {
@@ -1793,7 +1795,7 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(Q
             genres = genres.replace("Hurt/Comfort", "HurtComfort");
             auto list = genres.split("/");
             list.replaceInStrings("HurtComfort","Hurt/Comfort");
-            for(auto genreBit: list)
+            for(const auto& genreBit: list)
             {
                 genre_stats::GenreBit bit;
                 bit.genres.push_back(genreBit);
@@ -1818,7 +1820,7 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(Q
                 bit.genres = genre.split(QRegExp("[\\s,]"), Qt::SkipEmptyParts);
                 bit.relevance = q.value(tgKeyValue).toFloat();
                 bit.isDetected = true;
-                for(auto genreBit : bit.genres)
+                for(const auto& genreBit : std::as_const(bit.genres))
                     if(genres.contains(genreBit))
                         bit.isInTheOriginal = true;
 
@@ -2274,7 +2276,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
         QStringList parts;
 
         QStringList tokens;
-        for(auto tag : tags)
+        for(const auto& tag : tags)
         {
             tokens.push_back(prototype.arg(tag));
         }
@@ -2513,7 +2515,7 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fanfic> * fics, QSqlDat
     auto* data= ThreadData::GetRecommendationData();
     auto& hash = data->sourceFics;
 
-    for(const auto& fic : *fics)
+    for(const auto& fic : std::as_const(*fics))
         hash.insert(fic.identity.id);
 
     SqlContext<bool> ctx(db, qs);
@@ -2544,7 +2546,7 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fanfic> * 
     auto* data= ThreadData::GetRecommendationData();
     auto& sourceSet = data->sourceFics;
 
-    for(const auto& fic : *fics)
+    for(const auto& fic : std::as_const(*fics))
         sourceSet.insert(fic.identity.id);
     QSet<int> purgedFics;
     SqlContext<bool> ctx(db, qs);
@@ -2595,8 +2597,14 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
 {
     // need to create a list of ids to query for
     QStringList ids;
-    for(auto fic: scores.keys())
-        ids.push_back(QString::number(fic));
+    ids.reserve(scores.size());
+    auto it = scores.begin();
+    auto itEnd = scores.end();
+    while(it != itEnd){
+        ids.push_back(QString::number(it.key()));
+        it++;
+    }
+
     QString qs = QString("select fic_id, %1 from RecommendationListData where list_id = :list_id and fic_id in (%2)" );
     QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
     qs = qs.arg(pointsField);
@@ -2619,7 +2627,7 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> 
 
     QHash<int, int> indices;
     int i = 0;
-    for(auto fic: *fics)
+    for(const auto& fic: std::as_const(*fics))
     {
         ficIds.push_back(QString::number(fic.identity.id));
         indices[fic.identity.id] = i;
@@ -3126,7 +3134,7 @@ DiagnosticSQLResult<TaskList> GetUnfinishedTasks(QSqlDatabase db)
     if(!ctx1.result.success)
         return ctx2.result;
 
-    for(auto id: ctx1.result.data)
+    for(auto id: std::as_const(ctx1.result.data))
     {
         ctx2.bindValue("task_id",id);
         if(!ctx2.ExecAndCheckForData())
@@ -3526,7 +3534,7 @@ DiagnosticSQLResult<QHash<int, double> > GetFicGenreData(QString genre, QString 
 {
     SqlContext<QHash<int, double>> ctx(db);
     QString qs = QString("select fic_id, %1 from FicGenreStatistics where %2 order by fic_id");
-    qs = qs.arg(genre).arg(cutoff);
+    qs = qs.arg(genre,cutoff);
     ctx.FetchSelectIntoHash(qs, "fic_id", genre);
     return ctx.result;
 }
@@ -3680,7 +3688,7 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
     q.prepare("update algopasses set keywords_no = 1 where fic_id = :id");
     list = notSlashFics.values();
     counter = 0;
-    for(auto tempId: list)
+    for(auto tempId: std::as_const(list))
     {
         counter++;
         q.bindValue(":id", tempId);
@@ -3693,7 +3701,7 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
     q.prepare("update algopasses set keywords_yes = 1 where fic_id = :id");
     list = slashKeywords.values();
     counter = 0;
-    for(auto tempId: list)
+    for(auto tempId: std::as_const(list))
     {
         counter++;
         q.bindValue(":id", tempId);
@@ -3915,7 +3923,7 @@ static QHash<int, int> RecastFicScoresIntoPedestalSet(QSharedPointer<core::Recom
     QSet<int> scoresSet;
     QList<int> scoresList;
     QHash<int, int> scorePositions;
-    QVector ficsCopy = ficData->fics;
+    //QVector ficsCopy = ficData->fics;
     for(int i = 0; i < ficData->fics.size(); i++)
         scoresSet.insert(ficData->matchCounts[i]);
 

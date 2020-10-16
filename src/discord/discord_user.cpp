@@ -575,7 +575,7 @@ void Users::ClearInactiveUsers()
     if(userVec.size() > 100)
         userVec.erase(userVec.begin()+25, userVec.end());
     users.clear();
-    for(auto user: userVec)
+    for(const auto& user: userVec)
         users[user->UserID()] = user;
 }
 }

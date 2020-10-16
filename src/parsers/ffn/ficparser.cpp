@@ -271,7 +271,7 @@ void FicParser::GetAuthor(core::FanficSectionInFFNFavourites & section,  QString
     QSharedPointer<core::Author> author(new core::Author);
     section.result->author = author;
     QString uPart = rxEnd.cap(2);
-    section.result->author->SetWebID("ffn",uPart.mid(3).toInt()); // needs checking
+    section.result->author->SetWebID("ffn",uPart.midRef(3).toInt()); // needs checking
     section.result->author->name = full;
     queuedAuthor = author;
 }

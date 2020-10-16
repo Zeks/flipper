@@ -406,7 +406,7 @@ QString DefaultQueryBuilder::ProcessSlashMode(StoryFilter filter, bool renameToF
     if(!filter.slashFilter.onlyExactLevel)
         queryString = queryString.arg(slashField);
     else
-        queryString = queryString.arg(slashField).arg(excludeFields.first()).arg(excludeFields.last());
+        queryString = queryString.arg(slashField,excludeFields.first(),excludeFields.last());
     if(!renameToFID)
     {
         queryString.replace(" fid ", " ff.id ");
@@ -422,7 +422,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
         if(filter.genreInclusion.size() > 0)
         {
             int counter = 0;
-            for(auto genre : filter.genreInclusion)
+            for(const auto& genre : std::as_const(filter.genreInclusion))
             {
                 auto counter1 = ++counter;
                 queryString += QString(" AND f.genres like '%'||:genreinc%1||'%'").arg(QString::number(counter1));
@@ -432,7 +432,7 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
         if(filter.genreExclusion.size() > 0)
         {
             int counter = 0;
-            for(auto genre : filter.genreExclusion)
+            for(const auto& genre : std::as_const(filter.genreExclusion))
             {
                 auto counter1 = ++counter;
                 queryString += QString(" AND f.genres not like '%'||:genreexc%1||'%'").arg(QString::number(counter1));
@@ -455,15 +455,15 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
 
             int counter = 0;
             QStringList genreResult;
-            for(auto genre : filter.genreInclusion)
+            for(const auto& genre : std::as_const(filter.genreInclusion))
             {
                 auto counter1 = ++counter;
                 genreResult.push_back(QString(" true_genre1  like '%'||:genreinc%1||'%' and  true_genre1_percent/max_genre_percent > %2  ")
-                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++),QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre2  like '%'||:genreinc%1||'%' and  true_genre2_percent/max_genre_percent > %2  ")
-                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++),QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre3  like '%'||:genreinc%1||'%' and  true_genre3_percent/max_genre_percent > %2 ")
-                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++),QString::number(limiter)));
 
             }
             if(genreResult.size() > 0)
@@ -482,15 +482,15 @@ QString DefaultQueryBuilder::ProcessGenreIncluson(StoryFilter filter)
 
             int counter = 0;
             QStringList genreResult;
-            for(auto genre : filter.genreExclusion)
+            for(const auto& genre : std::as_const(filter.genreExclusion))
             {
                 auto counter1 = ++counter;
                 genreResult.push_back(QString(" true_genre1  like '%'||:genreexc%1||'%' and  true_genre1_percent/max_genre_percent > %2  ")
-                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++),QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre2  like '%'||:genreexc%1||'%' and  true_genre2_percent/max_genre_percent > %2  ")
-                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++),QString::number(limiter)));
                 genreResult.push_back(QString(" true_genre3  like '%'||:genreexc%1||'%' and  true_genre3_percent/max_genre_percent > %2 ")
-                                      .arg(QString::number(counter1++)).arg(QString::number(limiter)));
+                                      .arg(QString::number(counter1++),QString::number(limiter)));
             }
             if(genreResult.size() > 0)
                 queryString += QString(" AND not ( ") + genreResult.join(" OR ") + QString(" ) ");
@@ -506,7 +506,7 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
     if(filter.wordInclusion.size() > 0)
     {
         int counter = 0;
-        for(QString word: filter.wordInclusion)
+        for(const auto& word: std::as_const(filter.wordInclusion))
         {
             if(word.trimmed().isEmpty())
                 continue;
@@ -515,20 +515,20 @@ QString DefaultQueryBuilder::ProcessWordInclusion(StoryFilter filter)
             queryString += QString(" AND (summary like '%'||:incword%1||'%' "
                                    "or title like '%'||:incword%2||'%') ")
 
-                    .arg(QString::number(counter1)).arg(QString::number(counter2));
+                    .arg(QString::number(counter1),QString::number(counter2));
         }
     }
     if(filter.wordExclusion.size() > 0)
     {
         int counter = 0;
-        for(QString word: filter.wordExclusion)
+        for(const auto& word: std::as_const(filter.wordExclusion))
         {
             if(word.trimmed().isEmpty())
                 continue;
             auto counter1 = ++counter;
             auto counter2 = ++counter;
             queryString += QString(" AND summary not like '%'||:excword%1||'%' and title not like '%'||:excword%2||'%'")
-                    .arg(QString::number(counter1)).arg(QString::number(counter2));
+                    .arg(QString::number(counter1),QString::number(counter2));
         }
     }
     return queryString;
@@ -766,13 +766,13 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         if(!filter.genreInclusion.isEmpty())
         {
             int counter = 1;
-            for(auto genre : filter.genreInclusion)
+            for(const auto& genre : std::as_const(filter.genreInclusion))
                 q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
         }
         if(!filter.genreExclusion.isEmpty())
         {
             int counter = 1;
-            for(auto genre : filter.genreExclusion)
+            for(const auto& genre : std::as_const(filter.genreExclusion))
                 q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
         }
     }
@@ -781,7 +781,7 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         if(!filter.genreInclusion.isEmpty())
         {
             int counter = 1;
-            for(auto genre : filter.genreInclusion)
+            for(const auto& genre : std::as_const(filter.genreInclusion))
             {
                 q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
                 q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
@@ -791,7 +791,7 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         if(!filter.genreExclusion.isEmpty())
         {
             int counter = 1;
-            for(auto genre : filter.genreExclusion)
+            for(const auto& genre : std::as_const(filter.genreExclusion))
             {
                 q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
                 q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
@@ -814,7 +814,7 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
     if(!filter.wordInclusion.isEmpty())
     {
         int counter = 1;
-        for(QString word: filter.wordInclusion)
+        for(const auto& word: std::as_const(filter.wordInclusion))
         {
             if(word.trimmed().isEmpty())
                 continue;
@@ -825,7 +825,7 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
     if(!filter.wordExclusion.isEmpty())
     {
         int counter = 1;
-        for(QString word: filter.wordExclusion)
+        for(const auto& word: std::as_const(filter.wordExclusion))
         {
             if(word.trimmed().isEmpty())
                 continue;

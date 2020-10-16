@@ -363,7 +363,7 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(SleepyDiscord::Message message)
             if(silentStr.length() != 0)
                 silent = true;
             auto numbers = QString::fromStdString(match.get<2>().to_string()).split(" ");
-            for(auto number : numbers){
+            for(const auto& number : numbers){
                 auto id = number.toInt();
                 if(number != 0){
                     ignoredFics.ids.push_back(id);
@@ -447,7 +447,7 @@ CommandChain CommandParser::Execute(std::string command, QSharedPointer<discord:
         break;
     }
     result.AddUserToCommands(user);
-    for(auto command: result.commands){
+    for(const auto& command: std::as_const(result.commands)){
         if(!command.textForPreExecution.isEmpty())
             client->sendMessage(command.originalMessage.channelID, command.textForPreExecution.toStdString());
     }
@@ -485,7 +485,7 @@ void SendMessageCommand::Invoke(Client * client)
 {
     try{
         auto addReaction = [&](const SleepyDiscord::Message& newMessage){
-            for(auto reaction: reactionsToAdd)
+            for(const auto& reaction: std::as_const(reactionsToAdd))
                 client->addReaction(originalMessage.channelID, newMessage.ID, reaction.toStdString());
         };
         if(targetMessage.string().length() == 0){

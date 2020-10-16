@@ -29,7 +29,7 @@ void TaskRunner::run()
         result.performedParseCommand = true;
     if(chainToRun.hasFullParseCommand)
         result.performedFullParseCommand = true;
-    for(auto command : chainToRun.commands){
+    for(const auto& command : std::as_const(chainToRun.commands)){
         auto action = GetAction(command.type);
         auto actionResult = action->Execute(environment, command);
         result.Push(actionResult);

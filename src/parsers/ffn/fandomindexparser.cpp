@@ -82,8 +82,8 @@ void FFNFandomIndexParserBase::ProcessInternal(RegexProcessData procData)
         QString name = str.mid(nameStart + procData.nameStartLength,
                                nameEnd - (nameStart + procData.nameStartLength));
         name.replace("\\'", "'");
-        if(name.contains("Yu-Gi-Oh!"))
-            startAt = linkEnd;
+//        if(name.contains("Yu-Gi-Oh!"))
+//            startAt = linkEnd;
 
         startAt = linkEnd;
 

@@ -119,7 +119,7 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     qDebug () << "median of match value is: " << matchMedian;
     qDebug () << "median of ratio is: " << ratioMedian;
 
-    auto keysRatio = inputs.faves.keys();
+    //auto keysRatio = inputs.faves.keys();
     auto keysMedian = inputs.faves.keys();
     std::sort(keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
         return allAuthors[i1].matches < allAuthors[i2].matches;
@@ -242,7 +242,7 @@ void RecCalculatorImplWeighted::AdjustRatioForAutomaticParams()
     if(!params->isAutomatic)
         return;
     ratioSum = 0;
-    for(auto author : filteredAuthors)
+    for(auto author : std::as_const(filteredAuthors))
         ratioSum+=allAuthors[author].ratio;
 }
 

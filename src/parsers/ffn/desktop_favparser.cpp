@@ -101,7 +101,7 @@ inline void UpdateFandoms(QSharedPointer<core::Fanfic> fic,
         crossKeeper[0]++;
     else
         crossKeeper[1]++;
-    for(auto fandom: fic->fandoms)
+    for(const auto& fandom: std::as_const(fic->fandoms))
     {
         fandomKeeper[fandom]++;
     }
@@ -224,7 +224,7 @@ inline void UpdateGenreResults(QSharedPointer<core::Fanfic> fic,
 {
     thread_local QHash<QString, int> moodRedirects = CreateMoodRedirects();
     //int moodSum = 0;
-    for(auto genre: fic->genres)
+    for(const auto& genre: std::as_const(fic->genres))
     {
         genreKeeper[genre]++;
         auto redirected = moodRedirects[genre];
@@ -257,20 +257,23 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
 {
     double maxPrevalence = 0.0;
     int totalInClumps = 0;
-    for(auto genre : genreKeeper.keys())
-    {
-
-        double factor = static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal);
-        if(static_cast<double>(genreKeeper[genre])/static_cast<double>(ficTotal) > 0.5)
-            totalInClumps+=genreKeeper[genre];
+    auto it = genreKeeper.begin();
+    auto itEnd = genreKeeper.end();
+    while(it != itEnd){
+        const auto value = it.value();
+        double factor = static_cast<double>(value)/static_cast<double>(ficTotal);
+        if(static_cast<double>(value)/static_cast<double>(ficTotal) > 0.5)
+            totalInClumps+=value;
 
         if(factor > maxPrevalence)
         {
-            author->stats.favouriteStats.prevalentGenre = genre;
+            author->stats.favouriteStats.prevalentGenre = it.key();
             maxPrevalence = factor;
         }
-        author->stats.favouriteStats.genreFactors[genre]=factor;
+        author->stats.favouriteStats.genreFactors[it.key()]=factor;
+        it++;
     }
+
     int totalInRest = ficTotal - totalInClumps;
     author->stats.favouriteStats.genreDiversityFactor = static_cast<double>(totalInRest)/static_cast<double>(ficTotal);
 }
@@ -284,14 +287,15 @@ inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes
 {
     int total = sizes.size();
     int dominatingValue = 0.0;
-    for(auto ficSize : ficSizeKeeper.keys())
+
+    for(auto i = ficSizeKeeper.begin(); i != ficSizeKeeper.end(); i++)
     {
-        if(ficSizeKeeper[ficSize] > dominatingValue)
+        if(i.value() > dominatingValue)
         {
-            author->stats.favouriteStats.mostFavouritedSize = static_cast<core::EntitySizeType>(ficSize);
-            dominatingValue = ficSizeKeeper[ficSize];
+            author->stats.favouriteStats.mostFavouritedSize = static_cast<core::EntitySizeType>(i.key());
+            dominatingValue = i.value();
         }
-        author->stats.favouriteStats.sizeFactors[ficSize] = static_cast<double>(ficSizeKeeper[ficSize])/static_cast<double>(total);
+        author->stats.favouriteStats.sizeFactors[i.key()] = static_cast<double>(i.value())/static_cast<double>(total);
     }
     double averageFicSize = 0.0;
     int sum = 0;
@@ -314,17 +318,19 @@ inline void ProcessUnpopular(QSharedPointer<core::Author> author, int ficTotal, 
 
 inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficTotal, QHash<QString, int>& fandomKeeper)
 {
-    double averageFicsPerFandom = static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.keys().size());
+    double averageFicsPerFandom = static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.size());
     // need to find fics in fandoms 2x over average
     int totalInClumps = 0;
     int totalValue = 0;
-    for(auto fandom : fandomKeeper.keys())
+
+    for(auto i = fandomKeeper.begin(); i != fandomKeeper.end(); i++)
     {
-        totalValue+=fandomKeeper[fandom];
-        if(fandomKeeper[fandom] >= 2*averageFicsPerFandom)
-            totalInClumps+=fandomKeeper[fandom];
-        double  fandomFactor = static_cast<double>(fandomKeeper[fandom])/static_cast<double>(ficTotal);
-        author->stats.favouriteStats.fandomFactors[fandom]=fandomFactor;
+        auto tempValue = i.value();
+        totalValue+=tempValue;
+        if(tempValue >= 2*averageFicsPerFandom)
+            totalInClumps+=tempValue;
+        double  fandomFactor = static_cast<double>(tempValue)/static_cast<double>(ficTotal);
+        author->stats.favouriteStats.fandomFactors[i.key()]=fandomFactor;
     }
     int totalInRest = totalValue - totalInClumps;
     //diverse favourite list  will have this close to 1
@@ -464,7 +470,7 @@ QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString u
         diagnostics.push_back("<span> \nFinished loading data <br></span>");
     }
 
-    for(auto fic: sections)
+    for(const auto& fic: std::as_const(sections))
     {
         statToken.wordCount+=fic->wordCount.toInt();
         if(!statToken.firstPublished.isValid() || fic->published.date() < statToken.firstPublished)
@@ -486,14 +492,14 @@ QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString u
 //    qDebug() << "Fav fics: " << favCounter;
     processedStuff+=sections;
     authorStats = author;
-    currentPosition = 999;
+    //currentPosition = 999;
     return sections;
 }
 
 QSet<QString> FavouriteStoryParser::FetchFavouritesIdList()
 {
     QSet<QString> idResult;
-    for(auto fic : processedStuff)
+    for(const auto& fic : std::as_const(processedStuff))
     {
         if(fic->ficSource != core::Fanfic::efs_own_works)
             idResult.insert(QString::number(fic->identity.web.ffn));
@@ -537,10 +543,11 @@ void Combine(QHash<T, Y>& firstHash, QHash<T, Y> secondHash)
 void ConvertFandomsToIds(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomInterface)
 {
     auto& stats = author->stats.favouriteStats;
-    for(auto fandomName : author->stats.favouriteStats.fandoms.keys())
+
+    for(auto i = author->stats.favouriteStats.fandoms.begin(); i != author->stats.favouriteStats.fandoms.end(); i++)
     {
-        stats.fandomsConverted[fandomInterface->GetIDForName(fandomName)] = stats.fandoms[fandomName];
-        stats.fandomFactorsConverted[fandomInterface->GetIDForName(fandomName)] = stats.fandomFactors[fandomName];
+        stats.fandomsConverted[fandomInterface->GetIDForName(i.key())] = stats.fandoms[i.key()];
+        stats.fandomFactorsConverted[fandomInterface->GetIDForName(i.key())] = stats.fandomFactors[i.key()];
     }
 }
 
@@ -550,7 +557,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
                                       QList<core::FicSectionStatsTemporaryToken> tokens)
 {
     core::FicSectionStatsTemporaryToken resultingToken;
-    for(auto statToken : tokens)
+    for(const auto& statToken : tokens)
     {
         resultingToken.chapterKeeper += statToken.chapterKeeper;
         resultingToken.ficCount+= statToken.ficCount;
@@ -614,7 +621,7 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
 void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers)
 {
     QList<core::FicSectionStatsTemporaryToken> tokenList;
-    for(auto parser : parsers)
+    for(const auto& parser : parsers)
     {
       tokenList.push_back(parser.statToken);
     }

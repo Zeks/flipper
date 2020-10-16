@@ -26,7 +26,7 @@ QStringList DefaultRNGgenerator::Get(QSharedPointer<Query> query, QString userTo
     QString where = userToken + query->str;
     QStringList result;
     bool listIsOutdated = false, containsList = false;
-    for(auto bind: query->bindings)
+    for(const auto& bind: std::as_const(query->bindings))
         where += bind.key + bind.value.toString().left(30);
     where += "Minrecs: " + QString::number(filter.minRecommendations);
     where += "Rated: " + QString::number(filter.rating);
