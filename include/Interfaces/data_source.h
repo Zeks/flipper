@@ -27,8 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 class FicFilter
 {
 public:
-    FicFilter();
-    virtual ~FicFilter();
+    FicFilter() = default;
+    virtual ~FicFilter() = default;
     virtual bool Passed(core::Fanfic*, const SlashFilterState& slashFilter) = 0;
 };
 
@@ -36,7 +36,7 @@ class FicFilterSlash : public FicFilter
 {
 public:
     FicFilterSlash();
-    virtual ~FicFilterSlash();
+    virtual ~FicFilterSlash()= default;
     virtual bool Passed(core::Fanfic*, const SlashFilterState& slashFilter);
     CommonRegex regexToken;
 };
@@ -44,8 +44,8 @@ public:
 class FicSource
 {
 public:
-    FicSource();
-    virtual ~FicSource();
+    FicSource() = default;
+    virtual ~FicSource() = default;
 
     virtual void FetchData(core::StoryFilter filter, QVector<core::Fanfic>*) = 0;
     virtual int GetFicCount(core::StoryFilter filter) = 0;
@@ -65,11 +65,11 @@ class FicSourceDirect : public FicSource
 {
 public:
     FicSourceDirect(QSharedPointer<database::IDBWrapper> db, QSharedPointer<core::RNGData> rngData);
-    virtual ~FicSourceDirect();
-    virtual void FetchData(core::StoryFilter filter, QVector<core::Fanfic>*);
-    QSqlQuery BuildQuery(core::StoryFilter filter, bool countOnly = false) ;
+    virtual ~FicSourceDirect() = default;
+    virtual void FetchData(const core::StoryFilter &filter, QVector<core::Fanfic>*);
+    QSqlQuery BuildQuery(const core::StoryFilter &filter, bool countOnly = false) ;
     inline core::Fanfic LoadFanfic(QSqlQuery& q);
-    int GetFicCount(core::StoryFilter filter);
+    int GetFicCount(const core::StoryFilter &filter);
     //QSet<int> GetAuthorsForFics(QSet<int> ficIDsForActivetags);
     void InitQueryType(bool client = false, QString userToken = QString());
     QSharedPointer<core::Query> currentQuery;
