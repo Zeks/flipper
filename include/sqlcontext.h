@@ -1,6 +1,7 @@
 #pragma once
 #include "transaction.h"
 #include "logger/QsLog.h"
+#include <fmt/format.h>
 
 #include <QString>
 #include <QSqlDatabase>
@@ -15,6 +16,15 @@
 #include <array>
 #include <unordered_map>
 
+namespace std
+{
+    inline namespace __cxx11{
+    inline uint qHash(const std::string& key, uint seed = 0)
+     {
+         return qHash(QByteArray::fromRawData(key.data(), key.length()), seed);
+     }
+    }
+}
 
 
 
@@ -70,11 +80,11 @@ struct SqlContext
 {
     SqlContext(QSqlDatabase db) : q(db), transaction(db){
     }
-    SqlContext(QSqlDatabase db, QString qs) :qs(qs), q(db), transaction(db) {
+    SqlContext(QSqlDatabase db, std::string&& qs) :qs(qs), q(db), transaction(db) {
         Prepare(qs);
     }
 
-    SqlContext(QSqlDatabase db, QStringList queries) : q(db), transaction(db)
+    SqlContext(QSqlDatabase db, QList<std::string> queries) : q(db), transaction(db)
     {
         for(const auto& query : queries)
         {
@@ -84,14 +94,19 @@ struct SqlContext
         }
     }
 
-    SqlContext(QSqlDatabase db, QString qs,  std::function<void(SqlContext<ResultType>*)> func) : qs(qs), q(db), transaction(db),  func(func){
+    SqlContext(QSqlDatabase db, std::string&& qs,  std::function<void(SqlContext<ResultType>*)> func) : qs(qs), q(db), transaction(db),  func(func){
         Prepare(qs);
         func(this);
     }
 
-    SqlContext(QSqlDatabase db, QString qs, std::unordered_map<std::string, QVariant> hash) :  qs(qs), q(db),  transaction(db){
+    SqlContext(QSqlDatabase db, std::string&& qs, std::unordered_map<std::string, QVariant> hash) :  qs(qs), q(db),  transaction(db){
         Prepare(qs);
 
+        for(auto i = hash.begin(); i != hash.end(); i++)
+            bindMoveValue(std::move(i->first), std::move(i->second));
+    }
+
+    SqlContext(QSqlDatabase db, std::unordered_map<std::string, QVariant> hash) :  q(db),  transaction(db){
         for(auto i = hash.begin(); i != hash.end(); i++)
             bindMoveValue(std::move(i->first), std::move(i->second));
     }
@@ -109,16 +124,17 @@ struct SqlContext
         return result;
     }
 
-    void ReplaceQuery(QString query){
-        Prepare(query);
+    void ReplaceQuery(std::string&& query){
+        qs = query;
+        Prepare(qs);
         bindValues.clear();
     }
 
-    void ExecuteWithArgsSubstitution(QStringList keys){
+    void ExecuteWithArgsSubstitution(std::list<std::string>&& keys){
         for(const auto& key : keys)
         {
-            QString newString = qs;
-            newString = newString.arg(key);
+            auto newString = qs;
+            newString = fmt::format(newString, key);
             Prepare(newString);
             BindValues();
             ExecAndCheck();
@@ -195,7 +211,7 @@ struct SqlContext
             return false;
         return true;
     }
-    void FetchSelectFunctor(QString select, std::function<void(ResultType& data, QSqlQuery& q)> f, bool allowEmptyRecords = false)
+    void FetchSelectFunctor(std::string&& select, std::function<void(ResultType& data, QSqlQuery& q)> f, bool allowEmptyRecords = false)
     {
         Prepare(select);
         BindValues();
@@ -211,10 +227,10 @@ struct SqlContext
         } while(q.next());
     }
     template <typename ValueType>
-    void FetchLargeSelectIntoList(QString fieldName, QString actualQuery, QString countQuery = "",
+    void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::string&& countQuery = "",
                                   std::function<ValueType(QSqlQuery&)> func = std::function<ValueType(QSqlQuery&)>())
     {
-        if(countQuery.isEmpty())
+        if(countQuery.length() == 0)
             qs = "select count(*) from ( " + actualQuery + " ) ";
         else
             qs = countQuery;
@@ -241,14 +257,14 @@ struct SqlContext
 
         do{
             if(!func)
-                result.data += q.value(fieldName).template value<typename ResultType::value_type>();
+                result.data += q.value(fieldName.c_str()).template value<typename ResultType::value_type>();
             else
                 result.data += func(q);
         } while(q.next());
     }
 
     template <typename ValueType>
-    void FetchLargeSelectIntoListWithoutSize(QString fieldName, QString actualQuery,
+    void FetchLargeSelectIntoListWithoutSize(QString fieldName, std::string&& actualQuery,
                                   std::function<ValueType(QSqlQuery&)> func = std::function<ValueType(QSqlQuery&)>())
     {
         qs = actualQuery;
@@ -267,7 +283,7 @@ struct SqlContext
         } while(q.next());
     }
 
-    void FetchSelectIntoHash(QString actualQuery, QString idFieldName, QString valueFieldName)
+    void FetchSelectIntoHash(std::string&& actualQuery, QString idFieldName, QString valueFieldName)
     {
         qs = actualQuery;
         Prepare(qs);
@@ -287,10 +303,10 @@ struct SqlContext
     void FetchSingleValue(QString valueName,
                           ResultType defaultValue,
                           bool requireExisting = true,
-                          QString select = ""
+                          std::string&& select = ""
             ){
         result.data = defaultValue;
-        if(!select.isEmpty())
+        if(select.length() != 0)
         {
             qs = select;
             Prepare(qs);
@@ -307,7 +323,7 @@ struct SqlContext
         result.data = q.value(valueName).template value<T>();
     }
 
-    void ExecuteList(QStringList queries){
+    void ExecuteList(std::list<std::string>&& queries){
         bool execResult = true;
         for(const auto& query : queries)
         {
@@ -347,13 +363,13 @@ struct SqlContext
         for_each(func);
         return result;
     }
-    bool Prepare(QString qs){
-        if(qs.isEmpty())
+    bool Prepare(std::string_view qs){
+        if(qs.length() == 0)
         {
             qDebug() << "passed empty query";
             return true;
         }
-        bool success = q.prepare(qs);
+        bool success = q.prepare(QString::fromStdString(std::string(qs)));
         return success;
     }
 
@@ -399,7 +415,7 @@ struct SqlContext
     bool Success() const {return result.success;}
     bool Next() { return q.next();}
     DiagnosticSQLResult<ResultType> result;
-    QString qs;
+    std::string qs;
     QSqlQuery q;
     Transaction transaction;
     QList<QueryBinding> bindValues;
@@ -412,12 +428,12 @@ struct SqlContext
 template <typename ResultType>
 struct ParallelSqlContext
 {
-    ParallelSqlContext(QSqlDatabase source, QString sourceQuery, QStringList sourceFields,
-                       QSqlDatabase target, QString targetQuery, QStringList targetFields):
+    ParallelSqlContext(QSqlDatabase source, std::string&& sourceQuery, QList<std::string>&& sourceFields,
+                       QSqlDatabase target, std::string&& targetQuery, QList<std::string>&& targetFields):
         sourceQ(source), targetQ(target),
         sourceDB(source), targetDB(target), transaction(target) {
-        sourceQ.prepare(sourceQuery);
-        targetQ.prepare(targetQuery);
+        sourceQ.prepare(QString::fromStdString(sourceQuery));
+        targetQ.prepare(QString::fromStdString(targetQuery));
         this->sourceFields = sourceFields;
         this->targetFields = targetFields;
     }
@@ -444,11 +460,11 @@ struct ParallelSqlContext
                 }
                 else
                 {
-                    value = sourceQ.value(sourceFields[i]);
+                    value = sourceQ.value(sourceFields[i].c_str());
                     //qDebug() << "binding value: " << value;
                 }
                 //qDebug() << "to target field: " << targetFields[i];
-                targetQ.bindValue(":" + targetFields[i], value);
+                targetQ.bindValue((":" + targetFields[i]).c_str(), value);
             }
 
             if(!result.ExecAndCheck(targetQ, ignoreUniqueness))
@@ -462,10 +478,10 @@ struct ParallelSqlContext
     QSqlQuery targetQ;
     QSqlDatabase sourceDB;
     QSqlDatabase targetDB;
-    QStringList sourceFields;
-    QStringList targetFields;
+    QList<std::string> sourceFields;
+    QList<std::string> targetFields;
     Transaction transaction;
-    QHash<QString,std::function<QVariant(QString, QSqlQuery, QSqlDatabase, DiagnosticSQLResult<ResultType>&)>> valueConverters;
+    QHash<std::string,std::function<QVariant(std::string, QSqlQuery, QSqlDatabase, DiagnosticSQLResult<ResultType>&)>> valueConverters;
 };
 
 }

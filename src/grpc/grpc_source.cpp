@@ -643,9 +643,9 @@ public:
     ServerStatus GetStatus();
     bool GetInternalIDsForFics(QVector<core::Identity> * ficList);
     bool GetFFNIDsForFics(QVector<core::Identity> * ficList);
-    void FetchData(core::StoryFilter filter, QVector<core::Fanfic> * fics);
+    void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic> * fics);
     void FetchFic(int ficId, QVector<core::Fanfic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
-    int GetFicCount(core::StoryFilter filter);
+    int GetFicCount(const core::StoryFilter& filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
     core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
@@ -765,7 +765,7 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
     return true;
 }
 
-void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic> * fics)
+void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core::Fanfic> * fics)
 {
     grpc::ClientContext context;
 
@@ -855,7 +855,7 @@ void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fanfic> *fics, core::
     proto_converters::ProtoFicToLocalFic(response->fanfic(), (*fics)[static_cast<size_t>(0)]);
 }
 
-int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
+int FicSourceGRPCImpl::GetFicCount(const core::StoryFilter& filter)
 {
     grpc::ClientContext context;
 
@@ -1369,7 +1369,7 @@ FicSourceGRPC::~FicSourceGRPC()
 {
 
 }
-void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fanfic> *fics)
+void FicSourceGRPC::FetchData(const core::StoryFilter &filter, QVector<core::Fanfic> *fics)
 {
     if(!impl)
         return;
@@ -1384,7 +1384,7 @@ void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fanfic> *fics, core::Story
     impl->FetchFic(ficId, fics, idType);
 }
 
-int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
+int FicSourceGRPC::GetFicCount(const core::StoryFilter &filter)
 {
     if(!impl)
         return 0;

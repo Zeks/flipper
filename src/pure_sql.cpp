@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/genres.h"
 #include "EGenres.h"
 #include "include/in_tag_accessor.h"
+#include "fmt/format.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QVector>
@@ -57,11 +58,11 @@ bool NullPtrGuard(T item)
 
 static DiagnosticSQLResult<FicIdHash> GetGlobalIDHash(QSqlDatabase db, QString where)
 {
-    QString qs = QString("select id, ffn_id, ao3_id, sb_id, sv_id from fanfics ");
+    std::string qs = "select id, ffn_id, ao3_id, sb_id, sv_id from fanfics ";
     if(!where.isEmpty())
-        qs+=where;
+        qs+=where.toStdString();
 
-    SqlContext<FicIdHash> ctx(db, qs);
+    SqlContext<FicIdHash> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data.ids["ffn"][q.value("ffn_id").toInt()] = q.value("id").toInt();
         ctx.result.data.ids["sb"][q.value("sb_id").toInt()] = q.value("id").toInt();
@@ -77,50 +78,7 @@ static DiagnosticSQLResult<FicIdHash> GetGlobalIDHash(QSqlDatabase db, QString w
     return ctx.result;
 
 }
-//static const FanficIdRecord& GrabFicIDFromQuery(QSqlQuery& q, QSqlDatabase db)
-//{
-//    static FicIdHash webIdToGlobal = GetGlobalIDHash(db, "").data;
-//    static FanficIdRecord result;
-//    auto ffn = q.value("ffn_id").toInt();
-//    auto ao3 = q.value("ao3_id").toInt();
-//    auto sb = q.value("sb_id").toInt();
-//    auto sv = q.value("sv_id").toInt();
-//    result.ids["ffn"] = ffn;
-//    result.ids["ao3"] = ao3;
-//    result.ids["sb"] = sb;
-//    result.ids["sv"] = sv;
-//    if(webIdToGlobal.ids.size() == 0)
-//        return result;
 
-//    if(webIdToGlobal.ids["ffn"].contains(ffn))
-//        result.ids["db"] = webIdToGlobal.ids["ffn"][ffn];
-//    else if(webIdToGlobal.ids["sb"].contains(sb))
-//        result.ids["db"] = webIdToGlobal.ids["sb"][sb];
-//    else if(webIdToGlobal.ids["sv"].contains(sv))
-//        result.ids["db"] = webIdToGlobal.ids["sv"][sv];
-//    else if(webIdToGlobal.ids["ao3"].contains(ao3))
-//        result.ids["db"] = webIdToGlobal.ids["ao3"][ao3];
-
-//    return result;
-//}
-
-//bool ExecAndCheck(QSqlQuery& q)
-//{
-//    q.exec();
-//    if(q.lastError().isValid())
-//    {
-//        if(q.lastError().text().contains("record"))
-//            qDebug() << "Error while performing a query: ";
-//        qDebug() << "Error while performing a query: ";
-//        qDebug().noquote() << q.lastQuery();
-//        qDebug() << "Error was: " <<  q.lastError();
-//        qDebug() << q.lastError().nativeErrorCode();
-//        if(q.lastError().text().contains("Parameter"))
-//            return false;
-//        return false;
-//    }
-//    return true;
-//}
 bool CheckExecution(QSqlQuery& q)
 {
     if(q.lastError().isValid())
@@ -145,20 +103,20 @@ DiagnosticSQLResult<bool> SetFandomTracked(int id, bool tracked,  QSqlDatabase d
 
 DiagnosticSQLResult<bool> CalculateFandomsFicCounts(QSqlDatabase db)
 {
-    QString qs = QString("update fandomindex set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id)");
-    return SqlContext<bool> (db, qs)();
+    std::string qs = "update fandomindex set fic_count = (select count(fic_id) from ficfandoms where fandom_id = fandoms.id)";
+    return SqlContext<bool> (db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> UpdateFandomStats(int fandomId, QSqlDatabase db)
 {
-    QString qs = QString("update fandomsources set fic_count = "
+    std::string qs = "update fandomsources set fic_count = "
                          " (select count(fic_id) from ficfandoms where fandom_id = :fandom_id)"
                          //! todo
                          //" average_faves_top_3 = (select sum(favourites)/3 from fanfics f where f.fandom = fandoms.fandom and f.id "
                          //" in (select id from fanfics where fanfics.fandom = fandoms.fandom order by favourites desc limit 3))"
-                         " where fandoms.id = :fandom_id");
+                         " where fandoms.id = :fandom_id";
 
-    SqlContext<bool> ctx(db, qs, {{"fandom_id",fandomId}});
+    SqlContext<bool> ctx(db, std::move(qs), {{"fandom_id",fandomId}});
     if(fandomId == -1)
         return ctx.result;
     return ctx();
@@ -180,11 +138,11 @@ DiagnosticSQLResult<bool>  Internal::WriteMaxUpdateDateForFandom(QSharedPointer<
                                                                  QSqlDatabase db,
                                                                  std::function<void(QSharedPointer<core::Fandom>,QDateTime)> writer                                           )
 {
-    QString qs = QString("select max(updated) as updated from fanfics where id in (select distinct fic_id from FicFandoms where fandom_id = :fandom_id %1");
-    qs=qs.arg(condition);
+    std::string qs = "select max(updated) as updated from fanfics where id in (select distinct fic_id from FicFandoms where fandom_id = :fandom_id %1";
+    qs=fmt::format(qs,condition.toStdString());
 
     DiagnosticSQLResult<bool> opResult;
-    SqlContext<QString> ctx(db, qs);
+    SqlContext<QString> ctx(db, std::move(qs));
     ctx.FetchSingleValue<QString>("updated", "");
     opResult.success = ctx.result.success;
     if(!opResult.success)
@@ -198,22 +156,23 @@ DiagnosticSQLResult<bool>  Internal::WriteMaxUpdateDateForFandom(QSharedPointer<
 //! todo  requires refactor. fandoms need to have a tag table attached to them instead of forced sections
 DiagnosticSQLResult<QStringList> GetFandomListFromDB(QSqlDatabase db)
 {
-    QString qs = QString("select name from fandomindex");
+    std::string qs = "select name from fandomindex";
 
-    SqlContext<QStringList> ctx(db, qs);
+    SqlContext<QStringList> ctx(db, std::move(qs));
     ctx.result.data.push_back("");
-    ctx.FetchLargeSelectIntoList<QString>("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<bool> AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers)
 {
-    QString qs = "INSERT INTO FicTags(fic_id, tag) SELECT fic_id, '%1' as tag from FicFandoms f WHERE fandom_id = :fandom_id "
+    std::string qs = "INSERT INTO FicTags(fic_id, tag) SELECT fic_id, '%1' as tag from FicFandoms f WHERE fandom_id = :fandom_id "
                  " and NOT EXISTS(SELECT 1 FROM FicTags WHERE fic_id = f.fic_id and tag = '%1')";
     if(!includeCrossovers)
         qs+=" and (select count(distinct fandom_id) from ficfandoms where fic_id = f.fic_id) = 1";
-    qs=qs.arg(tag);
-    SqlContext<bool> ctx(db, qs, {{"fandom_id", fandom_id}});
+    qs=fmt::format(qs,tag.toStdString());
+
+    SqlContext<bool> ctx(db, std::move(qs), {{"fandom_id", fandom_id}});
     ctx.ExecAndCheck(true);
     return ctx.result;
 }
@@ -222,10 +181,10 @@ DiagnosticSQLResult<bool> AssignTagToFandom(QString tag, int fandom_id, QSqlData
 
 DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO FicTags(fic_id, tag, added) values(:fic_id, :tag, date('now'))";
-    SqlContext<bool> ctx(db, qs, {{"tag", tag},{"fic_id", fic_id}});
+    std::string qs = "INSERT INTO FicTags(fic_id, tag, added) values(:fic_id, :tag, date('now'))";
+    SqlContext<bool> ctx(db, std::move(qs), {{"tag", tag},{"fic_id", fic_id}});
     ctx.ExecAndCheck(true);
-    //    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id");
+    //    ctx.ReplaceQuery("update fanfics set hidden = 1 where id = :fic_id";
     //    ctx.bindValue("fic_id", fic_id);
     //    ctx.ExecAndCheck(true);
     return ctx.result;
@@ -234,15 +193,15 @@ DiagnosticSQLResult<bool> AssignTagToFanfic(QString tag, int fic_id, QSqlDatabas
 
 DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatabase db)
 {
-    QString qs = "delete from FicTags where fic_id = :fic_id and tag = :tag";
-    SqlContext<bool> ctx (db, qs, {{"tag", tag},{"fic_id", fic_id}});
+    std::string qs = "delete from FicTags where fic_id = :fic_id and tag = :tag";
+    SqlContext<bool> ctx (db, std::move(qs), {{"tag", tag},{"fic_id", fic_id}});
     ctx();
 
     //TODO need to  fix this... probably
 //    ctx.ReplaceQuery("update fanfics set hidden = case "
 //                     " when (select count(fic_id) from fictags where fic_id = :fic_id) > 0 then 1 "
 //                     " else 0 end "
-//                     " where id = :fic_id_");
+//                     " where id = :fic_id_";
 //    ctx.bindValue("fic_id", fic_id);
 //    ctx.bindValue("fic_id_", fic_id);
 //    ctx.ExecAndCheck();
@@ -251,21 +210,21 @@ DiagnosticSQLResult<bool> RemoveTagFromFanfic(QString tag, int fic_id, QSqlDatab
 
 DiagnosticSQLResult<bool> AssignSlashToFanfic(int fic_id, int source, QSqlDatabase db)
 {
-    QString qs = QString("update fanfics set slash_probability = 1, slash_source = :source where id = :fic_id");
-    return SqlContext<bool> (db, qs, {{"source", source},{"fic_id", fic_id}})();
+    std::string qs = "update fanfics set slash_probability = 1, slash_source = :source where id = :fic_id";
+    return SqlContext<bool> (db, std::move(qs), {{"source", source},{"fic_id", fic_id}})();
 }
 
 DiagnosticSQLResult<bool> AssignQueuedToFanfic(int fic_id, QSqlDatabase db)
 {
-    QString qs = QString("update fanfics set queued_for_action = 1 where id = :fic_id");
-    return SqlContext<bool> (db, qs, {{"fic_id", fic_id}})();
+    std::string qs = "update fanfics set queued_for_action = 1 where id = :fic_id";
+    return SqlContext<bool> (db, std::move(qs), {{"fic_id", fic_id}})();
 }
 
 DiagnosticSQLResult<bool> AssignChapterToFanfic(int fic_id, int chapter, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO FicReadingTracker(fic_id, at_chapter) values(:fic_id, :at_chapter) "
+    std::string qs = "INSERT INTO FicReadingTracker(fic_id, at_chapter) values(:fic_id, :at_chapter) "
                  "on conflict (fic_id) do update set at_chapter = :at_chapter_ where fic_id = :fic_id_";
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("fic_id", fic_id);
     ctx.bindValue("at_chapter", chapter);
     ctx.bindValue("at_chapter_", chapter);
@@ -277,31 +236,31 @@ DiagnosticSQLResult<bool> AssignScoreToFanfic(int score, int fic_id, QSqlDatabas
 {
     if(score > 0)
     {
-        QString qs = "INSERT INTO FicSCores(fic_id, score) values(:fic_id, :score) on conflict (fic_id) do update set score = :score where fic_id = :fic_id";
-        SqlContext<bool> ctx(db, qs, BP4(fic_id, score, score, fic_id));
+        std::string qs = "INSERT INTO FicSCores(fic_id, score) values(:fic_id, :score) on conflict (fic_id) do update set score = :score where fic_id = :fic_id";
+        SqlContext<bool> ctx(db, std::move(qs), BP4(fic_id, score, score, fic_id));
         ctx.ExecAndCheck(true);
         return ctx.result;
     }
     else {
-        QString qs = QString(" delete from FicScores where fic_id  = :fic_id");
-        return SqlContext<bool>(db, qs, BP1(fic_id))();
+        std::string qs = " delete from FicScores where fic_id  = :fic_id";
+        return SqlContext<bool>(db, std::move(qs), BP1(fic_id))();
     }
 }
 
 DiagnosticSQLResult<int> GetLastFandomID(QSqlDatabase db){
-    QString qs = QString("Select max(id) as maxid from fandomindex");
+    std::string qs = "Select max(id) as maxid from fandomindex";
 
-    SqlContext<int> ctx(db, qs);
+    SqlContext<int> ctx(db, std::move(qs));
     //qDebug() << "Db open: " << db.isOpen() << " " << db.connectionName();
-    ctx.FetchSingleValue<int>("maxid", -1, true, qs);
+    ctx.FetchSingleValue<int>("maxid", -1, true, std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<bool> WriteFandomUrls(core::FandomPtr fandom, QSqlDatabase db)
 {
-    QString qs = QString("insert into fandomurls(global_id, url, website, custom) values(:id, :url, :website, :custom)");
+    std::string qs = "insert into fandomurls(global_id, url, website, custom) values(:id, :url, :website, :custom)";
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     if(fandom->urls.size() == 0)
         fandom->urls.push_back(core::Url("", "ffn"));
     ctx.ExecuteWithKeyListAndBindFunctor<core::Url>(fandom->urls, [&](core::Url& url, QSqlQuery& q){
@@ -332,9 +291,9 @@ DiagnosticSQLResult<bool> CreateFandomInDatabase(core::FandomPtr fandom, QSqlDat
     if(newFandomId == -1)
         return ctx.result;
 
-    QString qs = QString("insert into fandomindex(id, name) "
-                         " values(:id, :name)");
-    ctx.ReplaceQuery(qs);
+    std::string qs = "insert into fandomindex(id, name) "
+                         " values(:id, :name)";
+    ctx.ReplaceQuery(std::move(qs));
     ctx.bindValue("name", fandom->GetName());
     ctx.bindValue("id", newFandomId);
     //qDebug() << db.isOpen();
@@ -351,19 +310,19 @@ DiagnosticSQLResult<bool> CreateFandomInDatabase(core::FandomPtr fandom, QSqlDat
 }
 DiagnosticSQLResult<int> GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db)
 {
-    QString qs = " select id from fanfics where author = :author and title = :title";
+    std::string qs = " select id from fanfics where author = :author and title = :title";
 
-    SqlContext<int> ctx(db, qs, {{"author", author},{"title", title}});
+    SqlContext<int> ctx(db, std::move(qs), {{"author", author},{"title", title}});
     ctx.FetchSingleValue<int>("id", -1);
     return ctx.result;
 }
 
 DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabase db)
 {
-    QString qs = " select id from fanfics where %1_id = :site_id";
-    qs = qs.arg(website);
+    std::string qs = " select id from fanfics where %1_id = :site_id";
+    qs=fmt::format(qs,website.toStdString());
 
-    SqlContext<int> ctx(db, qs, {{"site_id",webId}});
+    SqlContext<int> ctx(db, std::move(qs), {{"site_id",webId}});
     ctx.FetchSingleValue<int>("id", -1);
     return ctx.result;
 }
@@ -400,8 +359,8 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
 
 DiagnosticSQLResult<core::FicPtr> GetFicByWebId(QString website, int webId, QSqlDatabase db)
 {
-    QString qs = QString(" select * from fanfics where %1_id = :site_id").arg(website);
-    SqlContext<core::FicPtr> ctx(db, qs, {{"site_id",webId}});
+    std::string qs = fmt::format(" select * from fanfics where %1_id = :site_id",website.toStdString());
+    SqlContext<core::FicPtr> ctx(db, std::move(qs), {{"site_id",webId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data =  LoadFicFromQuery(q);
         ctx.result.data->webSite = website;
@@ -411,8 +370,8 @@ DiagnosticSQLResult<core::FicPtr> GetFicByWebId(QString website, int webId, QSql
 
 DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 {
-    QString qs = " select * from fanfics where id = :fic_id";
-    SqlContext<core::FicPtr> ctx(db, qs, {{"fic_id",ficId}});
+    std::string qs = " select * from fanfics where id = :fic_id";
+    SqlContext<core::FicPtr> ctx(db, std::move(qs), {{"fic_id",ficId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data =  LoadFicFromQuery(q);
     });
@@ -422,11 +381,11 @@ DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
-    QString getKeyQuery = QString("Select ( select count(*) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
+    auto getKeyQuery = fmt::format("Select ( select count(*) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
                                   " ( select count(*) from FANFICS where  %1_id = :site_id2 "
-                                  "and (updated < :updated or updated is null)) as count_updated").arg(fic->webSite);
+                                  "and (updated < :updated or updated is null)) as count_updated",fic->webSite.toStdString());
 
-    SqlContext<bool> ctx(db, getKeyQuery);
+    SqlContext<bool> ctx(db, std::move(getKeyQuery));
     ctx.bindValue("site_id1", fic->identity.web.GetPrimaryId());
     ctx.bindValue("site_id2", fic->identity.web.GetPrimaryId());
     ctx.bindValue("updated", fic->updated);
@@ -456,15 +415,16 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QS
 
 DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db)
 {
-    QString query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
+    std::string query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
                     " wcr, reviewstofavourites, age, daysrunning, at_chapter, lastupdate, fandom1, fandom2, author_id ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
                     " :CHARACTERS, :COMPLETE, :RATED, :summary, :genres, :published, :updated, :author_id,"
                     " :wcr, :reviewstofavourites, :age, :daysrunning, 0, date('now'), :fandom1, :fandom2, :author_id)";
-    query=query.arg(section->webSite);
 
-    SqlContext<bool> ctx(db, query);
+    query=fmt::format(query,section->webSite.toStdString());
+
+    SqlContext<bool> ctx(db, std::move(query));
     ctx.bindValue("site_id",section->identity.web.GetPrimaryId()); //?
     ctx.bindValue("fandom",section->fandom);
     ctx.bindValue("author",section->author->name); //?
@@ -498,15 +458,15 @@ DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fanfic> section, QSq
 }
 DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db)
 {
-    QString query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
+    std::string query = "UPDATE FANFICS set fandom = :fandom, wordcount= :wordcount, CHAPTERS = :CHAPTERS,  "
                     "COMPLETE = :COMPLETE, FAVOURITES = :FAVOURITES, REVIEWS= :REVIEWS, CHARACTERS = :CHARACTERS, RATED = :RATED, "
                     "summary = :summary, genres= :genres, published = :published, updated = :updated, author_id = :author_id,"
                     "wcr= :wcr,  author= :author, title= :title, reviewstofavourites = :reviewstofavourites, "
                     "age = :age, daysrunning = :daysrunning, lastupdate = date('now'),"
                     " fandom1 = :fandom1, fandom2 = :fandom2 "
                     " where %1_id = :site_id";
-    query=query.arg(section->webSite);
-    SqlContext<bool> ctx(db, query);
+    query=fmt::format(query,section->webSite.toStdString());
+    SqlContext<bool> ctx(db, std::move(query));
     ctx.bindValue("fandom",section->fandom);
     ctx.bindValue("author",section->author->name);
     ctx.bindValue("author_id",section->author->GetWebID("ffn"));
@@ -543,8 +503,8 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fanfic> section, QSql
 DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db)
 {
     // atm this pairs favourite story with an author
-    QString qs = " insert into recommendations (recommender_id, fic_id) values(:recommender_id,:fic_id); ";
-    SqlContext<bool> ctx(db, qs, {{"recommender_id", author->id},{"fic_id", fic_id}});
+    std::string qs = " insert into recommendations (recommender_id, fic_id) values(:recommender_id,:fic_id); ";
+    SqlContext<bool> ctx(db, std::move(qs), {{"recommender_id", author->id},{"fic_id", fic_id}});
     if(!author || author->id < 0)
         return ctx.result;
 
@@ -553,10 +513,10 @@ DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id
 
 DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> ficRelations, QSqlDatabase db)
 {
-    QString qs = " insert into FicRelations (fic1, fic2, fic1_list_count, fic2_list_count, meeting_list_count, same_fandom, attraction, repullsion, final_attraction)"
+    std::string qs = " insert into FicRelations (fic1, fic2, fic1_list_count, fic2_list_count, meeting_list_count, same_fandom, attraction, repullsion, final_attraction)"
                  " values(:fic1, :fic2, :fic1_list_count, :fic2_list_count, :meeting_list_count, :same_fandom, :attraction, :repullsion, :final_attraction); ";
     SqlContext<bool> ctx(db);
-    ctx.Prepare(qs);
+    ctx.Prepare(std::move(qs));
     DiagnosticSQLResult<bool> result;
     for(auto token : ficRelations)
     {
@@ -582,10 +542,10 @@ DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> ficRela
 
 DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  QSqlDatabase db)
 {
-    QString qs = " insert into FicAuthors (fic_id, author_id)"
+    std::string qs = " insert into FicAuthors (fic_id, author_id)"
                  " values(:fic_id, :author_id); ";
     SqlContext<bool> ctx(db);
-    ctx.Prepare(qs);
+    ctx.Prepare(std::move(qs));
     DiagnosticSQLResult<bool> result;
     for(auto i = data.begin(); i != data.end(); i++)
     {
@@ -605,19 +565,19 @@ DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  Q
 
 DiagnosticSQLResult<int>  GetAuthorIdFromUrl(QString url, QSqlDatabase db)
 {
-    QString qsl = " select id from recommenders where url like '%%1%' ";
-    qsl = qsl.arg(url);
+    std::string qsl = " select id from recommenders where url like '%%1%' ";
+    qsl = fmt::format(qsl, url.toStdString());
 
-    SqlContext<int> ctx(db, qsl);
+    SqlContext<int> ctx(db, std::move(qsl));
     ctx.FetchSingleValue<int>("id", -1);
     return ctx.result;
 }
 DiagnosticSQLResult<int>  GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db)
 {
-    QString qs = "select id from recommenders where %1_id = :id";
-    qs = qs.arg(website);
+    std::string qs = "select id from recommenders where %1_id = :id";
+    qs=fmt::format(qs,website.toStdString());
 
-    SqlContext<int> ctx(db, qs, {{"id", id}});
+    SqlContext<int> ctx(db, std::move(qs), {{"id", id}});
     ctx.FetchSingleValue<int>("id", -1, false);
     return ctx.result;
 }
@@ -627,9 +587,9 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase d
 {
     auto* userThreadData = ThreadData::GetUserData();
     userThreadData->ficsForAuthorSearch = fics;
-    QString qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
-    SqlContext<QSet<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("author_id", qs, "",[](QSqlQuery& q){
+    std::string qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
+    SqlContext<QSet<int>> ctx(db, std::move(qs));
+    ctx.FetchLargeSelectIntoList<int>("author_id", std::move(qs), "",[](QSqlQuery& q){
         return q.value("author_id").toInt();
     });
     ctx.result.data.remove(0);
@@ -639,13 +599,13 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase d
 }
 DiagnosticSQLResult<QSet<int>> GetRecommendersForFics(QSet<int> fics, QSqlDatabase db)
 {
-    QString qs = "select distinct recommender_id from  recommendations where fic_id in (%1)";
+    std::string qs = "select distinct recommender_id from  recommendations where fic_id in (%1)";
     QStringList list;
     for(auto fic: fics)
         list.push_back(QString::number(fic));
-    qs = qs.arg("'" + list.join("','") + "'");
-    SqlContext<QSet<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("recommender_id", qs, "",[](QSqlQuery& q){
+    qs = fmt::format(qs, "'" + list.join("','").toStdString() + "'");
+    SqlContext<QSet<int>> ctx(db, std::move(qs));
+    ctx.FetchLargeSelectIntoList<int>("recommender_id", std::move(qs), "",[](QSqlQuery& q){
         return q.value("recommender_id").toInt();
     });
     ctx.result.data.remove(0);
@@ -657,8 +617,8 @@ DiagnosticSQLResult<QHash<uint32_t, int>> GetHashAuthorsForFics(QSet<int> fics, 
 {
     auto* userThreadData = ThreadData::GetUserData();
     userThreadData->ficsForAuthorSearch = fics;
-    QString qs = "select author_id, id from fanfics where cfInFicsForAuthors(id) > 0";
-    SqlContext<QHash<uint32_t, int>> ctx(db, qs);
+    std::string qs = "select author_id, id from fanfics where cfInFicsForAuthors(id) > 0";
+    SqlContext<QHash<uint32_t, int>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data[q.value("id").toUInt()] = q.value("author_id").toInt();
     });
@@ -668,8 +628,8 @@ DiagnosticSQLResult<QHash<uint32_t, int>> GetHashAuthorsForFics(QSet<int> fics, 
 
 DiagnosticSQLResult<bool> AssignNewNameToAuthorWithId(core::AuthorPtr author, QSqlDatabase db)
 {
-    QString qs = " UPDATE recommenders SET name = :name where id = :id";
-    SqlContext<bool> ctx(db, qs, {{"name",author->name}, {"id",author->id}});
+    std::string qs = " UPDATE recommenders SET name = :name where id = :id";
+    SqlContext<bool> ctx(db, std::move(qs), {{"name",author->name}, {"id",author->id}});
     if(author->GetIdStatus() != core::AuthorIdStatus::valid)
         return ctx.result;
     return ctx();
@@ -706,18 +666,18 @@ core::AuthorPtr AuthorFromQuery(QSqlQuery& q)
 
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSqlDatabase db, int limit)
 {
-    QString qs = QString("select distinct id,name, url, ffn_id, ao3_id,sb_id, sv_id,  "
+    std::string qs = "select distinct id,name, url, ffn_id, ao3_id,sb_id, sv_id,  "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count,"
                          " last_favourites_update, last_favourites_checked "
-                         " from recommenders where website_type = :site order by id %1");
+                         " from recommenders where website_type = :site order by id %1";
     if(limit > 0)
-        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+        qs = fmt::format(qs, QString(" LIMIT %1 ").arg(QString::number(limit)).toStdString());
     else
-        qs = qs.arg("");
+        qs = fmt::format(qs, "");
 
     //!!! bindvalue incorrect for first query?
-    SqlContext<QList<core::AuthorPtr>> ctx(db, qs, {{"site",website}});
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs, "select count(*) from recommenders where website_type = :site",[](QSqlQuery& q){
+    SqlContext<QList<core::AuthorPtr>> ctx(db, {{"site",website}});
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", std::move(qs), "select count(*) from recommenders where website_type = :site",[](QSqlQuery& q){
         return AuthorFromQuery(q);
     });
     return ctx.result;
@@ -731,23 +691,23 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QStr
 {
     //todo fix reccount, needs to be precalculated in recommenders table
 
-    QString qs = QString("select distinct id,name, url, "
+    std::string qs = "select distinct id,name, url, "
                          "ffn_id, ao3_id,sb_id, sv_id, "
                          " last_favourites_update, last_favourites_checked, "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
                          " from recommenders where website_type = :site "
                          " and last_favourites_update > :date "
-                         "order by id %1");
+                         "order by id %1";
     if(limit > 0)
-        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+        qs = fmt::format(qs,QString(" LIMIT %1 ").arg(QString::number(limit)).toStdString());
     else
-        qs = qs.arg("");
+        qs = fmt::format(qs, "");
 
 
-    SqlContext<QList<core::AuthorPtr>> ctx(db, qs);
+    SqlContext<QList<core::AuthorPtr>> ctx(db);
     ctx.bindValue("site",website);
     ctx.bindValue("date",date);
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", std::move(qs),
                                                   "select count(*) from recommenders where website_type = :site",
                                                   [](QSqlQuery& q){
         return AuthorFromQuery(q);
@@ -765,7 +725,7 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
 {
     //todo fix reccount, needs to be precalculated in recommenders table
 
-    QString qs = QString("select distinct id,name, url, "
+    std::string qs = "select distinct id,name, url, "
                          "ffn_id, ao3_id,sb_id, sv_id, "
                          " last_favourites_update, last_favourites_checked, "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
@@ -773,18 +733,18 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
                          " last_favourites_update <= :date_start "
                          " and  last_favourites_update >= :date_end "
                          " and website_type = :site "
-                         "order by id %1");
+                         "order by id %1";
     if(limit > 0)
-        qs = qs.arg(QString(" LIMIT %1 ").arg(QString::number(limit)));
+        qs = fmt::format(qs,QString(" LIMIT %1 ").arg(QString::number(limit)).toStdString());
     else
-        qs = qs.arg("");
+        qs = fmt::format(qs, "");
 
     qDebug() << "fething authors between " << dateEnd << " and " << dateStart;
-    SqlContext<QList<core::AuthorPtr>> ctx(db, qs);
+    SqlContext<QList<core::AuthorPtr>> ctx(db);
     ctx.bindValue("date_start",dateStart);
     ctx.bindValue("date_end",dateEnd);
     ctx.bindValue("site",website);
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", qs,
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("",  std::move(qs),
                                                   "select count(*) from recommenders where website_type = :site",
                                                   [](QSqlQuery& q){
         return AuthorFromQuery(q);
@@ -798,13 +758,13 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
 
 DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int listId,  QSqlDatabase db)
 {
-    QString qs = QString("select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
+    std::string qs = "select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count, "
                          " last_favourites_update, last_favourites_checked "
                          " from recommenders "
-                         "where id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id )");
+                         "where id in ( select author_id from RecommendationListAuthorStats where list_id = :list_id )";
 
-    SqlContext<QList<core::AuthorPtr>> ctx(db, qs, {{"list_id",listId}});
+    SqlContext<QList<core::AuthorPtr>> ctx(db, std::move(qs), {{"list_id",listId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto author = AuthorFromQuery(q);
         ctx.result.data.push_back(author);
@@ -814,8 +774,8 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAuthorsForRecommendationList(int 
 
 DiagnosticSQLResult<QString> GetAuthorsForRecommendationListClient(int list_id,  QSqlDatabase db)
 {
-    QString qs = "select sources from recommendationlists where id = :list_id";
-    SqlContext<QString> ctx(db, qs, BP1(list_id));
+    std::string qs = "select sources from recommendationlists where id = :list_id";
+    SqlContext<QString> ctx(db, std::move(qs), BP1(list_id));
     ctx.FetchSingleValue<QString>("sources", "");
     return ctx.result;
 }
@@ -824,13 +784,13 @@ DiagnosticSQLResult<QString> GetAuthorsForRecommendationListClient(int list_id, 
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QString website, QSqlDatabase db)
 {
     core::AuthorPtr result;
-    QString qs = QString("select id,"
+    std::string qs = "select id,"
                          "name, url, website_type, ffn_id, ao3_id,sb_id, sv_id,"
                          " last_favourites_update, last_favourites_checked "
-                         " from recommenders where %1_id is not null and name = :name");
-    qs=qs.arg(website);
+                         " from recommenders where %1_id is not null and name = :name";
+    qs=fmt::format(qs,website.toStdString());
 
-    SqlContext<core::AuthorPtr> ctx(db, qs, {{"site",website},{"name",name}});
+    SqlContext<core::AuthorPtr> ctx(db, std::move(qs), {{"site",website},{"name",name}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data = AuthorFromQuery(q);
     });
@@ -838,12 +798,12 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QSt
 }
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString website, QSqlDatabase db)
 {
-    QString qs = QString("select r.id,r.name, r.url, r.website_type, r.ffn_id, r.ao3_id,r.sb_id, r.sv_id, "
+    std::string qs = "select r.id,r.name, r.url, r.website_type, r.ffn_id, r.ao3_id,r.sb_id, r.sv_id, "
                          " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count,"
                          " last_favourites_update, last_favourites_checked "
-                         "from recommenders r where %1_id is not null and %1_id = :id");
-    qs=qs.arg(website);
-    SqlContext<core::AuthorPtr> ctx(db, qs, {{"site",website},{"id",id}});
+                         "from recommenders r where %1_id is not null and %1_id = :id";
+    qs=fmt::format(qs,website.toStdString());
+    SqlContext<core::AuthorPtr> ctx(db, std::move(qs), {{"site",website},{"id",id}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data = AuthorFromQuery(q);
     });
@@ -897,9 +857,9 @@ void AuthorStatisticsFromQuery(QSqlQuery& q,  core::AuthorPtr author)
 
 DiagnosticSQLResult<bool> LoadAuthorStatistics(core::AuthorPtr author, QSqlDatabase db)
 {
-    QString qs = QString("select * from AuthorFavouritesStatistics  where author_id = :id");
+    std::string qs = "select * from AuthorFavouritesStatistics  where author_id = :id";
 
-    SqlContext<bool> ctx(db, qs, {{"id",author->id}});
+    SqlContext<bool> ctx(db, std::move(qs), {{"id",author->id}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         AuthorStatisticsFromQuery(q, author);
     });
@@ -908,9 +868,9 @@ DiagnosticSQLResult<bool> LoadAuthorStatistics(core::AuthorPtr author, QSqlDatab
 
 DiagnosticSQLResult<QHash<int, QSet<int>>> LoadFullFavouritesHashset(QSqlDatabase db)
 {
-    QString qs = QString("select * from recommendations order by recommender_id");
+    std::string qs = "select * from recommendations order by recommender_id";
 
-    SqlContext<QHash<int, QSet<int>>> ctx(db, qs);
+    SqlContext<QHash<int, QSet<int>>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data[q.value("recommender_id").toInt()].insert(q.value("fic_id").toInt());
     });
@@ -919,12 +879,12 @@ DiagnosticSQLResult<QHash<int, QSet<int>>> LoadFullFavouritesHashset(QSqlDatabas
 
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorByUrl(QString url, QSqlDatabase db)
 {
-    QString qs = QString("select r.id,name, r.url, r.ffn_id, r.ao3_id, r.sb_id, r.sv_id, "
+    std::string qs = "select r.id,name, r.url, r.ffn_id, r.ao3_id, r.sb_id, r.sv_id, "
                          " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count,"
                          " last_favourites_update, last_favourites_checked "
-                         " from recommenders r where url = :url");
+                         " from recommenders r where url = :url";
 
-    SqlContext<core::AuthorPtr> ctx(db, qs, {{"url",url}});
+    SqlContext<core::AuthorPtr> ctx(db, std::move(qs), {{"url",url}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data = AuthorFromQuery(q);
     });
@@ -933,12 +893,12 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByUrl(QString url, QSqlDatabase db
 
 DiagnosticSQLResult<core::AuthorPtr> GetAuthorById(int id, QSqlDatabase db)
 {
-    QString qs = QString("select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
+    std::string qs = "select id,name, url, ffn_id, ao3_id,sb_id, sv_id, "
                          "(select count(fic_id) from recommendations where recommender_id = :id) as rec_count, "
                          " last_favourites_update, last_favourites_checked "
-                         "from recommenders where id = :id");
+                         "from recommenders where id = :id";
 
-    SqlContext<core::AuthorPtr> ctx(db, qs, {{"id",id}});
+    SqlContext<core::AuthorPtr> ctx(db, std::move(qs), {{"id",id}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data = AuthorFromQuery(q);
     });
@@ -946,14 +906,14 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorById(int id, QSqlDatabase db)
 }
 DiagnosticSQLResult<bool> AssignAuthorNamesForWebIDsInFanficTable(QSqlDatabase db){
 
-    QString qs = " UPDATE fanfics SET author = (select name from recommenders rs where rs.ffn_id = fanfics.author_id) where exists (select name from recommenders rs where rs.ffn_id = fanfics.author_id)";
-    SqlContext<bool> ctx(db, qs);
+    std::string qs = " UPDATE fanfics SET author = (select name from recommenders rs where rs.ffn_id = fanfics.author_id) where exists (select name from recommenders rs where rs.ffn_id = fanfics.author_id)";
+    SqlContext<bool> ctx(db, std::move(qs));
     return ctx();
 }
 DiagnosticSQLResult<QList<QSharedPointer<core::RecommendationList>>> GetAvailableRecommendationLists(QSqlDatabase db)
 {
-    QString qs = QString("select * from RecommendationLists order by name");
-    SqlContext<QList<QSharedPointer<core::RecommendationList>>> ctx(db, qs);
+    std::string qs = "select * from RecommendationLists order by name";
+    SqlContext<QList<QSharedPointer<core::RecommendationList>>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         list->alwaysPickAt = q.value("always_pick_at").toInt();
@@ -970,8 +930,8 @@ DiagnosticSQLResult<QList<QSharedPointer<core::RecommendationList>>> GetAvailabl
 // LIMIT
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationList(int listId, QSqlDatabase db)
 {
-    QString qs = QString("select * from RecommendationLists where id = :list_id");
-    SqlContext<QSharedPointer<core::RecommendationList>> ctx(db, qs, {{"list_id", listId}});
+    std::string qs = "select * from RecommendationLists where id = :list_id";
+    SqlContext<QSharedPointer<core::RecommendationList>> ctx(db, std::move(qs), {{"list_id", listId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         list->alwaysPickAt = q.value("always_pick_at").toInt();
@@ -987,9 +947,9 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
 
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationList(QString name, QSqlDatabase db)
 {
-    QString qs = QString("select * from RecommendationLists where name = :list_name");
+    std::string qs = "select * from RecommendationLists where name = :list_name";
 
-    SqlContext<QSharedPointer<core::RecommendationList>> ctx(db, qs, {{"list_name", name}});
+    SqlContext<QSharedPointer<core::RecommendationList>> ctx(db, std::move(qs), {{"list_name", name}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         QSharedPointer<core::RecommendationList>  list(new core::RecommendationList);
         list->alwaysPickAt = q.value("always_pick_at").toInt();
@@ -1005,15 +965,15 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> GetRecommendationL
 
 DiagnosticSQLResult<QList<core::AuhtorStatsPtr>> GetRecommenderStatsForList(int listId, QString sortOn, QString order, QSqlDatabase db)
 {
-    QString qs = QString("select rts.match_count as match_count,"
+    std::string qs = "select rts.match_count as match_count,"
                          "rts.match_ratio as match_ratio,"
                          "rts.author_id as author_id,"
                          "rts.fic_count as fic_count,"
                          "r.name as name"
                          "  from RecommendationListAuthorStats rts, recommenders r "
-                         " where rts.author_id = r.id and list_id = :list_id order by %1 %2");
-    qs=qs.arg(sortOn,order);
-    SqlContext<QList<core::AuhtorStatsPtr>> ctx(db, qs, {{"list_id", listId}});
+                         " where rts.author_id = r.id and list_id = :list_id order by %1 %2";
+    qs=fmt::format(qs,sortOn.toStdString(),order.toStdString());
+    SqlContext<QList<core::AuhtorStatsPtr>> ctx(db, std::move(qs), {{"list_id", listId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         core::AuhtorStatsPtr stats(new core::AuthorRecommendationStats);
         stats->isValid = true;
@@ -1031,15 +991,15 @@ DiagnosticSQLResult<QList<core::AuhtorStatsPtr>> GetRecommenderStatsForList(int 
 
 DiagnosticSQLResult<int> GetMatchCountForRecommenderOnList(int authorId, int list, QSqlDatabase db)
 {
-    QString qs = "select fic_count from RecommendationListAuthorStats where list_id = :list_id and author_id = :author_id";
-    SqlContext<int> ctx(db, qs, {{"list_id", list}, {"author_id",authorId}});
+    std::string qs = "select fic_count from RecommendationListAuthorStats where list_id = :list_id and author_id = :author_id";
+    SqlContext<int> ctx(db, std::move(qs), {{"list_id", list}, {"author_id",authorId}});
     ctx.FetchSingleValue<int>("fic_count", -1);
     return ctx.result;
 }
 
 DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId,  core::StoryFilter::ESourceListLimiter limiter, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id");
+    std::string qs = "select fic_id from RecommendationListData where list_id = :list_id";
 
     if(limiter == core::StoryFilter::sll_above_average)
         qs+=" and (votes_uncommon > 0 or votes_rare > 0 or votes_unique> 0)";
@@ -1049,16 +1009,16 @@ DiagnosticSQLResult<QVector<int>> GetAllFicIDsFromRecommendationList(int listId,
         qs+=" and (votes_unique > 0)";
     SqlContext<QVector<int>> ctx(db);
     ctx.bindValue("list_id",listId);
-    ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+    ctx.FetchLargeSelectIntoList<int>("fic_id", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int listId,  QSqlDatabase db)
 {
-    QString qs = QString("select fic_id from RecommendationListData where list_id = :list_id and is_origin = 1");
+    std::string qs = "select fic_id from RecommendationListData where list_id = :list_id and is_origin = 1";
     SqlContext<QVector<int>> ctx(db);
     ctx.bindValue("list_id",listId);
-    ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+    ctx.FetchLargeSelectIntoList<int>("fic_id", std::move(qs));
     return ctx.result;
 }
 
@@ -1067,14 +1027,14 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::ReclistFilter filter, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id, %1 from RecommendationListData where list_id = :list_id");
-    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
-    qs = qs.arg(pointsField);
+    std::string qs = "select fic_id, %1 from RecommendationListData where list_id = :list_id";
+    std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = fmt::format(qs,pointsField);
 
 
     if(filter.minMatchCount != 0)
     {
-        qs += QString(" and %1 > :match_count").arg(pointsField);
+        qs += fmt::format(" and %1 > :match_count",pointsField);
     }
 
     if(filter.limiter == core::StoryFilter::sll_above_average)
@@ -1089,31 +1049,31 @@ DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::Re
 
     //qDebug() << "purged query:" << qs;
 
-    SqlContext<QHash<int,int>> ctx(db, qs);
+    SqlContext<QHash<int,int>> ctx(db, std::move(qs));
     ctx.bindValue("list_id",filter.mainListId);
     if(filter.minMatchCount != 0)
         ctx.bindValue("match_count",filter.minMatchCount);
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        ctx.result.data[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
+        ctx.result.data[q.value("fic_id").toInt()] = q.value(QString::fromStdString(pointsField)).toInt();
     });
     return ctx.result;
 }
 
 DiagnosticSQLResult<QStringList> GetAllAuthorNamesForRecommendationList(int listId, QSqlDatabase db)
 {
-    QString qs = QString("select name from recommenders where id in (select author_id from RecommendationListAuthorStats where list_id = :list_id)");
+    std::string qs = "select name from recommenders where id in (select author_id from RecommendationListAuthorStats where list_id = :list_id)";
     SqlContext<QStringList> ctx(db);
     ctx.bindValue("list_id",listId);
-    ctx.FetchLargeSelectIntoList<QString>("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<int>  GetCountOfTagInAuthorRecommendations(int authorId, QString tag, QSqlDatabase db)
 {
-    QString qs = QString("select count(distinct fic_id) as ficcount from FicTags ft where ft.tag = :tag and exists"
-                         " (select 1 from Recommendations where ft.fic_id = fic_id and recommender_id = :recommender_id)");
+    std::string qs = "select count(distinct fic_id) as ficcount from FicTags ft where ft.tag = :tag and exists"
+                         " (select 1 from Recommendations where ft.fic_id = fic_id and recommender_id = :recommender_id)";
 
-    SqlContext<int> ctx(db, qs, {{"tag", tag}, {"recommender_id",authorId}});
+    SqlContext<int> ctx(db, std::move(qs), {{"tag", tag}, {"recommender_id",authorId}});
     ctx.FetchSingleValue<int>("ficcount", 0);
     return ctx.result;
 }
@@ -1121,9 +1081,9 @@ DiagnosticSQLResult<int>  GetCountOfTagInAuthorRecommendations(int authorId, QSt
 //!todo needs check if the query actually works
 DiagnosticSQLResult<int> GetMatchesWithListIdInAuthorRecommendations(int authorId, int listId, QSqlDatabase db)
 {
-    QString qs = QString("select count(fic_id) as ficcount from Recommendations r where recommender_id = :author_id and exists "
-                         " (select 1 from RecommendationListData rld where rld.list_id = :list_id and fic_id = rld.fic_id)");
-    SqlContext<int> ctx(db, qs, {{"author_id", authorId}, {"list_id",listId}});
+    std::string qs = "select count(fic_id) as ficcount from Recommendations r where recommender_id = :author_id and exists "
+                         " (select 1 from RecommendationListData rld where rld.list_id = :list_id and fic_id = rld.fic_id)";
+    SqlContext<int> ctx(db, std::move(qs), {{"author_id", authorId}, {"list_id",listId}});
     ctx.FetchSingleValue<int>("ficcount", 0);
     return ctx.result;
 }
@@ -1155,18 +1115,18 @@ DiagnosticSQLResult<bool> DeleteRecommendationListData(int listId, QSqlDatabase 
 
 DiagnosticSQLResult<bool> CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db )
 {
-    QString qs = QString("insert into RecommendationListData (fic_id, list_id)"
+    std::string qs = "insert into RecommendationListData (fic_id, list_id)"
                          " select fic_id, %1 as list_id from recommendations r where r.recommender_id = :author_id and "
-                         " not exists( select 1 from RecommendationListData where list_id=:list_id and fic_id = r.fic_id) ");
-    qs=qs.arg(listId);
-    return SqlContext<bool>(db, qs, {{"author_id",authorId},{"list_id",listId}})();
+                         " not exists( select 1 from RecommendationListData where list_id=:list_id and fic_id = r.fic_id) ";
+    qs=fmt::format(qs,listId);
+    return SqlContext<bool>(db, std::move(qs), {{"author_id",authorId},{"list_id",listId}})();
 }
 DiagnosticSQLResult<bool> WriteAuthorRecommendationStatsForList(int listId, core::AuhtorStatsPtr stats, QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListAuthorStats (author_id, fic_count, match_count, match_ratio, list_id) "
-                         "values(:author_id, :fic_count, :match_count, :match_ratio, :list_id)");
+    std::string qs = "insert into RecommendationListAuthorStats (author_id, fic_count, match_count, match_ratio, list_id) "
+                         "values(:author_id, :fic_count, :match_count, :match_ratio, :list_id)";
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     if(!stats)
         return ctx.result;
     ctx.bindValue("author_id",stats->authorId);
@@ -1179,12 +1139,12 @@ DiagnosticSQLResult<bool> WriteAuthorRecommendationStatsForList(int listId, core
 }
 DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::RecommendationList> list, QDateTime creationTimestamp, QSqlDatabase db)
 {
-    QString qs;
-    SqlContext<bool> ctx(db, qs);
+    std::string qs;
+    SqlContext<bool> ctx(db);
     //int freeId = -2;
     {
-        qs = QString("select max(id) as id from RecommendationLists");
-        ctx.ReplaceQuery(qs);
+        qs = "select max(id) as id from RecommendationLists";
+        ctx.ReplaceQuery(std::move(qs));
         if(!ctx.ExecAndCheckForData())
         {
             return ctx.result;
@@ -1193,16 +1153,16 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
         qDebug() << "At this moment max id is: " << ctx.value("id").toInt();
     }
     qDebug() << "List's name is: " << list->name;
-    qs = QString("insert into RecommendationLists(name) select '%1' "
-                         " where not exists(select 1 from RecommendationLists where name = '%1')").arg(list->name);
-    ctx.ReplaceQuery(qs);
+    qs = fmt::format("insert into RecommendationLists(name) select '%1' "
+                         " where not exists(select 1 from RecommendationLists where name = '%1')", list->name.toStdString());
+    ctx.ReplaceQuery(std::move(qs));
     if(!ctx.ExecAndCheck())
     {
         list->id = -1;
         return ctx.result;
     }
-    qs = QString("select id from RecommendationLists where name = :name");
-    SqlContext<bool> ctx2(db, qs);
+    qs = "select id from RecommendationLists where name = :name";
+    SqlContext<bool> ctx2(db, std::move(qs));
     ctx2.bindValue("name",list->name);
     if(!ctx2.ExecAndCheckForData())
     {
@@ -1213,14 +1173,14 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
     qDebug() << "Created new list with id: " << list->id;
     ctx.result.data = list->id > 0;
 
-    qs = QString("update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, is_automatic = :is_automatic, "
+    qs = "update RecommendationLists set minimum = :minimum, pick_ratio = :pick_ratio, is_automatic = :is_automatic, "
                  " always_pick_at = :always_pick_at,  created = :created,"
                  "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
                  "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data,"
                  "  use_weighting = :use_weighting, use_mood_adjustment = :use_mood_adjustment,"
                  "  use_dislikes = :use_dislikes, use_dead_fic_ignore = :use_dead_fic_ignore,"
-                 " sources = :sources where name = :name");
-    ctx.ReplaceQuery(qs);
+                 " sources = :sources where name = :name";
+    ctx.ReplaceQuery(std::move(qs));
     ctx.bindValue("minimum",list->minimumMatch);
     ctx.bindValue("pick_ratio",list->maxUnmatchedPerMatch);
     ctx.bindValue("is_automatic",list->isAutomatic);
@@ -1251,11 +1211,11 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
 
 DiagnosticSQLResult<bool> WriteAuxParamsForReclist(QSharedPointer<core::RecommendationList> list, QSqlDatabase db)
 {
-    QString qs = QString("update RecommendationLists set  "
+    std::string qs = "update RecommendationLists set  "
                  "  quadratic_deviation = :quadratic_deviation, ratio_median = :ratio_median, "
                  "  distance_to_double_sigma = :distance_to_double_sigma,has_aux_data = :has_aux_data"
-                 " where name = :name");
-    SqlContext<bool> ctx(db, qs);
+                 " where name = :name";
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("quadratic_deviation",list->quadraticDeviation);
     ctx.bindValue("ratio_median",list->ratioMedian);
     ctx.bindValue("distance_to_double_sigma",list->sigma2Distance);
@@ -1268,9 +1228,9 @@ DiagnosticSQLResult<bool> WriteAuxParamsForReclist(QSharedPointer<core::Recommen
 
 DiagnosticSQLResult<bool> UpdateFicCountForRecommendationList(int listId, QSqlDatabase db)
 {
-    QString qs = QString("update RecommendationLists set fic_count=(select count(fic_id) "
-                         " from RecommendationListData where list_id = :list_id) where id = :list_id");
-    SqlContext<bool> ctx(db, qs,{{"list_id",listId}});
+    std::string qs = "update RecommendationLists set fic_count=(select count(fic_id) "
+                         " from RecommendationListData where list_id = :list_id) where id = :list_id";
+    SqlContext<bool> ctx(db, std::move(qs),{{"list_id",listId}});
     if(listId == -1 || !ctx.ExecAndCheck())
         return ctx.result;
     return ctx.result;
@@ -1287,38 +1247,38 @@ DiagnosticSQLResult<bool> DeleteTagFromDatabase(QString tag, QSqlDatabase db)
 
 DiagnosticSQLResult<bool>  CreateTagInDatabase(QString tag, QSqlDatabase db)
 {
-    QString qs = QString("INSERT INTO TAGS(TAG) VALUES(:tag)");
-    return SqlContext<bool>(db, qs,{{"tag",tag}})();
+    std::string qs = "INSERT INTO TAGS(TAG) VALUES(:tag)";
+    return SqlContext<bool>(db, std::move(qs),{{"tag",tag}})();
 }
 
 DiagnosticSQLResult<int>  GetRecommendationListIdForName(QString name, QSqlDatabase db)
 {
-    QString qs = QString("select id from RecommendationLists where name = :name");
-    SqlContext<int> ctx(db, qs, {{"name", name}});
+    std::string qs = "select id from RecommendationLists where name = :name";
+    SqlContext<int> ctx(db, std::move(qs), {{"name", name}});
     ctx.FetchSingleValue<int>("id", 0);
     return ctx.result;
 }
 
 DiagnosticSQLResult<bool>  AddAuthorFavouritesToList(int authorId, int listId, QSqlDatabase db)
 {
-    QString qs = QString(" update RecommendationListData set match_count = match_count+1 where "
+    std::string qs = " update RecommendationListData set match_count = match_count+1 where "
                          " list_id = :list_id "
-                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)");
-    return  SqlContext<bool>(db, qs,{{"author_id",authorId},{"list_id",listId}})();
+                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)";
+    return  SqlContext<bool>(db, std::move(qs),{{"author_id",authorId},{"list_id",listId}})();
 }
 
 DiagnosticSQLResult<bool>  ShortenFFNurlsForAllFics(QSqlDatabase db)
 {
-    QString qs = QString("update fanfics set url = cfReturnCapture('(/s/\\d+/)', url)");
-    return  SqlContext<bool>(db, qs)();
+    std::string qs = "update fanfics set url = cfReturnCapture('(/s/\\d+/)', url)";
+    return  SqlContext<bool>(db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> IsGenreList(QStringList list, QString website, QSqlDatabase db)
 {
-    QString qs = QString("select count(*) as idcount from genres where genre in(%1) and website = :website");
-    qs = qs.arg("'" + list.join("','") + "'");
+    std::string qs = "select count(*) as idcount from genres where genre in(%1) and website = :website";
+    qs = fmt::format(qs, "'" + list.join("','").toStdString() + "'");
 
-    SqlContext<int> ctx(db, qs, {{"website", website}});
+    SqlContext<int> ctx(db, std::move(qs), {{"website", website}});
     ctx.FetchSingleValue<int>("idcount", 0);
 
     DiagnosticSQLResult<bool> realResult;
@@ -1332,36 +1292,36 @@ DiagnosticSQLResult<bool> IsGenreList(QStringList list, QString website, QSqlDat
 DiagnosticSQLResult<QVector<int>> GetWebIdList(QString where, QString website, QSqlDatabase db)
 {
     //QVector<int> result;
-    QString fieldName = website + "_id";
-    QString qs = QString("select %1_id from fanfics %2").arg(website,where);
-    SqlContext<QVector<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>(fieldName, qs);
+    std::string fieldName = website.toStdString() + "_id";
+    std::string qs = fmt::format("select %1_id from fanfics %2",website.toStdString(),where.toStdString());
+    SqlContext<QVector<int>> ctx(db);
+    ctx.FetchLargeSelectIntoList<int>(std::move(fieldName), std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<QVector<int>> GetIdList(QString where, QSqlDatabase db)
 {
-    QString qs = QString("select id from fanfics %1 order by id asc").arg(where);
-    SqlContext<QVector<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("id", qs);
+    std::string qs = fmt::format("select id from fanfics %1 order by id asc",where.toStdString());
+    SqlContext<QVector<int>> ctx(db, std::move(qs));
+    ctx.FetchLargeSelectIntoList<int>("id", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<bool> DeactivateStory(int id, QString website, QSqlDatabase db)
 {
-    QString qs = QString("update fanfics set alive = 0 where %1_id = :id");
-    qs=qs.arg(website);
-    return SqlContext<bool>(db, qs, {{"id",id}})();
+    std::string qs = "update fanfics set alive = 0 where %1_id = :id";
+    qs=fmt::format(qs,website.toStdString());
+    return SqlContext<bool>(db, std::move(qs), {{"id",id}})();
 }
 
 DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
 
-    QString qs = " insert into recommenders(name, url, favourites, fics, page_updated, ffn_id, ao3_id,sb_id, sv_id, "
+    std::string qs = " insert into recommenders(name, url, favourites, fics, page_updated, ffn_id, ao3_id,sb_id, sv_id, "
                  "page_creation_date, info_updated, last_favourites_update,last_favourites_checked) "
                  "values(:name, :url, :favourites, :fics,  :time, :ffn_id, :ao3_id,:sb_id, :sv_id, "
                  ":page_creation_date, :info_updated,:last_favourites_update,:last_favourites_checked) ";
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     if(author->name.isEmpty())
         author->name = QUuid::createUuid().toString();
     ctx.bindValue("name", author->name);
@@ -1384,13 +1344,13 @@ DiagnosticSQLResult<bool> CreateAuthorRecord(core::AuthorPtr author, QDateTime t
 DiagnosticSQLResult<bool>  UpdateAuthorRecord(core::AuthorPtr author, QDateTime timestamp, QSqlDatabase db)
 {
 
-    QString qs = " update recommenders set name = :name, url = :url, favourites = :favourites, fics = :fics, page_updated = :page_updated, "
+    std::string qs = " update recommenders set name = :name, url = :url, favourites = :favourites, fics = :fics, page_updated = :page_updated, "
                  "page_creation_date= :page_creation_date, info_updated= :info_updated, "
                  " ffn_id = :ffn_id, ao3_id = :ao3_id, sb_id  =:sb_id, sv_id = :sv_id,"
                  " last_favourites_update = :last_favourites_update, "
                  " last_favourites_checked = :last_favourites_checked "
                  " where id = :id ";
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("name", author->name);
     ctx.bindValue("url", author->url("ffn"));
     ctx.bindValue("favourites", author->stats.favouriteStats.favourites);
@@ -1421,11 +1381,11 @@ DiagnosticSQLResult<bool>  UpdateAuthorRecord(core::AuthorPtr author, QDateTime 
 
 DiagnosticSQLResult<bool> UpdateAuthorFavouritesUpdateDate(int authorId, QDateTime date, QSqlDatabase db)
 {
-    QString qs = " update recommenders set"
+    std::string qs = " update recommenders set"
                  " last_favourites_update = :last_favourites_update, "
                  " last_favourites_checked = :last_favourites_checked "
                  "where id = :id ";
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("id", authorId);
     ctx.bindValue("last_favourites_update", date);
     ctx.bindValue("last_favourites_checked", QDateTime::currentDateTime());
@@ -1440,17 +1400,17 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
     DiagnosticSQLResult<QStringList> result;
     QSet<QString> tags;
     {
-    QString qs = QString("Select tag from tags");
+    std::string qs = "Select tag from tags";
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList<QString>("tag", qs);
+    ctx.FetchLargeSelectIntoList<QString>("tag", std::move(qs));
     if(!ctx.result.success)
         return ctx.result;
     tags = QSet<QString>(ctx.result.data.begin(), ctx.result.data.end());
     }
     {
-    QString qs = QString("select distinct tag from fictags");
+    std::string qs = "select distinct tag from fictags";
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList<QString>("tag", qs);
+    ctx.FetchLargeSelectIntoList<QString>("tag", std::move(qs));
     if(!ctx.result.success)
         return ctx.result;
     tags = QSet<QString>(ctx.result.data.begin(), ctx.result.data.end());
@@ -1465,8 +1425,8 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
 DiagnosticSQLResult<bool>  PushTaglistIntoDatabase(QStringList tagList, QSqlDatabase db)
 {
     int counter = 0;
-    QString qs = QString("INSERT INTO TAGS (TAG, id) VALUES (:tag, :id)");
-    SqlContext<bool> ctx(db, qs);
+    std::string qs = "INSERT INTO TAGS (TAG, id) VALUES (:tag, :id)";
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.ExecuteWithKeyListAndBindFunctor<QString>(tagList, [&](QString tag, QSqlQuery q){
         q.bindValue(":tag", tag);
         q.bindValue(":id", counter);
@@ -1477,8 +1437,8 @@ DiagnosticSQLResult<bool>  PushTaglistIntoDatabase(QStringList tagList, QSqlData
 
 DiagnosticSQLResult<bool>  AssignNewNameForAuthor(core::AuthorPtr author, QString name, QSqlDatabase db)
 {
-    QString qs = " UPDATE recommenders SET name = :name where id = :id";
-    SqlContext<bool> ctx(db, qs, {{"name", name},{"id", author->id}});
+    std::string qs = " UPDATE recommenders SET name = :name where id = :id";
+    SqlContext<bool> ctx(db, std::move(qs), {{"name", name},{"id", author->id}});
     if(author->GetIdStatus() != core::AuthorIdStatus::valid)
         return ctx.result;
     return ctx();
@@ -1486,10 +1446,10 @@ DiagnosticSQLResult<bool>  AssignNewNameForAuthor(core::AuthorPtr author, QStrin
 
 DiagnosticSQLResult<QList<int>> GetAllAuthorIds(QSqlDatabase db)
 {
-    QString qs = QString("select distinct id from recommenders");
+    std::string qs = "select distinct id from recommenders";
 
     SqlContext<QList<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList<int>("id", qs);
+    ctx.FetchLargeSelectIntoList<int>("id", std::move(qs));
     return ctx.result;
 }
 
@@ -1583,11 +1543,11 @@ static auto getFicWeightPtrFromQuery = [](auto& q){
 DiagnosticSQLResult<QHash<uint32_t, core::FicWeightPtr>> GetFicsForRecCreation(QSqlDatabase db)
 {
     SqlContext<QHash<uint32_t, core::FicWeightPtr>> ctx(db);
-    QString qs = QString("select id,rated, chapters, author_id, complete, updated, "
+    std::string qs = "select id,rated, chapters, author_id, complete, updated, "
                          "fandom1,fandom2,favourites, published, updated,"
                          "  genres, reviews, filter_pass_1, wordcount"
-                         "  from fanfics where cfInSourceFics(ffn_id) order by id asc");
-    ctx.FetchSelectFunctor(qs, DATAQ{
+                         "  from fanfics where cfInSourceFics(ffn_id) order by id asc";
+    ctx.FetchSelectFunctor(std::move(qs), DATAQ{
                                auto fw = getFicWeightPtrFromQuery(q);
                                if(fw)
                                 data[static_cast<uint32_t>(fw->id)] = fw;
@@ -1654,8 +1614,8 @@ DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, QSqlDatabase
 
 DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
 {
-    QString qs = QString("update fanfics set queued_for_action = 0");
-    SqlContext<bool> ctx(db, qs);
+    std::string qs = "update fanfics set queued_for_action = 0";
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx();
     return ctx.result;
 }
@@ -1663,7 +1623,7 @@ DiagnosticSQLResult<bool> ResetActionQueue(QSqlDatabase db)
 DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics, QSqlDatabase db)
 {
 
-    QString qsClenaup = QString("update fanfics set "
+    std::string qsClenaup = "update fanfics set "
                                 "true_genre1 = '', "
                                 "true_genre1_percent = 0,"
                                 "true_genre2 = '', "
@@ -1671,11 +1631,11 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
                                 "true_genre3 = '',"
                                 "true_genre3_percent = 0,"
                                 "max_genre_percent = 0, "
-                                "kept_genres = ''" );
-    SqlContext<bool> cleanup(db, qsClenaup);
+                                "kept_genres = ''";
+    SqlContext<bool> cleanup(db, std::move(qsClenaup));
     cleanup();
 
-    QString qs = QString("update fanfics set "
+    std::string qs = "update fanfics set "
                          " true_genre1 = :true_genre1, "
                          " true_genre1_percent = :true_genre1_percent,"
                          " true_genre2 = :true_genre2, "
@@ -1683,8 +1643,8 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
                          " true_genre3 = :true_genre3, "
                          " true_genre3_percent = :true_genre3_percent,"
                          " max_genre_percent = :max_genre_percent,"
-                         " kept_genres =:kept_genres where id = :fic_id" );
-    SqlContext<bool> ctx(db, qs);
+                         " kept_genres =:kept_genres where id = :fic_id";
+    SqlContext<bool> ctx(db, std::move(qs));
     for(const auto& fic : fics)
     {
         for(int i = 0; i < 3; i++)
@@ -1718,10 +1678,10 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
 
 DiagnosticSQLResult<bool> WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fics, QSqlDatabase db)
 {
-    QString qsClenaup = QString("delete from FIC_GENRE_ITERATIONS" );
-    SqlContext<bool> cleanup(db, qsClenaup);
+    std::string qsClenaup = std::string("delete from FIC_GENRE_ITERATIONS");
+    SqlContext<bool> cleanup(db, std::move(qsClenaup));
     cleanup();
-    QString qs = QString(" insert into fic_genre_iterations("
+    std::string qs = " insert into fic_genre_iterations("
                          "fic_id, "
                          " true_genre1, "
                          " true_genre1_percent,"
@@ -1742,8 +1702,8 @@ DiagnosticSQLResult<bool> WriteDetectedGenresIteration2(QVector<genre_stats::Fic
                          " :true_genre3_percent,"
                          " :kept_genres,"
                          " :max_genre_percent"
-                         ")");
-    SqlContext<bool> ctx(db, qs);
+                         ")";
+    SqlContext<bool> ctx(db, std::move(qs));
     for(const auto& fic : fics)
     {
         for(int i = 0; i < 3; i++)
@@ -1774,16 +1734,16 @@ DiagnosticSQLResult<bool> WriteDetectedGenresIteration2(QVector<genre_stats::Fic
 
 DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(QSqlDatabase db,bool useOriginalOnly)
 {
-    QString qs = QString("select id, genres, "
+    std::string qs = "select id, genres, "
                          " true_genre1, "
                          " true_genre1_percent,"
                          " true_genre2, "
                          " true_genre2_percent,"
                          " true_genre3,"
                          " true_genre3_percent"
-                         " from fanfics");
+                         " from fanfics";
 
-    SqlContext<QHash<int, QList<genre_stats::GenreBit>>> ctx (db, qs);
+    SqlContext<QHash<int, QList<genre_stats::GenreBit>>> ctx (db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         QList<genre_stats::GenreBit> dataForFic;
         auto id = q.value("id").toInt();
@@ -1835,10 +1795,10 @@ DiagnosticSQLResult<QHash<int, QList<genre_stats::GenreBit>>> GetFullGenreList(Q
 
 DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id, count(fic_id) as cnt from recommendations where cfInAuthors(recommender_id, :uid) = 1 group by fic_id");
+    std::string qs = "select fic_id, count(fic_id) as cnt from recommendations where cfInAuthors(recommender_id, :uid) = 1 group by fic_id";
     SqlContext<QHash<int, int> > ctx(db);
     ctx.bindValue("uid", uid);
-    ctx.FetchSelectFunctor(qs, [](QHash<int, int>& data, QSqlQuery& q){
+    ctx.FetchSelectFunctor(std::move(qs), [](QHash<int, int>& data, QSqlQuery& q){
         int fic = q.value("fic_id").toInt();
         int matches = q.value("cnt").toInt();
         //QLOG_INFO() << " fic_id: " << fic << " matches: " << matches;
@@ -1849,8 +1809,8 @@ DiagnosticSQLResult<QHash<int, int> > GetMatchesForUID(QString uid, QSqlDatabase
 
 DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db)
 {
-    QString qs = QString("select id, ffn_id, ao3_id, sb_id, sv_id from fanfics where id in (select fic_id from recommendations where recommender_id = :author_id )");
-    SqlContext<QStringList> ctx (db, qs, {{"author_id", id}});
+    std::string qs = "select id, ffn_id, ao3_id, sb_id, sv_id from fanfics where id in (select fic_id from recommendations where recommender_id = :author_id )";
+    SqlContext<QStringList> ctx (db, std::move(qs), {{"author_id", id}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto ffn_id = q.value("ffn_id").toInt();
         auto ao3_id = q.value("ao3_id").toInt();
@@ -1872,8 +1832,8 @@ DiagnosticSQLResult<QStringList> GetAllAuthorFavourites(int id, QSqlDatabase db)
 
 DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendationIDs(int id, QSqlDatabase db)
 {
-    QString qs = QString("select distinct fic_id from recommendations where recommender_id = :author_id");
-    SqlContext<QList<int>> ctx (db, qs, {{"author_id", id}});
+    std::string qs = "select distinct fic_id from recommendations where recommender_id = :author_id";
+    SqlContext<QList<int>> ctx (db, std::move(qs), {{"author_id", id}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data.push_back(q.value("fic_id").toInt());
     });
@@ -1882,20 +1842,20 @@ DiagnosticSQLResult<QList<int>> GetAllAuthorRecommendationIDs(int id, QSqlDataba
 
 DiagnosticSQLResult<bool> IncrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db)
 {
-    QString qs = QString(" update RecommendationListData set match_count = match_count+1 where "
+    std::string qs = " update RecommendationListData set match_count = match_count+1 where "
                          " list_id = :list_id "
-                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)");
-    return SqlContext<bool> (db, qs, {{"author_id", authorId},{"list_id", listId}})();
+                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)";
+    return SqlContext<bool> (db, std::move(qs), {{"author_id", authorId},{"list_id", listId}})();
 }
 
 
 DiagnosticSQLResult<bool> DecrementAllValuesInListMatchingAuthorFavourites(int authorId, int listId, QSqlDatabase db)
 {
-    QString qs = QString(" update RecommendationListData set match_count = match_count-1 where "
+    std::string qs = " update RecommendationListData set match_count = match_count-1 where "
                          " list_id = :list_id "
-                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)");
+                         " and fic_id in (select fic_id from recommendations r where recommender_id = :author_id)";
 
-    SqlContext<bool> ctx (db, qs, {{"author_id", authorId},{"list_id", listId}});
+    SqlContext<bool> ctx (db, std::move(qs), {{"author_id", authorId},{"list_id", listId}});
     if(!ctx.ExecAndCheck())
         return ctx.result;
 
@@ -1906,9 +1866,9 @@ DiagnosticSQLResult<bool> DecrementAllValuesInListMatchingAuthorFavourites(int a
 
 DiagnosticSQLResult<QSet<QString>> GetAllGenres(QSqlDatabase db)
 {
-    QString qs = QString("select genre from genres");
+    std::string qs = "select genre from genres";
     SqlContext<QSet<QString>> ctx(db);
-    ctx.FetchLargeSelectIntoList<QString>("genre", qs);
+    ctx.FetchLargeSelectIntoList<QString>("genre", std::move(qs));
     return ctx.result;
 }
 
@@ -1935,8 +1895,8 @@ static core::FandomPtr FandomfromQueryNew (QSqlQuery& q, core::FandomPtr fandom 
 }
 static DiagnosticSQLResult<bool> GetFandomStats(core::FandomPtr fandom, QSqlDatabase db)
 {
-    QString qs = QString("select * from fandomsources where global_id = :id");
-    SqlContext<bool> ctx(db, qs);
+    std::string qs = "select * from fandomsources where global_id = :id";
+    SqlContext<bool> ctx(db, std::move(qs));
     if(!fandom)
         return ctx.result;
     ctx.bindValue("id",fandom->id);
@@ -1957,19 +1917,19 @@ DiagnosticSQLResult<QList<core::FandomPtr>> GetAllFandoms(QSqlDatabase db)
 {
     int fandomsSize = 0;
     {
-        QString qs = QString(" select count(*) as cn from fandomindex");
-        SqlContext<int> ctx(db, qs);
+        std::string qs = " select count(*) as cn from fandomindex";
+        SqlContext<int> ctx(db, std::move(qs));
         ctx.FetchSingleValue<int>("cn", 1000);
         fandomsSize = ctx.result.data;
     }
 
     core::FandomPtr currentFandom;
     int lastId = -1;
-    QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
+    std::string qs = " select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
                          " urls.custom as section, ind.updated as updated "
                          " from fandomindex ind left join fandomurls urls"
-                         " on ind.id = urls.global_id order by id asc");
-    SqlContext<QList<core::FandomPtr>> ctx(db, qs);
+                         " on ind.id = urls.global_id order by id asc";
+    SqlContext<QList<core::FandomPtr>> ctx(db, std::move(qs));
     ctx.result.data.reserve(fandomsSize);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto currentId= q.value("id").toInt();
@@ -1989,19 +1949,19 @@ DiagnosticSQLResult<QList<core::FandomPtr> > GetAllFandomsAfter(int id, QSqlData
 {
     int fandomsSize = 0;
     {
-        QString qs = QString(" select count(*) as cn from fandomindex where id > :id");
-        SqlContext<int> ctx(db, qs, BP1(id));
+        std::string qs = " select count(*) as cn from fandomindex where id > :id";
+        SqlContext<int> ctx(db, std::move(qs), BP1(id));
         ctx.FetchSingleValue<int>("cn", 1000);
         fandomsSize = ctx.result.data;
     }
 
     core::FandomPtr currentFandom;
     int lastId = -1;
-    QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
+    std::string qs = " select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
                          " urls.custom as section, ind.updated as updated "
                          " from fandomindex ind left join fandomurls urls"
-                         " on ind.id = urls.global_id where ind.id > :id order by id asc ");
-    SqlContext<QList<core::FandomPtr>> ctx(db, qs, BP1(id));
+                         " on ind.id = urls.global_id where ind.id > :id order by id asc ";
+    SqlContext<QList<core::FandomPtr>> ctx(db, std::move(qs), BP1(id));
     ctx.result.data.reserve(fandomsSize);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto currentId= q.value("id").toInt();
@@ -2021,10 +1981,10 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(QString fandom, bool loadFandomSt
 {
     core::FandomPtr currentFandom;
 
-    QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
+    std::string qs = " select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
                          " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
-                         " where lower(name) = lower(:fandom) ");
-    SqlContext<core::FandomPtr> ctx(db, qs, BP1(fandom));
+                         " where lower(name) = lower(:fandom) ";
+    SqlContext<core::FandomPtr> ctx(db, std::move(qs), BP1(fandom));
 
     ctx.ForEachInSelect([&](QSqlQuery& q){
         currentFandom = FandomfromQueryNew(q, currentFandom);
@@ -2047,10 +2007,10 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats, QSq
 {
     core::FandomPtr currentFandom;
 
-    QString qs = QString(" select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
+    std::string qs = " select ind.id as id, ind.name as name, ind.tracked as tracked, urls.url as url, urls.website as website,"
                          " urls.custom as section, ind.updated as updated from fandomindex ind left join fandomurls urls on ind.id = urls.global_id"
-                         " where id = :id");
-    SqlContext<core::FandomPtr> ctx(db, qs, BP1(id));
+                         " where id = :id";
+    SqlContext<core::FandomPtr> ctx(db, std::move(qs), BP1(id));
 
     ctx.ForEachInSelect([&](QSqlQuery& q){
         currentFandom = FandomfromQueryNew(q, currentFandom);
@@ -2071,59 +2031,59 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats, QSq
 
 DiagnosticSQLResult<bool> IgnoreFandom(int fandom_id, bool including_crossovers, QSqlDatabase db)
 {
-    QString qs = QString(" insert into ignored_fandoms (fandom_id, including_crossovers) values (:fandom_id, :including_crossovers) ");
-    SqlContext<bool> ctx(db, qs,  BP2(fandom_id,including_crossovers));
+    std::string qs = " insert into ignored_fandoms (fandom_id, including_crossovers) values (:fandom_id, :including_crossovers) ";
+    SqlContext<bool> ctx(db, std::move(qs),  BP2(fandom_id,including_crossovers));
     return ctx(true);
 }
 
 DiagnosticSQLResult<bool> SetUserProfile(int id,  QSqlDatabase db)
 {
-    QString qs = QString(" update user_settings set value = :id where name = 'user_ffn_id' ");
-    SqlContext<bool> ctx(db, qs,  BP1(id));
+    std::string qs = " update user_settings set value = :id where name = 'user_ffn_id' ";
+    SqlContext<bool> ctx(db, std::move(qs),  BP1(id));
     return ctx(true);
 }
 
 DiagnosticSQLResult<int> GetUserProfile(QSqlDatabase db)
 {
-    QString qs = QString("select value from user_settings where name = 'user_ffn_id'");
-    SqlContext<int> ctx(db, qs);
+    std::string qs = "select value from user_settings where name = 'user_ffn_id'";
+    SqlContext<int> ctx(db, std::move(qs));
     ctx.FetchSingleValue<int>("value", -1);
     return ctx.result;
 }
 DiagnosticSQLResult<int> GetRecommenderIDByFFNId(int id, QSqlDatabase db)
 {
-    QString qs = QString("select id from recommenders where ffn_id = :id");
-    SqlContext<int> ctx(db, qs, BP1(id));
+    std::string qs = "select id from recommenders where ffn_id = :id";
+    SqlContext<int> ctx(db, std::move(qs), BP1(id));
     ctx.FetchSingleValue<int>("id", -1);
     return ctx.result;
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int fandom_id, QSqlDatabase db)
 {
-    QString qs = QString(" delete from ignored_fandoms where fandom_id  = :fandom_id");
-    return SqlContext<bool>(db, qs, BP1(fandom_id))();
+    std::string qs = " delete from ignored_fandoms where fandom_id  = :fandom_id";
+    return SqlContext<bool>(db, std::move(qs), BP1(fandom_id))();
 }
 
 DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
 {
-    QString qs = QString("select name from fandomindex where id in (select fandom_id from ignored_fandoms) order by name asc");
+    std::string qs = "select name from fandomindex where id in (select fandom_id from ignored_fandoms) order by name asc";
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList<QString>("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>ids, QSqlDatabase db)
 {
     SqlContext<QHash<int, QString> > ctx(db);
-    QString qs = QString("select id, name from fandomindex where id in (%1)");
+    std::string qs = "select id, name from fandomindex where id in (%1)";
     QStringList inParts;
     for(auto id: ids)
         inParts.push_back("'" + QString::number(id) + "'");
     if(inParts.size() == 0)
         return ctx.result;
-    qs = qs.arg(inParts.join(","));
+    qs = fmt::format(qs, inParts.join(",").toStdString());
 
-    ctx.FetchSelectFunctor(qs, [](QHash<int, QString>& data, QSqlQuery& q){
+    ctx.FetchSelectFunctor(std::move(qs), [](QHash<int, QString>& data, QSqlQuery& q){
         data[q.value("id").toInt()] = q.value("name").toString();
     });
     return ctx.result;
@@ -2131,9 +2091,9 @@ DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>ids, QSq
 
 DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
 {
-    QString qs = QString("select fandom_id, including_crossovers from ignored_fandoms order by fandom_id asc");
+    std::string qs = "select fandom_id, including_crossovers from ignored_fandoms order by fandom_id asc";
     SqlContext<QHash<int, bool> > ctx(db);
-    ctx.FetchSelectFunctor(qs, [](QHash<int, bool>& data, QSqlQuery& q){
+    ctx.FetchSelectFunctor(std::move(qs), [](QHash<int, bool>& data, QSqlQuery& q){
         data[q.value("fandom_id").toInt()] = q.value("including_crossovers").toBool();
     }, true);
     return ctx.result;
@@ -2142,22 +2102,22 @@ DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> IgnoreFandomSlashFilter(int fandom_id, QSqlDatabase db)
 {
-    QString qs = QString(" insert into ignored_fandoms_slash_filter (fandom_id) values (:fandom_id) ");
-    SqlContext<bool> ctx(db, qs, BP1(fandom_id));
+    std::string qs = " insert into ignored_fandoms_slash_filter (fandom_id) values (:fandom_id) ";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(fandom_id));
     return ctx(true);
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromIgnoredListSlashFilter(int fandom_id, QSqlDatabase db)
 {
-    QString qs = QString(" delete from ignored_fandoms_slash_filter where fandom_id  = :fandom_id");
-    return SqlContext<bool>(db, qs, BP1(fandom_id))();
+    std::string qs = " delete from ignored_fandoms_slash_filter where fandom_id  = :fandom_id";
+    return SqlContext<bool>(db, std::move(qs), BP1(fandom_id))();
 }
 
 DiagnosticSQLResult<QStringList> GetIgnoredFandomsSlashFilter(QSqlDatabase db)
 {
-    QString qs = QString("select name from fandomindex where id in (select fandom_id from ignored_fandoms_slash_filter) order by name asc");
+    std::string qs = "select name from fandomindex where id in (select fandom_id from ignored_fandoms_slash_filter) order by name asc";
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList<QString>("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", std::move(qs));
     return ctx.result;
 }
 
@@ -2183,16 +2143,16 @@ DiagnosticSQLResult<bool> DeleteFandom(int fandom_id, QSqlDatabase db)
 
 DiagnosticSQLResult<QStringList> GetTrackedFandomList(QSqlDatabase db)
 {
-    QString qs = QString(" select name from fandomindex where tracked = 1 order by name asc");
+    std::string qs = " select name from fandomindex where tracked = 1 order by name asc";
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoList<QString>("name", qs);
+    ctx.FetchLargeSelectIntoList<QString>("name", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<int> GetFandomCountInDatabase(QSqlDatabase db)
 {
-    QString qs = QString("Select count(name) as cn from fandomindex");
-    SqlContext<int> ctx(db, qs);
+    std::string qs = "Select count(name) as cn from fandomindex";
+    SqlContext<int> ctx(db, std::move(qs));
     ctx.FetchSingleValue<int>("cn", 0);
     return ctx.result;
 }
@@ -2200,8 +2160,8 @@ DiagnosticSQLResult<int> GetFandomCountInDatabase(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> AddFandomForFic(int fic_id, int fandom_id, QSqlDatabase db)
 {
-    QString qs = QString(" insert into ficfandoms (fic_id, fandom_id) values (:fic_id, :fandom_id) ");
-    SqlContext<bool> ctx(db, qs, BP2(fic_id,fandom_id));
+    std::string qs = " insert into ficfandoms (fic_id, fandom_id) values (:fic_id, :fandom_id) ";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(fic_id,fandom_id));
 
     if(fic_id == -1 || fandom_id == -1)
         return ctx.result;
@@ -2211,8 +2171,8 @@ DiagnosticSQLResult<bool> AddFandomForFic(int fic_id, int fandom_id, QSqlDatabas
 
 DiagnosticSQLResult<QStringList>  GetFandomNamesForFicId(int fic_id, QSqlDatabase db)
 {
-    QString qs = QString("select name from fandomindex where fandomindex.id in (select fandom_id from ficfandoms ff where ff.fic_id = :fic_id)");
-    SqlContext<QStringList> ctx(db, qs, BP1(fic_id));
+    std::string qs = "select name from fandomindex where fandomindex.id in (select fandom_id from ficfandoms ff where ff.fic_id = :fic_id)";
+    SqlContext<QStringList> ctx(db, std::move(qs), BP1(fic_id));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto fandom = q.value("name").toString().trimmed();
         if(!fandom.contains("????"))
@@ -2223,10 +2183,10 @@ DiagnosticSQLResult<QStringList>  GetFandomNamesForFicId(int fic_id, QSqlDatabas
 
 DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDatabase db)
 {
-    QString qs = QString(" insert into fandomurls (global_id, url, website, custom) "
-                         " values (:global_id, :url, :website, :custom) ");
+    std::string qs = " insert into fandomurls (global_id, url, website, custom) "
+                         " values (:global_id, :url, :website, :custom) ";
 
-    SqlContext<bool> ctx(db, qs,{{"global_id",fandomID},
+    SqlContext<bool> ctx(db, std::move(qs),{{"global_id",fandomID},
                                  {"url",url.GetUrl()},
                                  {"website",url.GetSource()},
                                  {"custom",url.GetType()}});
@@ -2237,17 +2197,17 @@ DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDataba
 
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSqlDatabase db)
 {
-    QString qs = QString("Select distinct recommender_id from recommendations where fic_id = :fic_id");
-    SqlContext<QList<int>> ctx(db, qs, BP1(fic_id));
-    ctx.FetchLargeSelectIntoList<int>("recommender_id", qs);
+    std::string qs = "Select distinct recommender_id from recommendations where fic_id = :fic_id";
+    SqlContext<QList<int>> ctx(db, std::move(qs), BP1(fic_id));
+    ctx.FetchLargeSelectIntoList<int>("recommender_id", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<QSet<int> > GetAllTaggedFics(QSqlDatabase db)
 {
-        QString qs = QString("select distinct fic_id from fictags ");
-        SqlContext<QSet<int>> ctx(db, qs);
-        ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+        std::string qs = "select distinct fic_id from fictags ";
+        SqlContext<QSet<int>> ctx(db, std::move(qs));
+        ctx.FetchLargeSelectIntoList<int>("fic_id", std::move(qs));
         return ctx.result;
 }
 
@@ -2255,7 +2215,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
 
     if(!useAND)
     {
-        QString qs = QString("select distinct fic_id from fictags ");
+        std::string qs = "select distinct fic_id from fictags ";
         QStringList parts;
 
         if(tags.size() > 0)
@@ -2264,14 +2224,14 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
         if(parts.size() > 0)
         {
             qs+= " where ";
-            qs+= parts.join(" and ");
+            qs+= parts.join(" and ").toStdString();
         }
-        SqlContext<QSet<int>> ctx(db, qs);
-        ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+        SqlContext<QSet<int>> ctx(db, std::move(qs));
+        ctx.FetchLargeSelectIntoList<int>("fic_id", std::move(qs));
         return ctx.result;
     }
     else {
-        QString qs = QString("select distinct fic_id from fictags ft where ");
+        std::string qs = "select distinct fic_id from fictags ft where ";
         QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '%1') ";
         QStringList parts;
 
@@ -2280,30 +2240,30 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
         {
             tokens.push_back(prototype.arg(tag));
         }
-        qs += tokens.join(" and ");
-        SqlContext<QSet<int>> ctx(db, qs);
-        ctx.FetchLargeSelectIntoList<int>("fic_id", qs);
+        qs += tokens.join(" and ").toStdString();
+        SqlContext<QSet<int>> ctx(db, std::move(qs));
+        ctx.FetchLargeSelectIntoList<int>("fic_id", std::move(qs));
         return ctx.result;
     }
 }
 
 DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase db){
-    QString qs = QString("select distinct author_id from ficauthors ");
-    qs += QString(" where fic_id in (select distinct fic_id from fictags where tag in ('%1'))").arg(tags.join("','"));
-    SqlContext<QSet<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("author_id", qs);
+    std::string qs = "select distinct author_id from ficauthors ";
+    qs += fmt::format(" where fic_id in (select distinct fic_id from fictags where tag in ('%1'))", tags.join("','").toStdString());
+    SqlContext<QSet<int>> ctx(db, std::move(qs));
+    ctx.FetchLargeSelectIntoList<int>("author_id", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<QString, int> > GetTagSizes(QStringList tags, QSqlDatabase db)
 {
-    QString qs = "select tag, count(tag) as count_tags from fictags %1 group by tag ";
+    std::string qs = "select tag, count(tag) as count_tags from fictags %1 group by tag ";
     if(tags.size() > 0)
-        qs = qs.arg("where tag in ('" + tags.join("','") + "')");
+        qs = fmt::format(qs, "where tag in ('" + tags.join("','").toStdString() + "')");
     else
-        qs = qs.arg("");
+        qs = fmt::format(qs,"");
 
-    SqlContext<QHash<QString, int>> ctx(db, qs);
+    SqlContext<QHash<QString, int>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data.insert(q.value("tag").toString(),q.value("count_tags").toInt());
     });
@@ -2319,17 +2279,17 @@ DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase 
         return result;
     }
 
-    QString qs = QString("delete from fictags where tag in (%1)");
-    qs = qs.arg("'" + tags.join("','") + "'");
-    return SqlContext<bool> (db, qs)();
+    std::string qs = "delete from fictags where tag in (%1)";
+    qs = fmt::format(qs, "'" + tags.join("','").toStdString() + "'");
+    return SqlContext<bool> (db, std::move(qs))();
 }
 
 
 
 DiagnosticSQLResult<QHash<int, core::FanficCompletionStatus> > GetSnoozeInfo(QSqlDatabase db)
 {
-    QString qs = "select id, ffn_id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
-    SqlContext<QHash<int, core::FanficCompletionStatus>> ctx(db, qs);
+    std::string qs = "select id, ffn_id, complete, chapters from fanfics where cfInFicSelection(id) > 0";
+    SqlContext<QHash<int, core::FanficCompletionStatus>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         //qDebug() << " loading snooze data:";
         core::FanficCompletionStatus info;
@@ -2347,7 +2307,7 @@ DiagnosticSQLResult<QHash<int, core::FanficCompletionStatus> > GetSnoozeInfo(QSq
 }
 
 DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
-    QString qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
+    std::string qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
 
     QStringList filters;
 
@@ -2358,14 +2318,14 @@ DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool
         filters.push_back(" expired == 0 ");
 
     if(filters.size() > 0)
-        qs=qs.arg(QString(" where ") + filters.join(" and "));
+        qs=fmt::format(qs, " where " + filters.join(" and ").toStdString());
     else
-        qs=qs.arg("");
+        qs=fmt::format(qs,"");
 
-    QLOG_TRACE() <<  "snooze query: " << qs;
+    QLOG_TRACE() <<  "snooze query: " << QString::fromStdString(qs);
 
 
-    SqlContext<QHash<int, core::FanficSnoozeStatus>> ctx(db, qs);
+    SqlContext<QHash<int, core::FanficSnoozeStatus>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         core::FanficSnoozeStatus info;
         info.ficId =                q.value("fic_id").toInt();
@@ -2382,14 +2342,14 @@ DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool
 
 
 DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection , QSqlDatabase db){
-    QString qs = "select * from ficnotes %1 order by fic_id asc";
+    std::string qs = "select * from ficnotes %1 order by fic_id asc";
 
     if(limitedSelection)
-        qs = qs.arg(" where cfInFicSelection(fic_id) > 0 ");
+        qs = fmt::format(qs, " where cfInFicSelection(fic_id) > 0 ");
     else
-        qs = qs.arg("");
+        qs = fmt::format(qs,"");
 
-    SqlContext<QHash<int, QString>> ctx(db, qs);
+    SqlContext<QHash<int, QString>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data[q.value("fic_id").toInt()] = q.value("note_content").toString();
     });
@@ -2398,14 +2358,14 @@ DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection ,
 
 DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelection, QSqlDatabase db)
 {
-    QString qs = "select * from FicReadingTracker %1 order by fic_id asc";
+    std::string qs = "select * from FicReadingTracker %1 order by fic_id asc";
 
     if(limitedSelection)
-        qs = qs.arg(" where cfInFicSelection(fic_id) > 0 ");
+        qs = fmt::format(qs, " where cfInFicSelection(fic_id) > 0 ");
     else
-        qs = qs.arg("");
+        qs = fmt::format(qs, "");
 
-    SqlContext<QHash<int, int>> ctx(db, qs);
+    SqlContext<QHash<int, int>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data[q.value("fic_id").toInt()] = q.value("at_chapter").toInt();
     });
@@ -2413,8 +2373,8 @@ DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelec
 }
 
 DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> data,QSqlDatabase db){
-    QString qs = QString("update ficsnoozes set expired = 1 where fic_id = :fic_id");
-    SqlContext<bool> ctx(db, qs);
+    std::string qs = "update ficsnoozes set expired = 1 where fic_id = :fic_id";
+    SqlContext<bool> ctx(db, std::move(qs));
     for(auto ficId : data)
     {
         ctx.bindValue("fic_id", ficId);
@@ -2425,7 +2385,7 @@ DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> data,QSqlDatabase db){
 }
 
 DiagnosticSQLResult<bool> SnoozeFic(core::FanficSnoozeStatus data,QSqlDatabase db){
-    QString qs = "INSERT INTO FicSnoozes(fic_id, snoozed_at_chapter, snoozed_till_chapter, snoozed_until_finished, snooze_added)"
+    std::string qs = "INSERT INTO FicSnoozes(fic_id, snoozed_at_chapter, snoozed_till_chapter, snoozed_until_finished, snooze_added)"
                  " values(:fic_id, :snoozed_at_chapter, :snoozed_till_chapter, :snoozed_until_finished,  date('now')) "
                  " on conflict (fic_id) "
                  " do update set "
@@ -2435,7 +2395,7 @@ DiagnosticSQLResult<bool> SnoozeFic(core::FanficSnoozeStatus data,QSqlDatabase d
                  " snooze_added = date('now'), "
                  " expired = 0 "
                  " where fic_id = :fic_id_";
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("fic_id", data.ficId);
     ctx.bindValue("snoozed_at_chapter", data.snoozedAtChapter);
     if(!data.untilFinished)
@@ -2456,15 +2416,15 @@ DiagnosticSQLResult<bool> SnoozeFic(core::FanficSnoozeStatus data,QSqlDatabase d
 }
 
 DiagnosticSQLResult<bool> RemoveSnooze(int fic_id,QSqlDatabase db){
-    QString qs = QString("delete from FicSnoozes where fic_id = :fic_id");
-    return SqlContext<bool> (db, qs, BP1(fic_id))();
+    std::string qs = "delete from FicSnoozes where fic_id = :fic_id";
+    return SqlContext<bool> (db, std::move(qs), BP1(fic_id))();
 }
 
 DiagnosticSQLResult<bool> AddNoteToFic(int fic_id, QString note, QSqlDatabase db)
 {
-    QString qs = "INSERT INTO ficnotes(fic_id, note_content, updated) values(:fic_id, :note, date('now')) "
+    std::string qs = "INSERT INTO ficnotes(fic_id, note_content, updated) values(:fic_id, :note, date('now')) "
                  "on conflict (fic_id) do update set note_content = :note_, updated = date('now') where fic_id = :fic_id_";
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("fic_id", fic_id);
     ctx.bindValue("note", note);
     ctx.bindValue("note_", note);
@@ -2475,23 +2435,23 @@ DiagnosticSQLResult<bool> AddNoteToFic(int fic_id, QString note, QSqlDatabase db
 
 DiagnosticSQLResult<bool> RemoveNoteFromFic(int fic_id, QSqlDatabase db)
 {
-    QString qs = QString("delete from ficnotes where fic_id = :fic_id");
-    return SqlContext<bool> (db, qs, BP1(fic_id))();
+    std::string qs = "delete from ficnotes where fic_id = :fic_id";
+    return SqlContext<bool> (db, std::move(qs), BP1(fic_id))();
 }
 
 
 DiagnosticSQLResult<QVector<int> > GetAllFicsThatDontHaveDBID(QSqlDatabase db)
 {
-    QString qs = QString("select distinct ffn_id from fictags where fic_id < 1");
-    SqlContext<QVector<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("ffn_id", qs);
+    std::string qs = "select distinct ffn_id from fictags where fic_id < 1";
+    SqlContext<QVector<int>> ctx(db, std::move(qs));
+    ctx.FetchLargeSelectIntoList<int>("ffn_id", std::move(qs));
     return ctx.result;
 }
 
 DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity> pack, QSqlDatabase db)
 {
-    QString qs = QString("update fictags set fic_id = :id where ffn_id = :ffn_id");
-    SqlContext<bool> ctx(db, qs);
+    std::string qs = "update fictags set fic_id = :id where ffn_id = :ffn_id";
+    SqlContext<bool> ctx(db, std::move(qs));
     for(const core::Identity& identity: pack)
     {
         if(identity.id < 1)
@@ -2510,7 +2470,7 @@ DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity> pack, QSqlDat
 
 DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fanfic> * fics, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInSourceFics(fic_id) > 0 group by fic_id");
+    std::string qs = "select fic_id,  group_concat(tag, ' ')  as tags from fictags where cfInSourceFics(fic_id) > 0 group by fic_id";
     QHash<int, QString> tags;
     auto* data= ThreadData::GetRecommendationData();
     auto& hash = data->sourceFics;
@@ -2518,7 +2478,7 @@ DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fanfic> * fics, QSqlDat
     for(const auto& fic : std::as_const(*fics))
         hash.insert(fic.identity.id);
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         tags[q.value("fic_id").toInt()] = q.value("tags").toString();
     });
@@ -2534,13 +2494,13 @@ inline double DivideAsDoubles(T1 arg1, T2 arg2){
 }
 DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fanfic> * fics, int listId, QSqlDatabase db)
 {
-    QString qs = QString("select fic_id,  "
+    std::string qs = "select fic_id,  "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
                          "value_common, value_uncommon, value_rare, value_unique, purged "
                          "from RecommendationListData where "
                          " cfInSourceFics(fic_id) > 0 and list_id = :listId"
-                         " group by fic_id");
+                         " group by fic_id";
     QHash<int, QStringList> breakdown;
     QHash<int, QStringList> breakdownCounts;
     auto* data= ThreadData::GetRecommendationData();
@@ -2549,7 +2509,7 @@ DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fanfic> * 
     for(const auto& fic : std::as_const(*fics))
         sourceSet.insert(fic.identity.id);
     QSet<int> purgedFics;
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("listId", listId);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto ficId = q.value("fic_id").toInt();
@@ -2605,16 +2565,16 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
         it++;
     }
 
-    QString qs = QString("select fic_id, %1 from RecommendationListData where list_id = :list_id and fic_id in (%2)" );
-    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
-    qs = qs.arg(pointsField);
-    qs = qs.arg(ids.join(","));
+    std::string qs = "select fic_id, %1 from RecommendationListData where list_id = :list_id and fic_id in (%2)";
+    std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = fmt::format(qs, pointsField);
+    qs = fmt::format(qs, ids.join(",").toStdString());
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("list_id", filter.mainListId);
 
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        scores[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
+        scores[q.value("fic_id").toInt()] = q.value(QString::fromStdString(pointsField)).toInt();
     });
     return ctx.result;
 
@@ -2639,24 +2599,24 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> 
         listIds << QString::number(filter.secondListId);
 
 
-    QString qs = QString("select fic_id, list_id, %1, position, pedestal from RecommendationListData where list_id in (%2) and fic_id in (%3)" );
-    QString pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
-    qs = qs.arg(pointsField);
-    qs = qs.arg(listIds.join(","));
-    qs = qs.arg(ficIds.join(","));
+    std::string qs = "select fic_id, list_id, %1, position, pedestal from RecommendationListData where list_id in (%2) and fic_id in (%3)";
+    std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
+    qs = fmt::format(qs, pointsField);
+    qs = fmt::format(qs, listIds.join(",").toStdString());
+    qs = fmt::format(qs, ficIds.join(",").toStdString());
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         int ficId = q.value("fic_id").toInt();
         auto& fic = (*fics)[indices[ficId]];
         if(q.value("list_id").toInt() == filter.mainListId)
         {
-            fic.recommendationsData.recommendationsMainList = q.value(pointsField).toInt();
+            fic.recommendationsData.recommendationsMainList = q.value(pointsField.c_str()).toInt();
             fic.recommendationsData.placeInMainList = q.value("position").toInt();
             fic.recommendationsData.placeOnSecondPedestal = q.value("pedestal").toInt();
         }
         else{
-            fic.recommendationsData.recommendationsSecondList = q.value(pointsField).toInt();
+            fic.recommendationsData.recommendationsSecondList = q.value(pointsField.c_str()).toInt();
             fic.recommendationsData.placeInSecondList = q.value("position").toInt();
             fic.recommendationsData.placeOnSecondPedestal= q.value("pedestal").toInt();
         }
@@ -2666,8 +2626,8 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> 
 
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db)
 {
-    QString qs = QString(" select * from recommendationlists where id = :id ");
-    SqlContext<QSharedPointer<core::RecommendationList>> ctx(db, qs, BP1(id));
+    std::string qs = " select * from recommendationlists where id = :id ";
+    SqlContext<QSharedPointer<core::RecommendationList>> ctx(db, std::move(qs), BP1(id));
     //QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data = QSharedPointer<core::RecommendationList>{new core::RecommendationList};
@@ -2687,31 +2647,31 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecL
 
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QVector<int> ficIds, int list_id, QSqlDatabase db)
 {
-    QString qs = QString("update RecommendationListData set is_origin = 1 where fic_id = :fic_id and list_id = :list_id");
-    SqlContext<bool> ctx(db, qs, BP1(list_id));
+    std::string qs = "update RecommendationListData set is_origin = 1 where fic_id = :fic_id and list_id = :list_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(list_id));
     ctx.ExecuteWithValueList<int>("fic_id", ficIds);
     return ctx.result;
 }
 
 DiagnosticSQLResult<bool> DeleteLinkedAuthorsForAuthor(int author_id,  QSqlDatabase db)
 {
-    QString qs = QString("delete from LinkedAuthors where recommender_id = :author_id");
-    return SqlContext<bool> (db, qs, BP1(author_id))();
+    std::string qs = "delete from LinkedAuthors where recommender_id = :author_id";
+    return SqlContext<bool> (db, std::move(qs), BP1(author_id))();
 }
 
 DiagnosticSQLResult<bool>  UploadLinkedAuthorsForAuthor(int author_id, QString website, QList<int> ids, QSqlDatabase db)
 {
-    QString qs = QString("insert into  LinkedAuthors(recommender_id, %1_id) values(:author_id, :id)").arg(website);
-    SqlContext<bool> ctx(db, qs, BP1(author_id));
+    std::string qs = fmt::format("insert into  LinkedAuthors(recommender_id, %1_id) values(:author_id, :id)",website.toStdString());
+    SqlContext<bool> ctx(db, std::move(qs), BP1(author_id));
     ctx.ExecuteWithValueList<int>("id", ids, true);
     return ctx.result;
 }
 
 DiagnosticSQLResult<QVector<int> > GetAllUnprocessedLinkedAuthors(QSqlDatabase db)
 {
-    QString qs = QString("select distinct ffn_id from linkedauthors where ffn_id not in (select ffn_id from recommenders)");
-    SqlContext<QVector<int>> ctx(db, qs);
-    ctx.FetchLargeSelectIntoList<int>("ffn_id", qs);
+    std::string qs = "select distinct ffn_id from linkedauthors where ffn_id not in (select ffn_id from recommenders)";
+    SqlContext<QVector<int>> ctx(db, std::move(qs));
+    ctx.FetchLargeSelectIntoList<int>("ffn_id", std::move(qs));
     return ctx.result;
 }
 
@@ -2719,14 +2679,14 @@ DiagnosticSQLResult<QVector<int> > GetAllUnprocessedLinkedAuthors(QSqlDatabase d
 
 DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int list_id, QString website, QSqlDatabase db)
 {
-    QString qs = QString("Select distinct %1_id from LinkedAuthors "
+    std::string qs = "Select distinct %1_id from LinkedAuthors "
                          " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = %2) "
                          " and %1_id not in (select distinct %1_id from recommenders)"
                          " union all "
-                         " select ffn_id from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ");
-    qs=qs.arg(website).arg(list_id);
+                         " select ffn_id from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ";
+    qs=fmt::format(qs, website.toStdString(), list_id);
 
-    SqlContext<QStringList> ctx(db, qs, BP1(list_id));
+    SqlContext<QStringList> ctx(db, std::move(qs), BP1(list_id));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         auto authorUrl = url_utils::GetAuthorUrlFromWebId(q.value(QString("%1_id").arg(website)).toInt(), "ffn");
         ctx.result.data.push_back(authorUrl);
@@ -2736,23 +2696,23 @@ DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int list_id, QString webs
 
 DiagnosticSQLResult<bool> RemoveAuthorRecommendationStatsFromDatabase(int list_id, int author_id, QSqlDatabase db)
 {
-    QString qs = QString("delete from recommendationlistauthorstats "
-                         " where list_id = :list_id and author_id = :author_id");
-    return SqlContext<bool>(db, qs, BP2(list_id,author_id))();
+    std::string qs = "delete from recommendationlistauthorstats "
+                         " where list_id = :list_id and author_id = :author_id";
+    return SqlContext<bool>(db, std::move(qs), BP2(list_id,author_id))();
 }
 
 DiagnosticSQLResult<bool> CreateFandomIndexRecord(int id, QString name, QSqlDatabase db)
 {
-    QString qs = QString("insert into fandomindex(id, name) values(:id, :name)");
-    return SqlContext<bool>(db, qs, BP2(name, id))();
+    std::string qs = "insert into fandomindex(id, name) values(:id, :name)";
+    return SqlContext<bool>(db, std::move(qs), BP2(name, id))();
 }
 
 
 
 DiagnosticSQLResult<QHash<int, QList<int>>> GetWholeFicFandomsTable(QSqlDatabase db)
 {
-    QString qs = QString("select fic_id, fandom_id from ficfandoms");
-    SqlContext<QHash<int, QList<int>>> ctx(db, qs);
+    std::string qs = "select fic_id, fandom_id from ficfandoms";
+    SqlContext<QHash<int, QList<int>>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data[q.value("fandom_id").toInt()].push_back(q.value("fic_id").toInt());
     });
@@ -2761,27 +2721,27 @@ DiagnosticSQLResult<QHash<int, QList<int>>> GetWholeFicFandomsTable(QSqlDatabase
 
 DiagnosticSQLResult<bool> EraseFicFandomsTable(QSqlDatabase db)
 {
-    QString qs = QString("delete from ficfandoms");
-    return SqlContext<bool>(db, qs)();
+    std::string qs = "delete from ficfandoms";
+    return SqlContext<bool>(db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> SetLastUpdateDateForFandom(int id, QDate updated, QSqlDatabase db)
 {
-    QString qs = QString("update fandomindex set updated = :updated where id = :id");
-    return SqlContext<bool>(db, qs, BP2(updated, id))();
+    std::string qs = "update fandomindex set updated = :updated where id = :id";
+    return SqlContext<bool>(db, std::move(qs), BP2(updated, id))();
 }
 
 DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase db)
 {
-    QString qs = QString("delete from recent_fandoms where fandom = :name");
-    return SqlContext<bool>(db, qs, BP1(name))();
+    std::string qs = "delete from recent_fandoms where fandom = :name";
+    return SqlContext<bool>(db, std::move(qs), BP1(name))();
 }
 
 
 DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db)
 {
-    QString qs = QString("select max(id) as maxid from pagetasks");
-    SqlContext<int>ctx(db, qs);
+    std::string qs = "select max(id) as maxid from pagetasks";
+    SqlContext<int>ctx(db, std::move(qs));
     ctx.FetchSingleValue<int>("maxid", -1);
     return ctx.result;
 }
@@ -2789,15 +2749,15 @@ DiagnosticSQLResult<int> GetLastExecutedTaskID(QSqlDatabase db)
 // new query limit
 DiagnosticSQLResult<bool> GetTaskSuccessByID(int id, QSqlDatabase db)
 {
-    QString qs = QString("select success from pagetasks where id = :id");
-    SqlContext<bool>ctx(db, qs, BP1(id));
+    std::string qs = "select success from pagetasks where id = :id";
+    SqlContext<bool>ctx(db, std::move(qs), BP1(id));
     ctx.FetchSingleValue<bool>("success", false);
     return ctx.result;
 }
 DiagnosticSQLResult<bool>  IsForceStopActivated(int id, QSqlDatabase db)
 {
-    QString qs = QString("select force_stop from pagetasks where id = :id");
-    SqlContext<bool>ctx(db, qs, BP1(id));
+    std::string qs = "select force_stop from pagetasks where id = :id";
+    SqlContext<bool>ctx(db, std::move(qs), BP1(id));
     ctx.FetchSingleValue<bool>("force_stop", false);
     return ctx.result;
 }
@@ -2869,8 +2829,8 @@ void FillSubTaskFromQuery(SubTaskPtr task, QSqlQuery& q){
 
 DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db)
 {
-    QString qs = QString("select * from pagetasks where id = :id");
-    SqlContext<PageTaskPtr>ctx(db, qs, BP1(id));
+    std::string qs = "select * from pagetasks where id = :id";
+    SqlContext<PageTaskPtr>ctx(db, std::move(qs), BP1(id));
     ctx.result.data = PageTask::CreateNewTask();
     if(!ctx.ExecAndCheckForData())
         return ctx.result;
@@ -2881,9 +2841,9 @@ DiagnosticSQLResult<PageTaskPtr> GetTaskData(int id, QSqlDatabase db)
 
 DiagnosticSQLResult<SubTaskList> GetSubTaskData(int id, QSqlDatabase db)
 {
-    QString qs = QString("select * from PageTaskParts where task_id = :id");
+    std::string qs = "select * from PageTaskParts where task_id = :id";
 
-    SqlContext<SubTaskList>ctx(db, qs, {{"id", id}});
+    SqlContext<SubTaskList>ctx(db, std::move(qs), {{"id", id}});
     return ctx.ForEachInSelect([&](QSqlQuery& q){
         auto subtask = PageSubTask::CreateNewSubTask();
         FillSubTaskFromQuery(subtask, q);
@@ -2921,12 +2881,12 @@ void FillActionFromQuery(PageTaskActionPtr action, QSqlQuery& q){
 
 DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id,  QSqlDatabase db, int subId)
 {
-    QString qs = QString("select * from PageWarnings where task_id = :id");
+    std::string qs = "select * from PageWarnings where task_id = :id";
     bool singleSubTask = subId != -1;
     if(singleSubTask)
         qs+= " and sub_id = :sub_id";
 
-    SqlContext<SubTaskErrors>ctx(db, qs, BP1(id));
+    SqlContext<SubTaskErrors>ctx(db, std::move(qs), BP1(id));
 
     if(singleSubTask)
         ctx.bindValue("sub_id", subId);
@@ -2942,11 +2902,11 @@ DiagnosticSQLResult<SubTaskErrors> GetErrorsForSubTask(int id,  QSqlDatabase db,
 DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase db, int subId)
 {
 
-    QString qs = QString("select * from PageTaskActions where task_id = :id");
+    std::string qs = "select * from PageTaskActions where task_id = :id";
     bool singleSubTask = subId != -1;
     if(singleSubTask)
         qs+= " and sub_id = :sub_id";
-    SqlContext<PageTaskActions>ctx(db, qs, BP1(id));
+    SqlContext<PageTaskActions>ctx(db, std::move(qs), BP1(id));
 
     if(singleSubTask)
         ctx.bindValue("sub_id", subId);
@@ -2962,14 +2922,14 @@ DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase d
 
 DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
 {
-    QString qs = QString("insert into PageTasks(type, parts, created_at, scheduled_to,  allowed_retry_count, "
+    std::string qs = "insert into PageTasks(type, parts, created_at, scheduled_to,  allowed_retry_count, "
                          "allowed_subtask_retry_count, cache_mode, refresh_if_needed, task_comment, task_size, success, finished,"
                          "parsed_pages, updated_fics,inserted_fics,inserted_authors,updated_authors) "
                          "values(:type, :parts, :created_at, :scheduled_to, :allowed_retry_count,"
                          ":allowed_subtask_retry_count, :cache_mode, :refresh_if_needed, :task_comment,:task_size, 0, 0,"
-                         " :parsed_pages, :updated_fics,:inserted_fics,:inserted_authors,:updated_authors) ");
+                         " :parsed_pages, :updated_fics,:inserted_fics,:inserted_authors,:updated_authors) ";
 
-    SqlContext<int>ctx(db, qs);
+    SqlContext<int>ctx(db, std::move(qs));
     ctx.result.data = -1;
     ctx.bindValue("type", task->type);
     ctx.bindValue("parts", task->parts);
@@ -2997,11 +2957,11 @@ DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr task, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
 {
-    QString qs = QString("insert into PageTaskParts(task_id, type, sub_id, created_at, scheduled_to, content,task_size, success, finished, parse_up_to,"
+    std::string qs = "insert into PageTaskParts(task_id, type, sub_id, created_at, scheduled_to, content,task_size, success, finished, parse_up_to,"
                          "custom_data1, parsed_pages, updated_fics,inserted_fics,inserted_authors,updated_authors) "
                          "values(:task_id, :type, :sub_id, :created_at, :scheduled_to, :content,:task_size, 0,0, :parse_up_to,"
-                         ":custom_data1, :parsed_pages, :updated_fics,:inserted_fics,:inserted_authors,:updated_authors) ");
-    SqlContext<bool>ctx(db, qs);
+                         ":custom_data1, :parsed_pages, :updated_fics,:inserted_fics,:inserted_authors,:updated_authors) ";
+    SqlContext<bool>ctx(db, std::move(qs));
 
     ctx.bindValue("task_id", subtask->parentId);
     ctx.bindValue("type", subtask->type);
@@ -3025,9 +2985,9 @@ DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr subtask, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr action, QSqlDatabase db)
 {
-    QString qs = QString("insert into PageTaskActions(action_uuid, task_id, sub_id, started_at, finished_at, success) "
-                         "values(:action_uuid, :task_id, :sub_id, :started_at, :finished_at, :success) ");
-    SqlContext<bool>ctx(db, qs);
+    std::string qs = "insert into PageTaskActions(action_uuid, task_id, sub_id, started_at, finished_at, success) "
+                         "values(:action_uuid, :task_id, :sub_id, :started_at, :finished_at, :success) ";
+    SqlContext<bool>ctx(db, std::move(qs));
     ctx.bindValue("action_uuid", action->id.toString());
     ctx.bindValue("task_id", action->taskId);
     ctx.bindValue("sub_id", action->subTaskId);
@@ -3040,10 +3000,10 @@ DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr action, QSqlDatabas
 
 DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors errors, QSqlDatabase db)
 {
-    QString qs = QString("insert into PageWarnings(action_uuid, task_id, sub_id, url, attempted_at, last_seen_at, error_code, error_level, error) "
-                         "values(:action_uuid, :task_id, :sub_id, :url, :attempted_at, :last_seen, :error_code, :error_level, :error) ");
+    std::string qs = "insert into PageWarnings(action_uuid, task_id, sub_id, url, attempted_at, last_seen_at, error_code, error_level, error) "
+                         "values(:action_uuid, :task_id, :sub_id, :url, :attempted_at, :last_seen, :error_code, :error_level, :error) ";
 
-    SqlContext<bool>ctx(db, qs);
+    SqlContext<bool>ctx(db, std::move(qs));
     ctx.ExecuteWithKeyListAndBindFunctor<PageFailurePtr>(errors, [](PageFailurePtr error, QSqlQuery& q){
         q.bindValue(":action_uuid", error->action->id.toString());
         q.bindValue(":task_id", error->action->taskId);
@@ -3061,12 +3021,12 @@ DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors errors, QSqlDatabase db
 DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
 {
 
-    QString qs = QString("update PageTasks set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished_at,"
+    std::string qs = "update PageTasks set scheduled_to = :scheduled_to, started_at = :started, finished_at = :finished_at,"
                          " results = :results, retries = :retries, success = :success, task_size = :size, finished = :finished,"
                          " parsed_pages = :parsed_pages, updated_fics = :updated_fics, inserted_fics = :inserted_fics,"
                          " inserted_authors = :inserted_authors, updated_authors = :updated_authors"
-                         " where id = :id");
-    SqlContext<bool>ctx(db, qs);
+                         " where id = :id";
+    SqlContext<bool>ctx(db, std::move(qs));
 
     ctx.bindValue("scheduled_to",      task->scheduledTo);
     ctx.bindValue("started_at",        task->startedAt);
@@ -3088,13 +3048,13 @@ DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr task, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr task, QSqlDatabase db)
 {
-    QString qs = QString("update PageTaskParts set scheduled_to = :scheduled_to, started_at = :started_at, finished_at = :finished_at,"
+    std::string qs = "update PageTaskParts set scheduled_to = :scheduled_to, started_at = :started_at, finished_at = :finished_at,"
                          " retries = :retries, success = :success, finished = :finished, "
                          " parsed_pages = :parsed_pages, updated_fics = :updated_fics, inserted_fics = :inserted_fics,"
                          " inserted_authors = :inserted_authors, updated_authors = :updated_authors, custom_data1 = :custom_data1"
-                         " where task_id = :task_id and sub_id = :sub_id");
+                         " where task_id = :task_id and sub_id = :sub_id";
 
-    SqlContext<bool>ctx(db, qs);
+    SqlContext<bool>ctx(db, std::move(qs));
     QString customData = task->content->CustomData1();
 
     ctx.bindValue("scheduled_to",     task->scheduledTo);
@@ -3154,16 +3114,16 @@ DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDataba
     thread_local auto idHash = GetGlobalIDHash(originDB, " where id in (select distinct fic_id from fictags)").data;
     {
 
-        QStringList targetKeyList = {"ffn_id","ao3_id","sb_id","sv_id","tag",};
-        QStringList sourceKeyList = {"ffn","ao3","sb","sv","tag",};
-        QString insertQS = QString("insert into UserFicTags(ffn_id, ao3_id, sb_id, sv_id, tag) values(:ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
-        ParallelSqlContext<bool> ctx (originDB, "select fic_id, tag from fictags order by fic_id, tag", sourceKeyList,
-                                      targetDB, insertQS, targetKeyList);
+        QList<std::string> targetKeyList = {"ffn_id","ao3_id","sb_id","sv_id","tag",};
+        QList<std::string> sourceKeyList = {"ffn","ao3","sb","sv","tag",};
+        std::string insertQS = "insert into UserFicTags(ffn_id, ao3_id, sb_id, sv_id, tag) values(:ffn_id, :ao3_id, :sb_id, :sv_id, :tag)";
+        ParallelSqlContext<bool> ctx (originDB, "select fic_id, tag from fictags order by fic_id, tag", std::move(sourceKeyList),
+                                      targetDB, std::move(insertQS), std::move(targetKeyList));
 
-        auto keyConverter = [&](QString sourceKey, QSqlQuery q, QSqlDatabase , auto& )->QVariant
+        auto keyConverter = [&](std::string sourceKey, QSqlQuery q, QSqlDatabase , auto& )->QVariant
         {
             auto record = idHash.GetRecord(q.value("fic_id").toInt());
-            return record.GetID(sourceKey);
+            return record.GetID(sourceKey.c_str());
         };
 
         ctx.valueConverters["ffn"] = keyConverter;
@@ -3175,10 +3135,10 @@ DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDataba
             return ctx.result;
     }
     {
-        QStringList keyList = {"tag","id"};
-        QString insertQS = QString("insert into UserTags(fic_id, tag) values(:id, :tag)");
-        ParallelSqlContext<bool> ctx (originDB, "select * from tags", keyList,
-                                      targetDB, insertQS, keyList);
+        QList<std::string> keyList = {"tag","id"};
+        std::string insertQS = "insert into UserTags(fic_id, tag) values(:id, :tag)";
+        ParallelSqlContext<bool> ctx (originDB, "select * from tags", std::move(keyList),
+                                      targetDB, std::move(insertQS), std::move(keyList));
         return ctx();
     }
 }
@@ -3187,22 +3147,22 @@ DiagnosticSQLResult<bool> ExportTagsToDatabase(QSqlDatabase originDB, QSqlDataba
 DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlDatabase tagImportSourceDB)
 {
     {
-        SqlContext<bool> ctxTarget(currentDB, QStringList{"delete from fictags","delete from tags"});
+        SqlContext<bool> ctxTarget(currentDB, QList<std::string>{"delete from fictags","delete from tags"});
         if(!ctxTarget.result.success)
             return ctxTarget.result;
     }
 
     {
-        QStringList keyList = {"tag","id"};
-        QString insertQS = QString("insert into Tags(id, tag) values(:id, :tag)");
-        ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserTags", keyList,
-                                      currentDB, insertQS, keyList);
+        QList<std::string> keyList = {"tag","id"};
+        std::string insertQS = "insert into Tags(id, tag) values(:id, :tag)";
+        ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserTags", std::move(keyList),
+                                      currentDB, std::move(insertQS), std::move(keyList));
         ctx();
         if(!ctx.Success())
             return ctx.result;
     }
     // need to ensure fic_id in the source database
-    SqlContext<bool> ctxTarget(tagImportSourceDB, QStringList{"alter table UserFicTags add column fic_id integer default -1"});
+    SqlContext<bool> ctxTarget(tagImportSourceDB, QList<std::string>{"alter table UserFicTags add column fic_id integer default -1"});
     ctxTarget();
     if(!ctxTarget.result.success)
         return ctxTarget.result;
@@ -3213,11 +3173,11 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
     //    if(!ctxTest.result.success)
     //        return ctxTest.result;
 
-    QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag"};
-    QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag) values(:fic_id, :ffn_id, :ao3_id, :sb_id, :sv_id, :tag)");
+    QList<std::string> keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag"};
+    std::string insertQS = "insert into FicTags(fic_id, ffn_id, ao3_id, sb_id, sv_id, tag) values(:fic_id, :ffn_id, :ao3_id, :sb_id, :sv_id, :tag)";
     //bool isOpen = currentDB.isOpen();
-    ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserFicTags", keyList,
-                                  currentDB, insertQS, keyList);
+    ParallelSqlContext<bool> ctx (tagImportSourceDB, "select * from UserFicTags", std::move(keyList),
+                                  currentDB, std::move(insertQS), std::move(keyList));
     return ctx();
 }
 
@@ -3225,12 +3185,12 @@ DiagnosticSQLResult<bool> ImportTagsFromDatabase(QSqlDatabase currentDB,QSqlData
 DiagnosticSQLResult<bool> ExportSlashToDatabase(QSqlDatabase originDB, QSqlDatabase targetDB)
 {
 
-    QStringList keyList = {"ffn_id","keywords_result","keywords_yes","keywords_no","filter_pass_1", "filter_pass_2"};
-    QString insertQS = QString("insert into slash_data_ffn(ffn_id, keywords_result, keywords_yes, keywords_no, filter_pass_1, filter_pass_2) "
-                               " values(:ffn_id, :keywords_result, :keywords_yes, :keywords_no, :filter_pass_1, :filter_pass_2) ");
+    QList<std::string> keyList = {"ffn_id","keywords_result","keywords_yes","keywords_no","filter_pass_1", "filter_pass_2"};
+    std::string insertQS = "insert into slash_data_ffn(ffn_id, keywords_result, keywords_yes, keywords_no, filter_pass_1, filter_pass_2) "
+                               " values(:ffn_id, :keywords_result, :keywords_yes, :keywords_no, :filter_pass_1, :filter_pass_2) ";
 
-    return ParallelSqlContext<bool> (originDB, "select * from slash_data_ffn", keyList,
-                                     targetDB, insertQS, keyList)();
+    return ParallelSqlContext<bool> (originDB, "select * from slash_data_ffn", std::move(keyList),
+                                     targetDB, std::move(insertQS), std::move(keyList))();
 }
 
 DiagnosticSQLResult<bool> ImportSlashFromDatabase(QSqlDatabase slashImportSourceDB, QSqlDatabase appDB)
@@ -3242,11 +3202,11 @@ DiagnosticSQLResult<bool> ImportSlashFromDatabase(QSqlDatabase slashImportSource
             return ctxTarget.result;
     }
 
-    QStringList keyList = {"ffn_id","keywords_result","keywords_yes","keywords_no","filter_pass_1", "filter_pass_2"};
-    QString insertQS = QString("insert into slash_data_ffn(ffn_id, keywords_yes, keywords_no, keywords_result, filter_pass_1, filter_pass_2)"
-                               "  values(:ffn_id, :keywords_yes, :keywords_no, :keywords_result, :filter_pass_1, :filter_pass_2)");
-    return ParallelSqlContext<bool> (slashImportSourceDB, "select * from slash_data_ffn", keyList,
-                                     appDB, insertQS, keyList)();
+    QList<std::string> keyList = {"ffn_id","keywords_result","keywords_yes","keywords_no","filter_pass_1", "filter_pass_2"};
+    std::string insertQS = "insert into slash_data_ffn(ffn_id, keywords_yes, keywords_no, keywords_result, filter_pass_1, filter_pass_2)"
+                               "  values(:ffn_id, :keywords_yes, :keywords_no, :keywords_result, :filter_pass_1, :filter_pass_2)";
+    return ParallelSqlContext<bool> (slashImportSourceDB, "select * from slash_data_ffn", std::move(keyList),
+                                     appDB, std::move(insertQS), std::move(keyList))();
 }
 
 
@@ -3261,10 +3221,10 @@ FanficIdRecord::FanficIdRecord()
 
 DiagnosticSQLResult<int> FanficIdRecord::CreateRecord(QSqlDatabase db) const
 {
-    QString query = "INSERT INTO FANFICS (ffn_id, sb_id, sv_id, ao3_id, for_fill, lastupdate) "
+    std::string query = "INSERT INTO FANFICS (ffn_id, sb_id, sv_id, ao3_id, for_fill, lastupdate) "
                     "VALUES ( :ffn_id, :sb_id, :sv_id, :ao3_id, 1, date('now'))";
 
-    SqlContext<int> ctx(db, query,
+    SqlContext<int> ctx(db, std::move(query),
     {{"ffn_id", ids["ffn"]},
      {"sb_id", ids["sb"]},
      {"sv_id", ids["sv"]},
@@ -3305,7 +3265,7 @@ DiagnosticSQLResult<bool> AddFandomLink(int oldId, int newId, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author, QSqlDatabase db)
 {
-    QString query = "INSERT INTO AuthorFavouritesStatistics ("
+    std::string query = "INSERT INTO AuthorFavouritesStatistics ("
                     "author_id, favourites, favourites_wordcount, average_words_per_chapter, esrb_type, prevalent_mood,"
                     "most_favourited_size,favourites_type,average_favourited_length,favourite_fandoms_diversity, explorer_factor, "
                     "mega_explorer_factor, crossover_factor,unfinished_factor,esrb_uniformity_factor,esrb_kiddy,esrb_mature,"
@@ -3321,7 +3281,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author,
                     ":crack_factor,:slash_factor,:smut_factor, :prevalent_genre, :size_tiny, :size_medium, :size_large, :size_huge,"
                     ":first_published, :last_published"
                     ")";
-    SqlContext<bool> ctx(db, query);
+    SqlContext<bool> ctx(db, std::move(query));
 
     auto& stats = author->stats.favouriteStats;
     ctx.bindValue("author_id", author->id);
@@ -3364,7 +3324,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteStatistics(core::AuthorPtr author,
 
 DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr author, QSqlDatabase db)
 {
-    QString query = "INSERT INTO AuthorFavouritesGenreStatistics (author_id, "
+    std::string query = "INSERT INTO AuthorFavouritesGenreStatistics (author_id, "
                     "General_,Humor,Poetry, Adventure, Mystery, Horror,Parody,Angst, Supernatural, Suspense, "
                     " Romance,SciFi, Fantasy,Spiritual,Tragedy, Drama, Western,Crime,Family,HurtComfort,Friendship, NoGenre) "
                     "VALUES ("
@@ -3373,7 +3333,7 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr au
                     ")";
     auto& genreFactors = author->stats.favouriteStats.genreFactors;
 
-    SqlContext<bool> ctx(db, query);
+    SqlContext<bool> ctx(db, std::move(query));
     ctx.bindValue("author_id",author->id);
     auto converter = interfaces::GenreConverter::Instance();
     ctx.ProcessKeys<QString>(interfaces::GenreConverter::Instance().GetCodeGenres(), [&](auto key, auto& q){
@@ -3385,13 +3345,13 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteGenreStatistics(core::AuthorPtr au
 
 DiagnosticSQLResult<bool> WriteAuthorFavouriteFandomStatistics(core::AuthorPtr author, QSqlDatabase db)
 {
-    QString query = "INSERT INTO AuthorFavouritesFandomRatioStatistics ("
+    std::string query = "INSERT INTO AuthorFavouritesFandomRatioStatistics ("
                     "author_id, fandom_id, fandom_ratio, fic_count) "
                     "VALUES ("
                     ":author_id, :fandom_id, :fandom_ratio, :fic_count"
                     ")";
 
-    SqlContext<bool> ctx(db, query);
+    SqlContext<bool> ctx(db, std::move(query));
     ctx.bindValue("author_id",author->id);
 
     ctx.ExecuteWithKeyListAndBindFunctor<int>(author->stats.favouriteStats.fandomFactorsConverted.keys(), [&](auto key, auto& q){
@@ -3449,14 +3409,14 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownNotSlashFics(QSqlDatabase db) //todo 
 
 DiagnosticSQLResult<QSet<int> > GetSingularFicsInLargeButSlashyLists(QSqlDatabase db)
 {
-    QString qs = QString("select fic_id from "
+    std::string qs = "select fic_id from "
                          " ( "
                          " select fic_id, count(fic_id) as cnt from recommendations where recommender_id in (select author_id from AuthorFavouritesStatistics where slash_factor > 0.5 and slash_factor < 0.85  and favourites > 1000) and fic_id not in ( "
                          " select distinct fic_id from recommendations where recommender_id in (select author_id from AuthorFavouritesStatistics where slash_factor <= 0.5 or slash_factor > 0.85) ) group by fic_id "
                          " ) "
-                         " where cnt = 1 ");
+                         " where cnt = 1 ";
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList<int>("fic_id",qs);
+    ctx.FetchLargeSelectIntoList<int>("fic_id",std::move(qs));
 
     return ctx.result;
 }
@@ -3464,31 +3424,32 @@ DiagnosticSQLResult<QSet<int> > GetSingularFicsInLargeButSlashyLists(QSqlDatabas
 DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db)
 {
     SqlContext<QHash<int, double>> ctx(db);
-    QString qs = QString("select id, %1 from fanfics order by id").arg(fieldName);
-    ctx.FetchSelectIntoHash(qs, "id", fieldName);
+    std::string qs = fmt::format("select id, %1 from fanfics order by id",fieldName.toStdString());
+    ctx.FetchSelectIntoHash(std::move(qs), "id", fieldName);
     return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<int, QString> >GetGenreForFics(QSqlDatabase db)
 {
     SqlContext<QHash<int, QString>> ctx(db);
-    QString qs = QString("select id, %1 from fanfics order by id").arg("genres");
-    ctx.FetchSelectIntoHash(qs, "id", "genres");
+    std::string qs = fmt::format("select id, %1 from fanfics order by id","genres");
+    ctx.FetchSelectIntoHash(std::move(qs), "id", "genres");
     return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<int, int>> GetScoresForFics(QSqlDatabase db)
 {
     SqlContext<QHash<int, int>> ctx(db);
-    QString qs = QString("select fic_id, score from ficscores order by fic_id asc");
-    ctx.FetchSelectIntoHash(qs, "fic_id", "score");
+    std::string qs = "select fic_id, score from ficscores order by fic_id asc";
+    ctx.FetchSelectIntoHash(std::move(qs), "fic_id", "score");
     return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetGenreData(QString keyName, QString query, QSqlDatabase db)
 {
+    std::string q = query.toStdString();
     SqlContext<QHash<int, std::array<double, 22>>> ctx(db);
-    ctx.FetchSelectFunctor(query, DATAQ{
+    ctx.FetchSelectFunctor(std::move(q), DATAQ{
                                std::size_t counter = 0;
 //                               qDebug() << "Loading list for author: " << q.value(keyName).toInt();
 //                               qDebug() << "Adventure value is: " << q.value("Adventure").toDouble();
@@ -3533,9 +3494,9 @@ DiagnosticSQLResult<QHash<int, std::array<double, 22> > > GetFullFicGenreData(QS
 DiagnosticSQLResult<QHash<int, double> > GetFicGenreData(QString genre, QString cutoff, QSqlDatabase db)
 {
     SqlContext<QHash<int, double>> ctx(db);
-    QString qs = QString("select fic_id, %1 from FicGenreStatistics where %2 order by fic_id");
-    qs = qs.arg(genre,cutoff);
-    ctx.FetchSelectIntoHash(qs, "fic_id", genre);
+    std::string qs = "select fic_id, %1 from FicGenreStatistics where %2 order by fic_id";
+    qs = fmt::format(qs, genre.toStdString(),cutoff.toStdString());
+    ctx.FetchSelectIntoHash(std::move(qs), "fic_id", genre);
     return ctx.result;
 }
 
@@ -3543,8 +3504,8 @@ DiagnosticSQLResult<QSet<int> > GetAllKnownFicIds(QString where, QSqlDatabase db
 {
     SqlContext<QSet<int>> ctx(db);
     ctx.FetchLargeSelectIntoList<int>("id",
-                                      "select id from fanfics where " + where,
-                                      "select count(*) from fanfics where " + where);
+                                      "select id from fanfics where " + where.toStdString(),
+                                      "select count(*) from fanfics where " + where.toStdString());
 
     return ctx.result;
 }
@@ -3560,9 +3521,9 @@ DiagnosticSQLResult<QSet<int>>  GetFicIDsWithUnsetAuthors(QSqlDatabase db)
 DiagnosticSQLResult<QVector<core::FicWeightPtr> > GetAllFicsWithEnoughFavesForWeights(int faves, QSqlDatabase db)
 {
     SqlContext<QVector<core::FicWeightPtr>> ctx(db);
-    QString qs = QString("select id,Rated, author_id, complete, updated, fandom1,fandom2,favourites, published, updated,  genres, reviews, filter_pass_1, wordcount"
-                         "  from fanfics where favourites > %1 order by id").arg(QString::number(faves));
-    ctx.FetchSelectFunctor(qs, DATAQ{
+    std::string qs = fmt::format("select id,Rated, author_id, complete, updated, fandom1,fandom2,favourites, published, updated,  genres, reviews, filter_pass_1, wordcount"
+                         "  from fanfics where favourites > %1 order by id", faves);
+    ctx.FetchSelectFunctor(std::move(qs), DATAQ{
                                auto fw = getFicWeightPtrFromQuery(q);
                                data.push_back(fw);
                            });
@@ -3574,9 +3535,9 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
 {
     DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> result;
     result.data.reserve(authors.size());
-    QString qs = QString(" select fandom_id, fandom_ratio, fic_count from AuthorFavouritesFandomRatioStatistics where author_id = :author_id");
+    std::string qs = " select fandom_id, fandom_ratio, fic_count from AuthorFavouritesFandomRatioStatistics where author_id = :author_id";
     SqlContext<core::AuthorFavFandomStatsPtr> ctx(db);
-    ctx.Prepare(qs);
+    ctx.Prepare(std::move(qs));
     for(auto author: authors)
     {
         ctx.bindValue("author_id", author);
@@ -3585,7 +3546,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
         core::AuthorFavFandomStatsPtr fs(new core::AuthorFandomStatsForWeightCalc);
 
         fs->listId = author;
-        ctx.FetchSelectFunctor(qs, DATAQN{
+        ctx.FetchSelectFunctor(std::move(qs), DATAQN{
                                fs->fandomPresence[q.value("fandom_id").toInt()] = q.value("fandom_ratio").toDouble();
                                fs->fandomCounts[q.value("fandom_id").toInt()] = q.value("fic_count").toInt();
                            }, true);
@@ -3609,12 +3570,12 @@ DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId,
                                                          QHash<int, int> fics,
                                                          QSqlDatabase db)
 {
-    QString qs = "INSERT INTO RecommendationListData ("
+    std::string qs = "INSERT INTO RecommendationListData ("
                  "fic_id, list_id, match_count) "
                  "VALUES ("
                  ":fic_id, :list_id, :match_count)";
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("list_id", listId);
     ctx.ExecuteWithArgsHash({"fic_id", "match_count"}, fics);
     return ctx.result;
@@ -3629,11 +3590,11 @@ DiagnosticSQLResult<bool> CreateSlashInfoPerFic(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> WipeSlashMetainformation(QSqlDatabase db)
 {
-    QString qs = "update algopasses set "
+    std::string qs = "update algopasses set "
                  " keywords_yes = 0, keywords_no = 0, keywords_pass_result = 0, "
                  " pass_1 = 0, pass_2 = 0,pass_3 = 0,pass_4 = 0,pass_5 = 0 ";
 
-    return SqlContext<bool>(db, qs)();
+    return SqlContext<bool>(db, std::move(qs))();
 }
 
 
@@ -3650,7 +3611,7 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
     QSet<int> slashFics;
     QSet<int> slashKeywords;
     QSet<int> notSlashFics;
-    QString qs = QString("select id, summary, characters, fandom from fanfics order by id asc");
+    QString qs = "select id, summary, characters, fandom from fanfics order by id asc";
     QSqlQuery q(db);
     q.prepare(qs);
     if(!result.ExecAndCheck(q))
@@ -3719,31 +3680,31 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
 
 DiagnosticSQLResult<bool> WipeAuthorStatisticsRecords(QSqlDatabase db)
 {
-    QString qs = QString("delete from AuthorFavouritesStatistics");
-    return SqlContext<bool>(db, qs)();
+    std::string qs = "delete from AuthorFavouritesStatistics";
+    return SqlContext<bool>(db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db)
 {
-    QString qs = QString("insert into AuthorFavouritesStatistics(author_id, favourites) select r.id, (select count(*) from recommendations where recommender_id = r.id) from recommenders r");
-    return SqlContext<bool>(db, qs)();
+    std::string qs = "insert into AuthorFavouritesStatistics(author_id, favourites) select r.id, (select count(*) from recommendations where recommender_id = r.id) from recommenders r";
+    return SqlContext<bool>(db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField,  QSqlDatabase db)
 {
-    QString qs = QString("update AuthorFavouritesStatistics set slash_factor  = "
+    std::string qs = "update AuthorFavouritesStatistics set slash_factor  = "
                          " cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses where %1 = 1) ff on ff.fic_id  = rs.fic_id) as float) "
-                         "/cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses)              ff on ff.fic_id  = rs.fic_id) as float)");
-    qs = qs.arg(usedField);
-    return SqlContext<bool>(db, qs)();
+                         "/cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses)              ff on ff.fic_id  = rs.fic_id) as float)";
+    qs = fmt::format(qs, usedField.toStdString());
+    return SqlContext<bool>(db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase db)
 {
-    QString qs = QString("update algopasses set %1 = 1 where keywords_pass_result = 1 or fic_id in "
-                         "(select fic_id from recommendationlistdata where list_id in (select id from recommendationlists where name = 'SlashCleaned'))");
-    qs = qs.arg(iteration);
-    return SqlContext<bool>(db, qs)();
+    std::string qs = "update algopasses set %1 = 1 where keywords_pass_result = 1 or fic_id in "
+                         "(select fic_id from recommendationlistdata where list_id in (select id from recommendationlists where name = 'SlashCleaned'))";
+    qs = fmt::format(qs, iteration.toStdString());
+    return SqlContext<bool>(db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int list_id, QHash<uint32_t, QVector<uint32_t> > relations, QSqlDatabase db)
@@ -3751,13 +3712,13 @@ DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int list_id, QH
     DiagnosticSQLResult<bool> result;
     result.success = false;
     {
-        QString qs = QString("delete from RecommendersForFicAndList where list_id = :list_id");
-        SqlContext<bool>(db, qs,BP1(list_id))();
+        std::string qs = "delete from RecommendersForFicAndList where list_id = :list_id";
+        SqlContext<bool>(db, std::move(qs),BP1(list_id))();
     }
 
     {
-        QString qs = QString("insert into RecommendersForFicAndList(list_id, fic_id, author_id) values(:list_id, :fic_id, :author_id)");
-        SqlContext<bool>ctx (db, qs);
+        std::string qs = "insert into RecommendersForFicAndList(list_id, fic_id, author_id) values(:list_id, :fic_id, :author_id)";
+        SqlContext<bool>ctx (db, std::move(qs));
         ctx.bindValue("list_id", list_id);
         auto fics = relations.keys();
         std::sort(fics.begin(), fics.end());
@@ -3783,16 +3744,16 @@ DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int list_id,
     DiagnosticSQLResult<bool> result;
     result.success = false;
     {
-        QString qs = QString("delete from AuthorParamsForRecList where list_id = :list_id");
-        SqlContext<bool>(db, qs,BP1(list_id))();
+        std::string qs = "delete from AuthorParamsForRecList where list_id = :list_id";
+        SqlContext<bool>(db, std::move(qs),BP1(list_id))();
     }
     {
-        QString qs = QString("insert into AuthorParamsForRecList"
+        std::string qs = "insert into AuthorParamsForRecList"
                              "(list_id, author_id, full_list_size, total_matches, negative_matches, match_category, "
                              "list_size_without_ignores, ratio_difference_on_neutral_mood, ratio_difference_on_touchy_mood) "
                              "values(:list_id, :author_id, :full_list_size, :total_matches, :negative_matches, :match_category,"
-                             ":list_size_without_ignores, :ratio_difference_on_neutral_mood, :ratio_difference_on_touchy_mood)");
-        SqlContext<bool> ctx(db, qs);
+                             ":list_size_without_ignores, :ratio_difference_on_neutral_mood, :ratio_difference_on_touchy_mood)";
+        SqlContext<bool> ctx(db, std::move(qs));
         ctx.bindValue("list_id", list_id);
         for(auto& author : authors){
             ctx.bindValue("author_id", author.id);
@@ -3843,11 +3804,14 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
     result["HurtComfort"] = -1;
     result["Friendship"] = 1;
 
-    QString qs = QString("update ficgenrestatistics set %1 =  CASE WHEN  (select count(distinct recommender_id) from recommendations r where r.fic_id = ficgenrestatistics .fic_id) >= 5 "
+    std::string qs = "update ficgenrestatistics set %1 =  CASE WHEN  (select count(distinct recommender_id) from recommendations r where r.fic_id = ficgenrestatistics .fic_id) >= 5 "
                          " THEN (select avg(%1) from AuthorFavouritesGenreStatistics afgs where afgs.author_id in (select distinct recommender_id from recommendations r where r.fic_id = ficgenrestatistics .fic_id))  "
-                         " ELSE 0 END ");
-    SqlContext<bool> ctx(db, qs);
-    ctx.ExecuteWithArgsSubstitution(result.keys());
+                         " ELSE 0 END ";
+    std::list<std::string> list;
+    for(auto i = result.begin(); i != result.end(); i++)
+        list.push_back(i.key().toStdString());
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.ExecuteWithArgsSubstitution(std::move(list));
     return ctx.result;
 
 }
@@ -3855,9 +3819,9 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
 DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
 {
     DiagnosticSQLResult<bool> result;
-    QString qs;
-    qs = QString("select count(*) as cnt from user_settings where name = 'db_uuid'");
-    SqlContext<int> ctx(db, qs);
+
+    std::string qs = "select count(*) as cnt from user_settings where name = 'db_uuid'";
+    SqlContext<int> ctx(db, std::move(qs));
     ctx.FetchSingleValue<int>("cnt", 0);
     if(!ctx.Success())
     {
@@ -3870,9 +3834,9 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
 
         return result;
     }
-    qs = QString("insert into user_settings(name, value) values('db_uuid', '%1')");
-    qs = qs.arg(id.toString());
-    ctx.ReplaceQuery(qs);
+    qs = "insert into user_settings(name, value) values('db_uuid', '%1')";
+    qs = fmt::format(qs,id.toString().toStdString());
+    ctx.ReplaceQuery(std::move(qs));
 
     ctx();
     if(!ctx.Success())
@@ -3890,8 +3854,8 @@ DiagnosticSQLResult<bool> FillFicDataForList(int listId,
                                              const QSet<int> &origins,
                                              QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, match_count, is_origin) values(:listId, :ficId, :matchCount, :is_origin)");
-    SqlContext<bool> ctx(db, qs);
+    std::string qs = "insert into RecommendationListData(list_id, fic_id, match_count, is_origin) values(:listId, :ficId, :matchCount, :is_origin)";
+    SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("listId", listId);
     for(int i = 0; i < fics.size(); i++)
     {
@@ -3958,7 +3922,7 @@ static QHash<int, int> CreateFicPositions(QSharedPointer<core::RecommendationLis
 DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::RecommendationList> list,
                                              QSqlDatabase db)
 {
-    QString qs = QString("insert into RecommendationListData(list_id, fic_id, position, pedestal, "
+    std::string qs = "insert into RecommendationListData(list_id, fic_id, position, pedestal, "
                          "match_count, no_trash_score, is_origin, "
                          "breakdown_available,"
                          "votes_common, votes_uncommon, votes_rare, votes_unique, "
@@ -3966,9 +3930,9 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
                          "values(:listId, :ficId, :position, :pedestal, :matchCount, :no_trash_score, :is_origin,"
                          ":breakdown_available,"
                          ":votes_common, :votes_uncommon, :votes_rare, :votes_unique, "
-                         ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)");
+                         ":value_common, :value_uncommon, :value_rare, :value_unique, :purged)";
 
-    SqlContext<bool> ctx(db, qs);
+    SqlContext<bool> ctx(db, std::move(qs));
     //QLOG_INFO() << "Origins list: " << list->ficData.sourceFics;
 
     qDebug() << "Creating new vote breakdown records for list with id: " << list->id;
@@ -4013,16 +3977,16 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
 
 DiagnosticSQLResult<QString> GetUserToken(QSqlDatabase db)
 {
-    QString qs = QString("Select value from user_settings where name = 'db_uuid'");
+    std::string qs = "Select value from user_settings where name = 'db_uuid'";
 
-    SqlContext<QString> ctx(db, qs);
+    SqlContext<QString> ctx(db, std::move(qs));
     ctx.FetchSingleValue<QString>("value", "");
     return ctx.result;
 }
 
 DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QSqlDatabase db)
 {
-    QString query = " with count_per_fic(fic_id, ffn_id, title, genres, total, HumorComposite, Flirty, Pure_drama, Pure_Romance,"
+    std::string query = " with count_per_fic(fic_id, ffn_id, title, genres, total, HumorComposite, Flirty, Pure_drama, Pure_Romance,"
                     " Hurty, Bondy, NeutralComposite,DramaComposite, NeutralSingle) as ("
                     " with"
                     " fic_ids as (select %1 as fid),"
@@ -4080,8 +4044,8 @@ DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QS
                     " ffn_id "
 
                     " from count_per_fic";
-    query= query.arg(QString::number(ficId));
-    SqlContext<genre_stats::FicGenreData> ctx(db, query);
+    query= fmt::format(query, ficId);
+    SqlContext<genre_stats::FicGenreData> ctx(db, std::move(query));
     auto genreConverter = interfaces::GenreConverter::Instance();
 
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -4105,11 +4069,11 @@ DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QS
 
 DiagnosticSQLResult<QHash<uint32_t, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db)
 {
-    QString query = " select * from AuthorMoodStatistics "
+    std::string query = " select * from AuthorMoodStatistics "
                     " where author_id in (select distinct recommender_id from recommendations) "
                     " order by author_id asc ";
 
-    SqlContext<QHash<uint32_t, genre_stats::ListMoodData>> ctx(db, query);
+    SqlContext<QHash<uint32_t, genre_stats::ListMoodData>> ctx(db, std::move(query));
     auto genreConverter = interfaces::GenreConverter::Instance();
     genre_stats::ListMoodData tmp;
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -4140,7 +4104,7 @@ DiagnosticSQLResult<QHash<uint32_t, genre_stats::ListMoodData>> GetMoodDataForLi
 
 DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFics(QSqlDatabase db)
 {
-    QString query = " with count_per_fic(fic_id, ffn_id, title, genres, total, HumorComposite, Flirty, Pure_drama, Pure_Romance,"
+    std::string query = " with count_per_fic(fic_id, ffn_id, title, genres, total, HumorComposite, Flirty, Pure_drama, Pure_Romance,"
                     " Hurty, Bondy, NeutralComposite,DramaComposite, NeutralSingle) as ("
                     " with"
                     " fic_ids as (select id as fid from fanfics where queued_for_action = 1),"
@@ -4199,7 +4163,7 @@ DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFic
 
                     " from count_per_fic";
 
-    SqlContext<QVector<genre_stats::FicGenreData>> ctx(db, query);
+    SqlContext<QVector<genre_stats::FicGenreData>> ctx(db, std::move(query));
     auto genreConverter = interfaces::GenreConverter::Instance();
     genre_stats::FicGenreData tmp;
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -4224,7 +4188,7 @@ DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFic
 
 DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists, int minFaves, QSqlDatabase db)
 {
-    QString qs = QString(" with "
+    std::string qs = " with "
                          " min_recs(val) as (select :minAuthorRecs), "
                          " min_filtered_lists(val) as (select :minFoundLists), "
                          " filtered_recommenders(filtered_rec) as( "
@@ -4236,106 +4200,116 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
                          "  select fic_id, count(fic_id) as count_rec from recommendations where recommender_id in filtered_recommenders group by fic_id "
                          "  ) fin where count_rec >= (select val from min_filtered_lists) "
                          " ) "
-                         " update fanfics set queued_for_action = 1 where id in to_update and favourites > %1 ");
-    qs=qs.arg(minFaves);
+                         " update fanfics set queued_for_action = 1 where id in to_update and favourites > %1 ";
+    qs=fmt::format(qs, minFaves);
 
-    return SqlContext<bool> (db, qs,BP2(minAuthorRecs,minFoundLists))();
+    return SqlContext<bool> (db, std::move(qs),BP2(minAuthorRecs,minFoundLists))();
 }
 
 DiagnosticSQLResult<bool> PassScoresToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"fic_id", "score", "updated"};
-    QString insertQS = QString("insert into FicScores(fic_id, score , updated) values(:fic_id, :score , :updated)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from FicScores", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyList = {"fic_id", "score", "updated"};
+    QList<std::string> keyListCopy = {"fic_id", "score", "updated"};
+    std::string insertQS = "insert into FicScores(fic_id, score , updated) values(:fic_id, :score , :updated)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicScores", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassSnoozesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"fic_id", "snooze_added", "snoozed_at_chapter",
+    QList<std::string> keyList = {"fic_id", "snooze_added", "snoozed_at_chapter",
                            "snoozed_till_chapter", "snoozed_until_finished", "expired"};
-    QString insertQS = QString("insert into FicSnoozes(fic_id, snooze_added, snoozed_at_chapter, snoozed_till_chapter,snoozed_until_finished,expired) "
-                               " values(:fic_id, :snooze_added, :snoozed_at_chapter, :snoozed_till_chapter,:snoozed_until_finished,:expired)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from FicSnoozes", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyListCopy = {"fic_id", "snooze_added", "snoozed_at_chapter",
+                           "snoozed_till_chapter", "snoozed_until_finished", "expired"};
+    std::string insertQS = "insert into FicSnoozes(fic_id, snooze_added, snoozed_at_chapter, snoozed_till_chapter,snoozed_until_finished,expired) "
+                               " values(:fic_id, :snooze_added, :snoozed_at_chapter, :snoozed_till_chapter,:snoozed_until_finished,:expired)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicSnoozes", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassFicTagsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag", "added"};
-    QString insertQS = QString("insert into FicTags(fic_id, ffn_id, ao3_id, sb_id,sv_id,tag, added) "
-                               " values(:fic_id, :ffn_id, :ao3_id, :sb_id,:sv_id,:tag, :added)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from FicTags", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyList = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag", "added"};
+    QList<std::string> keyListCopy = {"fic_id", "ffn_id", "ao3_id", "sb_id", "sv_id", "tag", "added"};
+    std::string insertQS = "insert into FicTags(fic_id, ffn_id, ao3_id, sb_id,sv_id,tag, added) "
+                               " values(:fic_id, :ffn_id, :ao3_id, :sb_id,:sv_id,:tag, :added)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicTags", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassFicNotesToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"fic_id", "note_content", "updated"};
-    QString insertQS = QString("insert into ficnotes(fic_id, note_content , updated) values(:fic_id, :note_content , :updated)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from ficnotes", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string>  keyList = {"fic_id", "note_content", "updated"};
+    QList<std::string>  keyListCopy  = {"fic_id", "note_content", "updated"};
+    std::string insertQS = "insert into ficnotes(fic_id, note_content , updated) values(:fic_id, :note_content , :updated)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from ficnotes", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassTagSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"id", "tag"};
-    QString insertQS = QString("insert into Tags(id, tag) values(:id, :tag)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from Tags", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyList = {"id", "tag"};
+    QList<std::string> keyListCopy = {"id", "tag"};
+    std::string insertQS = "insert into Tags(id, tag) values(:id, :tag)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from Tags", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"fandom", "seq_num"};
-    QString insertQS = QString("insert into recent_fandoms(fandom, seq_num) values(:fandom, :seq_num)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from recent_fandoms", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyList = {"fandom", "seq_num"};
+    QList<std::string> keyListCopy = {"fandom", "seq_num"};
+    std::string insertQS = "insert into recent_fandoms(fandom, seq_num) values(:fandom, :seq_num)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from recent_fandoms", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"fandom_id", "including_crossovers"};
-    QString insertQS = QString("insert into ignored_fandoms(fandom_id, including_crossovers) values(:fandom_id, :including_crossovers)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from ignored_fandoms", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyList = {"fandom_id", "including_crossovers"};
+    QList<std::string> keyListCopy = {"fandom_id", "including_crossovers"};
+    std::string insertQS = "insert into ignored_fandoms(fandom_id, including_crossovers) values(:fandom_id, :including_crossovers)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from ignored_fandoms", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
     {
-        QString qs = QString("delete from user_settings");
-        SqlContext<bool> (dbTarget, qs)();
+        std::string qs = "delete from user_settings";
+        SqlContext<bool> (dbTarget, std::move(qs))();
     }
-    QStringList keyList = {"name", "value"};
-    QString insertQS = QString("insert into user_settings(name, value) values(:name, :value)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from user_settings", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyList = {"name", "value"};
+    QList<std::string> keyListCopy = {"name", "value"};
+    std::string insertQS = "insert into user_settings(name, value) values(:name, :value)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from user_settings", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<bool> PassReadingDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
-    QStringList keyList = {"fic_id", "at_chapter"};
-    QString insertQS = QString("insert into FicReadingTracker(fic_id, at_chapter) values(:name, :at_chapter)");
-    ParallelSqlContext<bool> ctx (dbSource, "select * from FicReadingTracker", keyList,
-                                  dbTarget, insertQS, keyList);
+    QList<std::string> keyList = {"fic_id", "at_chapter"};
+    QList<std::string> keyListCopy = {"fic_id", "at_chapter"};
+    std::string insertQS = "insert into FicReadingTracker(fic_id, at_chapter) values(:name, :at_chapter)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from FicReadingTracker", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
     return ctx();
 }
 
 DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase db)
 {
     DiagnosticSQLResult<DBVerificationResult> result;
-    QString qs = "pragma quick_check;";
+    std::string qs = "pragma quick_check;";
     SqlContext<QStringList> ctx(db);
-    ctx.FetchLargeSelectIntoListWithoutSize<QString>("quick_check", qs);
+    ctx.FetchLargeSelectIntoListWithoutSize<QString>("quick_check", std::move(qs));
     if(ctx.result.data.size() == 0 || ctx.result.data.at(0) != "ok")
     {
         result.success = false;
