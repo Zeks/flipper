@@ -160,19 +160,19 @@ public:
     typedef QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> FilterListType;
     typedef QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> ActionListType;
 
-    RecCalculatorImplBase(RecInputVectors input):inputs(input){}
+    RecCalculatorImplBase(const RecInputVectors& input):inputs(input){}
 
     virtual ~RecCalculatorImplBase(){}
 
     virtual void ResetAccumulatedData();
     bool Calc();
-    void RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, FilterListType filters, ActionListType actions);
+    void RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, const FilterListType &filters, const ActionListType &actions);
     Roaring BuildIgnoreList();
     void FetchAuthorRelations();
     void CollectFicMatchQuality();
     void Filter(QSharedPointer<RecommendationList> params,
-                QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
-                QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> actions);
+                const QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>>& filters,
+                const QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>>& actions);
 
     void CalculateNegativeToPositiveRatio();
     void ReportNegativeResults();
@@ -191,7 +191,7 @@ public:
 
     virtual AutoAdjustmentAndFilteringResult AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList>);
     virtual void AdjustRatioForAutomaticParams();
-    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>, AutoAdjustmentAndFilteringResult adjustmentResult);
+    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>, const AutoAdjustmentAndFilteringResult &adjustmentResult);
 
     int ownProfileId = -1;
     uint8_t ratioCutoff = std::numeric_limits<uint8_t>::max();

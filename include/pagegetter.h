@@ -74,7 +74,7 @@ public:
     bool automaticCacheForCurrentDate = true;
 public slots:
     void Task(QString url, QString lastUrl, QDate updateLimit, ECacheMode cacheMode, bool ignoreUpdateDate, int delay);
-    void FandomTask(FandomParseTask);
+    void FandomTask(const FandomParseTask &);
     void ProcessBunchOfFandomUrls(QStringList urls,
                                   QDate stopAt,
                                   ECacheMode cacheMode,

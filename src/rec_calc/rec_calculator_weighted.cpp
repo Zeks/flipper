@@ -110,8 +110,8 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     double sum = 0;
     for(auto author: authorList)
     {
-        if(this->ownProfileId != static_cast<int>(allAuthors[author].id))
-            sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
+        if(this->ownProfileId != static_cast<int>(allAuthors.value(author).id))
+            sum+=std::pow(allAuthors.value(author).ratio - ratioMedian, 2);
     }
 
     quadraticDeviation = std::sqrt(normalizer * sum);
@@ -122,15 +122,15 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     //auto keysRatio = inputs.faves.keys();
     auto keysMedian = inputs.faves.keys();
     std::sort(keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
-        return allAuthors[i1].matches < allAuthors[i2].matches;
+        return allAuthors.value(i1).matches < allAuthors.value(i2).matches;
     });
 
     std::sort(authorList.begin(), authorList.end(),[&](const int& i1, const int& i2){
-        return allAuthors[i1].ratio < allAuthors[i2].ratio;
+        return allAuthors.value(i1).ratio < allAuthors.value(i2).ratio;
     });
 
     auto ratioMedianIt = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
-        return allAuthors[i1].ratio < ratioMedian;
+        return allAuthors.value(i1).ratio < ratioMedian;
     });
     auto beginningOfQuadraticToMedianRange = ratioMedianIt - authorList.begin();
     qDebug() << "distance to median is: " << beginningOfQuadraticToMedianRange;
@@ -140,7 +140,7 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     qDebug() << "2 sigma: " << quadraticDeviation * 2;
 
     auto ratioSigma2 = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
-        return allAuthors[i1].ratio < (ratioMedian - quadraticDeviation*2);
+        return allAuthors.value(i1).ratio < (ratioMedian - quadraticDeviation*2);
     });
     endOfUniqueAuthorRange = ratioSigma2 - authorList.begin();
     qDebug() << "distance to sigma15 is: " << endOfUniqueAuthorRange;
@@ -156,22 +156,22 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     for(auto authorId: authorList){
         seenAuthorCount++;
         if(seenAuthorCount == uncommonAuthorCount){
-            auto ratio = allAuthors[authorId].ratio;
+            auto ratio = allAuthors.value(authorId).ratio;
             auto currentRange = ratioMedian - ratio;
             uncommonRange = currentRange;
         }else if(seenAuthorCount == rareAuthorCount){
-            auto ratio = allAuthors[authorId].ratio;
+            auto ratio = allAuthors.value(authorId).ratio;
             auto currentRange = ratioMedian - ratio;
             rareRange = currentRange;
         }else if(seenAuthorCount == uniqueAuthorCount){
-            auto ratio = allAuthors[authorId].ratio;
+            auto ratio = allAuthors.value(authorId).ratio;
             auto currentRange = ratioMedian - ratio;
             uniqueRange = currentRange;
         }
     }
 
     for(auto authorId: authorList){
-        auto ratio = allAuthors[authorId].ratio;
+        auto ratio = allAuthors.value(authorId).ratio;
         if(ratioMedian - ratio > uniqueRange)
             this->uniqueAuthors++;
         else if(ratioMedian - ratio > rareRange)
@@ -243,7 +243,7 @@ void RecCalculatorImplWeighted::AdjustRatioForAutomaticParams()
         return;
     ratioSum = 0;
     for(auto author : std::as_const(filteredAuthors))
-        ratioSum+=allAuthors[author].ratio;
+        ratioSum+=allAuthors.value(author).ratio;
 }
 
 void RecCalculatorImplWeighted::ResetAccumulatedData()

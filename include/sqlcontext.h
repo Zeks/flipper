@@ -498,7 +498,7 @@ struct ParallelSqlContext
     QList<std::string> sourceFields;
     QList<std::string> targetFields;
     Transaction transaction;
-    QHash<std::string,std::function<QVariant(std::string, QSqlQuery, QSqlDatabase, DiagnosticSQLResult<ResultType>&)>> valueConverters;
+    QHash<std::string,std::function<QVariant(const std::string&, QSqlQuery, QSqlDatabase, DiagnosticSQLResult<ResultType>&)>> valueConverters;
 };
 
 }

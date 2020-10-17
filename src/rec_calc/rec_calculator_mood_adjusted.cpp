@@ -63,12 +63,14 @@ bool RecCalculatorImplMoodAdjusted::WeightingIsValid() const
 {
     return RecCalculatorImplWeighted::WeightingIsValid();
 }
-
-RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors input, genre_stats::GenreMoodData moodData):
+std::once_flag moodsFlag;
+RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(const RecInputVectors& input, const genre_stats::GenreMoodData& moodData):
     RecCalculatorImplWeighted(input), moodData(moodData)
 {
-    QStringList moodList;
-    moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+    static QStringList moodList;
+    std::call_once(moodsFlag, [&](){
+        moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+    });
 
     for(auto i = input.moods.begin(); i != input.moods.end(); i++)
     {
@@ -100,8 +102,8 @@ RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors inp
 
 std::optional<double> RecCalculatorImplMoodAdjusted::GetNeutralDiffForLists(uint32_t author)
 {
-    auto it = moodDiffs.find(author);
-    if(it == moodDiffs.end())
+    auto it = std::as_const(moodDiffs).find(author);
+    if(it == moodDiffs.cend())
         return {};
 
     return it.value().neutralDifference;
@@ -109,8 +111,8 @@ std::optional<double> RecCalculatorImplMoodAdjusted::GetNeutralDiffForLists(uint
 
 std::optional<double> RecCalculatorImplMoodAdjusted::GetTouchyDiffForLists(uint32_t author)
 {
-    auto it = moodDiffs.find(author);
-    if(it == moodDiffs.end())
+    auto it = std::as_const(moodDiffs).find(author);
+    if(it == moodDiffs.cend())
         return {};
 
     return it.value().touchyDifference;

@@ -16,7 +16,7 @@ void CommandController::Init(int runnerAmount)
     startTimer(300);
     for(int i =0; i < runnerAmount; i++){
         runners.push_back(QSharedPointer<TaskRunner>(new TaskRunner()));
-        connect(runners.last().data(), &TaskRunner::finished, this, &CommandController::OnTaskFinished);
+        connect(std::as_const(runners).last().data(), &TaskRunner::finished, this, &CommandController::OnTaskFinished);
     }
 
 }
@@ -38,17 +38,13 @@ void CommandController::Push(CommandChain&& chain)
         client->sendMessage(message.channelID, CreateMention(message.author.ID.string())+ ", your previous command is still executing, please wait");
         return;
     }
-    else if(chain.hasParseCommand && activeParseCommand)
+    else if(activeParseCommand)
     {
-        client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
-        queue.emplace_back(std::move(chain));
-        return;
-    }
-    else if(chain.hasFullParseCommand && activeFullParseCommand)
-    {
-        client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
-        queue.emplace_back(std::move(chain));
-        return;
+        if(chain.hasParseCommand || chain.hasFullParseCommand){
+            client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
+            queue.emplace_back(std::move(chain));
+            return;
+        }
     }
     activeUsers.insert(userId);
     auto runner = FetchFreeRunner();

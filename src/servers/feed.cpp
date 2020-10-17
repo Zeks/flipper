@@ -139,8 +139,8 @@ Status FeederService::GetStatus(ServerContext* context, const ProtoSpace::Status
     response->set_database_attached(attached);
     response->set_last_database_update(settings.value("Settings/lastDBUpdate", "").toString().toStdString());
     response->set_need_to_show_motd(settings.value("Settings/motdRequired", false).toBool());
-    auto majorProtocolVersion = QString(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
-    auto minorProtocolVersion = QString(STRINGIFY(MINOR_PROTOCOL_VERSION)).toInt();
+    auto majorProtocolVersion = QStringLiteral(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
+    auto minorProtocolVersion = QStringLiteral(STRINGIFY(MINOR_PROTOCOL_VERSION)).toInt();
     QLOG_INFO() << "Passing protocol version: " << majorProtocolVersion;
     response->set_protocol_version(majorProtocolVersion);
     auto protocol = response->mutable_current_protocol();
@@ -369,7 +369,7 @@ Status FeederService::SyncFandomList(ServerContext* context, const ProtoSpace::S
     QLOG_INFO() << " ";
     return Status::OK;
 }
-
+std::once_flag moodsFlag;
 genre_stats::GenreMoodData CalcMoodDistributionForFicList(QList<uint32_t> ficList, core::FicGenreCompositeType ficGenres){
 
     genre_stats::GenreMoodData result;
@@ -387,8 +387,11 @@ genre_stats::GenreMoodData CalcMoodDistributionForFicList(QList<uint32_t> ficLis
     qDebug() << "Logging reference list";
     result.listMoodData.Log();
 
-    QStringList moodList;
-    moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+    static QStringList moodList;
+    std::call_once(moodsFlag, [&](){
+        moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+    });
+
     for(int i= 0; i < moodList.size(); i++)
     {
         auto userValue =  interfaces::Genres::ReadMoodValue(moodList[i], result.listMoodData);
@@ -491,7 +494,7 @@ grpc::Status FeederService::DiagnosticRecommendationListCreation(grpc::ServerCon
         for(auto fic : keys){
             auto* newMatch = targetList->add_matches();
             newMatch->set_fic_id(fic);
-            for(auto author : std::as_const(list.authorsForFics[fic]))
+            for(auto author : list.authorsForFics.value(fic))
                 newMatch->add_author_id(author);
         }
         QLOG_INFO() << "passing author stats into data: " << list.authorData.size();
@@ -567,7 +570,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         if(!task->data().response_data_controls().ignore_breakdowns())
             targetList->mutable_no_trash_score()->Reserve(dataSize);
 
-        for(auto i = list.recommendations.begin(); i != list.recommendations.end(); i++)
+        for(auto i = list.recommendations.cbegin(); i != list.recommendations.cend(); i++)
         {
             const auto& key = i.key();
             const auto& value = i.value();
@@ -582,9 +585,9 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             if(adjustedVotes < 1)
                 adjustedVotes = 1;
             // purging based on mood
-            if((recommendationsCreationParams->useMoodAdjustment && (value/(baseVotes*list.pureMatches[key])) < 1) &&
-                    list.decentMatches[key] == 0 &&
-                    !recommendationsCreationParams->likedAuthors.contains(recCalculator->holder.fics[key]->authorId))
+            if((recommendationsCreationParams->useMoodAdjustment && (value/(baseVotes*list.pureMatches.value(key))) < 1) &&
+                    list.decentMatches.value(key) == 0 &&
+                    !recommendationsCreationParams->likedAuthors.contains(recCalculator->holder.fics.value(key)->authorId))
             {
                 bool axisGenre = false;;
                 //qDebug() << "attempting to purge fic: " << key;
@@ -646,7 +649,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             response->mutable_list()->add_author_ids(author);
 
         if(!task->data().response_data_controls().ignore_breakdowns())
-            for(auto i = list.matchReport.begin(); i != list.matchReport.end(); i++)
+            for(auto i = list.matchReport.cbegin(); i != list.matchReport.cend(); i++)
                 (*targetList->mutable_match_report())[i.key()] = i.value();
 
         response->mutable_list()->mutable_used_params()->set_is_automatic(recommendationsCreationParams->isAutomatic);
@@ -925,7 +928,7 @@ void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filte
     StatisticsToken token;
     {
         QWriteLocker locker(&lock);
-        StatisticsToken token = tokenData[uuid];
+        StatisticsToken token = tokenData.value(uuid);
         searchedTokens.insert(uuid);
         allTokens.insert(uuid);
         allSearches++;
@@ -1033,7 +1036,7 @@ QSharedPointer<FicSource> FeederService::InitFicSource(QString userToken,
 {
     //DatabaseContext dbContext;
     QSharedPointer<FicSource> ficSource(new FicSourceDirect(dbInterface,rngData));
-    FicSourceDirect* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
+    auto* convertedFicSource = dynamic_cast<FicSourceDirect*>(ficSource.data());
     QLOG_TRACE() << "Initializing fic source mode";
     convertedFicSource->InitQueryType(true, userToken);
     //QLOG_INFO() << "Initialized fic source mode";
@@ -1127,7 +1130,7 @@ void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicLi
     An<interfaces::GenreIndex> genreIndex;
     for(size_t i = 0; i < dataResult.result.genreRatios.size(); i++)
     {
-        const auto& genre =  genreIndex->genresByIndex[i];
+        const auto& genre =  genreIndex->genresByIndex.value(i);
         result.genreFactors[genre.name] = dataResult.result.genreRatios[i];
     }
 
