@@ -114,7 +114,7 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
     return list;
 }
 
-QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, QSet<QString> userFavourites, QSharedPointer<TaskEnvironment> environment, Command& command){
+QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(QString ffnId, const QSet<QString>& userFavourites, QSharedPointer<TaskEnvironment> environment, const Command& command){
     auto recList = CreateRecommendationParams(ffnId);
     recList->ignoreBreakdowns= true;
 
@@ -146,8 +146,8 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     //QLOG_INFO() << "Got fics";
     // refreshing the currently saved recommendation list params for user
     An<interfaces::Users> usersDbInterface;
-    usersDbInterface->DeleteUserList(command.user->UserID(), "");
-    usersDbInterface->WriteUserList(command.user->UserID(), "", discord::elt_favourites, recList->minimumMatch, recList->maxUnmatchedPerMatch, recList->alwaysPickAt);
+    usersDbInterface->DeleteUserList(command.user->UserID(), QStringLiteral(""));
+    usersDbInterface->WriteUserList(command.user->UserID(), QStringLiteral(""), discord::elt_favourites, recList->minimumMatch, recList->maxUnmatchedPerMatch, recList->alwaysPickAt);
     usersDbInterface->WriteUserFFNId(command.user->UserID(), command.ids.at(0));
 
     // instantiating working set for user
@@ -156,7 +156,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     //QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
     QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
     int count = 0;
-    if(!recList->ficData->matchCounts.size())
+    if(recList->ficData->matchCounts.isEmpty())
         return recList;
 
     for(int i = 0; i < recList->ficData->fics.size(); i++){
@@ -167,7 +167,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
         }
     }
     int perfectRange = count*0.05; // 5% of the list with score > 1
-    int goodRange = count*.15; // 15% of the list with score > 1
+    int goodRange = count*0.15; // 15% of the list with score > 1
     int perfectCutoff = 0, goodCutoff = 0;
     auto keys = matchFicToScore.keys();
     std::sort(keys.begin(), keys.end());
@@ -243,7 +243,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
 
     //qDebug() << "after filling";
 
-    if(!recList->ficData->matchCounts.size())
+    if(recList->ficData->matchCounts.isEmpty())
     {
         command.user->SetFfnID(ffnId);
         action->text = QStringLiteral("Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495");
@@ -303,7 +303,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         command.type = ct_create_recs_from_mobile_page;
         command.variantHash = command.variantHash;
         Command displayRecs = NewCommand(command.server, command.originalMessage, ct_display_page);
-        displayRecs.variantHash["refresh_previous"] = true;
+        displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
         displayRecs.user = command.user;
         displayRecs.ids.push_back(0);
         CommandChain chain;
@@ -327,7 +327,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     }
 
 
-    if(!recList->ficData->matchCounts.size())
+    if(recList->ficData->matchCounts.isEmpty())
     {
         command.user->SetFfnID(ffnId);
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495");
@@ -351,7 +351,7 @@ void ActionChain::Push(QSharedPointer<SendMessageCommand> action)
 
 QSharedPointer<SendMessageCommand> ActionChain::Pop()
 {
-    auto action = actions.first();
+    auto action = std::as_const(actions.first());
     actions.pop_front();
     return action;
 }
@@ -392,13 +392,13 @@ auto ExtractAge(QDateTime toDate){
     return dates;
 }
 
-void  FillListEmbedForFicAsFields(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool addNewlines = true){
+void  FillListEmbedForFicAsFields(SleepyDiscord::Embed& embed, const core::Fanfic& fic, int i, bool addNewlines = true){
     QString urlProto = QStringLiteral("[%1](https://www.fanfiction.net/s/%2)");
 
     auto fandomsList=fic.fandoms;
     SleepyDiscord::EmbedField field;
     field.isInline = true;
-    field.name = QString(QStringLiteral("Fandom: `") + fandomsList.join(" & ").replace(QStringLiteral("'"), QStringLiteral("\\'")) + QStringLiteral("`")).rightJustified(20, ' ').toStdString();
+    field.name = QString(QStringLiteral("Fandom: `") + fandomsList.join(QStringLiteral(" & ")).replace(QStringLiteral("'"), QStringLiteral("\\'")) + QStringLiteral("`")).rightJustified(20, ' ').toStdString();
     field.value += QString(QStringLiteral("ID: ") + QString::number(i)).rightJustified(2, ' ').toStdString();
     field.value += QString(QStringLiteral(" ") + urlProto.arg(fic.title, QString::number(fic.identity.web.GetPrimaryId()))+QStringLiteral("\n")).toStdString();
 
@@ -420,7 +420,7 @@ void  FillListEmbedForFicAsFields(SleepyDiscord::Embed& embed, core::Fanfic& fic
         QDateTime date = fic.updated.isValid() && fic.updated.date().year() != 1970 ? fic.updated : fic.published;
         auto dates = ExtractAge(date);
         if(dates.size())
-            field.value  += (QStringLiteral("\nIncomplete: `") + dates.join(" ") + "`").rightJustified(12).toStdString();
+            field.value  += (QStringLiteral("\nIncomplete: `") + dates.join(QStringLiteral(" ")) + QStringLiteral("`")).rightJustified(12).toStdString();
         else
             field.value  += QStringLiteral("\nIncomplete:`").rightJustified(12).toStdString();
     }
@@ -434,7 +434,7 @@ void  FillListEmbedForFicAsFields(SleepyDiscord::Embed& embed, core::Fanfic& fic
 }
 
 
-void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i, bool addNewlines = true){
+void  FillListEmbedForFic(SleepyDiscord::Embed& embed, const core::Fanfic& fic, int i, bool addNewlines = true){
     QString urlProto = QStringLiteral("[%1](https://www.fanfiction.net/s/%2)");
     auto fandomsList=fic.fandoms;
     embed.description += QString(QStringLiteral("ID: ") + QString::number(i)).rightJustified(2, ' ').toStdString();
@@ -453,7 +453,7 @@ void  FillListEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, int i,
         QDateTime date = fic.updated.isValid() && fic.updated.date().year() != 1970 ? fic.updated : fic.published;
         auto dates = ExtractAge(date);
         if(dates.size())
-            embed.description += (QStringLiteral(" `Incomplete: ") + dates.join(" ") + "`").rightJustified(12).toStdString();
+            embed.description += (QStringLiteral(" `Incomplete: ") + dates.join(QStringLiteral(" ")) + QStringLiteral("`")).rightJustified(12).toStdString();
         else
             embed.description += QStringLiteral(" `Incomplete`").rightJustified(12).toStdString();
     }
@@ -479,7 +479,7 @@ void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, in
         FillListEmbedForFicAsFields(embed, fic, i);
     else{
         FillListEmbedForFic(embed, fic, i, false);
-        embed.description += (QString("\n```") + fic.summary + QString("```")).toStdString();
+        embed.description += (QString(QStringLiteral("\n```")) + fic.summary + QString(QStringLiteral("```"))).toStdString();
         embed.description += "\n";
         auto temp =  QString::fromStdString(embed.description);
         temp = temp.replace(QStringLiteral("````"), QStringLiteral("```"));
@@ -491,7 +491,7 @@ void  FillDetailedEmbedForFic(SleepyDiscord::Embed& embed, core::Fanfic& fic, in
 
 
 
-void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
+void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, const Command& command){
     auto filter = command.user->GetCurrentFandomFilter();
 
     QString result;
@@ -505,14 +505,14 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
                 result += ( QStringLiteral(" - ") + environment->fandoms->GetNameForID(fandom) + QStringLiteral("\n"));
         }
     }
-
+    static constexpr uint16_t oneThousandWords = 1000;
     auto wordcountFilter = command.user->GetWordcountFilter();
-    if(wordcountFilter.firstLimit !=0 && wordcountFilter.secondLimit/1000 == 99999999)
-        result += QString(QStringLiteral("\nShowing fics with > %1k words.")).arg(QString::number(wordcountFilter.firstLimit/1000));
+    if(wordcountFilter.firstLimit !=0 && wordcountFilter.secondLimit/oneThousandWords == 99999999)
+        result += QString(QStringLiteral("\nShowing fics with > %1k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords));
     if(wordcountFilter.firstLimit == 0 && wordcountFilter.secondLimit != 0)
-        result += QString(QStringLiteral("\nShowing fics with < %1k words.")).arg(QString::number(wordcountFilter.secondLimit/1000));
+        result += QString(QStringLiteral("\nShowing fics with < %1k words.")).arg(QString::number(wordcountFilter.secondLimit/oneThousandWords));
     if(wordcountFilter.firstLimit != 0 && wordcountFilter.secondLimit != 0  && wordcountFilter.secondLimit/1000 != 99999999)
-        result += QString(QStringLiteral("\nShowing fics between %1k and %2k words.")).arg(QString::number(wordcountFilter.firstLimit/1000),QString::number(wordcountFilter.secondLimit/1000));
+        result += QString(QStringLiteral("\nShowing fics between %1k and %2k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords),QString::number(wordcountFilter.secondLimit/oneThousandWords));
 
 
     if(command.user->GetLastPageType() == ct_display_rng)
@@ -535,7 +535,7 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
     embed.description += result.toStdString();
 }
 
-void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, Command& command){
+void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPointer<TaskEnvironment> environment, const Command& command){
     auto filter = command.user->GetCurrentFandomFilter();
     SleepyDiscord::EmbedField field;
     field.isInline = false;
@@ -568,11 +568,12 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     QVector<core::Fanfic> fics;
     QLOG_TRACE() << "Fetching fics";
     environment->ficSource->ClearUserData();
-    FetchFicsForDisplayPageCommand(environment->ficSource, command.user, 9, &fics);
-    int pageCount = FetchPageCountForFilterCommand(environment->ficSource, command.user, 9);
+    static constexpr int listSize = 9;
+    FetchFicsForDisplayPageCommand(environment->ficSource, command.user, listSize, &fics);
+    int pageCount = FetchPageCountForFilterCommand(environment->ficSource, command.user, listSize);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
-        fic.score = userFics->ficToScore[fic.identity.id];
+        fic.score = userFics->ficToScore.value(fic.identity.id);
     QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
@@ -580,7 +581,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     environment->fandoms->db = dbToken->db;
     environment->fandoms->FetchFandomsForFics(&fics);
-    auto editPreviousPageIfPossible = command.variantHash[QStringLiteral("refresh_previous")].toBool();
+    auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
 
     if(command.targetMessage.string().length() != 0){
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
@@ -601,7 +602,8 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     embed.description = QString(QStringLiteral("Generated recs for user [%1](https://www.fanfiction.net/u/%1), page: %2 of %3")).arg(command.user->FfnID()).arg(command.user->CurrentRecommendationsPage()).arg(QString::number(pageCount)).toStdString();
     auto& tips = SendMessageCommand::tips;
     int tipNumber =  rand() % tips.size();
-    bool showAppOrPatreon = rand() % 7 == 0;
+    static constexpr uint8_t promoFrequency = 7;
+    bool showAppOrPatreon = rand() % promoFrequency == 0;
     SleepyDiscord::EmbedFooter footer;
     if(showAppOrPatreon){
         QStringList appPromo =  {QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
@@ -617,7 +619,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
         if(tips.size() > 0)
         {
             auto temp = tips.at(tipNumber);
-            if(temp.contains("%1"))
+            if(temp.contains(QStringLiteral("%1")))
                 temp =temp.arg(QSV(command.server->GetCommandPrefix()));
             footer.text = temp .toStdString();
         }
@@ -650,7 +652,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
 
 QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
-    auto quality = command.variantHash[QStringLiteral("quality")].toString().trimmed();
+    auto quality = command.variantHash.value(QStringLiteral("quality")).toString().trimmed();
     if(quality.length() == 0)
         quality = command.user->GetLastUsedRoll().isEmpty() ? QStringLiteral("all ") : command.user->GetLastUsedRoll();
     QVector<core::Fanfic> fics;
@@ -669,7 +671,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     FetchFicsForDisplayRngCommand(3, environment->ficSource, command.user, &fics, scoreCutoff);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
-        fic.score = userFics->ficToScore[fic.identity.id];
+        fic.score = userFics->ficToScore.value(fic.identity.id);
 
     QLOG_TRACE() << QStringLiteral("Fetched fics for rng");
 
@@ -680,7 +682,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
     SleepyDiscord::Embed embed;
     //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
-    auto editPreviousPageIfPossible = command.variantHash[QStringLiteral("refresh_previous")].toBool();
+    auto editPreviousPageIfPossible = command.variantHash.value(QStringLiteral("refresh_previous")).toBool();
     if(command.targetMessage.string().length() != 0)
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
     else {
@@ -722,7 +724,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
 
 QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
-    auto fandom = command.variantHash[QStringLiteral("fandom")].toString().trimmed();
+    auto fandom = command.variantHash.value(QStringLiteral("fandom")).toString().trimmed();
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     environment->fandoms->db = dbToken->db;
     auto fandomId = environment->fandoms->GetIDForName(fandom);
@@ -749,17 +751,17 @@ QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<T
     }
     else if(currentFilter.fandoms.size() == 2)
     {
-        auto oldFandomId = currentFilter.tokens.last().id;
+        auto oldFandomId = std::as_const(currentFilter.tokens).last().id;
         action->text = QStringLiteral("Replacing crossover fandom: ") + environment->fandoms->GetNameForID(currentFilter.tokens.last().id) +    QStringLiteral(" with: ") + fandom;
         usersDbInterface->UnfilterFandom(command.user->UserID(), oldFandomId);
-        usersDbInterface->FilterFandom(command.user->UserID(), fandomId, command.variantHash[QStringLiteral("allow_crossovers")].toBool());
+        usersDbInterface->FilterFandom(command.user->UserID(), fandomId, command.variantHash.value(QStringLiteral("allow_crossovers")).toBool());
         currentFilter.RemoveFandom(oldFandomId);
-        currentFilter.AddFandom(fandomId, command.variantHash[QStringLiteral("allow_crossovers")].toBool());
+        currentFilter.AddFandom(fandomId, command.variantHash.value(QStringLiteral("allow_crossovers")).toBool());
         return action;
     }
     else {
-        usersDbInterface->FilterFandom(command.user->UserID(), fandomId, command.variantHash[QStringLiteral("allow_crossovers")].toBool());
-        currentFilter.AddFandom(fandomId, command.variantHash[QStringLiteral("allow_crossovers")].toBool());
+        usersDbInterface->FilterFandom(command.user->UserID(), fandomId, command.variantHash.value(QStringLiteral("allow_crossovers")).toBool());
+        currentFilter.AddFandom(fandomId, command.variantHash.value(QStringLiteral("allow_crossovers")).toBool());
     }
     command.user->SetRngBustScheduled(true);
     command.user->SetFandomFilter(currentFilter);
@@ -769,13 +771,13 @@ QSharedPointer<SendMessageCommand> SetFandomAction::ExecuteImpl(QSharedPointer<T
 
 QSharedPointer<SendMessageCommand> IgnoreFandomAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
-    auto fandom = command.variantHash[QStringLiteral("fandom")].toString().trimmed();
+    auto fandom = command.variantHash.value(QStringLiteral("fandom")).toString().trimmed();
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     environment->fandoms->db = dbToken->db;
     auto fandomId = environment->fandoms->GetIDForName(fandom);
     auto properNameForFandom = environment->fandoms->GetNameForID(fandomId);
 
-    auto withCrossovers = command.variantHash[QStringLiteral("with_crossovers")].toBool();
+    auto withCrossovers = command.variantHash.value(QStringLiteral("with_crossovers")).toBool();
     An<interfaces::Users> usersDbInterface;
     if(command.variantHash.contains(QStringLiteral("reset")))
     {
@@ -858,7 +860,7 @@ QSharedPointer<SendMessageCommand> IgnoreFicAction::ExecuteImpl(QSharedPointer<T
 
 QSharedPointer<SendMessageCommand> TimeoutActiveAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
-    auto reason = command.variantHash[QStringLiteral("reason")].toString();
+    auto reason = command.variantHash.value(QStringLiteral("reason")).toString();
     auto seconds= command.ids.at(0);
     action->text = reason .arg(QString::number(seconds));
     return action;
@@ -874,7 +876,7 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
 {
     if(command.variantHash.contains(QStringLiteral("prefix"))){
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
-        command.server->SetCommandPrefix(command.variantHash[QStringLiteral("prefix")].toString().trimmed().toStdString());
+        command.server->SetCommandPrefix(command.variantHash.value(QStringLiteral("prefix")).toString().trimmed().toStdString());
         database::discord_queries::WriteServerPrefix(dbToken->db, command.server->GetServerId(), QSV(command.server->GetCommandPrefix()).trimmed());
         action->text = QStringLiteral("Prefix has been changed");
     }
@@ -899,9 +901,9 @@ QSharedPointer<SendMessageCommand> SetForcedListParamsAction::ExecuteImpl(QShare
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     environment->fandoms->db = dbToken->db;
     An<interfaces::Users> usersDbInterface;
-    usersDbInterface->WriteForcedListParams(command.user->UserID(), command.variantHash[QStringLiteral("min")].toUInt(), command.variantHash[QStringLiteral("ratio")].toUInt());
-    command.user->SetForcedMinMatch(command.variantHash[QStringLiteral("min")].toUInt());
-    command.user->SetForcedRatio(command.variantHash[QStringLiteral("ratio")].toUInt());
+    usersDbInterface->WriteForcedListParams(command.user->UserID(), command.variantHash.value(QStringLiteral("min")).toUInt(), command.variantHash.value(QStringLiteral("ratio")).toUInt());
+    command.user->SetForcedMinMatch(command.variantHash.value(QStringLiteral("min")).toUInt());
+    command.user->SetForcedRatio(command.variantHash.value(QStringLiteral("ratio")).toUInt());
     return action;
 }
 
@@ -971,7 +973,7 @@ QSharedPointer<SendMessageCommand> HideDeadAction::ExecuteImpl(QSharedPointer<Ta
     auto user = command.user;
     An<interfaces::Users> usersDbInterface;
     if(command.variantHash.contains(QStringLiteral("days"))){
-        int days = command.variantHash[QStringLiteral("days")].toUInt();
+        int days = command.variantHash.value(QStringLiteral("days")).toUInt();
         user->SetDeadFicDaysRange(days);
         usersDbInterface->SetDeadFicDaysRange(command.user->UserID(), days);
         usersDbInterface->SetHideDeadFilter(command.user->UserID(), true);
@@ -1074,7 +1076,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
     //QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
     //QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
 
-    if(!recList->ficData->matchCounts.size())
+    if(recList->ficData->matchCounts.isEmpty())
     {
         action->text = QStringLiteral("Couldn't create the list. Recommendations server is not available?");
         action->stopChain = true;

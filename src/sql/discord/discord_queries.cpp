@@ -404,7 +404,7 @@ DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id)
 
 DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, discord::WordcountFilter filter)
 {
-    QString qs = "update discord_users set words_filter_range_begin = :words_filter_range_begin, words_filter_range_end = :words_filter_range_end where user_id = :user_id";
+    QString qs = QStringLiteral("update discord_users set words_filter_range_begin = :words_filter_range_begin, words_filter_range_end = :words_filter_range_end where user_id = :user_id");
     SqlContext<bool> ctx(db, qs);
     ctx.bindValue("user_id", userId);
     ctx.bindValue("words_filter_range_begin", QVariant::fromValue<long long>(filter.firstLimit));
@@ -415,7 +415,7 @@ DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, di
 
 DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString user_id, int dead_fic_days_range)
 {
-    QString qs = "update discord_users set dead_fic_days_range = :dead_fic_days_range where user_id = :user_id";
+    QString qs = QStringLiteral("update discord_users set dead_fic_days_range = :dead_fic_days_range where user_id = :user_id");
     SqlContext<bool> ctx(db, qs, BP2(user_id, dead_fic_days_range));
     ctx.ExecAndCheck(true);
     return ctx.result;
