@@ -54,7 +54,7 @@ void Fandoms::ClearIndex()
 bool Fandoms::EnsureFandom(QString name)
 {
     name = core::Fandom::ConvertName(name.trimmed());
-    if(name.contains("'"))
+    if(name.contains(QStringLiteral("'")))
         name = core::Fandom::ConvertName(name.trimmed());
     if(nameIndex.contains(name.toLower()) || LoadFandom(name))
         return true;
@@ -136,7 +136,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom,
 
     // getting empty node if its not there which is not a problem since we are
     // supposed to fill it at the end
-    auto current = nameIndex[fandom->GetName().toLower()];
+    auto current = nameIndex.value(fandom->GetName().toLower());
     if(current && current->id != -1)
         return true;
     database::Transaction transaction(db);
@@ -160,7 +160,7 @@ bool Fandoms::CreateFandom(QString fandom)
     return CreateFandom(fandomPtr);
 }
 
-bool Fandoms::AddFandomLink(QString fandom, core::Url url)
+bool Fandoms::AddFandomLink(QString fandom, const core::Url& url)
 {
     fandom = core::Fandom::ConvertName(fandom);
     auto id = GetIDForName(fandom);
@@ -240,7 +240,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
     }
     if(!foundIterating)
     {
-        auto fandomPtr = nameIndex[fandom.toLower()];
+        auto fandomPtr = nameIndex.value(fandom.toLower());
         recentFandoms.push_back(fandomPtr);
         fandomPtr->idInRecentFandoms = 0;
     }
@@ -278,7 +278,7 @@ bool Fandoms::IsDataLoaded()
     return isLoaded;
 }
 
-QList<core::FandomPtr> Fandoms::FilterFandoms(std::function<bool (core::FandomPtr)> f)
+QList<core::FandomPtr> Fandoms::FilterFandoms(const std::function<bool (core::FandomPtr)>& f)
 {
     QList<core::FandomPtr > result;
     if(!LoadAllFandoms())
@@ -312,7 +312,7 @@ bool Fandoms::Load()
     Clear();
     // type makes it clearer
     QStringList recentFandoms = portableDBInterface->FetchRecentFandoms();
-    recentFandoms.removeAll("");
+    recentFandoms.removeAll(QStringLiteral(""));
     bool hadErrors = false;
 
     // not loading every fandom in this function
@@ -446,11 +446,11 @@ bool Fandoms::FetchFandomsForFics(QVector<core::Fanfic> *fics)
     {
         for(int i = 0; i < fic.fandomIds.size(); i++)
         {
-            auto index = fic.fandomIds[i];
+            auto index = fic.fandomIds.at(i);
             if(index != -1)
                 fic.fandoms.push_back(indexFandomsById[fic.fandomIds[i]]);
         }
-        fic.fandom = fic.fandoms.join(" & ");
+        fic.fandom = fic.fandoms.join(QStringLiteral(" & "));
     }
     return true;
 }
@@ -538,11 +538,6 @@ int Fandoms::GetFandomCount()
 int Fandoms::GetLastFandomID()
 {
     return database::puresql::GetLastFandomID(db).data;
-}
-
-Fandoms::~Fandoms()
-{
-
 }
 
 int Fandoms::GetIDForName(QString fandom)

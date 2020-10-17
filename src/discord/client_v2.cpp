@@ -56,7 +56,7 @@ QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDisco
             QSharedPointer<discord::Server> server(new discord::Server());
             server->SetServerId(serverId);
             server->SetServerName(QString::fromStdString(sleepyServer.cast().name));
-            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
             database::discord_queries::WriteServer(dbToken->db, server);
             servers->LoadServer(serverId);
         }
@@ -119,7 +119,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
 
     const auto commandPrefix = server->GetCommandPrefix();
     if(sv == botPrefixRequest)
-        sendMessage(message.channelID, "Prefix for this server is: " + commandPrefix);
+        sendMessage(message.channelID, "Prefix for this server is: " + std::string(commandPrefix));
 
     if(sv.substr(0, commandPrefix.length()) != commandPrefix)
         return;
@@ -139,7 +139,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         channelToServerHash.push(message.channelID.number(), message.serverID.number());
     }
 
-    executor->Push(commands);
+    executor->Push(std::move(commands));
 }
 
 static std::string CreateMention(const std::string& string){
@@ -174,12 +174,12 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
                 command = CreateChangeRecommendationsPageCommand(user,server, message, scrollDirection);
             else
                 command = CreateChangeHelpPageCommand(user,server, message, scrollDirection);
-            executor->Push(command);
+            executor->Push(std::move(command));
         }
         else if(emoji.name == "🔁")
         {
             auto newRoll = CreateRollCommand(user,server, message);
-            executor->Push(newRoll);
+            executor->Push(std::move(newRoll));
         }
     }
     else if(userID != getID()){

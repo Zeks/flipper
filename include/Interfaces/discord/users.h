@@ -39,7 +39,7 @@ class Fandoms;
 
 class Users {
 public:
-    virtual ~Users();
+    virtual ~Users() = default;
     QSharedPointer<discord::User> GetUser(QString);
     void WriteUser(QSharedPointer<discord::User>);
     void WriteUserFFNId(QString user_id, int ffn_id);

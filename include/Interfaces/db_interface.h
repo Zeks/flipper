@@ -26,7 +26,7 @@ namespace database{
 
 class IDBWrapper{
 public:
-    virtual ~IDBWrapper();
+    virtual ~IDBWrapper() = default;
     virtual int GetLastIdForTable(QString tableName) = 0;
     virtual bool PushFandomToTopOfRecent(QString fandom) = 0;
     virtual bool RebaseFandomsToZero() = 0;

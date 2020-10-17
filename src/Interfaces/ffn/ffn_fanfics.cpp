@@ -25,17 +25,17 @@ namespace interfaces {
 
 int FFNFanfics::GetIDFromWebID(int value)
 {
-    return Fanfics::GetIDFromWebID(value, "ffn");
+    return Fanfics::GetIDFromWebID(value, QStringLiteral("ffn"));
 }
 
 int FFNFanfics::GetWebIDFromID(int value)
 {
-    return Fanfics::GetWebIDFromID(value, "ffn");
+    return Fanfics::GetWebIDFromID(value, QStringLiteral("ffn"));
 }
 
 bool FFNFanfics::DeactivateFic(int ficId)
 {
-    return database::puresql::DeactivateStory(ficId, "ffn", db).success;
+    return database::puresql::DeactivateStory(ficId, QStringLiteral("ffn"), db).success;
 }
 
 int FFNFanfics::GetIdForUrl(QString url)

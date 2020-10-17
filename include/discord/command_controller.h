@@ -5,6 +5,7 @@
 #include <QSet>
 #include <QQueue>
 #include <mutex>
+#include <deque>
 
 namespace discord {
 class TaskRunner;
@@ -22,7 +23,7 @@ Q_OBJECT
 public:
     CommandController(QObject* parent = nullptr);
     void Init(int runnerAmount);
-    void Push(CommandChain);
+    void Push(CommandChain &&);
 
     QSharedPointer<TaskRunner> FetchFreeRunner(ECommandParseRequirement = cpr_none);
 
@@ -30,7 +31,7 @@ public:
     bool activeFullParseCommand = false;
     QSet<QString> activeUsers;
     QList<QSharedPointer<TaskRunner>> runners;
-    QQueue<CommandChain> queue;
+    std::deque<CommandChain> queue;
     Client* client = nullptr;
     std::recursive_mutex lock;
 public slots:

@@ -49,7 +49,8 @@ void TaskEnvironment::Init()
     QSettings settings("settings/settings_discord.ini", QSettings::IniFormat);
     auto ip = settings.value("Login/serverIp", "127.0.0.1").toString();
     auto port = settings.value("Login/serverPort", "3055").toString();
-    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  160));
+    static const int defaultDeadline = 160;
+    ficSource.reset(new FicSourceGRPC(CreateConnectString(ip, port), userDbInterface->userToken,  defaultDeadline));
 }
 
 }

@@ -25,11 +25,11 @@ static std::string CreateMention(const std::string& string){
     return "<@" + string + ">";
 }
 
-void CommandController::Push(CommandChain chain)
+void CommandController::Push(CommandChain&& chain)
 {
     if(chain.commands.size() == 0 )
         return;
-    const auto& message = chain.commands.first().originalMessage;
+    const auto& message = chain.commands.front().originalMessage;
     auto userId = QString::fromStdString(message.author.ID.string());
 
     std::lock_guard<std::recursive_mutex> guard(lock);
@@ -41,20 +41,20 @@ void CommandController::Push(CommandChain chain)
     else if(chain.hasParseCommand && activeParseCommand)
     {
         client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
-        queue.push_back(chain);
+        queue.emplace_back(std::move(chain));
         return;
     }
     else if(chain.hasFullParseCommand && activeFullParseCommand)
     {
         client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
-        queue.push_back(chain);
+        queue.emplace_back(std::move(chain));
         return;
     }
     activeUsers.insert(userId);
     auto runner = FetchFreeRunner();
     if(!runner){
         client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", there are no free command runners, putting your command on the queue. Your position is: " + QString::number(queue.size()).toStdString());
-        queue.push_back(chain);
+        queue.emplace_back(std::move(chain));
         return;
     }
     else{
@@ -62,7 +62,7 @@ void CommandController::Push(CommandChain chain)
             activeFullParseCommand = true;
         if(chain.hasParseCommand)
             activeParseCommand = true;
-        runner->AddTask(chain);
+        runner->AddTask(std::move(chain));
     }
 }
 
@@ -87,12 +87,12 @@ void CommandController::OnTaskFinished()
     auto result = senderTask->result;
     senderTask->ClearState();
     const auto& message = result.actions.first()->originalMessage;
-    QList<CommandChain> newCommands;
+    std::list<CommandChain> newCommands;
     for(auto& command : result.actions)
     {
         command->Invoke(client);
         if(command->commandsToReemit.size() > 0){
-            newCommands += command->commandsToReemit;
+            newCommands.splice(newCommands.end(), command->commandsToReemit);
         }
     }
     if(activeParseCommand && result.performedParseCommand)
@@ -103,24 +103,24 @@ void CommandController::OnTaskFinished()
     auto userId = QString::fromStdString(message.author.ID.string());
     activeUsers.remove(userId);
 
-    for(auto& command : newCommands)
-        Push(command);
+    for(auto&& command : newCommands)
+        Push(std::move(command));
 }
 
 void CommandController::timerEvent(QTimerEvent *)
 {
     std::lock_guard<std::recursive_mutex> guard(lock);
-    QQueue<CommandChain> newQueue;
+    std::deque<CommandChain> newQueue;
     forever{
         if(queue.size() == 0)
             break;
 
-        for(int i = 0; i < queue.size(); i++){
-            auto command = queue.front();
+        for(auto  i = 0; i < queue.size(); i++){
+            auto command = std::move(queue.front());
             queue.pop_front();
             if(activeUsers.contains(command.user->GetUuid()))
             {
-                newQueue.push_back(command);
+                newQueue.emplace_back(std::move(command));
                 continue;
             }
 
@@ -133,7 +133,7 @@ void CommandController::timerEvent(QTimerEvent *)
             auto runner = FetchFreeRunner(cpr);
             if(!runner)
             {
-                newQueue.push_back(command);
+                newQueue.emplace_back(std::move(command));
                 continue;
             }
             if(cpr == ECommandParseRequirement::cpr_full)
@@ -141,10 +141,10 @@ void CommandController::timerEvent(QTimerEvent *)
             else if(cpr == ECommandParseRequirement::cpr_quick)
                 activeParseCommand = true;
 
-            runner->AddTask(command);
+            runner->AddTask(std::move(command));
         }
     }
-    queue=newQueue;
+    queue=std::move(newQueue);
 }
 
 }

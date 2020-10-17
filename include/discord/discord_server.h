@@ -39,7 +39,7 @@ struct Server{
     QString GetDedicatedChannelId() const;
     void SetDedicatedChannelId(const QString& value);
 
-    std::string GetCommandPrefix() const;
+    std::string_view GetCommandPrefix() const;
     void SetCommandPrefix(const std::string& value);
 
     bool GetIsValid() const;
@@ -91,7 +91,7 @@ struct Server{
 struct Servers{
     void AddServer(QSharedPointer<Server>);
     bool HasServer(const std::string&);
-    QSharedPointer<Server> GetServer(const std::string&);
+    QSharedPointer<Server> GetServer(const std::string&) const;
     bool LoadServer(const std::string&);
     QHash<std::string,QSharedPointer<Server>> servers;
     QReadWriteLock lock;
