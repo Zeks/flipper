@@ -66,7 +66,7 @@ struct DiagnosticSQLResult
             if(!allowEmptyRecords)
             {
                 success = false;
-                oracleError = "no data to read";
+                oracleError = QStringLiteral("no data to read");
             }
             return false;
         }
@@ -84,7 +84,7 @@ struct SqlContext
         Prepare(qs);
     }
 
-    SqlContext(QSqlDatabase db, QList<std::string> queries) : q(db), transaction(db)
+    SqlContext(QSqlDatabase db, QList<std::string>&& queries) : q(db), transaction(db)
     {
         for(const auto& query : queries)
         {
@@ -264,7 +264,7 @@ struct SqlContext
     }
 
     template <typename ValueType>
-    void FetchLargeSelectIntoListWithoutSize(QString fieldName, std::string&& actualQuery,
+    void FetchLargeSelectIntoListWithoutSize(std::string&& fieldName, std::string&& actualQuery,
                                   std::function<ValueType(QSqlQuery&)> func = std::function<ValueType(QSqlQuery&)>())
     {
         qs = actualQuery;
@@ -277,13 +277,13 @@ struct SqlContext
 
         do{
             if(!func)
-                result.data += q.value(fieldName).template value<typename ResultType::value_type>();
+                result.data += q.value(fieldName.c_str()).template value<typename ResultType::value_type>();
             else
                 result.data += func(q);
         } while(q.next());
     }
 
-    void FetchSelectIntoHash(std::string&& actualQuery, QString idFieldName, QString valueFieldName)
+    void FetchSelectIntoHash(std::string&& actualQuery, std::string&& idFieldName, std::string&& valueFieldName)
     {
         qs = actualQuery;
         Prepare(qs);
@@ -295,12 +295,12 @@ struct SqlContext
         if(!CheckDataAvailability())
             return;
         do{
-            result.data[q.value(idFieldName).template value<typename ResultType::key_type>()] =  q.value(valueFieldName).template value<typename ResultType::mapped_type>();
+            result.data[q.value(idFieldName.c_str()).template value<typename ResultType::key_type>()] =  q.value(valueFieldName.c_str()).template value<typename ResultType::mapped_type>();
         } while(q.next());
     }
 
     template <typename T>
-    void FetchSingleValue(QString valueName,
+    void FetchSingleValue(std::string&& valueName,
                           ResultType defaultValue,
                           bool requireExisting = true,
                           std::string&& select = ""
@@ -320,7 +320,7 @@ struct SqlContext
                 result.success = true;
             return;
         }
-        result.data = q.value(valueName).template value<T>();
+        result.data = q.value(valueName.c_str()).template value<T>();
     }
 
     void ExecuteList(std::list<std::string>&& queries){
@@ -346,7 +346,7 @@ struct SqlContext
     }
 
     template<typename KeyType>
-    void ProcessKeys(QList<KeyType> keys, std::function<void(QString key, QSqlQuery&)> func){
+    void ProcessKeys(QList<KeyType> keys, const std::function<void(QString key, QSqlQuery&)>& func){
         for(auto key : keys)
             func(key, q);
     }
@@ -356,7 +356,7 @@ struct SqlContext
             func(q);
     }
 
-    DiagnosticSQLResult<ResultType> ForEachInSelect(std::function<void(QSqlQuery&)> func){
+    DiagnosticSQLResult<ResultType> ForEachInSelect(const std::function<void(QSqlQuery&)>& func){
         BindValues();
         if(!ExecAndCheck())
             return result;
@@ -375,41 +375,69 @@ struct SqlContext
 
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
+
+
+    template <typename Container, typename ConstIterator>
+    typename Container::iterator remove_constness(Container& c, ConstIterator it)
+    {
+        return c.erase(it, it);
+    }
+
     void bindValue(std::string&& key, QVariant value){
-        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+        auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
             return b.key == key;
         });
-        if(it!=bindValues.end())
-            it->value = value;
+        if(it!=bindValues.cend())
+        {
+            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+                return b.key == key;
+            });
+            nonConstIt->value = std::move(value);
+        }
         else
             bindValues.push_back({std::move(key), value});
     }
     void bindValue(const std::string& key, QVariant value){
-        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+        auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
             return b.key == key;
         });
-        if(it!=bindValues.end())
-            it->value = value;
+        if(it!=bindValues.cend())
+        {
+            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+                return b.key == key;
+            });
+            nonConstIt->value = std::move(value);
+        }
         else
             bindValues.push_back({key, value});
     }
     void bindMoveValue(std::string&& key, QVariant&& value){
-        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+        auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
             return b.key == key;
         });
-        if(it!=bindValues.end())
-            it->value = std::move(value);
+        if(it!=bindValues.cend())
+        {
+            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+                return b.key == key;
+            });
+            nonConstIt->value = std::move(value);
+        }
         else
-            bindValues.push_back({std::move(key), value});
+            bindValues.push_back({std::move(key), std::move(value)});
     }
     void bindMoveValue(const std::string& key, QVariant&& value){
-        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+        auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
             return b.key == key;
         });
-        if(it!=bindValues.end())
-            it->value = std::move(value);
+        if(it!=bindValues.cend())
+        {
+            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+                return b.key == key;
+            });
+            nonConstIt->value = std::move(value);
+        }
         else
-            bindValues.push_back({key, value});
+            bindValues.push_back({key, std::move(value)});
     }
     void SetDefaultValue(ResultType value) {result.data = value;}
     bool Success() const {return result.success;}
@@ -454,7 +482,7 @@ struct ParallelSqlContext
                 QVariant value;
                 if(valueConverters.contains(sourceFields[i]))
                 {
-                    value = valueConverters[sourceFields[i]](sourceFields[i], sourceQ, targetDB, result);
+                    value = valueConverters.value(sourceFields.at(i))(sourceFields.at(i), sourceQ, targetDB, result);
                     if(!result.success)
                         return result;
                 }

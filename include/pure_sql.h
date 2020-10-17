@@ -18,6 +18,7 @@
 #include "transaction.h"
 #include "sqlcontext.h"
 
+
 class BasePageTask;
 class PageTask;
 class PageSubTask;
@@ -240,7 +241,7 @@ DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int listId,
                                                             QHash<uint32_t,QVector<uint32_t>>,
                                                             QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int listId,
-                                                            QVector<core::AuthorResult>,
+                                                            const QVector<core::AuthorResult> &,
                                                             QSqlDatabase db);
 
 
@@ -334,7 +335,7 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecL
 
 DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QVector<int> ficIds, int listId, QSqlDatabase db);
-DiagnosticSQLResult<bool>  FillRecommendationListWithData(int listId, QHash<int, int>, QSqlDatabase db);
+DiagnosticSQLResult<bool>  FillRecommendationListWithData(int listId, const QHash<int, int> &, QSqlDatabase db);
 
 
 

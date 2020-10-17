@@ -138,7 +138,7 @@ DiagnosticSQLResult<bool>  Internal::WriteMaxUpdateDateForFandom(QSharedPointer<
                                                                  QSqlDatabase db,
                                                                  std::function<void(QSharedPointer<core::Fandom>,QDateTime)> writer                                           )
 {
-    std::string qs = "select max(updated) as updated from fanfics where id in (select distinct fic_id from FicFandoms where fandom_id = :fandom_id %1";
+    std::string qs = "select max(updated) as updated from fanfics where id in (select distinct fic_id from FicFandoms where fandom_id = :fandom_id {0}";
     qs=fmt::format(qs,condition.toStdString());
 
     DiagnosticSQLResult<bool> opResult;
@@ -166,8 +166,8 @@ DiagnosticSQLResult<QStringList> GetFandomListFromDB(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> AssignTagToFandom(QString tag, int fandom_id, QSqlDatabase db, bool includeCrossovers)
 {
-    std::string qs = "INSERT INTO FicTags(fic_id, tag) SELECT fic_id, '%1' as tag from FicFandoms f WHERE fandom_id = :fandom_id "
-                 " and NOT EXISTS(SELECT 1 FROM FicTags WHERE fic_id = f.fic_id and tag = '%1')";
+    std::string qs = "INSERT INTO FicTags(fic_id, tag) SELECT fic_id, '{0}' as tag from FicFandoms f WHERE fandom_id = :fandom_id "
+                 " and NOT EXISTS(SELECT 1 FROM FicTags WHERE fic_id = f.fic_id and tag = '{0}')";
     if(!includeCrossovers)
         qs+=" and (select count(distinct fandom_id) from ficfandoms where fic_id = f.fic_id) = 1";
     qs=fmt::format(qs,tag.toStdString());
@@ -319,7 +319,7 @@ DiagnosticSQLResult<int> GetFicIdByAuthorAndName(QString author, QString title, 
 
 DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabase db)
 {
-    std::string qs = " select id from fanfics where %1_id = :site_id";
+    std::string qs = " select id from fanfics where {0}_id = :site_id";
     qs=fmt::format(qs,website.toStdString());
 
     SqlContext<int> ctx(db, std::move(qs), {{"site_id",webId}});
@@ -359,7 +359,7 @@ core::FicPtr LoadFicFromQuery(QSqlQuery& q1, QString website = "ffn")
 
 DiagnosticSQLResult<core::FicPtr> GetFicByWebId(QString website, int webId, QSqlDatabase db)
 {
-    std::string qs = fmt::format(" select * from fanfics where %1_id = :site_id",website.toStdString());
+    std::string qs = fmt::format(" select * from fanfics where {0}_id = :site_id",website.toStdString());
     SqlContext<core::FicPtr> ctx(db, std::move(qs), {{"site_id",webId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ctx.result.data =  LoadFicFromQuery(q);
@@ -381,8 +381,8 @@ DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
-    auto getKeyQuery = fmt::format("Select ( select count(*) from FANFICS where  %1_id = :site_id1) as COUNT_NAMED,"
-                                  " ( select count(*) from FANFICS where  %1_id = :site_id2 "
+    auto getKeyQuery = fmt::format("Select ( select count(*) from FANFICS where  {0}_id = :site_id1) as COUNT_NAMED,"
+                                  " ( select count(*) from FANFICS where  {0}_id = :site_id2 "
                                   "and (updated < :updated or updated is null)) as count_updated",fic->webSite.toStdString());
 
     SqlContext<bool> ctx(db, std::move(getKeyQuery));
@@ -415,7 +415,7 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QS
 
 DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db)
 {
-    std::string query = "INSERT INTO FANFICS (%1_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
+    std::string query = "INSERT INTO FANFICS ({0}_id, FANDOM, AUTHOR, TITLE,WORDCOUNT, CHAPTERS, FAVOURITES, REVIEWS, "
                     " CHARACTERS, COMPLETE, RATED, SUMMARY, GENRES, PUBLISHED, UPDATED, AUTHOR_ID,"
                     " wcr, reviewstofavourites, age, daysrunning, at_chapter, lastupdate, fandom1, fandom2, author_id ) "
                     "VALUES ( :site_id,  :fandom, :author, :title, :wordcount, :CHAPTERS, :FAVOURITES, :REVIEWS, "
@@ -464,7 +464,7 @@ DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fanfic> section, QSql
                     "wcr= :wcr,  author= :author, title= :title, reviewstofavourites = :reviewstofavourites, "
                     "age = :age, daysrunning = :daysrunning, lastupdate = date('now'),"
                     " fandom1 = :fandom1, fandom2 = :fandom2 "
-                    " where %1_id = :site_id";
+                    " where {0}_id = :site_id";
     query=fmt::format(query,section->webSite.toStdString());
     SqlContext<bool> ctx(db, std::move(query));
     ctx.bindValue("fandom",section->fandom);
@@ -565,7 +565,7 @@ DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  Q
 
 DiagnosticSQLResult<int>  GetAuthorIdFromUrl(QString url, QSqlDatabase db)
 {
-    std::string qsl = " select id from recommenders where url like '%%1%' ";
+    std::string qsl = " select id from recommenders where url like '%{0}%' ";
     qsl = fmt::format(qsl, url.toStdString());
 
     SqlContext<int> ctx(db, std::move(qsl));
@@ -574,7 +574,7 @@ DiagnosticSQLResult<int>  GetAuthorIdFromUrl(QString url, QSqlDatabase db)
 }
 DiagnosticSQLResult<int>  GetAuthorIdFromWebID(int id, QString website, QSqlDatabase db)
 {
-    std::string qs = "select id from recommenders where %1_id = :id";
+    std::string qs = "select id from recommenders where {0}_id = :id";
     qs=fmt::format(qs,website.toStdString());
 
     SqlContext<int> ctx(db, std::move(qs), {{"id", id}});
@@ -599,7 +599,7 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, QSqlDatabase d
 }
 DiagnosticSQLResult<QSet<int>> GetRecommendersForFics(QSet<int> fics, QSqlDatabase db)
 {
-    std::string qs = "select distinct recommender_id from  recommendations where fic_id in (%1)";
+    std::string qs = "select distinct recommender_id from  recommendations where fic_id in ({0})";
     QStringList list;
     for(auto fic: fics)
         list.push_back(QString::number(fic));
@@ -669,9 +669,9 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  QSql
     std::string qs = "select distinct id,name, url, ffn_id, ao3_id,sb_id, sv_id,  "
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count,"
                          " last_favourites_update, last_favourites_checked "
-                         " from recommenders where website_type = :site order by id %1";
+                         " from recommenders where website_type = :site order by id {0}";
     if(limit > 0)
-        qs = fmt::format(qs, QString(" LIMIT %1 ").arg(QString::number(limit)).toStdString());
+        qs = fmt::format(qs, QString(" LIMIT {0} ").arg(QString::number(limit)).toStdString());
     else
         qs = fmt::format(qs, "");
 
@@ -697,9 +697,9 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QStr
                          "(select count(fic_id) from recommendations where recommender_id = recommenders.id) as rec_count "
                          " from recommenders where website_type = :site "
                          " and last_favourites_update > :date "
-                         "order by id %1";
+                         "order by id {0}";
     if(limit > 0)
-        qs = fmt::format(qs,QString(" LIMIT %1 ").arg(QString::number(limit)).toStdString());
+        qs = fmt::format(qs,QString(" LIMIT {0} ").arg(QString::number(limit)).toStdString());
     else
         qs = fmt::format(qs, "");
 
@@ -733,9 +733,9 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
                          " last_favourites_update <= :date_start "
                          " and  last_favourites_update >= :date_end "
                          " and website_type = :site "
-                         "order by id %1";
+                         "order by id {0}";
     if(limit > 0)
-        qs = fmt::format(qs,QString(" LIMIT %1 ").arg(QString::number(limit)).toStdString());
+        qs = fmt::format(qs,QString(" LIMIT {0} ").arg(QString::number(limit)).toStdString());
     else
         qs = fmt::format(qs, "");
 
@@ -787,7 +787,7 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByNameAndWebsite(QString name, QSt
     std::string qs = "select id,"
                          "name, url, website_type, ffn_id, ao3_id,sb_id, sv_id,"
                          " last_favourites_update, last_favourites_checked "
-                         " from recommenders where %1_id is not null and name = :name";
+                         " from recommenders where {0}_id is not null and name = :name";
     qs=fmt::format(qs,website.toStdString());
 
     SqlContext<core::AuthorPtr> ctx(db, std::move(qs), {{"site",website},{"name",name}});
@@ -801,7 +801,7 @@ DiagnosticSQLResult<core::AuthorPtr> GetAuthorByIDAndWebsite(int id, QString web
     std::string qs = "select r.id,r.name, r.url, r.website_type, r.ffn_id, r.ao3_id,r.sb_id, r.sv_id, "
                          " (select count(fic_id) from recommendations where recommender_id = r.id) as rec_count,"
                          " last_favourites_update, last_favourites_checked "
-                         "from recommenders r where %1_id is not null and %1_id = :id";
+                         "from recommenders r where {0}_id is not null and {0}_id = :id";
     qs=fmt::format(qs,website.toStdString());
     SqlContext<core::AuthorPtr> ctx(db, std::move(qs), {{"site",website},{"id",id}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -971,7 +971,7 @@ DiagnosticSQLResult<QList<core::AuhtorStatsPtr>> GetRecommenderStatsForList(int 
                          "rts.fic_count as fic_count,"
                          "r.name as name"
                          "  from RecommendationListAuthorStats rts, recommenders r "
-                         " where rts.author_id = r.id and list_id = :list_id order by %1 %2";
+                         " where rts.author_id = r.id and list_id = :list_id order by {0} {1}";
     qs=fmt::format(qs,sortOn.toStdString(),order.toStdString());
     SqlContext<QList<core::AuhtorStatsPtr>> ctx(db, std::move(qs), {{"list_id", listId}});
     ctx.ForEachInSelect([&](QSqlQuery& q){
@@ -1027,14 +1027,14 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::ReclistFilter filter, QSqlDatabase db)
 {
-    std::string qs = "select fic_id, %1 from RecommendationListData where list_id = :list_id";
+    std::string qs = "select fic_id, {0} from RecommendationListData where list_id = :list_id";
     std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
     qs = fmt::format(qs,pointsField);
 
 
     if(filter.minMatchCount != 0)
     {
-        qs += fmt::format(" and %1 > :match_count",pointsField);
+        qs += fmt::format(" and {0} > :match_count",pointsField);
     }
 
     if(filter.limiter == core::StoryFilter::sll_above_average)
@@ -1116,7 +1116,7 @@ DiagnosticSQLResult<bool> DeleteRecommendationListData(int listId, QSqlDatabase 
 DiagnosticSQLResult<bool> CopyAllAuthorRecommendationsToList(int authorId, int listId, QSqlDatabase db )
 {
     std::string qs = "insert into RecommendationListData (fic_id, list_id)"
-                         " select fic_id, %1 as list_id from recommendations r where r.recommender_id = :author_id and "
+                         " select fic_id, {0} as list_id from recommendations r where r.recommender_id = :author_id and "
                          " not exists( select 1 from RecommendationListData where list_id=:list_id and fic_id = r.fic_id) ";
     qs=fmt::format(qs,listId);
     return SqlContext<bool>(db, std::move(qs), {{"author_id",authorId},{"list_id",listId}})();
@@ -1153,8 +1153,8 @@ DiagnosticSQLResult<bool> CreateOrUpdateRecommendationList(QSharedPointer<core::
         qDebug() << "At this moment max id is: " << ctx.value("id").toInt();
     }
     qDebug() << "List's name is: " << list->name;
-    qs = fmt::format("insert into RecommendationLists(name) select '%1' "
-                         " where not exists(select 1 from RecommendationLists where name = '%1')", list->name.toStdString());
+    qs = fmt::format("insert into RecommendationLists(name) select '{0}' "
+                         " where not exists(select 1 from RecommendationLists where name = '{0}')", list->name.toStdString());
     ctx.ReplaceQuery(std::move(qs));
     if(!ctx.ExecAndCheck())
     {
@@ -1275,7 +1275,7 @@ DiagnosticSQLResult<bool>  ShortenFFNurlsForAllFics(QSqlDatabase db)
 
 DiagnosticSQLResult<bool> IsGenreList(QStringList list, QString website, QSqlDatabase db)
 {
-    std::string qs = "select count(*) as idcount from genres where genre in(%1) and website = :website";
+    std::string qs = "select count(*) as idcount from genres where genre in({0}) and website = :website";
     qs = fmt::format(qs, "'" + list.join("','").toStdString() + "'");
 
     SqlContext<int> ctx(db, std::move(qs), {{"website", website}});
@@ -1293,7 +1293,7 @@ DiagnosticSQLResult<QVector<int>> GetWebIdList(QString where, QString website, Q
 {
     //QVector<int> result;
     std::string fieldName = website.toStdString() + "_id";
-    std::string qs = fmt::format("select %1_id from fanfics %2",website.toStdString(),where.toStdString());
+    std::string qs = fmt::format("select {0}_id from fanfics {1}",website.toStdString(),where.toStdString());
     SqlContext<QVector<int>> ctx(db);
     ctx.FetchLargeSelectIntoList<int>(std::move(fieldName), std::move(qs));
     return ctx.result;
@@ -1301,7 +1301,7 @@ DiagnosticSQLResult<QVector<int>> GetWebIdList(QString where, QString website, Q
 
 DiagnosticSQLResult<QVector<int>> GetIdList(QString where, QSqlDatabase db)
 {
-    std::string qs = fmt::format("select id from fanfics %1 order by id asc",where.toStdString());
+    std::string qs = fmt::format("select id from fanfics {0} order by id asc",where.toStdString());
     SqlContext<QVector<int>> ctx(db, std::move(qs));
     ctx.FetchLargeSelectIntoList<int>("id", std::move(qs));
     return ctx.result;
@@ -1309,7 +1309,7 @@ DiagnosticSQLResult<QVector<int>> GetIdList(QString where, QSqlDatabase db)
 
 DiagnosticSQLResult<bool> DeactivateStory(int id, QString website, QSqlDatabase db)
 {
-    std::string qs = "update fanfics set alive = 0 where %1_id = :id";
+    std::string qs = "update fanfics set alive = 0 where {0}_id = :id";
     qs=fmt::format(qs,website.toStdString());
     return SqlContext<bool>(db, std::move(qs), {{"id",id}})();
 }
@@ -2075,7 +2075,7 @@ DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
 DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>ids, QSqlDatabase db)
 {
     SqlContext<QHash<int, QString> > ctx(db);
-    std::string qs = "select id, name from fandomindex where id in (%1)";
+    std::string qs = "select id, name from fandomindex where id in ({0})";
     QStringList inParts;
     for(auto id: ids)
         inParts.push_back("'" + QString::number(id) + "'");
@@ -2219,7 +2219,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
         QStringList parts;
 
         if(tags.size() > 0)
-            parts.push_back(QString("tag in ('%1')").arg(tags.join("','")));
+            parts.push_back(QString("tag in ('{0}')").arg(tags.join("','")));
 
         if(parts.size() > 0)
         {
@@ -2232,7 +2232,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
     }
     else {
         std::string qs = "select distinct fic_id from fictags ft where ";
-        QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '%1') ";
+        QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '{0}') ";
         QStringList parts;
 
         QStringList tokens;
@@ -2249,7 +2249,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
 
 DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase db){
     std::string qs = "select distinct author_id from ficauthors ";
-    qs += fmt::format(" where fic_id in (select distinct fic_id from fictags where tag in ('%1'))", tags.join("','").toStdString());
+    qs += fmt::format(" where fic_id in (select distinct fic_id from fictags where tag in ('{0}'))", tags.join("','").toStdString());
     SqlContext<QSet<int>> ctx(db, std::move(qs));
     ctx.FetchLargeSelectIntoList<int>("author_id", std::move(qs));
     return ctx.result;
@@ -2257,7 +2257,7 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase
 
 DiagnosticSQLResult<QHash<QString, int> > GetTagSizes(QStringList tags, QSqlDatabase db)
 {
-    std::string qs = "select tag, count(tag) as count_tags from fictags %1 group by tag ";
+    std::string qs = "select tag, count(tag) as count_tags from fictags {0} group by tag ";
     if(tags.size() > 0)
         qs = fmt::format(qs, "where tag in ('" + tags.join("','").toStdString() + "')");
     else
@@ -2279,7 +2279,7 @@ DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase 
         return result;
     }
 
-    std::string qs = "delete from fictags where tag in (%1)";
+    std::string qs = "delete from fictags where tag in ({0})";
     qs = fmt::format(qs, "'" + tags.join("','").toStdString() + "'");
     return SqlContext<bool> (db, std::move(qs))();
 }
@@ -2307,7 +2307,7 @@ DiagnosticSQLResult<QHash<int, core::FanficCompletionStatus> > GetSnoozeInfo(QSq
 }
 
 DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool fetchExpired, bool limitedSelection, QSqlDatabase db){
-    std::string qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes %1 order by fic_id asc";
+    std::string qs = "select fic_id, snooze_added, snoozed_until_finished, snoozed_at_chapter,  snoozed_till_chapter, expired from ficsnoozes {0} order by fic_id asc";
 
     QStringList filters;
 
@@ -2342,7 +2342,7 @@ DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool
 
 
 DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection , QSqlDatabase db){
-    std::string qs = "select * from ficnotes %1 order by fic_id asc";
+    std::string qs = "select * from ficnotes {0} order by fic_id asc";
 
     if(limitedSelection)
         qs = fmt::format(qs, " where cfInFicSelection(fic_id) > 0 ");
@@ -2358,7 +2358,7 @@ DiagnosticSQLResult<QHash<int, QString>> GetNotesForFics(bool limitedSelection ,
 
 DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelection, QSqlDatabase db)
 {
-    std::string qs = "select * from FicReadingTracker %1 order by fic_id asc";
+    std::string qs = "select * from FicReadingTracker {0} order by fic_id asc";
 
     if(limitedSelection)
         qs = fmt::format(qs, " where cfInFicSelection(fic_id) > 0 ");
@@ -2565,7 +2565,7 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
         it++;
     }
 
-    std::string qs = "select fic_id, %1 from RecommendationListData where list_id = :list_id and fic_id in (%2)";
+    std::string qs = "select fic_id, {0} from RecommendationListData where list_id = :list_id and fic_id in ({1})";
     std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
     qs = fmt::format(qs, pointsField);
     qs = fmt::format(qs, ids.join(",").toStdString());
@@ -2599,7 +2599,7 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> 
         listIds << QString::number(filter.secondListId);
 
 
-    std::string qs = "select fic_id, list_id, %1, position, pedestal from RecommendationListData where list_id in (%2) and fic_id in (%3)";
+    std::string qs = "select fic_id, list_id, {0}, position, pedestal from RecommendationListData where list_id in ({1}) and fic_id in ({2})";
     std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
     qs = fmt::format(qs, pointsField);
     qs = fmt::format(qs, listIds.join(",").toStdString());
@@ -2661,7 +2661,7 @@ DiagnosticSQLResult<bool> DeleteLinkedAuthorsForAuthor(int author_id,  QSqlDatab
 
 DiagnosticSQLResult<bool>  UploadLinkedAuthorsForAuthor(int author_id, QString website, QList<int> ids, QSqlDatabase db)
 {
-    std::string qs = fmt::format("insert into  LinkedAuthors(recommender_id, %1_id) values(:author_id, :id)",website.toStdString());
+    std::string qs = fmt::format("insert into  LinkedAuthors(recommender_id, {0}_id) values(:author_id, :id)",website.toStdString());
     SqlContext<bool> ctx(db, std::move(qs), BP1(author_id));
     ctx.ExecuteWithValueList<int>("id", ids, true);
     return ctx.result;
@@ -2679,16 +2679,16 @@ DiagnosticSQLResult<QVector<int> > GetAllUnprocessedLinkedAuthors(QSqlDatabase d
 
 DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int list_id, QString website, QSqlDatabase db)
 {
-    std::string qs = "Select distinct %1_id from LinkedAuthors "
-                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = %2) "
-                         " and %1_id not in (select distinct %1_id from recommenders)"
+    std::string qs = "Select distinct {0}_id from LinkedAuthors "
+                         " where recommender_id in ( select author_id from RecommendationListAuthorStats where list_id = {1}) "
+                         " and {0}_id not in (select distinct {0}_id from recommenders)"
                          " union all "
                          " select ffn_id from recommenders where id not in (select distinct recommender_id from recommendations) and favourites != 0 ";
     qs=fmt::format(qs, website.toStdString(), list_id);
 
     SqlContext<QStringList> ctx(db, std::move(qs), BP1(list_id));
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        auto authorUrl = url_utils::GetAuthorUrlFromWebId(q.value(QString("%1_id").arg(website)).toInt(), "ffn");
+        auto authorUrl = url_utils::GetAuthorUrlFromWebId(q.value(QString("{0}_id").arg(website)).toInt(), "ffn");
         ctx.result.data.push_back(authorUrl);
     });
     return ctx.result;
@@ -3424,15 +3424,15 @@ DiagnosticSQLResult<QSet<int> > GetSingularFicsInLargeButSlashyLists(QSqlDatabas
 DiagnosticSQLResult<QHash<int, double> > GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db)
 {
     SqlContext<QHash<int, double>> ctx(db);
-    std::string qs = fmt::format("select id, %1 from fanfics order by id",fieldName.toStdString());
-    ctx.FetchSelectIntoHash(std::move(qs), "id", fieldName);
+    std::string qs = fmt::format("select id, {0} from fanfics order by id",fieldName.toStdString());
+    ctx.FetchSelectIntoHash(std::move(qs), "id", fieldName.toStdString());
     return ctx.result;
 }
 
 DiagnosticSQLResult<QHash<int, QString> >GetGenreForFics(QSqlDatabase db)
 {
     SqlContext<QHash<int, QString>> ctx(db);
-    std::string qs = fmt::format("select id, %1 from fanfics order by id","genres");
+    std::string qs = fmt::format("select id, {0} from fanfics order by id","genres");
     ctx.FetchSelectIntoHash(std::move(qs), "id", "genres");
     return ctx.result;
 }
@@ -3445,36 +3445,36 @@ DiagnosticSQLResult<QHash<int, int>> GetScoresForFics(QSqlDatabase db)
     return ctx.result;
 }
 
-DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetGenreData(QString keyName, QString query, QSqlDatabase db)
+DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetGenreData(QString keyName, std::string&& query, QSqlDatabase db)
 {
-    std::string q = query.toStdString();
+
     SqlContext<QHash<int, std::array<double, 22>>> ctx(db);
-    ctx.FetchSelectFunctor(std::move(q), DATAQ{
+    ctx.FetchSelectFunctor(std::move(query), DATAQ{
                                std::size_t counter = 0;
 //                               qDebug() << "Loading list for author: " << q.value(keyName).toInt();
 //                               qDebug() << "Adventure value is: " << q.value("Adventure").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("General_").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Humor").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Poetry").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Adventure").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Mystery").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Horror").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Parody").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Angst").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Supernatural").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Suspense").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Romance").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("NoGenre").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("SciFi").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Fantasy").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Spiritual").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Tragedy").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Western").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Crime").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Family").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("HurtComfort").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Friendship").toDouble();
-                               data[q.value(keyName).toInt()][counter++] =q.value("Drama").toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("General_")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Humor")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Poetry")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Adventure")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Mystery")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Horror")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Parody")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Angst")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Supernatural")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Suspense")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Romance")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("NoGenre")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("SciFi")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Fantasy")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Spiritual")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Tragedy")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Western")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Crime")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Family")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("HurtComfort")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Friendship")).toDouble();
+                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Drama")).toDouble();
                            });
 
     return ctx.result;
@@ -3494,9 +3494,9 @@ DiagnosticSQLResult<QHash<int, std::array<double, 22> > > GetFullFicGenreData(QS
 DiagnosticSQLResult<QHash<int, double> > GetFicGenreData(QString genre, QString cutoff, QSqlDatabase db)
 {
     SqlContext<QHash<int, double>> ctx(db);
-    std::string qs = "select fic_id, %1 from FicGenreStatistics where %2 order by fic_id";
+    std::string qs = "select fic_id, {0} from FicGenreStatistics where {1} order by fic_id";
     qs = fmt::format(qs, genre.toStdString(),cutoff.toStdString());
-    ctx.FetchSelectIntoHash(std::move(qs), "fic_id", genre);
+    ctx.FetchSelectIntoHash(std::move(qs), "fic_id", genre.toStdString());
     return ctx.result;
 }
 
@@ -3522,7 +3522,7 @@ DiagnosticSQLResult<QVector<core::FicWeightPtr> > GetAllFicsWithEnoughFavesForWe
 {
     SqlContext<QVector<core::FicWeightPtr>> ctx(db);
     std::string qs = fmt::format("select id,Rated, author_id, complete, updated, fandom1,fandom2,favourites, published, updated,  genres, reviews, filter_pass_1, wordcount"
-                         "  from fanfics where favourites > %1 order by id", faves);
+                         "  from fanfics where favourites > {0} order by id", faves);
     ctx.FetchSelectFunctor(std::move(qs), DATAQ{
                                auto fw = getFicWeightPtrFromQuery(q);
                                data.push_back(fw);
@@ -3567,7 +3567,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
 }
 
 DiagnosticSQLResult<bool> FillRecommendationListWithData(int listId,
-                                                         QHash<int, int> fics,
+                                                         const QHash<int, int>& fics,
                                                          QSqlDatabase db)
 {
     std::string qs = "INSERT INTO RecommendationListData ("
@@ -3604,14 +3604,14 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
     result.success = false;
 
     CreateSlashInfoPerFic(db);
-    qDebug() << "finished creating records for fics";
+    qDebug() << QStringLiteral("finished creating records for fics");
     WipeSlashMetainformation(db);
-    qDebug() << "finished wiping slash info";
+    qDebug() << QStringLiteral("finished wiping slash info");
 
     QSet<int> slashFics;
     QSet<int> slashKeywords;
     QSet<int> notSlashFics;
-    QString qs = "select id, summary, characters, fandom from fanfics order by id asc";
+    QString qs = QStringLiteral("select id, summary, characters, fandom from fanfics order by id asc");
     QSqlQuery q(db);
     q.prepare(qs);
     if(!result.ExecAndCheck(q))
@@ -3620,59 +3620,59 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
         return result;
     do
     {
-        auto result = func(q.value("summary").toString(),
-                           q.value("characters").toString(),
-                           q.value("fandom").toString());
+        auto result = func(q.value(QStringLiteral("summary")).toString(),
+                           q.value(QStringLiteral("characters")).toString(),
+                           q.value(QStringLiteral("fandom")).toString());
         if(result.containsSlash)
-            slashKeywords.insert(q.value("id").toInt());
+            slashKeywords.insert(q.value(QStringLiteral("id")).toInt());
         if(result.IsSlash())
-            slashFics.insert(q.value("id").toInt());
+            slashFics.insert(q.value(QStringLiteral("id")).toInt());
         if(result.containsNotSlash)
-            notSlashFics.insert(q.value("id").toInt());
+            notSlashFics.insert(q.value(QStringLiteral("id")).toInt());
 
 
     }while(q.next());
-    qDebug() << "finished processing slash info";
-    q.prepare("update algopasses set keywords_pass_result = 1 where fic_id = :id");
+    qDebug() << QStringLiteral("finished processing slash info");
+    q.prepare(QStringLiteral("update algopasses set keywords_pass_result = 1 where fic_id = :id"));
     QList<int> list = slashFics.values();
     int counter = 0;
     for(auto tempId: list)
     {
         counter++;
-        q.bindValue(":id", tempId);
+        q.bindValue(QStringLiteral(":id"), tempId);
         if(!result.ExecAndCheck(q))
         {
-            qDebug() << "failed to write slash";
+            qDebug() << QStringLiteral("failed to write slash");
             return result;
         }
     }
-    q.prepare("update algopasses set keywords_no = 1 where fic_id = :id");
+    q.prepare(QStringLiteral("update algopasses set keywords_no = 1 where fic_id = :id"));
     list = notSlashFics.values();
     counter = 0;
     for(auto tempId: std::as_const(list))
     {
         counter++;
-        q.bindValue(":id", tempId);
+        q.bindValue(QStringLiteral(":id"), tempId);
         if(!result.ExecAndCheck(q))
         {
             qDebug() << "failed to write slash";
             return result;
         }
     }
-    q.prepare("update algopasses set keywords_yes = 1 where fic_id = :id");
+    q.prepare(QStringLiteral("update algopasses set keywords_yes = 1 where fic_id = :id"));
     list = slashKeywords.values();
     counter = 0;
     for(auto tempId: std::as_const(list))
     {
         counter++;
-        q.bindValue(":id", tempId);
+        q.bindValue(QStringLiteral(":id"), tempId);
         if(!result.ExecAndCheck(q))
         {
             qDebug() << "failed to write slash";
             return result;
         }
     }
-    qDebug() << "finished writing slash info into DB";
+    qDebug() << QStringLiteral("finished writing slash info into DB");
 
     result.success = true;
     return result;
@@ -3693,15 +3693,15 @@ DiagnosticSQLResult<bool> CreateStatisticsRecordsForAuthors(QSqlDatabase db)
 DiagnosticSQLResult<bool> CalculateSlashStatisticsPercentages(QString usedField,  QSqlDatabase db)
 {
     std::string qs = "update AuthorFavouritesStatistics set slash_factor  = "
-                         " cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses where %1 = 1) ff on ff.fic_id  = rs.fic_id) as float) "
-                         "/cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, %1 from algopasses)              ff on ff.fic_id  = rs.fic_id) as float)";
+                         " cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, {0} from algopasses where {0} = 1) ff on ff.fic_id  = rs.fic_id) as float) "
+                         "/cast( (select count (ff.fic_id) from (select fic_id from recommendations where recommender_id = author_id) rs left join  (select fic_id, {0} from algopasses)              ff on ff.fic_id  = rs.fic_id) as float)";
     qs = fmt::format(qs, usedField.toStdString());
     return SqlContext<bool>(db, std::move(qs))();
 }
 
 DiagnosticSQLResult<bool> AssignIterationOfSlash(QString iteration, QSqlDatabase db)
 {
-    std::string qs = "update algopasses set %1 = 1 where keywords_pass_result = 1 or fic_id in "
+    std::string qs = "update algopasses set {0} = 1 where keywords_pass_result = 1 or fic_id in "
                          "(select fic_id from recommendationlistdata where list_id in (select id from recommendationlists where name = 'SlashCleaned'))";
     qs = fmt::format(qs, iteration.toStdString());
     return SqlContext<bool>(db, std::move(qs))();
@@ -3739,7 +3739,7 @@ DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int list_id, QH
 }
 
 DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int list_id,
-                                                            QVector<core::AuthorResult> authors,
+                                                            const QVector<core::AuthorResult>& authors,
                                                      QSqlDatabase db){
     DiagnosticSQLResult<bool> result;
     result.success = false;
@@ -3804,8 +3804,8 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
     result["HurtComfort"] = -1;
     result["Friendship"] = 1;
 
-    std::string qs = "update ficgenrestatistics set %1 =  CASE WHEN  (select count(distinct recommender_id) from recommendations r where r.fic_id = ficgenrestatistics .fic_id) >= 5 "
-                         " THEN (select avg(%1) from AuthorFavouritesGenreStatistics afgs where afgs.author_id in (select distinct recommender_id from recommendations r where r.fic_id = ficgenrestatistics .fic_id))  "
+    std::string qs = "update ficgenrestatistics set {0} =  CASE WHEN  (select count(distinct recommender_id) from recommendations r where r.fic_id = ficgenrestatistics .fic_id) >= 5 "
+                         " THEN (select avg({0}) from AuthorFavouritesGenreStatistics afgs where afgs.author_id in (select distinct recommender_id from recommendations r where r.fic_id = ficgenrestatistics .fic_id))  "
                          " ELSE 0 END ";
     std::list<std::string> list;
     for(auto i = result.begin(); i != result.end(); i++)
@@ -3834,7 +3834,7 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, QSqlDatabase db)
 
         return result;
     }
-    qs = "insert into user_settings(name, value) values('db_uuid', '%1')";
+    qs = "insert into user_settings(name, value) values('db_uuid', '{0}')";
     qs = fmt::format(qs,id.toString().toStdString());
     ctx.ReplaceQuery(std::move(qs));
 
@@ -3907,7 +3907,7 @@ static QHash<int, int> CreateFicPositions(QSharedPointer<core::RecommendationLis
     QHash<int, int> positions;
     QVector ficsCopy = ficData->fics;
     for(int i = 0; i < ficData->fics.size(); i++)
-        scores[ficData->fics[i]] = ficData->matchCounts[i];
+        scores[ficData->fics[i]] = ficData->matchCounts.at(i);
 
     std::sort(ficsCopy.begin(), ficsCopy.end(), [&](const int& fic1, const int& fic2){
         return scores[fic1] > scores[fic2] ;
@@ -3989,7 +3989,7 @@ DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QS
     std::string query = " with count_per_fic(fic_id, ffn_id, title, genres, total, HumorComposite, Flirty, Pure_drama, Pure_Romance,"
                     " Hurty, Bondy, NeutralComposite,DramaComposite, NeutralSingle) as ("
                     " with"
-                    " fic_ids as (select %1 as fid),"
+                    " fic_ids as (select {0} as fid),"
 
                     " total as ("
                     " select fic_id, count(distinct recommender_id) as total from recommendations, fic_ids "
@@ -4049,20 +4049,20 @@ DiagnosticSQLResult<genre_stats::FicGenreData> GetRealGenresForFic(int ficId, QS
     auto genreConverter = interfaces::GenreConverter::Instance();
 
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        ctx.result.data.originalGenreString = q.value("genres").toString();
-        ctx.result.data.originalGenres = genreConverter.GetFFNGenreList(q.value("genres").toString());
+        ctx.result.data.originalGenreString = q.value(QStringLiteral("genres")).toString();
+        ctx.result.data.originalGenres = genreConverter.GetFFNGenreList(q.value(QStringLiteral("genres")).toString());
 
         ctx.result.data.ficId = ficId;
-        ctx.result.data.ffnId = q.value("ffn_id").toInt();
-        ctx.result.data.totalLists = q.value("total").toInt();
+        ctx.result.data.ffnId = q.value(QStringLiteral("ffn_id")).toInt();
+        ctx.result.data.totalLists = q.value(QStringLiteral("total")).toInt();
 
-        ctx.result.data.strengthHumor = q.value("Div_HumorComposite").toFloat();
-        ctx.result.data.strengthRomance = q.value("Div_Flirty").toFloat();
-        ctx.result.data.strengthDrama= q.value("Div_Dramatic").toFloat();
-        ctx.result.data.strengthBonds= q.value("Div_Bondy").toFloat();
-        ctx.result.data.strengthHurtComfort= q.value("Div_Hurty").toFloat();
-        ctx.result.data.strengthNeutralComposite= q.value("Div_NeutralComposite").toFloat();
-        ctx.result.data.strengthNeutralAdventure= q.value("Div_NeutralSingle").toFloat();
+        ctx.result.data.strengthHumor = q.value(QStringLiteral("Div_HumorComposite")).toFloat();
+        ctx.result.data.strengthRomance = q.value(QStringLiteral("Div_Flirty")).toFloat();
+        ctx.result.data.strengthDrama= q.value(QStringLiteral("Div_Dramatic")).toFloat();
+        ctx.result.data.strengthBonds= q.value(QStringLiteral("Div_Bondy")).toFloat();
+        ctx.result.data.strengthHurtComfort= q.value(QStringLiteral("Div_Hurty")).toFloat();
+        ctx.result.data.strengthNeutralComposite= q.value(QStringLiteral("Div_NeutralComposite")).toFloat();
+        ctx.result.data.strengthNeutralAdventure= q.value(QStringLiteral("Div_NeutralSingle")).toFloat();
     });
     return ctx.result;
 }
@@ -4077,24 +4077,24 @@ DiagnosticSQLResult<QHash<uint32_t, genre_stats::ListMoodData>> GetMoodDataForLi
     auto genreConverter = interfaces::GenreConverter::Instance();
     genre_stats::ListMoodData tmp;
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        tmp.listId = q.value("author_id").toInt();
+        tmp.listId = q.value(QStringLiteral("author_id")).toInt();
 
-        tmp.strengthBondy = q.value("bondy").toFloat();
-        tmp.strengthDramatic= q.value("dramatic").toFloat();
-        tmp.strengthFlirty= q.value("flirty").toFloat();
-        tmp.strengthFunny= q.value("funny").toFloat();
-        tmp.strengthHurty= q.value("hurty").toFloat();
-        tmp.strengthNeutral= q.value("neutral").toFloat();
+        tmp.strengthBondy = q.value(QStringLiteral("bondy")).toFloat();
+        tmp.strengthDramatic= q.value(QStringLiteral("dramatic")).toFloat();
+        tmp.strengthFlirty= q.value(QStringLiteral("flirty")).toFloat();
+        tmp.strengthFunny= q.value(QStringLiteral("funny")).toFloat();
+        tmp.strengthHurty= q.value(QStringLiteral("hurty")).toFloat();
+        tmp.strengthNeutral= q.value(QStringLiteral("neutral")).toFloat();
 
-        tmp.strengthNonBondy= q.value("nonbondy").toFloat();
-        tmp.strengthNonDramatic= q.value("NonDramatic").toFloat();
-        tmp.strengthNonFlirty= q.value("NonFlirty").toFloat();
-        tmp.strengthNonFunny= q.value("NonFunny").toFloat();
-        tmp.strengthNonHurty= q.value("NonHurty").toFloat();
-        tmp.strengthNonNeutral= q.value("NonNeutral").toFloat();
-        tmp.strengthNonShocky= q.value("NonShocky").toFloat();
-        tmp.strengthNone= q.value("None").toFloat();
-        tmp.strengthOther= q.value("Other").toFloat();
+        tmp.strengthNonBondy= q.value(QStringLiteral("nonbondy")).toFloat();
+        tmp.strengthNonDramatic= q.value(QStringLiteral("NonDramatic")).toFloat();
+        tmp.strengthNonFlirty= q.value(QStringLiteral("NonFlirty")).toFloat();
+        tmp.strengthNonFunny= q.value(QStringLiteral("NonFunny")).toFloat();
+        tmp.strengthNonHurty= q.value(QStringLiteral("NonHurty")).toFloat();
+        tmp.strengthNonNeutral= q.value(QStringLiteral("NonNeutral")).toFloat();
+        tmp.strengthNonShocky= q.value(QStringLiteral("NonShocky")).toFloat();
+        tmp.strengthNone= q.value(QStringLiteral("None")).toFloat();
+        tmp.strengthOther= q.value(QStringLiteral("Other")).toFloat();
 
 
         ctx.result.data.insert(tmp.listId, tmp);
@@ -4167,20 +4167,20 @@ DiagnosticSQLResult<QVector<genre_stats::FicGenreData>> GetGenreDataForQueuedFic
     auto genreConverter = interfaces::GenreConverter::Instance();
     genre_stats::FicGenreData tmp;
     ctx.ForEachInSelect([&](QSqlQuery& q){
-        tmp.originalGenreString = q.value("genres").toString();
-        tmp.originalGenres = genreConverter.GetFFNGenreList(q.value("genres").toString());
+        tmp.originalGenreString = q.value(QStringLiteral("genres")).toString();
+        tmp.originalGenres = genreConverter.GetFFNGenreList(q.value(QStringLiteral("genres")).toString());
 
-        tmp.ficId = q.value("fic_id").toInt();
-        tmp.ffnId = q.value("ffn_id").toInt();
-        tmp.totalLists = q.value("total").toInt();
+        tmp.ficId = q.value(QStringLiteral("fic_id")).toInt();
+        tmp.ffnId = q.value(QStringLiteral("ffn_id")).toInt();
+        tmp.totalLists = q.value(QStringLiteral("total")).toInt();
 
-        tmp.strengthHumor = q.value("Div_HumorComposite").toFloat();
-        tmp.strengthRomance = q.value("Div_Flirty").toFloat();
-        tmp.strengthDrama= q.value("Div_Dramatic").toFloat();
-        tmp.strengthBonds= q.value("Div_Bondy").toFloat();
-        tmp.strengthHurtComfort= q.value("Div_Hurty").toFloat();
-        tmp.strengthNeutralComposite= q.value("Div_NeutralComposite").toFloat();
-        tmp.strengthNeutralAdventure= q.value("Div_NeutralSingle").toFloat();
+        tmp.strengthHumor = q.value(QStringLiteral("Div_HumorComposite")).toFloat();
+        tmp.strengthRomance = q.value(QStringLiteral("Div_Flirty")).toFloat();
+        tmp.strengthDrama= q.value(QStringLiteral("Div_Dramatic")).toFloat();
+        tmp.strengthBonds= q.value(QStringLiteral("Div_Bondy")).toFloat();
+        tmp.strengthHurtComfort= q.value(QStringLiteral("Div_Hurty")).toFloat();
+        tmp.strengthNeutralComposite= q.value(QStringLiteral("Div_NeutralComposite")).toFloat();
+        tmp.strengthNeutralAdventure= q.value(QStringLiteral("Div_NeutralSingle")).toFloat();
         ctx.result.data.push_back(tmp);
     });
     return ctx.result;
@@ -4200,7 +4200,7 @@ DiagnosticSQLResult<bool> QueueFicsForGenreDetection(int minAuthorRecs, int minF
                          "  select fic_id, count(fic_id) as count_rec from recommendations where recommender_id in filtered_recommenders group by fic_id "
                          "  ) fin where count_rec >= (select val from min_filtered_lists) "
                          " ) "
-                         " update fanfics set queued_for_action = 1 where id in to_update and favourites > %1 ";
+                         " update fanfics set queued_for_action = 1 where id in to_update and favourites > {0} ";
     qs=fmt::format(qs, minFaves);
 
     return SqlContext<bool> (db, std::move(qs),BP2(minAuthorRecs,minFoundLists))();
