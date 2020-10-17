@@ -84,7 +84,7 @@ struct SqlContext
         Prepare(qs);
     }
 
-    SqlContext(QSqlDatabase db, QList<std::string>&& queries) : q(db), transaction(db)
+    SqlContext(QSqlDatabase db, std::list<std::string>&& queries) : q(db), transaction(db)
     {
         for(const auto& query : queries)
         {
@@ -376,26 +376,18 @@ struct SqlContext
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
 
-
-    template <typename Container, typename ConstIterator>
-    typename Container::iterator remove_constness(Container& c, ConstIterator it)
-    {
-        return c.erase(it, it);
-    }
-
     void bindValue(std::string&& key, QVariant value){
         auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
             return b.key == key;
         });
         if(it!=bindValues.cend())
         {
-            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+            auto it = std::remove_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
                 return b.key == key;
             });
-            nonConstIt->value = std::move(value);
+            bindValues.erase(it, bindValues.end());
         }
-        else
-            bindValues.push_back({std::move(key), value});
+        bindValues.push_back({std::move(key), value});
     }
     void bindValue(const std::string& key, QVariant value){
         auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
@@ -403,13 +395,12 @@ struct SqlContext
         });
         if(it!=bindValues.cend())
         {
-            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+            auto it = std::remove_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
                 return b.key == key;
             });
-            nonConstIt->value = std::move(value);
+            bindValues.erase(it, bindValues.end());
         }
-        else
-            bindValues.push_back({key, value});
+        bindValues.push_back({key, value});
     }
     void bindMoveValue(std::string&& key, QVariant&& value){
         auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
@@ -417,13 +408,12 @@ struct SqlContext
         });
         if(it!=bindValues.cend())
         {
-            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+            auto it = std::remove_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
                 return b.key == key;
             });
-            nonConstIt->value = std::move(value);
+            bindValues.erase(it, bindValues.end());
         }
-        else
-            bindValues.push_back({std::move(key), std::move(value)});
+        bindValues.push_back({std::move(key), std::move(value)});
     }
     void bindMoveValue(const std::string& key, QVariant&& value){
         auto it = std::find_if(bindValues.cbegin(), bindValues.cend(), [key](const QueryBinding& b){
@@ -431,13 +421,12 @@ struct SqlContext
         });
         if(it!=bindValues.cend())
         {
-            auto nonConstIt = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
+            auto it = std::remove_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
                 return b.key == key;
             });
-            nonConstIt->value = std::move(value);
+            bindValues.erase(it, bindValues.end());
         }
-        else
-            bindValues.push_back({key, std::move(value)});
+        bindValues.push_back({key, std::move(value)});
     }
     void SetDefaultValue(ResultType value) {result.data = value;}
     bool Success() const {return result.success;}
@@ -488,7 +477,7 @@ struct ParallelSqlContext
                 }
                 else
                 {
-                    value = sourceQ.value(sourceFields[i].c_str());
+                    value = sourceQ.value(sourceFields.at(i).c_str());
                     //qDebug() << "binding value: " << value;
                 }
                 //qDebug() << "to target field: " << targetFields[i];
