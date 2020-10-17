@@ -13,6 +13,7 @@
 #include <functional>
 #include <memory>
 #include <array>
+#include <unordered_map>
 
 
 
@@ -22,7 +23,7 @@ namespace puresql{
 
 
 struct QueryBinding{
-    QString key;
+    std::string key;
     QVariant value;
 };
 
@@ -88,11 +89,11 @@ struct SqlContext
         func(this);
     }
 
-    SqlContext(QSqlDatabase db, QString qs, QVariantHash hash) :  qs(qs), q(db),  transaction(db){
+    SqlContext(QSqlDatabase db, QString qs, std::unordered_map<std::string, QVariant> hash) :  qs(qs), q(db),  transaction(db){
         Prepare(qs);
 
         for(auto i = hash.begin(); i != hash.end(); i++)
-            bindValue(i.key(), i.value());
+            bindMoveValue(std::move(i->first), std::move(i->second));
     }
 
     ~SqlContext(){
@@ -324,7 +325,7 @@ struct SqlContext
     void BindValues(){
         for(const auto& bind : std::as_const(bindValues))
         {
-            q.bindValue(QString(":") + bind.key, bind.value);
+            q.bindValue(":" + QString::fromStdString(bind.key), bind.value);
         }
     }
 
@@ -358,12 +359,39 @@ struct SqlContext
 
     QVariant value(QString name){return q.value(name);}
     QString trimmedValue(QString name){return q.value(name).toString().trimmed();}
-    void bindValue(QString key, QVariant value){
+    void bindValue(std::string&& key, QVariant value){
         auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
             return b.key == key;
         });
         if(it!=bindValues.end())
             it->value = value;
+        else
+            bindValues.push_back({std::move(key), value});
+    }
+    void bindValue(const std::string& key, QVariant value){
+        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+            return b.key == key;
+        });
+        if(it!=bindValues.end())
+            it->value = value;
+        else
+            bindValues.push_back({key, value});
+    }
+    void bindMoveValue(std::string&& key, QVariant&& value){
+        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+            return b.key == key;
+        });
+        if(it!=bindValues.end())
+            it->value = std::move(value);
+        else
+            bindValues.push_back({std::move(key), value});
+    }
+    void bindMoveValue(const std::string& key, QVariant&& value){
+        auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding b){
+            return b.key == key;
+        });
+        if(it!=bindValues.end())
+            it->value = std::move(value);
         else
             bindValues.push_back({key, value});
     }

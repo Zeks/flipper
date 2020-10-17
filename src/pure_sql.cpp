@@ -1699,8 +1699,8 @@ DiagnosticSQLResult<bool> WriteDetectedGenres(QVector<genre_stats::FicGenreData>
             if(writtenGenre.isEmpty())
                 genre.relevance = 0;
 
-            ctx.bindValue("true_genre" + QString::number(i+1), writtenGenre);
-            ctx.bindValue("true_genre" + QString::number(i+1) + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
+            ctx.bindValue("true_genre" + QString::number(i+1).toStdString(), writtenGenre);
+            ctx.bindValue("true_genre" + QString::number(i+1).toStdString() + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
 
 
         }
@@ -1758,8 +1758,8 @@ DiagnosticSQLResult<bool> WriteDetectedGenresIteration2(QVector<genre_stats::Fic
             if(writtenGenre.isEmpty())
                 genre.relevance = 0;
 
-            ctx.bindValue("true_genre" + QString::number(i+1), writtenGenre);
-            ctx.bindValue("true_genre" + QString::number(i+1) + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
+            ctx.bindValue("true_genre" + QString::number(i+1).toStdString(), writtenGenre);
+            ctx.bindValue("true_genre" + QString::number(i+1).toStdString() + "_percent", genre.relevance > 1 ? 1 : genre.relevance );
 
 
         }
