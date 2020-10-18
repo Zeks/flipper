@@ -1047,6 +1047,8 @@ DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(const co
 
     if(!filter.displayPurged)
         qs+=" and purged = 0";
+    else
+        qs+=" and purged = 1";
 
     //qDebug() << "purged query:" << qs;
 
@@ -2607,9 +2609,7 @@ DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> 
 
     std::string qs = "select fic_id, list_id, {0}, position, pedestal from RecommendationListData where list_id in ({1}) and fic_id in ({2})";
     std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
-    qs = fmt::format(qs, pointsField);
-    qs = fmt::format(qs, listIds.join(",").toStdString());
-    qs = fmt::format(qs, ficIds.join(",").toStdString());
+    qs = fmt::format(qs, pointsField, listIds.join(",").toStdString(), ficIds.join(",").toStdString());
 
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){

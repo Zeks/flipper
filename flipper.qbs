@@ -247,7 +247,7 @@ App{
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         else
-            libs = libs.concat(["grpc", "grpc++", "gpr"])
+            libs = ["dl", "protobuf", "grpc", "grpc++", "gpr","cpr", "curl", "crypto", "ssl", "pthread"]
         return libs
     }
 

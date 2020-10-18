@@ -393,6 +393,7 @@ int CoreEnvironment::GetResultCount()
     reclistFilter.mainListId = interfaces.recs->GetCurrentRecommendationList();
     reclistFilter.minMatchCount = filter.minRecommendations;
     reclistFilter.limiter = filter.sourcesLimiter;
+    reclistFilter.displayPurged = filter.displayPurgedFics;
     reclistFilter.scoreType = scoreType;
     filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
 
