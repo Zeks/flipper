@@ -16,6 +16,7 @@
 #include "third_party/ctre.hpp"
 
 namespace discord {
+std::atomic<bool> Client::allowMessages = true;
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
     SleepyDiscord::DiscordClient(token, numOfThreads)
 {
@@ -201,6 +202,22 @@ void Client::timerEvent(QTimerEvent *)
 void discord::Client::onReady(SleepyDiscord::Ready )
 {
     botPrefixRequest = "<@!" + getID().string() + "> prefix";
+}
+
+SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message, const SleepyDiscord::Embed& embed)
+{
+    if(allowMessages)
+        return SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed);
+    SleepyDiscord::Response dummyResponse;
+    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
+}
+
+SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message)
+{
+    if(allowMessages)
+        return SleepyDiscord::DiscordClient::sendMessage(channelID, message);
+    SleepyDiscord::Response dummyResponse;
+    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
 }
 }
 

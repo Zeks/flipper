@@ -1,6 +1,9 @@
 #include "discord/actions.h"
 #include "discord/task_runner.h"
 #include "discord/task_environment.h"
+#include "discord/client_v2.h"
+#include <third_party/nanobench/nanobench.h>
+
 namespace discord {
 
 TaskRunner::TaskRunner(QObject *parent) : QThread(parent), environment(new TaskEnvironment())
@@ -24,17 +27,22 @@ void TaskRunner::ClearState()
 
 void TaskRunner::run()
 {
-    if(chainToRun.hasParseCommand)
-        result.performedParseCommand = true;
-    if(chainToRun.hasFullParseCommand)
-        result.performedFullParseCommand = true;
-    for(auto&& command : chainToRun.commands){
-        auto action = GetAction(command.type);
-        auto actionResult = action->Execute(environment, std::move(command));
-        result.Push(actionResult);
-        if(actionResult->stopChain)
-            break;
-    }
+    Client::allowMessages = false;
+     ankerl::nanobench::Bench().minEpochIterations(1).run(
+                 [&](){
+         if(chainToRun.hasParseCommand)
+             result.performedParseCommand = true;
+         if(chainToRun.hasFullParseCommand)
+             result.performedFullParseCommand = true;
+         for(auto&& command : chainToRun.commands){
+             auto action = GetAction(command.type);
+             auto actionResult = action->Execute(environment, std::move(command));
+             result.Push(actionResult);
+             if(actionResult->stopChain)
+                 break;
+         }
+     }
+    );
 }
 
 }
