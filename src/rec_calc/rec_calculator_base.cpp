@@ -64,10 +64,10 @@ bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
     //TimedAction relations("Fetching relations",[&](){
-        ankerl::nanobench::Bench().minEpochIterations(6).run(
-                    [&](){
+//        ankerl::nanobench::Bench().minEpochIterations(6).run(
+//                    [&](){
         FetchAuthorRelations();
-        });
+        //});
     //});
     //relations.run();
     params->ratioCutoff = ratioCutoff;
@@ -513,18 +513,18 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                     continue;
                 }
                 author.matches = 0;
-                Roaring ignoredTemp = inputs.faves[author.id];
-                ignoredTemp = ignoredTemp & ignores;
 
-                author.fullListSize = inputs.faves[author.id].cardinality();
-                Roaring temp = ownFavourites;
+                auto& tempAuthorRoaring = std::as_const(inputs.faves)[author.id];
+                author.fullListSize = tempAuthorRoaring.cardinality();
+                uint ignoredFics = tempAuthorRoaring.and_cardinality(ignores);
+                auto unignoredSize = tempAuthorRoaring.cardinality() - ignoredFics;
+
                 // first we need to remove ignored fics
-                auto unignoredSize = inputs.faves[author.id].xor_cardinality(ignoredTemp);
-                temp = temp & inputs.faves[author.id];
+                //auto unignoredSize = inputs.faves[author.id].xor_cardinality(ignoredTemp);
+                Roaring temp = tempAuthorRoaring.operator&(ownFavourites);
                 author.matches = temp.cardinality();
 
-                Roaring negative = ownMajorNegatives;
-                negative = negative & inputs.faves[author.id];
+                Roaring negative = tempAuthorRoaring.operator&(ownMajorNegatives);
                 author.negativeMatches = negative.cardinality();
 
                 author.sizeAfterIgnore = unignoredSize;
@@ -535,25 +535,27 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 // also not very interested with listsizes of less than 10 because their ratio will be too skewed
                 if(author.matches > 0 && ratio > 1 && author.sizeAfterIgnore >= 10){
                     //ratioHash.AddToken(ratio);
-                    tempResult.ratioInfo[ratio].ratio = ratio;
-                    tempResult.ratioInfo[ratio].authors++;
-                    tempResult.ratioInfo[ratio].totalFicEntries+=author.sizeAfterIgnore;
-                    if(tempResult.ratioInfo.value(ratio).minMatches > author.matches)
-                        tempResult.ratioInfo[ratio].minMatches = author.matches;
-                    tempResult.ratioInfo[ratio].fics|=inputs.faves[author.id];
-                    if(tempResult.ratioInfo.value(ratio).minListSize > author.sizeAfterIgnore)
-                        tempResult.ratioInfo[ratio].minListSize = author.sizeAfterIgnore;
-                    if(tempResult.ratioInfo.value(ratio).maxListSize < author.sizeAfterIgnore)
-                        tempResult.ratioInfo[ratio].maxListSize = author.sizeAfterIgnore;
+                    auto& ratioObject = tempResult.ratioInfo[ratio];
+                    ratioObject.ratio = ratio;
+                    ratioObject.authors++;
+                    ratioObject.totalFicEntries+=author.sizeAfterIgnore;
+                    if(ratioObject.minMatches > author.matches)
+                        ratioObject.minMatches = author.matches;
+                    ratioObject.fics|=tempAuthorRoaring;
+                    ratioObject.ficsAfterIgnore|=tempAuthorRoaring.operator-(ignores);
+
+                    if(ratioObject.minListSize > author.sizeAfterIgnore)
+                        ratioObject.minListSize = author.sizeAfterIgnore;
+                    if(ratioObject.maxListSize < author.sizeAfterIgnore)
+                        ratioObject.maxListSize = author.sizeAfterIgnore;
+                    if(tempResult.maximumMatches < author.matches)
+                    {
+                        prevMaximumMatches = tempResult.maximumMatches;
+                        tempResult.maximumMatches = author.matches;
+                    }
+                    tempResult.matchSum+=author.matches;
                 }
-                if(ignores.cardinality() == 0)
-                    author.sizeAfterIgnore = author.fullListSize;
-                if(tempResult.maximumMatches < author.matches)
-                {
-                    prevMaximumMatches = tempResult.maximumMatches;
-                    tempResult.maximumMatches = author.matches;
-                }
-                tempResult.matchSum+=author.matches;
+
                 itCurrent++;
             }
             return tempResult;
@@ -580,6 +582,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         const auto& item = i.value();
         tempSummary.authors += item.authors;
         tempSummary.fics |= item.fics;
+        tempSummary.ficsAfterIgnore |= item.ficsAfterIgnore;
         tempSummary.totalFicEntries+=item.totalFicEntries;
         tempSummary.averageListSize = tempSummary.totalFicEntries/tempSummary.authors;
 
@@ -587,13 +590,18 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         sumratio.ratio = i.key();
         sumratio.lastFicsAdded = tempSummary.fics.cardinality() - tempCardinality;
         sumratio.fics = tempSummary.fics;
+        sumratio.ficsAfterIgnore = tempSummary.ficsAfterIgnore;
         sumratio.totalFicEntries = tempSummary.totalFicEntries;
         sumratio.averageListSize = tempSummary.averageListSize;
         sumratio.authors = tempSummary.authors;
         sumratio.minListSize = item.minListSize;
         sumratio.maxListSize= item.maxListSize;
-        if(ratioCutoff == 0 && (sumratio.fics.cardinality() > (ownFavourites.cardinality() * 200)))
+        QLOG_INFO() << "ratio: " <<  i.key() << " own size: " << ownFavourites.cardinality() << " projected cardinality: " << ownFavourites.cardinality() * 200  << " sum cardinality: " << sumratio.ficsAfterIgnore.cardinality();
+        if(ratioCutoff == std::numeric_limits<uint16_t>::max() && (sumratio.ficsAfterIgnore.cardinality() > (ownFavourites.cardinality() * 200)))
+        {
+            QLOG_INFO() << "Picking ratio: " << i.key();
             ratioCutoff = i.key();
+        }
     }
     //Save(funcResult.ratioInfo);
     //Save(funcResult.ratioSumInfo);
