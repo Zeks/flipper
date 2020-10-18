@@ -480,8 +480,8 @@ void SendMessageCommand::Invoke(Client * client)
             client->sendMessage(originalMessageToken.channelID, diagnosticText.toStdString());
     }
     catch (const SleepyDiscord::ErrorCode& error){
-        QLOG_INFO() << error;
-        QLOG_INFO() << QString::fromStdString(this->embed.description);
+        QLOG_INFO() << "Discord error:" << error;
+        QLOG_INFO() << "Discord error:" << QString::fromStdString(this->embed.description);
     }
 
 }

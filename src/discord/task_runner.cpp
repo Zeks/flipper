@@ -27,22 +27,17 @@ void TaskRunner::ClearState()
 
 void TaskRunner::run()
 {
-    Client::allowMessages = false;
-     ankerl::nanobench::Bench().minEpochIterations(1).run(
-                 [&](){
-         if(chainToRun.hasParseCommand)
-             result.performedParseCommand = true;
-         if(chainToRun.hasFullParseCommand)
-             result.performedFullParseCommand = true;
-         for(auto&& command : chainToRun.commands){
-             auto action = GetAction(command.type);
-             auto actionResult = action->Execute(environment, std::move(command));
-             result.Push(actionResult);
-             if(actionResult->stopChain)
-                 break;
-         }
-     }
-    );
+    if(chainToRun.hasParseCommand)
+        result.performedParseCommand = true;
+    if(chainToRun.hasFullParseCommand)
+        result.performedFullParseCommand = true;
+    for(auto&& command : chainToRun.commands){
+        auto action = GetAction(command.type);
+        auto actionResult = action->Execute(environment, std::move(command));
+        result.Push(actionResult);
+        if(actionResult->stopChain)
+            break;
+    }
 }
 
 }

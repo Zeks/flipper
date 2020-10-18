@@ -1140,7 +1140,7 @@ void FicSourceGRPCImpl::ProcessStandardError(const grpc::Status& status)
         //intentionally empty
         break;
     }
-    error+=QString::fromStdString(status.error_message());
+    error+= "GRPC:" + QString::fromStdString(status.error_message());
 }
 
 core::FavListDetails FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identity> ficList)

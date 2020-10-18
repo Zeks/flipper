@@ -40,7 +40,7 @@ struct LastPageCommandMemo{
 };
 
 struct User{
-    User(){InitFicsPtr();}
+    User():lock(QReadWriteLock::Recursive){InitFicsPtr();}
     ~User() = default;
     User(QString userID, QString ffnID, QString name);
     User(const User &user);

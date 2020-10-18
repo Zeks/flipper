@@ -4,7 +4,7 @@
 
 using namespace std::chrono;
 namespace discord{
-User::User(QString userID, QString ffnID, QString name)
+User::User(QString userID, QString ffnID, QString name):lock(QReadWriteLock::Recursive)
 {
     InitFicsPtr();
     this->userID = userID;
@@ -12,7 +12,7 @@ User::User(QString userID, QString ffnID, QString name)
     this->userName = name;
 }
 
-User::User(const User &other)
+User::User(const User &other):lock(QReadWriteLock::Recursive)
 {
     this->InitFicsPtr();
     *this = other;
