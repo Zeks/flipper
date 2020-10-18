@@ -29,19 +29,19 @@ void CommandController::Push(CommandChain&& chain)
 {
     if(chain.commands.size() == 0 )
         return;
-    const auto& message = chain.commands.front().originalMessage;
-    auto userId = QString::fromStdString(message.author.ID.string());
+    const auto& message = chain.commands.front().originalMessageToken;
+    auto userId = QString::fromStdString(message.authorID.string());
 
     std::lock_guard<std::recursive_mutex> guard(lock);
     if(activeUsers.contains(userId))
     {
-        client->sendMessage(message.channelID, CreateMention(message.author.ID.string())+ ", your previous command is still executing, please wait");
+        client->sendMessage(message.channelID, CreateMention(message.authorID.string())+ ", your previous command is still executing, please wait");
         return;
     }
     else if(activeParseCommand)
     {
         if(chain.hasParseCommand || chain.hasFullParseCommand){
-            client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
+            client->sendMessage(message.channelID, CreateMention(message.authorID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
             queue.emplace_back(std::move(chain));
             return;
         }
@@ -49,7 +49,7 @@ void CommandController::Push(CommandChain&& chain)
     activeUsers.insert(userId);
     auto runner = FetchFreeRunner();
     if(!runner){
-        client->sendMessage(message.channelID, CreateMention(message.author.ID.string()) + ", there are no free command runners, putting your command on the queue. Your position is: " + QString::number(queue.size()).toStdString());
+        client->sendMessage(message.channelID, CreateMention(message.authorID.string()) + ", there are no free command runners, putting your command on the queue. Your position is: " + QString::number(queue.size()).toStdString());
         queue.emplace_back(std::move(chain));
         return;
     }
@@ -82,7 +82,7 @@ void CommandController::OnTaskFinished()
     auto senderTask = dynamic_cast<TaskRunner*>(sender());
     auto result = senderTask->result;
     senderTask->ClearState();
-    const auto& message = result.actions.first()->originalMessage;
+    const auto& message = result.actions.first()->originalMessageToken;
     std::list<CommandChain> newCommands;
     for(auto& command : result.actions)
     {
@@ -96,7 +96,7 @@ void CommandController::OnTaskFinished()
     if(activeFullParseCommand && result.performedFullParseCommand)
         activeFullParseCommand = false;
 
-    auto userId = QString::fromStdString(message.author.ID.string());
+    auto userId = QString::fromStdString(message.authorID.string());
     activeUsers.remove(userId);
 
     for(auto&& command : newCommands)

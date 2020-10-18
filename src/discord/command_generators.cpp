@@ -7,6 +7,7 @@
 #include "include/grpc/grpc_source.h"
 #include "logger/QsLog.h"
 #include "discord/type_functions.h"
+#include "discord/discord_message_token.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include <stdexcept>
 
@@ -74,11 +75,20 @@ void CommandCreator::EnsureUserExists(QString userId, QString userName)
 
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message &message, ECommandType type){
     Command command;
-    command.originalMessage = message;
+    command.originalMessageToken = message;
     command.server = server;
     command.type = type;
     return command;
 }
+
+Command NewCommand(QSharedPointer<discord::Server> server, const MessageToken& message, ECommandType type){
+    Command command;
+    command.originalMessageToken = message;
+    command.server = server;
+    command.type = type;
+    return command;
+}
+
 
 CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, bool)
 {
@@ -129,7 +139,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
         Command nullCommand = NewCommand(server, message,ct_timeout_active);
         nullCommand.ids.push_back(minRecsInterval-user->secsSinceLastsEasyQuery());
         nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Recommendations can only be regenerated once on 60 seconds.Please wait %1 more seconds.");
-        nullCommand.originalMessage = message;
+        nullCommand.originalMessageToken = message;
         nullCommand.server = this->server;
         result.Push(std::move(nullCommand));
         return std::move(result);
@@ -143,7 +153,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
     if(id.length() == 0){
         Command nullCommand = NewCommand(server, message,ct_null_command);
         nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Not a valid ID or user url.");
-        nullCommand.originalMessage = message;
+        nullCommand.originalMessageToken = message;
         nullCommand.server = this->server;
         result.Push(std::move(nullCommand));
         return std::move(result);
@@ -404,7 +414,7 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
     result.AddUserToCommands(user);
     for(const auto& command: std::as_const(result.commands)){
         if(!command.textForPreExecution.isEmpty())
-            client->sendMessage(command.originalMessage.channelID, command.textForPreExecution.toStdString());
+            client->sendMessage(command.originalMessageToken.channelID, command.textForPreExecution.toStdString());
     }
     return result;
 }
@@ -437,7 +447,7 @@ void SendMessageCommand::Invoke(Client * client)
     try{
         auto addReaction = [&](const SleepyDiscord::Message& newMessage){
             for(const auto& reaction: std::as_const(reactionsToAdd))
-                client->addReaction(originalMessage.channelID, newMessage.ID, reaction.toStdString());
+                client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
         };
         if(targetMessage.string().length() == 0){
             if(embed.empty())
@@ -445,29 +455,29 @@ void SendMessageCommand::Invoke(Client * client)
                 SleepyDiscord::Embed embed;
                 if(text.length() > 0)
                 {
-                    auto resultingMessage = client->sendMessage(originalMessage.channelID, text.toStdString(), embed).cast();
+                    auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
                     // I don't need to add reactions or hash messages without filled embeds
                 }
             }
             else{
-                auto resultingMessage = client->sendMessage(originalMessage.channelID, text.toStdString(), embed).cast();
+                auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
 
                 // I only need to hash messages that the user can later react to
                 // meaning page, rng and help commands
                 if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
                     if(originalCommandType *in(ct_display_page, ct_display_rng))
-                        this->user->SetLastPageMessage({resultingMessage, originalMessage.channelID});
-                    client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessage.author.ID.number(), originalCommandType});
+                        this->user->SetLastPageMessage({resultingMessage, originalMessageToken.channelID});
+                    client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken.authorID.number(), originalCommandType});
                     addReaction(resultingMessage);
                 }
             }
         }
         else{
             // editing message doesn't change its Id so rehashing isn't required
-            client->editMessage(originalMessage.channelID, targetMessage, text.toStdString(), embed);
+            client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
         }
         if(!diagnosticText.isEmpty())
-            client->sendMessage(originalMessage.channelID, diagnosticText.toStdString());
+            client->sendMessage(originalMessageToken.channelID, diagnosticText.toStdString());
     }
     catch (const SleepyDiscord::ErrorCode& error){
         QLOG_INFO() << error;
@@ -671,7 +681,7 @@ CommandChain HideDeadCommand::ProcessInputImpl(const SleepyDiscord::Message& mes
             Command nullCommand = NewCommand(server, message,ct_null_command);
             nullCommand.type = ct_null_command;
             nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Number of days must be greater than 0");
-            nullCommand.originalMessage = message;
+            nullCommand.originalMessageToken = message;
             nullCommand.server = this->server;
             result.Push(std::move(nullCommand));
             return std::move(result);
@@ -829,7 +839,7 @@ CommandChain WordcountCommand::ProcessInputImpl(const SleepyDiscord::Message& me
         Command nullCommand = NewCommand(server, message,ct_null_command);
         nullCommand.type = ct_null_command;
         nullCommand.variantHash[QStringLiteral("reason")] = reason;
-        nullCommand.originalMessage = message;
+        nullCommand.originalMessageToken = message;
         nullCommand.server = this->server;
         result.Push(std::move(nullCommand));
     };

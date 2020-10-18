@@ -10,6 +10,7 @@
 #pragma GCC diagnostic pop
 
 #include "discord/discord_user.h"
+#include "discord/discord_message_token.h"
 #include "discord/command_types.h"
 
 
@@ -36,7 +37,7 @@ struct Command{
 
     QList<uint64_t> ids;
     QHash<QString, QVariant> variantHash;
-    SleepyDiscord::Message originalMessage;
+    MessageToken originalMessageToken;
     QSharedPointer<User> user;
     QSharedPointer<Server> server;
 

@@ -5,6 +5,7 @@
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 #include "discord/discord_server.h"
+#include "discord/discord_message_token.h"
 #include "discord/fetch_filters.h"
 #include "discord/favourites_fetching.h"
 #include "discord/type_strings.h"
@@ -23,7 +24,7 @@ namespace discord {
 QSharedPointer<SendMessageCommand> ActionBase::Execute(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     action = SendMessageCommand::Create();
-    action->originalMessage = command.originalMessage;
+    action->originalMessageToken = command.originalMessageToken;
     action->user = command.user;
     action->originalCommandType = command.type;
     if(command.type != ECommandType::ct_timeout_active)
@@ -300,15 +301,16 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     {
         action->stopChain = true;
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
-        command.type = ct_create_recs_from_mobile_page;
-        command.variantHash = command.variantHash;
-        Command displayRecs = NewCommand(command.server, command.originalMessage, ct_display_page);
+        Command newRecsCommand = NewCommand(command.server, command.originalMessageToken, ct_create_recs_from_mobile_page);
+        newRecsCommand.variantHash = command.variantHash;
+        newRecsCommand.ids = command.ids;
+        Command displayRecs = NewCommand(command.server, command.originalMessageToken, ct_display_page);
         displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
         displayRecs.user = command.user;
         displayRecs.ids.push_back(0);
         CommandChain chain;
         chain.user = command.user;
-        chain.Push(std::move(command));
+        chain.Push(std::move(newRecsCommand));
         chain.Push(std::move(displayRecs));
         chain.hasFullParseCommand = true;
         action->commandsToReemit.push_back(std::move(chain));
@@ -588,14 +590,14 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     }
     else{
         auto previousPage = command.user->GetLastPageMessage();
-        if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessage.channelID)
+        if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessageToken.channelID)
         {
-            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
-            action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", your previous results have been updated with new data." );
+            action->text = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", here are the results:");
+            action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", your previous results have been updated with new data." );
             action->targetMessage = previousPage.message;
         }
         else
-            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+            action->text = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", here are the results:");
         //        action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
     }
 
@@ -687,14 +689,14 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + ", here are the results:");
     else {
         auto previousPage = command.user->GetLastPageMessage();
-        if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessage.channelID)
+        if(editPreviousPageIfPossible && previousPage.message.string().length() > 0 && previousPage.channel == command.originalMessageToken.channelID)
         {
-            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
-            action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", your previous results have been updated with new data." );
+            action->text = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", here are the results:");
+            action->diagnosticText = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", your previous results have been updated with new data." );
             action->targetMessage = previousPage.message;
         }
         else
-            action->text = QString::fromStdString(CreateMention(command.originalMessage.author.ID.string()) + ", here are the results:");
+            action->text = QString::fromStdString(CreateMention(command.originalMessageToken.authorID.string()) + ", here are the results:");
     }
 
 
@@ -1167,6 +1169,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

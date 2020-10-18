@@ -12,6 +12,7 @@
 #include "discord/command.h"
 #include "discord/limits.h"
 #include "discord/discord_user.h"
+#include "discord/discord_message_token.h"
 
 
 #include <mutex>
@@ -225,7 +226,7 @@ public:
     QString diagnosticText;
     QStringList reactionsToAdd;
     QSharedPointer<User> user;
-    SleepyDiscord::Message originalMessage;
+    MessageToken originalMessageToken;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
     ECommandType originalCommandType = ct_none;
     std::list<CommandChain> commandsToReemit;
@@ -239,5 +240,6 @@ CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , c
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const SleepyDiscord::Message& , bool shiftRight = true);
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const SleepyDiscord::Message&, bool shiftRight = true);
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, ECommandType type);
+Command NewCommand(QSharedPointer<discord::Server> server, const MessageToken& message, ECommandType type);
 }
 
