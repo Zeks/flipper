@@ -213,7 +213,7 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
 QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     Client::allowMessages = false;
-    ankerl::nanobench::Bench().minEpochIterations(2).run(
+    ankerl::nanobench::Bench().minEpochIterations(6).run(
                 [&](){
     command.user->initNewRecsQuery();
     auto ffnId = QString::number(command.ids.at(0));
