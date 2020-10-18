@@ -221,5 +221,17 @@ App{
         ]
         fileTags: ["proto"]
     }
+    Group{
+    name: "nanobench"
+    files: [
+        "third_party/nanobench/nanobench.cpp",
+        "third_party/nanobench/nanobench.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
 }
 

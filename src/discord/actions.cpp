@@ -213,8 +213,8 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
 QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     Client::allowMessages = false;
-    ankerl::nanobench::Bench().minEpochIterations(6).run(
-                [&](){
+//    ankerl::nanobench::Bench().minEpochIterations(6).run(
+//                [&](){
     command.user->initNewRecsQuery();
     auto ffnId = QString::number(command.ids.at(0));
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
@@ -227,13 +227,13 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     {
         action->text = userFavourites.errors.join(QStringLiteral("\n"));
         action->stopChain = true;
-        return;
+        return action;
     }
     // here, we check that we were able to fetch all favourites with desktop link and reschedule the task otherwise
     if(userFavourites.requiresFullParse)
     {
         action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
-        return;
+        return action;
     }
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
@@ -252,15 +252,15 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         command.user->SetFfnID(ffnId);
         action->text = QStringLiteral("Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495");
         action->stopChain = true;
-        return;
+        return action;
     }
 
     if(!refreshing)
         action->text = QStringLiteral("Recommendation list has been created for FFN ID: ") + QString::number(command.ids.at(0));
     environment->ficSource->ClearUserData();
     command.user->SetRngBustScheduled(true);
-    });
-    Client::allowMessages = true;
+//    });
+//    Client::allowMessages = true;
     return action;
 }
 

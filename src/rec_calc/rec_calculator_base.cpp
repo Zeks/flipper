@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/rec_calc/rec_calculator_base.h"
 #include "timeutils.h"
+#include "third_party/nanobench/nanobench.h"
 #include <QFuture>
 #include <QtConcurrent>
 
@@ -62,10 +63,13 @@ auto threadedIntListProcessor = [](QString taskName, int threadsToUse, QList<int
 bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
-    TimedAction relations("Fetching relations",[&](){
+    //TimedAction relations("Fetching relations",[&](){
+        ankerl::nanobench::Bench().minEpochIterations(6).run(
+                    [&](){
         FetchAuthorRelations();
-    });
-    relations.run();
+        });
+    //});
+    //relations.run();
     params->ratioCutoff = ratioCutoff;
     RunMatchingAndWeighting(params, filters, actions);
     QLOG_INFO() << "filtered authors after default pass:" << filteredAuthors.size();
@@ -476,8 +480,11 @@ void Save( const QMap<uint32_t, T>& data )
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
     qDebug() << "faves is of size: " << inputs.faves.size();
+    allAuthors.clear();
     allAuthors.reserve(inputs.faves.size());
-
+    ownFavourites = {};
+    maximumMatches = 0;
+    matchSum = 0;
     Roaring ignores = BuildIgnoreList();
 
     for(auto i = fetchedFics.cbegin(); i != fetchedFics.cend(); i++)
