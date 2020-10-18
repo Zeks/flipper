@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/genres.h"
 #include "Interfaces/recommendation_lists.h"
 #include "tasks/author_genre_iteration_processor.h"
+#include "third_party/nanobench/nanobench.h"
 
 
 #include <QSettings>
@@ -539,7 +540,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     if(task->data().id_packs().ffn_ids_size() == 0)
         return Status::OK;
-
+    //ankerl::nanobench::Bench().minEpochIterations(6).run([&](){
     auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
 
     auto ficResult = ficPackReader(reqContext, task);
@@ -555,6 +556,9 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     int baseVotes = recommendationsCreationParams->useMoodAdjustment ? 100 : 1;
 
     TimedAction dataPassAction("Passing data: ",[&](){
+
+
+        response->Clear();
         auto* targetList = response->mutable_list();
         targetList->set_success(list.success);
         QLOG_INFO() << "Notrash is of size: " <<  list.noTrashScore.size();
@@ -660,8 +664,9 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         response->mutable_list()->mutable_used_params()->set_use_mood_filtering(recommendationsCreationParams->useMoodAdjustment);
         response->mutable_list()->mutable_used_params()->set_use_dislikes(recommendationsCreationParams->useDislikes);
         response->mutable_list()->mutable_used_params()->set_use_dead_fic_ignore(recommendationsCreationParams->useDeadFicIgnore);
-    });
+        //});
 
+    });
     dataPassAction.run();
     QLOG_INFO() << "Byte size will be: " << response->ByteSizeLong();
     return Status::OK;

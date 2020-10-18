@@ -596,7 +596,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         sumratio.authors = tempSummary.authors;
         sumratio.minListSize = item.minListSize;
         sumratio.maxListSize= item.maxListSize;
-        QLOG_INFO() << "ratio: " <<  i.key() << " own size: " << ownFavourites.cardinality() << " projected cardinality: " << ownFavourites.cardinality() * 200  << " sum cardinality: " << sumratio.ficsAfterIgnore.cardinality();
+        //QLOG_INFO() << "ratio: " <<  i.key() << " own size: " << ownFavourites.cardinality() << " projected cardinality: " << ownFavourites.cardinality() * 200  << " sum cardinality: " << sumratio.ficsAfterIgnore.cardinality();
         if(ratioCutoff == std::numeric_limits<uint16_t>::max() && (sumratio.ficsAfterIgnore.cardinality() > (ownFavourites.cardinality() * 200)))
         {
             QLOG_INFO() << "Picking ratio: " << i.key();
