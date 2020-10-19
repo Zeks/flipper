@@ -542,10 +542,9 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                     auto& ratioObject = tempResult.ratioInfo[ratio];
                     ratioObject.ratio = ratio;
                     ratioObject.authors++;
-                    ratioObject.totalFicEntries+=author.sizeAfterIgnore;
                     if(ratioObject.minMatches > author.matches)
                         ratioObject.minMatches = author.matches;
-                    ratioObject.fics|=tempAuthorRoaring;
+                    //ratioObject.fics|=tempAuthorRoaring;
                     ratioObject.ficsAfterIgnore|=tempAuthorRoaring.operator-(ignores);
 
                     if(ratioObject.minListSize > author.sizeAfterIgnore)
@@ -585,18 +584,13 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         int tempCardinality = tempSummary.fics.cardinality();
         const auto& item = i.value();
         tempSummary.authors += item.authors;
-        tempSummary.fics |= item.fics;
         tempSummary.ficsAfterIgnore |= item.ficsAfterIgnore;
-        tempSummary.totalFicEntries+=item.totalFicEntries;
-        tempSummary.averageListSize = tempSummary.totalFicEntries/tempSummary.authors;
 
         auto& sumratio = funcResult.ratioSumInfo[i.key()];
         sumratio.ratio = i.key();
         sumratio.lastFicsAdded = tempSummary.fics.cardinality() - tempCardinality;
         sumratio.fics = tempSummary.fics;
         sumratio.ficsAfterIgnore = tempSummary.ficsAfterIgnore;
-        sumratio.totalFicEntries = tempSummary.totalFicEntries;
-        sumratio.averageListSize = tempSummary.averageListSize;
         sumratio.authors = tempSummary.authors;
         sumratio.minListSize = item.minListSize;
         sumratio.maxListSize= item.maxListSize;

@@ -89,23 +89,21 @@ struct AutoAdjustmentAndFilteringResult{
 };
 
 struct RatioInfo{
-    int totalFicEntries = 0;
     uint16_t authors = 0;
     uint16_t ratio = 0;
     uint16_t minListSize = std::numeric_limits<uint16_t>::max();
     uint16_t maxListSize = 0;
     uint16_t minMatches = std::numeric_limits<uint16_t>::max();
 
-    Roaring fics;
+    //Roaring fics;
     Roaring ficsAfterIgnore;
     RatioInfo& operator+=(const RatioInfo& rhs){
 
         this->authors += rhs.authors;
-        this->totalFicEntries+= rhs.totalFicEntries;
         this->ratio = rhs.ratio;
         if(this->minMatches > rhs.minMatches)
             this->minMatches = rhs.minMatches;
-        this->fics |= rhs.fics;
+        //this->fics |= rhs.fics;
         this->ficsAfterIgnore |= rhs.ficsAfterIgnore;
         if(this->minListSize > rhs.minListSize)
             this->minListSize = rhs.minListSize;
@@ -120,8 +118,6 @@ struct RatioSumInfo{
     uint16_t authors = 0;
     uint16_t ratio = 0;
     uint16_t minMatches = std::numeric_limits<uint16_t>::max();
-    uint16_t averageListSize = 0;
-    uint32_t totalFicEntries = 0;
     int lastFicsAdded = 0;
     uint16_t minListSize = std::numeric_limits<uint16_t>::max();
     uint16_t maxListSize = 0;
