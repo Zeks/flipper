@@ -16,6 +16,7 @@
 #include "third_party/ctre.hpp"
 
 namespace discord {
+std::atomic<bool> Client::allowMessages = true;
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
     SleepyDiscord::DiscordClient(token, numOfThreads)
 {
@@ -56,7 +57,7 @@ QSharedPointer<discord::Server> Client::InitDiscordServerIfNecessary(SleepyDisco
             QSharedPointer<discord::Server> server(new discord::Server());
             server->SetServerId(serverId);
             server->SetServerName(QString::fromStdString(sleepyServer.cast().name));
-            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
             database::discord_queries::WriteServer(dbToken->db, server);
             servers->LoadServer(serverId);
         }
@@ -119,7 +120,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
 
     const auto commandPrefix = server->GetCommandPrefix();
     if(sv == botPrefixRequest)
-        sendMessage(message.channelID, "Prefix for this server is: " + commandPrefix);
+        sendMessage(message.channelID, "Prefix for this server is: " + std::string(commandPrefix));
 
     if(sv.substr(0, commandPrefix.length()) != commandPrefix)
         return;
@@ -139,7 +140,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         channelToServerHash.push(message.channelID.number(), message.serverID.number());
     }
 
-    executor->Push(commands);
+    executor->Push(std::move(commands));
 }
 
 static std::string CreateMention(const std::string& string){
@@ -174,12 +175,12 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
                 command = CreateChangeRecommendationsPageCommand(user,server, message, scrollDirection);
             else
                 command = CreateChangeHelpPageCommand(user,server, message, scrollDirection);
-            executor->Push(command);
+            executor->Push(std::move(command));
         }
         else if(emoji.name == "🔁")
         {
             auto newRoll = CreateRollCommand(user,server, message);
-            executor->Push(newRoll);
+            executor->Push(std::move(newRoll));
         }
     }
     else if(userID != getID()){
@@ -201,6 +202,22 @@ void Client::timerEvent(QTimerEvent *)
 void discord::Client::onReady(SleepyDiscord::Ready )
 {
     botPrefixRequest = "<@!" + getID().string() + "> prefix";
+}
+
+SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message, const SleepyDiscord::Embed& embed)
+{
+    if(allowMessages)
+        return SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed);
+    SleepyDiscord::Response dummyResponse;
+    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
+}
+
+SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message)
+{
+    if(allowMessages)
+        return SleepyDiscord::DiscordClient::sendMessage(channelID, message);
+    SleepyDiscord::Response dummyResponse;
+    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
 }
 }
 

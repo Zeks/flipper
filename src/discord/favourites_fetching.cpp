@@ -11,15 +11,15 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
     FavouritesFetchResult resultingData;
     resultingData.ffnId = ffnId;
 
-    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("pageCache");
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("pageCache"));
 
-    TimedAction linkGet("Link fetch", [&](){
+    TimedAction linkGet(QStringLiteral("Link fetch"), [&](){
         parsers::ffn::UserFavouritesParser parser;
         auto result = parser.FetchDesktopUserPage(ffnId, dbToken->db, cacheMode,isId);
         parsers::ffn::QuickParseResult quickResult;
 
         if(!result)
-            resultingData.errors.push_back("Could not load user page on FFN. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed.");
+            resultingData.errors.push_back(QStringLiteral("Could not load user page on FFN. Please send your FFN ID and this error to ficfliper@gmail.com if you want it fixed."));
 
         parser.cacheDbToUse = dbToken->db;
         if(resultingData.errors.size() == 0)
@@ -28,7 +28,7 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
             resultingData.ffnId = quickResult.mobileUserId;
             if(!quickResult.validFavouritesCount){
                 resultingData.hasFavourites = false;
-                resultingData.errors.push_back("Could not load favourites from provided user profile.");
+                resultingData.errors.push_back(QStringLiteral("Could not load favourites from provided user profile."));
             }
             else {
                 // we will fetch first 500 regardless to avoid excessive querying later
@@ -48,12 +48,12 @@ FavouritesFetchResult TryFetchingDesktopFavourites(QString ffnId, ECacheMode cac
 FavouritesFetchResult FetchMobileFavourites(QString ffnId, ECacheMode cacheMode)
 {
     FavouritesFetchResult data;
-    TimedAction linkGet("Link fetch", [&](){
+    TimedAction linkGet(QStringLiteral("Link fetch"), [&](){
         parsers::ffn::discord::DiscordMobileFavouritesFetcher parser;
         parser.userId = ffnId;
         auto result = parser.Execute(cacheMode);
         if(result.size() == 0)
-            data.errors.push_back("Could not load favourites from provided user profile.");
+            data.errors.push_back(QStringLiteral("Could not load favourites from provided user profile."));
         data.links += result;
     });
     linkGet.run();

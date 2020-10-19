@@ -4,7 +4,7 @@
 namespace discord {
 
 struct FandomFilterToken{
-    FandomFilterToken(){};
+    FandomFilterToken()=default;
     FandomFilterToken(int id, bool includeCrossovers){
         this->id = id;
         this->includeCrossovers = includeCrossovers;
@@ -16,6 +16,7 @@ struct FandomFilterToken{
 struct FandomFilter{
     void RemoveFandom(int id){
         fandoms.remove(id);
+
         QList<FandomFilterToken> newTokens;
         for(auto token: qAsConst(tokens))
         {
@@ -40,3 +41,4 @@ struct FandomFilter{
     FandomFilterToken nullToken;
 };
 }
+Q_DECLARE_TYPEINFO(discord::FandomFilterToken, Q_MOVABLE_TYPE);

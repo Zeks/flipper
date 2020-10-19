@@ -413,8 +413,8 @@ QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db
 
     QSqlQuery q(db);
     q.prepare(qs);
-    auto it = query->bindings.begin();
-    auto end = query->bindings.end();
+    auto it = query->bindings.cbegin();
+    auto end = query->bindings.cend();
     while(it != end)
     {
         qDebug() << it->key << " " << it->value;

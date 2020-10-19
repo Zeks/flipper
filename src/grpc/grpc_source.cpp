@@ -72,12 +72,12 @@ std::string TS(const QString& s)
 
 QDateTime DFS(const std::string& s)
 {
-    return QDateTime::fromString(QString::fromStdString(s), "yyyyMMdd");
+    return QDateTime::fromString(QString::fromStdString(s), QStringLiteral("yyyyMMdd"));
 }
 
 std::string DTS(const QDateTime & date)
 {
-    return date.toString("yyyyMMdd").toStdString();
+    return date.toString(QStringLiteral("yyyyMMdd")).toStdString();
 }
 
 
@@ -188,8 +188,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
     recommendations->set_display_purged_fics(filter.displayPurgedFics);
     {
-        auto it= filter.recsHash.begin();
-        auto itEnd = filter.recsHash.end();
+        auto it= filter.recsHash.cbegin();
+        auto itEnd = filter.recsHash.cend();
         while(it != itEnd)
         {
             userData->mutable_recommendation_list()->add_list_of_fics(it.key());
@@ -198,8 +198,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
         }
     }
     {
-        auto it= filter.scoresHash.begin();
-        auto itEnd = filter.scoresHash.end();
+        auto it= filter.scoresHash.cbegin();
+        auto itEnd = filter.scoresHash.cend();
         while(it != itEnd)
         {
             userData->mutable_scores_list()->add_list_of_fics(it.key());
@@ -365,12 +365,12 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 QString RelevanceToString(float value)
 {
     if(value > 0.8f)
-        return "#c#";
+        return QStringLiteral("#c#");
     if(value > 0.5f)
-        return "#p#";
+        return QStringLiteral("#p#");
     if(value > 0.2f)
-        return "#b#";
-    return "#b#";
+        return QStringLiteral("#b#");
+    return QStringLiteral("#b#");
 }
 
 QString GenreDataToString(QList<genre_stats::GenreBit> data)
@@ -387,18 +387,18 @@ QString GenreDataToString(QList<genre_stats::GenreBit> data)
     {
         for(const auto& genreBit : std::as_const(genre.genres))
         {
-            const auto temp = genreBit.split(",");
+            const auto temp = genreBit.split(QStringLiteral(","));
             for(const auto& stringBit : temp)
             {
                 if(std::abs(maxValue - genre.relevance) < 0.1f)
-                    resultList+="#c#" + stringBit;
+                    resultList+=QStringLiteral("#c#") + stringBit;
                 else
                     resultList+=RelevanceToString(genre.relevance/maxValue) + stringBit;
             }
         }
     }
 
-    QString result =  resultList.join(",");
+    QString result =  resultList.join(QStringLiteral(","));
     return result;
 }
 
@@ -443,9 +443,9 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fanfic& coreFi
 
     coreFic.genreString = FS(protoFic.genres());
     coreFic.identity.web.ffn = protoFic.site_pack().ffn().id();  // temporary
-    coreFic.webSite = "ffn"; // temporary
+    coreFic.webSite = QStringLiteral("ffn"); // temporary
 
-    coreFic.urls["ffn"] = QString::number(coreFic.identity.web.ffn); // temporary
+    coreFic.urls[QStringLiteral("ffn")] = QString::number(coreFic.identity.web.ffn); // temporary
     for(auto i =0; i < protoFic.real_genres_size(); i++)
         coreFic.statistics.realGenreData.push_back({{FS(protoFic.real_genres(i).genre())}, protoFic.real_genres(i).relevance()});
 
@@ -554,8 +554,8 @@ bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::Fav
     stats.slashRatio = protoStats.slash_rating();
     stats.smutRatio = protoStats.smut_rating();
 
-    stats.firstPublished = QDate::fromString(FS(protoStats.published_first()), "yyyyMMdd");
-    stats.lastPublished = QDate::fromString(FS(protoStats.published_last()), "yyyyMMdd");
+    stats.firstPublished = QDate::fromString(FS(protoStats.published_first()), QStringLiteral("yyyyMMdd"));
+    stats.lastPublished = QDate::fromString(FS(protoStats.published_last()), QStringLiteral("yyyyMMdd"));
 
     stats.moodSad = protoStats.mood_rating(0);
     stats.moodNeutral = protoStats.mood_rating(1);
@@ -591,23 +591,23 @@ bool FavListLocalToProto(const core::FavListDetails &stats, ProtoSpace::FavListD
     protoStats->set_slash_rating(stats.slashRatio);
     protoStats->set_smut_rating(stats.smutRatio);
 
-    protoStats->set_published_first(stats.firstPublished.toString("yyyyMMdd").toStdString());
-    protoStats->set_published_last(stats.lastPublished.toString("yyyyMMdd").toStdString());
+    protoStats->set_published_first(stats.firstPublished.toString(QStringLiteral("yyyyMMdd")).toStdString());
+    protoStats->set_published_last(stats.lastPublished.toString(QStringLiteral("yyyyMMdd")).toStdString());
     protoStats->add_mood_rating(stats.moodSad);
     protoStats->add_mood_rating(stats.moodNeutral);
     protoStats->add_mood_rating(stats.moodHappy);
 
 
-    for(auto i = stats.sizeFactors.begin(); i !=stats.sizeFactors.end(); i++)
+    for(auto i = stats.sizeFactors.cbegin(); i !=stats.sizeFactors.cend(); i++)
         protoStats->add_size_rating(i.value());
 
-    for(auto i = stats.genreFactors.begin(); i !=stats.genreFactors.end(); i++)
+    for(auto i = stats.genreFactors.cbegin(); i !=stats.genreFactors.cend(); i++)
     {
         protoStats->add_genres(TS(i.key()));
         protoStats->add_genres_percentages(i.value());
     }
 
-    for(auto i = stats.fandomsConverted.begin(); i !=stats.fandomsConverted.end(); i++)
+    for(auto i = stats.fandomsConverted.cbegin(); i !=stats.fandomsConverted.cend(); i++)
     {
         protoStats->add_fandoms(i.key());
         protoStats->add_fandoms_counts(i.value());
@@ -643,13 +643,13 @@ public:
     ServerStatus GetStatus();
     bool GetInternalIDsForFics(QVector<core::Identity> * ficList);
     bool GetFFNIDsForFics(QVector<core::Identity> * ficList);
-    void FetchData(core::StoryFilter filter, QVector<core::Fanfic> * fics);
+    void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic> * fics);
     void FetchFic(int ficId, QVector<core::Fanfic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
-    int GetFicCount(core::StoryFilter filter);
+    int GetFicCount(const core::StoryFilter& filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
     bool GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
     core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
-    void ProcessStandardError(grpc::Status status);
+    void ProcessStandardError(const grpc::Status &status);
     core::FavListDetails GetStatsForFicList(QVector<core::Identity> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
@@ -695,7 +695,7 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     serverStatus.lastDBUpdate = QString::fromStdString(response->last_database_update());
     serverStatus.motd = proto_converters::FS(response->message_of_the_day());
     serverStatus.messageRequired = response->need_to_show_motd();
-    int ownProtocolVersion = QString(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
+    int ownProtocolVersion = QStringLiteral(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
     serverStatus.protocolVersionMismatch = ownProtocolVersion != response->protocol_version();
     return serverStatus;
 }
@@ -765,7 +765,7 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
     return true;
 }
 
-void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic> * fics)
+void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core::Fanfic> * fics)
 {
     grpc::ClientContext context;
 
@@ -801,7 +801,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fanfic
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
 
-    for(auto i = this->userData.ignoredFandoms.begin(); i != this->userData.ignoredFandoms.end(); i++)
+    for(auto i = this->userData.ignoredFandoms.cbegin(); i != this->userData.ignoredFandoms.cend(); i++)
     {
         auto key = i.key();
         QLOG_INFO() << "adding fandom ignore: " << key << " " << i.value();
@@ -855,7 +855,7 @@ void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fanfic> *fics, core::
     proto_converters::ProtoFicToLocalFic(response->fanfic(), (*fics)[static_cast<size_t>(0)]);
 }
 
-int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
+int FicSourceGRPCImpl::GetFicCount(const core::StoryFilter& filter)
 {
     grpc::ClientContext context;
 
@@ -885,7 +885,7 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
 
-    for(auto i = this->userData.ignoredFandoms.begin(); i != this->userData.ignoredFandoms.end(); i++)
+    for(auto i = this->userData.ignoredFandoms.cbegin(); i != this->userData.ignoredFandoms.cend(); i++)
     {
         ignoredFandoms->add_fandom_ids(i.key());
         ignoredFandoms->add_ignore_crossovers(i.value());
@@ -1104,7 +1104,7 @@ core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationLi
 }
 
 
-void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
+void FicSourceGRPCImpl::ProcessStandardError(const grpc::Status& status)
 {
     error.clear();
     if(status.ok())
@@ -1140,7 +1140,7 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
         //intentionally empty
         break;
     }
-    error+=QString::fromStdString(status.error_message());
+    error+= "GRPC:" + QString::fromStdString(status.error_message());
 }
 
 core::FavListDetails FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identity> ficList)
@@ -1369,7 +1369,7 @@ FicSourceGRPC::~FicSourceGRPC()
 {
 
 }
-void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fanfic> *fics)
+void FicSourceGRPC::FetchData(const core::StoryFilter &filter, QVector<core::Fanfic> *fics)
 {
     if(!impl)
         return;
@@ -1384,7 +1384,7 @@ void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fanfic> *fics, core::Story
     impl->FetchFic(ficId, fics, idType);
 }
 
-int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
+int FicSourceGRPC::GetFicCount(const core::StoryFilter &filter)
 {
     if(!impl)
         return 0;

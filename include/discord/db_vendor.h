@@ -24,7 +24,7 @@ struct LockedDatabase : public core::Database{
 class DatabaseVendor{
 public:
     QSharedPointer<LockedDatabase> GetDatabase(QString name);
-    void AddConnectionToken(QString, SqliteConnectionToken);
+    void AddConnectionToken(QString, const SqliteConnectionToken &);
 private:
     QSqlDatabase InstantiateDatabase(const SqliteConnectionToken&);
     SqliteConnectionToken users;

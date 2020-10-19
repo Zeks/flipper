@@ -28,7 +28,7 @@ namespace interfaces {
 class FFNAuthors : public Authors
 {
 public:
-    virtual ~FFNAuthors();
+    virtual ~FFNAuthors() = default;
     bool EnsureId(core::AuthorPtr) override;
     //bool RemoveAuthor(core::AuthorPtr author) override;
 

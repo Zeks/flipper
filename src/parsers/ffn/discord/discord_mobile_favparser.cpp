@@ -58,6 +58,7 @@ QSet<QString> DiscordMobileFavouritesFetcher::Execute(ECacheMode cacheMode = ECa
     // generating all of the urls that will need to be grabbed
     QStringList mobileUrls;
     // 26th page onwards can't be reached without m.
+    mobileUrls.reserve(amountOfPagesToGrab);
     for(int i = pageToStartFrom; i <= amountOfPagesToGrab; i++)
         mobileUrls.push_back(prototype + "&s=0&cid=0&p=" + QString::number(i));
 

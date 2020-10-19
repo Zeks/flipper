@@ -31,7 +31,7 @@ struct UserData{
         ficsForAuthorSearch.clear();
         ficsForSelection.clear();
         ignoredFandoms.clear();
-        token = "";
+        token = QStringLiteral("");
     };
     QSet<int> allTaggedFics;
     QSet<int> allSnoozedFics;

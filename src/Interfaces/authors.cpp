@@ -27,7 +27,7 @@ namespace interfaces {
 
 
 
-Authors::~Authors(){}
+
 void Authors::Clear()
 {
     authors.clear();
@@ -56,7 +56,7 @@ void Authors::ClearCache()
     cachedAuthorToTagStats.clear();
 }
 
-void Authors::AddPreloadedAuthor(core::AuthorPtr author)
+void Authors::AddPreloadedAuthor(const core::AuthorPtr& author)
 {
     if(!author)
         return;
@@ -67,7 +67,7 @@ void Authors::AddPreloadedAuthor(core::AuthorPtr author)
 
 void Authors::IndexAuthors()
 {
-    for(auto author : qAsConst(authors))
+    for(const auto& author : qAsConst(authors))
     {
         authorsById[author->id] = author;
         const auto websites = author->GetWebsites();
@@ -125,7 +125,7 @@ bool Authors::EnsureAuthorLoaded(int id)
     return true;
 }
 
-bool Authors::UpdateAuthorRecord(core::AuthorPtr author)
+bool Authors::UpdateAuthorRecord(const core::AuthorPtr& author)
 {
     auto result = database::puresql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
     database::puresql::WipeAuthorStatistics(author,db);
@@ -340,7 +340,7 @@ int Authors::GetFicCount(int authorId)
 
 }
 
-QList<int> Authors::GetFicList(core::AuthorPtr author) const
+QList<int> Authors::GetFicList(const core::AuthorPtr& author) const
 {
     QList<int> result;
     if(!author)
@@ -374,7 +374,7 @@ QHash<int, QSet<int> > Authors::LoadFullFavouritesHashset()
     return result;
 }
 
-void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
+void LoadIDForAuthor(const core::AuthorPtr& author, QSqlDatabase db)
 {
     const auto websites = author->GetWebsites();
     for(const auto& website : websites)
@@ -409,8 +409,9 @@ bool Authors::EnsureId(core::AuthorPtr author, QString website)
 
     //QString url = author->url(website);
     auto webId = author->GetWebID(website);
-    if(authorsByWebID[website].contains(webId) && authorsByWebID[website][webId])
-        author = authorsByWebID[website][webId];
+    const auto& it = authorsByWebID[website].find(webId);
+    if(it != authorsByWebID[website].cend() && *it)
+        author = *it;
 
     if(author->GetIdStatus() == core::AuthorIdStatus::unassigned)
         LoadIDForAuthor(author, db);
@@ -495,7 +496,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     if(!EnsureAuthorLoaded(authorId))
         return result;
 
-    auto author = authorsById[authorId];
+    auto& author = authorsById[authorId];
 
     result->listId = list->id;
     result->usedTag = list->tagToUse;;
@@ -505,7 +506,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
 
     result->matchesWithReference= database::puresql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db).data;
     if(result->matchesWithReference == 0)
-        result->matchRatio = 999999;
+        result->matchRatio = std::numeric_limits<double>::max();
     else
     {
         //qDebug() << "Have matches for: " << author->name;
@@ -523,7 +524,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
 //    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
 //}
 
-bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QString website , QList<int> ids)
+bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QString website , const QList<int>& ids)
 {
     if(!EnsureAuthorLoaded(authorId) || ids.isEmpty())
         return false;

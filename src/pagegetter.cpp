@@ -41,7 +41,7 @@ class PageGetterPrivate : public QObject
 {
 Q_OBJECT
 public:
-    PageGetterPrivate(QObject *parent=nullptr);
+    explicit PageGetterPrivate(QObject *parent=nullptr);
     QNetworkAccessManager manager;
     QNetworkRequest currentRequest;
     QNetworkRequest* currentReply= nullptr;
@@ -382,7 +382,7 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
     int counter = 0;
     for (const auto& url : urls)
     {
-        qDebug() << "loading page: " << url;
+        qDebug() << QStringLiteral("loading page: ") << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(url, cacheMode);
         result.pageIndex = counter+1;
@@ -415,11 +415,11 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
     }
 }
 
-void PageThreadWorker::FandomTask(FandomParseTask task)
+void PageThreadWorker::FandomTask(const FandomParseTask& task)
 {
     FuncCleanup f([&](){working = false;});
     //qDebug() << updateLimit;
-    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+    database::Transaction pcTransaction(QSqlDatabase::database(QStringLiteral("PageCache")));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     pager->WipeOldCache();
@@ -427,7 +427,7 @@ void PageThreadWorker::FandomTask(FandomParseTask task)
     QStringList failedPages;
     ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages, task.delay);
     QStringList voidPages;
-    qDebug() << "reacquiring urls: " << failedPages;
+    qDebug() << QStringLiteral("reacquiring urls: ") << failedPages;
     ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages, task.delay);
     for(const auto& page : std::as_const(voidPages))
     {
@@ -448,7 +448,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int del
     // kinda have to split pagecache db from service db I guess
     // which is only natural anyway... probably
     // still not helping for multithreading later on
-    auto db = QSqlDatabase::database("PageCache");
+    auto db = QSqlDatabase::database(QStringLiteral("PageCache"));
     database::Transaction pcTransaction(db);
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
@@ -485,20 +485,20 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int del
 }
 static QString CreateURL(QString str)
 {
-    return "https://www.fanfiction.net/" + str;
+    return QStringLiteral("https://www.fanfiction.net/") + str;
 }
 
 QString PageThreadWorker::GetNext(QString text)
 {
     QString nextUrl;
-    QRegExp rxEnd(QRegExp::escape("Next &#187"));
+    thread_local QRegExp rxEnd(QRegExp::escape(QStringLiteral("Next &#187")));
     int indexEnd = rxEnd.indexIn(text);
     if(indexEnd != -1)
         indexEnd-=2;
     int posHref = indexEnd - 400 + text.midRef(indexEnd - 400,400).lastIndexOf("href='");
     nextUrl = CreateURL(text.mid(posHref+6, indexEnd - (posHref+6)));
-    if(!nextUrl.contains("&p="))
-        nextUrl = "";
+    if(!nextUrl.contains(QStringLiteral("&p=")))
+        nextUrl = QStringLiteral("");
     //indexEnd = rxEnd.indexIn(text);
     return nextUrl;
 }
@@ -538,12 +538,12 @@ QDate PageThreadWorker::GrabMinUpdate(QString text)
     QList<QDate> dates;
     QDateTime minDate;
     QDate result;
-    QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
+    thread_local QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
     int startFrom = 0;
     int indexStart = -1;
     do{
         indexStart = rx.indexIn(text, startFrom);
-        if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
+        if(indexStart != 1 && !rx.cap(1).trimmed().replace(QStringLiteral("-"),QStringLiteral("")).isEmpty())
         {
             minDate.setTime_t(rx.cap(1).toInt());
             dates.push_back(minDate.date());

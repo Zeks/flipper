@@ -32,7 +32,7 @@ namespace interfaces {
 
 class Fanfics : public IDBWebIDIndex {
     public:
-    virtual ~Fanfics();
+    virtual ~Fanfics() = default;
     void ClearQueues() {
         updateQueue.clear();
         insertQueue.clear();
@@ -57,7 +57,7 @@ class Fanfics : public IDBWebIDIndex {
     virtual bool IsEmptyQueues();
     virtual int GetIdForUrl(QString url) = 0;
 
-    bool ReprocessFics(QString where, QString website,  bool useDirectIds = false, std::function<void(int)> f = std::function<void(int)>());
+    bool ReprocessFics(QString where, QString website,  bool useDirectIds = false, const std::function<void(int)>& f = std::function<void(int)>());
 
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
 

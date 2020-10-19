@@ -73,9 +73,9 @@ public:
     FicSourceGRPC(QString connectionString, QString userToken, int deadline);
     virtual ~FicSourceGRPC() override;
 
-    virtual void FetchData(core::StoryFilter filter, QVector<core::Fanfic>*) override;
+    virtual void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic>*) override;
     void FetchFic(int ficId, QVector<core::Fanfic>*fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
-    virtual int GetFicCount(core::StoryFilter filter) override;
+    virtual int GetFicCount(const core::StoryFilter& filter) override;
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
 
     core::DiagnosticsForReclist GetDiagnosticsForRecListFromServer(QSharedPointer<core::RecommendationList> recList);

@@ -34,7 +34,7 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
     if(!firstPass)
         return false;
 
-    auto cleanRatio = author.matches != 0 ? static_cast<double>(author.fullListSize)/static_cast<double>(author.matches) : 999999;
+    auto cleanRatio = author.matches != 0 ? static_cast<double>(author.fullListSize)/static_cast<double>(author.matches) : std::numeric_limits<double>::max();
     if(author.listDiff.touchyDifference.has_value())
     {
         auto authorcoef = author.listDiff.touchyDifference.value();
@@ -63,14 +63,16 @@ bool RecCalculatorImplMoodAdjusted::WeightingIsValid() const
 {
     return RecCalculatorImplWeighted::WeightingIsValid();
 }
-
-RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors input, genre_stats::GenreMoodData moodData):
+std::once_flag moodsFlag;
+RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(const RecInputVectors& input, const genre_stats::GenreMoodData& moodData):
     RecCalculatorImplWeighted(input), moodData(moodData)
 {
-    QStringList moodList;
-    moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+    static QStringList moodList;
+    std::call_once(moodsFlag, [&](){
+        moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
+    });
 
-    for(auto i = input.moods.begin(); i != input.moods.end(); i++)
+    for(auto i = input.moods.cbegin(); i != input.moods.cend(); i++)
     {
         double neutralDifference = 0., touchyDifference = 0.;
         auto authorData = i.value();
@@ -100,8 +102,8 @@ RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(RecInputVectors inp
 
 std::optional<double> RecCalculatorImplMoodAdjusted::GetNeutralDiffForLists(uint32_t author)
 {
-    auto it = moodDiffs.find(author);
-    if(it == moodDiffs.end())
+    auto it = std::as_const(moodDiffs).find(author);
+    if(it == moodDiffs.cend())
         return {};
 
     return it.value().neutralDifference;
@@ -109,8 +111,8 @@ std::optional<double> RecCalculatorImplMoodAdjusted::GetNeutralDiffForLists(uint
 
 std::optional<double> RecCalculatorImplMoodAdjusted::GetTouchyDiffForLists(uint32_t author)
 {
-    auto it = moodDiffs.find(author);
-    if(it == moodDiffs.end())
+    auto it = std::as_const(moodDiffs).find(author);
+    if(it == moodDiffs.cend())
         return {};
 
     return it.value().touchyDifference;

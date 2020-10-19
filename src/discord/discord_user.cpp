@@ -4,7 +4,7 @@
 
 using namespace std::chrono;
 namespace discord{
-User::User(QString userID, QString ffnID, QString name)
+User::User(QString userID, QString ffnID, QString name):lock(QReadWriteLock::Recursive)
 {
     InitFicsPtr();
     this->userID = userID;
@@ -12,7 +12,7 @@ User::User(QString userID, QString ffnID, QString name)
     this->userName = name;
 }
 
-User::User(const User &other)
+User::User(const User &other):lock(QReadWriteLock::Recursive)
 {
     this->InitFicsPtr();
     *this = other;
@@ -124,13 +124,13 @@ void User::SetFfnID(QString id)
     this->ffnID = id;
 }
 
-void User::SetPerfectRngFics(QSet<int> perfectRngFics)
+void User::SetPerfectRngFics(const QSet<int>& perfectRngFics)
 {
     QWriteLocker locker(&lock);
     this->perfectRngFics = perfectRngFics;
 }
 
-void User::SetGoodRngFics(QSet<int> goodRngFics)
+void User::SetGoodRngFics(const QSet<int>& goodRngFics)
 {
     QWriteLocker locker(&lock);
     this->goodRngFics = goodRngFics;
@@ -184,7 +184,7 @@ void User::SetFandomFilter(int id, bool displayCrossovers)
     filteredFandoms.tokens.push_back({id, displayCrossovers});
 }
 
-void User::SetFandomFilter(FandomFilter filter)
+void User::SetFandomFilter(const FandomFilter& filter)
 {
     QWriteLocker locker(&lock);
     filteredFandoms = filter;
@@ -196,7 +196,7 @@ FandomFilter User::GetCurrentFandomFilter() const
     return filteredFandoms;
 }
 
-void User::SetPositionsToIdsForCurrentPage(QHash<int, int> newData)
+void User::SetPositionsToIdsForCurrentPage(const QHash<int, int>& newData)
 {
     QWriteLocker locker(&lock);
     positionToId = newData;
@@ -208,7 +208,7 @@ FandomFilter User::GetCurrentIgnoredFandoms() const
     return ignoredFandoms;
 }
 
-void User::SetIgnoredFandoms(FandomFilter ignores)
+void User::SetIgnoredFandoms(const FandomFilter& ignores)
 {
     QWriteLocker locker(&lock);
     ignoredFandoms = ignores;
@@ -228,7 +228,7 @@ QSet<int> User::GetIgnoredFics()  const
     return ignoredFics;
 }
 
-void User::SetIgnoredFics(QSet<int> fics)
+void User::SetIgnoredFics(const QSet<int>& fics)
 {
     QWriteLocker locker(&lock);
     ignoredFics = fics;
@@ -479,7 +479,7 @@ WordcountFilter User::GetWordcountFilter() const
     return wordcountFilter;
 }
 
-void User::SetWordcountFilter(const WordcountFilter &value)
+void User::SetWordcountFilter(WordcountFilter value)
 {
     QWriteLocker locker(&lock);
     wordcountFilter = value;
@@ -541,16 +541,17 @@ bool Users::HasUser(QString user)
     return false;
 }
 
-QSharedPointer<User> Users::GetUser(QString user)
+QSharedPointer<User> Users::GetUser(QString user) const
 {
-    if(!users.contains(user))
+    auto it = users.find(user);
+    if(it == users.cend())
         return {};
-    return users[user];
+    return *it;
 }
 
 bool Users::LoadUser(QString name)
 {
-    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     auto user = database::discord_queries::GetUser(dbToken->db, name).data;
     if(!user)
         return false;
@@ -572,8 +573,10 @@ void Users::ClearInactiveUsers()
     std::sort(userVec.begin(), userVec.end(), [](const auto& user1, const auto& user2){
         return user1->LastActive() > user2->LastActive();
     });
-    if(userVec.size() > 100)
-        userVec.erase(userVec.begin()+25, userVec.end());
+    static const int activeUserDataLimit = 100;
+    static const int startOfUserDataEraseRange = 25;
+    if(userVec.size() > activeUserDataLimit)
+        userVec.erase(userVec.begin()+startOfUserDataEraseRange, userVec.end());
     users.clear();
     for(const auto& user: userVec)
         users[user->UserID()] = user;

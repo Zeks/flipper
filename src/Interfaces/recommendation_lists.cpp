@@ -266,7 +266,7 @@ void RecommendationLists::DeleteLocalList(int listId)
     QList<QPair<int, int>> keysToRemove;
 
 
-    for(auto i = grpcCacheForLists.begin(); i != grpcCacheForLists.end(); i++){
+    for(auto i = grpcCacheForLists.cbegin(); i != grpcCacheForLists.cend(); i++){
         if(i.key().first == listId)
             keysToRemove.push_back(i.key());
     }
@@ -319,7 +319,7 @@ core::AuhtorStatsPtr RecommendationLists::CreateAuthorRecommendationStatsForList
 
     result->matchesWithReference = opResult.data;
     if(result->matchesWithReference == 0)
-        result->matchRatio = 999999;
+        result->matchRatio = std::numeric_limits<double>::max();
     else
         result->matchRatio = static_cast<double>(result->totalRecommendations)/static_cast<double>(result->matchesWithReference);
     result->isValid = true;

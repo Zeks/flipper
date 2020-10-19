@@ -46,7 +46,7 @@ App{
 
     Precompiled{condition:Environment.usePrecompiledHeader}
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.3"])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.3", "FMT_HEADER_ONLY"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",
@@ -54,6 +54,7 @@ App{
         sourceDirectory + "/libs",
         sourceDirectory + "/third_party/zlib",
         sourceDirectory + "/libs/Logger/include",
+        sourceDirectory + "/third_party/fmt/include",
     ]
     cpp.systemIncludePaths: [
         sourceDirectory +"/proto",
@@ -246,7 +247,7 @@ App{
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         else
-            libs = libs.concat(["grpc", "grpc++", "gpr"])
+            libs = ["dl", "protobuf", "grpc", "grpc++", "gpr","cpr", "curl", "crypto", "ssl", "pthread"]
         return libs
     }
 

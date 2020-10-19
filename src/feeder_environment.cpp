@@ -37,8 +37,8 @@ QSqlQuery FeederEnvironment::BuildQuery(bool countOnly)
         currentQuery = queryBuilder.Build(filter);
     QSqlQuery q(db);
     q.prepare(currentQuery->str);
-    auto it = currentQuery->bindings.begin();
-    auto end = currentQuery->bindings.end();
+    auto it = currentQuery->bindings.cbegin();
+    auto end = currentQuery->bindings.cend();
     while(it != end)
     {
         if(currentQuery->str.contains(it->key))

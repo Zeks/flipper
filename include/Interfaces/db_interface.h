@@ -26,7 +26,7 @@ namespace database{
 
 class IDBWrapper{
 public:
-    virtual ~IDBWrapper();
+    virtual ~IDBWrapper() = default;
     virtual int GetLastIdForTable(QString tableName) = 0;
     virtual bool PushFandomToTopOfRecent(QString fandom) = 0;
     virtual bool RebaseFandomsToZero() = 0;
@@ -34,7 +34,7 @@ public:
     virtual QDateTime GetCurrentDateTime() = 0;
     virtual QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db = QSqlDatabase()) = 0;
     virtual bool BackupDatabase(QString dbname) = 0;
-    virtual bool ReadDbFile(QString file, QString connectionName = "") = 0;
+    virtual bool ReadDbFile(QString file, QString connectionName = QStringLiteral("")) = 0;
     virtual QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false) = 0;
     virtual QSqlDatabase InitDatabase2(QString fileName, QString connectionName, bool setDefault = false) = 0;
     virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false) = 0;

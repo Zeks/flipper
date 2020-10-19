@@ -146,7 +146,7 @@ public:
     virtual SubTaskContentBasePtr Spawn() override { return NewContent();}
     virtual ~SubTaskAuthorContent();
     virtual QString ToDB() override;
-    virtual QString CustomData1() override { return "";}
+    virtual QString CustomData1() override { return QStringLiteral("");}
     virtual int size() override {return authors.size();}
     QStringList authors;
 };

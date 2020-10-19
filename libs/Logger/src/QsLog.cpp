@@ -51,22 +51,22 @@ static inline QString LevelToText(Level theLevel)
 {
     switch (theLevel) {
         case TraceLevel:
-            return "TRACE";
+            return QStringLiteral("TRACE");
         case DebugLevel:
-            return "DEBUG";
+            return QStringLiteral("DEBUG");
         case InfoLevel:
-            return "INFO";
+            return QStringLiteral("INFO");
         case WarnLevel:
-            return "WARN";
+            return QStringLiteral("WARN");
         case ErrorLevel:
-            return "ERROR";
+            return QStringLiteral("ERROR");
         case FatalLevel:
-            return "FATAL";
+            return QStringLiteral("FATAL");
         case OffLevel:
-            return "";
+            return QStringLiteral("");
         default: {
             assert(!"bad log level");
-            return "INFO";
+            return QStringLiteral("INFO");
         }
     }
 }
@@ -92,6 +92,7 @@ private:
 
 class LoggerImpl
 {
+    friend class Logger;
 public:
     LoggerImpl() :
         logMutex(QReadWriteLock::Recursive),level(InfoLevel)
@@ -106,10 +107,11 @@ public:
 #ifdef QS_LOG_SEPARATE_THREAD
     QThreadPool threadPool;
 #else
-    QReadWriteLock logMutex;
 #endif
-    Level level;
+private:
     DestinationList destList;
+    QReadWriteLock logMutex;
+    Level level = InfoLevel;
 };
 
 Logger::Logger() :
@@ -158,7 +160,7 @@ Level Logger::loggingLevel() const
 void Logger::clearDestinationQueues()
 {
     QWriteLocker lock(&d->logMutex);
-    for(DestinationPtr dest : qAsConst(d->destList))
+    for(const auto& dest : qAsConst(d->destList))
     {
         dest->clearQueue();
     }
@@ -180,7 +182,7 @@ void Logger::ResetDestinations()
 void Logger::Helper::writeToLog()
 {
     if(writeServiceInfo)
-        loggerInstance->enqueueWrite(LevelToText(level) + " " + QDateTime::currentDateTimeUtc().toString(QStringLiteral("dd hh:mm:ss.zzz")) + " " + buffer, level);
+        loggerInstance->enqueueWrite(LevelToText(level) + " " + QDateTime::currentDateTimeUtc().toString("dd hh:mm:ss.zzz") + " " + buffer, level);
     else
         loggerInstance->enqueueWrite(buffer, level);
 }
@@ -225,7 +227,7 @@ void Logger::enqueueWrite(const QString& message, Level level)
 void Logger::write(const QString& message, Level level)
 {
     QWriteLocker lock(&d->logMutex);
-    for (auto it = d->destList.begin(), endIt = d->destList.end(); it != endIt;++it)
+    for (auto it = d->destList.cbegin(), endIt = d->destList.cend(); it != endIt;++it)
     {
             (*it)->write(message, level, d->level);
     }

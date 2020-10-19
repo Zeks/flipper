@@ -393,6 +393,7 @@ int CoreEnvironment::GetResultCount()
     reclistFilter.mainListId = interfaces.recs->GetCurrentRecommendationList();
     reclistFilter.minMatchCount = filter.minRecommendations;
     reclistFilter.limiter = filter.sourcesLimiter;
+    reclistFilter.displayPurged = filter.displayPurgedFics;
     reclistFilter.scoreType = scoreType;
     filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
 
@@ -1269,7 +1270,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
 
     auto ids = interfaces.fandoms->GetIgnoredFandomsIDs();
 
-    for(auto i = ids.begin(); i != ids.end(); i++)
+    for(auto i = ids.cbegin(); i != ids.cend(); i++)
         params->ignoredFandoms.insert(i.key());
 
     auto result = BuildRecommendations(params, sourceFics);

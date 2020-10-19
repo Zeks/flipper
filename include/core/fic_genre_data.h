@@ -214,7 +214,7 @@ struct ListMoodData
 
         strengthOther =0.0f;
     }
-    void Log(){
+    void Log() const{
         QLOG_INFO() << "";
         QLOG_INFO() << "///////////////";
         QLOG_INFO() << "Mood data for author:" << listId;

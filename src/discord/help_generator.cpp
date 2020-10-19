@@ -5,24 +5,26 @@
 
 namespace discord {
 
-SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string serverPrefix)
+
+
+SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string_view serverPrefix)
 {
-    switch(pageNumber){
-    case 0:
+    switch(static_cast<EHelpPages>(pageNumber)){
+    case EHelpPages::general_help:
         return GetTopLevelHelpPage(serverPrefix);
-    case 1:
+    case EHelpPages::list_navigation_help:
         return GetListNavigationPage(serverPrefix);
-    case 2:
+    case EHelpPages::list_modes_help:
         return GetListModesPage(serverPrefix);
-    case 3:
+    case EHelpPages::recs_help:
         return GetRecsHelpPage(serverPrefix);
-    case 4:
+    case EHelpPages::fresh_help:
         return GetFreshHelpPage(serverPrefix);
-    case 5:
+    case EHelpPages::roll_help:
         return GetRollHelpPage(serverPrefix);
-    case 6:
+    case EHelpPages::fanfic_filter_help:
         return GetFanficFiltersHelpPage(serverPrefix);
-    case 7:
+    case EHelpPages::fandom_filter_help:
         return GetFandomFiltersHelpPage(serverPrefix);
 
     default:
@@ -30,7 +32,27 @@ SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string serverPrefix)
     }
 }
 
-SleepyDiscord::Embed GetTopLevelHelpPage(std::string serverPrefix)
+int GetHelpPage(std::string_view argument)
+{
+    EHelpPages result;
+
+    if(argument * in("recs"))
+        result = EHelpPages::recs_help;
+    else if(argument * in("next", "prev", "page"))
+        result = EHelpPages::list_navigation_help;
+    else if(argument * in("fresh"))
+        result = EHelpPages::fresh_help;
+    else if(argument * in("roll"))
+        result = EHelpPages::roll_help;
+    else if(argument * in("complete", "dead", "liked", "xfic", "words"))
+        result = EHelpPages::fanfic_filter_help;
+    else if(argument * in("fandom", "xfandom"))
+        result = EHelpPages::fandom_filter_help;
+    else
+        result = EHelpPages::general_help;
+    return static_cast<int>(result);
+}
+SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
     std::string header = "To start using the bot you will need to do `{0}recs X` where X is your profile id on fanfiction.net or url to that which you can get [here](https://www.fanfiction.net/account/settings.php)\n"
@@ -126,7 +148,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string serverPrefix)
     return embed;
 }
 
-SleepyDiscord::Embed GetListNavigationPage(std::string serverPrefix)
+SleepyDiscord::Embed GetListNavigationPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
     std::string header = "The size of generated recommendation list is typically pretty large and depending "
@@ -199,7 +221,7 @@ SleepyDiscord::Embed GetListNavigationPage(std::string serverPrefix)
     return embed;
 }
 
-SleepyDiscord::Embed GetListModesPage(std::string serverPrefix)
+SleepyDiscord::Embed GetListModesPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
     std::string header = "There are four modes of list display you can try:"
@@ -222,7 +244,7 @@ SleepyDiscord::Embed GetListModesPage(std::string serverPrefix)
     return embed;
 }
 
-SleepyDiscord::Embed GetRecsHelpPage(std::string serverPrefix)
+SleepyDiscord::Embed GetRecsHelpPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
 
@@ -267,7 +289,7 @@ SleepyDiscord::Embed GetRecsHelpPage(std::string serverPrefix)
     return embed;
 }
 
-SleepyDiscord::Embed GetFreshHelpPage(std::string serverPrefix)
+SleepyDiscord::Embed GetFreshHelpPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
 
@@ -290,7 +312,7 @@ SleepyDiscord::Embed GetFreshHelpPage(std::string serverPrefix)
     return embed;
 }
 
-SleepyDiscord::Embed GetRollHelpPage(std::string serverPrefix)
+SleepyDiscord::Embed GetRollHelpPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
 
@@ -319,7 +341,7 @@ SleepyDiscord::Embed GetRollHelpPage(std::string serverPrefix)
     return embed;
 }
 
-SleepyDiscord::Embed GetFanficFiltersHelpPage(std::string serverPrefix)
+SleepyDiscord::Embed GetFanficFiltersHelpPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
 
@@ -402,7 +424,7 @@ SleepyDiscord::Embed GetFanficFiltersHelpPage(std::string serverPrefix)
     return embed;
 }
 
-SleepyDiscord::Embed GetFandomFiltersHelpPage(std::string serverPrefix)
+SleepyDiscord::Embed GetFandomFiltersHelpPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
 
@@ -454,22 +476,6 @@ SleepyDiscord::Embed GetFandomFiltersHelpPage(std::string serverPrefix)
     return embed;
 }
 
-int GetHelpPage(std::string_view argument)
-{
-    if(argument * in("recs"))
-        return 3;
-    if(argument * in("next", "prev", "page"))
-        return 1;
-    if(argument * in("fresh"))
-        return 4;
-    if(argument * in("roll"))
-        return 5;
-    if(argument * in("complete", "dead", "liked", "xfic", "words"))
-        return 6;
-    if(argument * in("fandom", "xfandom"))
-        return 7;
-    return 0;
-}
 
 }
 

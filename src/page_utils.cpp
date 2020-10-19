@@ -108,17 +108,17 @@ PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>pageTask,
     int i = 0;
     int counter = 0;
     do{
-        auto last = i + subTaskSize <= urls.size() ? urls.begin() + i + subTaskSize : urls.end();
+        auto last = i + subTaskSize <= urls.size() ? urls.cbegin() + i + subTaskSize : urls.cend();
         subtask = PageSubTask::CreateNewSubTask();
         subtask->type = 0;
         subtask->parent = task;
         auto content = SubTaskAuthorContent::NewContent();
         auto cast = static_cast<SubTaskAuthorContent*>(content.data());
-        std::copy(urls.begin() + i, last, std::back_inserter(cast->authors));
+        std::copy(urls.cbegin() + i, last, std::back_inserter(cast->authors));
         subtask->content = content;
         subtask->parentId = task->id;
         subtask->created = timestamp;
-        subtask->size = last - (urls.begin() + i); // fucking idiot
+        subtask->size = last - (urls.cbegin() + i); // fucking idiot
         task->size += subtask->size;
         subtask->id = counter;
         subtask->isValid = true;
