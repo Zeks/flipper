@@ -540,10 +540,12 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
     if(task->data().id_packs().ffn_ids_size() == 0)
         return Status::OK;
-    //ankerl::nanobench::Bench().minEpochIterations(6).run([&](){
+
     auto recommendationsCreationParams = basicRecommendationsParamReader(reqContext, task);
 
+
     auto ficResult = ficPackReader(reqContext, task);
+    //ankerl::nanobench::Bench().minEpochIterations(6).run([&](){
     //recommendationsCreationParams->ficData.sourceFics = ficResult.sourceFics;
     //QLOG_INFO() << "Received source fics: " << ficResult.sourceFics.toList();
     //recommendationsCreationParams->Log();
@@ -555,7 +557,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
     auto list = recCalculator->GetMatchedFicsForFavList(ficResult.fetchedFics, recommendationsCreationParams, moodData);
     int baseVotes = recommendationsCreationParams->useMoodAdjustment ? 100 : 1;
 
-    TimedAction dataPassAction("Passing data: ",[&](){
+    //TimedAction dataPassAction("Passing data: ",[&](){
 
 
         response->Clear();
@@ -666,8 +668,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         response->mutable_list()->mutable_used_params()->set_use_dead_fic_ignore(recommendationsCreationParams->useDeadFicIgnore);
         //});
 
-    });
-    dataPassAction.run();
+//    });
+//    dataPassAction.run();
     QLOG_INFO() << "Byte size will be: " << response->ByteSizeLong();
     return Status::OK;
 }

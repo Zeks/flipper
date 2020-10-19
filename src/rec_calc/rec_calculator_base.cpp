@@ -90,7 +90,7 @@ bool RecCalculatorImplBase::Calc(){
     });
 
     report.run();
-    ReportNegativeResults();
+    //ReportNegativeResults();
     if(needsDiagnosticData)
         FillFilteredAuthorsForFics();
     return true;
@@ -158,7 +158,7 @@ bool RecCalculatorImplBase::CollectVotes()
 
     uint32_t negativeSum = 0;
     for(auto author: std::as_const(filteredAuthors))
-        negativeSum+=allAuthors.value(author).negativeMatches;
+        negativeSum+=allAuthors[author].negativeMatches;
     negativeAverage = negativeSum/filteredAuthors.size();
 
     auto it = result.recommendations.cbegin();
@@ -180,10 +180,10 @@ bool RecCalculatorImplBase::CollectVotes()
     std::for_each(filteredAuthors.cbegin(), filteredAuthors.cend(), [maxValue,weightingFunc, authorSize, this, negativeMatchCutoff](int author){
         for(auto fic: inputs.faves[author])
         {
-            result.sumNegativeMatchesForFic[fic] += allAuthors.value(author).negativeMatches;
+            result.sumNegativeMatchesForFic[fic] += allAuthors[author].negativeMatches;
             auto weighting = weightingFunc(allAuthors[author],authorSize, maxValue );
             double matchCountSimilarityCoef = weighting.GetCoefficient();
-            if(allAuthors.value(author).negativeMatches <= negativeMatchCutoff)
+            if(allAuthors[author].negativeMatches <= negativeMatchCutoff)
                 result.sumNegativeVotesForFic[fic]++;
 
 
@@ -210,18 +210,18 @@ bool RecCalculatorImplBase::CollectVotes()
             }
             vote = vote * matchCountSimilarityCoef;
             if(doTrashCounting &&  ownMajorNegatives.cardinality() > startOfTrashCounting){
-                if(allAuthors.value(author).negativeToPositiveMatches > (averageNegativeToPositiveMatches*2))
+                if(allAuthors[author].negativeToPositiveMatches > (averageNegativeToPositiveMatches*2))
                 {
-                    vote = vote / (1 + (allAuthors.value(author).negativeToPositiveMatches - averageNegativeToPositiveMatches));
+                    vote = vote / (1 + (allAuthors[author].negativeToPositiveMatches - averageNegativeToPositiveMatches));
                     //if(allAuthors[author].negativeToPositiveMatches > averageNegativeToPositiveMatches*2)
                         //QLOG_INFO() << "reducing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
-                else if(allAuthors.value(author).negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/2.)){
-                    vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors.value(author).negativeToPositiveMatches)*3);
+                else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/2.)){
+                    vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors[author].negativeToPositiveMatches)*3);
                     //QLOG_INFO() << "increasing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
-                else if(allAuthors.value(author).negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.))
-                    vote = vote * (1 + ((averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.) - allAuthors.value(author).negativeToPositiveMatches));
+                else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.))
+                    vote = vote * (1 + ((averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/3.) - allAuthors[author].negativeToPositiveMatches));
 
 //                else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches))
 //                    vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors[author].negativeToPositiveMatches));
@@ -490,6 +490,10 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     for(auto i = fetchedFics.cbegin(); i != fetchedFics.cend(); i++)
         ownFavourites.add(i.key());
 
+    // instantiating data so that threads don't clash in createNode
+    for(auto i = inputs.faves.cbegin(); i != inputs.faves.cend(); i++)
+        allAuthors[i.key()] = {};
+
     qDebug() << "finished creating roaring";
     QLOG_INFO() << "user's FFN id: " << params->userFFNId;
 
@@ -603,8 +607,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
             ratioCutoff = i.key();
         }
     }
-    //Save(funcResult.ratioInfo);
-    //Save(funcResult.ratioSumInfo);
+
     QLOG_INFO() << "At the end of author processing maximumMatches: " << maximumMatches << " matchsum: " << matchSum;
 }
 
@@ -771,7 +774,7 @@ void RecCalculatorImplBase::Filter(QSharedPointer<RecommendationList> params,
 void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
 {
     for(auto author : std::as_const(filteredAuthors)){
-        double ratioForAuthor = static_cast<double>(allAuthors.value(author).negativeMatches)/static_cast<double>(allAuthors.value(author).matches);
+        double ratioForAuthor = static_cast<double>(allAuthors[author].negativeMatches)/static_cast<double>(allAuthors[author].matches);
         //QLOG_INFO() << "Negative matches: " << static_cast<double>(allAuthors[author].negativeMatches) << "Positive matches: " << static_cast<double>(allAuthors[author].matches);
         averageNegativeToPositiveMatches += ratioForAuthor;
         allAuthors[author].negativeToPositiveMatches = ratioForAuthor;
@@ -786,67 +789,67 @@ void RecCalculatorImplBase::ReportNegativeResults()
     auto authorList = filteredAuthors.values();
 
     std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
-        return allAuthors.value(id1).ratio < allAuthors.value(id2).ratio;
+        return allAuthors[id1].ratio < allAuthors[id2].ratio;
     });
 
     int limit = authorList.size() > 50 ? 50 : authorList.size();
     QLOG_INFO() << "RATIO REPORT";
     int i = 0;
-    for(auto& author : authorList){
-        if(i > limit)
-            break;
+//    for(auto& author : authorList){
+//        if(i > limit)
+//            break;
 //        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
 //                       << " negative matches: " <<  allAuthors[author].negativeMatches
 //                       << " negative ratio: " <<  allAuthors[author].negativeRatio
 //        << Qt::endl
 //                << " positive matches: " <<  allAuthors[author].matches
 //                << " positive ratio: " <<  allAuthors[author].ratio;
-        i++;
-    }
+//        i++;
+//    }
 
-    QLOG_INFO() << "MATCH REPORT";
-    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
-        return allAuthors.value(id1).matches > allAuthors.value(id2).matches;
-    });
-    limit = authorList.size() > 50 ? 50 : authorList.size();
-    i = 0;
-    for(auto& author : authorList){
-        if(i > limit)
-            break;
+//    QLOG_INFO() << "MATCH REPORT";
+//    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
+//        return allAuthors[id1].matches > allAuthors[id2].matches;
+//    });
+//    limit = authorList.size() > 50 ? 50 : authorList.size();
+//    i = 0;
+//    for(auto& author : authorList){
+//        if(i > limit)
+//            break;
 //        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
 //                       << " negative matches: " <<  allAuthors[author].negativeMatches
 //                       << " negative ratio: " <<  allAuthors[author].negativeRatio
 //        << Qt::endl
 //                << " positive matches: " <<  allAuthors[author].matches
 //                << " positive ratio: " <<  allAuthors[author].ratio;
-        i++;
-    }
+//        i++;
+//    }
 
     QLOG_INFO() << "NEGATIVE REPORT";
     QList<int> zeroAuthors;
     for(auto author : authorList)
     {
-        if(allAuthors.value(author).negativeMatches == 0)
+        if(allAuthors[author].negativeMatches == 0)
             zeroAuthors.push_back(author);
     }
 
     std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
-        return allAuthors.value(id1).negativeMatches < allAuthors.value(id2).negativeMatches ;
+        return allAuthors[id1].negativeMatches < allAuthors[id2].negativeMatches ;
     });
     limit = authorList.size() > 50 ? 50 : authorList.size();
     i = 0;
-    for(auto& author : authorList){
-        if(i > limit)
-            break;
+//    for(auto& author : authorList){
+//        if(i > limit)
+//            break;
 //        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
 //                       << " negative matches: " <<  allAuthors[author].negativeMatches
 //                       << " negative ratio: " <<  allAuthors[author].negativeRatio
 //        << Qt::endl
 //                << " positive matches: " <<  allAuthors[author].matches
 //                << " positive ratio: " <<  allAuthors[author].ratio;
-        i++;
+//        i++;
 
-    }
+//    }
 }
 
 void RecCalculatorImplBase::FillFilteredAuthorsForFics()
