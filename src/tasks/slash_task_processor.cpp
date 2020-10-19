@@ -141,7 +141,7 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
     int exclusionTriggers = 0;
     TimedAction intersect("Intersect", [&](){
 
-        for(auto i = slashFics[2].begin(); i != slashFics[2].end(); i++)
+        for(auto i = slashFics[2].cbegin(); i != slashFics[2].cend(); i++)
         {
 
             auto fic = i.key();

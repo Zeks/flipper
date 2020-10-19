@@ -9,8 +9,8 @@ Fanfic::Fanfic(){
 void core::Fanfic::LogUrls() const
 {
     qDebug() << "Urls:" ;
-    auto itTemp = urls.begin();
-    auto itEnd = urls.end();
+    auto itTemp = urls.cbegin();
+    auto itEnd = urls.cend();
     while(itTemp != itEnd){
         const auto key = itTemp.key();
         if(!key.trimmed().isEmpty())

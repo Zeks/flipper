@@ -46,7 +46,7 @@ struct DataHolderInfo<rdt_favourites>
     static auto loadFunc (){return [](QSharedPointer<interfaces::Authors> authorInterface){
             auto favourites = authorInterface->LoadFullFavouritesHashset();
             DataHolderInfo<rdt_favourites>::type roaring;
-            for(auto i = favourites.begin(); i != favourites.end(); i++)
+            for(auto i = favourites.cbegin(); i != favourites.cend(); i++)
             {
                 for(auto item : std::as_const(i.value()))
                     roaring[i.key()].add(item);

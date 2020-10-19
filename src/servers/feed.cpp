@@ -184,7 +184,7 @@ UsedInSearch FeederService::PrepareSearch(::ProtoSpace::ResponseInfo* response,
     {
         auto* userThreadData = ThreadData::GetUserData();
         const auto& list = reqContext.dbContext.authors->GetAllAuthorRecommendationIDs(recommender);
-        userThreadData->ficsForAuthorSearch += QSet<int>(list.begin(), list.end());
+        userThreadData->ficsForAuthorSearch += QSet<int>(list.cbegin(), list.cend());
     }
 
     result.filter = filter;
@@ -296,7 +296,7 @@ grpc::Status FeederService::GetUserMatches(grpc::ServerContext *context, const P
     QLOG_INFO() << "Responding";
     response->set_success(true);
 
-    for(auto i = fics.begin(); i != fics.end(); i++)
+    for(auto i = fics.cbegin(); i != fics.cend(); i++)
     {
         auto match = response->add_matches();
         const auto& value = i.value();
@@ -705,7 +705,7 @@ Status FeederService::GetDBFicIDS(ServerContext* context, const ProtoSpace::FicI
     response->set_success(true);
     QLOG_INFO() << "Succesfully converted ids:" << idsToFill.size();
 
-    for(auto i = idsToFill.begin(); i != idsToFill.end(); i ++)
+    for(auto i = idsToFill.cbegin(); i != idsToFill.cend(); i ++)
     {
         //QLOG_INFO() << "Returning fic ids: " << "DB: " << idsToFill[fic] << " FFN: " << fic;
         response->mutable_ids()->add_ffn_ids(i.key());
@@ -739,7 +739,7 @@ Status FeederService::GetFFNFicIDS(ServerContext* context, const ProtoSpace::Fic
     }
     response->set_success(true);
 
-    for(auto i = idsToFill.begin(); i != idsToFill.end(); i ++)
+    for(auto i = idsToFill.cbegin(); i != idsToFill.cend(); i ++)
     {
         //QLOG_INFO() << "Returning fic ids: " << "FFN: " << idsToFill[fic] << " DB: " << fic;
         response->mutable_ids()->add_db_ids(i.key());
@@ -840,7 +840,7 @@ grpc::Status FeederService::GetAuthorsForFicList(grpc::ServerContext *context, c
     QLOG_INFO() << "Fetching authors";
     auto result = reqContext.dbContext.authors->GetHashAuthorsForFics(sourceFics);
 
-    for(auto i = result.begin(); i != result.end(); i++)
+    for(auto i = result.cbegin(); i != result.cend(); i++)
     {
         response->add_fics(i.key());
         response->add_authors(i.value());
@@ -912,7 +912,7 @@ grpc::Status FeederService::GetExpiredSnoozes(grpc::ServerContext *, const Proto
 
     auto* userThreadData = ThreadData::GetUserData();
 
-    for(auto i = snoozes.begin();i != snoozes.end(); i++)
+    for(auto i = snoozes.cbegin();i != snoozes.cend(); i++)
         userThreadData->ficsForSelection.insert(i.key());
 
     qDebug() << "Selection is: " << userThreadData->ficsForSelection;
@@ -1141,10 +1141,10 @@ void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicLi
         result.genreFactors[genre.name] = dataResult.result.genreRatios[i];
     }
 
-    for(auto i = dataResult.result.fandomRatios.begin(); i != dataResult.result.fandomRatios.end(); i++)
+    for(auto i = dataResult.result.fandomRatios.cbegin(); i != dataResult.result.fandomRatios.cend(); i++)
         result.fandomFactorsConverted[i.key()] = i.value();
 
-    for(auto i = dataResult.fandomCounters.begin(); i != dataResult.fandomCounters.end(); i++)
+    for(auto i = dataResult.fandomCounters.cbegin(); i != dataResult.fandomCounters.cend(); i++)
         result.fandomsConverted[i.key()] = i.value();
 
     for(size_t i = 1; i < dataResult.result.sizeRatios.size(); i++)

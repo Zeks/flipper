@@ -138,7 +138,7 @@ void HumorProcessor::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors
     processHumor.run();
     QHash<int, int> relativeFics;
 
-    for(auto i = humorFics.begin(); i != humorFics.end(); i++)
+    for(auto i = humorFics.cbegin(); i != humorFics.cend(); i++)
     {
         auto fic = i.key();
         double averageHappiness = totalHappiness[fic]/static_cast<double>(i.value());

@@ -132,7 +132,7 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
     auto ratioMedianIt = std::lower_bound(authorList.cbegin(), authorList.cend(), ratioMedian, [&](const int& i1, const int& ){
         return allAuthors[i1].ratio < ratioMedian;
     });
-    auto beginningOfQuadraticToMedianRange = ratioMedianIt - authorList.begin();
+    auto beginningOfQuadraticToMedianRange = ratioMedianIt - authorList.cbegin();
     qDebug() << "distance to median is: " << beginningOfQuadraticToMedianRange;
     qDebug() << "vector size is: " << authorList.size();
 

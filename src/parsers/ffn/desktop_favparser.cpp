@@ -257,8 +257,8 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
 {
     double maxPrevalence = 0.0;
     int totalInClumps = 0;
-    auto it = genreKeeper.begin();
-    auto itEnd = genreKeeper.end();
+    auto it = genreKeeper.cbegin();
+    auto itEnd = genreKeeper.cend();
     while(it != itEnd){
         const auto value = it.value();
         double factor = static_cast<double>(value)/static_cast<double>(ficTotal);
@@ -288,7 +288,7 @@ inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes
     int total = sizes.size();
     int dominatingValue = 0.0;
 
-    for(auto i = ficSizeKeeper.begin(); i != ficSizeKeeper.end(); i++)
+    for(auto i = ficSizeKeeper.cbegin(); i != ficSizeKeeper.cend(); i++)
     {
         if(i.value() > dominatingValue)
         {
@@ -323,7 +323,7 @@ inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficT
     int totalInClumps = 0;
     int totalValue = 0;
 
-    for(auto i = fandomKeeper.begin(); i != fandomKeeper.end(); i++)
+    for(auto i = fandomKeeper.cbegin(); i != fandomKeeper.cend(); i++)
     {
         auto tempValue = i.value();
         totalValue+=tempValue;

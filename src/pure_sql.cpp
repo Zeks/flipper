@@ -547,7 +547,7 @@ DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  Q
     SqlContext<bool> ctx(db);
     ctx.Prepare(std::move(qs));
     DiagnosticSQLResult<bool> result;
-    for(auto i = data.begin(); i != data.end(); i++)
+    for(auto i = data.cbegin(); i != data.cend(); i++)
     {
         ctx.bindValue("fic_id",i.key());
         ctx.bindValue("author_id",i.value());
@@ -1409,7 +1409,7 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
     ctx.FetchLargeSelectIntoList<QString>("tag", std::move(qs));
     if(!ctx.result.success)
         return ctx.result;
-    tags = QSet<QString>(ctx.result.data.begin(), ctx.result.data.end());
+    tags = QSet<QString>(ctx.result.data.cbegin(), ctx.result.data.cend());
     }
     {
     std::string qs = "select distinct tag from fictags";
@@ -1417,7 +1417,7 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
     ctx.FetchLargeSelectIntoList<QString>("tag", std::move(qs));
     if(!ctx.result.success)
         return ctx.result;
-    tags = QSet<QString>(ctx.result.data.begin(), ctx.result.data.end());
+    tags = QSet<QString>(ctx.result.data.cbegin(), ctx.result.data.cend());
     }
     auto values = tags.values();
     std::sort(values.begin(), values.end());
@@ -2566,8 +2566,8 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
     // need to create a list of ids to query for
     QStringList ids;
     ids.reserve(scores.size());
-    auto it = scores.begin();
-    auto itEnd = scores.end();
+    auto it = scores.cbegin();
+    auto itEnd = scores.cend();
     while(it != itEnd){
         ids.push_back(QString::number(it.key()));
         it++;
@@ -3816,7 +3816,7 @@ DiagnosticSQLResult<bool> PerformGenreAssignment(QSqlDatabase db)
                          " THEN (select avg({0}) from AuthorFavouritesGenreStatistics afgs where afgs.author_id in (select distinct recommender_id from recommendations r where r.fic_id = ficgenrestatistics .fic_id))  "
                          " ELSE 0 END ";
     std::list<std::string> list;
-    for(auto i = result.begin(); i != result.end(); i++)
+    for(auto i = result.cbegin(); i != result.cend(); i++)
         list.push_back(i.key().toStdString());
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.ExecuteWithArgsSubstitution(std::move(list));

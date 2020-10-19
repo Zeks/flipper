@@ -1270,7 +1270,7 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
 
     auto ids = interfaces.fandoms->GetIgnoredFandomsIDs();
 
-    for(auto i = ids.begin(); i != ids.end(); i++)
+    for(auto i = ids.cbegin(); i != ids.cend(); i++)
         params->ignoredFandoms.insert(i.key());
 
     auto result = BuildRecommendations(params, sourceFics);

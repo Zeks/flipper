@@ -332,7 +332,7 @@ AutoAdjustmentAndFilteringResult RecCalculatorImplBase::AutoAdjustRecommendation
             continue;
         }
         //QLOG_INFO() << "adding authors for match count: " << matchCount << " amount:" << authorsByMatches[matchCount].size();
-        result.authors += QSet<int>(authorsByMatches[matchCount].begin(), authorsByMatches[matchCount].end());
+        result.authors += QSet<int>(authorsByMatches[matchCount].cbegin(), authorsByMatches[matchCount].cend());
     }
     return result;
 }
@@ -570,7 +570,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
                 funcResult.maximumMatches = data.maximumMatches;
             funcResult.matchSum+=data.matchSum;
 
-            for(auto i = data.ratioInfo.begin(); i != data.ratioInfo.end(); i++){
+            for(auto i = data.ratioInfo.cbegin(); i != data.ratioInfo.cend(); i++){
                 funcResult.ratioInfo[i.key()]+=i.value();
             }
         });

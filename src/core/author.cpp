@@ -22,8 +22,8 @@ void core::Author::Log()
 void core::Author::LogWebIds() const
 {
     qDebug() << "Author WebIds:" ;
-    auto itTemp = webIds.begin();
-    auto itEnd = webIds.end();
+    auto itTemp = webIds.cbegin();
+    auto itEnd = webIds.cend();
     while(itTemp != itEnd){
         const auto key = itTemp.key();
         if(!key.trimmed().isEmpty())

@@ -188,8 +188,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
     recommendations->set_display_purged_fics(filter.displayPurgedFics);
     {
-        auto it= filter.recsHash.begin();
-        auto itEnd = filter.recsHash.end();
+        auto it= filter.recsHash.cbegin();
+        auto itEnd = filter.recsHash.cend();
         while(it != itEnd)
         {
             userData->mutable_recommendation_list()->add_list_of_fics(it.key());
@@ -198,8 +198,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
         }
     }
     {
-        auto it= filter.scoresHash.begin();
-        auto itEnd = filter.scoresHash.end();
+        auto it= filter.scoresHash.cbegin();
+        auto itEnd = filter.scoresHash.cend();
         while(it != itEnd)
         {
             userData->mutable_scores_list()->add_list_of_fics(it.key());
@@ -598,16 +598,16 @@ bool FavListLocalToProto(const core::FavListDetails &stats, ProtoSpace::FavListD
     protoStats->add_mood_rating(stats.moodHappy);
 
 
-    for(auto i = stats.sizeFactors.begin(); i !=stats.sizeFactors.end(); i++)
+    for(auto i = stats.sizeFactors.cbegin(); i !=stats.sizeFactors.cend(); i++)
         protoStats->add_size_rating(i.value());
 
-    for(auto i = stats.genreFactors.begin(); i !=stats.genreFactors.end(); i++)
+    for(auto i = stats.genreFactors.cbegin(); i !=stats.genreFactors.cend(); i++)
     {
         protoStats->add_genres(TS(i.key()));
         protoStats->add_genres_percentages(i.value());
     }
 
-    for(auto i = stats.fandomsConverted.begin(); i !=stats.fandomsConverted.end(); i++)
+    for(auto i = stats.fandomsConverted.cbegin(); i !=stats.fandomsConverted.cend(); i++)
     {
         protoStats->add_fandoms(i.key());
         protoStats->add_fandoms_counts(i.value());

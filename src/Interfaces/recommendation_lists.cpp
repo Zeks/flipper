@@ -266,7 +266,7 @@ void RecommendationLists::DeleteLocalList(int listId)
     QList<QPair<int, int>> keysToRemove;
 
 
-    for(auto i = grpcCacheForLists.begin(); i != grpcCacheForLists.end(); i++){
+    for(auto i = grpcCacheForLists.cbegin(); i != grpcCacheForLists.cend(); i++){
         if(i.key().first == listId)
             keysToRemove.push_back(i.key());
     }

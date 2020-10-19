@@ -72,7 +72,7 @@ RecCalculatorImplMoodAdjusted::RecCalculatorImplMoodAdjusted(const RecInputVecto
         moodList << "Neutral" << "Funny"  << "Shocky" << "Flirty" << "Dramatic" << "Hurty" << "Bondy";
     });
 
-    for(auto i = input.moods.begin(); i != input.moods.end(); i++)
+    for(auto i = input.moods.cbegin(); i != input.moods.cend(); i++)
     {
         double neutralDifference = 0., touchyDifference = 0.;
         auto authorData = i.value();
