@@ -545,7 +545,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 
 
     auto ficResult = ficPackReader(reqContext, task);
-    //ankerl::nanobench::Bench().minEpochIterations(6).run([&](){
+    ankerl::nanobench::Bench().minEpochIterations(6).run([&](){
     //recommendationsCreationParams->ficData.sourceFics = ficResult.sourceFics;
     //QLOG_INFO() << "Received source fics: " << ficResult.sourceFics.toList();
     //recommendationsCreationParams->Log();
@@ -666,7 +666,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
         response->mutable_list()->mutable_used_params()->set_use_mood_filtering(recommendationsCreationParams->useMoodAdjustment);
         response->mutable_list()->mutable_used_params()->set_use_dislikes(recommendationsCreationParams->useDislikes);
         response->mutable_list()->mutable_used_params()->set_use_dead_fic_ignore(recommendationsCreationParams->useDeadFicIgnore);
-        //});
+        });
 
 //    });
 //    dataPassAction.run();

@@ -13,10 +13,6 @@ namespace discord{
 
 struct MessageToken{
     MessageToken() = default;
-    MessageToken(const MessageToken&) = default;
-    MessageToken(MessageToken&&) = default;
-    MessageToken& operator=(MessageToken&& other) = default;
-    MessageToken& operator=(const MessageToken& other) = default;
     MessageToken(const SleepyDiscord::Message& message){
         messageID = message.ID;
         authorID = message.author.ID;
