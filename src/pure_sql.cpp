@@ -1419,8 +1419,9 @@ DiagnosticSQLResult<QStringList> ReadUserTags(QSqlDatabase db)
         return ctx.result;
     tags = QSet<QString>(ctx.result.data.begin(), ctx.result.data.end());
     }
-    result.data = tags.values();
-    std::sort(result.data.begin(), result.data.end());
+    auto values = tags.values();
+    std::sort(values.begin(), values.end());
+    result.data = values;
     result.success = true;
     return result;
 
@@ -2574,8 +2575,7 @@ DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int>& score
 
     std::string qs = "select fic_id, {0} from RecommendationListData where list_id = :list_id and fic_id in ({1})";
     std::string pointsField = filter.scoreType == core::StoryFilter::st_points ? "match_count" : "no_trash_score";
-    qs = fmt::format(qs, pointsField);
-    qs = fmt::format(qs, ids.join(",").toStdString());
+    qs = fmt::format(qs, pointsField, ids.join(",").toStdString());
 
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("list_id", filter.mainListId);
@@ -3459,28 +3459,30 @@ DiagnosticSQLResult<QHash<int, std::array<double, genreArraySize>>> GetGenreData
                                std::size_t counter = 0;
 //                               qDebug() << "Loading list for author: " << q.value(keyName).toInt();
 //                               qDebug() << "Adventure value is: " << q.value("Adventure").toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("General_")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Humor")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Poetry")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Adventure")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Mystery")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Horror")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Parody")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Angst")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Supernatural")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Suspense")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Romance")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("NoGenre")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("SciFi")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Fantasy")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Spiritual")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Tragedy")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Western")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Crime")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Family")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("HurtComfort")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Friendship")).toDouble();
-                               data[q.value(keyName).toInt()].at(counter++) =q.value(QStringLiteral("Drama")).toDouble();
+                               auto key = q.value(keyName).toInt();
+                               auto& dataElement = data[key];
+                               dataElement.at(counter++) =q.value(QStringLiteral("General_")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Humor")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Poetry")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Adventure")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Mystery")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Horror")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Parody")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Angst")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Supernatural")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Suspense")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Romance")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("NoGenre")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("SciFi")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Fantasy")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Spiritual")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Tragedy")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Western")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Crime")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Family")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("HurtComfort")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Friendship")).toDouble();
+                               dataElement.at(counter++) =q.value(QStringLiteral("Drama")).toDouble();
                            });
 
     return ctx.result;

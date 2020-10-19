@@ -136,7 +136,7 @@ bool Fandoms::CreateFandom(core::FandomPtr fandom,
 
     // getting empty node if its not there which is not a problem since we are
     // supposed to fill it at the end
-    auto current = nameIndex.value(fandom->GetName().toLower());
+    const auto& current = nameIndex[fandom->GetName().toLower()];
     if(current && current->id != -1)
         return true;
     database::Transaction transaction(db);
@@ -240,7 +240,7 @@ bool Fandoms::AddToTopOfRecent(QString fandom)
     }
     if(!foundIterating)
     {
-        auto fandomPtr = nameIndex.value(fandom.toLower());
+        const auto& fandomPtr = nameIndex[fandom.toLower()];
         recentFandoms.push_back(fandomPtr);
         fandomPtr->idInRecentFandoms = 0;
     }

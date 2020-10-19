@@ -543,9 +543,10 @@ bool Users::HasUser(QString user)
 
 QSharedPointer<User> Users::GetUser(QString user) const
 {
-    if(!users.contains(user))
+    auto it = users.find(user);
+    if(it == users.cend())
         return {};
-    return users.value(user);
+    return *it;
 }
 
 bool Users::LoadUser(QString name)

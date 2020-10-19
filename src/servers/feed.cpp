@@ -597,8 +597,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
             {
                 bool axisGenre = false;;
                 //qDebug() << "attempting to purge fic: " << key;
-                QHash<int, QList<genre_stats::GenreBit>>& ref = recCalculator->holder.genreComposites;
-                QList<genre_stats::GenreBit>& refList = ref[key];
+                const QHash<int, QList<genre_stats::GenreBit>>& ref = recCalculator->holder.genreComposites;
+                const QList<genre_stats::GenreBit>& refList = ref[key];
                 double maxValue = 0.;
                 // shit code, but I really don't want to refactor rn
                 for(const auto& genreBit: refList)
@@ -935,7 +935,7 @@ void FeederService::AddToStatistics(QString uuid, const core::StoryFilter& filte
     StatisticsToken token;
     {
         QWriteLocker locker(&lock);
-        StatisticsToken token = tokenData.value(uuid);
+        //StatisticsToken token = tokenData.value(uuid);
         searchedTokens.insert(uuid);
         allTokens.insert(uuid);
         allSearches++;
@@ -1137,7 +1137,7 @@ void AccumulatorIntoSectionStats(core::FavListDetails& result, const core::FicLi
     An<interfaces::GenreIndex> genreIndex;
     for(size_t i = 0; i < dataResult.result.genreRatios.size(); i++)
     {
-        const auto& genre =  genreIndex->genresByIndex.value(i);
+        const auto& genre =  qAsConst(genreIndex->genresByIndex)[i];
         result.genreFactors[genre.name] = dataResult.result.genreRatios[i];
     }
 

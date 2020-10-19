@@ -602,12 +602,17 @@ Fanfics::IdResult Fanfics::FicIdToWebsiteMapping::GetDBIdByWebId(core::SiteId si
 Fanfics::IdResult Fanfics::FicIdToWebsiteMapping::GetDBIdByWebId(QString website, int webId)
 {
     Fanfics::IdResult result;
-    if(webIdIndex.contains(website) && webIdIndex.value(website).contains(webId))
-    {
-        result.exists = true;
-        result.id = webIdIndex.value(website).value(webId);
-        result.valid = result.id != -1;
-    }
+    auto itOuter = webIdIndex.find(website);
+    if(itOuter == webIdIndex.cend())
+        return result;
+    auto itInner = (*itOuter).find(webId);
+    if(itInner == (*itOuter).cend())
+        return result;
+
+    result.exists = true;
+    result.id = *itInner;
+    result.valid = result.id != -1;
+
     return result;
 }
 

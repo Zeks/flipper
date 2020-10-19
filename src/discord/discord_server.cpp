@@ -180,7 +180,7 @@ namespace discord {
     {
         if(!servers.contains(server))
             return {};
-        return servers.value(server);
+        return servers[server];
     }
 
     bool Servers::LoadServer(const std::string& server_id)

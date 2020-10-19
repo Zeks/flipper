@@ -461,7 +461,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fanfic& coreFi
 
     coreFic.statistics.realGenreString = GenreDataToString(coreFic.statistics.realGenreData);
 
-    coreFic.urlFFN = coreFic.urls.value("ffn");
+    coreFic.urlFFN = coreFic.urls["ffn"];
 
     coreFic.slashData.keywords_no = protoFic.slash_data().keywords_no();
     coreFic.slashData.keywords_yes = protoFic.slash_data().keywords_yes();
