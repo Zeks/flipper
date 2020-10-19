@@ -40,7 +40,7 @@ struct LastPageCommandMemo{
 };
 
 struct User{
-    User(){InitFicsPtr();}
+    User():lock(QReadWriteLock::Recursive){InitFicsPtr();}
     ~User() = default;
     User(QString userID, QString ffnID, QString name);
     User(const User &user);
@@ -59,8 +59,8 @@ struct User{
     void SetCurrentListId(int listId);
     void SetBanned(bool banned);
     void SetFfnID(QString id);
-    void SetPerfectRngFics(QSet<int>);
-    void SetGoodRngFics(QSet<int>);
+    void SetPerfectRngFics(const QSet<int>&);
+    void SetGoodRngFics(const QSet<int>&);
     void SetPerfectRngScoreCutoff(int);
     void SetGoodRngScoreCutoff(int);
     void SetUserID(QString id);
@@ -68,16 +68,16 @@ struct User{
     void SetUuid(QString);
     //void ToggleFandomIgnores(QSet<int>);
     void SetFandomFilter(int, bool displayCrossovers);
-    void SetFandomFilter(FandomFilter );
+    void SetFandomFilter(const FandomFilter & );
     FandomFilter GetCurrentFandomFilter() const;
-    void SetPositionsToIdsForCurrentPage(QHash<int, int>);
+    void SetPositionsToIdsForCurrentPage(const QHash<int, int> &);
 
     FandomFilter GetCurrentIgnoredFandoms()  const;
-    void SetIgnoredFandoms(FandomFilter);
+    void SetIgnoredFandoms(const FandomFilter &);
 
     int GetFicIDFromPositionId(int) const;
     QSet<int> GetIgnoredFics()  const;
-    void SetIgnoredFics(QSet<int>);
+    void SetIgnoredFics(const QSet<int> &);
 
     QSet<int> GetPerfectRngFics();
     QSet<int> GetGoodRngFics();
@@ -139,7 +139,7 @@ struct User{
     void SetRngBustScheduled(bool value);
 
     WordcountFilter GetWordcountFilter() const;
-    void SetWordcountFilter(const WordcountFilter &value);
+    void SetWordcountFilter(WordcountFilter value);
 
     int GetDeadFicDaysRange() const;
     void SetDeadFicDaysRange(int value);
@@ -175,6 +175,8 @@ private:
     int similarFicsId = 0;
     int forcedMinMatch = 0;
     int forcedRatio = 0;
+    int perfectRngScoreCutoff = 0;
+    int goodRngScoreCutoff = 0;
 
     QString lastUsedRoll = QStringLiteral("all");
 
@@ -186,8 +188,7 @@ private:
     QSharedPointer<core::RecommendationListFicData> fics;
     QSet<int> perfectRngFics;
     QSet<int> goodRngFics;
-    int perfectRngScoreCutoff;
-    int goodRngScoreCutoff;
+
     QSet<int> ignoredFics;
     FandomFilter filteredFandoms;
     WordcountFilter wordcountFilter;
@@ -203,7 +204,7 @@ struct Users{
     void AddUser(QSharedPointer<User>);
     void RemoveUserData(QSharedPointer<User>);
     bool HasUser(QString);
-    QSharedPointer<User> GetUser(QString);
+    QSharedPointer<User> GetUser(QString) const;
     bool LoadUser(QString user);
     void ClearInactiveUsers();
     QHash<QString,QSharedPointer<User>> users;

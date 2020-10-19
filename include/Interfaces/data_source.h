@@ -47,8 +47,8 @@ public:
     FicSource() = default;
     virtual ~FicSource() = default;
 
-    virtual void FetchData(core::StoryFilter filter, QVector<core::Fanfic>*) = 0;
-    virtual int GetFicCount(core::StoryFilter filter) = 0;
+    virtual void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic>*) = 0;
+    virtual int GetFicCount(const core::StoryFilter& filter) = 0;
 
     void AddFicFilter(QSharedPointer<FicFilter>);
     void ClearFilters();
@@ -66,10 +66,10 @@ class FicSourceDirect : public FicSource
 public:
     FicSourceDirect(QSharedPointer<database::IDBWrapper> db, QSharedPointer<core::RNGData> rngData);
     virtual ~FicSourceDirect() = default;
-    virtual void FetchData(const core::StoryFilter &filter, QVector<core::Fanfic>*);
-    QSqlQuery BuildQuery(const core::StoryFilter &filter, bool countOnly = false) ;
+    virtual void FetchData(const core::StoryFilter &filter, QVector<core::Fanfic>*) override;
+    QSqlQuery BuildQuery(const core::StoryFilter &filter, bool countOnly = false);
     inline core::Fanfic LoadFanfic(QSqlQuery& q);
-    int GetFicCount(const core::StoryFilter &filter);
+    int GetFicCount(const core::StoryFilter &filter) override;
     //QSet<int> GetAuthorsForFics(QSet<int> ficIDsForActivetags);
     void InitQueryType(bool client = false, QString userToken = QString());
     QSharedPointer<core::Query> currentQuery;

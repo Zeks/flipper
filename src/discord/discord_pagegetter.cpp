@@ -34,16 +34,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSqlError>
 namespace discord {
 
-class PageGetterPrivate : public QObject
+class PageGetterPrivate
 {
 public:
-    PageGetterPrivate(QObject *parent=nullptr);
+    explicit PageGetterPrivate();
     QNetworkAccessManager manager;
     QNetworkRequest currentRequest;
     QNetworkRequest* currentReply= nullptr;
     WebPage result;
     int timeout = 500;
-    QNetworkReply::NetworkError error;
+    QNetworkReply::NetworkError error = QNetworkReply::NoError;
     WebPage GetPage(QString url, ECacheMode useCache = ECacheMode::use_cache);
     WebPage GetPageFromDB(QString url);
     WebPage GetPageFromNetwork(QString url);
@@ -52,7 +52,7 @@ public:
     PageManager::DBGetterFunc dbGetter;
 };
 
-PageGetterPrivate::PageGetterPrivate(QObject *parent): QObject(parent)
+PageGetterPrivate::PageGetterPrivate()
 {
 }
 
@@ -62,14 +62,14 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 
     auto fetchPageFromNetwork = [&](){
         result = GetPageFromNetwork(url);
-        qDebug() << "From network";
+        qDebug() << QStringLiteral("From network");
         if(result.isValid)
             SavePageToDB(result);
     };
     if(useCache != ECacheMode::dont_use_cache)
     {
         result = GetPageFromDB(url);
-        QLOG_INFO() << "Version from cache was generated: " << result.generated;
+        QLOG_INFO() << QStringLiteral("Version from cache was generated: ") << result.generated;
         if(result.isValid)
              result.isFromCache = true;
         else
@@ -93,8 +93,8 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
 
     // first we search for the exact page in the database
     QSqlQuery q(dbToken->db);
-    q.prepare("select * from PageCache where url = :URL ");
-    q.bindValue(":URL", url);
+    q.prepare(QStringLiteral("select * from PageCache where url = :URL "));
+    q.bindValue(QStringLiteral(":URL"), url);
     q.exec();
     bool dataFound = q.next();
 
@@ -111,14 +111,14 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     result.url = url;
     result.isValid = true;
     if(q.value("COMPRESSED").toInt() == 1)
-        result.content = QString::fromUtf8(qUncompress(q.value("CONTENT").toByteArray()));
+        result.content = QString::fromUtf8(qUncompress(q.value(QStringLiteral("CONTENT")).toByteArray()));
     else
-        result.content = q.value("CONTENT").toByteArray();
+        result.content = q.value(QStringLiteral("CONTENT")).toByteArray();
     //result.crossover= q.value("CROSSOVER").toInt();
     //result.fandom= q.value("FANDOM").toString();
-    result.generated= q.value("GENERATION_DATE").toDateTime();
+    result.generated= q.value(QStringLiteral("GENERATION_DATE")).toDateTime();
     result.source = EPageSource::cache;
-    result.type = static_cast<EPageType>(q.value("PAGE_TYPE").toInt());
+    result.type = static_cast<EPageType>(q.value(QStringLiteral("PAGE_TYPE")).toInt());
 
     return result;
 }
@@ -129,7 +129,8 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     result.url = url;
     currentRequest = QNetworkRequest(QUrl(url));
     auto reply = manager.get(currentRequest);
-    int retries = 40;
+    static const int maxNumberOfRetries = 40;
+    int retries = maxNumberOfRetries;
     //qDebug() << "entering wait phase";
     while(!reply->isFinished() && retries > 0)
     {
@@ -166,22 +167,22 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     auto dbToken = dbGetter();
     QSqlQuery q(dbToken->db);
-    q.prepare("delete from pagecache where url = :url");
-    q.bindValue(":url", page.url);
+    q.prepare(QStringLiteral("delete from pagecache where url = :url"));
+    q.bindValue(QStringLiteral(":url"), page.url);
     q.exec();
-    QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
-                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
+    QString insert = QStringLiteral("INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
+                     "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)");
     q.prepare(insert);
-    q.bindValue(":URL", page.url);
-    q.bindValue(":GENERATION_DATE", QDateTime::currentDateTime());
-    q.bindValue(":CONTENT", qCompress(page.content.toUtf8()));
-    q.bindValue(":COMPRESSED", 1);
-    q.bindValue(":PAGE_TYPE", static_cast<int>(page.type));
+    q.bindValue(QStringLiteral(":URL"), page.url);
+    q.bindValue(QStringLiteral(":GENERATION_DATE"), QDateTime::currentDateTime());
+    q.bindValue(QStringLiteral(":CONTENT"), qCompress(page.content.toUtf8()));
+    q.bindValue(QStringLiteral(":COMPRESSED"), 1);
+    q.bindValue(QStringLiteral(":PAGE_TYPE"), static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
     {
-        qDebug() << "Writing url: " << page.url;
-        qDebug() << "Error saving page to database: "  << q.lastError();
+        qDebug() << QStringLiteral("Writing url: ") << page.url;
+        qDebug() << QStringLiteral("Error saving page to database: ")  << q.lastError();
     }
 }
 

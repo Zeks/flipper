@@ -11,7 +11,7 @@ struct SiteIdPack{
   int ao3 = -1;
   int sb = -1;
   int sv = -1;
-  int GetPrimaryId(){
+  int GetPrimaryId()const {
     if(ffn != -1)
         return ffn;
     if(ao3 != -1)

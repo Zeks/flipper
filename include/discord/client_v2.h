@@ -56,6 +56,8 @@ public:
     void onMessage(SleepyDiscord::Message message) override;
     void onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji) override;
     void onReady (SleepyDiscord::Ready readyData) override;
+    SleepyDiscord::ObjectResponse<SleepyDiscord::Message> sendMessage (SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string &message, const SleepyDiscord::Embed &embed);
+    SleepyDiscord::ObjectResponse<SleepyDiscord::Message> sendMessage (SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string &message);
 
     void Log(const SleepyDiscord::Message&);
 
@@ -68,6 +70,7 @@ public:
     BotIdentityMatchingHash<int64_t> channelToServerHash;
     std::string botPrefixRequest;
     ChannelSet nonPmChannels;
+    static std::atomic<bool> allowMessages;
 protected:
     virtual void timerEvent(QTimerEvent *) override;
 };

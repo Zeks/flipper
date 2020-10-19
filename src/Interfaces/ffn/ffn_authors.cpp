@@ -19,14 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 namespace interfaces {
 
-FFNAuthors::~FFNAuthors()
-{
-
-}
-
 bool FFNAuthors::EnsureId(QSharedPointer<core::Author> author)
 {
-    return Authors::EnsureId(author, "ffn");
+    return Authors::EnsureId(author, QStringLiteral("ffn"));
 }
 //bool FFNAuthors::RemoveAuthor(core::AuthorPtr author)
 //{

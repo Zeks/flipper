@@ -89,22 +89,22 @@ struct AutoAdjustmentAndFilteringResult{
 };
 
 struct RatioInfo{
-    int totalFicEntries = 0;
     uint16_t authors = 0;
     uint16_t ratio = 0;
     uint16_t minListSize = std::numeric_limits<uint16_t>::max();
     uint16_t maxListSize = 0;
     uint16_t minMatches = std::numeric_limits<uint16_t>::max();
 
-    Roaring fics;
+    //Roaring fics;
+    Roaring ficsAfterIgnore;
     RatioInfo& operator+=(const RatioInfo& rhs){
 
         this->authors += rhs.authors;
-        this->totalFicEntries+= rhs.totalFicEntries;
         this->ratio = rhs.ratio;
         if(this->minMatches > rhs.minMatches)
             this->minMatches = rhs.minMatches;
-        this->fics |= rhs.fics;
+        //this->fics |= rhs.fics;
+        this->ficsAfterIgnore |= rhs.ficsAfterIgnore;
         if(this->minListSize > rhs.minListSize)
             this->minListSize = rhs.minListSize;
         if(this->maxListSize < rhs.maxListSize)
@@ -118,12 +118,11 @@ struct RatioSumInfo{
     uint16_t authors = 0;
     uint16_t ratio = 0;
     uint16_t minMatches = std::numeric_limits<uint16_t>::max();
-    uint16_t averageListSize = 0;
-    uint32_t totalFicEntries = 0;
     int lastFicsAdded = 0;
     uint16_t minListSize = std::numeric_limits<uint16_t>::max();
     uint16_t maxListSize = 0;
     Roaring fics;
+    Roaring ficsAfterIgnore;
 
     //    RatioSumInfo& operator+=(const RatioSumInfo& rhs){
 
@@ -160,19 +159,19 @@ public:
     typedef QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> FilterListType;
     typedef QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> ActionListType;
 
-    RecCalculatorImplBase(RecInputVectors input):inputs(input){}
+    RecCalculatorImplBase(const RecInputVectors& input):inputs(input){}
 
     virtual ~RecCalculatorImplBase(){}
 
     virtual void ResetAccumulatedData();
     bool Calc();
-    void RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, FilterListType filters, ActionListType actions);
+    void RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, const FilterListType &filters, const ActionListType &actions);
     Roaring BuildIgnoreList();
     void FetchAuthorRelations();
     void CollectFicMatchQuality();
     void Filter(QSharedPointer<RecommendationList> params,
-                QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
-                QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> actions);
+                const QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>>& filters,
+                const QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>>& actions);
 
     void CalculateNegativeToPositiveRatio();
     void ReportNegativeResults();
@@ -191,10 +190,10 @@ public:
 
     virtual AutoAdjustmentAndFilteringResult AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList>);
     virtual void AdjustRatioForAutomaticParams();
-    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>, AutoAdjustmentAndFilteringResult adjustmentResult);
+    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>, const AutoAdjustmentAndFilteringResult &adjustmentResult);
 
     int ownProfileId = -1;
-    uint8_t ratioCutoff = std::numeric_limits<uint8_t>::max();
+    uint16_t ratioCutoff = std::numeric_limits<uint16_t>::max();
     uint32_t matchSum = 0;
     uint32_t negativeAverage = 0;
     RecInputVectors inputs;

@@ -129,20 +129,20 @@ void RecCalculatorImplWeighted::CalcWeightingParams(){
         return allAuthors[i1].ratio < allAuthors[i2].ratio;
     });
 
-    auto ratioMedianIt = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
+    auto ratioMedianIt = std::lower_bound(authorList.cbegin(), authorList.cend(), ratioMedian, [&](const int& i1, const int& ){
         return allAuthors[i1].ratio < ratioMedian;
     });
-    auto beginningOfQuadraticToMedianRange = ratioMedianIt - authorList.begin();
+    auto beginningOfQuadraticToMedianRange = ratioMedianIt - authorList.cbegin();
     qDebug() << "distance to median is: " << beginningOfQuadraticToMedianRange;
     qDebug() << "vector size is: " << authorList.size();
 
     qDebug() << "sigma: " << quadraticDeviation;
     qDebug() << "2 sigma: " << quadraticDeviation * 2;
 
-    auto ratioSigma2 = std::lower_bound(authorList.begin(), authorList.end(), ratioMedian, [&](const int& i1, const int& ){
+    auto ratioSigma2 = std::lower_bound(authorList.cbegin(), authorList.cend(), ratioMedian, [&](const int& i1, const int& ){
         return allAuthors[i1].ratio < (ratioMedian - quadraticDeviation*2);
     });
-    endOfUniqueAuthorRange = ratioSigma2 - authorList.begin();
+    endOfUniqueAuthorRange = ratioSigma2 - authorList.cbegin();
     qDebug() << "distance to sigma15 is: " << endOfUniqueAuthorRange;
     if(endOfUniqueAuthorRange == 0)
         needsRangeAdjustment = true;

@@ -157,8 +157,9 @@ public:
     }
     QString url(QString type) const
     {
-        if(urls.contains(type))
-            return urls.value(type);
+        const auto& it = urls.find(type);
+        if(it != urls.cend())
+            return *it;
         return QStringLiteral("");
     }
     void SetUrl(QString type, QString url);

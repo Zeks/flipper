@@ -32,6 +32,7 @@ App{
         "include/discord/command_generators.h",
         "include/discord/db_vendor.h",
         "include/discord/discord_init.h",
+        "include/discord/discord_message_token.h",
         "include/discord/discord_pagegetter.h",
         "include/discord/discord_server.h",
         "include/discord/discord_user.h",
@@ -154,6 +155,19 @@ App{
     files: [
         Environment.sqliteFolder + "/sqlite3.c",
         Environment.sqliteFolder + "/sqlite3.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
+
+    Group{
+    name: "nanobench"
+    files: [
+        "third_party/nanobench/nanobench.cpp",
+        "third_party/nanobench/nanobench.h"
     ]
     cpp.cFlags: {
         var flags = []

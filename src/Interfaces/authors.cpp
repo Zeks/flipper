@@ -83,7 +83,7 @@ void Authors::IndexAuthors()
 
 bool Authors::EnsureAuthorLoaded(QString name, QString website)
 {
-    if(authorsNamesByWebsite.contains(website) && authorsNamesByWebsite.value(website).contains(name))
+    if(authorsNamesByWebsite.contains(website) && authorsNamesByWebsite[website].contains(name))
         return true;
 
     if(!LoadAuthor(name, website))
@@ -94,7 +94,7 @@ bool Authors::EnsureAuthorLoaded(QString name, QString website)
 
 bool Authors::EnsureAuthorLoaded(QString website, int id)
 {
-    if(authorsByWebID.value(website).contains(id))
+    if(authorsByWebID[website].contains(id))
         return true;
 
     if(!LoadAuthor(website, id))
@@ -409,8 +409,9 @@ bool Authors::EnsureId(core::AuthorPtr author, QString website)
 
     //QString url = author->url(website);
     auto webId = author->GetWebID(website);
-    if(authorsByWebID.value(website).contains(webId) && authorsByWebID.value(website).value(webId))
-        author = authorsByWebID.value(website).value(webId);
+    const auto& it = authorsByWebID[website].find(webId);
+    if(it != authorsByWebID[website].cend() && *it)
+        author = *it;
 
     if(author->GetIdStatus() == core::AuthorIdStatus::unassigned)
         LoadIDForAuthor(author, db);
@@ -495,7 +496,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     if(!EnsureAuthorLoaded(authorId))
         return result;
 
-    auto author = authorsById.value(authorId);
+    auto& author = authorsById[authorId];
 
     result->listId = list->id;
     result->usedTag = list->tagToUse;;

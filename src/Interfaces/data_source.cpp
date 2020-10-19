@@ -68,6 +68,7 @@ QSqlQuery FicSourceDirect::BuildQuery(const core::StoryFilter& filter, bool coun
 
 inline core::Fanfic FicSourceDirect::LoadFanfic(QSqlQuery& q)
 {
+    // todo wait for response of qt guys about whether to use stringliteral here or not
     core::Fanfic result;
     result.identity.id = q.value(QStringLiteral("ID")).toInt();
     const auto fandoms = q.value(QStringLiteral("FANDOMIDS")).toString().split(QStringLiteral("::::"));
@@ -79,13 +80,13 @@ inline core::Fanfic FicSourceDirect::LoadFanfic(QSqlQuery& q)
     result.title = q.value(QStringLiteral("TITLE")).toString();
     result.summary = q.value(QStringLiteral("SUMMARY")).toString();
     result.genreString = q.value(QStringLiteral("GENRES")).toString();
-    result.charactersFull = q.value(QStringLiteral("CHARACTERS")).toString().replace("not found", "");
+    result.charactersFull = q.value(QStringLiteral("CHARACTERS")).toString().replace(QStringLiteral("not found"), QStringLiteral(""));
     result.rated = q.value(QStringLiteral("RATED")).toString();
     auto published = q.value(QStringLiteral("PUBLISHED")).toDateTime();
     auto updated   = q.value(QStringLiteral("UPDATED")).toDateTime();
     result.published = published;
     result.updated= updated;
-    result.SetUrl("ffn",q.value(QStringLiteral("URL")).toString());
+    result.SetUrl(QStringLiteral("ffn"),q.value(QStringLiteral("URL")).toString());
     result.identity.web.ffn = q.value(QStringLiteral("URL")).toInt();
 
     result.userData.tags = q.value(QStringLiteral("TAGS")).toString();
@@ -123,7 +124,7 @@ int FicSourceDirect::GetFicCount(const core::StoryFilter& filter)
     if(!database::puresql::ExecAndCheck(q))
         return -1;
     q.next();
-    auto result =  q.value("records").toInt();
+    auto result =  q.value(QStringLiteral("records")).toInt();
     return result;
 }
 

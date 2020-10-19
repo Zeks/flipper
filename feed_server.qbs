@@ -168,6 +168,7 @@ App{
         sourceDirectory +"/proto",
         sourceDirectory + "/third_party",
         Environment.sqliteFolder,
+        sourceDirectory + "/third_party/fmt/include",
         sourceDirectory + "/../"]
 
     cpp.staticLibraries: {
@@ -188,7 +189,7 @@ App{
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }
-    cpp.defines: base.concat(["L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601"])
+    cpp.defines: base.concat(["L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "FMT_HEADER_ONLY"])
 
     Group{
         name:"grpc files"
@@ -219,6 +220,18 @@ App{
 
         ]
         fileTags: ["proto"]
+    }
+    Group{
+    name: "nanobench"
+    files: [
+        "third_party/nanobench/nanobench.cpp",
+        "third_party/nanobench/nanobench.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
     }
 }
 

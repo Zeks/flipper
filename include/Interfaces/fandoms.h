@@ -32,7 +32,7 @@ namespace interfaces {
 class Fandoms{
 public:
     Fandoms() = default;
-    virtual ~Fandoms();
+    virtual ~Fandoms() = default;
 
     virtual void Clear() ;
     virtual void ClearIndex() ;
@@ -92,7 +92,7 @@ public:
                               bool writeUrls = true,
                               bool useSuppliedIds = false);
     virtual bool CreateFandom(QString);
-    virtual bool AddFandomLink(QString fandom, core::Url);
+    virtual bool AddFandomLink(QString fandom, const core::Url &);
     virtual bool AssignTagToFandom(QString, QString tag, bool includeCrosses = false);
     virtual void PushFandomToTopOfRecent(QString);
     virtual void RemoveFandomFromRecentList(QString);
@@ -104,7 +104,7 @@ public:
     virtual void CalculateFandomsAverages();
     virtual void CalculateFandomsFicCounts();
 
-    QList<core::FandomPtr> FilterFandoms(std::function<bool(core::FandomPtr)>);
+    QList<core::FandomPtr> FilterFandoms(const std::function<bool(core::FandomPtr)>&);
 
     bool isClient = false;
     QSqlDatabase db;

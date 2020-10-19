@@ -47,28 +47,28 @@ FieldSearcher CreateProfilePageUpdatedSearcher()
 {
     using namespace SearchTokenNamespace;
     QList<SearchToken> tokens;
-    tokens.push_back({"Profile\\sUpdated:",
-                      "0000000 1100000000",
+    tokens.push_back({QStringLiteral("Profile\\sUpdated:"),
+                      QStringLiteral("0000000 1100000000"),
                       16,          find_first_instance, move_left_boundary});
-    tokens.push_back({"'>","00",0, find_first_instance, move_right_boundary});
-    tokens.push_back({"'","0",1,   find_first_instance, move_left_boundary});
+    tokens.push_back({QStringLiteral("'>"),QStringLiteral("00"),0, find_first_instance, move_right_boundary});
+    tokens.push_back({QStringLiteral("'"),QStringLiteral("0"),1,   find_first_instance, move_left_boundary});
     FieldSearcher result;
     result.tokens = tokens;
-    result.name = "Profile Updated";
+    result.name = QStringLiteral("Profile Updated");
     return  result;
 }
 FieldSearcher CreateProfilePageCreatedSearcher()
 {
     using namespace SearchTokenNamespace;
     QList<SearchToken> tokens;
-    tokens.push_back({"=2>Joined\\s<",
-                      "000000000 110",
+    tokens.push_back({QStringLiteral("=2>Joined\\s<"),
+                      QStringLiteral("000000000 110"),
                       13,          find_first_instance, move_left_boundary});
-    tokens.push_back({"'>","00",0, find_first_instance, move_right_boundary});
-    tokens.push_back({"'","0",1,   find_first_instance, move_left_boundary});
+    tokens.push_back({QStringLiteral("'>"),QStringLiteral("00"),0, find_first_instance, move_right_boundary});
+    tokens.push_back({QStringLiteral("'"),QStringLiteral("0"),1,   find_first_instance, move_left_boundary});
     FieldSearcher result;
     result.tokens = tokens;
-    result.name = "Profile Created";
+    result.name = QStringLiteral("Profile Created");
     return  result;
 }
 
@@ -117,7 +117,7 @@ inline void FavouriteStoryParser::UpdateWordsCounterNew(QSharedPointer<core::Fan
                                   const CommonRegex& regexToken,
                                   QHash<int, int>& wordsKeeper)
 {
-    if(fic->summary.contains("crack", Qt::CaseInsensitive))
+    if(fic->summary.contains(QStringLiteral("crack"), Qt::CaseInsensitive))
         wordsKeeper[0]++;
 
     auto result = regexToken.ContainsSlash(fic->summary, fic->charactersFull, fic->fandom);
@@ -150,15 +150,15 @@ inline void UpdateWordsCounter(QSharedPointer<core::Fanfic> fic, QHash<int, int>
     containsSlash = containsSlash  || dontLikeDontRead;
 
     bool containsNotSlash = false;
-    QString notSlashRx = "((no[tn]{0,1}|isn[']t)(\\s|-)(slash|yaoi))|(jack\\sslash)|(fem[!]{0,1})|(naruko)";
+    QString notSlashRx = QStringLiteral("((no[tn]{0,1}|isn[']t)(\\s|-)(slash|yaoi))|(jack\\sslash)|(fem[!]{0,1})|(naruko)");
     containsNotSlash = containsNotSlash  || fic->summary.contains(QRegularExpression(notSlashRx, QRegularExpression::CaseInsensitiveOption));
 
     if(containsSlash && !containsNotSlash)
         wordsKeeper[1]++;
 
     bool hasSmut = false;
-    QString smutRx = "(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)"
-                     "(futanari)|(lemon)|(yuri)|(incest)|(succubus)|(incub)|(\\sanal\\s)|(vagina)|(\\sfem\\s)";
+    QString smutRx = QStringLiteral("(\\srape)|(harem)|(smut)|(lime)|(\\ssex)|(dickgirl)|(shemale)|(nsfw)|(porn)"
+                     "(futanari)|(lemon)|(yuri)|(incest)|(succubus)|(incub)|(\\sanal\\s)|(vagina)|(\\sfem\\s)");
     hasSmut = hasSmut  || fic->summary.contains(QRegularExpression(smutRx, QRegularExpression::CaseInsensitiveOption));
 
     if(hasSmut)
@@ -257,8 +257,8 @@ inline void ProcessGenre(QSharedPointer<core::Author> author,
 {
     double maxPrevalence = 0.0;
     int totalInClumps = 0;
-    auto it = genreKeeper.begin();
-    auto itEnd = genreKeeper.end();
+    auto it = genreKeeper.cbegin();
+    auto itEnd = genreKeeper.cend();
     while(it != itEnd){
         const auto value = it.value();
         double factor = static_cast<double>(value)/static_cast<double>(ficTotal);
@@ -288,7 +288,7 @@ inline void ProcessFicSize(QSharedPointer<core::Author> author, QList<int> sizes
     int total = sizes.size();
     int dominatingValue = 0.0;
 
-    for(auto i = ficSizeKeeper.begin(); i != ficSizeKeeper.end(); i++)
+    for(auto i = ficSizeKeeper.cbegin(); i != ficSizeKeeper.cend(); i++)
     {
         if(i.value() > dominatingValue)
         {
@@ -323,7 +323,7 @@ inline void ProcessFandomDiversity(QSharedPointer<core::Author> author, int ficT
     int totalInClumps = 0;
     int totalValue = 0;
 
-    for(auto i = fandomKeeper.begin(); i != fandomKeeper.end(); i++)
+    for(auto i = fandomKeeper.cbegin(); i != fandomKeeper.cend(); i++)
     {
         auto tempValue = i.value();
         totalValue+=tempValue;
@@ -414,7 +414,7 @@ QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString u
     recommender.author = author;
 
     recommender.author->name = authorName;
-    recommender.author->SetWebID("ffn", url_utils::GetWebId(url, "ffn").toInt());
+    recommender.author->SetWebID("ffn", url_utils::GetWebId(url, QStringLiteral("ffn")).toInt());
 
     auto profileUpdateDate = BouncingSearch(str, profilePageUpdatedFinder);
     auto profileCreateDate = BouncingSearch(str, profilePageCreatedFinder);
@@ -431,12 +431,12 @@ QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString u
     {
         counter++;
         favCounter++;
-        section = GetSection(str, "<div\\sclass=\'z-list\\sfavstories\'", currentPosition);
+        section = GetSection(str, QStringLiteral("<div\\sclass=\'z-list\\sfavstories\'"), currentPosition);
         if(!section.isValid)
         {
             favCounter--;
             ownCounter++;
-            section = GetSection(str, "<div\\sclass=\'z-list\\smystories\'", currentPosition);
+            section = GetSection(str, QStringLiteral("<div\\sclass=\'z-list\\smystories\'"), currentPosition);
             if(!section.isValid)
                 ownCounter--;
             ownStory = true;
@@ -532,11 +532,11 @@ void FavouriteStoryParser::SetAuthor(core::AuthorPtr author)
 }
 
 template <typename T, typename Y>
-void Combine(QHash<T, Y>& firstHash, QHash<T, Y> secondHash)
+void Combine(QHash<T, Y>& firstHash, const QHash<T, Y> secondHash)
 {
-    for(auto key: secondHash.keys())
+    for(const auto& key: secondHash.keys())
     {
-        firstHash[key] += secondHash[key];
+        firstHash[key] += secondHash.value(key);
     }
 }
 
@@ -544,17 +544,17 @@ void ConvertFandomsToIds(core::AuthorPtr author, QSharedPointer<interfaces::Fand
 {
     auto& stats = author->stats.favouriteStats;
 
-    for(auto i = author->stats.favouriteStats.fandoms.begin(); i != author->stats.favouriteStats.fandoms.end(); i++)
+    for(auto i = author->stats.favouriteStats.fandoms.cbegin(); i != author->stats.favouriteStats.fandoms.cend(); i++)
     {
-        stats.fandomsConverted[fandomInterface->GetIDForName(i.key())] = stats.fandoms[i.key()];
-        stats.fandomFactorsConverted[fandomInterface->GetIDForName(i.key())] = stats.fandomFactors[i.key()];
+        stats.fandomsConverted[fandomInterface->GetIDForName(i.key())] = stats.fandoms.value(i.key());
+        stats.fandomFactorsConverted[fandomInterface->GetIDForName(i.key())] = stats.fandomFactors.value(i.key());
     }
 }
 
 
 void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
                                       QSharedPointer<interfaces::Fandoms> fandomsInterface,
-                                      QList<core::FicSectionStatsTemporaryToken> tokens)
+                                      const QList<core::FicSectionStatsTemporaryToken>& tokens)
 {
     core::FicSectionStatsTemporaryToken resultingToken;
     for(const auto& statToken : tokens)
@@ -618,9 +618,10 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author,
     ConvertFandomsToIds(author, fandomsInterface);
 }
 
-void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers)
+void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, const QList<FavouriteStoryParser>& parsers)
 {
     QList<core::FicSectionStatsTemporaryToken> tokenList;
+    tokenList.reserve(parsers.size());
     for(const auto& parser : parsers)
     {
       tokenList.push_back(parser.statToken);
@@ -630,15 +631,15 @@ void FavouriteStoryParser::MergeStats(core::AuthorPtr author, QSharedPointer<int
 
 QString FavouriteStoryParser::ExtractRecommenderNameFromUrl(QString url)
 {
-    int pos = url.lastIndexOf("/");
+    int pos = url.lastIndexOf(QStringLiteral("/"));
     return url.mid(pos+1);
 }
 
 void FavouriteStoryParser::GetFandomFromTaggedSection(core::FanficSectionInFFNFavourites & section, QString text)
 {
-    thread_local QRegExp rxFandom("(.*)(?=\\s-\\sRated:)");
+    thread_local QRegExp rxFandom(QStringLiteral("(.*)(?=\\s-\\sRated:)"));
     GetTaggedSection(text, rxFandom,    [&section](QString val){
-        val.replace("\\'", "'");
+        val.replace(QStringLiteral("\\'"), QStringLiteral("'"));
         section.result->fandom = val;
     });
 }
@@ -651,8 +652,8 @@ void FavouriteStoryParser::GetTitle(core::FanficSectionInFFNFavourites & section
     int indexEnd = rxEnd.indexIn(text, indexStart+13);
     startfrom = indexEnd;
     section.result->title = text.mid(indexStart + 12,indexEnd - (indexStart + 12));
-    section.result->title=section.result->title.replace("\\'","'");
-    section.result->title=section.result->title.replace("\'","'");
+    section.result->title=section.result->title.replace(QStringLiteral("\\'"),QStringLiteral("'"));
+    section.result->title=section.result->title.replace(QStringLiteral("\'"),QStringLiteral("'"));
 }
 
 
@@ -666,7 +667,7 @@ void FavouriteStoryParser::GetTitleAndUrl(core::FanficSectionInFFNFavourites & s
 QString ParseAuthorNameFromFavouritePage(QString data)
 {
     QString result;
-    thread_local QRegExp rx("title>([A-Za-z0-9.\\-\\s']+)(?=\\s|\\sFanFiction)");
+    thread_local QRegExp rx(QStringLiteral("title>([A-Za-z0-9.\\-\\s']+)(?=\\s|\\sFanFiction)"));
     int index = rx.indexIn(data);
     if(index == -1)
         return result;

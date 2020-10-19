@@ -32,11 +32,11 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     auto userFics = user->FicList();
     for(int i = 0; i < userFics->fics.size(); i++)
     {
-        if(userFics->sourceFics.contains(userFics->fics[i]))
+        if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
         if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->matchCounts[i]>1))
-        filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
+                || (user->GetStrictFreshSort() && userFics->matchCounts.at(i) > 1))
+        filter.recsHash[userFics->fics[i]] = userFics->matchCounts.at(i);
     }
     userFics->ficToScore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();
@@ -111,10 +111,10 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
 
     for(int i = 0; i < userFics->fics.size(); i++)
     {
-        if(userFics->sourceFics.contains(userFics->fics[i]))
+        if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
-        if(userFics->matchCounts[i]>=qualityCutoff)
-            filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
+        if(userFics->matchCounts.at(i) >=qualityCutoff)
+            filter.recsHash[userFics->fics[i]] = userFics->matchCounts.at(i);
     }
     userFics->ficToScore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();
@@ -178,11 +178,11 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
     auto userFics = user->FicList();
     for(int i = 0; i < userFics->fics.size(); i++)
     {
-        if(userFics->sourceFics.contains(userFics->fics[i]))
+        if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
         if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->matchCounts[i]>1))
-        filter.recsHash[userFics->fics[i]] = userFics->matchCounts[i];
+                || (user->GetStrictFreshSort() && userFics->matchCounts.at(i)>1))
+        filter.recsHash[userFics->fics[i]] = userFics->matchCounts.at(i);
     }
     userFics->ficToScore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();

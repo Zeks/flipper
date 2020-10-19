@@ -59,8 +59,8 @@ public:
                                       QHash<int, int>& wordsKeeper);
 
     //QSharedPointer<interfaces::Fandoms> fandomInterface;
-    static void MergeStats(core::AuthorPtr,  QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<FavouriteStoryParser> parsers);
-    static void MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, QList<core::FicSectionStatsTemporaryToken> tokens);
+    static void MergeStats(core::AuthorPtr,  QSharedPointer<interfaces::Fandoms> fandomsInterface, const QList<FavouriteStoryParser> &parsers);
+    static void MergeStats(core::AuthorPtr author, QSharedPointer<interfaces::Fandoms> fandomsInterface, const QList<core::FicSectionStatsTemporaryToken>& tokens);
     core::FicSectionStatsTemporaryToken statToken;
     FavouritesPage recommender;
     QHash<QString, QString> alreadyDone;

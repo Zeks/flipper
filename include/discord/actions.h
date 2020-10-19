@@ -21,15 +21,15 @@ class ActionBase{
 public:
     ActionBase(){}
     virtual ~ActionBase(){}
-    virtual QSharedPointer<SendMessageCommand> Execute(QSharedPointer<TaskEnvironment>, Command);
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command) = 0;
+    virtual QSharedPointer<SendMessageCommand> Execute(QSharedPointer<TaskEnvironment>, Command&&);
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&&) = 0;
     QSharedPointer<SendMessageCommand> action;
 };
 
 #define ACTION(X) class X : public ActionBase{ \
 public: \
     X(){} \
-    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command); \
+    virtual QSharedPointer<SendMessageCommand> ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&&); \
 }
 
 ACTION(GeneralHelpAction);

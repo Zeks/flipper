@@ -25,56 +25,56 @@ namespace interfaces {
 QHash<QString, QString> CreateCodeToDBGenreConverter()
 {
     QHash<QString, QString> result;
-    result["General"] = "General_";
-    result["Humor"] = "Humor";
-    result["Poetry"] = "Poetry";
-    result["Adventure"] = "Adventure";
-    result["Mystery"] = "Mystery";
-    result["Horror"] = "Horror";
-    result["Parody"] = "Parody";
-    result["Angst"] = "Angst";
-    result["Supernatural"] = "Supernatural";
-    result["Suspense"] = "Suspense";
-    result["Romance"] = "Romance";
-    result["not found"] = "NoGenre";
-    result["Sci-Fi"] = "SciFi";
-    result["Fantasy"] = "Fantasy";
-    result["Spiritual"] = "Spiritual";
-    result["Tragedy"] = "Tragedy";
-    result["Drama"] = "Drama";
-    result["Western"] = "Western";
-    result["Crime"] = "Crime";
-    result["Family"] = "Family";
-    result["Hurt/Comfort"] = "HurtComfort";
-    result["Friendship"] = "Friendship";
+    result[QStringLiteral("General")] = QStringLiteral("General_");
+    result[QStringLiteral("Humor")] = QStringLiteral("Humor");
+    result[QStringLiteral("Poetry")] = QStringLiteral("Poetry");
+    result[QStringLiteral("Adventure")] = QStringLiteral("Adventure");
+    result[QStringLiteral("Mystery")] = QStringLiteral("Mystery");
+    result[QStringLiteral("Horror")] = QStringLiteral("Horror");
+    result[QStringLiteral("Parody")] = QStringLiteral("Parody");
+    result[QStringLiteral("Angst")] = QStringLiteral("Angst");
+    result[QStringLiteral("Supernatural")] = QStringLiteral("Supernatural");
+    result[QStringLiteral("Suspense")] = QStringLiteral("Suspense");
+    result[QStringLiteral("Romance")] = QStringLiteral("Romance");
+    result[QStringLiteral("not found")] = QStringLiteral("NoGenre");
+    result[QStringLiteral("Sci-Fi")] = QStringLiteral("SciFi");
+    result[QStringLiteral("Fantasy")] = QStringLiteral("Fantasy");
+    result[QStringLiteral("Spiritual")] = QStringLiteral("Spiritual");
+    result[QStringLiteral("Tragedy")] = QStringLiteral("Tragedy");
+    result[QStringLiteral("Drama")] = QStringLiteral("Drama");
+    result[QStringLiteral("Western")] = QStringLiteral("Western");
+    result[QStringLiteral("Crime")] = QStringLiteral("Crime");
+    result[QStringLiteral("Family")] = QStringLiteral("Family");
+    result[QStringLiteral("Hurt/Comfort")] = QStringLiteral("HurtComfort");
+    result[QStringLiteral("Friendship")] = QStringLiteral("Friendship");
     return result;
 }
 
 QHash<QString, QString> CreateDBToCodeGenreConverter()
 {
     QHash<QString, QString> result;
-    result["HurtComfort"] = "Hurt/Comfort";
-    result["General_"] = "General";
-    result["NoGenre"] = "not found";
-    result["SciFi"] = "Sci-Fi";
-    result["Humor"] = "Humor";
-    result["Poetry"] = "Poetry";
-    result["Adventure"] = "Adventure";
-    result["Mystery"] = "Mystery";
-    result["Horror"] = "Horror";
-    result["Parody"] = "Parody";
-    result["Angst"] = "Angst";
-    result["Supernatural"] = "Supernatural";
-    result["Suspense"] = "Suspense";
-    result["Romance"] = "Romance";
-    result["Fantasy"] = "Fantasy";
-    result["Spiritual"] = "Spiritual";
-    result["Tragedy"] = "Tragedy";
-    result["Drama"] = "Drama";
-    result["Western"] = "Western";
-    result["Crime"] = "Crime";
-    result["Family"] = "Family";
-    result["Friendship"] = "Friendship";
+    result[QStringLiteral("HurtComfort")] = QStringLiteral("Hurt/Comfort");
+    result[QStringLiteral("General_")] = QStringLiteral("General");
+    result[QStringLiteral("NoGenre")] = QStringLiteral("not found");
+    result[QStringLiteral("SciFi")] = QStringLiteral("Sci-Fi");
+    result[QStringLiteral("Humor")] = QStringLiteral("Humor");
+    result[QStringLiteral("Poetry")] = QStringLiteral("Poetry");
+    result[QStringLiteral("Adventure")] = QStringLiteral("Adventure");
+    result[QStringLiteral("Mystery")] = QStringLiteral("Mystery");
+    result[QStringLiteral("Horror")] = QStringLiteral("Horror");
+    result[QStringLiteral("Parody")] = QStringLiteral("Parody");
+    result[QStringLiteral("Angst")] = QStringLiteral("Angst");
+    result[QStringLiteral("Supernatural")] = QStringLiteral("Supernatural");
+    result[QStringLiteral("Suspense")] = QStringLiteral("Suspense");
+    result[QStringLiteral("Romance")] = QStringLiteral("Romance");
+    result[QStringLiteral("Fantasy")] = QStringLiteral("Fantasy");
+    result[QStringLiteral("Spiritual")] = QStringLiteral("Spiritual");
+    result[QStringLiteral("Tragedy")] = QStringLiteral("Tragedy");
+    result[QStringLiteral("Drama")] = QStringLiteral("Drama");
+    result[QStringLiteral("Western")] = QStringLiteral("Western");
+    result[QStringLiteral("Crime")] = QStringLiteral("Crime");
+    result[QStringLiteral("Family")] = QStringLiteral("Family");
+    result[QStringLiteral("Friendship")] = QStringLiteral("Friendship");
     return result;
 }
 
@@ -148,7 +148,7 @@ void Genres::LogGenreDistribution(std::array<double, 22> &data, QString target)
     {
 
         auto genre = genreIndex->genresByIndex[i];
-        auto value = std::abs(data[i]) > 0.005 ? data[i] : 0;
+        auto value = std::abs(data.at(i)) > 0.005 ? data.at(i) : 0;
         QLOG_INFO() << genre.name << ": " << value;
     }
     QLOG_INFO() << "///////////////////";
@@ -168,56 +168,56 @@ QString Genres::MoodForGenre(QString genre)
     thread_local QStringList dramatic = { "Drama" , "Tragedy" , "Angst"};
     thread_local QStringList shocky = {"Horror"};
     if(neutral.contains(genre))
-        result = "Neutral";
+        result = QStringLiteral("Neutral");
     if(flirty.contains(genre))
-        result = "Flirty";
+        result = QStringLiteral("Flirty");
     if(funny.contains(genre))
-        result = "Funny";
+        result = QStringLiteral("Funny");
     if(hurty.contains(genre))
-        result = "Hurty";
+        result = QStringLiteral("Hurty");
     if(bondy.contains(genre))
-        result = "Bondy";
+        result = QStringLiteral("Bondy");
     if(dramatic.contains(genre))
-        result = "Dramatic";
+        result = QStringLiteral("Dramatic");
     if(shocky.contains(genre))
-        result = "Shocky";
+        result = QStringLiteral("Shocky");
     //QLOG_INFO() << "returning:" << result;
     return result;
 }
 
 void Genres::WriteMoodValue(QString mood, float value, genre_stats::ListMoodData & data)
 {
-    if(mood =="Neutral")
+    if(mood == QStringLiteral("Neutral"))
         data.strengthNeutral+=value;
-    if(mood =="Funny")
+    if(mood == QStringLiteral("Funny"))
         data.strengthFunny+=value;
-    if(mood =="Hurty")
+    if(mood == QStringLiteral("Hurty"))
         data.strengthHurty+=value;
-    if(mood =="Bondy")
+    if(mood == QStringLiteral("Bondy"))
         data.strengthBondy+=value;
-    if(mood =="Dramatic")
+    if(mood == QStringLiteral("Dramatic"))
         data.strengthDramatic+=value;
-    if(mood =="Shocky")
+    if(mood == QStringLiteral("Shocky"))
         data.strengthShocky+=value;
-    if(mood =="Flirty")
+    if(mood == QStringLiteral("Flirty"))
         data.strengthFlirty+=value;
 }
 
 float Genres::ReadMoodValue(QString mood, const genre_stats::ListMoodData & data)
 {
-    if(mood =="Neutral")
+    if(mood ==QStringLiteral("Neutral"))
         return data.strengthNeutral;
-    if(mood =="Funny")
+    if(mood ==QStringLiteral("Funny"))
         return data.strengthFunny;
-    if(mood =="Hurty")
+    if(mood ==QStringLiteral("Hurty"))
         return data.strengthHurty;
-    if(mood =="Bondy")
+    if(mood ==QStringLiteral("Bondy"))
         return data.strengthBondy;
-    if(mood =="Dramatic")
+    if(mood ==QStringLiteral("Dramatic"))
         return data.strengthDramatic;
-    if(mood =="Shocky")
+    if(mood ==QStringLiteral("Shocky"))
         return data.strengthShocky;
-    if(mood =="Flirty")
+    if(mood ==QStringLiteral("Flirty"))
         return data.strengthFlirty;
     return 0.f;
 }
@@ -226,24 +226,24 @@ float Genres::ReadMoodValue(QString mood, const genre_stats::ListMoodData & data
 static QStringList GetSignificantNeutralTypes(QStringList list, bool addAdventure = false)
 {
     QStringList result;
-    if(list.contains("Sci-Fi"))
-        result.push_back("Sci-Fi");
-    if(list.contains("Spiritual"))
-        result.push_back("Spiritual");
-    if(list.contains("Supernatural"))
-        result.push_back("Supernatural");
-    if(list.contains("Suspense"))
-        result.push_back("Suspense");
-    if(list.contains("Mystery"))
-        result.push_back("Mystery");
-    if(list.contains("Crime"))
-        result.push_back("Crime");
-    if(list.contains("Fantasy"))
-        result.push_back("Fantasy");
-    if(list.contains("Western"))
-        result.push_back("Western");
-    if((addAdventure && result.empty()) || list.contains("Adventure"))
-        result.push_back("Adventure");
+    if(list.contains(QStringLiteral("Sci-Fi")))
+        result.push_back(QStringLiteral("Sci-Fi"));
+    if(list.contains(QStringLiteral("Spiritual")))
+        result.push_back(QStringLiteral("Spiritual"));
+    if(list.contains(QStringLiteral("Supernatural")))
+        result.push_back(QStringLiteral("Supernatural"));
+    if(list.contains(QStringLiteral("Suspense")))
+        result.push_back(QStringLiteral("Suspense"));
+    if(list.contains(QStringLiteral("Mystery")))
+        result.push_back(QStringLiteral("Mystery"));
+    if(list.contains(QStringLiteral("Crime")))
+        result.push_back(QStringLiteral("Crime"));
+    if(list.contains(QStringLiteral("Fantasy")))
+        result.push_back(QStringLiteral("Fantasy"));
+    if(list.contains(QStringLiteral("Western")))
+        result.push_back(QStringLiteral("Western"));
+    if((addAdventure && result.empty()) || list.contains(QStringLiteral("Adventure")))
+        result.push_back(QStringLiteral("Adventure"));
     return result;
 }
 
@@ -251,10 +251,10 @@ static QStringList GetSignificantNeutralTypes(QStringList list, bool addAdventur
 static QStringList GetSignificantHumorTypes(QStringList list)
 {
     QStringList result;
-    if(list.contains("Parody"))
-        result.push_back("Parody");
-    if(result.empty() || list.contains("Humor"))
-        result.push_back("Humor");
+    if(list.contains(QStringLiteral("Parody")))
+        result.push_back(QStringLiteral("Parody"));
+    if(result.empty() || list.contains(QStringLiteral("Humor")))
+        result.push_back(QStringLiteral("Humor"));
     return result;
 }
 
@@ -262,22 +262,22 @@ static QStringList GetSignificantHumorTypes(QStringList list)
 static QStringList GetSignificantDramaTypes(QStringList list)
 {
     QStringList result;
-    if(list.contains("Angst"))
-        result.push_back("Angst");
-    if(list.contains("Tragedy"))
-        result.push_back("Tragedy");
-    if(result.empty() || list.contains("Drama"))
-        result.push_back("Drama");
+    if(list.contains(QStringLiteral("Angst")))
+        result.push_back(QStringLiteral("Angst"));
+    if(list.contains(QStringLiteral("Tragedy")))
+        result.push_back(QStringLiteral("Tragedy"));
+    if(result.empty() || list.contains(QStringLiteral("Drama")))
+        result.push_back(QStringLiteral("Drama"));
     return  result;
 }
 
 static QStringList GetSignificantFamilyTypes(QStringList list)
 {
     QStringList result;
-    if(list.contains("Friendship"))
-        result.push_back("Friendship");
-    if(result.empty() || list.contains("Family"))
-        result.push_back("Family");
+    if(list.contains(QStringLiteral("Friendship")))
+        result.push_back(QStringLiteral("Friendship"));
+    if(result.empty() || list.contains(QStringLiteral("Family")))
+        result.push_back(QStringLiteral("Family"));
     return  result;
 }
 
@@ -395,11 +395,11 @@ void GenreConverter::ProcessGenreResult(genre_stats::FicGenreData & genreData)
     else if(genreData.strengthHumor > 0.25f && genreData.strengthDrama < 0.3f )
         genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 0.2f});
     if(genreData.strengthRomance > 0.7f)
-        genreData.realGenres.push_back({{"Romance"}, 1});
+        genreData.realGenres.push_back({{QStringLiteral("Romance")}, 1});
     else if(genreData.strengthRomance > 0.5f)
-        genreData.realGenres.push_back({{"Romance"}, 0.6f});
+        genreData.realGenres.push_back({{QStringLiteral("Romance")}, 0.6f});
     else if(genreData.strengthRomance > 0.25f)
-        genreData.realGenres.push_back({{"Romance"}, 0.2f});
+        genreData.realGenres.push_back({{QStringLiteral("Romance")}, 0.2f});
     if(genreData.strengthDrama > 0.6f)
         genreData.realGenres.push_back({GetSignificantDramaTypes(genreData.originalGenres), 1});
     else if(genreData.strengthDrama > 0.45f)
@@ -414,11 +414,11 @@ void GenreConverter::ProcessGenreResult(genre_stats::FicGenreData & genreData)
     else if(genreData.strengthBonds > 0.12f)
         genreData.realGenres.push_back({GetSignificantFamilyTypes(genreData.originalGenres), 0.3f});
     if(genreData.strengthHurtComfort> 0.4f)
-        genreData.realGenres.push_back({{"Hurt/Comfort"}, 1});
+        genreData.realGenres.push_back({{QStringLiteral("Hurt/Comfort")}, 1});
     else if(genreData.strengthHurtComfort > 0.3f)
-        genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.7f});
+        genreData.realGenres.push_back({{QStringLiteral("Hurt/Comfort")}, 0.7f});
     else if(genreData.strengthHurtComfort > 0.2f)
-        genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.5f});
+        genreData.realGenres.push_back({{QStringLiteral("Hurt/Comfort")}, 0.5f});
 
     genreData.processedGenres = FinalGenreProcessing(genreData);
 }
@@ -449,11 +449,11 @@ void GenreConverter::ProcessGenreResultIteration2(genre_stats::FicGenreData & ge
         genreData.realGenres.push_back({GetSignificantHumorTypes(genreData.originalGenres), 0.2f});
 
     if(genreData.strengthRomance > 0.7f)
-        genreData.realGenres.push_back({{"Romance"}, 1});
+        genreData.realGenres.push_back({{QStringLiteral("Romance")}, 1});
     else if(genreData.strengthRomance > 0.5f)
-        genreData.realGenres.push_back({{"Romance"}, 0.6f});
+        genreData.realGenres.push_back({{QStringLiteral("Romance")}, 0.6f});
     else if(genreData.strengthRomance > 0.25f)
-        genreData.realGenres.push_back({{"Romance"}, 0.2f});
+        genreData.realGenres.push_back({{QStringLiteral("Romance")}, 0.2f});
 
     if(genreData.strengthDrama > 0.6f)
         genreData.realGenres.push_back({GetSignificantDramaTypes(genreData.originalGenres), 1});
@@ -471,11 +471,11 @@ void GenreConverter::ProcessGenreResultIteration2(genre_stats::FicGenreData & ge
 
 
     if(genreData.strengthHurtComfort> 0.7f)
-        genreData.realGenres.push_back({{"Hurt/Comfort"}, 1});
+        genreData.realGenres.push_back({{QStringLiteral("Hurt/Comfort")}, 1});
     else if(genreData.strengthHurtComfort > 0.5f)
-        genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.7f});
+        genreData.realGenres.push_back({{QStringLiteral("Hurt/Comfort")}, 0.7f});
     else if(genreData.strengthHurtComfort > 0.4f)
-        genreData.realGenres.push_back({{"Hurt/Comfort"}, 0.5f});
+        genreData.realGenres.push_back({{QStringLiteral("Hurt/Comfort")}, 0.5f});
 
     genreData.processedGenres = FinalGenreProcessing(genreData);
 }
@@ -491,7 +491,7 @@ void GenreConverter::DetectRealGenres(genre_stats::FicGenreData & data)
 
     // leaving horror as is, because author probbaly knows what he is doing
     // and there's no reliable way to pull proper statisstics for it anyway
-    data.genresToKeep.push_back("Horror");
+    data.genresToKeep.push_back(QStringLiteral("Horror"));
 
     // we have  two cases
     // one where adventure firmly sits above 0.9 as a dominant genre
@@ -528,7 +528,7 @@ void GenreConverter::DetectRealGenres(genre_stats::FicGenreData & data)
         if( (data.strengthRomance - genreData) < 0.15f )
             romanceIsMainGenre = false;
     if(romanceIsMainGenre)
-        data.realGenres.push_back({{"Romance"}, data.strengthRomance*2});
+        data.realGenres.push_back({{QStringLiteral("Romance")}, data.strengthRomance*2});
 
     bool dramaIsMainGenre = true;
     for(auto genreData : {data.strengthRomance,data.strengthHumor, data.strengthHurtComfort})
@@ -546,15 +546,15 @@ void GenreConverter::DetectRealGenres(genre_stats::FicGenreData & data)
 
     if(hurtComfortStatisticallySignificant && (data.strengthHumor < 0.3f))
     {
-        data.realGenres.push_back({{"Hurt/Comfort"}, data.strengthHurtComfort*3});
-        data.genresToKeep.push_back("Hurt/Comfort");
+        data.realGenres.push_back({{QStringLiteral("Hurt/Comfort")}, data.strengthHurtComfort*3});
+        data.genresToKeep.push_back(QStringLiteral("Hurt/Comfort"));
     }
 
     if(data.strengthBonds > 0.15f)
     {
         data.realGenres.push_back({GetSignificantFamilyTypes(data.originalGenres), data.strengthBonds*3});
-        data.genresToKeep.push_back("Family");
-        data.genresToKeep.push_back("Friendship");
+        data.genresToKeep.push_back(QStringLiteral("Family"));
+        data.genresToKeep.push_back(QStringLiteral("Friendship"));
     }
 
     if(neutralDropsBelowThreshold )
@@ -569,7 +569,7 @@ void GenreConverter::DetectRealGenres(genre_stats::FicGenreData & data)
         if(!humorIsMainGenre &&
                 std::abs(data.strengthDrama - data.strengthRomance) < 0.15f)
         {
-            data.realGenres.push_back({{"Romance"}, data.strengthRomance*2});
+            data.realGenres.push_back({{QStringLiteral("Romance")}, data.strengthRomance*2});
             data.realGenres.push_back({GetSignificantDramaTypes(data.originalGenres), data.strengthDrama*2*dramaticMultiplier});
         }
         if(humorIsMainGenre)
@@ -577,7 +577,7 @@ void GenreConverter::DetectRealGenres(genre_stats::FicGenreData & data)
             if((data.strengthDrama - data.strengthRomance) > 0.15f)
                 data.realGenres.push_back({GetSignificantDramaTypes(data.originalGenres), data.strengthDrama*2});
             else if((data.strengthRomance - data.strengthDrama) > 0.15f)
-                data.realGenres.push_back({{"Romance"}, data.strengthRomance*2});
+                data.realGenres.push_back({{QStringLiteral("Romance")}, data.strengthRomance*2});
             else if(dramaticMultiplier > 1){
                 data.realGenres.push_back({GetSignificantDramaTypes(data.originalGenres), data.strengthDrama*2*dramaticMultiplier});
             }
@@ -603,28 +603,28 @@ GenreIndex::GenreIndex()
 void GenreIndex::Init()
 {
     size_t counter = 0;
-    InitGenre({true,counter++,"General", "General_", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Humor", "", mt_happy, gc_funny});
-    InitGenre({true,counter++,"Poetry", "", mt_neutral, gc_none});
-    InitGenre({true,counter++,"Adventure", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Mystery", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Horror", "", mt_neutral, gc_shocky});
-    InitGenre({true,counter++,"Parody", "", mt_happy, gc_funny});
-    InitGenre({true,counter++,"Angst", "", mt_sad, gc_dramatic});
-    InitGenre({true,counter++,"Supernatural", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Suspense", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Romance", "", mt_neutral, gc_flirty});
-    InitGenre({true,counter++,"not found", "NoGenre", mt_neutral, gc_none});
-    InitGenre({true,counter++,"Sci-Fi", "SciFi", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Fantasy", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Spiritual", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Tragedy", "", mt_sad, gc_dramatic});
-    InitGenre({true,counter++,"Western", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Crime", "", mt_neutral, gc_neutral});
-    InitGenre({true,counter++,"Family", "", mt_neutral, gc_bondy});
-    InitGenre({true,counter++,"Hurt/Comfort", "HurtComfort", mt_neutral, gc_hurty});
-    InitGenre({true,counter++,"Friendship", "", mt_neutral, gc_bondy});
-    InitGenre({true,counter++,"Drama", "", mt_sad, gc_dramatic});
+    InitGenre({true,counter++,QStringLiteral("General"), QStringLiteral("General_"), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Humor"), QStringLiteral(""), mt_happy, gc_funny});
+    InitGenre({true,counter++,QStringLiteral("Poetry"), QStringLiteral(""), mt_neutral, gc_none});
+    InitGenre({true,counter++,QStringLiteral("Adventure"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Mystery"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Horror"), QStringLiteral(""), mt_neutral, gc_shocky});
+    InitGenre({true,counter++,QStringLiteral("Parody"), QStringLiteral(""), mt_happy, gc_funny});
+    InitGenre({true,counter++,QStringLiteral("Angst"), QStringLiteral(""), mt_sad, gc_dramatic});
+    InitGenre({true,counter++,QStringLiteral("Supernatural"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Suspense"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Romance"), QStringLiteral(""), mt_neutral, gc_flirty});
+    InitGenre({true,counter++,QStringLiteral("not found"), QStringLiteral("NoGenre"), mt_neutral, gc_none});
+    InitGenre({true,counter++,QStringLiteral("Sci-Fi"), QStringLiteral("SciFi"), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Fantasy"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Spiritual"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Tragedy"), QStringLiteral(""), mt_sad, gc_dramatic});
+    InitGenre({true,counter++,QStringLiteral("Western"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Crime"), QStringLiteral(""), mt_neutral, gc_neutral});
+    InitGenre({true,counter++,QStringLiteral("Family"), QStringLiteral(""), mt_neutral, gc_bondy});
+    InitGenre({true,counter++,QStringLiteral("Hurt/Comfort"), QStringLiteral("HurtComfort"), mt_neutral, gc_hurty});
+    InitGenre({true,counter++,QStringLiteral("Friendship"), QStringLiteral(""), mt_neutral, gc_bondy});
+    InitGenre({true,counter++,QStringLiteral("Drama"), QStringLiteral(""), mt_sad, gc_dramatic});
 }
 
 void GenreIndex::InitGenre(const Genre &genre)

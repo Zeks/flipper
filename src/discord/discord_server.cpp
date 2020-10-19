@@ -53,7 +53,7 @@ namespace discord {
         dedicatedChannelId = value;
     }
 
-    std::string Server::GetCommandPrefix() const
+    std::string_view Server::GetCommandPrefix() const
     {
         QReadLocker locker(&lock);
         return commandPrefix;
@@ -176,7 +176,7 @@ namespace discord {
         return false;
     }
 
-    QSharedPointer<Server> Servers::GetServer(const std::string& server)
+    QSharedPointer<Server> Servers::GetServer(const std::string& server) const
     {
         if(!servers.contains(server))
             return {};
@@ -185,7 +185,7 @@ namespace discord {
 
     bool Servers::LoadServer(const std::string& server_id)
     {
-        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase("users");
+        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
         auto server = database::discord_queries::GetServer(dbToken->db, server_id).data;
         if(!server)
             return false;
