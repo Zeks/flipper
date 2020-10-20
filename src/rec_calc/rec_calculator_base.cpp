@@ -60,6 +60,38 @@ auto threadedIntListProcessor = [](QString taskName, int threadsToUse, QList<int
     task.run();
 };
 
+auto threadedIntListTupleProcessor = [](QString taskName, int threadsToUse, QList<int> list, auto worker, auto resultingDataProcessor){
+    QVector<std::tuple<QList<int>::const_iterator,QList<int>::const_iterator,QList<int>::const_iterator>> iterators;
+    int chunkSize = list.size()/threadsToUse;
+    int listSize = list.size();
+    int  i = 0;
+    iterators.reserve(threadsToUse);
+    while(i*chunkSize < listSize)
+    {
+        QList<int>::const_iterator begin = list.cbegin();
+        QList<int>::const_iterator end = list.cbegin();
+        std::advance(begin, i*chunkSize);
+        int rightBorder = i*chunkSize + chunkSize;
+        if(rightBorder < list.size())
+            std::advance(end, rightBorder);
+        else
+            end = list.cend();
+        iterators.push_back({list.begin(),begin, end});
+        i++;
+    }
+    typedef std::tuple<QList<int>::const_iterator,QList<int>::const_iterator,QList<int>::const_iterator> TupleType;
+    TimedAction task(taskName,[&](){
+        QVector<QFuture<decltype(worker(std::declval<TupleType>()))>> futures;
+        for(int i = 0; i < iterators.size(); i++)
+            futures.push_back(QtConcurrent::run(std::bind(worker,iterators.at(i))));
+        for(auto future: futures)
+            future.waitForFinished();
+        for(const auto& future: futures)
+            resultingDataProcessor(future.result());
+    });
+    task.run();
+};
+
 bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
@@ -482,6 +514,8 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     qDebug() << "faves is of size: " << inputs.faves.size();
     allAuthors.clear();
     allAuthors.reserve(inputs.faves.size());
+    std::vector<AuthorResult> tempAuthors;
+    tempAuthors.resize(inputs.faves.size());
     ownFavourites = {};
     maximumMatches = 0;
     matchSum = 0;
@@ -502,14 +536,15 @@ void RecCalculatorImplBase::FetchAuthorRelations()
     AuthorRelationsResult funcResult;
     //RatioHash ratioHash;
     TimedAction action("Relations Creation",[&](){
-        auto worker = [&](const std::pair<QList<int>::const_iterator,QList<int>::const_iterator>& beginEnd){
+        auto worker = [&](const std::tuple<QList<int>::const_iterator,QList<int>::const_iterator,QList<int>::const_iterator>& iterators){
             AuthorRelationsResult tempResult;
             tempResult.maximumMatches = params->minimumMatch;
-            auto itCurrent = beginEnd.first;
-            auto itEnd= beginEnd.second;
+            auto itCurrent = std::get<1>(iterators);
+            auto itEnd= std::get<2>(iterators);
+            auto rangeBegin = std::get<0>(iterators);
             while(itCurrent < itEnd)
             {
-                auto& author = allAuthors[*itCurrent];
+                auto& author = tempAuthors[itCurrent-rangeBegin];
                 author.id = *itCurrent;
                 if(ownProfileId == author.id)
                 {
@@ -565,7 +600,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         };
 
 
-        threadedIntListProcessor("Creation of author relations", QThread::idealThreadCount() - 3,inputs.faves.keys(),  worker, [&funcResult](const AuthorRelationsResult& data){
+        threadedIntListTupleProcessor("Creation of author relations", QThread::idealThreadCount() - 3,inputs.faves.keys(),  worker, [&funcResult](const AuthorRelationsResult& data){
             if(funcResult.maximumMatches < data.maximumMatches)
                 funcResult.maximumMatches = data.maximumMatches;
             funcResult.matchSum+=data.matchSum;
@@ -576,6 +611,10 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         });
     });
     action.run();
+    for(auto&& author: tempAuthors){
+        auto id = author.id;
+        allAuthors.insert(std::move(id),std::move(author));
+    }
     matchSum = funcResult.matchSum;
     maximumMatches = funcResult.maximumMatches;
     RatioSumInfo tempSummary;
