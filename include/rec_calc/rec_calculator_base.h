@@ -100,7 +100,8 @@ struct RatioInfo{
     RatioInfo& operator+=(const RatioInfo& rhs){
 
         this->authors += rhs.authors;
-        this->ratio = rhs.ratio;
+        if(this->ratio == 0)
+            this->ratio = rhs.ratio;
         if(this->minMatches > rhs.minMatches)
             this->minMatches = rhs.minMatches;
         //this->fics |= rhs.fics;
@@ -153,6 +154,7 @@ struct RatioSumInfo{
     //    QReadWriteLock lock;
 };
 
+
 class RecCalculatorImplBase
 {
 public:
@@ -200,7 +202,7 @@ public:
     QSharedPointer<RecommendationList> params;
     //QList<int> matchedAuthors;
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
-    QHash<int, AuthorResult> allAuthors;
+    std::unordered_map<int, AuthorResult> allAuthors;
     uint32_t maximumMatches = 0;
     uint32_t prevMaximumMatches = 0;
     double averageNegativeToPositiveMatches = 0;
@@ -235,7 +237,7 @@ static auto negativeFilter = [](AuthorResult& author, QSharedPointer<Recommendat
 
 static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author)
 {
-    ptr->filteredAuthors+=author.id;
+    ptr->filteredAuthors.insert(author.id);
 };
 
 

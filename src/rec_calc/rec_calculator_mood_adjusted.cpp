@@ -28,8 +28,8 @@ static auto ratioFilterMoodAdjusted = [](AuthorResult& author, QSharedPointer<Re
         return false;
 
     bool firstPass =  author.ratio <= params->maxUnmatchedPerMatch && author.matches > 0;
-    author.usedRatio = params->maxUnmatchedPerMatch;
-    author.usedMinimumMatrch= params->minimumMatch;
+//    author.usedRatio = params->maxUnmatchedPerMatch;
+//    author.usedMinimumMatrch= params->minimumMatch;
 
     if(!firstPass)
         return false;
