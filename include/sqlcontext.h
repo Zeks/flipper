@@ -103,12 +103,12 @@ struct SqlContext
         Prepare(qs);
 
         for(auto i = hash.begin(); i != hash.end(); i++)
-            bindValue(std::move(i->first), std::move(i->second));
+            bindValue(i->first, std::move(i->second));
     }
 
     SqlContext(QSqlDatabase db, std::unordered_map<std::string, QVariant>&& hash) :  q(db),  transaction(db){
         for(auto i = hash.begin(); i != hash.end(); i++)
-            bindValue(std::move(i->first), std::move(i->second));
+            bindValue(i->first, std::move(i->second));
     }
 
     ~SqlContext(){
@@ -146,14 +146,10 @@ struct SqlContext
     template <typename HashKey, typename HashValue>
     void ExecuteWithArgsHash(QStringList nameKeys, QHash<HashKey, HashValue> args, bool ignoreUniqueness = false){
         BindValues();
-        for(auto key : args.keys())
+        for(const auto& key : args.keys())
         {
-            //            for(QString nameKey: nameKeys)
-            //            {
-            //qDebug() << "cycling";
             q.bindValue(":" + nameKeys[0], key);
             q.bindValue(":" + nameKeys[1], args[key]);
-            //}
             if(!ExecAndCheck(ignoreUniqueness))
             {
                 qDebug() << "breaking out of cycle";
@@ -162,28 +158,28 @@ struct SqlContext
         }
     }
     template <typename KeyType>
-    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType& key, QSqlQuery& q)>&& functor, bool ignoreUniqueness = false){
+    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType&& key, QSqlQuery& q)>&& functor, bool ignoreUniqueness = false){
         BindValues();
-        for(auto key : keyList)
+        for(auto&& key : keyList)
         {
-            functor(key, q);
+            functor(std::move(key), q);
             if(!ExecAndCheck(ignoreUniqueness))
                 break;
         }
     }
 
-    template <typename KeyType>
-    void ExecuteWithValueList(QString keyName, QList<KeyType> valueList, bool ignoreUniqueness = false){
+    template <typename ValueType>
+    void ExecuteWithValueList(QString keyName, QList<ValueType>&& valueList, bool ignoreUniqueness = false){
         BindValues();
-        for(auto value : valueList)
+        for(auto&& value : valueList)
         {
-            q.bindValue(":" + keyName, value);
+            q.bindValue(":" + keyName, std::move(value));
             if(!ExecAndCheck(ignoreUniqueness))
                 break;
         }
     }
-    template <typename KeyType>
-    void ExecuteWithValueList(QString keyName, QVector<KeyType> valueList, bool ignoreUniqueness = false){
+    template <typename ValueType>
+    void ExecuteWithValueList(QString keyName, QVector<ValueType> valueList, bool ignoreUniqueness = false){
         BindValues();
         for(auto value : valueList)
         {
@@ -345,6 +341,8 @@ struct SqlContext
         }
     }
 
+    //template<typename KeyType, typename LamdaType>
+    //void ProcessKeys(QList<KeyType> keys, const LamdaType& func){
     template<typename KeyType>
     void ProcessKeys(QList<KeyType> keys, const std::function<void(QString key, QSqlQuery&)>& func){
         for(auto key : keys)
