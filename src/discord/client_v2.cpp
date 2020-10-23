@@ -154,6 +154,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
     if(!messageSourceAndTypeHash.contains(messageID.number()))
         return;
 
+    QLOG_INFO() << "entered the onReaction core body";
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
                                                                          channelToServerHash.contains(channelID.number())
                                                                          ? channelToServerHash.value(channelID.number()) : 0);
@@ -164,7 +165,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         auto user = users->GetUser(QString::fromStdString(userID.string()));
         if(!user)
             return;
-
+        QLOG_INFO() << "bot is fetching message information";
         auto message = getMessage(channelID, messageID);
 
         if(emoji.name *in("👉", "👈")){
@@ -206,6 +207,7 @@ void discord::Client::onReady(SleepyDiscord::Ready )
 
 SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message, const SleepyDiscord::Embed& embed)
 {
+    QLOG_INFO() << "bot is sending response message";
     if(allowMessages)
         return SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed);
     SleepyDiscord::Response dummyResponse;
@@ -214,6 +216,7 @@ SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(Sleepy
 
 SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message)
 {
+    QLOG_INFO() << "bot is sending response message";
     if(allowMessages)
         return SleepyDiscord::DiscordClient::sendMessage(channelID, message);
     SleepyDiscord::Response dummyResponse;
