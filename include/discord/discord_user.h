@@ -43,6 +43,7 @@ struct User{
     User():lock(QReadWriteLock::Recursive){InitFicsPtr();}
     ~User() = default;
     User(QString userID, QString ffnID, QString name);
+    User(QString userID, QString ffnID, QString name, QString uuid);
     User(const User &user);
     void InitFicsPtr();
     User& operator=(const User &user);

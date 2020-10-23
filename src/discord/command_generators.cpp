@@ -64,7 +64,7 @@ void CommandCreator::EnsureUserExists(QString userId, QString userName)
         bool inDatabase = users->LoadUser(userId);
         if(!inDatabase)
         {
-            QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), userName));
+            QSharedPointer<discord::User> user(new discord::User(userId, QStringLiteral("-1"), userName, QUuid::createUuid().toString()));
             An<interfaces::Users> usersInterface;
             usersInterface->WriteUser(user);
             users->LoadUser(userId);
@@ -467,7 +467,7 @@ void SendMessageCommand::Invoke(Client * client)
                 if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
                     if(originalCommandType *in(ct_display_page, ct_display_rng))
                         this->user->SetLastPageMessage({resultingMessage, originalMessageToken.channelID});
-                    client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken.authorID.number(), originalCommandType});
+                    client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken, originalCommandType});
                     addReaction(resultingMessage);
                 }
             }
@@ -733,17 +733,17 @@ bool ResetFiltersCommand::IsThisCommand(const std::string &cmd)
 
 
 
-CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const SleepyDiscord::Message& message){
+CommandChain CreateRollCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message){
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_rng);
     command.variantHash[QStringLiteral("quality")] = user->GetLastUsedRoll();
-    command.targetMessage = message.ID;
+    command.targetMessage = message.messageID;
     command.user = user;
     result.Push(std::move(command));
     return result;
 }
 
-CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const SleepyDiscord::Message& message,bool shiftRight)
+CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_page);
@@ -754,13 +754,13 @@ CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, Q
     else
         return result;
 
-    command.targetMessage = message.ID;
+    command.targetMessage = message.messageID;
     command.user = user;
     result.Push(std::move(command));
     return result;
 }
 
-CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const SleepyDiscord::Message& message, bool shiftRight)
+CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
 {
     CommandChain result;
     Command command = NewCommand(server, message,ct_display_help);
@@ -779,7 +779,7 @@ CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPoint
 
     }
     command.ids.push_back(newPage);
-    command.targetMessage = message.ID;
+    command.targetMessage = message.messageID;
     command.user = user;
     result.Push(std::move(command));
     return result;

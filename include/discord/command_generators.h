@@ -236,9 +236,9 @@ public:
     static QStringList tips;
 };
 
-CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const SleepyDiscord::Message& );
-CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const SleepyDiscord::Message& , bool shiftRight = true);
-CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const SleepyDiscord::Message&, bool shiftRight = true);
+CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & );
+CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & , bool shiftRight = true);
+CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken &, bool shiftRight = true);
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, ECommandType type);
 Command NewCommand(QSharedPointer<discord::Server> server, const MessageToken& message, ECommandType type);
 }

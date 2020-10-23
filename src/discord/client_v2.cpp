@@ -5,6 +5,7 @@
 #include "discord/discord_server.h"
 #include "discord/discord_init.h"
 #include "discord/type_functions.h"
+#include "discord/cached_message_source.h"
 #include "discord/db_vendor.h"
 #include "sql/discord/discord_queries.h"
 #include "logger/QsLog.h"
@@ -149,12 +150,14 @@ static std::string CreateMention(const std::string& string){
 
 
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
+    if(userID == getID())
+        return;
     if(!actionableEmoji.contains(emoji.name))
         return;
     if(!messageSourceAndTypeHash.contains(messageID.number()))
         return;
 
-    QLOG_INFO() << "entered the onReaction core body";
+    QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
                                                                          channelToServerHash.contains(channelID.number())
                                                                          ? channelToServerHash.value(channelID.number()) : 0);
@@ -166,21 +169,22 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         if(!user)
             return;
         QLOG_INFO() << "bot is fetching message information";
-        auto message = getMessage(channelID, messageID);
+        //auto message = getMessage(channelID, messageID);
 
+        auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
+        messageInfo.token.messageID = messageID;
         if(emoji.name *in("👉", "👈")){
             bool scrollDirection = emoji.name == "👉" ? true : false;
-            auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
             CommandChain command;
             if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
-                command = CreateChangeRecommendationsPageCommand(user,server, message, scrollDirection);
+                command = CreateChangeRecommendationsPageCommand(user,server, messageInfo.token, scrollDirection);
             else
-                command = CreateChangeHelpPageCommand(user,server, message, scrollDirection);
+                command = CreateChangeHelpPageCommand(user,server, messageInfo.token, scrollDirection);
             executor->Push(std::move(command));
         }
         else if(emoji.name == "🔁")
         {
-            auto newRoll = CreateRollCommand(user,server, message);
+            auto newRoll = CreateRollCommand(user,server, messageInfo.token);
             executor->Push(std::move(newRoll));
         }
     }
@@ -205,23 +209,23 @@ void discord::Client::onReady(SleepyDiscord::Ready )
     botPrefixRequest = "<@!" + getID().string() + "> prefix";
 }
 
-SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message, const SleepyDiscord::Embed& embed)
-{
-    QLOG_INFO() << "bot is sending response message";
-    if(allowMessages)
-        return SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed);
-    SleepyDiscord::Response dummyResponse;
-    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
-}
+//SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message, const SleepyDiscord::Embed& embed)
+//{
+//    QLOG_INFO() << "bot is sending response message";
+//    if(allowMessages)
+//        return SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed);
+//    SleepyDiscord::Response dummyResponse;
+//    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
+//}
 
-SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message)
-{
-    QLOG_INFO() << "bot is sending response message";
-    if(allowMessages)
-        return SleepyDiscord::DiscordClient::sendMessage(channelID, message);
-    SleepyDiscord::Response dummyResponse;
-    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
-}
+//SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message)
+//{
+//    QLOG_INFO() << "bot is sending response message";
+//    if(allowMessages)
+//        return SleepyDiscord::DiscordClient::sendMessage(channelID, message);
+//    SleepyDiscord::Response dummyResponse;
+//    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
+//}
 }
 
 

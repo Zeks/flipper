@@ -144,12 +144,13 @@ DiagnosticSQLResult<int> GetCurrentPage(QSqlDatabase db, QString user_id)
 }
 
 DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User> user){
-    std::string qs = "INSERT INTO discord_users(user_id, user_name, ffn_id, reads_slash, current_list, banned) values(:user_id, :user_name, :ffn_id, :reads_slash, 0, 0)";
+    std::string qs = "INSERT INTO discord_users(user_id, user_name, ffn_id, reads_slash, current_list, banned, uuid) values(:user_id, :user_name, :ffn_id, :reads_slash, 0, 0, :uuid)";
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("user_id", user->UserID());
     ctx.bindValue("user_name", user->UserName());
     ctx.bindValue("ffn_id", user->FfnID());
     ctx.bindValue("reads_slash", user->ReadsSlash());
+    ctx.bindValue("uuid", user->GetUuid());
     ctx.ExecAndCheck(false);
     return std::move(ctx.result);
 }
