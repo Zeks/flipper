@@ -40,10 +40,8 @@ ENV ZLIB_DEPENDENCIES $ZLIB_DEPENDENCIES
 ENV CPLUS_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 ENV C_INCLUDE_PATH=/build/libs/grpc-1.30.2/include
 
-ARG CACHEBUSTER_SLEEPY
-
-
 RUN   apt-get -y install git cmake ninja-build libssl-dev curl libcurl4-openssl-dev
+ARG CACHEBUSTER_SLEEPY
 RUN --mount=type=ssh \
     cd $PACKAGE_DIR  \ 
     && git clone https://github.com/Zeks/flipper.git   \ 
