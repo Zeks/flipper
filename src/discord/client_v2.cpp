@@ -119,6 +119,9 @@ void Client::onMessage(SleepyDiscord::Message message) {
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
     std::string_view sv (message.content);
 
+    if(server->GetServerId() == "342065231842902017" && message.channelID != "769193920394952706")
+        return;
+
     const auto commandPrefix = server->GetCommandPrefix();
     if(sv == botPrefixRequest)
         sendMessage(message.channelID, "Prefix for this server is: " + std::string(commandPrefix));
@@ -161,6 +164,9 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
                                                                          channelToServerHash.contains(channelID.number())
                                                                          ? channelToServerHash.value(channelID.number()) : 0);
+
+    if(server->GetServerId() == "342065231842902017" && channelID != "769193920394952706")
+        return;
 
     bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
     if(isOriginalUser){
