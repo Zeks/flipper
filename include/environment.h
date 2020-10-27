@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 
 #include "storyfilter.h"
-#include "libs/UniversalModels/include/TableDataInterface.h"
-#include "libs/UniversalModels/include/TableDataListHolder.h"
-#include "libs/UniversalModels/include/AdaptingTableModel.h"
+#include "libs/ui-models/include/TableDataInterface.h"
+#include "libs/ui-models/include/TableDataListHolder.h"
+#include "libs/ui-models/include/AdaptingTableModel.h"
 #include "include/tasks/fandom_task_processor.h"
 #include "include/tasks/author_task_processor.h"
 //#include "qml_ficmodel.h"

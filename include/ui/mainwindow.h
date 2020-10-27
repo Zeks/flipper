@@ -38,9 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <functional>
 #include "tagwidget.h"
 #include "storyfilter.h"
-#include "libs/UniversalModels/include/TableDataInterface.h"
-#include "libs/UniversalModels/include/TableDataListHolder.h"
-#include "libs/UniversalModels/include/AdaptingTableModel.h"
+#include "libs/ui-models/include/TableDataInterface.h"
+#include "libs/ui-models/include/TableDataListHolder.h"
+#include "libs/ui-models/include/AdaptingTableModel.h"
 #include "qml_ficmodel.h"
 #include "include/core/section.h"
 #include "include/pagetask.h"

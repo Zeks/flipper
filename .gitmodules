@@ -4,3 +4,6 @@
 [submodule "proto"]
 	path = proto
 	url = https://github.com/Zeks/flipper-proto.git
+[submodule "libs/ui-models"]
+	path = libs/ui-models
+	url = git@github.com:Zeks/ui-models.git
