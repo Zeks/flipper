@@ -2201,6 +2201,100 @@ DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDataba
     return ctx(true);
 }
 
+DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomLists(QSqlDatabase db)
+{
+    using ListPtr = core::fandom_lists::List::ListPtr;
+    using List = core::fandom_lists::List;
+    std::string qs = " select * from fandom_lists";
+
+    SqlContext<std::vector<core::fandom_lists::List::ListPtr>> ctx(db, std::move(qs));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ListPtr list(new List);
+        list->listId = q.value(QStringLiteral("id")).toBool();
+        list->listName = q.value(QStringLiteral("name")).toBool();
+        list->isEnabled= q.value(QStringLiteral("is_enabled")).toBool();
+        list->isDefault = q.value(QStringLiteral("is_default")).toBool();
+        list->uiIndex = q.value(QStringLiteral("ui_index")).toBool();
+        ctx.result.data.push_back(list);
+    });
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFandomStatesInUserList(int list_id, QSqlDatabase db)
+{
+    using FandomState = core::fandom_lists::FandomStateInList;
+    using FandomInclusionMode = core::fandom_lists::EFandomInclusionMode;
+    using CrossoverInclusionMode = core::fandom_lists::ECrossoverInclusionMode;
+
+    std::string qs = " select * from fandom_list_data where list_id=:list_id order by fandom_id asc";
+
+    SqlContext<std::vector<core::fandom_lists::FandomStateInList>> ctx(db, std::move(qs), BP1(list_id));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        FandomState state;
+        state.list_id = q.value(QStringLiteral("list_id")).toBool();
+        state.fandom_id = q.value(QStringLiteral("fandom_id")).toBool();
+        state.isEnabled = q.value(QStringLiteral("enabled_state")).toBool();
+        state.uiIndex = q.value(QStringLiteral("ui_index")).toBool();
+        state.crossoverInclusionMode = static_cast<CrossoverInclusionMode>(q.value(QStringLiteral("crossover_mode")).toBool());
+        state.fandomInclusionMode= static_cast<FandomInclusionMode>(q.value(QStringLiteral("inclusion_mode")).toBool());
+        ctx.result.data.push_back(state);
+    });
+    return std::move(ctx.result);
+}
+
+
+DiagnosticSQLResult<bool> AddFandomToUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase db)
+{
+    std::string qs = "insert into fandom_list_data(list_id, fandom_id) values(:list_id, :fandom_id)";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(list_id, fandom_id));
+    return ctx(true);
+}
+
+DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase db)
+{
+    std::string qs = "delete from fandom_list_data where list_id = :list_id and fandom_id = :fandom_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(list_id, fandom_id));
+    return ctx(true);
+}
+
+DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList & fandomState, QSqlDatabase db)
+{
+    std::string qs = "update fandom_list_data set "
+                     " enabled_state = :enabled_state,"
+                     " inclusion_mode = :inclusion_mode,"
+                     " crossover_mode = :crossover_mode,"
+                     " ui_index = :ui_index,"
+                     " where list_id = :list_id and fandom_id = :fandom_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("enabled_state", fandomState.isEnabled);
+    ctx.bindValue("inclusion_mode", static_cast<int>(fandomState.fandomInclusionMode));
+    ctx.bindValue("crossover_mode", static_cast<int>(fandomState.crossoverInclusionMode));
+    ctx.bindValue("ui_index", fandomState.uiIndex);
+    ctx.bindValue("list_id", fandomState.list_id);
+    ctx.bindValue("fandom_id", fandomState.fandom_id);
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr & listState, QSqlDatabase db)
+{
+    std::string qs = "update fandom_lists set "
+                     " name = :name,"
+                     " is_enabled = :is_enabled,"
+                     " is_inverted = :is_inverted,"
+                     " ui_index = :ui_index,"
+                     " where list_id = :list_id ";
+
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("name", listState->listName.c_str());
+    ctx.bindValue("is_enabled", listState->isEnabled);
+    ctx.bindValue("is_inverted", listState->isInverted);
+    ctx.bindValue("ui_index", listState->uiIndex);
+    ctx.bindValue("list_id", listState->listId);
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSqlDatabase db)
 {
     std::string qs = "Select distinct recommender_id from recommendations where fic_id = :fic_id";
@@ -4326,6 +4420,14 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
         result.success = true;
     return result;
 }
+
+
+
+
+
+
+
+
 
 }
 

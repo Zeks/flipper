@@ -449,12 +449,12 @@ private slots:
     void on_chkRandomizeSelection_toggled(bool checked);
 
     void OnRemoveFandomFromRecentList();
-    void OnRemoveFandomFromIgnoredList();
+    //void OnRemoveFandomFromIgnoredList();
     void OnRemoveFandomFromSlashFilterIgnoredList();
 
 
     void OnFandomsContextMenu(const QPoint &pos);
-    void OnIgnoredFandomsContextMenu(const QPoint &pos);
+    //void OnIgnoredFandomsContextMenu(const QPoint &pos);
     void OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos);
 
 //    void UpdateCategory(QString cat,
@@ -467,7 +467,7 @@ private slots:
     void GenerateFormattedList();
     void OnFindSimilarClicked(QVariant);
 
-    void on_pbIgnoreFandom_clicked();
+    //void on_pbIgnoreFandom_clicked();
 
 
 
@@ -500,7 +500,7 @@ private slots:
 
     void on_chkOtherFandoms_toggled(bool checked);
 
-    void on_chkIgnoreFandoms_toggled(bool checked);
+    //void on_chkIgnoreFandoms_toggled(bool checked);
 
     void on_pbDeleteRecList_clicked();
 

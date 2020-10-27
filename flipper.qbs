@@ -67,7 +67,6 @@ App{
     cpp.minimumWindowsVersion: "6.0"
 
     files: [
-        "UI/initialsetupdialog.ui",
         "include/core/db_entity.h",
         "include/core/experimental/fic_relations.h",
         "include/core/fandom.h",
@@ -82,17 +81,11 @@ App{
         "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_details.cpp",
-        "src/core/url.cpp",
         "src/parsers/ffn/desktop_favparser.cpp",
         "src/parsers/ffn/favparser_wrapper.cpp",
         "src/parsers/ffn/mobile_favparser.cpp",
-        "src/ui/welcomedialog.cpp",
-        "include/ui/welcomedialog.h",
-        "UI/welcomedialog.ui",
         "include/backups.h",
         "src/backups.cpp",
-        "src/ui/initialsetupdialog.cpp",
-        "include/ui/initialsetupdialog.h",
         "forms.qrc",
         "icons.qrc",
         "include/Interfaces/authors.h",
@@ -122,20 +115,14 @@ App{
         "include/tasks/author_task_processor.h",
         "include/timeutils.h",
         "include/webpage.h",
-        "src/ui/actionprogress.cpp",
-        "include/ui/actionprogress.h",
-        "UI/actionprogress.ui",
         "src/generic_utils.cpp",
         "src/parsers/ffn/fandomindexparser.cpp",
-        "include/ui/mainwindow.h",
         "include/parse.h",
         "include/querybuilder.h",
         "include/queryinterfaces.h",
         "include/core/section.h",
         "include/service_functions.h",
         "include/storyfilter.h",
-        "include/tagwidget.h",
-        "include/ui/fanficdisplay.h",
         "include/transaction.h",
         "include/url_utils.h",
         "qml_ficmodel.cpp",
@@ -177,17 +164,10 @@ App{
         "src/storyfilter.cpp",
         "src/transaction.cpp",
         "src/url_utils.cpp",
-        "UI/mainwindow.ui",
-        "UI/tagwidget.ui",
-        "UI/fanficdisplay.ui",
-        "src/ui/mainwindow.cpp",
-        "src/tagwidget.cpp",
-        "src/ui/fanficdisplay.cpp",
         "src/page_utils.cpp",
         "include/page_utils.h",
         "src/environment.cpp",
         "include/environment.h",
-        "src/statistics_utils.cpp",
         "include/statistics_utils.h",
         "src/tasks/author_stats_processor.cpp",
         "include/tasks/author_stats_processor.h",
@@ -211,7 +191,38 @@ App{
         "src/core/author.cpp",
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
+
     ]
+
+
+    Group{
+    name: "UI"
+    files: [
+        "src/ui/fandomlistwidget.cpp",
+        "include/ui/fandomlistwidget.h",
+        "UI/fandomlistwidget.ui",
+        "UI/mainwindow.ui",
+        "include/ui/mainwindow.h",
+        "src/ui/mainwindow.cpp",
+        "UI/tagwidget.ui",
+        "include/ui/tagwidget.h",
+        "src/ui/tagwidget.cpp",
+        "UI/fanficdisplay.ui",
+        "include/ui/fanficdisplay.h",
+        "src/ui/fanficdisplay.cpp",
+        "UI/actionprogress.ui",
+        "src/ui/actionprogress.cpp",
+        "include/ui/actionprogress.h",
+        "UI/initialsetupdialog.ui",
+        "src/ui/initialsetupdialog.cpp",
+        "include/ui/initialsetupdialog.h",
+        "UI/welcomedialog.ui",
+        "src/ui/welcomedialog.cpp",
+        "include/ui/welcomedialog.h",
+    ]
+
+    }
+
     Group{
     name: "sqlite"
     files: [

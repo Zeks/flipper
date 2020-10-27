@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/environment.h"
-#include "include/tagwidget.h"
+#include "include/ui/tagwidget.h"
 #include "include/page_utils.h"
 #include "include/regex_utils.h"
 #include "include/Interfaces/recommendation_lists.h"

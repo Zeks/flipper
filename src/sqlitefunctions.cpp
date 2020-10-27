@@ -26,8 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSettings>
 #include <QTextStream>
 #include <QCoreApplication>
-#include <third_party/quazip/quazip.h>
-#include <third_party/quazip/JlCompress.h>
+//#include <third_party/quazip/quazip.h>
+//#include <third_party/quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
 #include "include/transaction.h"
 #include "include/in_tag_accessor.h"
@@ -363,7 +363,6 @@ bool ReadDbFile(QString file, QString connectionName)
     QFile data(file);
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     auto reportSchemaErrors = settings.value("Settings/reportSchemaErrors", false).toBool();
 
     QLOG_INFO() << "Reading init file: " << file;
@@ -615,7 +614,6 @@ QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
     InstallCustomFunctions(db);
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ReadDbFile(sqlFile, setDefault ? "" : connectionName);
     bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
     QLOG_INFO() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;

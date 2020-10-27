@@ -212,7 +212,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
 
     ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
-    ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
+    //ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->lblGenreInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->chkUseReclistMatches->setStyle(new ImmediateTooltipProxyStyle());
 
@@ -249,7 +249,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     auto fandomList = env->interfaces.fandoms->GetFandomList(true);
     ui->cbNormals->setModel(new QStringListModel(fandomList));
     ui->cbCrossovers->setModel(new QStringListModel(fandomList));
-    ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
+    //ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
     ui->cbIgnoreFandomSlashFilter->setModel(new QStringListModel(fandomList));
 
     actionProgress = new ActionProgress;
@@ -312,7 +312,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
     ignoredFandomsSlashFilterModel->setStringList(env->interfaces.fandoms->GetIgnoredFandomsSlashFilter());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
-    ui->lvIgnoredFandoms->setModel(ignoredFandomsModel);
+    //ui->lvIgnoredFandoms->setModel(ignoredFandomsModel);
     ui->lvExcludedFandomsSlashFilter->setModel(ignoredFandomsSlashFilterModel);
 
 
@@ -342,7 +342,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
     ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
     ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
-    ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    //ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->edtResults->setOpenExternalLinks(true);
     ui->edtRecsContents->setReadOnly(false);
@@ -425,7 +425,7 @@ void MainWindow::InitConnections()
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
     //! todo currently null
     connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
-    connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
+    //connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
     connect(ui->edtRecsContents, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
@@ -1208,10 +1208,11 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
     QStringList list = data.split("&", QString::SkipEmptyParts);
     if(!list.size())
         return;
-    if(ui->cbIgnoreFandomSelector->currentText().trimmed() != list.at(0).trimmed())
-        ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
-    else if(list.size() > 1)
-        ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
+//    if(ui->cbIgnoreFandomSelector->currentText().trimmed() != list.at(0).trimmed())
+//        ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
+//    else if(list.size() > 1)
+//        ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
+    // todo
 }
 
 void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
@@ -2269,7 +2270,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomID();
     filter.secondFandom = ui->chkCrossovers->isChecked() ? GetCrossoverFandomID() : -1;
-    filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
+    //filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
+    // todo
 
     auto fixGenre = [](QStringList& genres) -> void{
         for(auto& genre: genres)
@@ -2438,10 +2440,11 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     else
         ui->cbCrossovers->setCurrentText("");
 
-    if(filter.otherFandomsMode)
-        ui->chkOtherFandoms->setChecked(true);
-    else
-        ui->chkOtherFandoms->setChecked(false);
+//    if(filter.otherFandomsMode)
+//        ui->chkOtherFandoms->setChecked(true);
+//    else
+//        ui->chkOtherFandoms->setChecked(false);
+    //todo
 
     // restoring genre exclusion
     {
@@ -2779,13 +2782,13 @@ void MainWindow::OnRemoveFandomFromRecentList()
     env->interfaces.fandoms->ReloadRecentFandoms();
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
 }
-
-void MainWindow::OnRemoveFandomFromIgnoredList()
-{
-    auto fandom = ui->lvIgnoredFandoms->currentIndex().data(0).toString();
-    env->interfaces.fandoms->RemoveFandomFromIgnoredList(fandom);
-    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
-}
+//todo
+//void MainWindow::OnRemoveFandomFromIgnoredList()
+//{
+//    auto fandom = ui->lvIgnoredFandoms->currentIndex().data(0).toString();
+//    env->interfaces.fandoms->RemoveFandomFromIgnoredList(fandom);
+//    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
+//}
 
 void MainWindow::OnRemoveFandomFromSlashFilterIgnoredList()
 {
@@ -2798,11 +2801,11 @@ void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
     fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
 }
-
-void MainWindow::OnIgnoredFandomsContextMenu(const QPoint &pos)
-{
-    ignoreFandomMenu.popup(ui->lvIgnoredFandoms->mapToGlobal(pos));
-}
+//todo
+//void MainWindow::OnIgnoredFandomsContextMenu(const QPoint &pos)
+//{
+//    ignoreFandomMenu.popup(ui->lvIgnoredFandoms->mapToGlobal(pos));
+//}
 
 void MainWindow::OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos)
 {
@@ -2862,11 +2865,12 @@ void MainWindow::OnFindSimilarClicked(QVariant url)
     CreateSimilarListForGivenFic(url.toInt());
 }
 
-void MainWindow::on_pbIgnoreFandom_clicked()
-{
-    env->interfaces.fandoms->IgnoreFandom(ui->cbIgnoreFandomSelector->currentText(), ui->chkIgnoreIncludesCrossovers->isChecked());
-    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
-}
+//todo
+//void MainWindow::on_pbIgnoreFandom_clicked()
+//{
+//    env->interfaces.fandoms->IgnoreFandom(ui->cbIgnoreFandomSelector->currentText(), ui->chkIgnoreIncludesCrossovers->isChecked());
+//    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
+//}
 
 void MainWindow::OnUpdatedProgressValue(int value)
 {
@@ -3262,7 +3266,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkNoGenre->setChecked(true);
     if(resetTagged)
         ui->chkIgnoreTags->setChecked(false);
-    ui->chkOtherFandoms->setChecked(false);
+    //ui->chkOtherFandoms->setChecked(false);
     ui->chkGenrePlus->setChecked(false);
     ui->chkGenreMinus->setChecked(false);
     ui->chkWordsPlus->setChecked(false);
@@ -3622,11 +3626,11 @@ void MainWindow::on_chkOtherFandoms_toggled(bool checked)
         ui->chkIgnoreFandoms->setChecked(false);
 }
 
-void MainWindow::on_chkIgnoreFandoms_toggled(bool checked)
-{
-    if(checked)
-        ui->chkOtherFandoms->setChecked(false);
-}
+//void MainWindow::on_chkIgnoreFandoms_toggled(bool checked)
+//{
+//    if(checked)
+//        ui->chkOtherFandoms->setChecked(false);
+//}
 
 void MainWindow::on_pbDeleteRecList_clicked()
 {
