@@ -11,19 +11,21 @@ namespace fandom_lists{
         uint16_t uiIndex;
     };
 
+    enum EInclusionMode{
+        im_include = 0,
+        im_exclude = 1,
+    };
+
     struct List : public ListBase{
         using ListPtr = std::shared_ptr<List>;
         bool isDefault;
-        bool isInverted;
+        EInclusionMode inclusionMode;
         uint16_t listId;
-        std::string listName;
+        QString listName; // otherwise I will have to convert on display
     };
 
 
-    enum EFandomInclusionMode{
-        fim_include_fandom = 0,
-        fim_exclude_fandom = 1,
-    };
+
 
     enum ECrossoverInclusionMode{
         cim_select_all = 0,
@@ -34,7 +36,8 @@ namespace fandom_lists{
     struct FandomStateInList: public ListBase{
         uint32_t fandom_id;
         uint32_t list_id;
-        EFandomInclusionMode fandomInclusionMode;
+        QString name; // otherwise I will have to convert on display
+        EInclusionMode inclusionMode;
         ECrossoverInclusionMode crossoverInclusionMode;
     };
 

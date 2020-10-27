@@ -140,7 +140,7 @@ DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDataba
 
 DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomLists(QSqlDatabase);
 DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFandomStatesInUserList(int list_id, QSqlDatabase);
-DiagnosticSQLResult<bool> AddFandomToUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase);
+DiagnosticSQLResult<bool> AddFandomToUserList(uint32_t list_id, uint32_t fandom_id,  QString fandom_name, QSqlDatabase);
 DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase);
 DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList&, QSqlDatabase);
 DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr&, QSqlDatabase);

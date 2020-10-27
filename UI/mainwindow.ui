@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1148</width>
-    <height>1437</height>
+    <height>1559</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -2866,7 +2866,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QWidget" name="widget_14" native="true">
+                  <widget class="FandomListWidget" name="wdgFandomListPlaceholder" native="true">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -3750,6 +3750,12 @@
    <class>TagWidget</class>
    <extends>QWidget</extends>
    <header>ui/tagwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FandomListWidget</class>
+   <extends>QWidget</extends>
+   <header>ui/fandomlistwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
