@@ -358,7 +358,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     //    ui->spRecsFan->setStretchFactor(1, 1);
     ui->spFanIgnFan->setCollapsible(0,0);
     ui->spFanIgnFan->setCollapsible(1,0);
-    ui->spFanIgnFan->setSizes({1000,0});
+    ui->spFanIgnFan->setSizes({100,900});
     ui->spRecsFan->setCollapsible(0,0);
     ui->spRecsFan->setCollapsible(1,0);
     ui->spRecsFan->setSizes({0,1000});

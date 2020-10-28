@@ -22,6 +22,11 @@ namespace fandom_lists{
         uint16_t uiIndex;
         EEntityType type;
         EInclusionMode inclusionMode;
+        EInclusionMode Rotate(EInclusionMode mode){
+            if(mode == im_exclude)
+                return im_include;
+            return im_exclude;
+        };
 
     };
 
@@ -40,8 +45,16 @@ namespace fandom_lists{
 
     struct FandomStateInList: public ListBase{
         FandomStateInList():ListBase(et_fandom){}
+        using ListBase::Rotate;
         uint32_t list_id;
         ECrossoverInclusionMode crossoverInclusionMode;
+        ECrossoverInclusionMode Rotate(ECrossoverInclusionMode mode){
+            if(mode == cim_select_all)
+                return cim_select_crossovers;
+            if(mode == cim_select_crossovers)
+                return cim_select_pure;
+            return cim_select_all;
+        };
     };
 
 }

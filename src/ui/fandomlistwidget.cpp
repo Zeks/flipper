@@ -2,6 +2,8 @@
 #include "ui_fandomlistwidget.h"
 #include "ui-models/include/custom_icon_delegate.h"
 #include "ui-models/include/TreeItem.h"
+#include "ui-models/include/treeviewtemplatefunctions.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include <QMouseEvent>
 #include <QStyledItemDelegate>
 #include <QPainter>
@@ -19,33 +21,6 @@ static QRect CheckBoxRect(const QStyleOptionViewItem &view_item_style_options) {
                            check_box_rect.height() / 2);
     return QRect(check_box_point, check_box_rect.size());
 }
-static bool editorEvent(QEvent *event,
-                        QAbstractItemModel *model,
-                        const QStyleOptionViewItem &option,
-                        const QModelIndex &index) {
-    if ((event->type() == QEvent::MouseButtonRelease) ||
-            (event->type() == QEvent::MouseButtonDblClick)) {
-        QMouseEvent *mouse_event = static_cast<QMouseEvent*>(event);
-        if (mouse_event->button() != Qt::LeftButton ||
-                !CheckBoxRect(option).contains(mouse_event->pos())) {
-            return false;
-        }
-        if (event->type() == QEvent::MouseButtonDblClick) {
-            return true;
-        }
-    } else if (event->type() == QEvent::KeyPress) {
-        if (static_cast<QKeyEvent*>(event)->key() != Qt::Key_Space &&
-                static_cast<QKeyEvent*>(event)->key() != Qt::Key_Select) {
-            return false;
-        }
-    } else {
-        return false;
-    }
-
-    bool checked = index.model()->data(index, Qt::DisplayRole).toBool();
-    model->setData(index, !checked, Qt::DisplayRole);
-    return model->setData(index, !checked, Qt::EditRole);
-}
 
 
 static const auto iconPainter = [](const QStyledItemDelegate* delegate, QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index, auto iconSelector)
@@ -56,8 +31,6 @@ static const auto iconPainter = [](const QStyledItemDelegate* delegate, QPainter
     if(!value.isValid())
         return;
 
-    //bool checked = index.model()->data(index, Qt::DisplayRole).toBool();
-    //checked ? QPixmap(":/icons/icons/heart_tag.png") :  QPixmap(":/icons/icons/heart_tag_gray.png");
     auto pixmapToDraw = iconSelector(index);
     painter->drawPixmap(CheckBoxRect(option), pixmapToDraw);
 
@@ -94,13 +67,15 @@ FandomListWidget::FandomListWidget(QWidget *parent) :
                                              std::placeholders::_3,
                                              std::placeholders::_4,
                                              lambda);
-        delegate->editorEventProcessor = editorEvent;
+        //delegate->editorEventProcessor = editorEvent;
         return delegate;
     };
 
     modeDelegate = createDelegate([](QModelIndex index){
             MEMBER_GETTER(inclusionMode);
             auto value = getter(basePtr);
+            if(basePtr->type == et_list)
+                return QPixmap(":/icons/icons/switch.png");
             if(value == im_exclude)
                 return QPixmap(":/icons/icons/cross_red.png");
             else
@@ -111,7 +86,7 @@ FandomListWidget::FandomListWidget(QWidget *parent) :
             MEMBER_VALUE_OR_DEFAULT(crossoverInclusionMode);
             auto value = getter(basePtr);
             if(value == cim_select_all)
-                return QPixmap(":/icons/icons/open_book_gray.png");
+                return QPixmap(":/icons/icons/bit2.png");
             else if(value == cim_select_crossovers)
                 return  QPixmap(":/icons/icons/shuffle_blue.png");
             else
@@ -122,7 +97,8 @@ FandomListWidget::FandomListWidget(QWidget *parent) :
     ui->tvFandomLists->setItemDelegateForColumn(1, modeDelegate);
     ui->tvFandomLists->setItemDelegateForColumn(2, crossoverDelegate);
     InitTree();
-    connect(ui->tvFandomLists, SIGNAL(itemCheckStatusChanged(const QModelIndex&)), this, SLOT(OnTreeItemChecked(const QModelIndex&)),Qt::UniqueConnection);
+    connect(treeModel, &TreeModel::itemCheckStatusChanged, this, &FandomListWidget::OnTreeItemChecked);
+    connect(ui->tvFandomLists, &QTreeView::doubleClicked, this, &FandomListWidget::OnTreeItemDoubleClicked);
 }
 
 FandomListWidget::~FandomListWidget()
@@ -163,6 +139,15 @@ void FandomListWidget::SetupItemControllers()
     });
     fandomItemController->AddGetter(3,displayRoles, [](const core::fandom_lists::FandomStateInList* ptr)->QVariant{
         return ptr->name;
+    });
+
+    listItemController->AddGetter(3, {Qt::FontRole}, [view = ui->tvFandomLists](const core::fandom_lists::List*)->QVariant{
+        auto font = view->font();
+        font.setWeight(60);
+        return font;
+    });
+    fandomItemController->AddGetter(3, {Qt::FontRole}, [view = ui->tvFandomLists](const core::fandom_lists::FandomStateInList*)->QVariant{
+        return view->font();
     });
 
 
@@ -248,6 +233,7 @@ void FandomListWidget::InitTree()
     ui->tvFandomLists->setRootIsDecorated(true);
     ui->tvFandomLists->setTreePosition(3);
     ui->tvFandomLists->setIndentation(10);
+    ui->tvFandomLists->setSelectionMode(QAbstractItemView::NoSelection);
     ui->tvFandomLists->setExpandsOnDoubleClick(false);
     ui->tvFandomLists->header()->setMinimumSectionSize(2);
     static const int defaultSectionSize = 30;
@@ -260,7 +246,27 @@ void FandomListWidget::InitTree()
 
 void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
 {
-
+    ui->tvFandomLists->blockSignals(true);
+    if(index.column() *in(1,2)){
+        using namespace core::fandom_lists;
+        auto pointer = static_cast<TreeItemInterface*>(index.internalPointer());
+        ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
+        if(basePtr->type == et_list){
+            TreeFunctions::Visit<TreeItemInterface>([](TreeItemInterface* item)->void{
+                FandomStateInList* ptr = static_cast<FandomStateInList*>(item->InternalPointer());
+                ptr->inclusionMode = ptr->Rotate(ptr->inclusionMode);
+            }, treeModel, index);
+        }
+        else{
+            auto* ptr = static_cast<FandomStateInList*>(basePtr);
+            if(index.column() == 1)
+                ptr->inclusionMode = ptr->Rotate(ptr->inclusionMode);
+            else
+                ptr->crossoverInclusionMode = ptr->Rotate(ptr->crossoverInclusionMode);
+        }
+    }
+    ui->tvFandomLists->blockSignals(false);
+    treeModel->Refresh();
 }
 
 void FandomListWidget::OnTreeItemChecked(const QModelIndex &index)
