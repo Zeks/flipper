@@ -48,7 +48,7 @@ static bool editorEvent(QEvent *event,
 }
 
 
-static void paintCheckbox(const QStyledItemDelegate* delegate, QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index)
+static const auto iconPainter = [](const QStyledItemDelegate* delegate, QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index, auto iconSelector)
 {
     QVariant value = index.model()->data(index, Qt::DisplayRole);
 
@@ -56,22 +56,71 @@ static void paintCheckbox(const QStyledItemDelegate* delegate, QPainter *painter
     if(!value.isValid())
         return;
 
-    bool checked = index.model()->data(index, Qt::DisplayRole).toBool();
-    auto pixmapToDraw = checked ? QPixmap(":/icons/icons/heart_tag.png") :  QPixmap(":/icons/icons/heart_tag_gray.png");
+    //bool checked = index.model()->data(index, Qt::DisplayRole).toBool();
+    //checked ? QPixmap(":/icons/icons/heart_tag.png") :  QPixmap(":/icons/icons/heart_tag_gray.png");
+    auto pixmapToDraw = iconSelector(index);
     painter->drawPixmap(CheckBoxRect(option), pixmapToDraw);
 
-}
+};
+
+#define MEMBER_GETTER(member) \
+    using namespace core::fandom_lists; \
+    auto pointer = static_cast<TreeItemInterface*>(index.internalPointer()); \
+    ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer()); \
+    auto getter = +[](ListBase* basePtr){return basePtr->member;};
+
+
+#define MEMBER_VALUE_OR_DEFAULT(member) \
+    using namespace core::fandom_lists; \
+    auto pointer = static_cast<TreeItemInterface*>(index.internalPointer()); \
+    ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer()); \
+    using MemberType = decltype(std::declval<FandomStateInList>().member); \
+    auto getter = basePtr->type == et_list ? +[](ListBase*)->MemberType{return MemberType();} : \
+    +[](ListBase* basePtr){return static_cast<FandomStateInList*>(basePtr)->member;}
+
+
 
 FandomListWidget::FandomListWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FandomListWidget)
 {
     ui->setupUi(this);
-    dummyDelegate = new CustomIconDelegate();
-    dummyDelegate->widgetCreator = [](QWidget * ) {return static_cast<QWidget*>(nullptr);};
-    dummyDelegate->paintProcessor = paintCheckbox;
-    dummyDelegate->editorEventProcessor = editorEvent;
-    ui->tvFandomLists->setItemDelegateForColumn(1, dummyDelegate);
+    auto createDelegate = [](auto lambda){
+        CustomIconDelegate* delegate = new CustomIconDelegate();
+        delegate->widgetCreator = [](QWidget *) {return static_cast<QWidget*>(nullptr);};
+        delegate->paintProcessor = std::bind(iconPainter,
+                                             std::placeholders::_1,
+                                             std::placeholders::_2,
+                                             std::placeholders::_3,
+                                             std::placeholders::_4,
+                                             lambda);
+        delegate->editorEventProcessor = editorEvent;
+        return delegate;
+    };
+
+    modeDelegate = createDelegate([](QModelIndex index){
+            MEMBER_GETTER(inclusionMode);
+            auto value = getter(basePtr);
+            if(value == im_exclude)
+                return QPixmap(":/icons/icons/cross_red.png");
+            else
+                return  QPixmap(":/icons/icons/ok.png");
+});
+
+    crossoverDelegate = createDelegate([](QModelIndex index){
+            MEMBER_VALUE_OR_DEFAULT(crossoverInclusionMode);
+            auto value = getter(basePtr);
+            if(value == cim_select_all)
+                return QPixmap(":/icons/icons/open_book_gray.png");
+            else if(value == cim_select_crossovers)
+                return  QPixmap(":/icons/icons/shuffle_blue.png");
+            else
+            return  QPixmap(":/icons/icons/open_book.png");
+});
+
+    ui->tvFandomLists->setItemDelegateForColumn(0, dummyDelegate);
+    ui->tvFandomLists->setItemDelegateForColumn(1, modeDelegate);
+    ui->tvFandomLists->setItemDelegateForColumn(2, crossoverDelegate);
     InitTree();
     connect(ui->tvFandomLists, SIGNAL(itemCheckStatusChanged(const QModelIndex&)), this, SLOT(OnTreeItemChecked(const QModelIndex&)),Qt::UniqueConnection);
 }
@@ -110,7 +159,7 @@ void FandomListWidget::SetupItemControllers()
         return static_cast<int>(ptr->crossoverInclusionMode);
     });
     listItemController->AddGetter(3,displayRoles, [](const core::fandom_lists::List* ptr)->QVariant{
-        return ptr->listName;
+        return ptr->name;
     });
     fandomItemController->AddGetter(3,displayRoles, [](const core::fandom_lists::FandomStateInList* ptr)->QVariant{
         return ptr->name;
@@ -119,11 +168,19 @@ void FandomListWidget::SetupItemControllers()
 
     // SETTERS
     listItemController->AddSetter(3,displayRoles, [](core::fandom_lists::List* data, QVariant value)->bool{
-        data->listName = value.toString();
+        data->name = value.toString();
         return true;
     });
     fandomItemController->AddSetter(3,displayRoles, [](core::fandom_lists::FandomStateInList*data, QVariant value)->bool{
         data->name = value.toString();
+        return true;
+    });
+    listItemController->AddSetter(2,displayRoles, [](core::fandom_lists::List* data, QVariant value)->bool{
+        data->inclusionMode = static_cast<core::fandom_lists::EInclusionMode>(value.toInt());
+        return true;
+    });
+    fandomItemController->AddSetter(2,displayRoles, [](core::fandom_lists::FandomStateInList*data, QVariant value)->bool{
+        data->inclusionMode = static_cast<core::fandom_lists::EInclusionMode>(value.toInt());
         return true;
     });
 
@@ -161,6 +218,8 @@ void FandomListWidget::InitTree()
     ignoresPointer->SetParent(rootItem);
     ignoresPointer->setData(3, "Ignores", 0);
     ignoresPointer->setData(3, "Ignores", 2);
+    ignoresPointer->setData(2, 1, 0);
+    ignoresPointer->setData(2, 1, 2);
 
     TreeItem<core::fandom_lists::List>* whitelistPointer = new TreeItem<core::fandom_lists::List>();
     auto whitelistItem = std::shared_ptr<TreeItemInterface>(whitelistPointer);
@@ -173,6 +232,7 @@ void FandomListWidget::InitTree()
     ignoreNodePointer->SetController(fandomItemController);
     ignoreNodePointer->SetParent(ignoresItem);
     ignoreNodePointer->setData(3, "Fairy Tail", 0);
+    ignoreNodePointer->setData(2, 1, 0);
 
     listItemController->SetColumns(QStringList() << "dummy" << "inclusion" << "n" << "name");
     fandomItemController->SetColumns(QStringList()<< "dummy" << "inclusion" << "crossovers" << "name");
@@ -185,11 +245,15 @@ void FandomListWidget::InitTree()
     ui->tvFandomLists->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->tvFandomLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tvFandomLists->setColumnWidth(0, 230);
-    ui->tvFandomLists->setRootIsDecorated(false);
+    ui->tvFandomLists->setRootIsDecorated(true);
     ui->tvFandomLists->setTreePosition(3);
-    ui->tvFandomLists->setIndentation(5);
-    ui->tvFandomLists->setExpandsOnDoubleClick(true);
+    ui->tvFandomLists->setIndentation(10);
+    ui->tvFandomLists->setExpandsOnDoubleClick(false);
     ui->tvFandomLists->header()->setMinimumSectionSize(2);
+    static const int defaultSectionSize = 30;
+    ui->tvFandomLists->header()->resizeSection(0, defaultSectionSize);
+    ui->tvFandomLists->header()->resizeSection(1, defaultSectionSize);
+    ui->tvFandomLists->header()->resizeSection(2, defaultSectionSize);
 
 
 }

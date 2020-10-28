@@ -2210,8 +2210,8 @@ DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomL
     SqlContext<std::vector<core::fandom_lists::List::ListPtr>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ListPtr list(new List);
-        list->listId = q.value(QStringLiteral("id")).toBool();
-        list->listName = q.value(QStringLiteral("name")).toBool();
+        list->id = q.value(QStringLiteral("id")).toBool();
+        list->name = q.value(QStringLiteral("name")).toBool();
         list->isEnabled= q.value(QStringLiteral("is_enabled")).toBool();
         list->isDefault = q.value(QStringLiteral("is_default")).toBool();
         list->uiIndex = q.value(QStringLiteral("ui_index")).toBool();
@@ -2233,7 +2233,7 @@ DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFan
         FandomState state;
         state.list_id = q.value(QStringLiteral("list_id")).toBool();
         state.name = q.value(QStringLiteral("name")).toString();
-        state.fandom_id = q.value(QStringLiteral("fandom_id")).toBool();
+        state.id = q.value(QStringLiteral("fandom_id")).toBool();
         state.isEnabled = q.value(QStringLiteral("enabled_state")).toBool();
         state.uiIndex = q.value(QStringLiteral("ui_index")).toBool();
         state.crossoverInclusionMode = static_cast<CrossoverInclusionMode>(q.value(QStringLiteral("crossover_mode")).toBool());
@@ -2272,7 +2272,7 @@ DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::Fando
     ctx.bindValue("crossover_mode", static_cast<int>(fandomState.crossoverInclusionMode));
     ctx.bindValue("ui_index", fandomState.uiIndex);
     ctx.bindValue("list_id", fandomState.list_id);
-    ctx.bindValue("fandom_id", fandomState.fandom_id);
+    ctx.bindValue("fandom_id", fandomState.id);
     ctx.ExecAndCheck(true);
     return ctx.result;
 }
@@ -2287,11 +2287,11 @@ DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr 
                      " where list_id = :list_id ";
 
     SqlContext<bool> ctx(db, std::move(qs));
-    ctx.bindValue("name", listState->listName);
+    ctx.bindValue("name", listState->name);
     ctx.bindValue("is_enabled", listState->isEnabled);
     ctx.bindValue("is_inverted", static_cast<int>(listState->inclusionMode));
     ctx.bindValue("ui_index", listState->uiIndex);
-    ctx.bindValue("list_id", listState->listId);
+    ctx.bindValue("list_id", listState->id);
     ctx.ExecAndCheck(true);
     return ctx.result;
 }

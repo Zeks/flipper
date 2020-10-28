@@ -32,6 +32,8 @@ private:
     std::shared_ptr<TreeItemInterface> rootItem;
     std::shared_ptr<ListControllerType> listItemController;
     std::shared_ptr<FandomControllerType> fandomItemController;
+    CustomIconDelegate* modeDelegate;
+    CustomIconDelegate* crossoverDelegate;
     CustomIconDelegate* dummyDelegate;
 
 

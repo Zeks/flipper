@@ -93,5 +93,6 @@
         <file>icons/spoilers.png</file>
         <file>icons/spoilers_gray.png</file>
         <file>icons/reset_filter.png</file>
+        <file>icons/shuffle_blue.png</file>
     </qresource>
 </RCC>

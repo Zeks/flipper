@@ -102,10 +102,10 @@
       <bool>true</bool>
      </property>
      <property name="headerHidden">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <attribute name="headerVisible">
-      <bool>true</bool>
+      <bool>false</bool>
      </attribute>
     </widget>
    </item>
