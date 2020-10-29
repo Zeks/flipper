@@ -23,17 +23,27 @@ public:
     ~FandomListWidget();
     void SetupItemControllers();
     void InitTree();
+    void InitButtonConnections();
+    void InitFandomList(QStringList);
     void CreateContextMenus();
     // context menu controls
     void AddNewList();
     void DeleteListUnderCursor();
     void RenameListUnderCursor();
     void DeleteFandomUnderCursor();
+    std::vector<core::fandom_lists::FandomSearchStateToken> GetStateForSearches();
+
+
 
 
     QSharedPointer<CoreEnvironment> env;
 private:
     std::shared_ptr<TreeItemInterface> FetchAndConvertFandomLists();
+    void ScrollToFandom(std::shared_ptr<TreeItemInterface>, uint32_t id);
+    bool IsFandomInList(std::shared_ptr<TreeItemInterface>, uint32_t);
+    void AddFandomToList(std::shared_ptr<TreeItemInterface>, uint32_t);
+    QModelIndex FindIndexForPath(QStringList);
+
     Ui::FandomListWidget *ui;
 
     TreeModel* treeModel = nullptr;
@@ -43,6 +53,8 @@ private:
     std::unique_ptr<QMenu> fandomItemMenu;
 
     std::shared_ptr<TreeItemInterface> rootItem;
+    std::shared_ptr<TreeItemInterface> ignoresItem;
+    std::shared_ptr<TreeItemInterface> whitelistItem;
     std::shared_ptr<ListControllerType> listItemController;
     std::shared_ptr<FandomControllerType> fandomItemController;
     CustomIconDelegate* modeDelegate;
@@ -56,6 +68,10 @@ private slots:
     void OnTreeItemDoubleClicked(const QModelIndex& index);
     void OnTreeItemChecked(const QModelIndex& index);
     void OnContextMenuRequested(const QPoint &pos);
+    // button functions
+    void OnIgnoreCurrentFandom();
+    void OnWhitelistCurrentFandom();
+    void OnAddCurrentFandomToList();
 };
 
 

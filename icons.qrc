@@ -94,5 +94,7 @@
         <file>icons/spoilers_gray.png</file>
         <file>icons/reset_filter.png</file>
         <file>icons/shuffle_blue.png</file>
+        <file>icons/book_white.png</file>
+        <file>icons/book_black.png</file>
     </qresource>
 </RCC>

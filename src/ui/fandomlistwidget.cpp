@@ -4,6 +4,7 @@
 #include "ui-models/include/TreeItem.h"
 #include "ui-models/include/treeviewtemplatefunctions.h"
 #include "Interfaces/fandom_lists.h"
+#include "Interfaces/fandoms.h"
 #include "GlobalHeaders/snippets_templates.h"
 #include "environment.h"
 #include <QMouseEvent>
@@ -102,6 +103,7 @@ FandomListWidget::FandomListWidget(QWidget *parent) :
     ui->tvFandomLists->setItemDelegateForColumn(1, modeDelegate);
     ui->tvFandomLists->setItemDelegateForColumn(2, crossoverDelegate);
     CreateContextMenus();
+    InitButtonConnections();
 
 }
 
@@ -200,6 +202,7 @@ void FandomListWidget::InitTree()
     fandomItemController->SetColumns(QStringList()<< "dummy" << "inclusion" << "crossovers" << "name");
 
     rootItem = FetchAndConvertFandomLists();
+    ui->cbFandomLists->setCurrentText("Ignores");
     treeModel->InsertRootItem(rootItem);
     ui->tvFandomLists->setModel(treeModel);
     ui->tvFandomLists->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -218,8 +221,18 @@ void FandomListWidget::InitTree()
     connect(treeModel, &TreeModel::itemCheckStatusChanged, this, &FandomListWidget::OnTreeItemChecked);
     connect(ui->tvFandomLists, &QTreeView::doubleClicked, this, &FandomListWidget::OnTreeItemDoubleClicked);
     connect(ui->tvFandomLists, &QTreeView::customContextMenuRequested, this, &FandomListWidget::OnContextMenuRequested);
+}
 
+void FandomListWidget::InitButtonConnections()
+{
+    connect(ui->pbAddFandomToSelectedList, &QPushButton::clicked, this, &FandomListWidget::OnAddCurrentFandomToList);
+    connect(ui->pbIgnoreFandom, &QPushButton::clicked, this, &FandomListWidget::OnIgnoreCurrentFandom);
+    connect(ui->pbWhitelistFandom, &QPushButton::clicked, this, &FandomListWidget::OnWhitelistCurrentFandom);
+}
 
+void FandomListWidget::InitFandomList(QStringList fandomList)
+{
+    ui->cbFandoms->setModel(new QStringListModel(fandomList));
 }
 
 void FandomListWidget::CreateContextMenus()
@@ -306,6 +319,27 @@ void FandomListWidget::DeleteFandomUnderCursor()
     treeModel->Refresh();
 }
 
+std::vector<core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetStateForSearches()
+{
+    // go from top to the bottom
+    // lower records override upper ones (? indicate conflict)
+    using namespace core::fandom_lists;
+    std::vector<FandomSearchStateToken> result;
+    for(auto list: rootItem->GetChildren()){
+        // in the list range
+        for(auto fandom: list->GetChildren()){
+            // in the fandom range
+            FandomStateInList* fandomPtr = static_cast<FandomStateInList*>(fandom->InternalPointer());
+            FandomSearchStateToken token;
+            token.id = fandomPtr->id;
+            token.inclusionMode = fandomPtr->inclusionMode;
+            token.crossoverInclusionMode = fandomPtr->crossoverInclusionMode;
+            result.emplace_back(std::move(token));
+        }
+    }
+    return result;
+}
+
 std::shared_ptr<TreeItemInterface> FandomListWidget::FetchAndConvertFandomLists()
 {
     auto fandomListInterface = env->interfaces.fandomLists;
@@ -330,6 +364,11 @@ std::shared_ptr<TreeItemInterface> FandomListWidget::FetchAndConvertFandomLists(
         rootPointer->addChild(item);
         if(list->isEnabled)
             item->setCheckState(Qt::Checked);
+        if(list->name == "Ignores")
+            ignoresItem = item;
+        if(list->name == "Whiltelist")
+            whitelistItem = item;
+        ui->cbFandomLists->addItem(list->name);
 
         auto fandomData = fandomListInterface->GetFandomStatesForList(list->name);
         std::sort(fandomData.begin(),fandomData.end(), [](const auto& i1,const auto& i2){
@@ -345,6 +384,64 @@ std::shared_ptr<TreeItemInterface> FandomListWidget::FetchAndConvertFandomLists(
         }
     }
     return rootItem;
+}
+
+void FandomListWidget::ScrollToFandom(std::shared_ptr<TreeItemInterface> nodeToScrollIn,uint32_t fandomId)
+{
+    using namespace core::fandom_lists;
+    auto name = env->interfaces.fandoms->GetNameForID(fandomId);
+
+    ListBase* basePtr = static_cast<ListBase*>(nodeToScrollIn->InternalPointer());
+    auto index = FindIndexForPath({basePtr->name, name});
+    if(!index.isValid())
+        return;
+    ui->tvFandomLists->scrollTo(index);
+}
+
+bool FandomListWidget::IsFandomInList(std::shared_ptr<TreeItemInterface> node, uint32_t fandomId)
+{
+    using namespace core::fandom_lists;
+    for(auto child: node->GetChildren()){
+        ListBase* basePtr = static_cast<ListBase*>(child->InternalPointer());
+        if(basePtr->id == fandomId)
+            return true;
+    }
+    return false;
+}
+
+void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, uint32_t fandomId)
+{
+    using namespace core::fandom_lists;
+    auto name = env->interfaces.fandoms->GetNameForID(fandomId);
+
+    FandomStateInList newFandomState;
+    newFandomState.id = fandomId;
+    newFandomState.name = name;
+    newFandomState.inclusionMode = im_include;
+
+    auto item = TreeFunctions::CreateInterfaceFromData<FandomStateInList, TreeItemInterface, TreeItem>
+            (node, newFandomState, fandomItemController);
+    node->addChild(item);
+    treeModel->Refresh();
+    ScrollToFandom(node, fandomId);
+}
+
+QModelIndex FandomListWidget::FindIndexForPath(QStringList path)
+{
+    int currentDepth = 0;
+    for(auto listIndex = 0; listIndex < treeModel->rowCount(QModelIndex()); listIndex++){
+        QModelIndex currentListIndex = treeModel->index(listIndex, 3);
+        if(currentListIndex.data(Qt::DisplayRole).toString() == path.at(currentDepth))
+        {
+            currentDepth++;
+            for(auto fandomIndex = 0; fandomIndex < treeModel->rowCount(currentListIndex); fandomIndex++){
+                auto currentFandomIndex = treeModel->index(fandomIndex, 3, currentListIndex);
+                if(currentListIndex.data(Qt::DisplayRole).toString() == path.at(currentDepth))
+                    return currentFandomIndex;
+            }
+        }
+    }
+    return QModelIndex();
 }
 
 void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
@@ -405,6 +502,61 @@ void FandomListWidget::OnContextMenuRequested(const QPoint &pos)
         else
             fandomItemMenu->popup(ui->tvFandomLists->mapToGlobal(pos));
     }
+}
+
+void FandomListWidget::OnIgnoreCurrentFandom()
+{
+    QString fandom = ui->cbFandoms->currentText();
+    auto id = env->interfaces.fandoms->GetIDForName(fandom);
+    if(id == -1)
+    {
+        QMessageBox::warning(nullptr, "Warning!", QString("Fandom %1 doesn't exist").arg(fandom));
+        return;
+    }
+    bool alreadyInList = IsFandomInList(ignoresItem, id);
+    if(alreadyInList)
+    {
+        ScrollToFandom(ignoresItem, id);
+        return;
+    }
+    AddFandomToList(ignoresItem, id);
+    ScrollToFandom(ignoresItem, id);
+}
+
+void FandomListWidget::OnWhitelistCurrentFandom()
+{
+    QString fandom = ui->cbFandoms->currentText();
+    auto id = env->interfaces.fandoms->GetIDForName(fandom);
+    if(id == -1)
+    {
+        QMessageBox::warning(nullptr, "Warning!", QString("Fandom %1 doesn't exist").arg(fandom));
+        return;
+    }
+    bool alreadyInList = IsFandomInList(whitelistItem, id);
+    if(alreadyInList)
+    {
+        ScrollToFandom(whitelistItem, id);
+        return;
+    }
+    AddFandomToList(whitelistItem, id);
+    ScrollToFandom(whitelistItem, id);
+}
+
+void FandomListWidget::OnAddCurrentFandomToList()
+{
+    auto listName = ui->cbFandomLists->currentText();
+    auto index = FindIndexForPath({listName});
+    if(!index.isValid())
+        return;
+
+    using namespace core::fandom_lists;
+    auto pointer = static_cast<TreeItemInterface*>(index.internalPointer());
+    auto sharedList = pointer->shared_from_this();
+
+    QString fandom = ui->cbFandoms->currentText();
+    auto id = env->interfaces.fandoms->GetIDForName(fandom);
+    AddFandomToList(sharedList, id);
+    ScrollToFandom(sharedList, id);
 }
 
 

@@ -17,13 +17,13 @@ namespace fandom_lists{
     struct ListBase : public std::enable_shared_from_this<ListBase>{
         ListBase(EEntityType type):type(type){}
         virtual ~ListBase(){};
-        bool isEnabled;
-        bool isExpanded;
+        bool isEnabled = true;;
+        bool isExpanded = true;;
         uint32_t id;
         QString name;
         uint16_t uiIndex;
         EEntityType type;
-        EInclusionMode inclusionMode;
+        EInclusionMode inclusionMode = im_exclude;
         EInclusionMode Rotate(EInclusionMode mode){
             if(mode == im_exclude)
                 return im_include;
@@ -57,6 +57,12 @@ namespace fandom_lists{
                 return cim_select_pure;
             return cim_select_all;
         };
+    };
+
+    struct FandomSearchStateToken{
+        uint32_t id;
+        EInclusionMode inclusionMode = im_exclude;
+        ECrossoverInclusionMode crossoverInclusionMode;
     };
 
 }

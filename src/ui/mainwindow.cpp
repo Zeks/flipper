@@ -247,6 +247,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
 
     auto fandomList = env->interfaces.fandoms->GetFandomList(true);
+    ui->wdgFandomListPlaceholder->InitFandomList(fandomList);
     ui->cbNormals->setModel(new QStringListModel(fandomList));
     ui->cbCrossovers->setModel(new QStringListModel(fandomList));
     //ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
