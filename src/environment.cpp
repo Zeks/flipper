@@ -389,6 +389,7 @@ int CoreEnvironment::GetResultCount()
         userData.ficIDsForActivetags = interfaces.tags->GetFicsTaggedWith(tagFetcherSettings);
     }
     userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
+    userData.fandomStates = filter.fandomStates;
     ficSource->userData = userData;
 
     //QVector<int> recFics;

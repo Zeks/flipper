@@ -2147,7 +2147,10 @@ DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>ids, QSq
 
 DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
 {
-    std::string qs = "select fandom_id, inclusion_mode from fandom_list_data where list_id = 0 and inclusion_mode = 1 order by fandom_id asc";
+    std::string qs = "select fandom_id, crossover_mode from fandom_list_data where list_id = 0 and inclusion_mode = 1 "
+                     " and list_id in (select id from fandom_lists where is_enabled = 1) "
+                     " and enabled_state = 1 "
+                     " order by fandom_id asc";
     SqlContext<QHash<int, bool> > ctx(db);
     ctx.FetchSelectFunctor(std::move(qs), [](auto& data, QSqlQuery& q){
         data[q.value(QStringLiteral("fandom_id")).toInt()] = q.value(QStringLiteral("crossover_mode")).toInt() *in(0, 2); // todo check this
@@ -2260,7 +2263,7 @@ DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomL
     SqlContext<std::vector<core::fandom_lists::List::ListPtr>> ctx(db, std::move(qs));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ListPtr list(new List);
-        list->id = q.value(QStringLiteral("id")).toBool();
+        list->id = q.value(QStringLiteral("id")).toInt();
         list->name = q.value(QStringLiteral("name")).toString();
         list->isEnabled= q.value(QStringLiteral("is_enabled")).toBool();
         list->isDefault = q.value(QStringLiteral("is_default")).toBool();
@@ -2281,13 +2284,13 @@ DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFan
     SqlContext<std::vector<core::fandom_lists::FandomStateInList>> ctx(db, std::move(qs), BP1(list_id));
     ctx.ForEachInSelect([&](QSqlQuery& q){
         FandomState state;
-        state.list_id = q.value(QStringLiteral("list_id")).toBool();
+        state.list_id = q.value(QStringLiteral("list_id")).toInt();
         state.name = q.value(QStringLiteral("fandom_name")).toString();
-        state.id = q.value(QStringLiteral("fandom_id")).toBool();
+        state.id = q.value(QStringLiteral("fandom_id")).toInt();
         state.isEnabled = q.value(QStringLiteral("enabled_state")).toBool();
-        state.uiIndex = q.value(QStringLiteral("ui_index")).toBool();
-        state.crossoverInclusionMode = static_cast<CrossoverInclusionMode>(q.value(QStringLiteral("crossover_mode")).toBool());
-        state.inclusionMode= static_cast<FandomInclusionMode>(q.value(QStringLiteral("inclusion_mode")).toBool());
+        state.uiIndex = q.value(QStringLiteral("ui_index")).toInt();
+        state.crossoverInclusionMode = static_cast<CrossoverInclusionMode>(q.value(QStringLiteral("crossover_mode")).toInt());
+        state.inclusionMode= static_cast<FandomInclusionMode>(q.value(QStringLiteral("inclusion_mode")).toInt());
         ctx.result.data.push_back(state);
     });
     return std::move(ctx.result);
@@ -2345,7 +2348,7 @@ DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::Fando
                      " enabled_state = :enabled_state,"
                      " inclusion_mode = :inclusion_mode,"
                      " crossover_mode = :crossover_mode,"
-                     " ui_index = :ui_index,"
+                     " ui_index = :ui_index "
                      " where list_id = :list_id and fandom_id = :fandom_id";
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("enabled_state", fandomState.isEnabled);
@@ -2364,15 +2367,15 @@ DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List& listStat
                      " name = :name,"
                      " is_enabled = :is_enabled,"
                      " is_expanded = :is_expanded,"
-                     " ui_index = :ui_index,"
-                     " where list_id = :list_id ";
+                     " ui_index = :ui_index"
+                     " where id = :id ";
 
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("name", listState.name);
     ctx.bindValue("is_enabled", listState.isEnabled);
     ctx.bindValue("is_expanded", listState.isExpanded);
     ctx.bindValue("ui_index", listState.uiIndex);
-    ctx.bindValue("list_id", listState.id);
+    ctx.bindValue("id", listState.id);
     ctx.ExecAndCheck(true);
     return ctx.result;
 }

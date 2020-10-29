@@ -332,6 +332,8 @@ std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> FandomListWid
         if(list->checkState() == Qt::Unchecked)
             continue;
         for(auto fandom: list->GetChildren()){
+            if(fandom->checkState() == Qt::Unchecked)
+                continue;
             // in the fandom range
             FandomStateInList* fandomPtr = static_cast<FandomStateInList*>(fandom->InternalPointer());
             FandomSearchStateToken token;

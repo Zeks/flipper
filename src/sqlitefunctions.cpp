@@ -244,21 +244,34 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
         auto itFirstFandom = data->fandomStates.find(fandom1);
         auto itSecondFandom = data->fandomStates.find(fandom2);
 
-        bool firstFandomIgnoredAsCrossover = itFirstFandom != data->fandomStates.end()
-                && itFirstFandom->second.inclusionMode == EInclusionMode::im_exclude
-                && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
-
-        bool secondFandomIgnoredAsCrossover = itSecondFandom != data->fandomStates.end()
-                && itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
-                && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
-
-
-        // todo this is definitely broken and needs checking
-        if(!firstFandomIgnoredAsCrossover || !secondFandomIgnoredAsCrossover)
+        if(itFirstFandom == data->fandomStates.end() && itSecondFandom == data->fandomStates.end()){
             sqlite3_result_int(ctx, 0);
-        else
-            sqlite3_result_int(ctx, 1);
-
+            return;
+        }
+        else if(itFirstFandom == data->fandomStates.end() && itSecondFandom != data->fandomStates.end()){
+            if(itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers)){
+                sqlite3_result_int(ctx, 1);
+                return;
+            }
+        }
+        else if(itSecondFandom == data->fandomStates.end() && itFirstFandom != data->fandomStates.end()){
+            if(itFirstFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers)){
+                sqlite3_result_int(ctx, 1);
+                return;
+            }
+        }
+        else{
+            bool firstFandomIgnored = itFirstFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+            bool secondFandomIgnored = itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+            if(firstFandomIgnored || secondFandomIgnored)
+                sqlite3_result_int(ctx, 1);
+            return;
+        }
+        sqlite3_result_int(ctx, 0);
     }
 }
 
