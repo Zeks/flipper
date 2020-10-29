@@ -2410,7 +2410,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
         QStringList parts;
 
         if(tags.size() > 0)
-            parts.push_back(QString("tag in ('{0}')").arg(tags.join("','")));
+            parts.push_back(QString("tag in ('%1')").arg(tags.join("','")));
 
         if(parts.size() > 0)
         {
@@ -2423,7 +2423,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
     }
     else {
         std::string qs = "select distinct fic_id from fictags ft where ";
-        QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '{0}') ";
+        QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '%1') ";
         QStringList parts;
 
         QStringList tokens;
