@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/regex_utils.h"
 #include "include/Interfaces/recommendation_lists.h"
 #include "include/Interfaces/fandoms.h"
+#include "include/Interfaces/fandom_lists.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/authors.h"
 #include "include/Interfaces/db_interface.h"
@@ -270,6 +271,8 @@ bool CoreEnvironment::Init()
     interfaces.fandoms->Load();
     interfaces.fandoms->FillFandomList(true);
     interfaces.fandoms->ReloadRecentFandoms();
+    interfaces.fandomLists->ProcessIgnoreListIntoFandomList();
+    interfaces.fandomLists->LoadFandomLists();
     auto recentFandoms = interfaces.fandoms->GetRecentFandoms();
     if(recentFandoms.size() == 0)
     {
@@ -325,6 +328,7 @@ void CoreEnvironment::InitInterfaces()
     interfaces.fanfics = QSharedPointer<interfaces::Fanfics> (new interfaces::FFNFanfics());
     interfaces.recs   = QSharedPointer<interfaces::RecommendationLists> (new interfaces::RecommendationLists());
     interfaces.fandoms = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
+    interfaces.fandomLists = std::shared_ptr<interfaces::FandomLists> (new interfaces::FandomLists());
     interfaces.tags   = QSharedPointer<interfaces::Tags> (new interfaces::Tags());
     interfaces.genres  = QSharedPointer<interfaces::Genres> (new interfaces::Genres());
     interfaces.pageTask= QSharedPointer<interfaces::PageTask> (new interfaces::PageTask());
@@ -345,6 +349,7 @@ void CoreEnvironment::InitInterfaces()
     interfaces.fanfics->db = userDBInterface->GetDatabase();
     interfaces.recs->db    = userDBInterface->GetDatabase();
     interfaces.fandoms->db = userDBInterface->GetDatabase();
+    interfaces.fandomLists->db = userDBInterface->GetDatabase();
     interfaces.fandoms->isClient = true;
     interfaces.tags->db    = userDBInterface->GetDatabase();
     interfaces.genres->db  = userDBInterface->GetDatabase();

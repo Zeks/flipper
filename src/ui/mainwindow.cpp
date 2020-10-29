@@ -373,6 +373,9 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     if(scheduleSlashFilterOn)
         ui->chkEnableSlashFilter->setChecked(true);
 
+    ui->wdgFandomListPlaceholder->env = env;
+    ui->wdgFandomListPlaceholder->InitTree();
+
     return true;
 }
 

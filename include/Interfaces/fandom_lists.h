@@ -18,13 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "core/fandom_list.h"
 #include <QSqlDatabase>
+#include <QSharedPointer>
 #include <functional>
 #include <unordered_set>
 #include <unordered_map>
-
-namespace  {
-
-}
 
 namespace interfaces {
 
@@ -35,16 +32,24 @@ class FandomLists{
     using FandomState = core::fandom_lists::FandomStateInList;
 public:
     FandomLists();
+    void ProcessIgnoreListIntoFandomList();
     void Clear();
     void LoadFandomLists();
     // operations on fandoms
-    void AddFandomToList(uint32_t listId,uint32_t fandomId);
+    void AddFandomToList(uint32_t listId,uint32_t fandomId, QString fandomName);
     void RemoveFandomFromList(uint32_t listId,uint32_t fandomId);
     void EditFandomStateForList(const FandomState &);
     // operations on fandom lists themselves
-    void AddFandomList(FandomList::ListPtr);
+    int AddFandomList(QString);
     void RemoveFandomList(uint32_t listId); // deactivate instead? or fuck precautions?
     void EditListState(FandomList::ListPtr);
+    // getters
+    QStringList GetLoadedFandomLists() const;
+    FandomList::ListPtr GetFandomList(QString) const;
+    const std::vector<FandomState>& GetFandomStatesForList(QString) const;
+    //
+    void FlipValuesForList(uint32_t);
+
 
     // where to put the code that creates the TreeInterface?
     // should I have only the raw representation here?
@@ -55,7 +60,7 @@ public:
     // public until refactor to maintain uniformity of use between interface
     QSqlDatabase db;
 private:
-    std::unique_ptr<FandomListsImpl> d;
+    QSharedPointer<interfaces::FandomListsImpl> d;
 };
 
 }

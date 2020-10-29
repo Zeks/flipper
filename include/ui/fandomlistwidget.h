@@ -11,6 +11,7 @@ class FandomListWidget;
 }
 
 class CustomIconDelegate;
+class CoreEnvironment;
 
 class FandomListWidget : public QWidget
 {
@@ -22,13 +23,25 @@ public:
     ~FandomListWidget();
     void SetupItemControllers();
     void InitTree();
+    void CreateContextMenus();
+    // context menu controls
+    void AddNewList();
+    void DeleteListUnderCursor();
+    void RenameListUnderCursor();
+    void DeleteFandomUnderCursor();
 
 
+    QSharedPointer<CoreEnvironment> env;
 private:
+    std::shared_ptr<TreeItemInterface> FetchAndConvertFandomLists();
     Ui::FandomListWidget *ui;
 
     TreeModel* treeModel = nullptr;
-    QMenu* treeItemMenu = nullptr;
+
+    std::unique_ptr<QMenu> noItemMenu;
+    std::unique_ptr<QMenu> listItemMenu;
+    std::unique_ptr<QMenu> fandomItemMenu;
+
     std::shared_ptr<TreeItemInterface> rootItem;
     std::shared_ptr<ListControllerType> listItemController;
     std::shared_ptr<FandomControllerType> fandomItemController;
@@ -36,10 +49,13 @@ private:
     CustomIconDelegate* crossoverDelegate;
     CustomIconDelegate* dummyDelegate;
 
+    QModelIndex clickedIndex;
+
 
 private slots:
     void OnTreeItemDoubleClicked(const QModelIndex& index);
     void OnTreeItemChecked(const QModelIndex& index);
+    void OnContextMenuRequested(const QPoint &pos);
 };
 
 

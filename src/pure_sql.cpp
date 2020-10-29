@@ -2069,6 +2069,55 @@ DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int fandom_id, QSqlDatabas
     return SqlContext<bool>(db, std::move(qs), BP1(fandom_id))();
 }
 
+DiagnosticSQLResult<bool> ProcessIgnoresIntoFandomLists(QSqlDatabase db)
+{
+    // first we read the ignorelist and verify it's not empty
+    int numberOfIgnorelistRecords = 0;
+    DiagnosticSQLResult<bool> result;
+    result.success = true;
+    {
+        std::string qs = " select count(*) as count from ignored_fandoms";
+        SqlContext<int> ctx(db, std::move(qs));
+        ctx.FetchSingleValue<int>("count", 0);
+        if(!ctx.result.success)
+        {
+            // we assume that this table no longer exists and move on
+            return result;
+        }
+        else
+            numberOfIgnorelistRecords = ctx.result.data;
+    }
+
+    // if there is nothing in ignores - we have nothing to do
+    if(numberOfIgnorelistRecords == 0)
+        return result;
+    {
+        int index = 0;
+        std::string qs = " select * from ignored_fandoms";
+        SqlContext<bool> ctx(db, std::move(qs));
+        ctx.ForEachInSelect([&index, db](QSqlQuery& q){
+            auto qs = "insert into fandom_list_data(list_id, fandom_id, fandom_name, enabled_state, inclusion_mode, crossover_mode, ui_index)"
+                      " values(0, :fandom_id, (select name from fandomindex where id = :fandom_id_repeat), 1, 1, :crossover_mode, :ui_index)";
+            SqlContext<bool> ctx(db, std::move(qs));
+            ctx.bindValue("fandom_id", q.value(QStringLiteral("fandom_id")).toInt());
+            ctx.bindValue("fandom_id_repeat", q.value(QStringLiteral("fandom_id")).toInt());
+            auto includeCrossovers = q.value(QStringLiteral("fandom_id")).toInt();
+            ctx.bindValue("crossover_mode", includeCrossovers ? 0 : 1);
+            ctx.bindValue("ui_index", index);
+            index++;
+            ctx();
+            if(ctx.result.success)
+            {
+                SqlContext<bool> ctx(db, "delete from ignored_fandoms where fandom_id = :fandom_id");
+                ctx.bindValue("fandom_id", q.value(QStringLiteral("fandom_id")).toInt());
+                ctx();
+            }
+        });
+        result = ctx.result;
+    }
+    return result;
+}
+
 DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
 {
     std::string qs = "select name from fandomindex where id in (select fandom_id from ignored_fandoms) order by name asc";
@@ -2211,10 +2260,10 @@ DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomL
     ctx.ForEachInSelect([&](QSqlQuery& q){
         ListPtr list(new List);
         list->id = q.value(QStringLiteral("id")).toBool();
-        list->name = q.value(QStringLiteral("name")).toBool();
+        list->name = q.value(QStringLiteral("name")).toString();
         list->isEnabled= q.value(QStringLiteral("is_enabled")).toBool();
         list->isDefault = q.value(QStringLiteral("is_default")).toBool();
-        list->uiIndex = q.value(QStringLiteral("ui_index")).toBool();
+        list->uiIndex = q.value(QStringLiteral("ui_index")).toInt();
         ctx.result.data.push_back(list);
     });
     return std::move(ctx.result);
@@ -2232,7 +2281,7 @@ DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFan
     ctx.ForEachInSelect([&](QSqlQuery& q){
         FandomState state;
         state.list_id = q.value(QStringLiteral("list_id")).toBool();
-        state.name = q.value(QStringLiteral("name")).toString();
+        state.name = q.value(QStringLiteral("fandom_name")).toString();
         state.id = q.value(QStringLiteral("fandom_id")).toBool();
         state.isEnabled = q.value(QStringLiteral("enabled_state")).toBool();
         state.uiIndex = q.value(QStringLiteral("ui_index")).toBool();
@@ -2256,6 +2305,37 @@ DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fa
     std::string qs = "delete from fandom_list_data where list_id = :list_id and fandom_id = :fandom_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(list_id, fandom_id));
     return ctx(true);
+}
+
+DiagnosticSQLResult<bool> RemoveFandomList(uint32_t list_id, QSqlDatabase db)
+{
+    std::string qs = "delete from fandom_lists where list_id = :list_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(list_id));
+    return ctx(true);
+}
+
+
+DiagnosticSQLResult<int> AddNewFandomList(QString name, QSqlDatabase db)
+{
+    int maxFandomId = 0;
+    {
+        std::string qs = "select max(id) as maxid from fandom_lists";
+        SqlContext<int>ctx(db, std::move(qs));
+        ctx.FetchSingleValue<int>("maxid", -1);
+        maxFandomId = ctx.result.data;
+    }
+    DiagnosticSQLResult<int> result;
+    int id = maxFandomId + 1;
+    std::string qs = "insert into fandom_lists(id, name) values(:id, :name)";
+    SqlContext<int> ctx(db, std::move(qs), BP2(id, name));
+    ctx(true);
+    if(!ctx.result.success){
+        result.data = -1;
+        result.success = false;
+    }
+    else
+        result.data = id;
+    return result;
 }
 
 DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList & fandomState, QSqlDatabase db)
@@ -2282,18 +2362,27 @@ DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr 
     std::string qs = "update fandom_lists set "
                      " name = :name,"
                      " is_enabled = :is_enabled,"
-                     " is_inverted = :is_inverted,"
+                     " is_expanded = :is_expanded,"
                      " ui_index = :ui_index,"
                      " where list_id = :list_id ";
 
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("name", listState->name);
     ctx.bindValue("is_enabled", listState->isEnabled);
-    ctx.bindValue("is_inverted", static_cast<int>(listState->inclusionMode));
+    ctx.bindValue("is_expanded", listState->isExpanded);
     ctx.bindValue("ui_index", listState->uiIndex);
     ctx.bindValue("list_id", listState->id);
     ctx.ExecAndCheck(true);
     return ctx.result;
+}
+
+
+DiagnosticSQLResult<bool> FlipListValues(uint32_t list_id, QSqlDatabase db){
+    std::string qs = "update fandom_list_data set "
+                       " inclusion_mode = CASE WHEN inclusion_mode = 1 THEN 0 ELSE 1 END"
+                     "  where list_id = :list_id  ";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(list_id));
+    return ctx(true);
 }
 
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSqlDatabase db)
@@ -4421,6 +4510,10 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
         result.success = true;
     return result;
 }
+
+
+
+
 
 
 

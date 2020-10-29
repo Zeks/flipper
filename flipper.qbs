@@ -78,6 +78,7 @@ App{
         "include/parsers/ffn/desktop_favparser.h",
         "include/parsers/ffn/favparser_wrapper.h",
         "include/parsers/ffn/mobile_favparser.h",
+        "src/Interfaces/fandom_lists.cpp",
         "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
         "src/core/fav_list_details.cpp",
@@ -191,7 +192,6 @@ App{
         "src/core/author.cpp",
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
-
     ]
 
 

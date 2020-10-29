@@ -210,12 +210,12 @@ CREATE TABLE if not exists fandom_lists(id integer PRIMARY KEY not null,
  name varchar,
  is_enabled integer default 0,
  is_default integer default 0,
- inclusion_mode integer default 0,
+ is_expanded integer default 1,
  ui_index integer
 );
 CREATE INDEX if not exists I_FANDOM_LISTS ON fandom_lists (list_id ASC);
-INSERT INTO fandom_lists(id, name, is_enabled, id_default, ui_index) values(0, 'Ignores', 1, 1, 0);
-INSERT INTO fandom_lists(id, name, is_enabled, id_default, ui_index) values(1, 'Whitelist', 0, 1, 1);
+INSERT INTO fandom_lists(id, name, is_enabled, is_default, is_expanded, ui_index) values(0, 'Ignores',   1, 1, 1, 0);
+INSERT INTO fandom_lists(id, name, is_enabled, is_default, is_expanded, ui_index) values(1, 'Whitelist', 1, 1, 1, 1);
 
 CREATE TABLE if not exists fandom_list_data(list_id integer,
 fandom_id integer,

@@ -14,9 +14,11 @@ namespace fandom_lists{
         im_include = 0,
         im_exclude = 1,
     };
-    struct ListBase{
+    struct ListBase : public std::enable_shared_from_this<ListBase>{
         ListBase(EEntityType type):type(type){}
+        virtual ~ListBase(){};
         bool isEnabled;
+        bool isExpanded;
         uint32_t id;
         QString name;
         uint16_t uiIndex;

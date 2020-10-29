@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 namespace interfaces{
 class Fandoms;
+class FandomLists;
 class Fanfics;
 class Authors;
 class Tags;
@@ -135,6 +136,7 @@ public:
     struct Interfaces{
         // the interface classes used to avoid direct database access in the application
         QSharedPointer<interfaces::Fandoms> fandoms;
+        std::shared_ptr<interfaces::FandomLists> fandomLists;
         QSharedPointer<interfaces::Fanfics> fanfics;
         QSharedPointer<interfaces::Authors> authors;
         QSharedPointer<interfaces::Tags> tags;

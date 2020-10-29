@@ -114,6 +114,8 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats,  QS
 
 DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
+DiagnosticSQLResult<bool>  ProcessIgnoresIntoFandomLists(QSqlDatabase db);
+
 DiagnosticSQLResult<QStringList>  GetIgnoredFandoms(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, bool>> GetIgnoredFandomIDs(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>, QSqlDatabase db);
@@ -142,8 +144,12 @@ DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomL
 DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFandomStatesInUserList(int list_id, QSqlDatabase);
 DiagnosticSQLResult<bool> AddFandomToUserList(uint32_t list_id, uint32_t fandom_id,  QString fandom_name, QSqlDatabase);
 DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase);
+DiagnosticSQLResult<int> AddNewFandomList(QString name, QSqlDatabase);
+DiagnosticSQLResult<bool> RemoveFandomList(uint32_t list_id, QSqlDatabase);
+
 DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList&, QSqlDatabase);
 DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr&, QSqlDatabase);
+DiagnosticSQLResult<bool> FlipListValues(uint32_t list_id, QSqlDatabase);
 
 
 
