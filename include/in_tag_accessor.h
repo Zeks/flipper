@@ -33,6 +33,8 @@ struct UserData{
         ficsForSelection.clear();
         ignoredFandoms.clear();
         token = QStringLiteral("");
+        hasWhitelistedFandoms = false;
+        fandomStates.clear();
     };
     QSet<int> allTaggedFics;
     QSet<int> allSnoozedFics;
@@ -44,6 +46,7 @@ struct UserData{
     QHash<int, bool> ignoredFandoms;
     std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> fandomStates;
     QString token;
+    bool hasWhitelistedFandoms = false;
 };
 struct RecommendationsData{
     QSet<int> sourceFics;

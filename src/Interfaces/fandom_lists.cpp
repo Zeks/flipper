@@ -11,7 +11,7 @@ struct FandomListsImpl{
     // let's go with values for now
     // should I use pointers for ease of referencing? is there a point to keep these as values?
     std::unordered_map<uint16_t, FandomList::ListPtr> idToList;
-    QHash<QString, FandomList::ListPtr> nameToList;
+    QMap<QString, FandomList::ListPtr> nameToList;
     // do I need a hash of all lists fandom is present in? can't hurt I guess
     std::unordered_map<int, std::unordered_set<int>> fandomToLists;
     std::unordered_map<int, std::vector<FandomState>> fandomStatesPerList; // storing values here prevents pre-declarations, d?

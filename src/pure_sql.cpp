@@ -2313,7 +2313,7 @@ DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fa
 
 DiagnosticSQLResult<bool> RemoveFandomList(uint32_t list_id, QSqlDatabase db)
 {
-    std::string qs = "delete from fandom_lists where list_id = :list_id";
+    std::string qs = "delete from fandom_lists where id = :list_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(list_id));
     return ctx(true);
 }

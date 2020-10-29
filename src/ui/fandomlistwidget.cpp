@@ -269,26 +269,30 @@ void FandomListWidget::AddNewList()
     newListPointer->SetInternalData(list.get());
     auto newListItem = std::shared_ptr<TreeItemInterface>(newListPointer);
     newListPointer->SetController(listItemController);
-    ui->tvFandomLists->blockSignals(true);
+    //ui->tvFandomLists->blockSignals(true);
     rootItem->addChild(newListItem);
-    ui->tvFandomLists->blockSignals(false);
-    treeModel->Refresh();
+    //ui->tvFandomLists->blockSignals(false);
+    ReloadModel();
 }
 
 void FandomListWidget::DeleteListUnderCursor()
 {
     QMessageBox::StandardButton reply;
-      reply = QMessageBox::question(this, "QUestion", "Do you really want to delete this fandom list?",
-                                    QMessageBox::Yes|QMessageBox::No);
-      if (reply == QMessageBox::No)
-            return;
+    reply = QMessageBox::question(this, "QUestion", "Do you really want to delete this fandom list?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if (reply == QMessageBox::No)
+        return;
 
-      using namespace core::fandom_lists;
-      auto pointer = static_cast<TreeItemInterface*>(clickedIndex.internalPointer());
-      ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
-      env->interfaces.fandomLists->RemoveFandomList(basePtr->id);
-      pointer->removeChildren(pointer->row(), 1);
-      treeModel->Refresh();
+    if(!clickedIndex.isValid())
+        return;
+
+    using namespace core::fandom_lists;
+    auto pointer = static_cast<TreeItemInterface*>(clickedIndex.internalPointer());
+    auto parentPtr = pointer->parent();
+    ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
+    env->interfaces.fandomLists->RemoveFandomList(basePtr->id);
+    parentPtr->removeChildren(pointer->row(), 1);
+    ReloadModel();
 }
 
 void FandomListWidget::RenameListUnderCursor()
@@ -309,6 +313,15 @@ void FandomListWidget::RenameListUnderCursor()
     treeModel->Refresh();
 }
 
+
+//void StoreNodePathExpandState(std::function<QVariant(typename std::remove_pointer<DataType>::type *)> dataAccessor,
+//                              QStringList & nodes,
+//                              QTreeView * view,
+//                              QAbstractItemModel * model,
+//                              const QModelIndex& startIndex,
+//                              QString path = QString())
+
+
 void FandomListWidget::DeleteFandomUnderCursor()
 {
     using namespace core::fandom_lists;
@@ -318,7 +331,7 @@ void FandomListWidget::DeleteFandomUnderCursor()
     ListBase* listPtr = static_cast<ListBase*>(parentPtr->InternalPointer());
     env->interfaces.fandomLists->RemoveFandomFromList(listPtr->id, fandomPtr->id);
     parentPtr->removeChildren(pointer->row(), 1);
-    treeModel->Refresh();
+    ReloadModel();
 }
 
 std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetStateForSearches()
@@ -359,7 +372,7 @@ std::shared_ptr<TreeItemInterface> FandomListWidget::FetchAndConvertFandomLists(
         listVec.push_back(list);
     }
     std::sort(listVec.begin(),listVec.end(), [](const auto& i1,const auto& i2){
-        return i1->uiIndex < i2->uiIndex;
+        return i1->id < i2->id;
     });
 
     TreeItem<core::fandom_lists::List>* rootPointer = new TreeItem<core::fandom_lists::List>();
@@ -374,7 +387,7 @@ std::shared_ptr<TreeItemInterface> FandomListWidget::FetchAndConvertFandomLists(
             item->setCheckState(Qt::Checked);
         if(list->name == "Ignores")
             ignoresItem = item;
-        if(list->name == "Whiltelist")
+        if(list->name == "Whitelist")
             whitelistItem = item;
         ui->cbFandomLists->addItem(list->name);
 
@@ -417,7 +430,7 @@ bool FandomListWidget::IsFandomInList(std::shared_ptr<TreeItemInterface> node, u
     return false;
 }
 
-void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, uint32_t fandomId)
+void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, uint32_t fandomId, core::fandom_lists::EInclusionMode mode)
 {
     using namespace core::fandom_lists;
     auto name = env->interfaces.fandoms->GetNameForID(fandomId);
@@ -425,12 +438,24 @@ void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, 
     FandomStateInList newFandomState;
     newFandomState.id = fandomId;
     newFandomState.name = name;
-    newFandomState.inclusionMode = im_include;
+    newFandomState.inclusionMode = mode;
+    newFandomState.crossoverInclusionMode = ECrossoverInclusionMode::cim_select_all;
+
+    ListBase* basePtr = static_cast<ListBase*>(node->InternalPointer());
 
     auto item = TreeFunctions::CreateInterfaceFromData<FandomStateInList, TreeItemInterface, TreeItem>
             (node, newFandomState, fandomItemController);
+    item->setCheckState(Qt::Checked);
     node->addChild(item);
-    treeModel->Refresh();
+    auto children = node->GetChildren();
+    std::sort(children.begin(),children.end(), [](const auto& i1,const auto& i2){
+        return i1->data(3, Qt::DisplayRole).toString() < i2->data(3, Qt::DisplayRole).toString();
+    });
+    node->removeChildren();
+    node->AddChildren(children);
+    env->interfaces.fandomLists->AddFandomToList(basePtr->id, fandomId, name);
+    env->interfaces.fandomLists->EditFandomStateForList(*static_cast<FandomStateInList*>(basePtr));
+    ReloadModel();
     ScrollToFandom(node, fandomId);
 }
 
@@ -439,9 +464,12 @@ QModelIndex FandomListWidget::FindIndexForPath(QStringList path)
     int currentDepth = 0;
     for(auto listIndex = 0; listIndex < treeModel->rowCount(QModelIndex()); listIndex++){
         QModelIndex currentListIndex = treeModel->index(listIndex, 3);
+        //auto data = currentListIndex.data(Qt::DisplayRole).toString();
         if(currentListIndex.data(Qt::DisplayRole).toString() == path.at(currentDepth))
         {
             currentDepth++;
+            if(path.size() == 1)
+                return currentListIndex;
             for(auto fandomIndex = 0; fandomIndex < treeModel->rowCount(currentListIndex); fandomIndex++){
                 auto currentFandomIndex = treeModel->index(fandomIndex, 3, currentListIndex);
                 if(currentListIndex.data(Qt::DisplayRole).toString() == path.at(currentDepth))
@@ -450,6 +478,18 @@ QModelIndex FandomListWidget::FindIndexForPath(QStringList path)
         }
     }
     return QModelIndex();
+}
+
+void FandomListWidget::ReloadModel()
+{
+    using namespace core::fandom_lists;
+    QStringList expandedNodes;
+    std::function<QVariant(ListBase*)> dataAccessFunc =
+                [](ListBase* data){return QVariant(data->name);};
+    TreeFunctions::StoreNodePathExpandState<TreeItemInterface, TreeItem, ListBase>(dataAccessFunc, expandedNodes, ui->tvFandomLists, treeModel, QModelIndex());
+    treeModel->InsertRootItem(rootItem);
+    TreeFunctions::ApplyNodePathExpandState<TreeItemInterface, TreeItem, ListBase>(dataAccessFunc, expandedNodes, ui->tvFandomLists, treeModel, QModelIndex());
+
 }
 
 void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
@@ -467,6 +507,11 @@ void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
             env->interfaces.fandomLists->FlipValuesForList(basePtr->id);
         }
         else{
+            // preventing flip of individual nodes in ignorelist to avoid confusion
+            if(pointer->parent()->data(3, Qt::DisplayRole).toString() == "Ignores" && index.column() == 1){
+                QMessageBox::warning(nullptr, "Warning!", "Ignores is a special case so you can only flip mode for its contents but not individual fandoms.");
+                return;
+            }
             auto* ptr = static_cast<FandomStateInList*>(basePtr);
             if(index.column() == 1)
                 ptr->inclusionMode = ptr->Rotate(ptr->inclusionMode);
@@ -475,7 +520,7 @@ void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
         }
     }
     ui->tvFandomLists->blockSignals(false);
-    treeModel->Refresh();
+    ReloadModel();
 }
 
 void FandomListWidget::OnTreeItemChecked(const QModelIndex &index)
@@ -527,7 +572,7 @@ void FandomListWidget::OnIgnoreCurrentFandom()
         ScrollToFandom(ignoresItem, id);
         return;
     }
-    AddFandomToList(ignoresItem, id);
+    AddFandomToList(ignoresItem, id, core::fandom_lists::EInclusionMode::im_exclude);
     ScrollToFandom(ignoresItem, id);
 }
 
@@ -546,7 +591,7 @@ void FandomListWidget::OnWhitelistCurrentFandom()
         ScrollToFandom(whitelistItem, id);
         return;
     }
-    AddFandomToList(whitelistItem, id);
+    AddFandomToList(whitelistItem, id, core::fandom_lists::EInclusionMode::im_include);
     ScrollToFandom(whitelistItem, id);
 }
 
@@ -563,7 +608,8 @@ void FandomListWidget::OnAddCurrentFandomToList()
 
     QString fandom = ui->cbFandoms->currentText();
     auto id = env->interfaces.fandoms->GetIDForName(fandom);
-    AddFandomToList(sharedList, id);
+    auto mode = listName == "Ignores" ? core::fandom_lists::EInclusionMode::im_exclude : core::fandom_lists::EInclusionMode::im_include;
+    AddFandomToList(sharedList, id, mode);
     ScrollToFandom(sharedList, id);
 }
 

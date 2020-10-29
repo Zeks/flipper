@@ -227,6 +227,61 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
     int fandom2 = sqlite3_value_int(argv[1]);
     using namespace core::fandom_lists;
     auto* data = ThreadData::GetUserData();
+    // whitelist branch
+    if(data->hasWhitelistedFandoms){
+        if(fandom2 == -1){
+            auto it = data->fandomStates.find(fandom1);
+            bool isWhitelisted = it != data->fandomStates.end()
+                    && it->second.inclusionMode == EInclusionMode::im_include
+                    && it->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_pure);
+            if(!isWhitelisted)
+            {
+                sqlite3_result_int(ctx,1);
+                return;
+            }
+        }
+        else{
+            auto itFirstFandom = data->fandomStates.find(fandom1);
+            auto itSecondFandom = data->fandomStates.find(fandom2);
+            if(itFirstFandom == data->fandomStates.end() && itSecondFandom == data->fandomStates.end()){
+                sqlite3_result_int(ctx,1);
+                return;
+            }
+            else if(itFirstFandom == data->fandomStates.end() && itSecondFandom != data->fandomStates.end()){
+                bool isWhitelisted = itSecondFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                if(!isWhitelisted)
+                {
+                    sqlite3_result_int(ctx,1);
+                    return;
+                }
+
+            }
+            else if(itFirstFandom != data->fandomStates.end() && itSecondFandom == data->fandomStates.end()){
+                bool isWhitelisted = itFirstFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                if(!isWhitelisted)
+                {
+                    sqlite3_result_int(ctx,1);
+                    return;
+                }
+            }
+            else{
+                bool isFirstWhitelisted = itFirstFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                bool isSecondWhitelisted = itSecondFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                if(!(isFirstWhitelisted || isSecondWhitelisted))
+                {
+                    sqlite3_result_int(ctx,1);
+                    return;
+                }
+
+            }
+        }
+    }
+
+    // ignores branch
     if(fandom2 == -1)
     {
         auto it = data->fandomStates.find(fandom1);
@@ -234,9 +289,10 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
                 && it->second.inclusionMode == EInclusionMode::im_exclude
                 && it->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
         if(isIgnored)
+        {
             sqlite3_result_int(ctx, 1);
-        else
-            sqlite3_result_int(ctx, 0);
+            return;
+        }
     }
     else
     {
@@ -245,8 +301,7 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
         auto itSecondFandom = data->fandomStates.find(fandom2);
 
         if(itFirstFandom == data->fandomStates.end() && itSecondFandom == data->fandomStates.end()){
-            sqlite3_result_int(ctx, 0);
-            return;
+            // do nothing here, wil lassign 0 later
         }
         else if(itFirstFandom == data->fandomStates.end() && itSecondFandom != data->fandomStates.end()){
             if(itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
@@ -267,12 +322,13 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
                     && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
             bool secondFandomIgnored = itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
                     && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
-            if(firstFandomIgnored || secondFandomIgnored)
+            if(firstFandomIgnored || secondFandomIgnored){
                 sqlite3_result_int(ctx, 1);
-            return;
+                return;
+            }
         }
-        sqlite3_result_int(ctx, 0);
     }
+    sqlite3_result_int(ctx,0);
 }
 
 void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)

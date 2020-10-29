@@ -38,8 +38,9 @@ private:
     std::shared_ptr<TreeItemInterface> FetchAndConvertFandomLists();
     void ScrollToFandom(std::shared_ptr<TreeItemInterface>, uint32_t id);
     bool IsFandomInList(std::shared_ptr<TreeItemInterface>, uint32_t);
-    void AddFandomToList(std::shared_ptr<TreeItemInterface>, uint32_t);
+    void AddFandomToList(std::shared_ptr<TreeItemInterface>, uint32_t, core::fandom_lists::EInclusionMode mode);
     QModelIndex FindIndexForPath(QStringList);
+    void ReloadModel();
 
     Ui::FandomListWidget *ui;
 
