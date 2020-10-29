@@ -12,6 +12,7 @@
 #include <QPainter>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QStringListModel>
 #include <vector>
 
 static QRect CheckBoxRect(const QStyleOptionViewItem &view_item_style_options) {
@@ -83,20 +84,20 @@ FandomListWidget::FandomListWidget(QWidget *parent) :
             if(basePtr->type == et_list)
                 return QPixmap(":/icons/icons/switch.png");
             if(value == im_exclude)
-                return QPixmap(":/icons/icons/cross_red.png");
+                return QPixmap(":/icons/icons/minus_darkened.png");
             else
-                return  QPixmap(":/icons/icons/ok.png");
+                return QPixmap(":/icons/icons/plus_darkened.png");
 });
 
     crossoverDelegate = createDelegate([](QModelIndex index){
             MEMBER_VALUE_OR_DEFAULT(crossoverInclusionMode);
             auto value = getter(basePtr);
             if(value == cim_select_all)
-                return QPixmap(":/icons/icons/bit2.png");
+                return QPixmap(":/icons/icons/select_fic_crosses.png");
             else if(value == cim_select_crossovers)
-                return  QPixmap(":/icons/icons/shuffle_blue.png");
+                return QPixmap(":/icons/icons/shuffle_blue.png");
             else
-            return  QPixmap(":/icons/icons/open_book.png");
+            return QPixmap(":/icons/icons/select_fic.png");
 });
 
     ui->tvFandomLists->setItemDelegateForColumn(0, dummyDelegate);
@@ -303,7 +304,8 @@ void FandomListWidget::RenameListUnderCursor()
     auto pointer = static_cast<TreeItemInterface*>(clickedIndex.internalPointer());
     ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
     basePtr->name = name;
-    env->interfaces.fandomLists->EditListState(std::dynamic_pointer_cast<List>(basePtr->shared_from_this()));
+
+    env->interfaces.fandomLists->EditListState(*static_cast<List*>(pointer->InternalPointer()));
     treeModel->Refresh();
 }
 
@@ -319,14 +321,16 @@ void FandomListWidget::DeleteFandomUnderCursor()
     treeModel->Refresh();
 }
 
-std::vector<core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetStateForSearches()
+std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetStateForSearches()
 {
     // go from top to the bottom
     // lower records override upper ones (? indicate conflict)
     using namespace core::fandom_lists;
-    std::vector<FandomSearchStateToken> result;
+    std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> result;
     for(auto list: rootItem->GetChildren()){
         // in the list range
+        if(list->checkState() == Qt::Unchecked)
+            continue;
         for(auto fandom: list->GetChildren()){
             // in the fandom range
             FandomStateInList* fandomPtr = static_cast<FandomStateInList*>(fandom->InternalPointer());
@@ -334,7 +338,7 @@ std::vector<core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetSta
             token.id = fandomPtr->id;
             token.inclusionMode = fandomPtr->inclusionMode;
             token.crossoverInclusionMode = fandomPtr->crossoverInclusionMode;
-            result.emplace_back(std::move(token));
+            result.insert_or_assign(fandomPtr->id, std::move(token));
         }
     }
     return result;
@@ -345,10 +349,12 @@ std::shared_ptr<TreeItemInterface> FandomListWidget::FetchAndConvertFandomLists(
     auto fandomListInterface = env->interfaces.fandomLists;
     auto lists = fandomListInterface->GetLoadedFandomLists();
     using namespace interfaces;
-    using ListType = decltype(std::declval<FandomLists>().GetFandomList(std::declval<QString>()));
-    std::vector<ListType> listVec;
+    //using ListType = decltype(std::declval<FandomLists>().GetFandomList(std::declval<QString>()));
+    using namespace core::fandom_lists;
+    std::vector<List::ListPtr> listVec;
     for(auto name : lists){
-        listVec.push_back(fandomListInterface->GetFandomList(name));
+        auto list = fandomListInterface->GetFandomList(name);
+        listVec.push_back(list);
     }
     std::sort(listVec.begin(),listVec.end(), [](const auto& i1,const auto& i2){
         return i1->uiIndex < i2->uiIndex;
@@ -477,7 +483,7 @@ void FandomListWidget::OnTreeItemChecked(const QModelIndex &index)
     ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
     basePtr->isEnabled = pointer->checkState() == Qt::Checked;
     if(basePtr->type == et_list){
-        env->interfaces.fandomLists->EditListState(std::dynamic_pointer_cast<List>(basePtr->shared_from_this()));
+        env->interfaces.fandomLists->EditListState(*static_cast<List*>(basePtr));
     }
     else{
         env->interfaces.fandomLists->EditFandomStateForList(*static_cast<FandomStateInList*>(basePtr));

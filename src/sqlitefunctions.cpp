@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/in_tag_accessor.h"
 #include "pure_sql.h"
 #include "logger/QsLog.h"
+#include "GlobalHeaders/snippets_templates.h"
 
 namespace database{
 
@@ -224,35 +225,36 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int fandom1 = sqlite3_value_int(argv[0]);
     int fandom2 = sqlite3_value_int(argv[1]);
-    //QList<int> fandoms = {fandom1, fandom2};
-//    if(!fandoms.size())
-//        sqlite3_result_int(ctx, 0);
+    using namespace core::fandom_lists;
     auto* data = ThreadData::GetUserData();
     if(fandom2 == -1)
     {
-        if(data->ignoredFandoms.contains(fandom1))
+        auto it = data->fandomStates.find(fandom1);
+        bool isIgnored = it != data->fandomStates.end()
+                && it->second.inclusionMode == EInclusionMode::im_exclude
+                && it->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+        if(isIgnored)
             sqlite3_result_int(ctx, 1);
         else
             sqlite3_result_int(ctx, 0);
     }
     else
     {
-        bool hasUnignored = false;
-        for(auto fandom: {fandom1, fandom2})
-        {
-            auto it = data->ignoredFandoms.find(fandom);
-            if(it == data->ignoredFandoms.end())
-            {
-                hasUnignored = true;
-                continue;
-            }
-            if(it.value() == true)
-            {
-                sqlite3_result_int(ctx, 1);
-                return;
-            }
-        }
-        if(hasUnignored)
+        // this is SO going to break >_<
+        auto itFirstFandom = data->fandomStates.find(fandom1);
+        auto itSecondFandom = data->fandomStates.find(fandom2);
+
+        bool firstFandomIgnoredAsCrossover = itFirstFandom != data->fandomStates.end()
+                && itFirstFandom->second.inclusionMode == EInclusionMode::im_exclude
+                && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+
+        bool secondFandomIgnoredAsCrossover = itSecondFandom != data->fandomStates.end()
+                && itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
+                && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+
+
+        // todo this is definitely broken and needs checking
+        if(!firstFandomIgnoredAsCrossover || !secondFandomIgnoredAsCrossover)
             sqlite3_result_int(ctx, 0);
         else
             sqlite3_result_int(ctx, 1);

@@ -148,7 +148,7 @@ DiagnosticSQLResult<int> AddNewFandomList(QString name, QSqlDatabase);
 DiagnosticSQLResult<bool> RemoveFandomList(uint32_t list_id, QSqlDatabase);
 
 DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList&, QSqlDatabase);
-DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr&, QSqlDatabase);
+DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List &, QSqlDatabase);
 DiagnosticSQLResult<bool> FlipListValues(uint32_t list_id, QSqlDatabase);
 
 

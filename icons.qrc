@@ -96,5 +96,10 @@
         <file>icons/shuffle_blue.png</file>
         <file>icons/book_white.png</file>
         <file>icons/book_black.png</file>
+        <file>icons/minus_darkened.png</file>
+        <file>icons/plus_darkened.png</file>
+        <file>icons/fic_crosses_test.png</file>
+        <file>icons/select_fic.png</file>
+        <file>icons/select_fic_crosses.png</file>
     </qresource>
 </RCC>

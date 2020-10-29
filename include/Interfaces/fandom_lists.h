@@ -42,7 +42,7 @@ public:
     // operations on fandom lists themselves
     int AddFandomList(QString);
     void RemoveFandomList(uint32_t listId); // deactivate instead? or fuck precautions?
-    void EditListState(FandomList::ListPtr);
+    void EditListState(const core::fandom_lists::List &);
     // getters
     QStringList GetLoadedFandomLists() const;
     FandomList::ListPtr GetFandomList(QString) const;

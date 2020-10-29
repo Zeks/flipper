@@ -31,10 +31,7 @@ public:
     void DeleteListUnderCursor();
     void RenameListUnderCursor();
     void DeleteFandomUnderCursor();
-    std::vector<core::fandom_lists::FandomSearchStateToken> GetStateForSearches();
-
-
-
+    std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> GetStateForSearches();
 
     QSharedPointer<CoreEnvironment> env;
 private:

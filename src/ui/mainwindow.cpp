@@ -2370,6 +2370,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.mode = mode;
     filter.descendingDirection = ui->cbSortDirection->currentIndex() == 0;
     filter.displaySnoozedFics = ui->chkDisplaySnoozed->isChecked();
+    filter.fandomStates = ui->wdgFandomListPlaceholder->GetStateForSearches();
 
     QObject* windowObject= qwFics->rootObject();
     windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());

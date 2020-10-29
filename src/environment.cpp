@@ -120,6 +120,7 @@ void CoreEnvironment::LoadData()
             }
 
             userData.ignoredFandoms = interfaces.fandoms->GetIgnoredFandomsIDs();
+            userData.fandomStates = filter.fandomStates;
             //userData.likedAuthors = likedAuthors;
             ficSource->userData = userData;
 

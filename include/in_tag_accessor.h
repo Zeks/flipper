@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QReadWriteLock>
 #include <QSharedPointer>
 #include "GlobalHeaders/SingletonHolder.h"
+#include "core/fandom_list.h"
 struct UserData{
     void Clear(){
         allTaggedFics.clear();
@@ -41,6 +42,7 @@ struct UserData{
     QSet<int> ficsForAuthorSearch;
     QSet<int> ficsForSelection;
     QHash<int, bool> ignoredFandoms;
+    std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> fandomStates;
     QString token;
 };
 struct RecommendationsData{

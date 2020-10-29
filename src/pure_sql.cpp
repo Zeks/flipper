@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/genres.h"
 #include "EGenres.h"
 #include "include/in_tag_accessor.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include "fmt/format.h"
 #include <QSqlQuery>
 #include <QSqlError>
@@ -2146,10 +2147,10 @@ DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>ids, QSq
 
 DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
 {
-    std::string qs = "select fandom_id, including_crossovers from ignored_fandoms order by fandom_id asc";
+    std::string qs = "select fandom_id, inclusion_mode from fandom_list_data where list_id = 0 and inclusion_mode = 1 order by fandom_id asc";
     SqlContext<QHash<int, bool> > ctx(db);
-    ctx.FetchSelectFunctor(std::move(qs), [](QHash<int, bool>& data, QSqlQuery& q){
-        data[q.value("fandom_id").toInt()] = q.value("including_crossovers").toBool();
+    ctx.FetchSelectFunctor(std::move(qs), [](auto& data, QSqlQuery& q){
+        data[q.value(QStringLiteral("fandom_id")).toInt()] = q.value(QStringLiteral("crossover_mode")).toInt() *in(0, 2); // todo check this
     }, true);
     return std::move(ctx.result);
 }
@@ -2357,7 +2358,7 @@ DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::Fando
     return ctx.result;
 }
 
-DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr & listState, QSqlDatabase db)
+DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List& listState, QSqlDatabase db)
 {
     std::string qs = "update fandom_lists set "
                      " name = :name,"
@@ -2367,11 +2368,11 @@ DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List::ListPtr 
                      " where list_id = :list_id ";
 
     SqlContext<bool> ctx(db, std::move(qs));
-    ctx.bindValue("name", listState->name);
-    ctx.bindValue("is_enabled", listState->isEnabled);
-    ctx.bindValue("is_expanded", listState->isExpanded);
-    ctx.bindValue("ui_index", listState->uiIndex);
-    ctx.bindValue("list_id", listState->id);
+    ctx.bindValue("name", listState.name);
+    ctx.bindValue("is_enabled", listState.isEnabled);
+    ctx.bindValue("is_expanded", listState.isExpanded);
+    ctx.bindValue("ui_index", listState.uiIndex);
+    ctx.bindValue("list_id", listState.id);
     ctx.ExecAndCheck(true);
     return ctx.result;
 }

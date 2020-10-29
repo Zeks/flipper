@@ -901,7 +901,7 @@
                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Used to enable/disable fandom ignore. If this is checked fics from fandoms you have ignored will not be shown in your recommendation list.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                      <property name="text">
-                      <string>Fandom Ignore</string>
+                      <string>Fandom Lists</string>
                      </property>
                      <property name="checked">
                       <bool>true</bool>

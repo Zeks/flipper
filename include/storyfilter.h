@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QHash>
 #include <QVector>
 #include <QSet>
+#include "core/fandom_list.h"
 struct SlashFilterState
 {
     void Log();
@@ -109,8 +110,7 @@ struct StoryFilter{
         ssm_show = 1,
         ssm_hide = 2,
     };
-    //do I even need that?
-    //QString ficCategory;
+
     bool isValid = true;
     bool includeCrossovers = true;
     bool crossoversOnly = false;
@@ -138,8 +138,6 @@ struct StoryFilter{
     int useThisRecommenderOnly = -1;
     int recordLimit = -1;
     int recordPage = -1;
-//    int physicalRecordLimit = -1;
-//    int lastFetchedRecordID = -1;
     int minWords = 0;
     int maxWords = 0;
     int maxFics = 0;
@@ -185,11 +183,10 @@ struct StoryFilter{
 
     double reviewBiasRatio = 0;
 
-//    QSet<int> allTaggedIDs;
-//    QSet<int> idsForActiveTags;
     QList<int> recFics;
     QHash<int, int> recsHash; // for use on the server
     QHash<int, int> scoresHash; // for use on the server
+    std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> fandomStates;
     QString userToken;
     QString rngDisambiguator;
 };

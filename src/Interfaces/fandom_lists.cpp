@@ -74,7 +74,7 @@ void FandomLists::RemoveFandomList(uint32_t listId)
     database::puresql::RemoveFandomList(listId, db);
 }
 
-void FandomLists::EditListState(core::fandom_lists::List::ListPtr list)
+void FandomLists::EditListState(const core::fandom_lists::List& list)
 {
     database::puresql::EditListState(list, db);
 }

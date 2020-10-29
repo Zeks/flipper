@@ -16,6 +16,7 @@ namespace fandom_lists{
     };
     struct ListBase : public std::enable_shared_from_this<ListBase>{
         ListBase(EEntityType type):type(type){}
+        std::shared_ptr<ListBase> getShared(){return shared_from_this();};
         virtual ~ListBase(){};
         bool isEnabled = true;;
         bool isExpanded = true;;
