@@ -1050,7 +1050,9 @@ core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcf
                         core::fandom_lists::ECrossoverInclusionMode::cim_select_pure;
             filter.fandomStates.emplace(it.key(), std::move(newToken));
         }
+        userData->fandomStates = filter.fandomStates;
     }
+
     for(const auto& state: userData->fandomStates){
         if(state.second.inclusionMode == core::fandom_lists::EInclusionMode::im_include)
             userData->hasWhitelistedFandoms = true;
