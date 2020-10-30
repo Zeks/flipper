@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QHash>
 #include <QVector>
 #include <QSet>
+#include "core/fandom_list.h"
 struct SlashFilterState
 {
     void Log();
@@ -45,7 +46,7 @@ struct StoryFilter{
     static QStringList ProcessDelimited(QString str, QString delimiter){
         if(str.contains(delimiter))
             return str.split(delimiter);
-        return str.split(" ");
+        return str.split(QStringLiteral(" "));
     }
     enum EScoreType
     {
@@ -109,12 +110,11 @@ struct StoryFilter{
         ssm_show = 1,
         ssm_hide = 2,
     };
-    //do I even need that?
-    //QString ficCategory;
+
     bool isValid = true;
     bool includeCrossovers = true;
-    bool ignoreAlreadyTagged = false;
     bool crossoversOnly = false;
+    bool ignoreAlreadyTagged = false;
     bool ignoreFandoms = false;
     bool randomizeResults = false;
     bool ensureCompleted = false;
@@ -131,14 +131,13 @@ struct StoryFilter{
     bool descendingDirection = true;
     bool displayPurgedFics = false;
     bool displaySnoozedFics = false;
+    bool wipeRngSequence = false;;
 
     SlashFilterState slashFilter;
 
     int useThisRecommenderOnly = -1;
     int recordLimit = -1;
     int recordPage = -1;
-//    int physicalRecordLimit = -1;
-//    int lastFetchedRecordID = -1;
     int minWords = 0;
     int maxWords = 0;
     int maxFics = 0;
@@ -156,6 +155,7 @@ struct StoryFilter{
     int useThisFic = -1;
     int protocolMajorVersion = 2;
     int protocolMinorVersion = 0;
+    int deadFicDaysRange = 365;
 
     QList<int> usedRecommenders;
     ESortMode sortMode;
@@ -183,12 +183,12 @@ struct StoryFilter{
 
     double reviewBiasRatio = 0;
 
-//    QSet<int> allTaggedIDs;
-//    QSet<int> idsForActiveTags;
     QList<int> recFics;
     QHash<int, int> recsHash; // for use on the server
     QHash<int, int> scoresHash; // for use on the server
+    std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> fandomStates;
     QString userToken;
+    QString rngDisambiguator;
 };
 
 struct ReclistFilter{

@@ -1,0 +1,109 @@
+# syntax = docker/dockerfile:1.0-experimental
+FROM ubuntu:20.10
+SHELL ["bash", "-l", "-c"]
+
+ARG THREAD_COUNT=12
+ARG DEBIAN_FRONTEND=noninteractive
+ENV THREAD_COUNT ${DEBIAN_FRONTEND:-noninteractive}
+
+# создаём общие директории
+ENV PACKAGE_DIR /build/downloads
+ENV BUILD_DIR /build/tmp
+ENV TARGET_DIR /build/libs
+ENV INCLUDES_DIR /build/includes
+
+RUN mkdir -p $PACKAGE_DIR $BUILD_DIR $TARGET_DIR
+
+ENV CC=/usr/bin/gcc
+ENV CXX=/usr/bin/g++
+
+# добавляем репозитории и ставим нужные пакеты
+RUN apt-get update && apt-get -y  install \
+    git \
+    autojump \
+    libssl-dev \
+    wget \
+    mlocate \
+    ccache \
+    perl \
+    python \
+    build-essential \
+    libx11-xcb-dev \
+    libglu1-mesa-dev \
+    '^libxcb.*-dev' \ 
+    libxrender-dev \
+    libxi-dev \
+    libxkbcommon-dev \
+    libxkbcommon-x11-dev \
+    flex \
+    bison \
+    gperf \
+    libicu-dev \
+    libxslt-dev \
+    ruby 
+
+ENV CCACHE_MAXSIZE ${CCACHE_MAXSIZE:-15G}
+ENV CCACHE_DIR /root/.cache/qbs
+
+ARG QT_MAJOR_VERSION=5.15
+ARG QT_MINOR_VERSION=0
+ARG QT_FULL_VERSION=$QT_MAJOR_VERSION.$QT_MINOR_VERSION
+ENV PATH $PATH:$TARGET_DIR/qt/qt.$QT_FULL_VERSION/bin
+ENV QTDIR $TARGET_DIR/qt/qt.$QT_FULL_VERSION
+ENV QTLIB $TARGET_DIR/qt/qt.$QT_FULL_VERSION/lib
+ENV QTINC $TARGET_DIR/qt/qt.$QT_FULL_VERSION/include
+ENV QT_BASE_DIR $TARGET_DIR/qt/qt.$QT_FULL_VERSION
+
+RUN mkdir -p $TARGET_DIR/qt/qt.$QT_FULL_VERSION 
+RUN --mount=type=cache,target=/root/.cache/qbs wget http://download.qt.io/official_releases/qt/$QT_MAJOR_VERSION/$QT_FULL_VERSION/single/qt-everywhere-src-$QT_FULL_VERSION.tar.xz -P $PACKAGE_DIR/ \
+	&& tar xpJf $PACKAGE_DIR/qt-everywhere-src-$QT_FULL_VERSION.tar.xz -C $BUILD_DIR/ \
+    && cd $BUILD_DIR/qt-everywhere-src-$QT_FULL_VERSION \
+    && cp $BUILD_DIR/qt-everywhere-src-$QT_FULL_VERSION/qtbase/src/3rdparty/sqlite/sqlite3.c  $TARGET_DIR/sqlite3.c \
+    && cp $BUILD_DIR/qt-everywhere-src-$QT_FULL_VERSION/qtbase/src/3rdparty/sqlite/sqlite3.h  $TARGET_DIR/sqlite3.h \
+    && ./configure -release -ccache -opensource -confirm-license -nomake examples -nomake tests -nomake tools -skip qtandroidextras -skip qtconnectivity -skip qtgamepad -skip qtmacextras -skip qtsensors -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtvirtualkeyboard -no-avx2 -xcb -xcb-xlib -prefix $TARGET_DIR/qt/qt.$QT_FULL_VERSION \
+    && make -j$THREAD_COUNT  \
+    && make install \
+    && rm -rf $PACKAGE_DIR/* $BUILD_DIR/*
+
+ARG QBS_VERSION=1.15.0
+#starting qbs installation
+RUN --mount=type=cache,target=/root/.cache/qbs \
+    wget https://github.com/qbs/qbs/archive/v$QBS_VERSION.tar.gz -P $PACKAGE_DIR/ \
+	&& tar xzf $PACKAGE_DIR/v$QBS_VERSION.tar.gz -C $BUILD_DIR/ \
+    && cd $BUILD_DIR/qbs-$QBS_VERSION \
+    && qmake -r qbs.pro && make -j$THREAD_COUNT \
+    && make install INSTALL_ROOT=$TARGET_DIR/qbs-$QBS_VERSION \
+    && rm -rf $PACKAGE_DIR/* $BUILD_DIR/*
+
+ENV PATH $PATH:$TARGET_DIR/qbs-$QBS_VERSION/usr/local/bin
+# setup qbs
+RUN qbs setup-toolchains --detect
+RUN qbs setup-qt $TARGET_DIR/qt/qt.$QT_FULL_VERSION/bin/qmake defaultqt
+
+
+ARG GRPC_VERSION=1.30.2
+#grpc compile part
+RUN mkdir -p $BUILD_DIR  \
+    && mkdir -p $TARGET_DIR \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION/include \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION/lib \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION/bin 
+
+# grpc
+RUN apt-get -y install autoconf libtool
+RUN --mount=type=cache,target=/root/.cache/qbs \
+    cd $BUILD_DIR \
+    && git clone https://github.com/grpc/grpc.git \
+    && cd grpc \
+    && git checkout v$GRPC_VERSION \
+    && git submodule update --init  \
+    && mkdir -p $TARGET_DIR/grpc-$GRPC_VERSION \
+    && make CXXFLAGS="-Wno-error=cast-function-type -Wno-error=sizeof-pointer-memaccess -Wno-error=class-memaccess -Wno-error=ignored-qualifiers -Wno-error=stringop-truncation" CFLAGS="-Wno-error=cast-function-type  -Wno-error=sizeof-pointer-memaccess -Wno-error=class-memaccess -Wno-error=ignored-qualifiers -Wno-error=stringop-truncation"  -j$THREAD_COUNT \
+    && make install  \
+    && cp -rf $BUILD_DIR/grpc/third_party/protobuf/src/google  $TARGET_DIR/grpc-$GRPC_VERSION/include \
+    && cp -rf $BUILD_DIR/grpc/third_party/protobuf/src/*.la $TARGET_DIR/grpc-$GRPC_VERSION/lib  \
+    && cp -rf $BUILD_DIR/grpc/third_party/protobuf/src/.libs/*.a $TARGET_DIR/grpc-$GRPC_VERSION/lib \
+    && cp $BUILD_DIR/grpc/bins/opt/protobuf/protoc $TARGET_DIR/grpc-$GRPC_VERSION/bin \
+    && cp $BUILD_DIR/grpc/libs/opt/protobuf/libprotoc.a $TARGET_DIR/grpc-$GRPC_VERSION/lib \
+    && rm -rf $PACKAGE_DIR/* $BUILD_DIR/*

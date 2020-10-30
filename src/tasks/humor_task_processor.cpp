@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/timeutils.h"
 #include "include/EGenres.h"
 #include <array>
+#include <cmath>
 
 #include <QThread>
 
@@ -64,7 +65,7 @@ inline void HumorProcessor::AddToCountingHumorHash(QList<core::AuthorPtr> author
 {
     QList<double> coeffs ;
     coeffs = {0.2, 0.4, 0.7, 1}; //second
-    for(auto author : authors)
+    for(const auto& author : authors)
     {
         auto fics = authorsInterface->GetFicList(author);
         double listvalue;
@@ -107,7 +108,7 @@ void HumorProcessor::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors
 
     QList<core::AuthorPtr> humorAuthors;
     QList<core::AuthorPtr> validAuthors;
-    for(auto author : authors)
+    for(const auto& author : authors)
     {
         if(author->stats.favouriteStats.favourites < 50)
             continue;
@@ -136,10 +137,12 @@ void HumorProcessor::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors
 
     processHumor.run();
     QHash<int, int> relativeFics;
-    for(auto fic:humorFics.keys())
+
+    for(auto i = humorFics.cbegin(); i != humorFics.cend(); i++)
     {
-        double averageHappiness = totalHappiness[fic]/static_cast<double>(humorFics[fic]);
-        auto appearanceInHumor = static_cast<double>(humorFics[fic]);
+        auto fic = i.key();
+        double averageHappiness = totalHappiness[fic]/static_cast<double>(i.value());
+        auto appearanceInHumor = static_cast<double>(i.value());
         double adjustedHumorValue;
         double logvalue = log10(humorValues[fic]);
         if(logvalue < 1)
@@ -202,7 +205,7 @@ void HumorProcessor::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors
 
 inline void HumorProcessor::AddToHumorHash(QList<core::AuthorPtr> authors,QHash<int, int>& countingHash)
 {
-    for(auto author : authors)
+    for(const auto& author : std::as_const(authors))
     {
         auto fics = authorsInterface->GetFicList(author);
         for(auto fic : fics)
@@ -225,8 +228,8 @@ void HumorProcessor::CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors
     getGenres.run();
 
     QList<core::AuthorPtr> humorAuthors;
-    QList<core::AuthorPtr> validAuthors;
-    for(auto author : authors)
+    //QList<core::AuthorPtr> validAuthors;
+    for(const auto& author : authors)
     {
         if(author->stats.favouriteStats.favourites < 50)
             continue;
@@ -237,13 +240,13 @@ void HumorProcessor::CreateRecListOfHumorProfiles(QList<core::AuthorPtr> authors
     }
     qDebug() << "humor size: " << humorAuthors.size();
     QHash<int, int> humorFics;
-    QHash<int, double> humorValues;
-    QHash<int, double> dummyValues;
-    QHash<int, int> allFics;
-    QHash<int, double> totalHappiness;
-    QHash<int, double> totalSlash;
-    QHash<int, double> dummyHappiness;
-    QHash<int, double> dummySlash;
+//    QHash<int, double> humorValues;
+//    QHash<int, double> dummyValues;
+//    QHash<int, int> allFics;
+//    QHash<int, double> totalHappiness;
+//    QHash<int, double> totalSlash;
+//    QHash<int, double> dummyHappiness;
+//    QHash<int, double> dummySlash;
     TimedAction processHumor("ProcHumor", [&](){
         AddToHumorHash(humorAuthors,humorFics);
     });

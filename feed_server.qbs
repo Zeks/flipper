@@ -35,12 +35,13 @@ App{
     Depends { name: "Qt.concurrent" }
     Depends { name: "cpp" }
     Depends { name: "logger" }
+    Depends { name: "Environment" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
 
     Depends { name: "projecttype" }
 
-    Precompiled{condition:localvariables.usePrecompiledHeader}
+    Precompiled{condition:Environment.usePrecompiledHeader}
     cpp.minimumWindowsVersion: "6.0"
 
     cpp.includePaths: [
@@ -54,7 +55,12 @@ App{
 
     files: [
         "include/calc_data_holder.h",
+        "include/core/db_entity.h",
+        "include/core/fanfic.h",
         "include/core/fav_list_analysis.h",
+        "include/core/fav_list_details.h",
+        "include/core/identity.h",
+        "include/core/slash_data.h",
         "include/data_code/data_holders.h",
         "include/data_code/rec_calc_data.h",
         "include/grpc/grpc_source.h",
@@ -62,12 +68,21 @@ App{
         "include/rec_calc/rec_calculator_base.h",
         "include/rec_calc/rec_calculator_mood_adjusted.h",
         "include/rec_calc/rec_calculator_weighted.h",
+        "include/sqlcontext.h",
+        "include/sqlitefunctions.h",
         "include/tasks/author_genre_iteration_processor.h",
         "include/threaded_data/common_traits.h",
         "include/threaded_data/threaded_load.h",
         "include/threaded_data/threaded_save.h",
+        "include/core/author.h",
+        "src/core/author.cpp",
         "src/calc_data_holder.cpp",
+        "src/core/fandom.cpp",
+        "src/core/fanfic.cpp",
         "src/core/fav_list_analysis.cpp",
+        "src/core/fav_list_details.cpp",
+        "include/core/recommendation_list.h",
+        "src/core/recommendation_list.cpp",
         "src/data_code/rec_calc_data.cpp",
         "src/grpc/grpc_source.cpp",
         "src/Interfaces/data_source.cpp",
@@ -107,8 +122,6 @@ App{
         "third_party/roaring/roaring.c",
         "third_party/roaring/roaring.h",
         "third_party/roaring/roaring.hh",
-        "third_party/sqlite3/sqlite3.c",
-        "third_party/sqlite3/sqlite3.h",
         "src/sqlcontext.cpp",
         "src/main_feed_server.cpp",
         "src/pure_sql.cpp",
@@ -139,39 +152,51 @@ App{
         "src/servers/database_context.cpp",
         "include/servers/database_context.h",
     ]
+    Group{
+    name: "sqlite"
+    files: [
+        Environment.sqliteFolder + "/sqlite3.c",
+        Environment.sqliteFolder + "/sqlite3.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
     cpp.systemIncludePaths: [
         sourceDirectory +"/proto",
         sourceDirectory + "/third_party",
-        "/home/zeks/grpc/third_party/protobuf/src",
+        Environment.sqliteFolder,
+        sourceDirectory + "/third_party/fmt/include",
         sourceDirectory + "/../"]
 
     cpp.staticLibraries: {
         //var libs = ["UniversalModels", "logger", "quazip"]
         var libs = []
         if(qbs.toolchain.contains("msvc"))
-            libs = ["logger"]
+            libs = []
         else{
-            libs = ["logger", "dl", "protobuf"]
+            libs = ["dl", "protobuf"]
         }
-        libs = libs.concat(localvariables.zlib)
-        libs = libs.concat(localvariables.ssl)
+
 
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(qbs.toolchain.contains("msvc"))
-            libs = libs.concat([localvariables.protobufName,"grpc", "grpc++", "gpr"])
+            libs = libs.concat(["grpc", "grpc++", "gpr"])
         else
             libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }
-    cpp.defines: base.concat(["L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601"])
+    cpp.defines: base.concat(["L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "FMT_HEADER_ONLY"])
 
     Group{
         name:"grpc files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        grpc_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
-        grpc_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: project.rootFolder + "/proto"
+        grpc_generation.rootDir: project.rootFolder + "/proto"
+        proto_generation.protobufDependencyDir: project.rootFolder + "../"
+        grpc_generation.protobufDependencyDir: project.rootFolder + "../"
         proto_generation.toolchain : qbs.toolchain
         grpc_generation.toolchain : qbs.toolchain
         files: [
@@ -181,8 +206,8 @@ App{
     }
     Group{
         name:"proto files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: project.rootFolder + "/proto"
+        proto_generation.protobufDependencyDir: project.rootFolder + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
             "proto/search/filter.proto",
@@ -196,4 +221,17 @@ App{
         ]
         fileTags: ["proto"]
     }
+    Group{
+    name: "nanobench"
+    files: [
+        "third_party/nanobench/nanobench.cpp",
+        "third_party/nanobench/nanobench.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
 }
+

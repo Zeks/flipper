@@ -58,7 +58,7 @@ public:
 
     // used to build the actual query to be used in the database from filters
     QSqlQuery BuildQuery(bool countOnly = false);
-    inline core::Fic LoadFanfic(QSqlQuery& q);
+    inline core::Fanfic LoadFanfic(QSqlQuery& q);
     void LoadData(SlashFilterState);
     int GetResultCount();
 
@@ -73,7 +73,7 @@ public:
     int pageOfCurrentQuery = 0; // current page that the used search query is at
     int currentLastFanficId = -1;
 
-    QList<core::Fic> fanfics; // filtered fanfic data
+    QList<core::Fanfic> fanfics; // filtered fanfic data
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
 

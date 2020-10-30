@@ -17,31 +17,95 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/rec_calc/rec_calculator_base.h"
 #include "timeutils.h"
+#include "third_party/nanobench/nanobench.h"
+#include <QFuture>
+#include <QtConcurrent>
+#include <execution>
 
 namespace core{
+void RecCalculatorImplBase::ResetAccumulatedData()
+{
+    matchSum = 0;
+    filteredAuthors.clear();
+}
+
+auto threadedIntListProcessor = [](QString taskName, int threadsToUse, QList<int> list, auto worker, auto resultingDataProcessor){
+    QVector<std::pair<QList<int>::const_iterator,QList<int>::const_iterator>> iterators;
+    int chunkSize = list.size()/threadsToUse;
+    int listSize = list.size();
+    int  i = 0;
+    iterators.reserve(threadsToUse);
+    while(i*chunkSize < listSize)
+    {
+        QList<int>::const_iterator begin = list.cbegin();
+        QList<int>::const_iterator end = list.cbegin();
+        std::advance(begin, i*chunkSize);
+        int rightBorder = i*chunkSize + chunkSize;
+        if(rightBorder < list.size())
+            std::advance(end, rightBorder);
+        else
+            end = list.cend();
+        iterators.push_back({begin, end});
+        i++;
+    }
+    typedef std::pair<QList<int>::const_iterator,QList<int>::const_iterator> PairType;
+    TimedAction task(taskName,[&](){
+        QVector<QFuture<decltype(worker(std::declval<PairType>()))>> futures;
+        for(int i = 0; i < iterators.size(); i++)
+            futures.push_back(QtConcurrent::run(std::bind(worker,iterators.at(i))));
+        for(auto future: futures)
+            future.waitForFinished();
+        for(const auto& future: futures)
+            resultingDataProcessor(future.result());
+    });
+    task.run();
+};
+
+auto threadedIntListTupleProcessor = [](QString taskName, int threadsToUse, QList<int> list, auto worker, auto resultingDataProcessor){
+    QVector<std::tuple<QList<int>::const_iterator,QList<int>::const_iterator,QList<int>::const_iterator>> iterators;
+    int chunkSize = list.size()/threadsToUse;
+    int listSize = list.size();
+    int  i = 0;
+    iterators.reserve(threadsToUse);
+    while(i*chunkSize < listSize)
+    {
+        QList<int>::const_iterator begin = list.cbegin();
+        QList<int>::const_iterator end = list.cbegin();
+        std::advance(begin, i*chunkSize);
+        int rightBorder = i*chunkSize + chunkSize;
+        if(rightBorder < list.size())
+            std::advance(end, rightBorder);
+        else
+            end = list.cend();
+        iterators.push_back({list.begin(),begin, end});
+        i++;
+    }
+    typedef std::tuple<QList<int>::const_iterator,QList<int>::const_iterator,QList<int>::const_iterator> TupleType;
+    TimedAction task(taskName,[&](){
+        QVector<QFuture<decltype(worker(std::declval<TupleType>()))>> futures;
+        for(int i = 0; i < iterators.size(); i++)
+            futures.push_back(QtConcurrent::run(std::bind(worker,iterators.at(i))));
+        for(auto future: futures)
+            future.waitForFinished();
+        for(const auto& future: futures)
+            resultingDataProcessor(future.result());
+    });
+    task.run();
+};
+
 bool RecCalculatorImplBase::Calc(){
     auto filters = GetFilterList();
     auto actions = GetActionList();
-
-    TimedAction relations("Fetching relations",[&](){
+    //TimedAction relations("Fetching relations",[&](){
+        //ankerl::nanobench::Bench().minEpochIterations(2).run(
+                    //[&](){
         FetchAuthorRelations();
-    });
-    relations.run();
-    TimedAction filtering("Filtering data",[&](){
-        Filter(filters, actions);
-    });
-    filtering.run();
-
-    TimedAction resultAdjustment("adjusting results",[&](){
-        AutoAdjustRecommendationParamsAndFilter();
-        AdjustRatioForAutomaticParams();
-    });
-    resultAdjustment.run();
-
-    TimedAction weighting("weighting",[&](){
-        CalcWeightingParams();
-    });
-    weighting.run();
+        //});
+    //});
+    //relations.run();
+    params->ratioCutoff = ratioCutoff;
+    RunMatchingAndWeighting(params, filters, actions);
+    QLOG_INFO() << "filtered authors after default pass:" << filteredAuthors.size();
 
     CalculateNegativeToPositiveRatio();
     bool succesfullyGotVotes = false;
@@ -53,15 +117,38 @@ bool RecCalculatorImplBase::Calc(){
         return false;
 
     TimedAction report("writing match report",[&](){
-        for(auto& author: filteredAuthors)
-            result.matchReport[allAuthors[author].matches]++;
+        for(auto& author: std::as_const(filteredAuthors))
+            if(author != ownProfileId)
+                result.matchReport[allAuthors[author].matches]++;
     });
 
     report.run();
-    ReportNegativeResults();
+    //ReportNegativeResults();
     if(needsDiagnosticData)
         FillFilteredAuthorsForFics();
     return true;
+}
+
+void RecCalculatorImplBase::RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, const FilterListType& filters, const ActionListType& actions)
+{
+    int  i = 0;
+    AutoAdjustmentAndFilteringResult firstAdjustmentResult;
+    do
+    {
+        ResetAccumulatedData();
+        TimedAction filtering("Filtering data",[&](){
+            Filter(params, filters, actions);
+        });
+        filtering.run();
+
+        TimedAction weighting("weighting",[&](){
+            CalcWeightingParams();
+        });
+        weighting.run();
+        if(!params->isAutomatic && !params->adjusting)
+            break;
+        i++;
+    }while(params->adjusting);
 }
 
 double GetCoeffForTouchyDiff(double diff, bool useScaleDown = true)
@@ -93,7 +180,7 @@ bool RecCalculatorImplBase::CollectVotes()
     if(filteredAuthors.size() == 0)
         return false;
     qDebug() << "Max Matches:" <<  prevMaximumMatches;
-    std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [this](int author){
+    std::for_each(filteredAuthors.cbegin(), filteredAuthors.cend(), [this](int author){
         for(auto fic: inputs.faves[author])
         {
             result.recommendations[fic]+= 1;
@@ -102,13 +189,13 @@ bool RecCalculatorImplBase::CollectVotes()
     int maxValue = 0;
     int maxId = -1;
 
-    int negativeSum = 0;
-    for(auto author: filteredAuthors)
+    uint32_t negativeSum = 0;
+    for(auto author: std::as_const(filteredAuthors))
         negativeSum+=allAuthors[author].negativeMatches;
     negativeAverage = negativeSum/filteredAuthors.size();
 
-    auto it = result.recommendations.begin();
-    while(it != result.recommendations.end())
+    auto it = result.recommendations.cbegin();
+    while(it != result.recommendations.cend())
     {
         if(it.value() > maxValue )
         {
@@ -121,9 +208,9 @@ bool RecCalculatorImplBase::CollectVotes()
     qDebug() << "Max pure votes: " << maxValue;
     qDebug() << "Max id: " << maxId;
     result.recommendations.clear();
-    int negativeMatchCutoff = negativeAverage/3;
+    uint32_t negativeMatchCutoff = negativeAverage/3;
 
-    std::for_each(filteredAuthors.begin(), filteredAuthors.end(), [maxValue,weightingFunc, authorSize, this, negativeMatchCutoff](int author){
+    std::for_each(filteredAuthors.cbegin(), filteredAuthors.cend(), [maxValue,weightingFunc, authorSize, this, negativeMatchCutoff](int author){
         for(auto fic: inputs.faves[author])
         {
             result.sumNegativeMatchesForFic[fic] += allAuthors[author].negativeMatches;
@@ -158,13 +245,11 @@ bool RecCalculatorImplBase::CollectVotes()
             if(doTrashCounting &&  ownMajorNegatives.cardinality() > startOfTrashCounting){
                 if(allAuthors[author].negativeToPositiveMatches > (averageNegativeToPositiveMatches*2))
                 {
-                    double originalVote = vote;
                     vote = vote / (1 + (allAuthors[author].negativeToPositiveMatches - averageNegativeToPositiveMatches));
                     //if(allAuthors[author].negativeToPositiveMatches > averageNegativeToPositiveMatches*2)
                         //QLOG_INFO() << "reducing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
                 else if(allAuthors[author].negativeToPositiveMatches < (averageNegativeToPositiveMatches - averageNegativeToPositiveMatches/2.)){
-                    double originalVote = vote;
                     vote = vote * (1 + (averageNegativeToPositiveMatches - allAuthors[author].negativeToPositiveMatches)*3);
                     //QLOG_INFO() << "increasing vote for fic: " << fic << "from: " << originalVote << " to: " << vote;
                 }
@@ -187,11 +272,12 @@ bool RecCalculatorImplBase::CollectVotes()
     //}
 }
 
-void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
+AutoAdjustmentAndFilteringResult RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList> params)
 {
+    AutoAdjustmentAndFilteringResult result;
     // if the options were supplied manually, we just return what we got
-    if(!params->isAutomatic)
-        return;
+    if(!params->isAutomatic && !params->adjusting)
+        return result;
     // else we try to adjust minimum mathes so that a set of conditionsa re met
     // 1) for the average of 3 numbers we take a differnece between it and the middle one
     //    divide by the middle one and check to see if it's >0.05
@@ -201,7 +287,7 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
     // first we need to prepare the dataset
     QMap<int, QList<int>> authorsByMatches;
     int totalMatches = 0;
-    for(auto author : filteredAuthors)
+    for(auto author : std::as_const(filteredAuthors))
     {
         authorsByMatches[allAuthors[author].matches].push_back(allAuthors[author].id);
         totalMatches++;
@@ -225,15 +311,21 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
         return totalMatches - sum;
 
     };
-    if(matches.size() > 3)
+
+    if(matches.size() && matches.last() >= params->maxUnmatchedPerMatch/2)
     {
         for(int i = 0; i < matches.count() - 2; i ++){
+            if(i > 0)
+                result.adjustmentStoppedAtFirstIteration = false;
 
             QLOG_INFO() << "starting processing of: " << i;
             int firstCount = authorsByMatches[matches[i]].count();
             int secondCount = authorsByMatches[matches[i+1]].count();
             int thirdCount = authorsByMatches[matches[i+2]].count();
             QLOG_INFO() << firstCount << secondCount << thirdCount;
+            result.sizes[0] = firstCount;
+            result.sizes[1] = secondCount;
+            result.sizes[2] = thirdCount;
             double average = static_cast<double>(firstCount + secondCount + thirdCount)/3.;
             //QLOG_INFO() << "average is: " << average;
 
@@ -261,19 +353,21 @@ void RecCalculatorImplBase::AutoAdjustRecommendationParamsAndFilter()
     stoppingIndex = stoppingIndex < 0 ? 0 : stoppingIndex;
     QLOG_INFO() << "Adjustment stopped at: " << stoppingIndex;
     //QHash<int, AuthorResult> result;
-    QList<int> result;
+    result.performedFiltering = true;
     params->minimumMatch = matches[stoppingIndex];
-    for(auto matchCount : matches){
+
+    if(params->minimumMatch > 20)
+        params->minimumMatch = 20;
+    for(auto matchCount : std::as_const(matches)){
         if(matchCount < params->minimumMatch)
         {
             //QLOG_INFO() << "discarding match count: " << matchCount;
             continue;
         }
         //QLOG_INFO() << "adding authors for match count: " << matchCount << " amount:" << authorsByMatches[matchCount].size();
-        result += authorsByMatches[matchCount];
-
+        result.authors += QSet<int>(authorsByMatches[matchCount].cbegin(), authorsByMatches[matchCount].cend());
     }
-    filteredAuthors = result;
+    return result;
 }
 
 void RecCalculatorImplBase::AdjustRatioForAutomaticParams()
@@ -281,267 +375,430 @@ void RecCalculatorImplBase::AdjustRatioForAutomaticParams()
     // intentionally does nothing
 }
 
+bool RecCalculatorImplBase::AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList> params, const AutoAdjustmentAndFilteringResult& adjustmentResult)
+{
+    int dropMinimum = 1;
+    int dropRatio = 1;
+    auto stopAdjusting = [&](){
+        params->isAutomatic = false;
+        params->adjusting = false;
+        return false;
+    };
+    if(adjustmentResult.adjustmentStoppedAtFirstIteration && adjustmentResult.sizes[2]*6 > params->maxUnmatchedPerMatch)
+        return stopAdjusting();
+    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch - dropRatio <= 10)
+        return stopAdjusting();
+    if(params->minimumMatch-dropMinimum < 10 && params->maxUnmatchedPerMatch-dropRatio <= 10)
+    {
+        // we've failed to find exceptional lists, better to just fall back to higher ratio
+        //params->maxUnmatchedPerMatch*=2;
+        return stopAdjusting();
+    }
+
+    if(params->maxUnmatchedPerMatch-dropRatio < 10 && params->minimumMatch == 20)
+    {
+        // we've failed to find exceptional lists, better to just fall back to higher ratio
+        //params->maxUnmatchedPerMatch*=2;
+        return stopAdjusting();
+    }
+
+    bool canDropRatio = params->maxUnmatchedPerMatch-dropRatio > 10;
+    bool canDropMin = params->minimumMatch-dropMinimum > 10;
+    if(canDropRatio  || canDropMin ){
+        if(canDropRatio)
+            params->maxUnmatchedPerMatch-=dropRatio;
+        if(canDropMin )
+            params->minimumMatch-=dropMinimum;
+        params->isAutomatic = false;
+        params->adjusting = true;
+        QLOG_INFO() << "params after adjustment: " <<  params->minimumMatch << " " << params->maxUnmatchedPerMatch;
+        return true;
+    }
+
+    return stopAdjusting();
+}
+
+
 Roaring RecCalculatorImplBase::BuildIgnoreList()
 {
-    Roaring ignores;
-    //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
     QLOG_INFO() << "Building ignore list";
     QLOG_INFO() << "Ignored fics size:" << params->ignoredDeadFics.size();
+    Roaring fullIgnores;
+    auto ficKeys = inputs.fics.keys();
 
-    TimedAction ignoresCreation("Building ignores",[&](){
-        for(auto fic: inputs.fics)
-        {
-            if(!fic)
-                continue;
-
-            int count = 0;
-            bool inIgnored = false;
-            if(params->ficData.sourceFics.contains(fic->id))
-                continue;
-
-            if(params->ignoredDeadFics.contains(fic->id) && !params->majorNegativeVotes.contains(fic->id))
-                inIgnored = true;
-
-            for(auto fandom: fic->fandoms)
+    auto worker = [&](const std::pair<QList<int>::const_iterator,QList<int>::const_iterator>& beginEnd){
+            auto itCurrent = beginEnd.first;
+            auto itEnd= beginEnd.second;
+            Roaring ignores;
+            while(itCurrent < itEnd)
             {
-                if(fandom != -1)
-                    count++;
-                if(params->ignoredFandoms.contains(fandom) && fandom > 1)
-                    inIgnored = true;
-            }
-            if(/*count == 1 && */inIgnored)
-                ignores.add(fic->id);
+                auto& fic = inputs.fics[*itCurrent];
+                itCurrent++;
 
-        }
+                if(!fic)
+                    continue;
+
+                bool inIgnored = false;
+                // we don't ignore fics that are soruces for the recommednation list
+                if(params->ficData->sourceFics.contains(fic->id))
+                    continue;
+
+                // we don't ignore fics that user pressed negative tag on for weighting
+                if(params->majorNegativeVotes.contains(fic->id))
+                    continue;
+
+                // the fics that were maked as "Limbo"
+                if(params->ignoredDeadFics.contains(fic->id))
+                    inIgnored = true;
+
+                for(auto fandom: std::as_const(fic->fandoms))
+                {
+                    if(params->ignoredFandoms.contains(fandom) && fandom >= 1)
+                        inIgnored = true;
+                }
+                if(inIgnored)
+                    ignores.add(fic->id);
+            }
+            QLOG_INFO() << "returning ignored fics of size: " << ignores.cardinality();
+            return ignores;
+        };
+
+    threadedIntListProcessor("Creation of ignore list", QThread::idealThreadCount() - 3,ficKeys,  worker, [&fullIgnores](const Roaring& data){
+        fullIgnores= fullIgnores | data;
     });
-    ignoresCreation.run();
-    QLOG_INFO() << "fanfic ignore list is of size: " << ignores.cardinality();
-    return ignores;
+    QLOG_INFO() << "fanfic ignore list is of size: " << fullIgnores.cardinality();
+    return fullIgnores;
+
+
 }
+
+//struct RatioHash{
+//    void AddToken(int token){
+//        QWriteLocker locker(&lock);
+//        ratioSumInfo[token].ratio = token;
+//    };
+//    RatioSumInfo& GetToken(int token){
+//        QReadLocker locker(&lock);
+//        return ratioSumInfo[token];
+//    };
+//    QMap<uint32_t, RatioSumInfo> ratioSumInfo;
+//    QReadWriteLock lock;
+//};
+
+struct AuthorRelationsResult{
+    uint maximumMatches = 0;
+    uint matchSum = 0;
+    QMap<uint32_t, RatioInfo> ratioInfo;
+    QMap<uint32_t, RatioSumInfo> ratioSumInfo;
+};
+template <typename T>
+void Save( const QMap<uint32_t, T>& data )
+{
+    QFile file("statistics/_data.txt");
+    if (file.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
+        QTextStream stream(&file);
+       for (auto key: data.keys())
+            stream << QString::number(data[key].ratio).leftJustified(6, ' ')
+                    << " authors:    "<< QString::number(data[key].authors).leftJustified(5, ' ')
+                    << " avg size:   " << QString::number(data[key].averageListSize).leftJustified(5, ' ')
+                    << " fics added: " << QString::number(data[key].lastFicsAdded).leftJustified(5, ' ')
+                    << " min size:   " << QString::number(data[key].minListSize).leftJustified(5, ' ')
+                    << " max size:   " << QString::number(data[key].maxListSize).leftJustified(5, ' ')
+                    << " total size: " << QString::number(data[key].fics.cardinality()).leftJustified(5, ' ')
+                   << Qt::endl;
+    }
+}
+
 
 void RecCalculatorImplBase::FetchAuthorRelations()
 {
     qDebug() << "faves is of size: " << inputs.faves.size();
-    allAuthors.reserve(inputs.faves.size());
-    Roaring ignores;
-    //QLOG_INFO() << "fandom ignore list is of size: " << params->ignoredFandoms.size();
+    allAuthors.clear();
+    std::vector<AuthorResult> tempAuthors;
+    tempAuthors.resize(inputs.faves.size());
+    ownFavourites = {};
+    maximumMatches = 0;
+    matchSum = 0;
+    Roaring ignores = BuildIgnoreList();
 
-    TimedAction ignoresCreation("Building ignores",[&](){
-        ignores = BuildIgnoreList();
-    });
-    ignoresCreation.run();
+    for(auto i = fetchedFics.cbegin(); i != fetchedFics.cend(); i++)
+        ownFavourites.add(i.key());
 
-    auto sourceFics = QSet<uint32_t>::fromList(fetchedFics.keys());
-
-    for(auto bit : sourceFics)
-        ownFavourites.add(bit);
     qDebug() << "finished creating roaring";
     QLOG_INFO() << "user's FFN id: " << params->userFFNId;
+
     ownProfileId = params->userFFNId;
-    int minMatches;
-    minMatches =  params->minimumMatch;
-    maximumMatches = minMatches;
+    maximumMatches = params->minimumMatch;
+    AuthorRelationsResult funcResult;
+    //RatioHash ratioHash;
     TimedAction action("Relations Creation",[&](){
-        auto it = inputs.faves.begin();
-        while (it != inputs.faves.end())
-        {
-            if(params->userFFNId == it.key())
+        auto worker = [&](const std::tuple<QList<int>::const_iterator,QList<int>::const_iterator,QList<int>::const_iterator>& iterators){
+            AuthorRelationsResult tempResult;
+            tempResult.maximumMatches = params->minimumMatch;
+            auto itCurrent = std::get<1>(iterators);
+            auto itEnd= std::get<2>(iterators);
+            auto rangeBegin = std::get<0>(iterators);
+            while(itCurrent < itEnd)
             {
-                QLOG_INFO() << "Skipping user's own list: " << params->userFFNId;
-                it++;
-                continue;
+                auto& author = tempAuthors[itCurrent-rangeBegin];
+                author.id = *itCurrent;
+                if(ownProfileId == author.id)
+                {
+                    itCurrent++;
+                    continue;
+                }
+
+                const auto& tempAuthorRoaring = std::as_const(inputs.faves)[author.id];
+                author.fullListSize = tempAuthorRoaring.cardinality();
+                const uint ignoredFics = tempAuthorRoaring.and_cardinality(ignores);
+                const auto unignoredSize = tempAuthorRoaring.cardinality() - ignoredFics;
+
+                // first we need to remove ignored fics
+                //auto unignoredSize = inputs.faves[author.id].xor_cardinality(ignoredTemp);
+                //Roaring temp = tempAuthorRoaring.operator&(ownFavourites);
+                author.matches = tempAuthorRoaring.and_cardinality(ownFavourites);
+                author.negativeMatches = tempAuthorRoaring.and_cardinality(ownMajorNegatives);
+                author.sizeAfterIgnore = unignoredSize;
+
+                // not interested with lists that don't add anything new
+                // also not very interested with listsizes of less than 10 because their ratio will be too skewed
+                if(author.matches > 0){
+                    const auto ratio = author.sizeAfterIgnore/author.matches;
+                    if(ratio <= 1 || author.sizeAfterIgnore < 10){
+                        itCurrent++;
+                        continue;
+                    }
+                    author.ratio = ratio;
+                    //ratioHash.AddToken(ratio);
+                    auto& ratioObject = tempResult.ratioInfo[ratio];
+                    ratioObject.ratio = ratio;
+                    ratioObject.authors++;
+                    if(ratioObject.minMatches > author.matches)
+                        ratioObject.minMatches = author.matches;
+                    //ratioObject.fics|=tempAuthorRoaring;
+                    ratioObject.ficsAfterIgnore|=tempAuthorRoaring.operator-(ignores);
+
+                    if(ratioObject.minListSize > author.sizeAfterIgnore)
+                        ratioObject.minListSize = author.sizeAfterIgnore;
+                    if(ratioObject.maxListSize < author.sizeAfterIgnore)
+                        ratioObject.maxListSize = author.sizeAfterIgnore;
+                    if(tempResult.maximumMatches < author.matches)
+                    {
+                        prevMaximumMatches = tempResult.maximumMatches;
+                        tempResult.maximumMatches = author.matches;
+                    }
+                    tempResult.matchSum+=author.matches;
+                }
+                itCurrent++;
             }
+            return tempResult;
+        };
 
-            auto& author = allAuthors[it.key()];
-            author.id = it.key();
-            author.matches = 0;
-            //QLOG_INFO
-            //these are the fics from the current fav list that are ignored
 
-            //bool hasIgnoredMatches = false;
-            Roaring ignoredTemp = it.value();
-            ignoredTemp = ignoredTemp & ignores;
+        threadedIntListTupleProcessor("Creation of author relations", QThread::idealThreadCount() - 3,inputs.faves.keys(),  worker, [&funcResult](AuthorRelationsResult&& data){
+            if(funcResult.maximumMatches < data.maximumMatches)
+                funcResult.maximumMatches = data.maximumMatches;
+            funcResult.matchSum+=data.matchSum;
 
-            if(ignoredTemp.cardinality() > 0)
-            {
-                //hasIgnoredMatches = true;
-                //                QLOG_INFO() << "ficl list size is: " << it.value().cardinality();
-                //                QLOG_INFO() << "of those ignored are: " << ignoredTemp.cardinality();
+            for(auto i = data.ratioInfo.cbegin(); i != data.ratioInfo.cend(); i++){
+                funcResult.ratioInfo[i.key()]+=i.value();
             }
-            author.fullListSize = it.value().cardinality();
-            Roaring temp = ownFavourites;
-            // first we need to remove ignored fics
-            auto unignoredSize = it.value().xor_cardinality(ignoredTemp);
-            //            if(hasIgnoredMatches)
-            //                QLOG_INFO() << "this leaves unignored: " << unignoredSize;
-            temp = temp & it.value();
-            author.matches = temp.cardinality();
-
-            Roaring negative = ownMajorNegatives;
-            negative = negative & it.value();
-            author.negativeMatches = negative.cardinality();
-
-            author.sizeAfterIgnore = unignoredSize;
-            if(ignores.cardinality() == 0)
-                author.sizeAfterIgnore = author.fullListSize;
-            if(maximumMatches < author.matches)
-            {
-                prevMaximumMatches = maximumMatches;
-                maximumMatches = author.matches;
-            }
-            matchSum+=author.matches;
-            it++;
-        }
+        });
     });
     action.run();
+    for(auto&& author: tempAuthors){
+        auto id = author.id;
+        allAuthors.emplace(std::move(id),std::move(author));
+    }
+    matchSum = funcResult.matchSum;
+    maximumMatches = funcResult.maximumMatches;
+    RatioSumInfo tempSummary;
+
+    for(auto i = funcResult.ratioInfo.cbegin(); i != funcResult.ratioInfo.cend(); i++) {
+        int tempCardinality = tempSummary.fics.cardinality();
+        const auto& item = i.value();
+        tempSummary.authors += item.authors;
+        tempSummary.ficsAfterIgnore |= item.ficsAfterIgnore;
+
+        auto& sumratio = funcResult.ratioSumInfo[i.key()];
+        sumratio.ratio = i.key();
+        sumratio.lastFicsAdded = tempSummary.fics.cardinality() - tempCardinality;
+        sumratio.fics = tempSummary.fics;
+        sumratio.ficsAfterIgnore = tempSummary.ficsAfterIgnore;
+        sumratio.authors = tempSummary.authors;
+        sumratio.minListSize = item.minListSize;
+        sumratio.maxListSize= item.maxListSize;
+        //QLOG_INFO() << "ratio: " <<  i.key() << " own size: " << ownFavourites.cardinality() << " projected cardinality: " << ownFavourites.cardinality() * 200  << " sum cardinality: " << sumratio.ficsAfterIgnore.cardinality();
+        if(ratioCutoff == std::numeric_limits<uint16_t>::max() && (sumratio.ficsAfterIgnore.cardinality() > (ownFavourites.cardinality() * 200)))
+        {
+            QLOG_INFO() << "Picking ratio: " << i.key();
+            ratioCutoff = i.key();
+        }
+    }
+
+    QLOG_INFO() << "At the end of author processing maximumMatches: " << maximumMatches << " matchsum: " << matchSum;
 }
 
 void RecCalculatorImplBase::CollectFicMatchQuality()
 {
-    QVector<int> tempAuthors;
+//    QVector<int> tempAuthors;
 
-    for(auto authorId : filteredAuthors)
-    {
-        tempAuthors.push_back(authorId);
-        auto& author = allAuthors[authorId];
-        auto& authorFaves = inputs.faves[authorId];
-        Roaring temp = ownFavourites;
-        auto matches = temp & authorFaves;
-        for(auto value : matches)
-        {
-            auto itFic = inputs.fics.find(value);
-            if(itFic == inputs.fics.end())
-                continue;
+//    for(auto authorId : filteredAuthors)
+//    {
+//        tempAuthors.push_back(authorId);
+//        auto& author = allAuthors[authorId];
+//        auto& authorFaves = inputs.faves[authorId];
+//        Roaring temp = ownFavourites;
+//        auto matches = temp & authorFaves;
+//        for(auto value : matches)
+//        {
+//            auto itFic = inputs.fics.find(value);
+//            if(itFic == inputs.fics.end())
+//                continue;
 
-            // < 500 1 votes
-            // < 300 4 votes
-            // < 100 8 votes
-            // < 50 15 votes
+//            // < 500 1 votes
+//            // < 300 4 votes
+//            // < 100 8 votes
+//            // < 50 15 votes
 
-            author.breakdown.total++;
-            if(itFic->get()->favCount <= 50)
-            {
-                author.breakdown.below50++;
-                author.breakdown.votes+=15;
-                if(itFic->get()->authorId != -1)
-                    author.breakdown.authors.insert(itFic->get()->authorId);
+//            author.breakdown.total++;
+//            if(itFic->get()->favCount <= 50)
+//            {
+//                author.breakdown.below50++;
+//                author.breakdown.votes+=15;
+//                if(itFic->get()->authorId != -1)
+//                    author.breakdown.authors.insert(itFic->get()->authorId);
 
-            }
-            else if(itFic->get()->favCount <= 100)
-            {
-                author.breakdown.below100++;
-                author.breakdown.votes+=8;
-                if(itFic->get()->authorId != -1)
-                    author.breakdown.authors.insert(itFic->get()->authorId);
-            }
-            else if(itFic->get()->favCount <= 300)
-            {
-                author.breakdown.below300++;
-                author.breakdown.votes+=4;
-                if(itFic->get()->authorId != -1)
-                    author.breakdown.authors.insert(itFic->get()->authorId);
-            }
-            else if(itFic->get()->favCount <= 500)
-            {
-                author.breakdown.below500++;
-                author.breakdown.votes+=1;
-            }
-        }
-        author.breakdown.priority1 = (author.breakdown.below50 + author.breakdown.below100) >= 3;
-        author.breakdown.priority1 = author.breakdown.priority1 && author.breakdown.authors.size() > 1;
+//            }
+//            else if(itFic->get()->favCount <= 100)
+//            {
+//                author.breakdown.below100++;
+//                author.breakdown.votes+=8;
+//                if(itFic->get()->authorId != -1)
+//                    author.breakdown.authors.insert(itFic->get()->authorId);
+//            }
+//            else if(itFic->get()->favCount <= 300)
+//            {
+//                author.breakdown.below300++;
+//                author.breakdown.votes+=4;
+//                if(itFic->get()->authorId != -1)
+//                    author.breakdown.authors.insert(itFic->get()->authorId);
+//            }
+//            else if(itFic->get()->favCount <= 500)
+//            {
+//                author.breakdown.below500++;
+//                author.breakdown.votes+=1;
+//            }
+//        }
+//        author.breakdown.priority1 = (author.breakdown.below50 + author.breakdown.below100) >= 3;
+//        author.breakdown.priority1 = author.breakdown.priority1 && author.breakdown.authors.size() > 1;
 
-        author.breakdown.priority2 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300) >= 5;
-        author.breakdown.priority2 = author.breakdown.priority1 || (author.breakdown.priority2 && author.breakdown.authors.size() > 1);
+//        author.breakdown.priority2 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300) >= 5;
+//        author.breakdown.priority2 = author.breakdown.priority1 || (author.breakdown.priority2 && author.breakdown.authors.size() > 1);
 
-        author.breakdown.priority3 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300 + author.breakdown.below500) >= 8;
-        author.breakdown.priority3 = (author.breakdown.priority1 || author.breakdown.priority2) || (author.breakdown.priority3 && author.breakdown.authors.size() > 1);
-    }
-    std::sort(tempAuthors.begin(), tempAuthors.end(), [&](int id1, int id2){
+//        author.breakdown.priority3 = (author.breakdown.below50 + author.breakdown.below100 + author.breakdown.below300 + author.breakdown.below500) >= 8;
+//        author.breakdown.priority3 = (author.breakdown.priority1 || author.breakdown.priority2) || (author.breakdown.priority3 && author.breakdown.authors.size() > 1);
+//    }
+//    std::sort(tempAuthors.begin(), tempAuthors.end(), [&](int id1, int id2){
 
-        bool largerScore = allAuthors[id1].breakdown.votes > allAuthors[id2].breakdown.votes;
-        bool doubleBelow100First =  (allAuthors[id1].breakdown.below50 + allAuthors[id1].breakdown.below100) >= 2;
-        bool doubleBelow100Second =  (allAuthors[id2].breakdown.below50 + allAuthors[id2].breakdown.below100) >= 2;
-        if(doubleBelow100First && !doubleBelow100Second)
-            return true;
-        if(!doubleBelow100First && doubleBelow100Second)
-            return false;
-        return largerScore;
-    });
+//        bool largerScore = allAuthors[id1].breakdown.votes > allAuthors[id2].breakdown.votes;
+//        bool doubleBelow100First =  (allAuthors[id1].breakdown.below50 + allAuthors[id1].breakdown.below100) >= 2;
+//        bool doubleBelow100Second =  (allAuthors[id2].breakdown.below50 + allAuthors[id2].breakdown.below100) >= 2;
+//        if(doubleBelow100First && !doubleBelow100Second)
+//            return true;
+//        if(!doubleBelow100First && doubleBelow100Second)
+//            return false;
+//        return largerScore;
+//    });
 
-    QLOG_INFO() << "Displaying 100 most closesly matched authors";
-    auto justified = [](int value, int padding) {
-        return QString::number(value).leftJustified(padding, ' ');
-    };
-    QLOG_INFO() << "Displaying priority lists: ";
-    QLOG_INFO() << "//////////////////////";
-    QLOG_INFO() << "P1: ";
-    QLOG_INFO() << "//////////////////////";
-    for(int i = 0; i < 100; i++)
-    {
-        if(allAuthors[tempAuthors[i]].breakdown.priority1)
-            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
-    }
-    QLOG_INFO() << "//////////////////////";
-    QLOG_INFO() << "P2: ";
-    QLOG_INFO() << "//////////////////////";
-    for(int i = 0; i < 100; i++)
-    {
-        if(allAuthors[tempAuthors[i]].breakdown.priority2)
-            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
-    }
-    QLOG_INFO() << "//////////////////////";
-    QLOG_INFO() << "P3: ";
-    QLOG_INFO() << "//////////////////////";
-    for(int i = 0; i < 100; i++)
-    {
-        if(allAuthors[tempAuthors[i]].breakdown.priority3)
-            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
-                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
-                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
-                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
-    }
+//    QLOG_INFO() << "Displaying 100 most closesly matched authors";
+//    auto justified = [](int value, int padding) {
+//        return QString::number(value).leftJustified(padding, ' ');
+//    };
+//    QLOG_INFO() << "Displaying priority lists: ";
+//    QLOG_INFO() << "//////////////////////";
+//    QLOG_INFO() << "P1: ";
+//    QLOG_INFO() << "//////////////////////";
+//    for(int i = 0; i < 100; i++)
+//    {
+//        if(allAuthors[tempAuthors[i]].breakdown.priority1)
+//            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+//                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+//                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+//                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+//    }
+//    QLOG_INFO() << "//////////////////////";
+//    QLOG_INFO() << "P2: ";
+//    QLOG_INFO() << "//////////////////////";
+//    for(int i = 0; i < 100; i++)
+//    {
+//        if(allAuthors[tempAuthors[i]].breakdown.priority2)
+//            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+//                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+//                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+//                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+//    }
+//    QLOG_INFO() << "//////////////////////";
+//    QLOG_INFO() << "P3: ";
+//    QLOG_INFO() << "//////////////////////";
+//    for(int i = 0; i < 100; i++)
+//    {
+//        if(allAuthors[tempAuthors[i]].breakdown.priority3)
+//            QLOG_INFO() << "Author id: " << justified(tempAuthors[i],9) << " votes: " <<  justified(allAuthors[tempAuthors[i]].breakdown.votes,5) <<
+//                                                                                                                                                     "Ratio: " << justified(allAuthors[tempAuthors[i]].ratio, 3) <<
+//                                                                                                                                                                                                                    "below 50: " << justified(allAuthors[tempAuthors[i]].breakdown.below50, 5) <<
+//                                                                                                                                                                                                                                                                                                  "below 100: " << justified(allAuthors[tempAuthors[i]].breakdown.below100, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                  "below 300: " << justified(allAuthors[tempAuthors[i]].breakdown.below300, 5) <<
+//                                                                                                                                                                                                                                                                                                                                                                                                                                                                  "below 500: " << justified(allAuthors[tempAuthors[i]].breakdown.below500, 5);
+//    }
 
 }
 
-void RecCalculatorImplBase::Filter(QList<std::function<bool (AuthorResult &, QSharedPointer<RecommendationList>)> > filters,
-                                   QList<std::function<void (RecCalculatorImplBase *, AuthorResult &)> > actions)
+void RecCalculatorImplBase::Filter(QSharedPointer<RecommendationList> params,
+                                   const QList<std::function<bool (AuthorResult &, QSharedPointer<RecommendationList>)> >& filters,
+                                   const QList<std::function<void (RecCalculatorImplBase *, AuthorResult &)> >& actions)
 {
-    auto params = this->params;
     auto thisPtr = this;
+    using FilterType = std::decay<decltype(filters)>::type::value_type;
+    using ActionType = std::decay<decltype(actions)>::type::value_type;
 
-    std::for_each(allAuthors.begin(), allAuthors.end(), [this, filters, actions, params,thisPtr](AuthorResult& author){
-        author.ratio = author.matches != 0 ? static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches) : 999999;
-        author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : 999999;
-        author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
-        author.listDiff.neutralDifference = GetNeutralDiffForLists(author.id);
-        bool fail = std::any_of(filters.begin(), filters.end(), [&](decltype(filters)::value_type filter){
+    for(auto & [ key, author]: allAuthors){
+        auto setInvalid = [](auto& author){
+            author.ratio = 99999;
+            author.similarityPercentage = 0;
+        };
+        if(author.matches == 0 || author.sizeAfterIgnore < 10){
+            setInvalid(author);
+        }
+        else{
+            author.similarityPercentage = author.matches/(static_cast<double>(author.sizeAfterIgnore)/100.);
+            author.ratio = static_cast<double>(author.sizeAfterIgnore)/static_cast<double>(author.matches);
+            author.negativeRatio = author.negativeMatches != 0  ? static_cast<double>(author.negativeMatches)/static_cast<double>(author.fullListSize) : std::numeric_limits<double>::max();
+            author.listDiff.touchyDifference = GetTouchyDiffForLists(author.id);
+            author.listDiff.neutralDifference = GetNeutralDiffForLists(author.id);
+            bool fail = std::any_of(std::execution::par_unseq,filters.cbegin(), filters.cend(), [author = std::ref(author),&params](const FilterType& filter){
                 return filter(author, params) == 0;
-    });
-        if(fail)
-            return;
 
-        std::for_each(actions.begin(), actions.end(), [thisPtr, &author](decltype(actions)::value_type action){
-            action(thisPtr, author);
-        });
+            });
+            if(fail || author.ratio == 1){
+                setInvalid(author);
+                continue;
+            }
+            std::for_each(actions.cbegin(), actions.cend(), [thisPtr, author = std::ref(author)](const ActionType& action){
+                action(thisPtr, author);
+            });
 
-    });
+        }
+    };
 }
 
 void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
 {
-    for(auto author : filteredAuthors){
+    for(auto author : std::as_const(filteredAuthors)){
         double ratioForAuthor = static_cast<double>(allAuthors[author].negativeMatches)/static_cast<double>(allAuthors[author].matches);
         //QLOG_INFO() << "Negative matches: " << static_cast<double>(allAuthors[author].negativeMatches) << "Positive matches: " << static_cast<double>(allAuthors[author].matches);
         averageNegativeToPositiveMatches += ratioForAuthor;
@@ -551,71 +808,83 @@ void RecCalculatorImplBase::CalculateNegativeToPositiveRatio()
     QLOG_INFO() << " average ratio division result: " << averageNegativeToPositiveMatches;
 }
 
-void RecCalculatorImplBase::ReportNegativeResults()
-{
+//void RecCalculatorImplBase::ReportNegativeResults()
+//{
 
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
-        return allAuthors[id1].ratio < allAuthors[id2].ratio;
-    });
+//    auto authorList = filteredAuthors.values();
 
-    int limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
-    QLOG_INFO() << "RATIO REPORT";
-    for(int i = 0; i < limit; i++){
-        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
-                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
-                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
-        << endl
-                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
-                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
+//    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
+//        return allAuthors[id1].ratio < allAuthors[id2].ratio;
+//    });
 
-    }
+//    int limit = authorList.size() > 50 ? 50 : authorList.size();
+//    QLOG_INFO() << "RATIO REPORT";
+//    int i = 0;
+////    for(auto& author : authorList){
+////        if(i > limit)
+////            break;
+////        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+////                       << " negative matches: " <<  allAuthors[author].negativeMatches
+////                       << " negative ratio: " <<  allAuthors[author].negativeRatio
+////        << Qt::endl
+////                << " positive matches: " <<  allAuthors[author].matches
+////                << " positive ratio: " <<  allAuthors[author].ratio;
+////        i++;
+////    }
 
-    QLOG_INFO() << "MATCH REPORT";
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
-        return allAuthors[id1].matches > allAuthors[id2].matches;
-    });
-    limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
-    for(int i = 0; i < limit; i++){
-        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
-                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
-                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
-        << endl
-                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
-                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
+////    QLOG_INFO() << "MATCH REPORT";
+////    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
+////        return allAuthors[id1].matches > allAuthors[id2].matches;
+////    });
+////    limit = authorList.size() > 50 ? 50 : authorList.size();
+////    i = 0;
+////    for(auto& author : authorList){
+////        if(i > limit)
+////            break;
+////        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+////                       << " negative matches: " <<  allAuthors[author].negativeMatches
+////                       << " negative ratio: " <<  allAuthors[author].negativeRatio
+////        << Qt::endl
+////                << " positive matches: " <<  allAuthors[author].matches
+////                << " positive ratio: " <<  allAuthors[author].ratio;
+////        i++;
+////    }
 
-    }
+//    QLOG_INFO() << "NEGATIVE REPORT";
+//    QList<int> zeroAuthors;
+//    for(auto author : authorList)
+//    {
+//        if(allAuthors[author].negativeMatches == 0)
+//            zeroAuthors.push_back(author);
+//    }
 
-    QLOG_INFO() << "NEGATIVE REPORT";
-    QList<int> zeroAuthors;
-    for(auto author : filteredAuthors)
-    {
-        if(allAuthors[author].negativeMatches == 0)
-            zeroAuthors.push_back(author);
-    }
+//    std::sort(authorList.begin(), authorList.end(), [&](int id1, int id2){
+//        return allAuthors[id1].negativeMatches < allAuthors[id2].negativeMatches ;
+//    });
+//    limit = authorList.size() > 50 ? 50 : authorList.size();
+//    i = 0;
+////    for(auto& author : authorList){
+////        if(i > limit)
+////            break;
+////        QLOG_INFO() << Qt::endl << " author: " << author << " size: " <<  allAuthors[author].sizeAfterIgnore << Qt::endl
+////                       << " negative matches: " <<  allAuthors[author].negativeMatches
+////                       << " negative ratio: " <<  allAuthors[author].negativeRatio
+////        << Qt::endl
+////                << " positive matches: " <<  allAuthors[author].matches
+////                << " positive ratio: " <<  allAuthors[author].ratio;
+////        i++;
 
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(), [&](int id1, int id2){
-        return allAuthors[id1].negativeMatches < allAuthors[id2].negativeMatches ;
-    });
-    limit = filteredAuthors.size() > 50 ? 50 : filteredAuthors.size();
-    for(int i = 0; i < limit; i++){
-        QLOG_INFO() << endl << " author: " << filteredAuthors[i] << " size: " <<  allAuthors[filteredAuthors[i]].sizeAfterIgnore << endl
-                       << " negative matches: " <<  allAuthors[filteredAuthors[i]].negativeMatches
-                       << " negative ratio: " <<  allAuthors[filteredAuthors[i]].negativeRatio
-        << endl
-                << " positive matches: " <<  allAuthors[filteredAuthors[i]].matches
-                << " positive ratio: " <<  allAuthors[filteredAuthors[i]].ratio;
-
-    }
-}
+////    }
+//}
 
 void RecCalculatorImplBase::FillFilteredAuthorsForFics()
 {
-    QLOG_INFO() << "Filling authors for fics: " << result.recommendations.keys().size();
+    QLOG_INFO() << "Filling authors for fics: " << result.recommendations.size();
     int counter = 0;
     // probably need to prefill roaring per fic so that I don't search
     QHash<uint32_t, Roaring> ficsRoarings;
     QLOG_INFO() << "Filling fic roarings";
-    for(auto author : filteredAuthors)
+    for(auto author : std::as_const(filteredAuthors))
     {
         if(counter%10000)
             QLOG_INFO() << counter;
@@ -628,17 +897,18 @@ void RecCalculatorImplBase::FillFilteredAuthorsForFics()
     counter = 0;
 
     Roaring filterAuthorsRoar;
-    for(auto author : filteredAuthors)
+    for(auto author : std::as_const(filteredAuthors))
         filterAuthorsRoar.add(author);
 
     QLOG_INFO()  << "Authors roar size is: " << filterAuthorsRoar.cardinality();
 
     QLOG_INFO() << "Filling actual author data";
-    for(auto ficId : result.recommendations.keys()){
+
+    for(auto i = result.recommendations.cbegin(); i != result.recommendations.cend(); i++){
         if(counter%10000 == 0)
             QLOG_INFO() << "At counter:" << counter;
 
-        auto& ficRoaring = ficsRoarings[ficId];
+        auto& ficRoaring = ficsRoarings[i.key()];
         //QLOG_INFO() << "Fic roaring size is:" << ficRoaring.cardinality();
 
         Roaring temp = filterAuthorsRoar;
@@ -649,10 +919,10 @@ void RecCalculatorImplBase::FillFilteredAuthorsForFics()
         if(temp.cardinality() == 0)
             continue;
 
-        if(!authorsForFics.contains(ficId))
-            authorsForFics[ficId].reserve(1000);
+        if(!authorsForFics.contains(i.key()))
+            authorsForFics[i.key()].reserve(1000);
         for(auto author : temp){
-            authorsForFics[ficId].push_back(author);
+            authorsForFics[i.key()].push_back(author);
         }
         counter++;
 //        if(counter > 10)
@@ -662,7 +932,15 @@ void RecCalculatorImplBase::FillFilteredAuthorsForFics()
     QLOG_INFO() << "Finished filling authors for fics";
 }
 
+bool RecCalculatorImplDefault::WeightingIsValid() const
+{
+    return true;
+}
+
 
 
 
 }
+
+
+

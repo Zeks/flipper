@@ -18,14 +18,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import qbs 1.0
 import qbs.Process
+import qbs.File
+import qbs.Environment
 import "BaseDefines.qbs" as Application
 
 Project {
     name: "flipper_proj"
+    qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]
+    property string rootFolder: {
+        var rootFolder = File.canonicalFilePath(sourceDirectory).toString();
+        console.error("Source:" + rootFolder)
+        return rootFolder.toString()
+    }
+
     references: [
         "flipper.qbs",
         "gui_condition.qbs",
-        "libs/UniversalModels/UniversalModels.qbs",
+        "environment_plugs.qbs",
+        "libs/ui-models/UniversalModels.qbs",
         "libs/Logger/logger.qbs",
     ]
 }

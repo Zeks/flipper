@@ -38,9 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <functional>
 #include "tagwidget.h"
 #include "storyfilter.h"
-#include "libs/UniversalModels/include/TableDataInterface.h"
-#include "libs/UniversalModels/include/TableDataListHolder.h"
-#include "libs/UniversalModels/include/AdaptingTableModel.h"
+#include "libs/ui-models/include/TableDataInterface.h"
+#include "libs/ui-models/include/TableDataListHolder.h"
+#include "libs/ui-models/include/AdaptingTableModel.h"
 #include "qml_ficmodel.h"
 #include "include/core/section.h"
 #include "include/pagetask.h"
@@ -323,7 +323,7 @@ private:
 
     QSharedPointer<TableDataInterface> typetableInterface;
     FicModel* typetableModel = nullptr; // model for fanfics to be passed into qml
-    TableDataListHolder<QVector, core::Fic>* holder = nullptr; // an interface class that model uses to access the data
+    TableDataListHolder<QVector, core::Fanfic>* holder = nullptr; // an interface class that model uses to access the data
 
     QStringListModel* recentFandomsModel= nullptr; // used in the listview that shows the recently search fandoms
     QStringListModel* ignoredFandomsModel= nullptr;
@@ -449,12 +449,12 @@ private slots:
     void on_chkRandomizeSelection_toggled(bool checked);
 
     void OnRemoveFandomFromRecentList();
-    void OnRemoveFandomFromIgnoredList();
+    //void OnRemoveFandomFromIgnoredList();
     void OnRemoveFandomFromSlashFilterIgnoredList();
 
 
     void OnFandomsContextMenu(const QPoint &pos);
-    void OnIgnoredFandomsContextMenu(const QPoint &pos);
+    //void OnIgnoredFandomsContextMenu(const QPoint &pos);
     void OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos);
 
 //    void UpdateCategory(QString cat,
@@ -467,7 +467,7 @@ private slots:
     void GenerateFormattedList();
     void OnFindSimilarClicked(QVariant);
 
-    void on_pbIgnoreFandom_clicked();
+    //void on_pbIgnoreFandom_clicked();
 
 
 
@@ -500,7 +500,7 @@ private slots:
 
     void on_chkOtherFandoms_toggled(bool checked);
 
-    void on_chkIgnoreFandoms_toggled(bool checked);
+    //void on_chkIgnoreFandoms_toggled(bool checked);
 
     void on_pbDeleteRecList_clicked();
 

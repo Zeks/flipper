@@ -93,5 +93,16 @@
         <file>icons/spoilers.png</file>
         <file>icons/spoilers_gray.png</file>
         <file>icons/reset_filter.png</file>
+        <file>icons/shuffle_blue.png</file>
+        <file>icons/book_white.png</file>
+        <file>icons/book_black.png</file>
+        <file>icons/minus_darkened.png</file>
+        <file>icons/plus_darkened.png</file>
+        <file>icons/fic_crosses_test.png</file>
+        <file>icons/select_fic.png</file>
+        <file>icons/select_fic_crosses.png</file>
+        <file>icons/link_angled_dodged.png</file>
+        <file>icons/hand_share_up_dark.png</file>
+        <file>icons/push_left_blue.png</file>
     </qresource>
 </RCC>

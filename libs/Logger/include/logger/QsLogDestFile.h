@@ -38,7 +38,7 @@ namespace QsLogging
 class RotationStrategy
 {
 public:
-    virtual ~RotationStrategy();
+    virtual ~RotationStrategy() = default;
 
     virtual void setInitialInfo(const QFile &file) = 0;
     virtual void includeMessageInCalculation(const QString &message) = 0;

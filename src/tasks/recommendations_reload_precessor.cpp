@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagegetter.h"
 #include "include/pagetask.h"
 #include "include/parsers/ffn/fandomparser.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/transaction.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"
@@ -68,13 +68,13 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     auto& authors = stagedAuthors;
     emit requestProgressbar(authors.size());
     QSet<QString> fandoms;
-    QList<core::FicRecommendation> recommendations;
+    //QList<core::FicRecommendation> recommendations;
     auto fanficsInterface = this->fanficsInterface;
     auto authorsInterface = this->authorsInterface;
     auto fandomsInterface = this->fandomsInterface;
     auto job = [fanficsInterface,authorsInterface,fandomsInterface](QString url, QString content){
-        QList<QSharedPointer<core::Fic> > sections;
-        FavouriteStoryParser parser(fanficsInterface);
+        //QList<QSharedPointer<core::Fanfic> > sections;
+        FavouriteStoryParser parser;
         parser.ProcessPage(url, content);
         return parser;
     };
@@ -88,9 +88,9 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
             QLOG_INFO() << "At this moment processed:  "<< counter << " authors of: " << authors.size();
             QLOG_INFO() << "=========================================================================";
         }
-        QList<QSharedPointer<core::Fic>> sections;
-        QList<QFuture<FavouriteStoryParser>> futures;
-        QSet<int> uniqueAuthors;
+        //QList<QSharedPointer<core::Fanfic>> sections;
+        QVector<QFuture<FavouriteStoryParser>> futures;
+        //QSet<int> uniqueAuthors;
         authorsInterface->DeleteLinkedAuthorsForAuthor(author->id);
         auto startPageRequest = std::chrono::high_resolution_clock::now();
         auto page = env::RequestPage(author->url("ffn"), cacheMode);
@@ -98,11 +98,11 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         qDebug() <<  "Loading author: " << author->GetWebID("ffn");
         //qDebug() << "Fetched page in: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         auto startPageProcess = std::chrono::high_resolution_clock::now();
-        FavouriteStoryParser parser(fanficsInterface);
+        FavouriteStoryParser parser;
         //parser.ProcessPage(page.url, page.content);
 
         auto splittings = page_utils::SplitJob(page.content);
-        for(auto part: splittings.parts)
+        for(const auto& part: std::as_const(splittings.parts))
         {
             futures.push_back(QtConcurrent::run(job, page.url, part.data));
         }
@@ -116,13 +116,13 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
         sumParser.SetAuthor(author);
 
         QList<FavouriteStoryParser> finishedParsers;
-        for(auto actualParser: futures)
+        for(const auto& actualParser: futures)
             finishedParsers.push_back(actualParser.result());
 
         FavouriteStoryParser::MergeStats(author,fandomsInterface, finishedParsers);
         authorsInterface->UpdateAuthorRecord(author);
 
-        for(auto actualParser: finishedParsers)
+        for(const auto& actualParser: std::as_const(finishedParsers))
             sumParser.processedStuff+=actualParser.processedStuff;
         ////
         {

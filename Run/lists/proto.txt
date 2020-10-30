@@ -1,4 +1,0 @@
-tag#aaa_sneaky
-min#3
-ratio#75
-always#7

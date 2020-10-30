@@ -27,28 +27,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 class FicFilter
 {
 public:
-    FicFilter();
-    virtual ~FicFilter();
-    virtual bool Passed(core::Fic*, const SlashFilterState& slashFilter) = 0;
+    FicFilter() = default;
+    virtual ~FicFilter() = default;
+    virtual bool Passed(core::Fanfic*, const SlashFilterState& slashFilter) = 0;
 };
 
 class FicFilterSlash : public FicFilter
 {
 public:
     FicFilterSlash();
-    virtual ~FicFilterSlash();
-    virtual bool Passed(core::Fic*, const SlashFilterState& slashFilter);
+    virtual ~FicFilterSlash()= default;
+    virtual bool Passed(core::Fanfic*, const SlashFilterState& slashFilter);
     CommonRegex regexToken;
 };
 
 class FicSource
 {
 public:
-    FicSource();
-    virtual ~FicSource();
+    FicSource() = default;
+    virtual ~FicSource() = default;
 
-    virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*) = 0;
-    virtual int GetFicCount(core::StoryFilter filter) = 0;
+    virtual void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic>*) = 0;
+    virtual int GetFicCount(const core::StoryFilter& filter) = 0;
 
     void AddFicFilter(QSharedPointer<FicFilter>);
     void ClearFilters();
@@ -65,11 +65,11 @@ class FicSourceDirect : public FicSource
 {
 public:
     FicSourceDirect(QSharedPointer<database::IDBWrapper> db, QSharedPointer<core::RNGData> rngData);
-    virtual ~FicSourceDirect();
-    virtual void FetchData(core::StoryFilter filter, QVector<core::Fic>*);
-    QSqlQuery BuildQuery(core::StoryFilter filter, bool countOnly = false) ;
-    inline core::Fic LoadFanfic(QSqlQuery& q);
-    int GetFicCount(core::StoryFilter filter);
+    virtual ~FicSourceDirect() = default;
+    virtual void FetchData(const core::StoryFilter &filter, QVector<core::Fanfic>*) override;
+    QSqlQuery BuildQuery(const core::StoryFilter &filter, bool countOnly = false);
+    inline core::Fanfic LoadFanfic(QSqlQuery& q);
+    int GetFicCount(const core::StoryFilter &filter) override;
     //QSet<int> GetAuthorsForFics(QSet<int> ficIDsForActivetags);
     void InitQueryType(bool client = false, QString userToken = QString());
     QSharedPointer<core::Query> currentQuery;

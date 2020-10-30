@@ -220,7 +220,6 @@ bool RebindDuplicateFandoms(QSqlDatabase db)
     for(auto fandom: fandoms)
         fandom->SetName(core::Fandom::ConvertName(fandom->GetName()));
 
-    int currentId = 0;
     QMap<QString,int> fandomNameToNewId;
     QHash<int,core::FandomPtr> idToFandom;
     for(auto fandom : fandoms)

@@ -72,12 +72,12 @@ std::string TS(const QString& s)
 
 QDateTime DFS(const std::string& s)
 {
-    return QDateTime::fromString(QString::fromStdString(s), "yyyyMMdd");
+    return QDateTime::fromString(QString::fromStdString(s), QStringLiteral("yyyyMMdd"));
 }
 
 std::string DTS(const QDateTime & date)
 {
-    return date.toString("yyyyMMdd").toStdString();
+    return date.toString(QStringLiteral("yyyyMMdd")).toStdString();
 }
 
 
@@ -102,6 +102,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
 
     basicFilters->set_ensure_active(filter.ensureActive);
+    basicFilters->set_last_active_days(filter.deadFicDaysRange);
     basicFilters->set_ensure_completed(filter.ensureCompleted);
 
     result.set_filtering_mode(static_cast<ProtoSpace::Filter::EFilterMode>(filter.mode));
@@ -131,6 +132,8 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
 
     auto* randomizer = result.mutable_randomizer();
     randomizer->set_randomize_results(filter.randomizeResults);
+    randomizer->set_sequence_name(filter.rngDisambiguator.toStdString());
+    randomizer->set_rebuild_random_sequence(filter.wipeRngSequence);
 
     auto* contentFilter = result.mutable_content_filter();
     contentFilter->set_fandom(filter.fandom);
@@ -140,17 +143,17 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     contentFilter->set_other_fandoms_mode(filter.otherFandomsMode);
     contentFilter->set_use_ignored_fandoms(filter.ignoreFandoms);
 
-    for(auto word : filter.wordExclusion)
+    for(const auto& word : filter.wordExclusion)
         contentFilter->add_word_exclusion(word.toStdString());
-    for(auto word : filter.wordInclusion)
+    for(const auto& word : filter.wordInclusion)
         contentFilter->add_word_inclusion(word.toStdString());
 
 
     auto* genreFilter = result.mutable_genre_filter();
 
-    for(auto genre : filter.genreExclusion)
+    for(const auto& genre : filter.genreExclusion)
         genreFilter->add_genre_exclusion(genre.toStdString());
-    for(auto genre : filter.genreInclusion)
+    for(const auto& genre : filter.genreInclusion)
         genreFilter->add_genre_inclusion(genre.toStdString());
     genreFilter->set_use_implied_genre(filter.useRealGenres);
 
@@ -184,16 +187,27 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     recommendations->set_min_recommendations(filter.minRecommendations);
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
     recommendations->set_display_purged_fics(filter.displayPurgedFics);
-    for(auto fic : filter.recsHash.keys())
     {
-        userData->mutable_recommendation_list()->add_list_of_fics(fic);
-        userData->mutable_recommendation_list()->add_list_of_matches(filter.recsHash[fic]);
+        auto it= filter.recsHash.cbegin();
+        auto itEnd = filter.recsHash.cend();
+        while(it != itEnd)
+        {
+            userData->mutable_recommendation_list()->add_list_of_fics(it.key());
+            userData->mutable_recommendation_list()->add_list_of_matches(it.value());
+            it++;
+        }
     }
-    for(auto fic : filter.scoresHash.keys())
     {
-        userData->mutable_scores_list()->add_list_of_fics(fic);
-        userData->mutable_scores_list()->add_list_of_scores(filter.scoresHash[fic]);
+        auto it= filter.scoresHash.cbegin();
+        auto itEnd = filter.scoresHash.cend();
+        while(it != itEnd)
+        {
+            userData->mutable_scores_list()->add_list_of_fics(it.key());
+            userData->mutable_scores_list()->add_list_of_scores(it.value());
+            it++;
+        }
     }
+    //auto* fandomState = result.mutable_();
     return result;
 }
 
@@ -220,6 +234,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     core::StoryFilter result;
     result.randomizeResults = filter.randomizer().randomize_results();
+    result.rngDisambiguator = QString::fromStdString(filter.randomizer().sequence_name());
+    result.wipeRngSequence = filter.randomizer().rebuild_random_sequence();
     result.useRealGenres = filter.genre_filter().use_implied_genre();
     result.displayPurgedFics = filter.recommendations().display_purged_fics();
     if(filter.sort_direction() == ::ProtoSpace::Filter_ESortDirection::Filter_ESortDirection_sd_ascending)
@@ -244,6 +260,9 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.allowNoGenre = filter.genre_filter().allow_no_genre();
 
     result.ensureActive = filter.basic_filters().ensure_active();
+    result.deadFicDaysRange= filter.basic_filters().last_active_days();
+    if(result.deadFicDaysRange == 0)
+        result.deadFicDaysRange = 365;
     result.ensureCompleted = filter.basic_filters().ensure_completed();
 
     result.mode = static_cast<core::StoryFilter::EFilterMode>(filter.filtering_mode());
@@ -337,9 +356,18 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         result.recsHash[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
     for(int i = 0; i < userData.scores_list().list_of_fics_size(); i++)
         result.scoresHash[userData.scores_list().list_of_fics(i)] = userData.scores_list().list_of_scores(i);
+
     for(int i = 0; i < userData.ignored_fandoms().fandom_ids_size(); i++)
         userThreadData->ignoredFandoms[userData.ignored_fandoms().fandom_ids(i)] = userData.ignored_fandoms().ignore_crossovers(i);
 
+    for(int i = 0; i < userData.fandomstatetokens_size(); i++){
+        core::fandom_lists::FandomSearchStateToken token;
+        auto id = userData.fandomstatetokens().at(i).id();
+        token.id = userData.fandomstatetokens().at(i).id();
+        token.inclusionMode = static_cast<core::fandom_lists::EInclusionMode>(userData.fandomstatetokens().at(i).inclusion_mode());
+        token.crossoverInclusionMode = static_cast<core::fandom_lists::ECrossoverInclusionMode>(userData.fandomstatetokens().at(i).crossover_inclusion_mode());
+        result.fandomStates.insert_or_assign(id, std::move(token));
+    }
 
     return result;
 }
@@ -347,56 +375,57 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 QString RelevanceToString(float value)
 {
     if(value > 0.8f)
-        return "#c#";
+        return QStringLiteral("#c#");
     if(value > 0.5f)
-        return "#p#";
+        return QStringLiteral("#p#");
     if(value > 0.2f)
-        return "#b#";
-    return "#b#";
+        return QStringLiteral("#b#");
+    return QStringLiteral("#b#");
 }
 
 QString GenreDataToString(QList<genre_stats::GenreBit> data)
 {
     QStringList resultList;
     float maxValue = 0;
-    for(auto genre : data)
+    for(const auto& genre : data)
     {
         if(genre.relevance > maxValue)
             maxValue = genre.relevance;
     }
 
-    for(auto genre : data)
+    for(const auto& genre : data)
     {
-        for(auto genreBit : genre.genres)
+        for(const auto& genreBit : std::as_const(genre.genres))
         {
-            for(auto stringBit : genreBit.split(","))
+            const auto temp = genreBit.split(QStringLiteral(","));
+            for(const auto& stringBit : temp)
             {
                 if(std::abs(maxValue - genre.relevance) < 0.1f)
-                    resultList+="#c#" + stringBit;
+                    resultList+=QStringLiteral("#c#") + stringBit;
                 else
                     resultList+=RelevanceToString(genre.relevance/maxValue) + stringBit;
             }
         }
     }
 
-    QString result =  resultList.join(",");
+    QString result =  resultList.join(QStringLiteral(","));
     return result;
 }
 
 
-bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
+bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fanfic& coreFic)
 {
     coreFic.isValid = protoFic.is_valid();
     if(!coreFic.isValid)
         return false;
 
-    coreFic.id = protoFic.id();
+    coreFic.identity.id = protoFic.id();
 
     // I will probably disable this for now in the ui
-    coreFic.atChapter = GetChapterForFic(coreFic.id);
+    coreFic.userData.atChapter = GetChapterForFic(coreFic.identity.id);
 
     coreFic.complete = protoFic.complete();
-    coreFic.recommendationsMainList = protoFic.recommendations();
+    coreFic.recommendationsData.recommendationsMainList = protoFic.recommendations();
     coreFic.wordCount = FS(protoFic.word_count());
     coreFic.chapters = FS(protoFic.chapters());
     //qDebug() << "received chapters: " << coreFic.chapters ;
@@ -423,15 +452,14 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.isCrossover = coreFic.fandoms.size() > 1;
 
     coreFic.genreString = FS(protoFic.genres());
-    coreFic.webId = protoFic.site_pack().ffn().id(); // temporary
-    coreFic.ffn_id = coreFic.webId; // temporary
-    coreFic.webSite = "ffn"; // temporary
+    coreFic.identity.web.ffn = protoFic.site_pack().ffn().id();  // temporary
+    coreFic.webSite = QStringLiteral("ffn"); // temporary
 
-    coreFic.urls["ffn"] = QString::number(coreFic.webId); // temporary
+    coreFic.urls[QStringLiteral("ffn")] = QString::number(coreFic.identity.web.ffn); // temporary
     for(auto i =0; i < protoFic.real_genres_size(); i++)
-        coreFic.realGenreData.push_back({{FS(protoFic.real_genres(i).genre())}, protoFic.real_genres(i).relevance()});
+        coreFic.statistics.realGenreData.push_back({{FS(protoFic.real_genres(i).genre())}, protoFic.real_genres(i).relevance()});
 
-    std::sort(coreFic.realGenreData.begin(),coreFic.realGenreData.end(),[](const genre_stats::GenreBit& g1,const genre_stats::GenreBit& g2){
+    std::sort(coreFic.statistics.realGenreData.begin(),coreFic.statistics.realGenreData.end(),[](const genre_stats::GenreBit& g1,const genre_stats::GenreBit& g2){
         if(g1.genres.size() != 0 && g2.genres.size() == 0)
             return true;
         if(g2.genres.size() != 0 && g1.genres.size() == 0)
@@ -441,7 +469,7 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
         return g1.relevance > g2.relevance;
     });
 
-    coreFic.realGenreString = GenreDataToString(coreFic.realGenreData);
+    coreFic.statistics.realGenreString = GenreDataToString(coreFic.statistics.realGenreData);
 
     coreFic.urlFFN = coreFic.urls["ffn"];
 
@@ -451,25 +479,25 @@ bool ProtoFicToLocalFic(const ProtoSpace::Fanfic& protoFic, core::Fic& coreFic)
     coreFic.slashData.filter_pass_1= protoFic.slash_data().filter_pass_1();
     coreFic.slashData.filter_pass_2= protoFic.slash_data().filter_pass_2();
     if(coreFic.slashData.keywords_result)
-        coreFic.minSlashPass = 1;
+        coreFic.statistics.minSlashPass = 1;
     else if(coreFic.slashData.filter_pass_1)
-        coreFic.minSlashPass = 2;
+        coreFic.statistics.minSlashPass = 2;
     else if(coreFic.slashData.filter_pass_2)
-        coreFic.minSlashPass = 3;
+        coreFic.statistics.minSlashPass = 3;
     else
-        coreFic.minSlashPass = 0;
+        coreFic.statistics.minSlashPass = 0;
 
     return true;
 }
 
-bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
+bool LocalFicToProtoFic(const core::Fanfic& coreFic, ProtoSpace::Fanfic* protoFic)
 {
     protoFic->set_is_valid(true);
-    protoFic->set_id(coreFic.id);
+    protoFic->set_id(coreFic.identity.id);
 
     protoFic->set_chapters(TS(coreFic.chapters));
     protoFic->set_complete(coreFic.complete);
-    protoFic->set_recommendations(coreFic.recommendationsMainList);
+    protoFic->set_recommendations(coreFic.recommendationsData.recommendationsMainList);
 
     protoFic->set_word_count(TS(coreFic.wordCount));
     protoFic->set_reviews(TS(coreFic.reviews));
@@ -489,12 +517,12 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     protoFic->set_characters(TS(coreFic.charactersFull));
 
 
-    for(auto fandom : coreFic.fandoms)
+    for(const auto& fandom : std::as_const(coreFic.fandoms))
         protoFic->add_fandoms(TS(fandom));
-    for(auto fandom : coreFic.fandomIds)
+    for(const auto& fandom : std::as_const(coreFic.fandomIds))
         protoFic->add_fandom_ids(fandom);
 
-    for(auto realGenre : coreFic.realGenreData)
+    for(const auto& realGenre : std::as_const(coreFic.statistics.realGenreData))
     {
         auto* genreData =  protoFic->add_real_genres();
         genreData->set_genre(TS(realGenre.genres.join(",")));
@@ -502,7 +530,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     }
 
 
-    protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.ffn_id);
+    protoFic->mutable_site_pack()->mutable_ffn()->set_id(coreFic.identity.web.ffn);
 
     auto slashData = protoFic->mutable_slash_data();
     slashData->set_keywords_no(coreFic.slashData.keywords_no);
@@ -514,7 +542,7 @@ bool LocalFicToProtoFic(const core::Fic& coreFic, ProtoSpace::Fanfic* protoFic)
     return true;
 }
 
-bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::FicSectionStats &stats)
+bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::FavListDetails &stats)
 {
     stats.isValid = protoStats.is_valid();
     if(!stats.isValid)
@@ -536,8 +564,8 @@ bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::Fic
     stats.slashRatio = protoStats.slash_rating();
     stats.smutRatio = protoStats.smut_rating();
 
-    stats.firstPublished = QDate::fromString(FS(protoStats.published_first()), "yyyyMMdd");
-    stats.lastPublished = QDate::fromString(FS(protoStats.published_last()), "yyyyMMdd");
+    stats.firstPublished = QDate::fromString(FS(protoStats.published_first()), QStringLiteral("yyyyMMdd"));
+    stats.lastPublished = QDate::fromString(FS(protoStats.published_last()), QStringLiteral("yyyyMMdd"));
 
     stats.moodSad = protoStats.mood_rating(0);
     stats.moodNeutral = protoStats.mood_rating(1);
@@ -553,7 +581,7 @@ bool FavListProtoToLocal(const ProtoSpace::FavListDetails &protoStats, core::Fic
     return true;
 }
 
-bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavListDetails *protoStats)
+bool FavListLocalToProto(const core::FavListDetails &stats, ProtoSpace::FavListDetails *protoStats)
 {
     protoStats->set_is_valid(true);
     protoStats->set_fic_count(stats.favourites);
@@ -573,25 +601,26 @@ bool FavListLocalToProto(const core::FicSectionStats &stats, ProtoSpace::FavList
     protoStats->set_slash_rating(stats.slashRatio);
     protoStats->set_smut_rating(stats.smutRatio);
 
-    protoStats->set_published_first(stats.firstPublished.toString("yyyyMMdd").toStdString());
-    protoStats->set_published_last(stats.lastPublished.toString("yyyyMMdd").toStdString());
+    protoStats->set_published_first(stats.firstPublished.toString(QStringLiteral("yyyyMMdd")).toStdString());
+    protoStats->set_published_last(stats.lastPublished.toString(QStringLiteral("yyyyMMdd")).toStdString());
     protoStats->add_mood_rating(stats.moodSad);
     protoStats->add_mood_rating(stats.moodNeutral);
     protoStats->add_mood_rating(stats.moodHappy);
 
-    for(auto size: stats.sizeFactors.keys())
-        protoStats->add_size_rating(stats.sizeFactors[size]);
 
-    for(auto genre: stats.genreFactors.keys())
+    for(auto i = stats.sizeFactors.cbegin(); i !=stats.sizeFactors.cend(); i++)
+        protoStats->add_size_rating(i.value());
+
+    for(auto i = stats.genreFactors.cbegin(); i !=stats.genreFactors.cend(); i++)
     {
-        protoStats->add_genres(TS(genre));
-        protoStats->add_genres_percentages(stats.genreFactors[genre]);
+        protoStats->add_genres(TS(i.key()));
+        protoStats->add_genres_percentages(i.value());
     }
 
-    for(auto fandom: stats.fandomsConverted.keys())
+    for(auto i = stats.fandomsConverted.cbegin(); i !=stats.fandomsConverted.cend(); i++)
     {
-        protoStats->add_fandoms(fandom);
-        protoStats->add_fandoms_counts(stats.fandomsConverted[fandom]);
+        protoStats->add_fandoms(i.key());
+        protoStats->add_fandoms_counts(i.value());
     }
     return true;
 }
@@ -622,28 +651,29 @@ public:
             stub_ = ProtoSpace::Feeder::NewStub(customChannel);
     }
     ServerStatus GetStatus();
-    bool GetInternalIDsForFics(QVector<core::IdPack> * ficList);
-    bool GetFFNIDsForFics(QVector<core::IdPack> * ficList);
-    void FetchData(core::StoryFilter filter, QVector<core::Fic> * fics);
-    void FetchFic(int ficId, QVector<core::Fic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
-    int GetFicCount(core::StoryFilter filter);
+    bool GetInternalIDsForFics(QVector<core::Identity> * ficList);
+    bool GetFFNIDsForFics(QVector<core::Identity> * ficList);
+    void FetchData(const core::StoryFilter& filter, QVector<core::Fanfic> * fics);
+    void FetchFic(int ficId, QVector<core::Fanfic> * fics, core::StoryFilter::EUseThisFicType idType = core::StoryFilter::EUseThisFicType::utf_ffn_id);
+    int GetFicCount(const core::StoryFilter& filter);
     bool GetFandomListFromServer(int lastFandomID, QVector<core::Fandom>* fandoms);
-    bool GetRecommendationListFromServer(core::RecommendationList &recList);
-    core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList);
-    void ProcessStandardError(grpc::Status status);
-    core::FicSectionStats GetStatsForFicList(QVector<core::IdPack> ficList);
+    bool GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
+    core::DiagnosticsForReclist GetDiagnosticsForRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList);
+    void ProcessStandardError(const grpc::Status &status);
+    core::FavListDetails GetStatsForFicList(QVector<core::Identity> ficList);
     QHash<uint32_t, uint32_t> GetAuthorsForFicList(QSet<int> ficList);
     QSet<int> GetAuthorsForFicInRecList(int sourceFic, QString authors);
-    QHash<int, core::MatchedFics > GetMatchesForUsers(int sourceUser, QList<int> users);
-    QHash<int, core::MatchedFics> GetMatchesForUsers(InputsForMatches data, QList<int> users);
-    QSet<int> GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data);
-
+    QHash<int, core::FavouritesMatchResult > GetMatchesForUsers(int sourceUser, QList<int> users);
+    QHash<int, core::FavouritesMatchResult> GetMatchesForUsers(InputsForMatches data, QList<int> users);
+    QSet<int> GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus> data);
+    void FillControlStruct(ProtoSpace::ControlInfo *controls);
 
     std::unique_ptr<ProtoSpace::Feeder::Stub> stub_;
     QString error;
     bool hasErrors = false;
     int deadline = 60;
     QString userToken;
+    QString applicationToken;
     UserData userData;
 };
 #define TO_STR2(x) #x
@@ -658,8 +688,8 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
+
 
     grpc::Status status = stub_->GetStatus(&context, task, response.data());
 
@@ -671,16 +701,16 @@ ServerStatus FicSourceGRPCImpl::GetStatus()
     }
     serverStatus.isValid = true;
     serverStatus.dbAttached = response->database_attached();
-    QString dbUpdate = proto_converters::FS(response->last_database_update());
+    //QString dbUpdate = proto_converters::FS(response->last_database_update());
     serverStatus.lastDBUpdate = QString::fromStdString(response->last_database_update());
     serverStatus.motd = proto_converters::FS(response->message_of_the_day());
     serverStatus.messageRequired = response->need_to_show_motd();
-    int ownProtocolVersion = QString(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
+    int ownProtocolVersion = QStringLiteral(STRINGIFY(MAJOR_PROTOCOL_VERSION)).toInt();
     serverStatus.protocolVersionMismatch = ownProtocolVersion != response->protocol_version();
     return serverStatus;
 }
 
-bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
+bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::Identity> * ficList){
     grpc::ClientContext context;
 
     ProtoSpace::FicIdRequest task;
@@ -693,13 +723,12 @@ bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
 
-    for(core::IdPack& fic : *ficList)
+    for(core::Identity& fic : *ficList)
     {
-        task.mutable_ids()->add_db_ids(fic.db);
-        task.mutable_ids()->add_ffn_ids(fic.ffn);
+        task.mutable_ids()->add_db_ids(fic.id);
+        task.mutable_ids()->add_ffn_ids(fic.web.ffn);
     }
 
     grpc::Status status = stub_->GetDBFicIDS(&context, task, response.data());
@@ -708,13 +737,13 @@ bool FicSourceGRPCImpl::GetInternalIDsForFics(QVector<core::IdPack> * ficList){
 
     for(int i = 0; i < response->ids().db_ids_size(); i++)
     {
-        (*ficList)[i].db = response->ids().db_ids(i);
-        (*ficList)[i].ffn = response->ids().ffn_ids(i);
+        (*ficList)[i].id = response->ids().db_ids(i);
+        (*ficList)[i].web.ffn = response->ids().ffn_ids(i);
     }
     return true;
 }
 
-bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
+bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
 {
     grpc::ClientContext context;
 
@@ -727,13 +756,11 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
-
-    for(core::IdPack& fic : *ficList)
+    FillControlStruct(task.mutable_controls());
+    for(core::Identity& fic : *ficList)
     {
-        task.mutable_ids()->add_db_ids(fic.db);
-        task.mutable_ids()->add_ffn_ids(fic.ffn);
+        task.mutable_ids()->add_db_ids(fic.id);
+        task.mutable_ids()->add_ffn_ids(fic.web.ffn);
     }
 
     grpc::Status status = stub_->GetFFNFicIDS(&context, task, response.data());
@@ -742,13 +769,13 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::IdPack> *ficList)
 
     for(int i = 0; i < response->ids().db_ids_size(); i++)
     {
-        (*ficList)[i].db = response->ids().db_ids(i);
-        (*ficList)[i].ffn = response->ids().ffn_ids(i);
+        (*ficList)[i].id = response->ids().db_ids(i);
+        (*ficList)[i].web.ffn = response->ids().ffn_ids(i);
     }
     return true;
 }
 
-void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> * fics)
+void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core::Fanfic> * fics)
 {
     grpc::ClientContext context;
 
@@ -764,30 +791,46 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(controls);
     controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
     controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
 
     auto* tags = userData->mutable_user_tags();
 
-    for(auto tag : this->userData.allTaggedFics)
-        tags->add_all_tags(tag);
+    for(auto fic : std::as_const(this->userData.allTaggedFics))
+    {
+        //QLOG_INFO() << "adding fic ignore: " << fic;
+        tags->add_all_tags(fic);
+    }
 
-    for(auto tag : this->userData.ficIDsForActivetags)
+    for(auto tag : std::as_const(this->userData.ficIDsForActivetags))
         tags->add_searched_tags(tag);
-    for(auto snooze : this->userData.allSnoozedFics)
+    for(auto snooze : std::as_const(this->userData.allSnoozedFics))
         userData->add_snoozes(snooze);
 
+
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
-    for(auto key: this->userData.ignoredFandoms.keys())
+
+    for(auto i = this->userData.ignoredFandoms.cbegin(); i != this->userData.ignoredFandoms.cend(); i++)
     {
+        auto key = i.key();
+        //QLOG_INFO() << "adding fandom ignore: " << key << " " << i.value();
+        if(key==-1)
+            continue;
         ignoredFandoms->add_fandom_ids(key);
-        ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+        ignoredFandoms->add_ignore_crossovers(i.value());
+    }
+
+    for(auto it = this->userData.fandomStates.cbegin(); it != this->userData.fandomStates.cend(); it++){
+        auto token = userData->add_fandomstatetokens();
+        token->set_id(it->second.id);
+        token->set_inclusion_mode(static_cast<::ProtoSpace::EInclusionMode>((it->second.inclusionMode)));
+        token->set_crossover_inclusion_mode(static_cast<::ProtoSpace::ECrossoverInclusionMode>((it->second.crossoverInclusionMode)));
     }
 
     auto tagData = task.mutable_filter()->mutable_tag_filter();
-    for(auto tag: filter.activeTags)
+    for(const auto& tag: std::as_const(filter.activeTags))
         tagData->add_active_tags(tag.toStdString());
 
     grpc::Status status = stub_->Search(&context, task, response.data());
@@ -803,7 +846,7 @@ void FicSourceGRPCImpl::FetchData(core::StoryFilter filter, QVector<core::Fic> *
     task.release_filter();
 }
 
-void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fic> *fics, core::StoryFilter::EUseThisFicType idType)
+void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fanfic> *fics, core::StoryFilter::EUseThisFicType idType)
 {
     grpc::ClientContext context;
 
@@ -814,8 +857,7 @@ void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fic> *fics, core::Sto
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
     task.set_id(ficId);
     if(idType == core::StoryFilter::EUseThisFicType::utf_ffn_id)
         task.set_id_type(ProtoSpace::SearchByFFNIDTask::ffn);
@@ -831,7 +873,7 @@ void FicSourceGRPCImpl::FetchFic(int ficId,  QVector<core::Fic> *fics, core::Sto
     proto_converters::ProtoFicToLocalFic(response->fanfic(), (*fics)[static_cast<size_t>(0)]);
 }
 
-int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
+int FicSourceGRPCImpl::GetFicCount(const core::StoryFilter& filter)
 {
     grpc::ClientContext context;
 
@@ -843,7 +885,7 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
     task.set_allocated_filter(&protoFilter);
 
     auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(controls);
     controls->mutable_protocol_version()->set_major_version(filter.protocolMajorVersion);
     controls->mutable_protocol_version()->set_minor_version(filter.protocolMinorVersion);
 
@@ -852,18 +894,25 @@ int FicSourceGRPCImpl::GetFicCount(core::StoryFilter filter)
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     auto* tags = userData->mutable_user_tags();
-    for(auto tag : this->userData.allTaggedFics)
+    for(const auto& tag : std::as_const(this->userData.allTaggedFics))
         tags->add_all_tags(tag);
-    for(auto tag : this->userData.ficIDsForActivetags)
+    for(const auto& tag : std::as_const(this->userData.ficIDsForActivetags))
         tags->add_searched_tags(tag);
-    for(auto snooze : this->userData.allSnoozedFics)
+    for(const auto& snooze : std::as_const(this->userData.allSnoozedFics))
         userData->add_snoozes(snooze);
 
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
-    for(auto key: this->userData.ignoredFandoms.keys())
+
+    for(auto i = this->userData.ignoredFandoms.cbegin(); i != this->userData.ignoredFandoms.cend(); i++)
     {
-        ignoredFandoms->add_fandom_ids(key);
-        ignoredFandoms->add_ignore_crossovers(this->userData.ignoredFandoms[key]);
+        ignoredFandoms->add_fandom_ids(i.key());
+        ignoredFandoms->add_ignore_crossovers(i.value());
+    }
+    for(auto it = this->userData.fandomStates.cbegin(); it != this->userData.fandomStates.cend(); it++){
+        auto token = userData->add_fandomstatetokens();
+        token->set_id(it->second.id);
+        token->set_inclusion_mode(static_cast<::ProtoSpace::EInclusionMode>((it->second.inclusionMode)));
+        token->set_crossover_inclusion_mode(static_cast<::ProtoSpace::ECrossoverInclusionMode>((it->second.crossoverInclusionMode)));
     }
 
     grpc::Status status = stub_->GetFicCount(&context, task, response.data());
@@ -886,8 +935,12 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
     task.mutable_controls()->set_user_token(proto_converters::TS(userToken));
+    task.mutable_controls()->set_application_token(proto_converters::TS(applicationToken));
 
     grpc::Status status = stub_->SyncFandomList(&context, task, response.data());
+
+    if(!status.ok())
+        QLOG_INFO() << "error calling grpc: " <<  status.error_code() << " " << QString::fromStdString(status.error_message());
 
     ProcessStandardError(status);
     if(!response->needs_update())
@@ -901,104 +954,110 @@ bool FicSourceGRPCImpl::GetFandomListFromServer(int lastFandomID, QVector<core::
     return true;
 }
 
-static const auto paramToTaskFiller = [](auto& task, core::RecommendationList& recList){
+static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::RecommendationList> recList){
     auto* data = task.mutable_data();
     auto* ffn = data->mutable_id_packs();
     auto* params = data->mutable_general_params();
 
-    //std::sort(std::begin(recList.ficData.fics), std::end(recList.ficData.fics));
+    //std::sort(std::begin(recList->ficData.fics), std::end(recList->ficData.fics));
     //qDebug() << "Source fics  for list: ";
-    for(auto fic: recList.ficData.fics)
+    for(auto fic: std::as_const(recList->ficData->fics))
     {
         //qDebug() << fic;
         ffn->add_ffn_ids(fic);
     }
-    data->set_list_name(proto_converters::TS(recList.name));
-    params->set_always_pick_at(recList.alwaysPickAt);
-    params->set_is_automatic(recList.isAutomatic);
-    params->set_use_dislikes(recList.useDislikes);
-    params->set_use_dead_fic_ignore(recList.useDeadFicIgnore);
-    params->set_min_fics_to_match(recList.minimumMatch);
-    params->set_max_unmatched_to_one_matched(static_cast<int>(recList.maxUnmatchedPerMatch));
-    params->set_use_weighting(recList.useWeighting);
-    params->set_use_mood_filtering(recList.useMoodAdjustment);
-    params->set_users_ffn_profile_id(recList.userFFNId);
-    QLOG_INFO() << "passing user id to server: " << recList.userFFNId;
+    data->mutable_response_data_controls()->set_ignore_breakdowns(recList->ignoreBreakdowns);
+    data->set_list_name(proto_converters::TS(recList->name));
+    params->set_always_pick_at(recList->alwaysPickAt);
+    params->set_is_automatic(recList->isAutomatic);
+    params->set_use_dislikes(recList->useDislikes);
+    params->set_use_dead_fic_ignore(recList->useDeadFicIgnore);
+    params->set_min_fics_to_match(recList->minimumMatch);
+    params->set_max_unmatched_to_one_matched(static_cast<int>(recList->maxUnmatchedPerMatch));
+    params->set_use_weighting(recList->useWeighting);
+    params->set_use_mood_filtering(recList->useMoodAdjustment);
+    params->set_users_ffn_profile_id(recList->userFFNId);
+    QLOG_INFO() << "passing user id to server: " << recList->userFFNId;
 
     auto userData = data->mutable_user_data();
     auto ignores = userData->mutable_ignored_fandoms();
-    for(auto ignore: recList.ignoredFandoms)
+    for(auto ignore: std::as_const(recList->ignoredFandoms))
         ignores->add_fandom_ids(ignore);
     //auto likedAuthors = userData->mutable_liked_authors();
-    for(auto authorId: recList.likedAuthors)
+    for(auto authorId: std::as_const(recList->likedAuthors))
         userData->add_liked_authors(authorId);
 
-    for(auto vote: recList.majorNegativeVotes)
+    for(auto vote: std::as_const(recList->majorNegativeVotes))
         userData->mutable_negative_feedback()->add_strongnegatives(vote);
-    for(auto fic: recList.ignoredDeadFics)
+    for(auto fic: std::as_const(recList->ignoredDeadFics))
         userData->add_ignored_fics(fic);
 
 };
 
 
-static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationListData& response, core::RecommendationList& recList){
+static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationListData& response, QSharedPointer<core::RecommendationList> recList){
 
-    recList.ficData.fics.clear();
-    recList.ficData.fics.reserve(response.fic_ids_size());
-    recList.ficData.purges.reserve(response.fic_ids_size());
-    recList.ficData.matchCounts.reserve(response.fic_ids_size());
-    recList.ficData.noTrashScores.reserve(response.fic_ids_size());
+   recList->ficData->fics.clear();
+   recList->ficData->fics.reserve(response.fic_ids_size());
+   recList->ficData->purges.reserve(response.fic_ids_size());
+   recList->ficData->matchCounts.reserve(response.fic_ids_size());
+   recList->ficData->noTrashScores.reserve(response.fic_ids_size());
 
     for(int i = 0; i < response.fic_ids_size(); i++)
-    {
-        recList.ficData.fics.push_back(response.fic_ids(i));
-        recList.ficData.matchCounts.push_back(response.fic_matches(i));
-        recList.ficData.purges.push_back(response.purged(i));
-        recList.ficData.noTrashScores.push_back(response.no_trash_score(i));
-    }
+       recList->ficData->fics.push_back(response.fic_ids(i));
+    for(int i = 0; i < response.fic_matches_size(); i++)
+        recList->ficData->matchCounts.push_back(response.fic_matches(i));
+    for(int i = 0; i < response.purged_size(); i++)
+        recList->ficData->purges.push_back(response.purged(i));
+    for(int i = 0; i < response.no_trash_score_size(); i++)
+        recList->ficData->noTrashScores.push_back(response.no_trash_score(i));
+
 
     for(int i = 0; i < response.author_ids_size(); i++)
-        recList.ficData.authorIds.push_back(response.author_ids(i));
+       recList->ficData->authorIds.push_back(response.author_ids(i));
 
     auto it = response.match_report().begin();
     while(it != response.match_report().end())
     {
-        recList.ficData.matchReport[it->first] = it->second;
+       recList->ficData->matchReport[it->first] = it->second;
         ++it;
     }
     using core::AuthorWeightingResult;
-    for(int i = 0; i < response.breakdowns_size(); i++)
-    {
-        auto ficid= response.breakdowns(i).id();
-        recList.ficData.breakdowns[ficid].ficId = static_cast<uint32_t>(ficid);
-        auto&  breakdown = recList.ficData.breakdowns[response.breakdowns(i).id()];
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
-                            response.breakdowns(i).counts_common(),
-                            response.breakdowns(i).votes_common());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::uncommon,
-                            response.breakdowns(i).counts_uncommon(),
-                            response.breakdowns(i).votes_uncommon());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
-                            response.breakdowns(i).counts_rare(),
-                            response.breakdowns(i).votes_rare());
-        breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::unique,
-                            response.breakdowns(i).counts_unique(),
-                            response.breakdowns(i).votes_unique());
+    if(!recList->ignoreBreakdowns){
+        for(int i = 0; i < response.breakdowns_size(); i++)
+        {
+            auto ficid= response.breakdowns(i).id();
+            recList->ficData->breakdowns[ficid].ficId = static_cast<uint32_t>(ficid);
+            auto&  breakdown =recList->ficData->breakdowns[response.breakdowns(i).id()];
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::common,
+                                      response.breakdowns(i).counts_common(),
+                                      response.breakdowns(i).votes_common());
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::uncommon,
+                                      response.breakdowns(i).counts_uncommon(),
+                                      response.breakdowns(i).votes_uncommon());
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::rare,
+                                      response.breakdowns(i).counts_rare(),
+                                      response.breakdowns(i).votes_rare());
+            breakdown.AddAuthorResult(AuthorWeightingResult::EAuthorType::unique,
+                                      response.breakdowns(i).counts_unique(),
+                                      response.breakdowns(i).votes_unique());
+        }
     }
     // need to fill the params for the list as they were adjusted on the server
-    recList.isAutomatic = response.used_params().is_automatic();
-    recList.useDislikes = response.used_params().use_dislikes();
-    recList.useDeadFicIgnore= response.used_params().use_dead_fic_ignore();
-    recList.minimumMatch = response.used_params().min_fics_to_match();
-    recList.maxUnmatchedPerMatch = response.used_params().max_unmatched_to_one_matched();
-    recList.alwaysPickAt = response.used_params().always_pick_at();
-    recList.useWeighting = response.used_params().use_weighting();
-    recList.useMoodAdjustment = response.used_params().use_mood_filtering();
-    recList.success = response.success();
+   recList->isAutomatic = response.used_params().is_automatic();
+   recList->useDislikes = response.used_params().use_dislikes();
+   recList->useDeadFicIgnore= response.used_params().use_dead_fic_ignore();
+   recList->minimumMatch = response.used_params().min_fics_to_match();
+   recList->maxUnmatchedPerMatch = response.used_params().max_unmatched_to_one_matched();
+   recList->alwaysPickAt = response.used_params().always_pick_at();
+   recList->useWeighting = response.used_params().use_weighting();
+   recList->useMoodAdjustment = response.used_params().use_mood_filtering();
+   recList->userFFNId = response.used_params().users_ffn_profile_id();
+   recList->success = response.success();
 
 };
 
-bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList& recList)
+bool FicSourceGRPCImpl::GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     grpc::ClientContext context;
     ProtoSpace::RecommendationListCreationRequest task;
@@ -1008,10 +1067,11 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
     context.set_deadline(deadline);
     paramToTaskFiller(task, recList);
 
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
 
     grpc::Status status = stub_->RecommendationListCreation(&context, task, response.data());
+    if(!status.ok())
+        QLOG_INFO() << "error calling grpc: " <<  status.error_code() << " " << QString::fromStdString(status.error_message());
 
     ProcessStandardError(status);
     //DumpToLog("Test Dump", response.data());
@@ -1023,7 +1083,7 @@ bool FicSourceGRPCImpl::GetRecommendationListFromServer(core::RecommendationList
 }
 
 
-core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationListFromServer(core::RecommendationList recList)
+core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     core::DiagnosticsForReclist result;
 
@@ -1036,8 +1096,7 @@ core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationLi
     context.set_deadline(deadline);
     paramToTaskFiller(task, recList);
 
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
 
     grpc::Status status = stub_->DiagnosticRecommendationListCreation(&context, task, response.data());
 
@@ -1069,7 +1128,7 @@ core::DiagnosticsForReclist FicSourceGRPCImpl::GetDiagnosticsForRecommendationLi
 }
 
 
-void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
+void FicSourceGRPCImpl::ProcessStandardError(const grpc::Status& status)
 {
     error.clear();
     if(status.ok())
@@ -1105,12 +1164,12 @@ void FicSourceGRPCImpl::ProcessStandardError(grpc::Status status)
         //intentionally empty
         break;
     }
-    error+=QString::fromStdString(status.error_message());
+    error+= "GRPC:" + QString::fromStdString(status.error_message());
 }
 
-core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack> ficList)
+core::FavListDetails FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identity> ficList)
 {
-    core::FicSectionStats result;
+    core::FavListDetails result;
 
     grpc::ClientContext context;
 
@@ -1123,13 +1182,12 @@ core::FicSectionStats FicSourceGRPCImpl::GetStatsForFicList(QVector<core::IdPack
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
 
-    for(core::IdPack& fic : ficList)
+    for(core::Identity& fic : ficList)
     {
         auto idPacks = task.mutable_id_packs();
-        idPacks->add_ffn_ids(fic.ffn);
+        idPacks->add_ffn_ids(fic.web.ffn);
     }
 
     grpc::Status status = stub_->GetFavListDetails(&context, task, response.data());
@@ -1159,8 +1217,7 @@ QHash<uint32_t, uint32_t> FicSourceGRPCImpl::GetAuthorsForFicList(QSet<int> ficL
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
 
     for(auto fic : ficList)
     {
@@ -1192,8 +1249,7 @@ QSet<int> FicSourceGRPCImpl::GetAuthorsForFicInRecList(int sourceFic, QString au
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
+    FillControlStruct(task.mutable_controls());
     task.set_fic_id(sourceFic);
     task.set_author_list(authors.toStdString());
 
@@ -1209,9 +1265,9 @@ QSet<int> FicSourceGRPCImpl::GetAuthorsForFicInRecList(int sourceFic, QString au
     return result;
 }
 
-QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(int sourceUser, QList<int> users)
+QHash<int, core::FavouritesMatchResult > FicSourceGRPCImpl::GetMatchesForUsers(int sourceUser, QList<int> users)
 {
-    QHash<int, core::MatchedFics> result;
+    QHash<int, core::FavouritesMatchResult> result;
 
     grpc::ClientContext context;
 
@@ -1245,9 +1301,9 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(int sourceU
     return result;
 }
 
-QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMatches data, QList<int> users)
+QHash<int, core::FavouritesMatchResult > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMatches data, QList<int> users)
 {
-    QHash<int, core::MatchedFics> result;
+    QHash<int, core::FavouritesMatchResult> result;
 
     grpc::ClientContext context;
 
@@ -1259,9 +1315,9 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMa
     context.set_deadline(deadline);
 //    auto* controls = task.mutable_controls();
 //    controls->set_user_token(proto_converters::TS(userToken));
-    for(auto fic: data.userFics)
+    for(const auto& fic: std::as_const(data.userFics))
         task.add_user_fics(fic.toInt());
-    for(auto fic: data.userIgnores)
+    for(const auto& fic: std::as_const(data.userIgnores))
         task.add_fandom_ignores(fic.toInt());
     for(auto user: users)
         task.add_test_users(user);
@@ -1284,7 +1340,7 @@ QHash<int, core::MatchedFics > FicSourceGRPCImpl::GetMatchesForUsers(InputsForMa
     return result;
 }
 
-QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data)
+QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus> data)
 {
     QSet<int> result;
 
@@ -1296,9 +1352,8 @@ QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> 
     std::chrono::system_clock::time_point deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(this->deadline);
     context.set_deadline(deadline);
-    auto* controls = task.mutable_controls();
-    controls->set_user_token(proto_converters::TS(userToken));
-    for(auto snoozeInfo : data)
+    FillControlStruct(task.mutable_controls());
+    for(const auto& snoozeInfo : data)
     {
         auto snooze = task.add_snoozes();
         snooze->set_fic_id(snoozeInfo.ficId);
@@ -1320,18 +1375,25 @@ QSet<int> FicSourceGRPCImpl::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> 
 
 }
 
+void FicSourceGRPCImpl::FillControlStruct(ProtoSpace::ControlInfo *controls)
+{
+    controls->set_user_token(proto_converters::TS(userToken));
+    controls->set_application_token(proto_converters::TS(applicationToken));
+}
+
 FicSourceGRPC::FicSourceGRPC(QString connectionString,
                              QString userToken,
                              int deadline): impl(new FicSourceGRPCImpl(connectionString, deadline))
 {
     impl->userToken = userToken;
+    impl->applicationToken = userToken;
 }
 
 FicSourceGRPC::~FicSourceGRPC()
 {
 
 }
-void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics)
+void FicSourceGRPC::FetchData(const core::StoryFilter &filter, QVector<core::Fanfic> *fics)
 {
     if(!impl)
         return;
@@ -1339,14 +1401,14 @@ void FicSourceGRPC::FetchData(core::StoryFilter filter, QVector<core::Fic> *fics
     impl->FetchData(filter, fics);
 }
 
-void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fic> *fics, core::StoryFilter::EUseThisFicType idType)
+void FicSourceGRPC::FetchFic(int ficId, QVector<core::Fanfic> *fics, core::StoryFilter::EUseThisFicType idType)
 {
     if(!impl)
         return;
     impl->FetchFic(ficId, fics, idType);
 }
 
-int FicSourceGRPC::GetFicCount(core::StoryFilter filter)
+int FicSourceGRPC::GetFicCount(const core::StoryFilter &filter)
 {
     if(!impl)
         return 0;
@@ -1361,35 +1423,35 @@ bool FicSourceGRPC::GetFandomListFromServer(int lastFandomID, QVector<core::Fand
     return impl->GetFandomListFromServer(lastFandomID, fandoms);
 }
 
-core::DiagnosticsForReclist FicSourceGRPC::GetDiagnosticsForRecListFromServer(core::RecommendationList recList)
+core::DiagnosticsForReclist FicSourceGRPC::GetDiagnosticsForRecListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     if(!impl)
         return {};
     return impl->GetDiagnosticsForRecommendationListFromServer(recList);
 }
 
-bool FicSourceGRPC::GetRecommendationListFromServer(core::RecommendationList &recList)
+bool FicSourceGRPC::GetRecommendationListFromServer(QSharedPointer<core::RecommendationList> recList)
 {
     if(!impl)
         return false;
     return impl->GetRecommendationListFromServer(recList);
 }
 
-bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::IdPack> * ficList)
+bool FicSourceGRPC::GetInternalIDsForFics(QVector<core::Identity> * ficList)
 {
     if(!impl)
         return false;
     return impl->GetInternalIDsForFics(ficList);
 }
 
-bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::IdPack> * ficList)
+bool FicSourceGRPC::GetFFNIDsForFics(QVector<core::Identity> * ficList)
 {
     if(!impl)
         return false;
     return impl->GetFFNIDsForFics(ficList);
 }
 
-std::optional<core::FicSectionStats> FicSourceGRPC::GetStatsForFicList(QVector<core::IdPack> ficList)
+std::optional<core::FavListDetails> FicSourceGRPC::GetStatsForFicList(QVector<core::Identity> ficList)
 {
     if(!impl)
         return {};
@@ -1410,20 +1472,20 @@ QSet<int> FicSourceGRPC::GetAuthorsForFicInRecList(int sourceFic, QString author
     return impl->GetAuthorsForFicInRecList(sourceFic, authors);
 }
 
-QHash<int, core::MatchedFics > FicSourceGRPC::GetMatchesForUsers(int sourceUser, QList<int> users)
+QHash<int, core::FavouritesMatchResult > FicSourceGRPC::GetMatchesForUsers(int sourceUser, QList<int> users)
 {
     if(!impl)
         return {};
     return impl->GetMatchesForUsers(sourceUser, users);
 }
-QHash<int, core::MatchedFics> FicSourceGRPC::GetMatchesForUsers(InputsForMatches data, QList<int> users)
+QHash<int, core::FavouritesMatchResult> FicSourceGRPC::GetMatchesForUsers(InputsForMatches data, QList<int> users)
 {
     if(!impl)
         return {};
     return impl->GetMatchesForUsers(data, users);
 }
 
-QSet<int> FicSourceGRPC::GetExpiredSnoozes(QHash<int, core::SnoozeTaskInfo> data)
+QSet<int> FicSourceGRPC::GetExpiredSnoozes(QHash<int, core::FanficSnoozeStatus> data)
 {
     if(!impl)
         return {};
@@ -1436,7 +1498,19 @@ ServerStatus FicSourceGRPC::GetStatus()
     return impl->GetStatus();
 }
 
-bool VerifyString(const std::string& s, int maxSize = 200){
+void FicSourceGRPC::SetUserToken(QString token)
+{
+    impl->userToken = token;
+}
+
+void FicSourceGRPC::ClearUserData()
+{
+    impl->userData.Clear();
+}
+
+
+
+bool VerifyString(const std::string& s, uint maxSize = 200){
     if(s.length() > maxSize)
         return false;
     return true;
@@ -1463,16 +1537,16 @@ bool VerifyNotEmpty(const int& val){
 bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseInfo* info)
 {
     bool isValid = true;
-    if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 )
-        isValid = true;
+    if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 && idPack.db_ids().size() == 0 )
+        isValid = false;
     if(idPack.ffn_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(idPack.ao3_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(idPack.sb_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(idPack.sv_ids().size() > 10000)
-        isValid = true;
+        isValid = false;
     if(!isValid)
     {
         SetFicIDSyncDataError(info);
@@ -1486,12 +1560,14 @@ bool VerifyRecommendationsRequest(const ProtoSpace::RecommendationListCreationRe
 {
     if(request->data().list_name().size() > 100)
         return false;
-    if(request->data().general_params().min_fics_to_match() <= 0 || request->data().general_params().min_fics_to_match() > 10000)
+    if(!request->data().general_params().is_automatic() &&
+            (request->data().general_params().min_fics_to_match() <= 0 || request->data().general_params().min_fics_to_match() > 10000))
         return false;
-    if(request->data().general_params().max_unmatched_to_one_matched() <= 0)
+    if(!request->data().general_params().is_automatic()
+            && request->data().general_params().max_unmatched_to_one_matched() <= 0)
         return false;
-    if(request->data().general_params().always_pick_at() < 1)
-        return false;
+//    if(request->data().general_params().always_pick_at() < 1)
+//        return false;
     if(!VerifyIDPack(request->data().id_packs(), info))
         return false;
     return true;

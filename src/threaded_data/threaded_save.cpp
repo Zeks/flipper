@@ -39,7 +39,7 @@ auto fileWrapperVector = [](DataKeeper* obj, int threadCount, int taskSize, int 
         {
             obj->fileCounter++;
             obj->data.close();
-            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase).arg(QString::number(obj->fileCounter)));
+            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase,QString::number(obj->fileCounter)));
             if(obj->data.open(QFile::WriteOnly | QFile::Truncate))
             {
                 obj->out.setDevice(&obj->data);
@@ -67,16 +67,16 @@ auto fileWrapperHash = [](DataKeeper* obj,int threadCount, QString nameBase, aut
     int counter = -1;
     int chunkSize = container.size()/threadCount;
     int taskSize = container.size();
-    auto it = container.begin();
+    auto it = container.cbegin();
     obj->fileCounter = -1;
-    while(it != container.end())
+    while(it != container.cend())
     {
         counter++;
         if( counter%chunkSize == 0)
         {
             obj->fileCounter++;
             obj->data.close();
-            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase).arg(QString::number(obj->fileCounter)));
+            obj->data.setFileName(QString("%1_%2.txt").arg(nameBase,QString::number(obj->fileCounter)));
             if(obj->data.open(QFile::WriteOnly | QFile::Truncate))
             {
                 obj->out.setDevice(&obj->data);
@@ -126,7 +126,7 @@ void SaveFavouritesData(QString storageFolder, QHash<int, Roaring>& favourites){
     Impl::fileWrapperHash(&keeper, threadCount, storageFolder + "/roafav", favourites, [&](auto& out, auto it){
         out << it.key();
 
-        Roaring& r = it.value();
+        const Roaring& r = it.value();
         size_t  expectedsize = r.getSizeInBytes();
         //qDebug() << "writing roaring of size: " << expectedsize;
         char *serializedbytes = new char [expectedsize];
@@ -161,7 +161,7 @@ void SaveData(QString storageFolder, QString fileName, QHash<int, Roaring>& favo
     Impl::fileWrapperHash(&keeper, threadCount, storageFolder + "/" + fileName, favourites, [&](auto& out, auto it){
         out << it.key();
 
-        Roaring& r = it.value();
+        const Roaring& r = it.value();
         size_t  expectedsize = r.getSizeInBytes();
         //qDebug() << "writing roaring of size: " << expectedsize;
         char *serializedbytes = new char [expectedsize];

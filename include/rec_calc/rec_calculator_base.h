@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 
 #include <QList>
+#include <limits>
 
 #include "include/data_code/data_holders.h"
 #include "include/data_code/rec_calc_data.h"
@@ -41,7 +42,7 @@ struct RecommendationListResult{
     QHash<int, int> sumNegativeMatchesForFic;
     QHash<int, int> sumNegativeVotesForFic;
     QHash<int, double> noTrashScore;
-    QList<int> authors;
+    QSet<int> authors;
 };
 
 struct DiagnosticRecommendationListResult{
@@ -80,6 +81,78 @@ struct RecInputVectors{
     const core::AuthorMoodDistributions& moods;
 };
 
+struct AutoAdjustmentAndFilteringResult{
+    bool performedFiltering = false;
+    bool adjustmentStoppedAtFirstIteration = true;
+    QSet<int> authors;
+    std::vector<int> sizes = {0,0,0};
+};
+
+struct RatioInfo{
+    uint16_t authors = 0;
+    uint16_t ratio = 0;
+    uint16_t minListSize = std::numeric_limits<uint16_t>::max();
+    uint16_t maxListSize = 0;
+    uint16_t minMatches = std::numeric_limits<uint16_t>::max();
+
+    //Roaring fics;
+    Roaring ficsAfterIgnore;
+    RatioInfo& operator+=(const RatioInfo& rhs){
+
+        this->authors += rhs.authors;
+        if(this->ratio == 0)
+            this->ratio = rhs.ratio;
+        if(this->minMatches > rhs.minMatches)
+            this->minMatches = rhs.minMatches;
+        //this->fics |= rhs.fics;
+        this->ficsAfterIgnore |= rhs.ficsAfterIgnore;
+        if(this->minListSize > rhs.minListSize)
+            this->minListSize = rhs.minListSize;
+        if(this->maxListSize < rhs.maxListSize)
+            this->maxListSize = rhs.maxListSize;
+        return *this;
+    }
+
+};
+
+struct RatioSumInfo{
+    uint16_t authors = 0;
+    uint16_t ratio = 0;
+    uint16_t minMatches = std::numeric_limits<uint16_t>::max();
+    int lastFicsAdded = 0;
+    uint16_t minListSize = std::numeric_limits<uint16_t>::max();
+    uint16_t maxListSize = 0;
+    Roaring fics;
+    Roaring ficsAfterIgnore;
+
+    //    RatioSumInfo& operator+=(const RatioSumInfo& rhs){
+
+    //        this->authors += rhs.authors;
+    //        this->ratio = rhs.ratio;
+    //        if(this->minMatches > rhs.minMatches)
+    //            this->minMatches = rhs.minMatches;
+    //        this->fics = this->fics | rhs.fics;
+    //          return *this;
+    //    }
+    //    void IncrementAuthors(){
+    //        QWriteLocker locker(&lock);
+    //        authors++;
+    //    };
+    //    void SetRatio(int ratio){
+    //        QWriteLocker locker(&lock);
+    //        this->ratio = ratio;
+    //    };
+    //    void UpdateMinMatches(int matches){
+    //        QWriteLocker locker(&lock);
+    //        if(minMatches > matches)
+    //            minMatches = matches;
+    //    };
+    //    void MergeFics(const Roaring& newFics){
+    //        QWriteLocker locker(&lock);
+    //        fics|=newFics;
+    //    };
+    //    QReadWriteLock lock;
+};
 
 
 class RecCalculatorImplBase
@@ -88,22 +161,26 @@ public:
     typedef QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> FilterListType;
     typedef QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> ActionListType;
 
-    RecCalculatorImplBase(RecInputVectors input):inputs(input){}
+    RecCalculatorImplBase(const RecInputVectors& input):inputs(input){}
 
     virtual ~RecCalculatorImplBase(){}
 
+    virtual void ResetAccumulatedData();
     bool Calc();
+    void RunMatchingAndWeighting(QSharedPointer<RecommendationList> params, const FilterListType &filters, const ActionListType &actions);
     Roaring BuildIgnoreList();
     void FetchAuthorRelations();
     void CollectFicMatchQuality();
-    void Filter(QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>> filters,
-                QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>> actions);
+    void Filter(QSharedPointer<RecommendationList> params,
+                const QList<std::function<bool(AuthorResult&,QSharedPointer<RecommendationList>)>>& filters,
+                const QList<std::function<void(RecCalculatorImplBase*,AuthorResult &)>>& actions);
 
     void CalculateNegativeToPositiveRatio();
     void ReportNegativeResults();
     void FillFilteredAuthorsForFics();
 
     virtual bool CollectVotes();
+    virtual bool WeightingIsValid() const = 0;
 
     virtual void CalcWeightingParams() = 0;
     virtual FilterListType GetFilterList() = 0;
@@ -113,33 +190,36 @@ public:
     virtual std::optional<double> GetNeutralDiffForLists(uint32_t){return {};}
     virtual std::optional<double> GetTouchyDiffForLists(uint32_t){return {};}
 
-    virtual void AutoAdjustRecommendationParamsAndFilter();
+    virtual AutoAdjustmentAndFilteringResult AutoAdjustRecommendationParamsAndFilter(QSharedPointer<RecommendationList>);
     virtual void AdjustRatioForAutomaticParams();
+    virtual bool AdjustParamsToHaveExceptionalLists(QSharedPointer<RecommendationList>, const AutoAdjustmentAndFilteringResult &adjustmentResult);
 
     int ownProfileId = -1;
-    int matchSum = 0;
-    int negativeAverage = 0;
+    uint16_t ratioCutoff = std::numeric_limits<uint16_t>::max();
+    uint32_t matchSum = 0;
+    uint32_t negativeAverage = 0;
     RecInputVectors inputs;
     QSharedPointer<RecommendationList> params;
     //QList<int> matchedAuthors;
     QHash<uint32_t, core::FicWeightPtr> fetchedFics;
-    QHash<int, AuthorResult> allAuthors;
-    int maximumMatches = 0;
-    int prevMaximumMatches = 0;
+    std::unordered_map<int, AuthorResult> allAuthors;
+    uint32_t maximumMatches = 0;
+    uint32_t prevMaximumMatches = 0;
     double averageNegativeToPositiveMatches = 0;
-    int startOfTrashCounting = 200;
+    uint32_t startOfTrashCounting = 200;
     bool doTrashCounting = true;
-    QList<int> filteredAuthors;
+    QSet<int> filteredAuthors;
     Roaring ownFavourites;
     Roaring ownMajorNegatives;
     RecommendationListResult result;
     QHash<uint32_t, QVector<uint32_t>> authorsForFics;
+    QHash<uint16_t, RatioInfo> ratioInfo;
     bool needsDiagnosticData = false;
 
     int votesBase = 1;
 };
 static auto matchesFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params){
-    return author.matches >= params->minimumMatch || author.matches >= params->alwaysPickAt;
+    return static_cast<int>(author.matches) >= params->minimumMatch || static_cast<int>(author.matches) >= params->alwaysPickAt;
 };
 static auto ratioFilter = [](AuthorResult& author, QSharedPointer<RecommendationList> params)
 {
@@ -157,26 +237,28 @@ static auto negativeFilter = [](AuthorResult& author, QSharedPointer<Recommendat
 
 static auto authorAccumulator = [](RecCalculatorImplBase* ptr,AuthorResult & author)
 {
-    ptr->filteredAuthors.push_back(author.id);
+    ptr->filteredAuthors.insert(author.id);
 };
 
 
-//auto ratioAccumulator = [&ratioSum](RecCalculatorImplBase* ,AuthorResult & author){ratioSum+=author.ratio;};
 class RecCalculatorImplDefault: public RecCalculatorImplBase{
 public:
     RecCalculatorImplDefault(RecInputVectors input): RecCalculatorImplBase(input){}
-    virtual FilterListType GetFilterList(){
+    virtual FilterListType GetFilterList() override{
         return {matchesFilter, ratioFilter, negativeFilter};
     }
-    virtual ActionListType GetActionList(){
+    virtual ActionListType GetActionList() override{
         return {authorAccumulator};
     }
-    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc(){
+    virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override{
         return [](AuthorResult&, int, int){return AuthorWeightingResult();};
     }
-    void CalcWeightingParams(){
+    void CalcWeightingParams() override{
         // does nothing
     }
+
+    bool WeightingIsValid() const override;
 };
 
 }
+

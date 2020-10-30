@@ -26,16 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 class FandomParser : public FFNParserBase
 {
 public:
-    FandomParser(QSharedPointer<interfaces::Fanfics> fanfics);
+    FandomParser();
     void ProcessPage(WebPage page);
-    void GetWordCount(core::Section& , int& startfrom, QString text);
-    void GetPublishedDate(core::Section& , int& startfrom, QString text);
-    void GetUpdatedDate(core::Section& , int& startfrom, QString text);
+    void GetWordCount(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);
+    void GetPublishedDate(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);
+    void GetUpdatedDate(core::FanficSectionInFFNFavourites& , int& startfrom, QString text);
     QString GetNext(int& startfrom, QString text);
     QString GetLast(QString pageContent, QString originalUrl);
     QString CreateURL(QString str);
-    void GetTitle(core::Section & section, int& startfrom, QString text) override;
-    virtual void GetTitleAndUrl(core::Section & , int& , QString ) override;
+    void GetTitle(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text) override;
+    virtual void GetTitleAndUrl(core::FanficSectionInFFNFavourites & , int& , QString ) override;
     QStringList diagnostics;
     QString nextUrl;
     QDate minSectionUpdateDate;

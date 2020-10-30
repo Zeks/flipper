@@ -46,10 +46,10 @@ struct DataHolderInfo<rdt_favourites>
     static auto loadFunc (){return [](QSharedPointer<interfaces::Authors> authorInterface){
             auto favourites = authorInterface->LoadFullFavouritesHashset();
             DataHolderInfo<rdt_favourites>::type roaring;
-            for(auto key: favourites.keys())
+            for(auto i = favourites.cbegin(); i != favourites.cend(); i++)
             {
-                for(auto item : favourites[key])
-                    roaring[key].add(item);
+                for(auto item : std::as_const(i.value()))
+                    roaring[i.key()].add(item);
             }
             return roaring;
         };}

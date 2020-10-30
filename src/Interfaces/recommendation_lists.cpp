@@ -48,7 +48,7 @@ void RecommendationLists::ClearCache()
 void RecommendationLists::Reindex()
 {
     ClearIndex();
-    for(auto list: lists)
+    for(const auto& list: std::as_const(lists))
     {
         if(!list)
             continue;
@@ -264,10 +264,11 @@ void RecommendationLists::DeleteLocalList(int listId)
     ficsCacheForLists.remove(list->id);
     //grpcCacheForLists.remove(list->id);
     QList<QPair<int, int>> keysToRemove;
-    for(auto key: grpcCacheForLists.keys())
-    {
-        if(key.first == listId)
-            keysToRemove.push_back(key);
+
+
+    for(auto i = grpcCacheForLists.cbegin(); i != grpcCacheForLists.cend(); i++){
+        if(i.key().first == listId)
+            keysToRemove.push_back(i.key());
     }
     for(auto key : keysToRemove)
         grpcCacheForLists.remove(key);
@@ -318,7 +319,7 @@ core::AuhtorStatsPtr RecommendationLists::CreateAuthorRecommendationStatsForList
 
     result->matchesWithReference = opResult.data;
     if(result->matchesWithReference == 0)
-        result->matchRatio = 999999;
+        result->matchRatio = std::numeric_limits<double>::max();
     else
         result->matchRatio = static_cast<double>(result->totalRecommendations)/static_cast<double>(result->matchesWithReference);
     result->isValid = true;
@@ -409,7 +410,7 @@ bool RecommendationLists::CreateRecommendationList(QString name, QHash<int, int>
 {
     QSharedPointer<core::RecommendationList> dummyParams(new core::RecommendationList);
     dummyParams->name = name;
-    dummyParams->ficCount = fics.keys().size();
+    dummyParams->ficCount = fics.size();
     dummyParams->created = QDateTime::currentDateTime();
     auto listId = GetListIdForName(name);
     dummyParams->id = listId;
@@ -441,7 +442,7 @@ bool RecommendationLists::LoadAuthorsForRecommendationList(int listId)
         return false;
     auto authors = opResult.data;
 
-    for(auto author: authors)
+    for(const auto& author: std::as_const(authors))
     {
         if(!author)
             continue;
@@ -509,29 +510,29 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
     if(forced || lists.empty())
         LoadAvailableRecommendationLists();
     auto list = nameIndex.keys();
-    qSort(list.begin(), list.end());
+    std::sort(list.begin(), list.end());
     return list;
 }
 
 
-void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fic> *fics, int listId)
+void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fanfic> *fics, int listId)
 {
     database::puresql::FetchRecommendationsBreakdown(fics, listId, db);
 }
 
-void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fic> *fics, core::ReclistFilter filter)
+void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fanfic> *fics, core::ReclistFilter filter)
 {
     QHash<int, int> scores;
-    for(auto fic: *fics)
-        scores[fic.id] = 0;
+    for(const auto& fic: std::as_const(*fics))
+        scores[fic.identity.id] = 0;
 
     database::puresql::FetchRecommendationScoreForFics(scores, filter, db);
     for(auto& fic: *fics){
-        fic.recommendationsMainList = scores[fic.id];
+        fic.recommendationsData.recommendationsMainList = scores[fic.identity.id];
     }
 }
 
-void RecommendationLists::LoadPlaceAndRecommendationsData(QVector<core::Fic> *fics, core::ReclistFilter filter)
+void RecommendationLists::LoadPlaceAndRecommendationsData(QVector<core::Fanfic> *fics, core::ReclistFilter filter)
 {
     database::puresql::LoadPlaceAndRecommendationsData(fics, filter, db);
 }

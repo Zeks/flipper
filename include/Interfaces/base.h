@@ -23,8 +23,8 @@ namespace interfaces {
 
 struct WriteStats
 {
-    QList<QSharedPointer<core::Fic>> requiresInsert;
-    QList<QSharedPointer<core::Fic>> requiresUpdate;
+    QList<QSharedPointer<core::Fanfic>> requiresInsert;
+    QList<QSharedPointer<core::Fanfic>> requiresUpdate;
     bool HasData(){return requiresInsert.size() > 0 || requiresUpdate.size() > 0;}
 };
 
@@ -42,7 +42,7 @@ class IDBWrapper;
 
 class IDBWebIDIndex{
   public:
-    virtual ~IDBWebIDIndex();
+    virtual ~IDBWebIDIndex() = default;
     virtual int GetIDFromWebID(int) = 0;
     virtual int GetWebIDFromID(int) = 0;
     virtual int GetIDFromWebID(int, QString website) = 0;
@@ -53,7 +53,7 @@ class IDBWebIDIndex{
 class IDbService
 {
 public:
-    virtual ~IDbService();
+    virtual ~IDbService() = default;
     virtual void DropAllFanficIndexes() = 0;
     virtual void RebuildAllFanficIndexes() = 0;
     virtual void EnsureWebIdsFilled() = 0;

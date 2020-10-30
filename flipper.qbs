@@ -39,13 +39,14 @@ App{
     Depends { name: "cpp" }
     Depends { name: "UniversalModels" }
     Depends { name: "logger" }
+    Depends { name: "Environment" }
     Depends { name: "proto_generation" }
     Depends { name: "grpc_generation" }
     Depends { name: "projecttype" }
 
-    Precompiled{condition:localvariables.usePrecompiledHeader}
+    Precompiled{condition:Environment.usePrecompiledHeader}
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.3"])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.3", "FMT_HEADER_ONLY"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",
@@ -53,18 +54,39 @@ App{
         sourceDirectory + "/libs",
         sourceDirectory + "/third_party/zlib",
         sourceDirectory + "/libs/Logger/include",
+        sourceDirectory + "/third_party/fmt/include",
     ]
+    cpp.systemIncludePaths: [
+        sourceDirectory +"/proto",
+        sourceDirectory + "/third_party",
+        "/home/zeks/grpc/third_party/protobuf/src",
+        Environment.sqliteFolder,
+        sourceDirectory + "/../"]
+
+
     cpp.minimumWindowsVersion: "6.0"
 
     files: [
-        "UI/initialsetupdialog.ui",
-        "src/ui/welcomedialog.cpp",
-        "include/ui/welcomedialog.h",
-        "UI/welcomedialog.ui",
+        "include/core/db_entity.h",
+        "include/core/experimental/fic_relations.h",
+        "include/core/fandom.h",
+        "include/core/fanfic.h",
+        "include/core/fav_list_details.h",
+        "include/core/identity.h",
+        "include/core/slash_data.h",
+        "include/core/url.h",
+        "include/parsers/ffn/desktop_favparser.h",
+        "include/parsers/ffn/favparser_wrapper.h",
+        "include/parsers/ffn/mobile_favparser.h",
+        "src/Interfaces/fandom_lists.cpp",
+        "src/core/fandom.cpp",
+        "src/core/fanfic.cpp",
+        "src/core/fav_list_details.cpp",
+        "src/parsers/ffn/desktop_favparser.cpp",
+        "src/parsers/ffn/favparser_wrapper.cpp",
+        "src/parsers/ffn/mobile_favparser.cpp",
         "include/backups.h",
         "src/backups.cpp",
-        "src/ui/initialsetupdialog.cpp",
-        "include/ui/initialsetupdialog.h",
         "forms.qrc",
         "icons.qrc",
         "include/Interfaces/authors.h",
@@ -85,7 +107,6 @@ App{
         "include/pagetask.h",
         "include/db_fixers.h",
         "include/parsers/ffn/fandomparser.h",
-        "include/parsers/ffn/favparser.h",
         "include/parsers/ffn/ffnparserbase.h",
         "include/parsers/ffn/ficparser.h",
         "include/parsers/ffn/fandomindexparser.h",
@@ -95,20 +116,14 @@ App{
         "include/tasks/author_task_processor.h",
         "include/timeutils.h",
         "include/webpage.h",
-        "src/ui/actionprogress.cpp",
-        "include/ui/actionprogress.h",
-        "UI/actionprogress.ui",
         "src/generic_utils.cpp",
         "src/parsers/ffn/fandomindexparser.cpp",
-        "include/ui/mainwindow.h",
         "include/parse.h",
         "include/querybuilder.h",
         "include/queryinterfaces.h",
         "include/core/section.h",
         "include/service_functions.h",
         "include/storyfilter.h",
-        "include/tagwidget.h",
-        "include/ui/fanficdisplay.h",
         "include/transaction.h",
         "include/url_utils.h",
         "qml_ficmodel.cpp",
@@ -119,8 +134,6 @@ App{
         "src/tasks/fandom_task_processor.cpp",
         "src/tasks/author_task_processor.cpp",
         "src/pageconsumer.cpp",
-        "third_party/sqlite3/sqlite3.c",
-        "third_party/sqlite3/sqlite3.h",
         "src/Interfaces/authors.cpp",
         "src/Interfaces/base.cpp",
         "src/Interfaces/db_interface.cpp",
@@ -137,7 +150,6 @@ App{
         "src/db_fixers.cpp",
         "src/sqlcontext.cpp",
         "src/parsers/ffn/fandomparser.cpp",
-        "src/parsers/ffn/favparser.cpp",
         "src/parsers/ffn/ffnparserbase.cpp",
         "src/parsers/ffn/ficparser.cpp",
         "src/main_flipper.cpp",
@@ -153,17 +165,10 @@ App{
         "src/storyfilter.cpp",
         "src/transaction.cpp",
         "src/url_utils.cpp",
-        "UI/mainwindow.ui",
-        "UI/tagwidget.ui",
-        "UI/fanficdisplay.ui",
-        "src/ui/mainwindow.cpp",
-        "src/tagwidget.cpp",
-        "src/ui/fanficdisplay.cpp",
         "src/page_utils.cpp",
         "include/page_utils.h",
         "src/environment.cpp",
         "include/environment.h",
-        "src/statistics_utils.cpp",
         "include/statistics_utils.h",
         "src/tasks/author_stats_processor.cpp",
         "include/tasks/author_stats_processor.h",
@@ -183,7 +188,53 @@ App{
         "src/in_tag_accessor.cpp",
         "src/rng.cpp",
         "include/rng.h",
+        "include/core/author.h",
+        "src/core/author.cpp",
+        "include/core/recommendation_list.h",
+        "src/core/recommendation_list.cpp",
     ]
+
+
+    Group{
+    name: "UI"
+    files: [
+        "src/ui/fandomlistwidget.cpp",
+        "include/ui/fandomlistwidget.h",
+        "UI/fandomlistwidget.ui",
+        "UI/mainwindow.ui",
+        "include/ui/mainwindow.h",
+        "src/ui/mainwindow.cpp",
+        "UI/tagwidget.ui",
+        "include/ui/tagwidget.h",
+        "src/ui/tagwidget.cpp",
+        "UI/fanficdisplay.ui",
+        "include/ui/fanficdisplay.h",
+        "src/ui/fanficdisplay.cpp",
+        "UI/actionprogress.ui",
+        "src/ui/actionprogress.cpp",
+        "include/ui/actionprogress.h",
+        "UI/initialsetupdialog.ui",
+        "src/ui/initialsetupdialog.cpp",
+        "include/ui/initialsetupdialog.h",
+        "UI/welcomedialog.ui",
+        "src/ui/welcomedialog.cpp",
+        "include/ui/welcomedialog.h",
+    ]
+
+    }
+
+    Group{
+    name: "sqlite"
+    files: [
+        Environment.sqliteFolder + "/sqlite3.c",
+        Environment.sqliteFolder + "/sqlite3.h"
+    ]
+    cpp.cFlags: {
+        var flags = []
+        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        return flags
+    }
+    }
     Group{
     name: "qr"
     files: [
@@ -196,38 +247,30 @@ App{
     ]
     }
     cpp.staticLibraries: {
-        //var libs = ["UniversalModels", "logger", "quazip"]
         var libs = []
         if(qbs.toolchain.contains("msvc"))
-            libs = ["logger"]
+            libs = []
         else{
-            libs = ["logger", "dl", "protobuf"]
+            libs = ["dl", "protobuf"]
         }
-        libs = libs.concat(localvariables.zlib)
-        libs = libs.concat(localvariables.ssl)
-
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(qbs.toolchain.contains("msvc"))
-            libs = libs.concat([localvariables.protobufName,"grpc", "grpc++", "gpr"])
-        else
             libs = libs.concat(["grpc", "grpc++", "gpr"])
+        else
+            libs = ["dl", "protobuf", "grpc", "grpc++", "gpr","cpr", "curl", "crypto", "ssl", "pthread"]
         return libs
     }
 
 
-    cpp.systemIncludePaths: [
-        sourceDirectory +"/proto",
-        sourceDirectory + "/third_party",
-        "/home/zeks/grpc/third_party/protobuf/src",
-        sourceDirectory + "/../"]
+
 
     Group{
         name:"grpc files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        grpc_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
-        grpc_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: project.rootFolder + "/proto"
+        grpc_generation.rootDir: project.rootFolder + "/proto"
+        proto_generation.protobufDependencyDir: project.rootFolder + "../"
+        grpc_generation.protobufDependencyDir: project.rootFolder + "../"
         proto_generation.toolchain : qbs.toolchain
         grpc_generation.toolchain : qbs.toolchain
         files: [
@@ -237,8 +280,8 @@ App{
     }
     Group{
         name:"proto files"
-        proto_generation.rootDir: localvariables.projectPath + "/proto"
-        proto_generation.protobufDependencyDir: localvariables.projectPath + "../"
+        proto_generation.rootDir: project.rootFolder + "/proto"
+        proto_generation.protobufDependencyDir: project.rootFolder + "../"
         proto_generation.toolchain : qbs.toolchain
         files: [
             "proto/search/filter.proto",

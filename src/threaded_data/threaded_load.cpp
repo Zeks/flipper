@@ -96,7 +96,7 @@ auto resultCreator,
 int file,
 auto valueFetcher){
     auto resultHolder = resultCreator();
-    QString fileName = QString("%1_%2.txt").arg(nameBase).arg(QString::number(file));
+    QString fileName = QString("%1_%2.txt").arg(nameBase,QString::number(file));
     QFile data(fileName);
     if (data.open(QFile::ReadOnly))
     {
@@ -145,7 +145,7 @@ auto vectorUnifier = [](auto& dest, auto source){
     dest+=source;
 };
 auto hashUnifier = [](auto& dest, auto source){
-    dest.unite(source);
+    dest.insert(source);
 };
 auto genresFetchFunc = [](auto& container, QDataStream& in){
     int key;

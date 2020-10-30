@@ -18,13 +18,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import qbs 1.0
 import qbs.Process
+import qbs.File
+import qbs.Environment
 import "BaseDefines.qbs" as Application
 
 Project {
     name: "feed_proj"
+    qbsSearchPaths: [sourceDirectory + "/modules", sourceDirectory + "/repo_modules"]
+    property string rootFolder: {
+        var rootFolder = File.canonicalFilePath(sourceDirectory).toString();
+        console.error("Source:" + rootFolder)
+        return rootFolder.toString()
+    }
     references: [
         "feed_server.qbs",
         "core_condition.qbs",
+        "environment_plugs.qbs",
         "libs/Logger/logger.qbs",
     ]
 }

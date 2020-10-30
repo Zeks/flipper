@@ -75,7 +75,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "genericeventfilter.h"
 
 
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/parsers/ffn/fandomparser.h"
 #include "include/parsers/ffn/fandomindexparser.h"
 #include "include/url_utils.h"
@@ -212,7 +212,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tabWidget_2->setStyleSheet("QTabBar::tab:last { background-color: #ffe23f; }");
 
     ui->lblRecentFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
-    ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
+    //ui->lblIgnoredFandomsInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->lblGenreInfo->setStyle(new ImmediateTooltipProxyStyle());
     ui->chkUseReclistMatches->setStyle(new ImmediateTooltipProxyStyle());
 
@@ -247,9 +247,10 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ui->edtResults->setContextMenuPolicy(Qt::CustomContextMenu);
 
     auto fandomList = env->interfaces.fandoms->GetFandomList(true);
+    ui->wdgFandomListPlaceholder->InitFandomList(fandomList);
     ui->cbNormals->setModel(new QStringListModel(fandomList));
     ui->cbCrossovers->setModel(new QStringListModel(fandomList));
-    ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
+    //ui->cbIgnoreFandomSelector->setModel(new QStringListModel(fandomList));
     ui->cbIgnoreFandomSlashFilter->setModel(new QStringListModel(fandomList));
 
     actionProgress = new ActionProgress;
@@ -290,7 +291,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
         lblDBUpdateDate = new QLabel;
         ui->statusBar->addPermanentWidget(lblDBUpdateDate,0);
         QString prototype = "<b><font color=\"%1\">%2</font></b>";
-        lblDBUpdateDate->setText(prototype.arg(diff < 7 ? "darkGreen" : "darkBrown").arg(env->status.lastDBUpdate));
+        lblDBUpdateDate->setText(prototype.arg(diff < 7 ? "darkGreen" : "darkBrown", env->status.lastDBUpdate));
         lblDBUpdateDate->setStyle(new ImmediateTooltipProxyStyle());
         lblDBUpdateInfo->setStyle(new ImmediateTooltipProxyStyle());
 
@@ -312,7 +313,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
     ignoredFandomsSlashFilterModel->setStringList(env->interfaces.fandoms->GetIgnoredFandomsSlashFilter());
     ui->lvTrackedFandoms->setModel(recentFandomsModel);
-    ui->lvIgnoredFandoms->setModel(ignoredFandomsModel);
+    //ui->lvIgnoredFandoms->setModel(ignoredFandomsModel);
     ui->lvExcludedFandomsSlashFilter->setModel(ignoredFandomsSlashFilterModel);
 
 
@@ -342,7 +343,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     ignoreFandomMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromIgnoredList()));
     ignoreFandomSlashFilterMenu.addAction("Remove fandom from list", this, SLOT(OnRemoveFandomFromSlashFilterIgnoredList()));
     ui->lvTrackedFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
-    ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
+    //ui->lvIgnoredFandoms->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->lvExcludedFandomsSlashFilter->setContextMenuPolicy(Qt::CustomContextMenu);
     //ui->edtResults->setOpenExternalLinks(true);
     ui->edtRecsContents->setReadOnly(false);
@@ -358,7 +359,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     //    ui->spRecsFan->setStretchFactor(1, 1);
     ui->spFanIgnFan->setCollapsible(0,0);
     ui->spFanIgnFan->setCollapsible(1,0);
-    ui->spFanIgnFan->setSizes({1000,0});
+    ui->spFanIgnFan->setSizes({100,900});
     ui->spRecsFan->setCollapsible(0,0);
     ui->spRecsFan->setCollapsible(1,0);
     ui->spRecsFan->setSizes({0,1000});
@@ -372,6 +373,9 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
     }
     if(scheduleSlashFilterOn)
         ui->chkEnableSlashFilter->setChecked(true);
+
+    ui->wdgFandomListPlaceholder->env = env;
+    ui->wdgFandomListPlaceholder->InitTree();
 
     return true;
 }
@@ -423,9 +427,8 @@ void MainWindow::InitConnections()
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagReloadRequested, this, &MainWindow::OnTagReloadRequested);
     connect(ui->wdgTagsPlaceholder, &TagWidget::clearLikedAuthors, this, &MainWindow::OnClearLikedAuthorsRequested);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
-    //! todo currently null
-    connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
-    connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
+
+    //connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
     connect(ui->edtRecsContents, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
@@ -448,12 +451,12 @@ void MainWindow::InitUIFromTask(PageTaskPtr task)
     ReinitProgressbar(task->size);
 }
 
-int ConvertFicSnoozeModeToInt (core::Fic::EFicSnoozeMode type){return static_cast<int>(type);}
-void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = static_cast<core::Fic::EFicSnoozeMode>(value);}
+int ConvertFicSnoozeModeToInt (core::Fanfic::EFicSnoozeMode type){return static_cast<int>(type);}
+void AssignFicSnoozeModeFromInt(core::Fanfic* data, int value){data->userData.snoozeMode = static_cast<core::Fanfic::EFicSnoozeMode>(value);}
 
 #define ADD_STRING_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -462,7 +465,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toString(); \
@@ -472,7 +475,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_STRING_NUMBER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data){ \
     QString temp;\
@@ -490,7 +493,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toString(); \
@@ -500,7 +503,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_DATE_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -509,7 +512,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toDateTime(); \
@@ -518,7 +521,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_STRING_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -527,7 +530,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = QString::number(value.toInt()); \
@@ -536,7 +539,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_INTEGER_GETSET(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -545,7 +548,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     data->PARAM = value.toInt(); \
@@ -554,7 +557,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_ENUM_GETSET(GETTER, SETTER, HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(GETTER(data->PARAM)); \
@@ -563,7 +566,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
     } \
     ); \
     HOLDER->AddSetter(QPair<int,int>(ROW,ROLE), \
-    [] (core::Fic* data, QVariant value) \
+    [] (core::Fanfic* data, QVariant value) \
 { \
     if(data) \
     SETTER(data, value.toInt());    \
@@ -572,7 +575,7 @@ void AssignFicSnoozeModeFromInt(core::Fic* data, int value){data->snoozeMode = s
 
 #define ADD_STRINGLIST_GETTER(HOLDER,ROW,ROLE,PARAM)  \
     HOLDER->AddGetter(QPair<int,int>(ROW,ROLE), \
-    [] (const core::Fic* data) \
+    [] (const core::Fanfic* data) \
 { \
     if(data) \
     return QVariant(data->PARAM); \
@@ -599,36 +602,36 @@ void MainWindow::SetupTableAccess()
     ADD_DATE_GETSET(holder, 7, 0, published);
     ADD_DATE_GETSET(holder, 8, 0, updated);
     ADD_STRING_GETSET(holder, 9, 0, urlFFN);
-    ADD_STRING_GETSET(holder, 10, 0, tags);
+    ADD_STRING_GETSET(holder, 10, 0, userData.tags);
     ADD_STRING_NUMBER_GETSET(holder, 11, 0, wordCount);
     ADD_STRING_INTEGER_GETSET(holder, 12, 0, favourites);
     ADD_STRING_INTEGER_GETSET(holder, 13, 0, reviews);
     ADD_STRING_INTEGER_GETSET(holder, 14, 0, chapters);
     ADD_INTEGER_GETSET(holder, 15, 0, complete);
-    ADD_INTEGER_GETSET(holder, 16, 0, atChapter);
-    ADD_INTEGER_GETSET(holder, 17, 0, id);
-    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsMainList);
-    ADD_STRING_GETSET(holder, 19, 0, realGenreString);
+    ADD_INTEGER_GETSET(holder, 16, 0, userData.atChapter);
+    ADD_INTEGER_GETSET(holder, 17, 0, identity.id);
+    ADD_INTEGER_GETSET(holder, 18, 0, recommendationsData.recommendationsMainList);
+    ADD_STRING_GETSET(holder, 19, 0, statistics.realGenreString);
     ADD_INTEGER_GETSET(holder, 20, 0, author_id);
-    ADD_INTEGER_GETSET(holder, 21, 0, minSlashPass);
-    ADD_STRINGLIST_GETTER(holder, 22, 0, voteBreakdown);
-    ADD_STRINGLIST_GETTER(holder, 23, 0, voteBreakdownCounts);
-    ADD_INTEGER_GETSET(holder, 24, 0, likedAuthor);
-    ADD_INTEGER_GETSET(holder, 25, 0, purged);
+    ADD_INTEGER_GETSET(holder, 21, 0, statistics.minSlashPass);
+    ADD_STRINGLIST_GETTER(holder, 22, 0, recommendationsData.voteBreakdown);
+    ADD_STRINGLIST_GETTER(holder, 23, 0, recommendationsData.voteBreakdownCounts);
+    ADD_INTEGER_GETSET(holder, 24, 0, userData.likedAuthor);
+    ADD_INTEGER_GETSET(holder, 25, 0, recommendationsData.purged);
     ADD_INTEGER_GETSET(holder, 26, 0, score);
-    ADD_INTEGER_GETSET(holder, 27, 0, snoozeExpired);
-    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, snoozeMode);
-    ADD_INTEGER_GETSET(holder, 29, 0, chapterTillSnoozed);
-    ADD_INTEGER_GETSET(holder, 30, 0, chapterSnoozed);
+    ADD_INTEGER_GETSET(holder, 27, 0, userData.snoozeExpired);
+    ADD_ENUM_GETSET(ConvertFicSnoozeModeToInt, AssignFicSnoozeModeFromInt, holder, 28, 0, userData.snoozeMode);
+    ADD_INTEGER_GETSET(holder, 29, 0, userData.chapterTillSnoozed);
+    ADD_INTEGER_GETSET(holder, 30, 0, userData.chapterSnoozed);
     ADD_STRING_GETSET(holder, 31, 0, notes);
     ADD_STRINGLIST_GETTER(holder, 32, 0, quotes);
-    ADD_STRINGLIST_GETTER(holder, 33, 0, selected);
-    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsSecondList);
-    ADD_INTEGER_GETSET(holder, 35, 0, placeInMainList);
-    ADD_INTEGER_GETSET(holder, 36, 0, placeInSecondList);
-    ADD_INTEGER_GETSET(holder, 37, 0, placeOnFirstPedestal);
-    ADD_INTEGER_GETSET(holder, 38, 0, placeOnSecondPedestal);
-    ADD_INTEGER_GETSET(holder, 39, 0, ficIsSnoozed);
+    ADD_STRINGLIST_GETTER(holder, 33, 0, uiData.selected);
+    ADD_INTEGER_GETSET(holder, 34, 0, recommendationsData.recommendationsSecondList);
+    ADD_INTEGER_GETSET(holder, 35, 0, recommendationsData.placeInMainList);
+    ADD_INTEGER_GETSET(holder, 36, 0, recommendationsData.placeInSecondList);
+    ADD_INTEGER_GETSET(holder, 37, 0, recommendationsData.placeOnFirstPedestal);
+    ADD_INTEGER_GETSET(holder, 38, 0, recommendationsData.placeOnSecondPedestal);
+    ADD_INTEGER_GETSET(holder, 39, 0, userData.ficIsSnoozed);
 
     holder->AddFlagsFunctor(
                 [](const QModelIndex& index)
@@ -645,7 +648,7 @@ void MainWindow::SetupTableAccess()
 
 void MainWindow::SetupFanficTable()
 {
-    holder = new TableDataListHolder<QVector, core::Fic>();
+    holder = new TableDataListHolder<QVector, core::Fanfic>();
     typetableModel = new FicModel();
 
     SetupTableAccess();
@@ -760,7 +763,7 @@ void MainWindow::OnShuffleDisplayedData()
 
     int selectedFicId = -1;
     if(selectedIndex >= 0)
-        selectedFicId = env->fanfics[selectedIndex].id;
+        selectedFicId = env->fanfics[selectedIndex].GetIdInDatabase();
 
     auto rng = std::default_random_engine {};
     std::shuffle(std::begin(env->fanfics), std::end(env->fanfics), rng);
@@ -768,9 +771,9 @@ void MainWindow::OnShuffleDisplayedData()
     if(selectedIndex >= 0)
     {
         int index = 0;
-        for(auto fic : env->fanfics)
+        for(const auto& fic : std::as_const(env->fanfics))
         {
-            if(fic.id == selectedFicId)
+            if(fic.GetIdInDatabase() == selectedFicId)
             {
                 selectedIndex = index;
                 break;
@@ -865,8 +868,7 @@ void MainWindow::SaveCurrentQuery()
     frame.havePagesAfter = windowObject->property("havePagesAfter").toBool();
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     frame.authorFilterActive = childObject->property("authorFilterActive").toBool();
-
-    //frame.selectedIndex = windowObject->property("selectedIndex").toInt();
+    frame.savedFandomLists = ui->wdgFandomListPlaceholder->CreateFandomListToken();
 
     SetNextEnabled(false);
 
@@ -952,7 +954,7 @@ void MainWindow::ProcessTagsIntoGui()
     auto tagList = env->interfaces.tags->ReadUserTags();
     QList<QPair<QString, QString>> tagPairs;
 
-    for(auto tag : tagList)
+    for(const auto& tag : tagList)
         tagPairs.push_back({ "0", tag });
     ui->wdgTagsPlaceholder->InitFromTags(-1, tagPairs);
 
@@ -1018,16 +1020,16 @@ void MainWindow::OnDoFormattedListByFandoms()
     for(int i = 0; i < typetableModel->rowCount(); i ++)
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
     QSet<QPair<QString, int>> already;
-    QMap<int, QList<core::Fic*>> byFandoms;
-    for(core::Fic& fic : env->fanfics)
+    QMap<int, QList<core::Fanfic*>> byFandoms;
+    for(core::Fanfic& fic : env->fanfics)
     {
         auto* ficPtr = &fic;
 
         auto fandoms = ficPtr->fandomIds;
         if(fandoms.size() == 0)
         {
-            auto fandom = ficPtr->fandom.trimmed();
-            qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">";
+            //auto fandom = ficPtr->fandom.trimmed();
+            qDebug() << "no fandoms written for: " << "https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">";
         }
         for(auto fandom: fandoms)
         {
@@ -1038,44 +1040,46 @@ void MainWindow::OnDoFormattedListByFandoms()
     fandomnNames = env->interfaces.fandoms->GetFandomNamesForIDs(byFandoms.keys());
 
     result += "<ul>";
-    for(auto fandomKey : byFandoms.keys())
+
+    for(auto i = byFandoms.begin(); i != byFandoms.end(); i++)
     {
-        QString name = fandomnNames[fandomKey];
+        QString name = fandomnNames[i.key()];
         if(name.trimmed().isEmpty())
             continue;
         result+= "<li><a href=\"#" + name.toLower().replace(" ","_") +"\">" + name + "</a></li>";
     }
     An<PageManager> pager;
     pager->SetDatabase(QSqlDatabase::database());
-    for(auto fandomKey : byFandoms.keys())
+
+    for(auto i = byFandoms.begin(); i != byFandoms.end(); i++)
     {
-        QString name = fandomnNames[fandomKey];
+        QString name = fandomnNames[i.key()];
         if(name.trimmed().isEmpty())
             continue;
 
         result+="<h4 id=\""+ name.toLower().replace(" ","_") +  "\">" + name + "</h4>";
 
-        for(auto fic : byFandoms[fandomKey])
+        for(auto fic : std::as_const(i.value()))
         {
             auto* ficPtr = fic;
-            QPair<QString, int> key = {name, fic->id};
+            QPair<QString, int> key = {name, fic->GetIdInDatabase()};
 
             if(already.contains(key))
                 continue;
             already.insert(key);
 
-            auto genreString = ficPtr->genreString;
+            //auto genreString = ficPtr->genreString;
             bool validGenre = true;
             if(validGenre)
             {
-                result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+                result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
                 result+=ficPtr->genreString + "<br><br>";
                 QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
                 if(ficPtr->complete)
-                    result+=status.arg("green").arg("Complete<br>");
+                    result+=status.arg("green","Complete<br>");
                 else
-                    result+=status.arg("red").arg("Active<br>");
+                    result+=status.arg("red","Active<br>");
                 result+=ficPtr->summary + "<br><br>";
             }
 
@@ -1092,24 +1096,24 @@ void MainWindow::OnDoFormattedList()
     QList<int> ficIds;
     for(int i = 0; i < typetableModel->rowCount(); i ++)
         ficIds.push_back(typetableModel->index(i, 17).data().toInt());
-    QSet<QPair<QString, int>> already;
-    QMap<QString, QList<int>> byFandoms;
-    for(core::Fic& fic : env->fanfics)
+    //QSet<QPair<QString, int>> already;
+    //QMap<QString, QList<int>> byFandoms;
+    for(core::Fanfic& fic : env->fanfics)
     {
         //auto ficPtr = env->interfaces.fanfics->GetFicById(id);
         auto* ficPtr = &fic;
-        auto genreString = ficPtr->genreString;
+        //auto genreString = ficPtr->genreString;
         bool validGenre = true;
         if(validGenre)
         {
-            result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->webId) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
+            result+="<a href=https://www.fanfiction.net/s/" + QString::number(ficPtr->identity.web.GetPrimaryId()) + ">" + ficPtr->title + "</a> by " + ficPtr->author->name + "<br>";
             result+=ficPtr->genreString + "<br><br>";
             QString status = "<b>Status:</b> <font color=\"%1\">%2</font>";
 
             if(ficPtr->complete)
-                result+=status.arg("green").arg("Complete<br>");
+                result+=status.arg("green","Complete<br>");
             else
-                result+=status.arg("red").arg("Active<br>");
+                result+=status.arg("red","Active<br>");
             result+=ficPtr->summary + "<br><br>";
         }
     }
@@ -1206,10 +1210,12 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
     QStringList list = data.split("&", QString::SkipEmptyParts);
     if(!list.size())
         return;
-    if(ui->cbIgnoreFandomSelector->currentText().trimmed() != list.at(0).trimmed())
-        ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
+
+    if(ui->wdgFandomListPlaceholder->GetCurrentlySelectedFandom().trimmed() != list.at(0).trimmed())
+        ui->wdgFandomListPlaceholder->SetFandomToCombobox(list.at(0).trimmed());
     else if(list.size() > 1)
-        ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
+        ui->wdgFandomListPlaceholder->SetFandomToCombobox(list.at(1).trimmed());
+
 }
 
 void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
@@ -1263,7 +1269,7 @@ void MainWindow::OnGetUrlsForTags(bool idMode)
     QString result;
     if(ui->wdgTagsPlaceholder->DbIdsRequested())
     {
-        for(auto fic : fics)
+        for(auto fic : std::as_const(fics))
             result += QString::number(fic) + ",";
     }
     else
@@ -1656,7 +1662,7 @@ void MainWindow::OnSnoozeTypeChanged(QVariant row, QVariant type, QVariant chapt
     int rownum = row.toInt();
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
     auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
-    core::SnoozeTaskInfo data;
+    core::FanficSnoozeStatus data;
     data.ficId = id;
     if(type.toInt() == 0)
     {
@@ -1694,7 +1700,7 @@ void MainWindow::OnSnoozeAdded(QVariant row)
     auto id = typetableModel->data(typetableModel->index(rownum, 17), 0).toInt();
 
     auto currentChapter = typetableModel->data(typetableModel->index(rownum, 14), 0).toInt();
-    core::SnoozeTaskInfo info;
+    core::FanficSnoozeStatus info;
     info.ficId = id;
     info.untilFinished = 0;
     info.snoozedTillChapter = currentChapter+1;
@@ -2049,7 +2055,7 @@ void MainWindow::FillRecommenderListView(bool forceRefresh)
     std::sort(std::begin(allStats),std::end(allStats), [](auto s1, auto s2){
         return s1->matchRatio < s2->matchRatio;
     });
-    for(auto stat : allStats)
+    for(const auto& stat : std::as_const(allStats))
         result.push_back(stat->authorName);
     recommendersModel->setStringList(result);
 }
@@ -2081,13 +2087,14 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
     params->userFFNId = env->interfaces.recs->GetUserProfile();
     //params->majorNegativeVotes = env->GetFicsForNegativeTags();
 
-    QString storedList = ui->cbRecGroup->currentText();
+    //QString storedList = ui->cbRecGroup->currentText();
     auto storedLists = env->interfaces.recs->GetAllRecommendationListNames(true);
     QVector<int> sourceFics;
     sourceFics.push_back(id);
     auto ids = env->interfaces.fandoms->GetIgnoredFandomsIDs();
-    for(auto fandom: ids.keys())
-        params->ignoredFandoms.insert(fandom);
+
+    for(auto i = ids.begin(); i != ids.end(); i++)
+        params->ignoredFandoms.insert(i.key());
 
     //params->Log();
     auto result = env->BuildRecommendations(params, sourceFics);
@@ -2125,7 +2132,7 @@ void MainWindow::OpenRecommendationList(QString listName)
     }
 }
 
-int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool clearAuthors)
+int MainWindow::BuildRecommendations(QSharedPointer<core::RecommendationList> params, bool)
 {
     TaskProgressGuard guard(this);
     int result = -1;
@@ -2266,7 +2273,6 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomID();
     filter.secondFandom = ui->chkCrossovers->isChecked() ? GetCrossoverFandomID() : -1;
-    filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
 
     auto fixGenre = [](QStringList& genres) -> void{
         for(auto& genre: genres)
@@ -2301,7 +2307,8 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
         filter.useThisAuthor = ui->leAuthorID->text().toInt();
     if(ui->cbIDMode->currentIndex() == 2 && !ui->leAuthorID->text().isEmpty() && ui->chkIdSearch->isChecked())
     {
-        for(auto id : ui->leAuthorID->text().split(",", QString::SkipEmptyParts))
+        const auto list = ui->leAuthorID->text().split(",", Qt::SkipEmptyParts);
+        for(const auto& id : list)
             filter.usedRecommenders.push_back(id.toInt());
     }
 
@@ -2360,6 +2367,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.mode = mode;
     filter.descendingDirection = ui->cbSortDirection->currentIndex() == 0;
     filter.displaySnoozedFics = ui->chkDisplaySnoozed->isChecked();
+    filter.fandomStates = ui->wdgFandomListPlaceholder->GetStateForSearches();
 
     QObject* windowObject= qwFics->rootObject();
     windowObject->setProperty("displaySnoozed", ui->chkDisplaySnoozed->isChecked());
@@ -2433,11 +2441,6 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
         ui->cbCrossovers->setCurrentText(env->interfaces.fandoms->GetNameForID(filter.secondFandom));
     else
         ui->cbCrossovers->setCurrentText("");
-
-    if(filter.otherFandomsMode)
-        ui->chkOtherFandoms->setChecked(true);
-    else
-        ui->chkOtherFandoms->setChecked(false);
 
     // restoring genre exclusion
     {
@@ -2533,7 +2536,7 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     {
         ui->cbIDMode->setCurrentIndex(2);
         QStringList temp;
-        for(auto reccer : filter.usedRecommenders)
+        for(const auto& reccer : std::as_const(filter.usedRecommenders))
         {
             temp.push_back(QString::number(reccer));
         }
@@ -2776,13 +2779,6 @@ void MainWindow::OnRemoveFandomFromRecentList()
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
 }
 
-void MainWindow::OnRemoveFandomFromIgnoredList()
-{
-    auto fandom = ui->lvIgnoredFandoms->currentIndex().data(0).toString();
-    env->interfaces.fandoms->RemoveFandomFromIgnoredList(fandom);
-    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
-}
-
 void MainWindow::OnRemoveFandomFromSlashFilterIgnoredList()
 {
     auto fandom = ui->lvExcludedFandomsSlashFilter->currentIndex().data(0).toString();
@@ -2793,11 +2789,6 @@ void MainWindow::OnRemoveFandomFromSlashFilterIgnoredList()
 void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
     fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
-}
-
-void MainWindow::OnIgnoredFandomsContextMenu(const QPoint &pos)
-{
-    ignoreFandomMenu.popup(ui->lvIgnoredFandoms->mapToGlobal(pos));
 }
 
 void MainWindow::OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos)
@@ -2856,12 +2847,6 @@ void MainWindow::OnFindSimilarClicked(QVariant url)
     ui->leContainsWords->setText("");
     ui->leNotContainsWords->setText("");
     CreateSimilarListForGivenFic(url.toInt());
-}
-
-void MainWindow::on_pbIgnoreFandom_clicked()
-{
-    env->interfaces.fandoms->IgnoreFandom(ui->cbIgnoreFandomSelector->currentText(), ui->chkIgnoreIncludesCrossovers->isChecked());
-    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
 }
 
 void MainWindow::OnUpdatedProgressValue(int value)
@@ -2968,8 +2953,9 @@ QSharedPointer<core::RecommendationList> MainWindow::CreateReclistParamsFromUI(b
         params->assignLikedToSources = true;
 
     auto ids = env->interfaces.fandoms->GetIgnoredFandomsIDs();
-    for(auto fandom: ids.keys())
-        params->ignoredFandoms.insert(fandom);
+
+    for(auto i = ids.begin(); i != ids.end(); i++)
+        params->ignoredFandoms.insert(i.key());
     if(ui->chkIgnoreMarkedDeadFics->isChecked())
         params->ignoredDeadFics = env->GetIgnoredDeadFics();
     if(ui->chkUseDislikes->isChecked())
@@ -3257,7 +3243,7 @@ void MainWindow::ResetFilterUItoDefaults(bool resetTagged)
     ui->chkNoGenre->setChecked(true);
     if(resetTagged)
         ui->chkIgnoreTags->setChecked(false);
-    ui->chkOtherFandoms->setChecked(false);
+    //ui->chkOtherFandoms->setChecked(false);
     ui->chkGenrePlus->setChecked(false);
     ui->chkGenreMinus->setChecked(false);
     ui->chkWordsPlus->setChecked(false);
@@ -3366,7 +3352,7 @@ void MainWindow::LoadFFNProfileIntoTextBrowser(QTextBrowser*edit, QLineEdit* leU
 
     edit->setFont(font);
 
-    for(auto fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         edit->insertHtml("https://www.fanfiction.net/s/" + fic + "<br>");
     }
@@ -3382,7 +3368,7 @@ QVector<int> MainWindow::PickFicIDsFromString(QString str)
     QVector<int> sourceFics;
     QStringList lines = str.split("\n");
     QRegularExpression rx("https://www.fanfiction.net/s/(\\d+)");
-    for(auto line : lines)
+    for(const auto& line : lines)
     {
         if(!line.startsWith("http"))
             continue;
@@ -3435,10 +3421,10 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     std::sort(std::begin(sizes), std::end(sizes), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
         return m1.value > m2.value;
     });
-    for(auto size : sizes)
+    for(const auto& size : std::as_const(sizes))
     {
         QString tmp = sizeTemplate;
-        tmp=tmp.arg(size.name).arg(QString::number(size.value*100));
+        tmp=tmp.arg(size.name, QString::number(size.value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
@@ -3454,17 +3440,18 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     std::sort(std::begin(moodsVec), std::end(moodsVec), [](const SortedBit<double>& m1,const SortedBit<double>& m2){
         return m1.value > m2.value;
     });
-    for(auto mood : moodsVec)
+    for(const auto& mood : std::as_const(moodsVec))
     {
         QString tmp = moodTemplate;
-        tmp=tmp.arg(mood.name.rightJustified(8)).arg(QString::number(mood.value*100));
+        tmp=tmp.arg(mood.name.rightJustified(8),QString::number(mood.value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
 
     QVector<SortedBit<double>> genres;
-    for(auto genreKey : stats.genreFactors.keys())
-        genres.push_back({stats.genreFactors[genreKey],genreKey});
+
+    for(auto i = stats.genreFactors.begin(); i != stats.genreFactors.end(); i++)
+        genres.push_back({i.value(),i.key()});
     std::sort(std::begin(genres), std::end(genres), [](const SortedBit<double>& g1,const SortedBit<double>& g2){
         return g1.value > g2.value;
     });
@@ -3476,7 +3463,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     for(int i = 0; i < 10; i++)
     {
         QString tmp = genreTemplate;
-        tmp=tmp.arg(genres[i].name).arg(QString::number(genres[i].value*100));
+        tmp=tmp.arg(genres[i].name,QString::number(genres[i].value*100));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults->insertHtml("<br>");
@@ -3486,11 +3473,11 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
     //ui->edtAnalysisResults->insertHtml(QString("Fandom diversity: <font color=blue>%1</font><br>").arg(QString::number(stats.fandomsDiversity)));
     ui->edtAnalysisResults->insertHtml("Fandoms:<br>");
     QVector<SortedBit<int>> fandoms;
-    for(auto id : stats.fandomsConverted.keys())
+
+    for(auto i = stats.fandomsConverted.begin(); i != stats.fandomsConverted.end(); i++)
     {
-        QString name = env->interfaces.fandoms->GetNameForID(id);
-        int count = stats.fandomsConverted[id];
-        fandoms.push_back({count, name});
+        QString name = env->interfaces.fandoms->GetNameForID(i.key());
+        fandoms.push_back({i.value(), name});
     }
     std::sort(std::begin(fandoms), std::end(fandoms), [](const SortedBit<int>& g1,const SortedBit<int>& g2){
         return g1.value > g2.value;
@@ -3501,7 +3488,7 @@ void MainWindow::AnalyzeIdList(QVector<int> ficIDs)
         QString tmp = fandomTemplate;
         if(i >= fandoms.size())
             break;
-        tmp=tmp.arg(fandoms[i].name).arg(QString::number(fandoms[i].value));
+        tmp=tmp.arg(fandoms[i].name, QString::number(fandoms[i].value));
         ui->edtAnalysisResults->insertHtml(tmp + "<br>");
     }
     ui->edtAnalysisResults ->moveCursor (QTextCursor::Start) ;
@@ -3616,11 +3603,11 @@ void MainWindow::on_chkOtherFandoms_toggled(bool checked)
         ui->chkIgnoreFandoms->setChecked(false);
 }
 
-void MainWindow::on_chkIgnoreFandoms_toggled(bool checked)
-{
-    if(checked)
-        ui->chkOtherFandoms->setChecked(false);
-}
+//void MainWindow::on_chkIgnoreFandoms_toggled(bool checked)
+//{
+//    if(checked)
+//        ui->chkOtherFandoms->setChecked(false);
+//}
 
 void MainWindow::on_pbDeleteRecList_clicked()
 {
@@ -3709,7 +3696,7 @@ void MainWindow::on_pbProfileCompare_clicked()
     // then query data for fics I have no information on
 
 
-    for(auto fic: result)
+    for(const auto& fic: std::as_const(result))
     {
         //        QString url = url_utils::GetStoryUrlFromWebId(fic->ffn_id, "ffn");
         //        QString toInsert = "<a href=\"" + url + "\"> %1 </a>";
@@ -3856,6 +3843,7 @@ void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
 {
     holder->SetData(env->fanfics);
     ProcessStoryFilterIntoGUI(frame.filter);
+    ui->wdgFandomListPlaceholder->RestoreFandomListToken(frame.savedFandomLists, FandomListWidget::frm_token_state);
 
     int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : env->filter.recordLimit;
     QObject* windowObject= qwFics->rootObject();
@@ -4185,7 +4173,7 @@ void MainWindow::OnTagFromClipboard()
 
     auto ficIDs = env->GetDBIDsForFics(result.sources);
 
-    for(auto tag : tags){
+    for(const auto& tag : tags){
         for(auto fic : ficIDs){
             env->interfaces.tags->SetTagForFic(fic, tag);
         }

@@ -8,12 +8,17 @@
 #include <QSqlError>
 #include <QSharedPointer>
 #include "core/section.h"
+#include "core/fandom.h"
+#include "core/fandom_list.h"
 #include "core/fic_genre_data.h"
+#include "core/recommendation_list.h"
+#include "core/experimental/fic_relations.h"
 #include "include/storyfilter.h"
 #include "include/reclist_author_result.h"
 #include "regex_utils.h"
 #include "transaction.h"
 #include "sqlcontext.h"
+
 
 class BasePageTask;
 class PageTask;
@@ -25,15 +30,20 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 typedef QSharedPointer<PageSubTask> SubTaskPtr;
 typedef QSharedPointer<PageFailure> PageFailurePtr;
 typedef QSharedPointer<PageTaskAction> PageTaskActionPtr;
-typedef QList<PageTaskPtr> TaskList;
+typedef QVector<PageTaskPtr> TaskList;
 typedef QList<SubTaskPtr> SubTaskList;
 typedef QList<PageFailurePtr> SubTaskErrors;
 typedef QList<PageTaskActionPtr> PageTaskActions;
 namespace database {
 namespace puresql{
-
+static constexpr int genreArraySize = 22;
 //bool ExecAndCheck(QSqlQuery& q);
 bool CheckExecution(QSqlQuery& q);
+
+struct DBVerificationResult{
+  bool success = true;
+  QStringList data;
+};
 
 enum IDType{
     idt_db = 0,
@@ -104,6 +114,8 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats,  QS
 
 DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
+DiagnosticSQLResult<bool>  ProcessIgnoresIntoFandomLists(QSqlDatabase db);
+
 DiagnosticSQLResult<QStringList>  GetIgnoredFandoms(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, bool>> GetIgnoredFandomIDs(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>, QSqlDatabase db);
@@ -127,6 +139,23 @@ DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase 
 DiagnosticSQLResult<QStringList> GetFandomNamesForFicId(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDatabase);
 
+
+DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomLists(QSqlDatabase);
+DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFandomStatesInUserList(int list_id, QSqlDatabase);
+DiagnosticSQLResult<bool> AddFandomToUserList(uint32_t list_id, uint32_t fandom_id,  QString fandom_name, QSqlDatabase);
+DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase);
+DiagnosticSQLResult<int> AddNewFandomList(QString name, QSqlDatabase);
+DiagnosticSQLResult<bool> RemoveFandomList(uint32_t list_id, QSqlDatabase);
+
+DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList&, QSqlDatabase);
+DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List &, QSqlDatabase);
+DiagnosticSQLResult<bool> FlipListValues(uint32_t list_id, QSqlDatabase);
+
+
+
+
+
+
 DiagnosticSQLResult<int>  GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
 DiagnosticSQLResult<core::FicPtr> GetFicByWebId(QString website, int webId, QSqlDatabase db);
@@ -134,9 +163,9 @@ DiagnosticSQLResult<core::FicPtr> GetFicById(int ficId, QSqlDatabase db);
 
 
 
-DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
-DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
-DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fic> section, QSqlDatabase db);
+DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert);
+DiagnosticSQLResult<bool> InsertIntoDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db);
+DiagnosticSQLResult<bool>  UpdateInDB(QSharedPointer<core::Fanfic> section, QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteRecommendation(core::AuthorPtr author, int fic_id, QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> result,  QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  QSqlDatabase db);
@@ -211,10 +240,10 @@ DiagnosticSQLResult<QVector<core::FicWeightPtr>>  GetAllFicsWithEnoughFavesForWe
 DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFandomStatistics(QList<int> authors, QSqlDatabase db);
 
 DiagnosticSQLResult<QSet<int>>  GetSingularFicsInLargeButSlashyLists(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetListGenreData(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, std::array<double, genreArraySize>>> GetListGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<uint32_t, genre_stats::ListMoodData>> GetMoodDataForLists(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double>>  GetFicGenreData(QString genre, QString cutoff, QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, std::array<double, 22>>> GetFullFicGenreData(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, std::array<double, genreArraySize>>> GetFullFicGenreData(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, double>> GetDoubleValueHashForFics(QString fieldName, QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, QString>>GetGenreForFics(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, int>> GetScoresForFics(QSqlDatabase db);
@@ -237,7 +266,7 @@ DiagnosticSQLResult<bool> WriteFicRecommenderRelationsForRecList(int listId,
                                                             QHash<uint32_t,QVector<uint32_t>>,
                                                             QSqlDatabase db);
 DiagnosticSQLResult<bool> WriteAuthorStatsForRecList(int listId,
-                                                            QVector<core::AuthorResult>,
+                                                            const QVector<core::AuthorResult> &,
                                                             QSqlDatabase db);
 
 
@@ -256,7 +285,7 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 
 
-DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(core::ReclistFilter filter,QSqlDatabase db);
+DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(const core::ReclistFilter &filter, QSqlDatabase db);
 
 
 
@@ -291,12 +320,12 @@ DiagnosticSQLResult<bool> RemoveTagsFromEveryFic(QStringList tags, QSqlDatabase 
 
 
 // assumes that ficsForSelection are filled
-DiagnosticSQLResult<QHash<int, core::SnoozeInfo>> GetSnoozeInfo(QSqlDatabase db);
-DiagnosticSQLResult<QHash<int, core::SnoozeTaskInfo>> GetUserSnoozeInfo(bool fetchExpired = true, bool limitedSelection = false, QSqlDatabase db = {});
+DiagnosticSQLResult<QHash<int, core::FanficCompletionStatus>> GetSnoozeInfo(QSqlDatabase db);
+DiagnosticSQLResult<QHash<int, core::FanficSnoozeStatus>> GetUserSnoozeInfo(bool fetchExpired = true, bool limitedSelection = false, QSqlDatabase db = {});
 
 
 DiagnosticSQLResult<bool> WriteExpiredSnoozes(QSet<int> ,QSqlDatabase db);
-DiagnosticSQLResult<bool> SnoozeFic(core::SnoozeTaskInfo,QSqlDatabase db);
+DiagnosticSQLResult<bool> SnoozeFic(const core::FanficSnoozeStatus &, QSqlDatabase db);
 DiagnosticSQLResult<bool> RemoveSnooze(int,QSqlDatabase db);
 
 DiagnosticSQLResult<bool> AddNoteToFic(int, QString, QSqlDatabase db);
@@ -310,19 +339,19 @@ DiagnosticSQLResult<QHash<int, int>> GetReadingChaptersForFics(bool limitedSelec
 
 
 DiagnosticSQLResult<QVector<int>> GetAllFicsThatDontHaveDBID( QSqlDatabase db);
-DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::IdPack>, QSqlDatabase db);
-DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FillDBIDsForFics(QVector<core::Identity>, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchTagsForFics(QVector<core::Fanfic> * fics, QSqlDatabase db);
 
-DiagnosticSQLResult<bool> FetchSnoozesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
-DiagnosticSQLResult<bool> FetchReadingChaptersForFics(QVector<core::Fic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchSnoozesForFics(QVector<core::Fanfic> * fics, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchReadingChaptersForFics(QVector<core::Fanfic> * fics, QSqlDatabase db);
 //DiagnosticSQLResult<bool> FetchNotesForFics(QVector<core::Fic> * fics, QSqlDatabase db);
 
 
 
-DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fic> * fics, int listId, QSqlDatabase db);
-DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int> &scores, core::ReclistFilter, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchRecommendationsBreakdown(QVector<core::Fanfic> * fics, int listId, QSqlDatabase db);
+DiagnosticSQLResult<bool> FetchRecommendationScoreForFics(QHash<int, int> &scores, const core::ReclistFilter&, QSqlDatabase db);
 
-DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fic> * fics, core::ReclistFilter, QSqlDatabase db);
+DiagnosticSQLResult<bool> LoadPlaceAndRecommendationsData(QVector<core::Fanfic> * fics, const core::ReclistFilter &, QSqlDatabase db);
 
 DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecList(int id, QSqlDatabase db);
 
@@ -331,7 +360,7 @@ DiagnosticSQLResult<QSharedPointer<core::RecommendationList>> FetchParamsForRecL
 
 DiagnosticSQLResult<QStringList> GetLinkedPagesForList(int listId, QString website, QSqlDatabase db);
 DiagnosticSQLResult<bool> SetFicsAsListOrigin(QVector<int> ficIds, int listId, QSqlDatabase db);
-DiagnosticSQLResult<bool>  FillRecommendationListWithData(int listId, QHash<int, int>, QSqlDatabase db);
+DiagnosticSQLResult<bool>  FillRecommendationListWithData(int listId, const QHash<int, int> &, QSqlDatabase db);
 
 
 
@@ -398,7 +427,7 @@ DiagnosticSQLResult<PageTaskActions> GetActionsForSubTask(int id, QSqlDatabase d
 DiagnosticSQLResult<int> CreateTaskInDB(PageTaskPtr, QSqlDatabase);
 DiagnosticSQLResult<bool> CreateSubTaskInDB(SubTaskPtr, QSqlDatabase);
 DiagnosticSQLResult<bool> CreateActionInDB(PageTaskActionPtr, QSqlDatabase);
-DiagnosticSQLResult<bool> CreateErrorsInDB(SubTaskErrors, QSqlDatabase);
+DiagnosticSQLResult<bool> CreateErrorsInDB(const SubTaskErrors &, QSqlDatabase);
 
 DiagnosticSQLResult<bool> UpdateTaskInDB(PageTaskPtr, QSqlDatabase);
 DiagnosticSQLResult<bool> UpdateSubTaskInDB(SubTaskPtr, QSqlDatabase);
@@ -418,11 +447,10 @@ DiagnosticSQLResult<bool> PassTagSetToAnotherDatabase(QSqlDatabase dbSource, QSq
 DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
 DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
 DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassFandomListSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassFandomListDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
 
-struct DBVerificationResult{
-  bool success = true;
-  QStringList data;
-};
+
 DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase db);
 
 namespace Internal{

@@ -27,7 +27,7 @@ namespace interfaces {
 
 
 
-Authors::~Authors(){}
+
 void Authors::Clear()
 {
     authors.clear();
@@ -56,7 +56,7 @@ void Authors::ClearCache()
     cachedAuthorToTagStats.clear();
 }
 
-void Authors::AddPreloadedAuthor(core::AuthorPtr author)
+void Authors::AddPreloadedAuthor(const core::AuthorPtr& author)
 {
     if(!author)
         return;
@@ -67,10 +67,11 @@ void Authors::AddPreloadedAuthor(core::AuthorPtr author)
 
 void Authors::IndexAuthors()
 {
-    for(auto author : authors)
+    for(const auto& author : qAsConst(authors))
     {
         authorsById[author->id] = author;
-        for(auto key : author->GetWebsites())
+        const auto websites = author->GetWebsites();
+        for(auto& key : websites)
         {
             authorsNamesByWebsite[key][author->name] = author;
             authorsByWebID[key][author->GetWebID(key)] = author;
@@ -124,7 +125,7 @@ bool Authors::EnsureAuthorLoaded(int id)
     return true;
 }
 
-bool Authors::UpdateAuthorRecord(core::AuthorPtr author)
+bool Authors::UpdateAuthorRecord(const core::AuthorPtr& author)
 {
     auto result = database::puresql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
     database::puresql::WipeAuthorStatistics(author,db);
@@ -141,7 +142,7 @@ bool Authors::UpdateAuthorFavouritesUpdateDate(core::AuthorPtr author)
     if(!author)
         return false;
 
-    auto result = database::puresql::UpdateAuthorFavouritesUpdateDate(author->id, QDateTime(author->stats.favouritesLastUpdated), db).success;
+    auto result = database::puresql::UpdateAuthorFavouritesUpdateDate(author->id, QDate(author->stats.favouritesLastUpdated).startOfDay(), db).success;
     return result;
 }
 
@@ -200,7 +201,7 @@ QList<core::AuthorPtr> Authors::GetAllByName(QString name)
     QList<core::AuthorPtr> result;
     auto websites = ListWebsites();
 
-    for(auto bit : websites)
+    for(auto& bit : qAsConst(websites))
     {
         if(EnsureAuthorLoaded(name, bit))
             result.push_back(authorsNamesByWebsite[bit][name]);
@@ -264,7 +265,7 @@ QList<core::AuthorPtr> Authors::GetAllAuthorsLimited(QString website, int limit)
 {
     QList<core::AuthorPtr> result;
     result = database::puresql::GetAllAuthors(website, db, limit).data;
-    for(auto author: result)
+    for(auto& author: qAsConst(result))
         database::puresql::LoadAuthorStatistics(author, db);
     return result;
 }
@@ -275,7 +276,7 @@ QList<core::AuthorPtr> Authors::GetAllAuthorsWithFavUpdateSince(QString website,
 {
     QList<core::AuthorPtr> result;
     result = database::puresql::GetAllAuthorsWithFavUpdateSince(website,date, db, limit).data;
-    for(auto author: result)
+    for(const auto& author: qAsConst(result))
         database::puresql::LoadAuthorStatistics(author, db);
     return result;
 }
@@ -286,7 +287,7 @@ QList<core::AuthorPtr> Authors::GetAllAuthorsWithFavUpdateBetween(QString websit
 {
     QList<core::AuthorPtr> result;
     result = database::puresql::GetAllAuthorsWithFavUpdateBetween(website,dateStart, dateEnd, db, limit).data;
-    for(auto author: result)
+    for(const auto& author: std::as_const(result))
         database::puresql::LoadAuthorStatistics(author, db);
     return result;
 }
@@ -298,7 +299,7 @@ QStringList Authors::GetAllAuthorsUrls(QString website, bool forced)
     {
         auto authors = GetAllAuthors(website, forced);
         result.reserve(authors.size());
-        for(auto author: authors)
+        for(const auto& author: std::as_const(authors))
             result.push_back(author->url(website));
 
         cachedAuthorUrls[website] = result;
@@ -339,7 +340,7 @@ int Authors::GetFicCount(int authorId)
 
 }
 
-QList<int> Authors::GetFicList(core::AuthorPtr author) const
+QList<int> Authors::GetFicList(const core::AuthorPtr& author) const
 {
     QList<int> result;
     if(!author)
@@ -359,7 +360,7 @@ int Authors::GetCountOfRecsForTag(int authorId, QString tag)
 bool Authors::LoadAuthors(QString website, bool )
 {
     authors = database::puresql::GetAllAuthors(website, db).data;
-    for(auto author: authors)
+    for(const auto& author: std::as_const(authors))
         database::puresql::LoadAuthorStatistics(author, db);
     if(authors.size() == 0)
         return false;
@@ -373,9 +374,10 @@ QHash<int, QSet<int> > Authors::LoadFullFavouritesHashset()
     return result;
 }
 
-void LoadIDForAuthor(core::AuthorPtr author, QSqlDatabase db)
+void LoadIDForAuthor(const core::AuthorPtr& author, QSqlDatabase db)
 {
-    for(QString website : author->GetWebsites())
+    const auto websites = author->GetWebsites();
+    for(const auto& website : websites)
     {
         auto id = database::puresql::GetAuthorIdFromWebID(author->GetWebID(website),website, db).data;
         author->AssignId(id);
@@ -407,8 +409,9 @@ bool Authors::EnsureId(core::AuthorPtr author, QString website)
 
     //QString url = author->url(website);
     auto webId = author->GetWebID(website);
-    if(authorsByWebID[website].contains(webId) && authorsByWebID[website][webId])
-        author = authorsByWebID[website][webId];
+    const auto& it = authorsByWebID[website].find(webId);
+    if(it != authorsByWebID[website].cend() && *it)
+        author = *it;
 
     if(author->GetIdStatus() == core::AuthorIdStatus::unassigned)
         LoadIDForAuthor(author, db);
@@ -429,7 +432,8 @@ void Authors::AddAuthorToIndex(core::AuthorPtr author)
 {
     authors.push_back(author);
 
-    for(auto key : author->GetWebsites())
+    const auto websites = author->GetWebsites();
+    for(const auto& key : websites)
     {
         authorsNamesByWebsite[key][author->name] = author;
         auto webId = author->GetWebID(key);
@@ -492,7 +496,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     if(!EnsureAuthorLoaded(authorId))
         return result;
 
-    auto author = authorsById[authorId];
+    auto& author = authorsById[authorId];
 
     result->listId = list->id;
     result->usedTag = list->tagToUse;;
@@ -502,7 +506,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
 
     result->matchesWithReference= database::puresql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db).data;
     if(result->matchesWithReference == 0)
-        result->matchRatio = 999999;
+        result->matchRatio = std::numeric_limits<double>::max();
     else
     {
         //qDebug() << "Have matches for: " << author->name;
@@ -520,7 +524,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
 //    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
 //}
 
-bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QString website , QList<int> ids)
+bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QString website , const QList<int>& ids)
 {
     if(!EnsureAuthorLoaded(authorId) || ids.isEmpty())
         return false;

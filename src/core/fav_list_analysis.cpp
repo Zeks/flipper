@@ -123,7 +123,7 @@ void FicListDataAccumulator::ProcessFicSize()
 
 void FicListDataAccumulator::ProcessGenres()
 {
-    QHash<int, int> moodKeeper;
+    //QHash<int, int> moodKeeper;
     An<interfaces::GenreIndex> genreIndex;
     //int moodSum = 0;
     int totalInClumps = 0;
@@ -150,27 +150,28 @@ void FicListDataAccumulator::ProcessGenres()
     auto maxMood = std::max(result.moodRatios[1], std::max(result.moodRatios[2], result.moodRatios[3]));
     result.moodUniformityRatio = DivideAsDoubles(minMood,maxMood);
     if(result.moodRatios[1] > result.moodRatios[2] && result.moodRatios[1] > result.moodRatios[3])
-        result.prevalentMood = FicSectionStats::MoodType::sad;
+        result.prevalentMood = FavListDetails::MoodType::sad;
     if(result.moodRatios[2] > result.moodRatios[1] && result.moodRatios[2] > result.moodRatios[3])
-        result.prevalentMood = FicSectionStats::MoodType::neutral;
+        result.prevalentMood = FavListDetails::MoodType::neutral;
     if(result.moodRatios[3] > result.moodRatios[2] && result.moodRatios[3] > result.moodRatios[1])
-        result.prevalentMood = FicSectionStats::MoodType::positive;
+        result.prevalentMood = FavListDetails::MoodType::positive;
 }
 
 void FicListDataAccumulator::ProcessFandoms()
 {
-    double averageFicsPerFandom = DivideAsDoubles(ficCount,fandomCounters.keys().size()); //static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.keys().size());
+    double averageFicsPerFandom = DivideAsDoubles(ficCount,fandomCounters.size()); //static_cast<double>(ficTotal)/static_cast<double>(fandomKeeper.keys().size());
 
     int totalInClumps = 0;
     int total = 0;
-    for(auto fandom : fandomCounters.keys())
-    {
-        auto currentFandomCounter = fandomCounters[fandom];
-        total+=fandomCounters[fandom];
-        if(currentFandomCounter >= 2*averageFicsPerFandom)
-            totalInClumps+=fandomCounters[fandom];
 
-        result.fandomRatios[fandom]=DivideAsDoubles(fandomCounters[fandom], ficCount);
+    for(auto i = fandomCounters.begin(); i != fandomCounters.end(); i++)
+    {
+        auto currentFandomCounter = i.value();
+        total+=i.value();
+        if(currentFandomCounter >= 2*averageFicsPerFandom)
+            totalInClumps+=i.value();
+
+        result.fandomRatios[i.key()]=DivideAsDoubles(i.value(), ficCount);
     }
     int totalInRest = total - totalInClumps;
     //diverse favourite list  will have this close to 1

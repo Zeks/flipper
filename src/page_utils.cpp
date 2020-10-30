@@ -30,15 +30,14 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
         threadCount = QThread::idealThreadCount();
     else
         threadCount = 50;
-    thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
-    int index = rxStart.indexIn(data);
+    //thread_local QRegExp rxStart("<div\\sclass=\'z-list\\sfavstories\'");
 
     int captured = data.count(" favstories");
     result.favouriteStoryCountInWhole = captured;
     //qDebug() << "RX fav fics:" << captured;
 
     thread_local QRegExp rxAuthorStories("<div\\sclass=\'z-list\\smystories\'");
-    index = rxAuthorStories.indexIn(data);
+
     int capturedAuthorStories = data.count(rxAuthorStories);
     result.authorStoryCountInWhole = capturedAuthorStories;
     //qDebug() << "RX own fics:" << capturedAuthorStories;
@@ -46,7 +45,7 @@ SplitJobs SplitJob(QString data, bool splitOnThreads)
 
     int partSize = (captured+capturedAuthorStories)/(threadCount-1);
     //qDebug() << "In packs of "  << partSize;
-    index = 0;
+    int index = 0;
 
     if(partSize < 40)
         partSize = 40;
@@ -109,17 +108,17 @@ PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>pageTask,
     int i = 0;
     int counter = 0;
     do{
-        auto last = i + subTaskSize <= urls.size() ? urls.begin() + i + subTaskSize : urls.end();
+        auto last = i + subTaskSize <= urls.size() ? urls.cbegin() + i + subTaskSize : urls.cend();
         subtask = PageSubTask::CreateNewSubTask();
         subtask->type = 0;
         subtask->parent = task;
         auto content = SubTaskAuthorContent::NewContent();
         auto cast = static_cast<SubTaskAuthorContent*>(content.data());
-        std::copy(urls.begin() + i, last, std::back_inserter(cast->authors));
+        std::copy(urls.cbegin() + i, last, std::back_inserter(cast->authors));
         subtask->content = content;
         subtask->parentId = task->id;
         subtask->created = timestamp;
-        subtask->size = last - (urls.begin() + i); // fucking idiot
+        subtask->size = last - (urls.cbegin() + i); // fucking idiot
         task->size += subtask->size;
         subtask->id = counter;
         subtask->isValid = true;

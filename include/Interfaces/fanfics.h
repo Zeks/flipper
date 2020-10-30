@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 #include "Interfaces/base.h"
 #include "core/section.h"
+#include "core/experimental/fic_relations.h"
 #include "regex_utils.h"
 #include "QScopedPointer"
 #include <QSet>
@@ -31,7 +32,7 @@ namespace interfaces {
 
 class Fanfics : public IDBWebIDIndex {
     public:
-    virtual ~Fanfics();
+    virtual ~Fanfics() = default;
     void ClearQueues() {
         updateQueue.clear();
         insertQueue.clear();
@@ -39,11 +40,10 @@ class Fanfics : public IDBWebIDIndex {
 
     void ClearIndex();
     void ClearIndexWithIdIndex();
-    void Reindex();
     void AddFicToIndex(core::FicPtr);
 
-    int EnsureId(core::FicPtr fic);
-    void EnsureId(QString website, int webId);
+    int LoadFicIntoIdHash(core::FicPtr fic);
+    void LoadFicIntoIdHash(QString website, int webId);
 
     bool EnsureFicLoaded(int id, QString website);
     bool LoadFicFromDB(int id, QString website);
@@ -57,12 +57,12 @@ class Fanfics : public IDBWebIDIndex {
     virtual bool IsEmptyQueues();
     virtual int GetIdForUrl(QString url) = 0;
 
-    bool ReprocessFics(QString where, QString website,  bool useDirectIds = false, std::function<void(int)> f = std::function<void(int)>());
+    bool ReprocessFics(QString where, QString website,  bool useDirectIds = false, const std::function<void(int)>& f = std::function<void(int)>());
 
     void AddRecommendations(QList<core::FicRecommendation> recommendations);
 
     void ProcessIntoDataQueues(QList<core::FicPtr> fics, bool alwaysUpdateIfNotInsert = false);
-    void CalcStatsForFics(QList<QSharedPointer<core::Fic>>);
+    void CalcStatsForFics(QList<QSharedPointer<core::Fanfic>>);
     bool WriteRecommendations();
     bool WriteFicRelations(QList<core::FicWeightResult> result);
     bool WriteAuthorsForFics(QHash<uint32_t, uint32_t>);
@@ -80,16 +80,16 @@ class Fanfics : public IDBWebIDIndex {
     QSet<int> GetAllKnownFicIDs(QString where);
     QSet<int> GetFicIDsWithUnsetAuthors();
     // used on the server with threaded user data
-    QHash<int, core::SnoozeInfo> GetSnoozeInfo();
+    QHash<int, core::FanficCompletionStatus> GetSnoozeInfo();
     // used on the client to fetch snoozed fics to pass to the server
-    QHash<int, core::SnoozeTaskInfo> GetUserSnoozeInfo(bool fetchExpired = true, bool useLimitedSelection = false);
+    QHash<int, core::FanficSnoozeStatus> GetUserSnoozeInfo(bool fetchExpired = true, bool useLimitedSelection = false);
     bool WriteExpiredSnoozes(QSet<int>);
-    bool SnoozeFic(core::SnoozeTaskInfo);
+    bool SnoozeFic(core::FanficSnoozeStatus);
     bool RemoveSnooze(int ficId);
 
-    bool FetchSnoozesForFics(QVector<core::Fic>*);
-    bool FetchNotesForFics(QVector<core::Fic>*);
-    bool FetchChaptersForFics(QVector<core::Fic>*);
+    bool FetchSnoozesForFics(QVector<core::Fanfic>*);
+    bool FetchNotesForFics(QVector<core::Fanfic>*);
+    bool FetchChaptersForFics(QVector<core::Fanfic>*);
 
 
     bool AddNoteToFic(int ficId, QString note);
@@ -134,15 +134,14 @@ class Fanfics : public IDBWebIDIndex {
     int skippedCounter = 0;
     int insertedCounter = 0;
     int updatedCounter = 0;
-    QList<core::FicPtr> fics;
-    QHash<int, core::FicPtr> idIndex;
-    QHash<QString, QHash<int, core::FicPtr>> webIdIndex;
+    QHash<int, core::FicPtr> fanficIndex;
 
     QSharedPointer<Fandoms> fandomInterface;
     QSharedPointer<Authors> authorInterface;
     QSqlDatabase db;
 private:
     int GetIdFromDatabase(QString website, int id);
+    int GetIdFromDatabase(core::SiteId);
     // index for ids only, for cases where I don't need to operate on whole fics
     struct IdResult
     {
@@ -150,19 +149,17 @@ private:
         bool valid = false;
         int id = -1;
     };
-    struct FicIds{
+    struct FicIdToWebsiteMapping{
         void Clear();
-        IdResult GetIdByWebId(QString, int);
-        IdResult GetWebIdById(QString, int);
+        IdResult GetDBIdByWebId(core::SiteId);
+        IdResult GetDBIdByWebId(QString, int);
+        IdResult GetWebIdByDBId(QString, int);
         void Add(QString website, int webId, int id);
-//        void AddToAccessedWebIds(QString website, int webId);
-//        void AddToAccessedIds(int id);
-        //QSet<QPair<QString, int>> accessedWebIDs;
-        //QSet<int> accessedIDs;
+        void ProcessIdentityIntoMappings(core::Identity);
         QHash<int, QHash<QString, int>> idIndex;
         QHash<QString, QHash<int, int>> webIdIndex;
     };
-    FicIds idOnly;
+    FicIdToWebsiteMapping idToWebsiteMappings;
 
 };
 }

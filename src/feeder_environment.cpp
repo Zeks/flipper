@@ -37,8 +37,8 @@ QSqlQuery FeederEnvironment::BuildQuery(bool countOnly)
         currentQuery = queryBuilder.Build(filter);
     QSqlQuery q(db);
     q.prepare(currentQuery->str);
-    auto it = currentQuery->bindings.begin();
-    auto end = currentQuery->bindings.end();
+    auto it = currentQuery->bindings.cbegin();
+    auto end = currentQuery->bindings.cend();
     while(it != end)
     {
         if(currentQuery->str.contains(it->key))
@@ -94,7 +94,7 @@ void FeederEnvironment::LoadData(SlashFilterState slashFilter)
             qDebug() << "tick " << counter/1000;
     }
     if(fanfics.size() > 0)
-        currentLastFanficId = fanfics.last().id;
+        currentLastFanficId = fanfics.last().GetIdInDatabase();
     qDebug() << "loaded fics:" << counter;
 }
 
@@ -127,10 +127,10 @@ void FeederEnvironment::Init()
 }
 
 
-inline core::Fic FeederEnvironment::LoadFanfic(QSqlQuery& q)
+inline core::Fanfic FeederEnvironment::LoadFanfic(QSqlQuery& q)
 {
-    core::Fic result;
-    result.id = q.value("ID").toInt();
+    core::Fanfic result;
+    result.identity.id = q.value("ID").toInt();
     result.fandom = q.value("FANDOM").toString();
     result.author = core::Author::NewAuthor();
     result.author->name = q.value("AUTHOR").toString();
@@ -144,14 +144,14 @@ inline core::Fic FeederEnvironment::LoadFanfic(QSqlQuery& q)
     result.published = published;
     result.updated= updated;
     result.SetUrl("ffn",q.value("URL").toString());
-    result.tags = q.value("TAGS").toString();
+    result.userData.tags = q.value("TAGS").toString();
     result.wordCount = q.value("WORDCOUNT").toString();
     result.favourites = q.value("FAVOURITES").toString();
     result.reviews = q.value("REVIEWS").toString();
     result.chapters = QString::number(q.value("CHAPTERS").toInt());
     result.complete= q.value("COMPLETE").toInt();
-    result.atChapter = q.value("AT_CHAPTER").toInt();
-    result.recommendationsMainList= q.value("SUMRECS").toInt();
+    result.userData.atChapter = q.value("AT_CHAPTER").toInt();
+    result.recommendationsData.recommendationsMainList= q.value("SUMRECS").toInt();
     //QLOG_INFO() << "recs value: " << result.recommendations;
     return result;
 }

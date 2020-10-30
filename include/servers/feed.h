@@ -71,6 +71,7 @@ struct RequestContext{
     bool Process(::ProtoSpace::ResponseInfo*);
     QSharedPointer<UserToken<UserTokenizer>> safetyToken;
     QString userToken;
+    QString applicationToken;
     FeederService* server;
     DatabaseContext dbContext;
     RecommendationsData* recsData;

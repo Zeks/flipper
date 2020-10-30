@@ -26,30 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 namespace interfaces {
 
-
-Fanfics::~Fanfics()
-{
-
-}
-
 void Fanfics::ClearIndex()
 {
     //idOnly.Clear();
-    idIndex.clear();
-    webIdIndex.clear();
+    fanficIndex.clear();
 }
 
 void Fanfics::ClearIndexWithIdIndex()
 {
-    idOnly.Clear();
+    idToWebsiteMappings.Clear();
     ClearIndex();
-}
-
-void Fanfics::Reindex()
-{
-    ClearIndex();
-    for(auto fic : fics)
-        AddFicToIndex(fic);
 }
 
 void Fanfics::AddFicToIndex(core::FicPtr fic)
@@ -57,14 +43,14 @@ void Fanfics::AddFicToIndex(core::FicPtr fic)
     if(!fic)
         return;
 
-    EnsureId(fic->webSite, fic->webId);
-    idIndex.insert(fic->id, fic);
-    webIdIndex[fic->webSite][fic->webId] = fic;
+    LoadFicIntoIdHash(fic);
+    fanficIndex.insert(fic->identity.id, fic);
 }
 
-int Fanfics::EnsureId(core::FicPtr fic)
+int Fanfics::LoadFicIntoIdHash(core::FicPtr fic)
 {
-    auto result = idOnly.GetIdByWebId(fic->webSite,fic->webId);
+    auto webIdentity = fic->identity.web.GetPrimaryIdentity();
+    auto result = idToWebsiteMappings.GetDBIdByWebId(webIdentity);
     if(result.exists && result.valid)
         return result.id;
 
@@ -72,30 +58,29 @@ int Fanfics::EnsureId(core::FicPtr fic)
     if(!LoadFicToDB(fic))
         return result.id;
 
-    result.id = GetIdFromDatabase(fic->webSite, fic->webId);
+    result.id = GetIdFromDatabase(webIdentity);
     transaction.finalize();
-    fic->id = result.id;
-    idOnly.Add(fic->webSite, fic->webId, result.id);
-
+    fic->identity.id = result.id;
+    idToWebsiteMappings.Add(webIdentity.website, webIdentity.identity, result.id);
     return result.id;
 }
 
-void Fanfics::EnsureId(QString website, int webId)
+void Fanfics::LoadFicIntoIdHash(QString website, int webId)
 {
-    auto result = idOnly.GetIdByWebId(website,webId);
+    auto result = idToWebsiteMappings.GetDBIdByWebId(website,webId);
     if(result.exists && result.valid)
         return;
 
     result.id = GetIdFromDatabase(website, webId);
 
-    idOnly.Add(website, webId, result.id);
+    idToWebsiteMappings.Add(website, webId, result.id);
     return;
 }
 
 bool Fanfics::EnsureFicLoaded(int id, QString website)
 {
     bool result = false;
-    if(webIdIndex.contains(website) && webIdIndex[website].contains(id))
+    if(idToWebsiteMappings.GetDBIdByWebId({website, id}).valid)
         return true;
 
     if(LoadFicFromDB(id,website))
@@ -125,20 +110,21 @@ bool Fanfics::LoadFicToDB(core::FicPtr fic)
     bool insertResult = database::puresql::InsertIntoDB(fic, db).success;
     if(!insertResult)
         return false;
-    int idResult = GetIdFromDatabase(fic->webSite, fic->webId);
+    auto webIdentity = fic->identity.web.GetPrimaryIdentity();
+    int idResult = GetIdFromDatabase(webIdentity);
     if(idResult == -1)
         return false;
 
     transaction.finalize();
-    fic->id = idResult;
+    fic->identity.id = idResult;
     AddFicToIndex(fic);
     return true;
 }
 
 core::FicPtr Fanfics::GetFicById(int id)
 {
-    if(idIndex.contains(id))
-        return idIndex[id];
+    if(fanficIndex.contains(id))
+        return fanficIndex[id];
 
     auto result = database::puresql::GetFicById(id, db);
     auto fic= result.data;
@@ -152,19 +138,19 @@ core::FicPtr Fanfics::GetFicById(int id)
 
 int Fanfics::GetIDFromWebID(int id, QString website)
 {
-    EnsureId(website, id);
-    auto result = idOnly.GetIdByWebId(website, id);
+    LoadFicIntoIdHash(website, id);
+    auto result = idToWebsiteMappings.GetDBIdByWebId(website, id);
     return result.id;
 }
 
 int Fanfics::GetWebIDFromID(int id, QString website)
 {
-    EnsureId(website, id);
-    auto result = idOnly.GetWebIdById(website, id);
+    LoadFicIntoIdHash(website, id);
+    auto result = idToWebsiteMappings.GetWebIdByDBId(website, id);
     return result.id;
 }
 
-bool Fanfics::ReprocessFics(QString where, QString website, bool useDirectIds, std::function<void (int)> f)
+bool Fanfics::ReprocessFics(QString where, QString website, bool useDirectIds, const std::function<void (int)>& f)
 {
     QVector<int> list;
     if(useDirectIds)
@@ -173,7 +159,7 @@ bool Fanfics::ReprocessFics(QString where, QString website, bool useDirectIds, s
         list = database::puresql::GetWebIdList(where, website, db).data;
     if(list.empty())
         return false;
-    for(auto id : list)
+    for(auto id : std::as_const(list))
     {
         f(id);
     }
@@ -226,12 +212,12 @@ QSet<int> Fanfics::GetFicIDsWithUnsetAuthors()
     return database::puresql::GetFicIDsWithUnsetAuthors(db).data;
 }
 
-QHash<int, core::SnoozeInfo> Fanfics::GetSnoozeInfo()
+QHash<int, core::FanficCompletionStatus> Fanfics::GetSnoozeInfo()
 {
     return database::puresql::GetSnoozeInfo(db).data;
 }
 
-QHash<int, core::SnoozeTaskInfo> Fanfics::GetUserSnoozeInfo(bool fetchExpired, bool useLimitedSelection)
+QHash<int, core::FanficSnoozeStatus> Fanfics::GetUserSnoozeInfo(bool fetchExpired, bool useLimitedSelection)
 {
     return database::puresql::GetUserSnoozeInfo(fetchExpired, useLimitedSelection, db).data;
 }
@@ -241,7 +227,7 @@ bool Fanfics::WriteExpiredSnoozes(QSet<int> data)
     return database::puresql::WriteExpiredSnoozes(data, db).success;
 }
 
-bool Fanfics::SnoozeFic(core::SnoozeTaskInfo data)
+bool Fanfics::SnoozeFic(core::FanficSnoozeStatus data)
 {
     return database::puresql::SnoozeFic(data, db).success;
 }
@@ -251,15 +237,15 @@ bool Fanfics::RemoveSnooze(int ficId)
     return database::puresql::RemoveSnooze(ficId, db).success;
 }
 
-void UploadFicIdsForSelection(QVector<core::Fic> * fics){
+void UploadFicIdsForSelection(QVector<core::Fanfic> * fics){
     auto* userThreadData = ThreadData::GetUserData();
     userThreadData->ficsForSelection.clear();
     for(auto& fic : *fics)
-        userThreadData->ficsForSelection.insert(fic.id);
+        userThreadData->ficsForSelection.insert(fic.identity.id);
 }
 
 
-bool Fanfics::FetchSnoozesForFics(QVector<core::Fic> * fics)
+bool Fanfics::FetchSnoozesForFics(QVector<core::Fanfic> * fics)
 {
     if(!fics)
         return false;
@@ -269,27 +255,27 @@ bool Fanfics::FetchSnoozesForFics(QVector<core::Fic> * fics)
     auto snoozes = GetUserSnoozeInfo(true, true);
     for(auto& fic: *fics)
     {
-        if(snoozes.contains(fic.id))
+        if(snoozes.contains(fic.identity.id))
         {
-            auto& snooze = snoozes[fic.id];
-            fic.chapterTillSnoozed = snooze.snoozedTillChapter;
-            fic.chapterSnoozed = snooze .snoozedAtChapter;
+            auto& snooze = snoozes[fic.identity.id];
+            fic.userData.chapterTillSnoozed = snooze.snoozedTillChapter;
+            fic.userData.chapterSnoozed = snooze .snoozedAtChapter;
             if(snooze.untilFinished)
             {
-                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_til_finished;
+                fic.userData.snoozeMode = core::Fanfic::EFicSnoozeMode::efsm_til_finished;
             }
             else if((snooze.snoozedTillChapter - snooze.snoozedAtChapter) == 1)
             {
-                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_next_chapter;
+                fic.userData.snoozeMode = core::Fanfic::EFicSnoozeMode::efsm_next_chapter;
             }
             else
-                fic.snoozeMode = core::Fic::EFicSnoozeMode::efsm_target_chapter;
+                fic.userData.snoozeMode = core::Fanfic::EFicSnoozeMode::efsm_target_chapter;
         }
     }
     return true;
 }
 
-bool Fanfics::FetchNotesForFics(QVector<core::Fic> * fics)
+bool Fanfics::FetchNotesForFics(QVector<core::Fanfic> * fics)
 {
     if(!fics)
         return false;
@@ -299,16 +285,16 @@ bool Fanfics::FetchNotesForFics(QVector<core::Fic> * fics)
 
     for(auto& fic: *fics)
     {
-        if(notes.contains(fic.id))
+        if(notes.contains(fic.identity.id))
         {
-            fic.notes = notes[fic.id];
+            fic.notes = notes[fic.identity.id];
         }
     }
 
     return true;
 }
 
-bool Fanfics::FetchChaptersForFics(QVector<core::Fic> * fics)
+bool Fanfics::FetchChaptersForFics(QVector<core::Fanfic> * fics)
 {
     if(!fics)
         return false;
@@ -318,12 +304,12 @@ bool Fanfics::FetchChaptersForFics(QVector<core::Fic> * fics)
 
     for(auto& fic: *fics)
     {
-        if(chapters.contains(fic.id))
+        if(chapters.contains(fic.identity.id))
         {
-            fic.atChapter = chapters[fic.id];
+            fic.userData.atChapter = chapters[fic.identity.id];
         }
         else
-            fic.atChapter = 0;
+            fic.userData.atChapter = 0;
     }
 
     return true;
@@ -348,7 +334,7 @@ QHash<int, core::FicWeightPtr> Fanfics::GetHashOfAllFicsWithEnoughFavesForWeight
 {
     QHash<int, core::FicWeightPtr> result;
     auto temp = GetAllFicsWithEnoughFavesForWeights(faves);
-    for(auto fic : temp)
+    for(const auto& fic : temp)
         result[fic->id] = fic;
     return result;
 }
@@ -446,32 +432,33 @@ void Fanfics::AddRecommendations(QList<core::FicRecommendation> recommendations)
     ficRecommendations += recommendations;
 }
 
-void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fic>> fics)
+void Fanfics::CalcStatsForFics(QList<QSharedPointer<core::Fanfic>> fics)
 {
-    for(QSharedPointer<core::Fic> fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         if(!fic)
             continue;
 
-        fic->calcStats.wcr = 200000; // default
+        fic->statistics.wcr = 200000; // default
         if(fic->wordCount.toInt() > 1000 && fic->reviews > 0)
-            fic->calcStats.wcr = fic->wordCount.toDouble()/fic->reviews.toDouble();
-        fic->calcStats.reviewsTofavourites = 0;
+            fic->statistics.wcr = fic->wordCount.toDouble()/fic->reviews.toDouble();
+        fic->statistics.reviewsTofavourites = 0;
         if(fic->favourites.toInt())
-            fic->calcStats.reviewsTofavourites = fic->reviews.toDouble()/fic->favourites.toDouble();
-        fic->calcStats.age = std::abs(QDateTime::currentDateTimeUtc().daysTo(fic->published));
-        fic->calcStats.daysRunning = std::abs(fic->updated.daysTo(fic->published));
+            fic->statistics.reviewsTofavourites = fic->reviews.toDouble()/fic->favourites.toDouble();
+        fic->statistics.age = std::abs(QDateTime::currentDateTimeUtc().daysTo(fic->published));
+        fic->statistics.daysRunning = std::abs(fic->updated.daysTo(fic->published));
     }
 }
 
 bool Fanfics::WriteRecommendations()
 {
     database::Transaction transaction(db);
-    for(auto recommendation: ficRecommendations)
+    for(auto recommendation: std::as_const(ficRecommendations))
     {
         if(!recommendation.IsValid() || !authorInterface->EnsureId(recommendation.author))
             continue;
-        auto id = GetIDFromWebID(recommendation.fic->webId, recommendation.fic->webSite);
+        auto webIdentity = recommendation.fic->identity.web.GetPrimaryIdentity();
+        auto id = GetIDFromWebID(webIdentity.identity, webIdentity.website);
         database::puresql::WriteRecommendation(recommendation.author, id, db);
     }
 
@@ -492,19 +479,19 @@ bool Fanfics::WriteAuthorsForFics(QHash<uint32_t, uint32_t> data)
 }
 
 
-void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool alwaysUpdateIfNotInsert)
+void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fanfic>> fics, bool alwaysUpdateIfNotInsert)
 {
     CalcStatsForFics(fics);
     skippedCounter = 0;
     updatedCounter = 0;
     insertedCounter = 0;
-    for(QSharedPointer<core::Fic> fic: fics)
+    for(const auto& fic: std::as_const(fics))
     {
         if(!fic)
             continue;
-        auto id = fic->webId;
+        auto id = fic->identity.web.GetPrimaryId();
 
-        if(!processedHash.contains(fic->webId))
+        if(!processedHash.contains(fic->identity.web.GetPrimaryId()))
         {
             database::puresql::SetUpdateOrInsert(fic, db, alwaysUpdateIfNotInsert);
             {
@@ -528,7 +515,7 @@ void Fanfics::ProcessIntoDataQueues(QList<QSharedPointer<core::Fic>> fics, bool 
         }
         else
             skippedCounter++;
-        processedHash.insert(fic->webId);
+        processedHash.insert(fic->identity.web.GetPrimaryId());
     }
 }
 
@@ -538,19 +525,19 @@ bool Fanfics::FlushDataQueues()
     int insertCounter = 0;
     int updateCounter = 0;
     bool hasFailures = false;
-    for(auto fic: insertQueue)
+    for(const auto& fic: std::as_const(insertQueue))
     {
         insertCounter++;
         bool writeResult = database::puresql::InsertIntoDB(fic, db).success;
         hasFailures = hasFailures && writeResult;
-        fic->id = GetIDFromWebID(fic->webId, "ffn");
-        for(auto fandom: fic->fandoms)
+        fic->identity.id = GetIDFromWebID(fic->identity.web.ffn, "ffn");
+        for(const auto& fandom: std::as_const(fic->fandoms))
         {
-            bool result = database::puresql::AddFandomForFic(fic->id, fandomInterface->GetIDForName(fandom), db).success;
+            bool result = database::puresql::AddFandomForFic(fic->identity.id, fandomInterface->GetIDForName(fandom), db).success;
             hasFailures = hasFailures && result;
             if(!result)
             {
-                qDebug() << "failed to write fandom for: " << fic->webId;
+                qDebug() << "failed to write fandom for: " << fic->identity.web.ffn;
                 fandomInterface->GetIDForName(fandom);
             }
             if(hasFailures)
@@ -562,9 +549,9 @@ bool Fanfics::FlushDataQueues()
     if(hasFailures)
         return false;
 
-    for(auto fic: updateQueue)
+    for(const auto& fic: std::as_const(updateQueue))
     {
-        fic->id = GetIDFromWebID(fic->webId, "ffn");
+        fic->identity.id = GetIDFromWebID(fic->identity.web.ffn, "ffn");
         auto result = database::puresql::UpdateInDB(fic, db).success;
         hasFailures = hasFailures && result;
         updateCounter++;
@@ -591,26 +578,45 @@ int Fanfics::GetIdFromDatabase(QString website, int id)
     return database::puresql::GetFicIdByWebId(website, id, db).data;
 }
 
+int Fanfics::GetIdFromDatabase(core::SiteId siteId)
+{
+    if(!siteId.website.isEmpty())
+        return GetIdFromDatabase(siteId.website, siteId.identity);
+    return -1;
+}
 
-void Fanfics::FicIds::Clear()
+
+void Fanfics::FicIdToWebsiteMapping::Clear()
 {
     idIndex.clear();
     webIdIndex.clear();
 }
 
-Fanfics::IdResult Fanfics::FicIds::GetIdByWebId(QString website, int webId)
+Fanfics::IdResult Fanfics::FicIdToWebsiteMapping::GetDBIdByWebId(core::SiteId siteId)
+{
+    if(!siteId.website.isEmpty())
+        return GetDBIdByWebId(siteId.website, siteId.identity);
+    return {};
+}
+
+Fanfics::IdResult Fanfics::FicIdToWebsiteMapping::GetDBIdByWebId(QString website, int webId)
 {
     Fanfics::IdResult result;
-    if(webIdIndex.contains(website) && webIdIndex[website].contains(webId))
-    {
-        result.exists = true;
-        result.id = webIdIndex[website][webId];
-        result.valid = result.id != -1;
-    }
+    auto itOuter = webIdIndex.find(website);
+    if(itOuter == webIdIndex.cend())
+        return result;
+    auto itInner = (*itOuter).find(webId);
+    if(itInner == (*itOuter).cend())
+        return result;
+
+    result.exists = true;
+    result.id = *itInner;
+    result.valid = result.id != -1;
+
     return result;
 }
 
-Fanfics::IdResult Fanfics::FicIds::GetWebIdById(QString website, int id)
+Fanfics::IdResult Fanfics::FicIdToWebsiteMapping::GetWebIdByDBId(QString website, int id)
 {
     Fanfics::IdResult result;
     if(idIndex.contains(id) && idIndex[id].contains(website))
@@ -622,10 +628,22 @@ Fanfics::IdResult Fanfics::FicIds::GetWebIdById(QString website, int id)
     return result;
 }
 
-void Fanfics::FicIds::Add(QString website, int webId, int id)
+void Fanfics::FicIdToWebsiteMapping::Add(QString website, int webId, int id)
 {
     idIndex[id][website] = webId;
     webIdIndex[website][webId] = id;
+}
+
+void Fanfics::FicIdToWebsiteMapping::ProcessIdentityIntoMappings(core::Identity identity)
+{
+    if(identity.web.ffn != -1)
+        webIdIndex["ffn"][identity.web.ffn] = identity.id;
+    if(identity.web.ao3 != -1)
+        webIdIndex["ao3"][identity.web.ao3] = identity.id;
+    if(identity.web.sb != -1)
+        webIdIndex["sb"][identity.web.sb] = identity.id;
+    if(identity.web.sv != -1)
+        webIdIndex["sv"][identity.web.sv] = identity.id;
 }
 
 }

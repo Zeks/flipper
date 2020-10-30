@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include "include/rec_calc/rec_calculator_weighted.h"
+#include <cmath>
 namespace core {
 
 
@@ -40,12 +41,12 @@ double quadratic_coef(double ratio,
     double result = 0;
     switch(type)
     {
-    case ECalcType::close:
+    case ECalcType::unique:
         //qDebug() << "casting max vote: " << "matches: " << maximumMatches << " value: " << 0.2*static_cast<double>(maximumMatches);
         result =  0.2*static_cast<double>(maximumMatches);
 
         break;
-    case ECalcType::near:
+    case ECalcType::rare:
 
         result = 0.05*static_cast<double>(maximumMatches);
 
@@ -80,7 +81,7 @@ RecCalculatorImplWeighted::FilterListType RecCalculatorImplWeighted::GetFilterLi
 RecCalculatorImplBase::ActionListType RecCalculatorImplWeighted::GetActionList(){
     auto ratioAccumulator = [ratioSum = std::reference_wrapper<double>(this->ratioSum)](RecCalculatorImplBase* calc,AuthorResult & author)
     {
-        if(calc->ownProfileId != author.id)
+        if(calc->ownProfileId != static_cast<int>(author.id))
             ratioSum+=author.ratio;
     };
     return {authorAccumulator, ratioAccumulator};
@@ -94,87 +95,139 @@ std::function<AuthorWeightingResult(AuthorResult&, int, int)> RecCalculatorImplW
 }
 
 void RecCalculatorImplWeighted::CalcWeightingParams(){
+    auto authorList = filteredAuthors.values();
     QLOG_INFO() << "inputs to weighting:";
     QLOG_INFO() << "matchsum:" << matchSum;
     QLOG_INFO() << "inputs.faves.size():" << inputs.faves.size();
     QLOG_INFO() << "ratioSum:" << ratioSum;
-    QLOG_INFO() << "filteredAuthors.size():" << filteredAuthors.size();
-
-
+    QLOG_INFO() << "filteredAuthors.size():" << authorList.size();
+    needsRangeAdjustment = false;
     int matchMedian = matchSum/inputs.faves.size();
 
-    ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(filteredAuthors.size());
+    ratioMedian = static_cast<double>(ratioSum)/static_cast<double>(authorList.size());
 
-    double normalizer = 1./static_cast<double>(filteredAuthors.size()-1.);
+    double normalizer = 1./static_cast<double>(authorList.size()-1.);
     double sum = 0;
-    for(auto author: filteredAuthors)
+    for(auto author: authorList)
     {
-        sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
+        if(this->ownProfileId != static_cast<int>(allAuthors[author].id))
+            sum+=std::pow(allAuthors[author].ratio - ratioMedian, 2);
     }
-    quad = std::sqrt(normalizer * sum);
 
+    quadraticDeviation = std::sqrt(normalizer * sum);
 
-    qDebug () << "median value is: " << matchMedian;
-    qDebug () << "median ratio is: " << ratioMedian;
+    qDebug () << "median of match value is: " << matchMedian;
+    qDebug () << "median of ratio is: " << ratioMedian;
 
-    auto keysRatio = inputs.faves.keys();
+    //auto keysRatio = inputs.faves.keys();
     auto keysMedian = inputs.faves.keys();
     std::sort(keysMedian.begin(), keysMedian.end(),[&](const int& i1, const int& i2){
         return allAuthors[i1].matches < allAuthors[i2].matches;
     });
 
-    std::sort(filteredAuthors.begin(), filteredAuthors.end(),[&](const int& i1, const int& i2){
+    std::sort(authorList.begin(), authorList.end(),[&](const int& i1, const int& i2){
         return allAuthors[i1].ratio < allAuthors[i2].ratio;
     });
 
-    auto ratioMedianIt = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& ){
+    auto ratioMedianIt = std::lower_bound(authorList.cbegin(), authorList.cend(), ratioMedian, [&](const int& i1, const int& ){
         return allAuthors[i1].ratio < ratioMedian;
     });
-    auto dist = ratioMedianIt - filteredAuthors.begin();
-    qDebug() << "distance to median is: " << dist;
-    qDebug() << "vector size is: " << filteredAuthors.size();
+    auto beginningOfQuadraticToMedianRange = ratioMedianIt - authorList.cbegin();
+    qDebug() << "distance to median is: " << beginningOfQuadraticToMedianRange;
+    qDebug() << "vector size is: " << authorList.size();
 
-    qDebug() << "sigma: " << quad;
-    qDebug() << "2 sigma: " << quad * 2;
+    qDebug() << "sigma: " << quadraticDeviation;
+    qDebug() << "2 sigma: " << quadraticDeviation * 2;
 
-    auto ratioSigma2 = std::lower_bound(filteredAuthors.begin(), filteredAuthors.end(), ratioMedian, [&](const int& i1, const int& ){
-        return allAuthors[i1].ratio < (ratioMedian - quad*2);
+    auto ratioSigma2 = std::lower_bound(authorList.cbegin(), authorList.cend(), ratioMedian, [&](const int& i1, const int& ){
+        return allAuthors[i1].ratio < (ratioMedian - quadraticDeviation*2);
     });
-    sigma2Dist = ratioSigma2 - filteredAuthors.begin();
-    qDebug() << "distance to sigma15 is: " << sigma2Dist;
+    endOfUniqueAuthorRange = ratioSigma2 - authorList.cbegin();
+    qDebug() << "distance to sigma15 is: " << endOfUniqueAuthorRange;
+    if(endOfUniqueAuthorRange == 0)
+        needsRangeAdjustment = true;
+
+    // okay, I need to find the limits for deviation that pull a certain % of lists into rarity ranges
+    int uncommonAuthorCount = (authorList.size()/100.)*8.;
+    int rareAuthorCount = (authorList.size()/100.)*2.5;
+    int uniqueAuthorCount = (authorList.size()/100.)*0.5;
+    int seenAuthorCount = 0;
+
+    for(auto authorId: authorList){
+        seenAuthorCount++;
+        if(seenAuthorCount == uncommonAuthorCount){
+            auto ratio = allAuthors[authorId].ratio;
+            auto currentRange = ratioMedian - ratio;
+            uncommonRange = currentRange;
+        }else if(seenAuthorCount == rareAuthorCount){
+            auto ratio = allAuthors[authorId].ratio;
+            auto currentRange = ratioMedian - ratio;
+            rareRange = currentRange;
+        }else if(seenAuthorCount == uniqueAuthorCount){
+            auto ratio = allAuthors[authorId].ratio;
+            auto currentRange = ratioMedian - ratio;
+            uniqueRange = currentRange;
+        }
+    }
+
+    for(auto authorId: authorList){
+        auto ratio = allAuthors[authorId].ratio;
+        if(ratioMedian - ratio > uniqueRange)
+            this->uniqueAuthors++;
+        else if(ratioMedian - ratio > rareRange)
+            this->rareAuthors++;
+        else if(ratioMedian - ratio > uncommonRange)
+            this->uncommonAuthors++;
+    }
+
 
     QLOG_INFO() << "outputs from weighting:";
-    QLOG_INFO() << "quad:" << quad;
-    QLOG_INFO() << "sigma2Dist:" << sigma2Dist;
+    QLOG_INFO() << "quad:" << quadraticDeviation;
+    QLOG_INFO() << "sigma2Dist:" << endOfUniqueAuthorRange;
     QLOG_INFO() << "ratioMedian:" << ratioMedian;
+
+    QLOG_INFO() << "uncommon:" << uncommonRange;
+    QLOG_INFO() << "rare:" << rareRange;
+    QLOG_INFO() << "unique:" << uniqueRange;
+
+    QLOG_INFO() << "uncommon authors:" << uncommonAuthors;
+    QLOG_INFO() << "rare authors:" << rareAuthors;
+    QLOG_INFO() << "unique authors:" << uniqueAuthors;
 }
 
 AuthorWeightingResult RecCalculatorImplWeighted::CalcWeightingForAuthor(AuthorResult& author, int authorSize, int maximumMatches){
     AuthorWeightingResult result;
     result.isValid = true;
-    bool gtSigma = (ratioMedian - quad) >= author.ratio;
-    bool gtSigma2 = (ratioMedian - 2 * quad) >= author.ratio;
-    bool gtSigma17 = (ratioMedian - 1.7 * quad) >= author.ratio;
 
-    if(gtSigma2)
+    bool uncommon = uncommonRange <= (ratioMedian - author.ratio);
+    bool rare = rareRange <= (ratioMedian - author.ratio);
+    bool unique = uniqueRange <= (ratioMedian - author.ratio);
+
+    if(this->ownProfileId == static_cast<int>(author.id))
     {
+        result.value = 0;
+        result.ownProfile = true;
+        result.authorType = AuthorWeightingResult::EAuthorType::common;
+        author.authorMatchCloseness = result.authorType;
+        return result;
+    }
 
+    if(unique)
+    {
         result.authorType = AuthorWeightingResult::EAuthorType::unique;
         counter2Sigma++;
-        //result.value = quadratic_coef(author.ratio,ratioMedian, quad, authorSize/10, authorSize/20, authorSize);
-        result.value = quadratic_coef(author.ratio,ratioMedian, quad, authorSize, maximumMatches, ECalcType::close);
+        result.value = quadratic_coef(author.ratio,ratioMedian, quadraticDeviation, authorSize, maximumMatches, ECalcType::unique);
     }
-    else if(gtSigma17)
+    else if(rare)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::rare;
         counter17Sigma++;
-        //result.value  = quadratic_coef(author.ratio,ratioMedian,  quad,authorSize/20, authorSize/40, authorSize);
-        result.value  = quadratic_coef(author.ratio,ratioMedian,  quad,  authorSize, maximumMatches, ECalcType::near);
+        result.value  = quadratic_coef(author.ratio,ratioMedian,  quadraticDeviation,  authorSize, maximumMatches, ECalcType::rare);
     }
-    else if(gtSigma)
+    else if(uncommon)
     {
         result.authorType = AuthorWeightingResult::EAuthorType::uncommon;
-        result.value  = quadratic_coef(author.ratio, ratioMedian, quad,  authorSize, maximumMatches, ECalcType::uncommon);
+        result.value  = quadratic_coef(author.ratio, ratioMedian, quadraticDeviation,  authorSize, maximumMatches, ECalcType::uncommon);
     }
     else
     {
@@ -189,8 +242,24 @@ void RecCalculatorImplWeighted::AdjustRatioForAutomaticParams()
     if(!params->isAutomatic)
         return;
     ratioSum = 0;
-    for(auto author : filteredAuthors)
+    for(auto author : std::as_const(filteredAuthors))
         ratioSum+=allAuthors[author].ratio;
+}
+
+void RecCalculatorImplWeighted::ResetAccumulatedData()
+{
+    RecCalculatorImplBase::ResetAccumulatedData();
+    ratioSum = 0;
+    ratioMedian = 0;
+    quadraticDeviation = 0;
+    endOfUniqueAuthorRange = 0;
+    counter2Sigma = 0;
+    counter17Sigma = 0;
+}
+
+bool RecCalculatorImplWeighted::WeightingIsValid() const
+{
+    return endOfUniqueAuthorRange >= 4;
 }
 
 }

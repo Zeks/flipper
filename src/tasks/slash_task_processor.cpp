@@ -59,7 +59,7 @@ inline void SlashProcessor::AddToSlashHash(QList<core::AuthorPtr> authors,
 {
     CommonRegex rx;
     rx.Init();
-    for(auto author : authors)
+    for(const auto& author : authors)
     {
         auto fics = authorsInterface->GetFicList(author);
         for(auto fic : fics)
@@ -86,7 +86,7 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
     QList<core::AuthorPtr> notSlashAuthors;
 
 
-    for(auto author : authors)
+    for(const auto& author : authors)
     {
         auto& stats = author->stats.favouriteStats;
         if(stats.slashRatio > 0.7)
@@ -140,16 +140,18 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
     auto TRepo = fanficsInterface->GetAllKnownFicIDs(" rated <> 'M' ");
     int exclusionTriggers = 0;
     TimedAction intersect("Intersect", [&](){
-        for(const auto& fic: slashFics[2].keys())
+
+        for(auto i = slashFics[2].cbegin(); i != slashFics[2].cend(); i++)
         {
 
+            auto fic = i.key();
             if(slashFics[0][fic] >= 2)
                 sufficientMatchesCount = 7;
             else if(slashFics[1][fic] >= 5)
                 sufficientMatchesCount = 5;
 
-            bool soleTMatch = (TRepo.contains(fic) && slashFics[2][fic]==1);
-            bool cantTellReliably = slashFics[2][fic]==1 && slashFics[1][fic] == 0;
+            bool soleTMatch = (TRepo.contains(fic) && i.value() == 1);
+            bool cantTellReliably = i.value() ==1 && slashFics[1][fic] == 0;
             bool sufficientMatches = notSlashFics[fic] >= static_cast<double>(sufficientMatchesCount)/neededNotslashMatchesCoeff;
             if(fic == 86768)
             {
@@ -162,7 +164,7 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
                 intersection.push_back(fic);
             else
             {
-                bool sufficientMatches = notSlashFics[fic] >= 5;
+                //bool sufficientMatches = notSlashFics[fic] >= 5;
             }
         }
     });
@@ -173,7 +175,7 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
     QHash<int, int> filteredSlashFics;
 
     TimedAction filter("Fill Intersection", [&](){
-        for(auto fic : intersection)
+        for(auto fic : std::as_const(intersection))
         {
             filteredSlashFics[fic]=slashFics[2][fic];
             slashFics[2].remove(fic);
@@ -204,7 +206,7 @@ void SlashProcessor::AssignSlashKeywordsMetaInfomation(QSqlDatabase db)
 
 void SlashProcessor::DoFullCycle(QSqlDatabase db, int passCount)
 {
-    auto authors = authorsInterface->GetAllAuthors("ffn", true);
+    //auto authors = authorsInterface->GetAllAuthors("ffn", true);
     {
         database::Transaction transaction(db);
         qDebug() << "Assigning metainformation for first pass";

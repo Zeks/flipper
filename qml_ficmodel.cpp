@@ -77,7 +77,6 @@ QVariant FicModel::data(const QModelIndex &index, int role) const
             return AdaptingTableModel::data(index.sibling(index.row(), 19), Qt::DisplayRole).toString().split(",", QString::SkipEmptyParts);
         if(role == AuthorIdRole)
         {
-            auto value = AdaptingTableModel::data(index.sibling(index.row(), 20), Qt::DisplayRole).toInt();
             return AdaptingTableModel::data(index.sibling(index.row(), 20), Qt::DisplayRole).toInt();
         }
         if(role == SlashRole)
@@ -219,8 +218,9 @@ QHash<int, QByteArray> FicModel::roleNames() const {
 
 QVariantMap FicModel::get(int idx) const {
   QVariantMap map;
-  foreach(int k, roleNames().keys()) {
-    map[roleNames().value(k)] = data(AdaptingTableModel::index(idx, 0), k);
+  for(int key: roleNames().keys()) {
+      auto index = AdaptingTableModel::index(idx, 0, QModelIndex());
+    map[roleNames().value(key)] = data(index, key);
   }
   return map;
 }

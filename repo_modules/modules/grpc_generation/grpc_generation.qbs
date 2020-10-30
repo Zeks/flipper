@@ -2,6 +2,8 @@ import qbs
 import qbs.FileInfo
 import qbs.File
 import qbs.Utilities
+import qbs.Environment
+import "../../../BuildHelpers.js" as Funcs
 
 Module {
     property string rootDir: ""
@@ -25,8 +27,12 @@ Module {
             }
         }
 
+        Artifact {
+            filePath: FileInfo.path(input.filePath)  + '/' + FileInfo.baseName(input.fileName) + '.grpc.pb.h'
+        }
+
         prepare: {
-            var protoc = product.moduleProperty('localvariables', 'protoc');
+            var protoc = Funcs.getEnvOrDie("PROTOC")
 
             // use of canonicalFilePath is discourage because it might break on symlinks
             var rootDir = File.canonicalFilePath(input.moduleProperty('grpc_generation', 'rootDir'))
@@ -40,12 +46,12 @@ Module {
             gprcArgs = gprcArgs.concat(["--proto_path=" + rootDir]);
             gprcArgs = gprcArgs.concat(["--proto_path=" + pbDependencyDir]);
             gprcArgs = gprcArgs.concat(["--grpc_out=" + generationDir]);
-            gprcArgs = gprcArgs.concat(["--plugin=protoc-gen-grpc=" + product.moduleProperty('localvariables', 'grpcPlugin') ]);
+            var grpcPluginPath = Funcs.getEnvOrDie("GRPC_PLUGIN")
+            gprcArgs = gprcArgs.concat(["--plugin=protoc-gen-grpc=" + grpcPluginPath]);
             gprcArgs = gprcArgs.concat([input.filePath]);
 
             var grpcCommand = new Command(protoc, gprcArgs);
-            grpcCommand.description = 'Generating service from: ' + input.fileName;
-            //grpcCommand.description = 'Generating service from: ' + rootDir + " pb: " + pbDependencyDir;
+            grpcCommand.description = 'protoc-grpc ' + input.fileName;
 
             return [grpcCommand];
         }

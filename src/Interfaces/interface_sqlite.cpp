@@ -138,6 +138,16 @@ bool SqliteInterface::PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget)
     return puresql::PassIgnoredFandomsToAnotherDatabase(db, dbTarget).success;
 }
 
+bool SqliteInterface::PassFandomListSetToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassFandomListSetToAnotherDatabase(db, dbTarget).success;
+}
+
+bool SqliteInterface::PassFandomListDataToAnotherDatabase(QSqlDatabase dbTarget)
+{
+    return puresql::PassFandomListDataToAnotherDatabase(db, dbTarget).success;
+}
+
 bool SqliteInterface::PassClientDataToAnotherDatabase(QSqlDatabase dbTarget)
 {
     return puresql::PassClientDataToAnotherDatabase(db, dbTarget).success;

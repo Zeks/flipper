@@ -63,11 +63,15 @@ public:
 template <typename T>
 struct UserToken{
     QString token;
-    UserToken(QString token):token(token){}
+    QString subToken;
+    UserToken(QString token, QString subToken = ""):token(token), subToken(subToken){}
     virtual ~UserToken(){ReleaseToken();}
     virtual void ReleaseToken(){
         An<TokenKeeper<T>> accessor;
-        accessor->ReleaseToken(token);
+        if(subToken.isEmpty())
+            accessor->ReleaseToken(token);
+        else
+            accessor->ReleaseToken(subToken);
     }
 };
 using UserTokenizer = TokenKeeper<User>;

@@ -22,8 +22,8 @@ namespace core {
 enum class ECalcType{
     common,
     uncommon,
-    near,
-    close
+    rare,
+    unique
 };
 
 double quadratic_coef(double ratio,
@@ -41,7 +41,7 @@ double sqrt_coef(double ratio, double median, double sigma, int base, int scaler
 
 class RecCalculatorImplWeighted : public RecCalculatorImplBase{
 public:
-    RecCalculatorImplWeighted(RecInputVectors input): RecCalculatorImplBase(input){}
+    RecCalculatorImplWeighted(const RecInputVectors& input): RecCalculatorImplBase(input){}
     virtual FilterListType GetFilterList() override;
     virtual ActionListType GetActionList() override;
     virtual std::function<AuthorWeightingResult(AuthorResult&, int, int)> GetWeightingFunc() override;
@@ -50,16 +50,25 @@ public:
 
     double ratioSum = 0;
     double ratioMedian = 0;
-    double quad = 0;
-    int sigma2Dist = 0;
+    double quadraticDeviation = 0;
+
+    double uncommonRange = 0;
+    double rareRange = 0;
+    double uniqueRange = 0;
+
+    int uniqueAuthors = 0;
+    int rareAuthors = 0;
+    int uncommonAuthors = 0;
+
+    int endOfUniqueAuthorRange = 0;
     int counter2Sigma = 0;
     int counter17Sigma = 0;
 
+    bool needsRangeAdjustment = false;
 
-
-    // RecCalculatorImplBase interface
-public:
     void AdjustRatioForAutomaticParams() override;
+    void ResetAccumulatedData() override;
+    bool WeightingIsValid() const override;
 };
 
 

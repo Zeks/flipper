@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pagegetter.h"
 #include "include/pagetask.h"
 #include "include/parsers/ffn/fandomparser.h"
-#include "include/parsers/ffn/favparser.h"
+#include "include/parsers/ffn/desktop_favparser.h"
 #include "include/transaction.h"
 #include "include/Interfaces/fanfics.h"
 #include "include/Interfaces/fandoms.h"
@@ -75,7 +75,7 @@ void AuthorCacheReprocessor::ReprocessAllAuthorsStats()
         statistics_utils::UserPageSource source;
         statistics_utils::UserPageSink<ParsedAuthorData> sink;
 
-        QHash<int, QList<WebPage>>pages;
+        //QHash<int, QList<WebPage>>pages;
         int counter = 1;
 
         int chunkSize = 500;
@@ -120,7 +120,7 @@ void AuthorCacheReprocessor::ReprocessAllAuthorsStats()
                             break;
                         }
 
-                        QSharedPointer<FavouriteStoryParser> parser( new FavouriteStoryParser(fanficsInterface));
+                        QSharedPointer<FavouriteStoryParser> parser;
 
                         page_utils::SplitJobs splittings;
                         splittings = page_utils::SplitJob(result.page.content, false);
@@ -155,7 +155,7 @@ void AuthorCacheReprocessor::ReprocessAllAuthorsStats()
                 processSlash.run();
                 QThread::msleep(100);
                 qDebug() << "writing results, have " << sink.tokens.size() << " tokens to merge";
-                for(auto token: sink.tokens)
+                for(const auto& token: std::as_const(sink.tokens))
                 {
                     //qDebug() << "original new webid: " << token.parser->recommender.author->GetWebID("ffn");
                     authorsInterface->EnsureId(token.parser->recommender.author);

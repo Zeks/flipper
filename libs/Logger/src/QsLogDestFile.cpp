@@ -31,10 +31,7 @@
 #include <iostream>
 
 const int QsLogging::SizeRotationStrategy::MaxBackupCount = 10;
-//comment
-QsLogging::RotationStrategy::~RotationStrategy()
-{
-}
+
 
 QsLogging::SizeRotationStrategy::SizeRotationStrategy(bool _rotateOnInit)
     : mCurrentSizeInBytes(0)
@@ -72,7 +69,7 @@ void QsLogging::SizeRotationStrategy::rotate()
     }
 
     // 1. find the last existing backup than can be shifted up
-    const QString logNamePattern = mFileName + QString::fromUtf8(".%1");
+    const QString logNamePattern = mFileName + QStringLiteral(".%1");
     int lastExistingBackupIndex = 0;
     for (int i = 1;i <= mBackupsCount;++i) {
         const QString backupFileName = logNamePattern.arg(i);
@@ -152,7 +149,7 @@ void QsLogging::FileDestination::write(const QString& message, Level level, Leve
         mOutputStream.setDevice(&mFile);
     }
 
-    mOutputStream << message << endl;
+    mOutputStream << message << Qt::endl;
     mOutputStream.flush();
 }
 
@@ -193,7 +190,7 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
             }
 
 
-            mOutputStream << message << endl;
+            mOutputStream << message << Qt::endl;
             mOutputStream.flush();
         }
         queue.push_back(message);
@@ -212,14 +209,14 @@ void QsLogging::ErrDumpDestination::write(const QString &message, QsLogging::Lev
         }
         bool queueFull = queue.size() > 0;
         if(queueFull)
-            mOutputStream << "Error level triggered, dumping full cycle" << endl;
-        for(auto string : queue)
+            mOutputStream << "Error level triggered, dumping full cycle" << Qt::endl;
+        for(auto& string : qAsConst(queue))
         {
-            mOutputStream << string << endl;
+            mOutputStream << string << Qt::endl;
         }
-        mOutputStream << message << endl;
+        mOutputStream << message << Qt::endl;
         if(queueFull)
-            mOutputStream << "Error level triggered, end of dump" << endl;
+            mOutputStream << "Error level triggered, end of dump" << Qt::endl;
         queue.clear();
         mOutputStream.flush();
     }

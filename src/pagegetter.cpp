@@ -41,7 +41,7 @@ class PageGetterPrivate : public QObject
 {
 Q_OBJECT
 public:
-    PageGetterPrivate(QObject *parent=nullptr);
+    explicit PageGetterPrivate(QObject *parent=nullptr);
     QNetworkAccessManager manager;
     QNetworkRequest currentRequest;
     QNetworkRequest* currentReply= nullptr;
@@ -78,7 +78,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     auto temp = GetPageFromDB(url);
     if(temp.isValid)
         QLOG_INFO() << "Version from cache was generated: " << temp.generated;
-    if(autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
+    if(useCache != ECacheMode::dont_use_cache && autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
     {
         result = temp;
         qDebug() << "pickign cache version";
@@ -88,11 +88,12 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
     {
         result = GetPageFromDB(url);
-        if(result.isValid && result.generated > QDateTime::currentDateTime().addDays(-7))
+        if(result.isValid)
         {
-            result.isFromCache = true;
+            if(useCache == ECacheMode::use_only_cache || result.generated > QDateTime::currentDateTime().addDays(-7))
+                result.isFromCache = true;
         }
-        else if(useCache == ECacheMode::use_cache)
+        else
         {
             result = GetPageFromNetwork(url);
             qDebug() << "From network";
@@ -112,7 +113,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-    auto db = QSqlDatabase::database("PageCache");
+//    auto db = QSqlDatabase::database("PageCache");
     bool dbOpen = db.isOpen();
     if(!dbOpen)
         return result;
@@ -191,7 +192,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    QSqlQuery q(QSqlDatabase::database("PageCache"));
+    QSqlQuery q(db);
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
@@ -239,21 +240,6 @@ void PageGetterPrivate::WipeAllCache()
     if(q.lastError().isValid())
         qDebug() << "Error wiping cache: "  << q.lastError();
 }
-
-//void PageGetterPrivate::OnNetworkReply(QNetworkReply * reply)
-//{
-//    FuncCleanup f([&](){waitLoop.quit();});
-//    QByteArray data=reply->readAll();
-//    error = reply->error();
-//    reply->deleteLater();
-//    if(error != QNetworkReply::NoError)
-//        return;
-//    //QString str(data);
-//    result.content = data;
-//    result.isValid = true;
-//    result.url = currentRequest.url().toString();
-//    result.source = EPageSource::network;
-//}
 
 PageManager::PageManager() : d(new PageGetterPrivate)
 {
@@ -313,7 +299,7 @@ void PageManager::WipeAllCache()
 }
 #include "pagegetter.moc"
 
-PageThreadWorker::PageThreadWorker(QObject *parent)
+PageThreadWorker::PageThreadWorker(QObject*)
 {
     startTimer(2000);
 }
@@ -394,9 +380,9 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
     pager->SetAutomaticCacheLimit(automaticCache);
     pager->SetAutomaticCacheForCurrentDate(automaticCacheForCurrentDate);
     int counter = 0;
-    for (auto url : urls)
+    for (const auto& url : urls)
     {
-        qDebug() << "loading page: " << url;
+        qDebug() << QStringLiteral("loading page: ") << url;
         auto startPageLoad = std::chrono::high_resolution_clock::now();
         result = pager->GetPage(url, cacheMode);
         result.pageIndex = counter+1;
@@ -429,11 +415,11 @@ void PageThreadWorker::ProcessBunchOfFandomUrls(QStringList urls,
     }
 }
 
-void PageThreadWorker::FandomTask(FandomParseTask task)
+void PageThreadWorker::FandomTask(const FandomParseTask& task)
 {
     FuncCleanup f([&](){working = false;});
     //qDebug() << updateLimit;
-    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+    database::Transaction pcTransaction(QSqlDatabase::database(QStringLiteral("PageCache")));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     pager->WipeOldCache();
@@ -441,9 +427,9 @@ void PageThreadWorker::FandomTask(FandomParseTask task)
     QStringList failedPages;
     ProcessBunchOfFandomUrls(task.parts,task.stopAt, task.cacheMode, failedPages, task.delay);
     QStringList voidPages;
-    qDebug() << "reacquiring urls: " << failedPages;
+    qDebug() << QStringLiteral("reacquiring urls: ") << failedPages;
     ProcessBunchOfFandomUrls(failedPages,task.stopAt, task.cacheMode, voidPages, task.delay);
-    for(auto page : voidPages)
+    for(const auto& page : std::as_const(voidPages))
     {
         WebPage failedPage;
         failedPage.failedToAcquire = true;
@@ -462,7 +448,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int del
     // kinda have to split pagecache db from service db I guess
     // which is only natural anyway... probably
     // still not helping for multithreading later on
-    auto db = QSqlDatabase::database("PageCache");
+    auto db = QSqlDatabase::database(QStringLiteral("PageCache"));
     database::Transaction pcTransaction(db);
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
@@ -499,21 +485,21 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int del
 }
 static QString CreateURL(QString str)
 {
-    return "https://www.fanfiction.net/" + str;
+    return QStringLiteral("https://www.fanfiction.net/") + str;
 }
 
 QString PageThreadWorker::GetNext(QString text)
 {
     QString nextUrl;
-    QRegExp rxEnd(QRegExp::escape("Next &#187"));
+    thread_local QRegExp rxEnd(QRegExp::escape(QStringLiteral("Next &#187")));
     int indexEnd = rxEnd.indexIn(text);
     if(indexEnd != -1)
         indexEnd-=2;
     int posHref = indexEnd - 400 + text.midRef(indexEnd - 400,400).lastIndexOf("href='");
     nextUrl = CreateURL(text.mid(posHref+6, indexEnd - (posHref+6)));
-    if(!nextUrl.contains("&p="))
-        nextUrl = "";
-    indexEnd = rxEnd.indexIn(text);
+    if(!nextUrl.contains(QStringLiteral("&p=")))
+        nextUrl = QStringLiteral("");
+    //indexEnd = rxEnd.indexIn(text);
     return nextUrl;
 }
 
@@ -523,10 +509,10 @@ static QDate GetRealMinDate(QList<QDate> dates)
         return QDate();
     std::sort(std::begin(dates), std::end(dates));
     QDate medianDate = dates[dates.size()/2];
-    QHash<QDate, int> distances;
+    //QHash<QDate, int> distances;
     int counter = 0;
     int totalDistance = 0;
-    for(auto date : dates)
+    for(auto date : std::as_const(dates))
     {
         int distance = std::abs(date.daysTo(medianDate));
         totalDistance+=distance;
@@ -538,7 +524,7 @@ static QDate GetRealMinDate(QList<QDate> dates)
     double average = static_cast<double>(totalDistance)/static_cast<double>(counter);
 
     QDate minDate = medianDate;
-    for(auto date : dates)
+    for(auto date : std::as_const(dates))
     {
         if(date < minDate && std::abs(date.daysTo(medianDate)) <= average)
             minDate = date;
@@ -552,12 +538,12 @@ QDate PageThreadWorker::GrabMinUpdate(QString text)
     QList<QDate> dates;
     QDateTime minDate;
     QDate result;
-    QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
+    thread_local QRegExp rx("Updated:\\s<span\\sdata-xutime='(\\d+)'");
     int startFrom = 0;
     int indexStart = -1;
     do{
         indexStart = rx.indexIn(text, startFrom);
-        if(indexStart != 1 && !rx.cap(1).trimmed().replace("-","").isEmpty())
+        if(indexStart != 1 && !rx.cap(1).trimmed().replace(QStringLiteral("-"),QStringLiteral("")).isEmpty())
         {
             minDate.setTime_t(rx.cap(1).toInt());
             dates.push_back(minDate.date());

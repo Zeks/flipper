@@ -56,7 +56,7 @@ FandomParseTaskResult FandomLoadProcessor::Run(FandomParseTask task)
 
     QSet<QString> updatedFandoms;
     database::Transaction transaction(db);
-    FandomParser parser(fanficsInterface);
+    FandomParser parser;
     An<PageManager> pager;
     FandomParseTaskResult result;
     do
@@ -148,13 +148,14 @@ void FandomLoadProcessor::Run(PageTaskPtr task)
         emit updateInfo(task->taskComment + "<br>");
 
     QStringList acquisitioFailures;
-    QList<SubTaskPtr> subsToInsert;
-    for(auto subtask : task->subTasks)
+    QVector<SubTaskPtr> subsToInsert;
+    subsToInsert.reserve(task->subTasks.size());
+    for(const auto& subtask : std::as_const(task->subTasks))
     {
         if(subtask->finished)
             continue;
         acquisitioFailures.clear();
-        auto urlList= subtask->content->ToDB().split("\n",QString::SkipEmptyParts);
+        auto urlList= subtask->content->ToDB().split("\n",Qt::SkipEmptyParts);
 
         FandomParseTask fpt;
         fpt.cacheMode = task->cacheMode;
@@ -201,7 +202,7 @@ void FandomLoadProcessor::Run(PageTaskPtr task)
         task->success = true;
     else
         task->success =false;
-    for(auto sub: subsToInsert )
+    for(const auto& sub: subsToInsert )
         task->subTasks.push_back(sub);
     task->finished = true;
 
@@ -262,7 +263,7 @@ PageTaskPtr FandomLoadProcessor::CreatePageTaskFromFandoms(QList<core::FandomPtr
 
             auto urlString = prototype.arg(FixCrossoverUrl(url.GetUrl()));
             WebPage currentPage = pager->GetPage(urlString, cacheMode);
-            FandomParser parser(fanficsInterface);
+            FandomParser parser;
             QString lastUrl = parser.GetLast(currentPage.content, urlString);
 
             subtask = PageSubTask::CreateNewSubTask();

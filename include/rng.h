@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 
 #include "include/queryinterfaces.h"
-#include "include/rng.h"
 
 #include <QSqlDatabase>
 #include <QReadWriteLock>
+#include <queue>
 
 
 namespace core{
@@ -32,12 +32,18 @@ struct IRNGGenerator{
 };
 
 struct RNGList{
-    QDateTime generationDate;
+    QDateTime generationTimestamp;
+    QDateTime lastAccessTimestamp;
+    QString sequenceIdentifier;
     QStringList ids;
 };
 
 struct RNGData{
-    QHash<QString, RNGList> randomIdLists;
+    RNGData();
+    void Log(QString prefix);
+    typedef QSharedPointer<RNGList> ListPtr;
+    QHash<QString, ListPtr> randomIdLists;
+    std::priority_queue<ListPtr,std::vector<ListPtr>, std::function<bool(ListPtr, ListPtr)>> queue;
     QReadWriteLock lock;
 };
 
@@ -45,6 +51,9 @@ struct DefaultRNGgenerator : public IRNGGenerator{
     virtual QStringList Get(QSharedPointer<Query> where,
                         QString userToken,
                         QSqlDatabase db, StoryFilter& filter);
+
+    void RemoveOutdatedRngSequences();
+    void RemoveOlderRngSequencesPastTheLimit(uint32_t limit);
 
     QSharedPointer<RNGData> rngData;
     QSharedPointer<database::IDBWrapper> portableDBInterface;
