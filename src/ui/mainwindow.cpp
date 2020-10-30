@@ -2442,12 +2442,6 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     else
         ui->cbCrossovers->setCurrentText("");
 
-//    if(filter.otherFandomsMode)
-//        ui->chkOtherFandoms->setChecked(true);
-//    else
-//        ui->chkOtherFandoms->setChecked(false);
-    //todo
-
     // restoring genre exclusion
     {
         if(filter.genreExclusion.size() > 0)
@@ -2784,13 +2778,6 @@ void MainWindow::OnRemoveFandomFromRecentList()
     env->interfaces.fandoms->ReloadRecentFandoms();
     recentFandomsModel->setStringList(env->interfaces.fandoms->GetRecentFandoms());
 }
-//todo
-//void MainWindow::OnRemoveFandomFromIgnoredList()
-//{
-//    auto fandom = ui->lvIgnoredFandoms->currentIndex().data(0).toString();
-//    env->interfaces.fandoms->RemoveFandomFromIgnoredList(fandom);
-//    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
-//}
 
 void MainWindow::OnRemoveFandomFromSlashFilterIgnoredList()
 {
@@ -2803,11 +2790,6 @@ void MainWindow::OnFandomsContextMenu(const QPoint &pos)
 {
     fandomMenu.popup(ui->lvTrackedFandoms->mapToGlobal(pos));
 }
-//todo
-//void MainWindow::OnIgnoredFandomsContextMenu(const QPoint &pos)
-//{
-//    ignoreFandomMenu.popup(ui->lvIgnoredFandoms->mapToGlobal(pos));
-//}
 
 void MainWindow::OnIgnoredFandomsSlashFilterContextMenu(const QPoint &pos)
 {
@@ -2866,13 +2848,6 @@ void MainWindow::OnFindSimilarClicked(QVariant url)
     ui->leNotContainsWords->setText("");
     CreateSimilarListForGivenFic(url.toInt());
 }
-
-//todo
-//void MainWindow::on_pbIgnoreFandom_clicked()
-//{
-//    env->interfaces.fandoms->IgnoreFandom(ui->cbIgnoreFandomSelector->currentText(), ui->chkIgnoreIncludesCrossovers->isChecked());
-//    ignoredFandomsModel->setStringList(env->interfaces.fandoms->GetIgnoredFandoms());
-//}
 
 void MainWindow::OnUpdatedProgressValue(int value)
 {
