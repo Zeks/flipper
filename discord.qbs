@@ -57,6 +57,7 @@ App{
         "include/tasks/author_cache_reprocessor.h",
         "include/tasks/author_task_processor.h",
         "include/tasks/fandom_task_processor.h",
+        "src/Interfaces/fandom_lists.cpp",
         "src/Interfaces/pagetask_interface.cpp",
         "src/Interfaces/tags.cpp",
         "src/core/fandom.cpp",
