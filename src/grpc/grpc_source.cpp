@@ -800,7 +800,7 @@ void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core:
 
     for(auto fic : std::as_const(this->userData.allTaggedFics))
     {
-        QLOG_INFO() << "adding fic ignore: " << fic;
+        //QLOG_INFO() << "adding fic ignore: " << fic;
         tags->add_all_tags(fic);
     }
 
@@ -815,7 +815,7 @@ void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core:
     for(auto i = this->userData.ignoredFandoms.cbegin(); i != this->userData.ignoredFandoms.cend(); i++)
     {
         auto key = i.key();
-        QLOG_INFO() << "adding fandom ignore: " << key << " " << i.value();
+        //QLOG_INFO() << "adding fandom ignore: " << key << " " << i.value();
         if(key==-1)
             continue;
         ignoredFandoms->add_fandom_ids(key);
@@ -1537,7 +1537,7 @@ bool VerifyNotEmpty(const int& val){
 bool VerifyIDPack(const ::ProtoSpace::SiteIDPack& idPack, ProtoSpace::ResponseInfo* info)
 {
     bool isValid = true;
-    if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 )
+    if(idPack.ffn_ids().size() == 0 && idPack.ao3_ids().size() == 0 && idPack.sb_ids().size() == 0 && idPack.sv_ids().size() == 0 && idPack.db_ids().size() == 0 )
         isValid = false;
     if(idPack.ffn_ids().size() > 10000)
         isValid = false;

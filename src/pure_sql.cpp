@@ -2445,6 +2445,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
 DiagnosticSQLResult<QSet<int> > GetAuthorsForTags(QStringList tags, QSqlDatabase db){
     std::string qs = "select distinct author_id from ficauthors ";
     qs += fmt::format(" where fic_id in (select distinct fic_id from fictags where tag in ('{0}'))", tags.join("','").toStdString());
+    //qDebug() << QString::fromStdString(qs);
     SqlContext<QSet<int>> ctx(db);
     ctx.FetchLargeSelectIntoList<int>("author_id", std::move(qs));
     return std::move(ctx.result);
