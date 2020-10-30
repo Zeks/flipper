@@ -84,6 +84,7 @@ App{
         "include/core/recommendation_list.h",
         "src/core/recommendation_list.cpp",
         "src/data_code/rec_calc_data.cpp",
+        "src/grpc/grpc_log.cpp",
         "src/grpc/grpc_source.cpp",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",

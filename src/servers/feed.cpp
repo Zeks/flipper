@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "logger/QsLog.h"
 #include "loggers/usage_statistics.h"
 #include "grpc/grpc_source.h"
+#include "grpc/grpc_log.h"
 
 #include "Interfaces/data_source.h"
 #include "Interfaces/ffn/ffn_authors.h"
@@ -523,6 +524,8 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
 {
 
     Q_UNUSED(context);
+    //grpcutils::DumpToLog("Received recommendations request: ", task);
+
     RequestContext reqContext("Reclist Creation",task->controls(), this);
     if(!reqContext.Process(response->mutable_response_info()))
         return Status::OK;
