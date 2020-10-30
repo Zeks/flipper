@@ -287,7 +287,7 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
         auto it = data->fandomStates.find(fandom1);
         bool isIgnored = it != data->fandomStates.end()
                 && it->second.inclusionMode == EInclusionMode::im_exclude
-                && it->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                && it->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_pure);
         if(isIgnored)
         {
             sqlite3_result_int(ctx, 1);
