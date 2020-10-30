@@ -104,9 +104,9 @@ const std::vector<FandomLists::FandomState> &FandomLists::GetFandomStatesForList
     return itStates->second;
 }
 
-void FandomLists::FlipValuesForList(uint32_t)
+void FandomLists::FlipValuesForList(uint32_t id)
 {
-
+    database::puresql::FlipListValues(id, db);
 }
 
 void FandomListsImpl::Clear()

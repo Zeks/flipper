@@ -11,8 +11,8 @@ namespace fandom_lists{
         et_fandom = 1,
     };
     enum EInclusionMode{
-        im_include = 0,
-        im_exclude = 1,
+        im_exclude = 0,
+        im_include = 1,
     };
     struct ListBase : public std::enable_shared_from_this<ListBase>{
         ListBase(EEntityType type):type(type){}

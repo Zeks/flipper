@@ -111,7 +111,24 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="6">
+     <item row="1" column="3">
+      <widget class="QComboBox" name="cbFandomLists">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Fandom:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="8">
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -124,25 +141,25 @@
        </property>
       </spacer>
      </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_2">
+     <item row="1" column="2">
+      <widget class="QPushButton" name="pbDeleteFandomList">
        <property name="text">
-        <string>Fandom:</string>
+        <string/>
        </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QComboBox" name="cbFandomLists">
-       <property name="minimumSize">
+       <property name="icon">
+        <iconset resource="../icons.qrc">
+         <normaloff>:/icons/icons/cross_red.png</normaloff>:/icons/icons/cross_red.png</iconset>
+       </property>
+       <property name="iconSize">
         <size>
-         <width>150</width>
-         <height>0</height>
+         <width>16</width>
+         <height>16</height>
         </size>
        </property>
       </widget>
      </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="pbAddFandomToSelectedList">
+     <item row="1" column="10">
+      <widget class="QPushButton" name="pbIgnoreFandom">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
          <horstretch>0</horstretch>
@@ -154,11 +171,29 @@
        </property>
        <property name="icon">
         <iconset resource="../icons.qrc">
+         <normaloff>:/icons/icons/book_black.png</normaloff>:/icons/icons/book_black.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="pbAddNewFandomList">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../icons.qrc">
          <normaloff>:/icons/icons/add.png</normaloff>:/icons/icons/add.png</iconset>
        </property>
       </widget>
      </item>
-     <item row="0" column="1" colspan="8">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>List:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" colspan="11">
       <widget class="QComboBox" name="cbFandoms">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
@@ -171,7 +206,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="8">
+     <item row="1" column="11">
       <widget class="QPushButton" name="pbWhitelistFandom">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
@@ -188,15 +223,8 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>List:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="7">
-      <widget class="QPushButton" name="pbIgnoreFandom">
+     <item row="1" column="9">
+      <widget class="QPushButton" name="pbAddFandomToSelectedList">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
          <horstretch>0</horstretch>
@@ -208,7 +236,13 @@
        </property>
        <property name="icon">
         <iconset resource="../icons.qrc">
-         <normaloff>:/icons/icons/book_black.png</normaloff>:/icons/icons/book_black.png</iconset>
+         <normaloff>:/icons/icons/push_left_blue.png</normaloff>:/icons/icons/push_left_blue.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>16</height>
+        </size>
        </property>
       </widget>
      </item>

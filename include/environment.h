@@ -56,6 +56,7 @@ public:
 
 class QLineEdit;
 class QLabel;
+class TreeItemInterface;
 
 struct FilterFrame{
 
@@ -72,6 +73,7 @@ struct FilterFrame{
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
+    std::shared_ptr<TreeItemInterface> savedFandomLists;
 };
 
 

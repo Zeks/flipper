@@ -2,6 +2,7 @@
 #include "ui_fandomlistwidget.h"
 #include "ui-models/include/custom_icon_delegate.h"
 #include "ui-models/include/TreeItem.h"
+#include "ui-models/include/treeitemfunctions.h"
 #include "ui-models/include/treeviewtemplatefunctions.h"
 #include "Interfaces/fandom_lists.h"
 #include "Interfaces/fandoms.h"
@@ -103,6 +104,9 @@ FandomListWidget::FandomListWidget(QWidget *parent) :
     ui->tvFandomLists->setItemDelegateForColumn(0, dummyDelegate);
     ui->tvFandomLists->setItemDelegateForColumn(1, modeDelegate);
     ui->tvFandomLists->setItemDelegateForColumn(2, crossoverDelegate);
+    ui->pbAddFandomToSelectedList->setEnabled(false);
+    ui->pbIgnoreFandom->setEnabled(false);
+    ui->pbWhitelistFandom->setEnabled(false);
     CreateContextMenus();
     InitButtonConnections();
 
@@ -221,6 +225,7 @@ void FandomListWidget::InitTree()
     ui->tvFandomLists->header()->resizeSection(2, defaultSectionSize);
     connect(treeModel, &TreeModel::itemCheckStatusChanged, this, &FandomListWidget::OnTreeItemChecked);
     connect(ui->tvFandomLists, &QTreeView::doubleClicked, this, &FandomListWidget::OnTreeItemDoubleClicked);
+    connect(ui->tvFandomLists->selectionModel(), &QItemSelectionModel::currentChanged, this, &FandomListWidget::OnTreeItemSelectionChanged);
     connect(ui->tvFandomLists, &QTreeView::customContextMenuRequested, this, &FandomListWidget::OnContextMenuRequested);
 }
 
@@ -229,6 +234,12 @@ void FandomListWidget::InitButtonConnections()
     connect(ui->pbAddFandomToSelectedList, &QPushButton::clicked, this, &FandomListWidget::OnAddCurrentFandomToList);
     connect(ui->pbIgnoreFandom, &QPushButton::clicked, this, &FandomListWidget::OnIgnoreCurrentFandom);
     connect(ui->pbWhitelistFandom, &QPushButton::clicked, this, &FandomListWidget::OnWhitelistCurrentFandom);
+    connect(ui->cbFandoms, &QComboBox::editTextChanged, this, &FandomListWidget::OnCheckComboboxText);
+
+    connect(ui->pbAddNewFandomList, &QPushButton::clicked, [&]{AddNewList();});
+    connect(ui->pbDeleteFandomList, &QPushButton::clicked, [&](){
+        DeleteCurrentListInCombobox();
+    });
 }
 
 void FandomListWidget::InitFandomList(QStringList fandomList)
@@ -269,20 +280,23 @@ void FandomListWidget::AddNewList()
     newListPointer->SetInternalData(list.get());
     auto newListItem = std::shared_ptr<TreeItemInterface>(newListPointer);
     newListPointer->SetController(listItemController);
-    //ui->tvFandomLists->blockSignals(true);
     rootItem->addChild(newListItem);
-    //ui->tvFandomLists->blockSignals(false);
+    newListPointer->SetParent(rootItem);
     ReloadModel();
 }
 
-void FandomListWidget::DeleteListUnderCursor()
+bool FandomListWidget::ShowDeleteListConfirmation()
 {
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(this, "QUestion", "Do you really want to delete this fandom list?",
                                   QMessageBox::Yes|QMessageBox::No);
     if (reply == QMessageBox::No)
-        return;
+        return false;
+    return true;
+}
 
+void FandomListWidget::DeleteListUnderCursor()
+{
     if(!clickedIndex.isValid())
         return;
 
@@ -290,13 +304,58 @@ void FandomListWidget::DeleteListUnderCursor()
     auto pointer = static_cast<TreeItemInterface*>(clickedIndex.internalPointer());
     auto parentPtr = pointer->parent();
     ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
+    if(basePtr->name *in ("Ignores", "Whitelist")){
+        QMessageBox::warning(nullptr, "Warning!", "Ignores and Whitelist cannot be deleted.");
+        return;
+    }
+    if(!ShowDeleteListConfirmation())
+        return;
+
     env->interfaces.fandomLists->RemoveFandomList(basePtr->id);
     parentPtr->removeChildren(pointer->row(), 1);
+    ui->cbFandomLists->removeItem(ui->cbFandomLists->findText(basePtr->name));
     ReloadModel();
+}
+
+void FandomListWidget::DeleteCurrentListInCombobox()
+{
+    if(ui->cbFandomLists->currentText() *in ("Ignores", "Whitelist")){
+        QMessageBox::warning(nullptr, "Warning!", "Ignores and Whitelist cannot be deleted.");
+        return;
+    }
+
+    if(!ShowDeleteListConfirmation())
+        return;
+
+    // I need to find an index for the path
+    auto index = FindIndexForPath({ui->cbFandomLists->currentText()});
+    if(!index.isValid())
+        return;
+
+    using namespace core::fandom_lists;
+    auto pointer = static_cast<TreeItemInterface*>(index.internalPointer());
+    auto parentPtr = pointer->parent();
+    ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
+    env->interfaces.fandomLists->RemoveFandomList(basePtr->id);
+    parentPtr->removeChildren(pointer->row(), 1);
+    ui->cbFandomLists->removeItem(ui->cbFandomLists->findText(basePtr->name));
+    ReloadModel();
+
 }
 
 void FandomListWidget::RenameListUnderCursor()
 {
+    if(!clickedIndex.isValid())
+        return;
+
+    using namespace core::fandom_lists;
+    auto pointer = static_cast<TreeItemInterface*>(clickedIndex.internalPointer());
+    ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
+    if(basePtr->name *in ("Ignores", "Whitelist")){
+        QMessageBox::warning(nullptr, "Warning!", "Ignores and Whitelist cannot be renamed.");
+        return;
+    }
+
     bool ok = false;
     QString name = QInputDialog::getText(this, tr("Name selector"),
                                              tr("Choose a new name for your list:"), QLineEdit::Normal,
@@ -304,9 +363,6 @@ void FandomListWidget::RenameListUnderCursor()
     if(name.length() == 0)
         return;
 
-    using namespace core::fandom_lists;
-    auto pointer = static_cast<TreeItemInterface*>(clickedIndex.internalPointer());
-    ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
     basePtr->name = name;
 
     env->interfaces.fandomLists->EditListState(*static_cast<List*>(pointer->InternalPointer()));
@@ -334,13 +390,103 @@ void FandomListWidget::DeleteFandomUnderCursor()
     ReloadModel();
 }
 
-std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetStateForSearches()
+void FandomListWidget::SetFandomToCombobox(const QString & text)
+{
+    ui->cbFandoms->setCurrentText(text);
+}
+
+QString FandomListWidget::GetCurrentlySelectedFandom()
+{
+    return ui->cbFandoms->currentText();
+}
+
+std::shared_ptr<TreeItemInterface> FandomListWidget::CreateFandomListToken()
+{
+    TreeItem<core::fandom_lists::List>* newRootPointer = new TreeItem<core::fandom_lists::List>();
+    auto newRootItem = std::shared_ptr<TreeItemInterface>(newRootPointer);
+    newRootPointer->SetController(listItemController);
+    for(auto item: rootItem->GetChildren()){
+        newRootItem->addChild(item->Clone(newRootItem));
+    }
+    return newRootItem;
+}
+
+void FandomListWidget::RestoreFandomListToken(std::shared_ptr<TreeItemInterface> token, EFilterRestorationMode restoreMode)
+{
+    if(restoreMode == EFilterRestorationMode::frm_full)
+        rootItem = token;
+    else{
+        using namespace core::fandom_lists;
+        using Flattened = std::unordered_map<QString, std::shared_ptr<TreeItemInterface>>;
+        std::unordered_map<QString, std::shared_ptr<TreeItemInterface>> ownHash;
+        std::unordered_map<QString, std::shared_ptr<TreeItemInterface>> tokenHash;
+        auto flattener = [](std::shared_ptr<TreeItemInterface> topLevelItem)->Flattened{
+            Flattened result;
+            QString topLevelKey;
+            for(auto listItem : topLevelItem->GetChildren())
+            {
+                ListBase* listPtr = static_cast<ListBase*>(listItem->InternalPointer());
+                topLevelKey = listPtr->name;
+                result[topLevelKey] = listItem;
+                for(auto fandomItem : listItem->GetChildren()){
+                    ListBase* fandomPtr = static_cast<ListBase*>(fandomItem->InternalPointer());
+                    result[topLevelKey + fandomPtr->name] = fandomItem;
+                }
+            }
+            return result;
+        };
+        auto flattenedOwnHash = flattener(rootItem);
+        auto flattenedTokenHash = flattener(token);
+        for(auto& [key, value]: flattenedTokenHash){
+            auto it = flattenedOwnHash.find(key);
+            if(it != flattenedOwnHash.end())
+            {
+                ListBase* basePtr = static_cast<ListBase*>(it->second->InternalPointer());
+                if(basePtr->type == et_list){
+                    List* ownListPtr = static_cast<List*>(it->second->InternalPointer());
+                    List* tokenListPtr = static_cast<List*>(value->InternalPointer());
+
+                    ownListPtr->isEnabled = tokenListPtr->isEnabled;
+                    ownListPtr->isDefault = tokenListPtr->isDefault;
+                    ownListPtr->id = tokenListPtr->id;
+                    ownListPtr->name = tokenListPtr->name;
+                    ownListPtr->uiIndex = tokenListPtr->uiIndex;
+                    ownListPtr->type = tokenListPtr->type;
+                    ownListPtr->inclusionMode = tokenListPtr->inclusionMode;
+                    it->second->setCheckState(value->checkState());
+                }
+                else{
+                    FandomStateInList* ownListPtr = static_cast<FandomStateInList*>(it->second->InternalPointer());
+                    FandomStateInList* tokenListPtr = static_cast<FandomStateInList*>(value->InternalPointer());
+
+                    ownListPtr->isEnabled = tokenListPtr->isEnabled;
+                    ownListPtr->id = tokenListPtr->id;
+                    ownListPtr->list_id = tokenListPtr->list_id;
+                    ownListPtr->name = tokenListPtr->name;
+                    ownListPtr->uiIndex = tokenListPtr->uiIndex;
+                    ownListPtr->type = tokenListPtr->type;
+                    ownListPtr->inclusionMode = tokenListPtr->inclusionMode;
+                    ownListPtr->crossoverInclusionMode = tokenListPtr->crossoverInclusionMode;
+                    it->second->setCheckState(value->checkState());
+                }
+            }
+        }
+    }
+    ReloadModel();
+}
+
+std::unordered_map<int, core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetStateForSearches()
+{
+    return GetStateForSearchesFromTreeItem(rootItem);
+}
+
+std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> FandomListWidget::GetStateForSearchesFromTreeItem(std::shared_ptr<TreeItemInterface> item)
 {
     // go from top to the bottom
     // lower records override upper ones (? indicate conflict)
     using namespace core::fandom_lists;
     std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> result;
-    for(auto list: rootItem->GetChildren()){
+    for(auto list: item->GetChildren()){
         // in the list range
         if(list->checkState() == Qt::Unchecked)
             continue;
@@ -454,7 +600,7 @@ void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, 
     node->removeChildren();
     node->AddChildren(children);
     env->interfaces.fandomLists->AddFandomToList(basePtr->id, fandomId, name);
-    env->interfaces.fandomLists->EditFandomStateForList(*static_cast<FandomStateInList*>(basePtr));
+    env->interfaces.fandomLists->EditFandomStateForList(newFandomState);
     ReloadModel();
     ScrollToFandom(node, fandomId);
 }
@@ -521,6 +667,23 @@ void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
     }
     ui->tvFandomLists->blockSignals(false);
     ReloadModel();
+}
+
+void FandomListWidget::OnTreeItemSelectionChanged(const QModelIndex&, const QModelIndex& newIndex)
+{
+    if(!newIndex.isValid())
+        return;
+    using namespace core::fandom_lists;
+    auto pointer = static_cast<TreeItemInterface*>(newIndex.internalPointer());
+    ListBase* basePtr = static_cast<ListBase*>(pointer->InternalPointer());
+    if(basePtr->type == et_list){
+        ui->cbFandomLists->setCurrentText(basePtr->name);
+    }
+    else{
+        auto parentPtr = pointer->parent();
+        ListBase* basePtr = static_cast<ListBase*>(parentPtr->InternalPointer());
+        ui->cbFandomLists->setCurrentText(basePtr->name);
+    }
 }
 
 void FandomListWidget::OnTreeItemChecked(const QModelIndex &index)
@@ -611,6 +774,20 @@ void FandomListWidget::OnAddCurrentFandomToList()
     auto mode = listName == "Ignores" ? core::fandom_lists::EInclusionMode::im_exclude : core::fandom_lists::EInclusionMode::im_include;
     AddFandomToList(sharedList, id, mode);
     ScrollToFandom(sharedList, id);
+}
+
+void FandomListWidget::OnCheckComboboxText(const QString & text)
+{
+    if(text.length() > 0){
+        ui->pbAddFandomToSelectedList->setEnabled(true);
+        ui->pbIgnoreFandom->setEnabled(true);
+        ui->pbWhitelistFandom->setEnabled(true);
+    }
+    else{
+        ui->pbAddFandomToSelectedList->setEnabled(false);
+        ui->pbIgnoreFandom->setEnabled(false);
+        ui->pbWhitelistFandom->setEnabled(false);
+    }
 }
 
 

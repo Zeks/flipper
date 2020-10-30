@@ -427,8 +427,7 @@ void MainWindow::InitConnections()
     connect(ui->wdgTagsPlaceholder, &TagWidget::tagReloadRequested, this, &MainWindow::OnTagReloadRequested);
     connect(ui->wdgTagsPlaceholder, &TagWidget::clearLikedAuthors, this, &MainWindow::OnClearLikedAuthorsRequested);
     connect(ui->lvTrackedFandoms->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::OnNewSelectionInRecentList);
-    //! todo currently null
-    connect(ui->lvTrackedFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnFandomsContextMenu);
+
     //connect(ui->lvIgnoredFandoms, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsContextMenu);
     connect(ui->lvExcludedFandomsSlashFilter, &QListView::customContextMenuRequested, this, &MainWindow::OnIgnoredFandomsSlashFilterContextMenu);
     connect(ui->edtResults, &QTextBrowser::anchorClicked, this, &MainWindow::OnOpenLogUrl);
@@ -869,8 +868,7 @@ void MainWindow::SaveCurrentQuery()
     frame.havePagesAfter = windowObject->property("havePagesAfter").toBool();
     QObject *childObject = qwFics->rootObject()->findChild<QObject*>("lvFics");
     frame.authorFilterActive = childObject->property("authorFilterActive").toBool();
-
-    //frame.selectedIndex = windowObject->property("selectedIndex").toInt();
+    frame.savedFandomLists = ui->wdgFandomListPlaceholder->CreateFandomListToken();
 
     SetNextEnabled(false);
 
@@ -1212,11 +1210,12 @@ void MainWindow::OnQMLFandomToggled(QVariant var)
     QStringList list = data.split("&", QString::SkipEmptyParts);
     if(!list.size())
         return;
-//    if(ui->cbIgnoreFandomSelector->currentText().trimmed() != list.at(0).trimmed())
-//        ui->cbIgnoreFandomSelector->setCurrentText(list.at(0).trimmed());
-//    else if(list.size() > 1)
-//        ui->cbIgnoreFandomSelector->setCurrentText(list.at(1).trimmed());
-    // todo
+
+    if(ui->wdgFandomListPlaceholder->GetCurrentlySelectedFandom().trimmed() != list.at(0).trimmed())
+        ui->wdgFandomListPlaceholder->SetFandomToCombobox(list.at(0).trimmed());
+    else if(list.size() > 1)
+        ui->wdgFandomListPlaceholder->SetFandomToCombobox(list.at(1).trimmed());
+
 }
 
 void MainWindow::OnQMLAuthorToggled(QVariant var, QVariant active)
@@ -2274,8 +2273,6 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.ensureCompleted= ui->chkComplete->isChecked();
     filter.fandom = GetCurrentFandomID();
     filter.secondFandom = ui->chkCrossovers->isChecked() ? GetCrossoverFandomID() : -1;
-    //filter.otherFandomsMode = ui->chkOtherFandoms->isChecked();
-    // todo
 
     auto fixGenre = [](QStringList& genres) -> void{
         for(auto& genre: genres)
@@ -3871,6 +3868,7 @@ void MainWindow::LoadFrameIntoUI(const FilterFrame &frame)
 {
     holder->SetData(env->fanfics);
     ProcessStoryFilterIntoGUI(frame.filter);
+    ui->wdgFandomListPlaceholder->RestoreFandomListToken(frame.savedFandomLists, FandomListWidget::frm_token_state);
 
     int currentActuaLimit = ui->chkRandomizeSelection->isChecked() ? ui->sbMaxRandomFicCount->value() : env->filter.recordLimit;
     QObject* windowObject= qwFics->rootObject();
