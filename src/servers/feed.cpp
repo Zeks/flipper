@@ -1041,6 +1041,8 @@ core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcf
 
     auto* userData = ThreadData::GetUserData();
     userData->fandomStates = filter.fandomStates;
+    userData->fandomStates.erase(filter.fandom);
+    userData->fandomStates.erase(filter.secondFandom);
 
     // assuming older client
     if(!userData->ignoredFandoms.isEmpty() && filter.fandomStates.size() == 0){
