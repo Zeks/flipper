@@ -304,8 +304,6 @@ bool CoreEnvironment::Init()
         if(grpcSource)
         {
             auto authors = grpcSource->GetAuthorsForFicList(fics);
-            //            for(auto fic: authors.keys())
-            //                QLOG_INFO() << "Fic: "  << fic << " Author: " << authors[fic];
             interfaces.fanfics->WriteAuthorsForFics(authors);
         }
     }
@@ -684,6 +682,14 @@ int CoreEnvironment::BuildRecommendationsServerFetch(QSharedPointer<core::Recomm
                     interfaces.tags->SetTagForFic(fic, "Liked");
             }
         }
+        auto fics = interfaces.fanfics->GetFicIDsWithUnsetAuthors();
+        auto authors = grpcSource->GetAuthorsForFicList(fics);
+        interfaces.fanfics->WriteAuthorsForFics(authors);
+
+        QSettings settings("settings/settings.ini", QSettings::IniFormat);
+        auto positiveTags = settings.value("Tags/minorPositive").toString().split(",", Qt::SkipEmptyParts);
+        positiveTags += settings.value("Tags/majorPositive").toString().split(",", Qt::SkipEmptyParts);
+        likedAuthors = interfaces.tags->GetAuthorsForTags(positiveTags);
     });
     action.run();
     transaction.finalize();
