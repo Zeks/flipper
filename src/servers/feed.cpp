@@ -1054,6 +1054,8 @@ core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcf
     for(const auto& state: userData->fandomStates){
         if(state.second.inclusionMode == core::fandom_lists::EInclusionMode::im_include)
             userData->hasWhitelistedFandoms = true;
+        if(state.second.inclusionMode == core::fandom_lists::EInclusionMode::im_exclude)
+            filter.ignoredFandomCount++;
     }
 
     return filter;
