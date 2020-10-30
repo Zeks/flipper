@@ -31,16 +31,26 @@ static QRect CheckBoxRect(const QStyleOptionViewItem &view_item_style_options) {
 }
 
 
-static const auto iconPainter = [](const QStyledItemDelegate* delegate, QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index, auto iconSelector)
+static const auto iconPainter = [](const QStyledItemDelegate* delegate,
+        QPainter *painter,
+        const QStyleOptionViewItem &option,
+        const QModelIndex &index,
+        auto iconSelector)
 {
+    if(!index.isValid())
+        return;
     QVariant value = index.model()->data(index, Qt::DisplayRole);
+    if(index.column() == 0)
+    {
+        delegate->QStyledItemDelegate::paint(painter, option, index.parent().sibling(0,2));
+        return;
+    }
 
-    delegate->QStyledItemDelegate::paint(painter, option, index.parent().sibling(0,2));
     if(!value.isValid())
         return;
 
-    auto pixmapToDraw = iconSelector(index);
-    painter->drawPixmap(CheckBoxRect(option), pixmapToDraw);
+     auto pixmapToDraw = iconSelector(index);
+     painter->drawPixmap(CheckBoxRect(option), pixmapToDraw);
 
 };
 
@@ -101,7 +111,6 @@ FandomListWidget::FandomListWidget(QWidget *parent) :
             return QPixmap(":/icons/icons/select_fic.png");
 });
 
-    ui->tvFandomLists->setItemDelegateForColumn(0, dummyDelegate);
     ui->tvFandomLists->setItemDelegateForColumn(1, modeDelegate);
     ui->tvFandomLists->setItemDelegateForColumn(2, crossoverDelegate);
     ui->pbAddFandomToSelectedList->setEnabled(false);
