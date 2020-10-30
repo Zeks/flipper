@@ -360,13 +360,12 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     for(int i = 0; i < userData.ignored_fandoms().fandom_ids_size(); i++)
         userThreadData->ignoredFandoms[userData.ignored_fandoms().fandom_ids(i)] = userData.ignored_fandoms().ignore_crossovers(i);
 
-    for(int i = 0; i < userData.fandomstatetokens_size(); i++){
+    for(auto& item: userData.fandomstatetokens()){
         core::fandom_lists::FandomSearchStateToken token;
-        auto id = userData.fandomstatetokens().at(i).id();
-        token.id = userData.fandomstatetokens().at(i).id();
-        token.inclusionMode = static_cast<core::fandom_lists::EInclusionMode>(userData.fandomstatetokens().at(i).inclusion_mode());
-        token.crossoverInclusionMode = static_cast<core::fandom_lists::ECrossoverInclusionMode>(userData.fandomstatetokens().at(i).crossover_inclusion_mode());
-        result.fandomStates.insert_or_assign(id, std::move(token));
+        token.id = item.id();
+        token.inclusionMode = static_cast<core::fandom_lists::EInclusionMode>(item.inclusion_mode());
+        token.crossoverInclusionMode = static_cast<core::fandom_lists::ECrossoverInclusionMode>(item.crossover_inclusion_mode());
+        result.fandomStates.insert_or_assign(item.id(), std::move(token));
     }
 
     return result;
