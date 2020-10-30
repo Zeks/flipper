@@ -1038,6 +1038,19 @@ core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcf
 
     auto* userData = ThreadData::GetUserData();
     userData->fandomStates = filter.fandomStates;
+
+    // assuming older client
+    if(!userData->ignoredFandoms.isEmpty() && filter.fandomStates.size() == 0){
+        for(auto it = userData->ignoredFandoms.begin(); it != userData->ignoredFandoms.end(); it++){
+            core::fandom_lists::FandomSearchStateToken newToken;
+            newToken.id = it.key();
+            newToken.inclusionMode = core::fandom_lists::EInclusionMode::im_exclude;
+            newToken.crossoverInclusionMode = it.value() ?
+                        core::fandom_lists::ECrossoverInclusionMode::cim_select_all :
+                        core::fandom_lists::ECrossoverInclusionMode::cim_select_pure;
+            filter.fandomStates.emplace(it.key(), std::move(newToken));
+        }
+    }
     for(const auto& state: userData->fandomStates){
         if(state.second.inclusionMode == core::fandom_lists::EInclusionMode::im_include)
             userData->hasWhitelistedFandoms = true;
