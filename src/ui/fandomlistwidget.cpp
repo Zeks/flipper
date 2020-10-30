@@ -309,6 +309,7 @@ void FandomListWidget::AddNewList()
     newListPointer->SetController(listItemController);
     rootItem->addChild(newListItem);
     newListPointer->SetParent(rootItem);
+    ui->cbFandomLists->addItem(name);
     ReloadModel();
 }
 
