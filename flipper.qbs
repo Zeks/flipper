@@ -231,7 +231,8 @@ App{
     ]
     cpp.cFlags: {
         var flags = []
-        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        if(!qbs.toolchain.contains("msvc"))
+            flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
         return flags
     }
     }

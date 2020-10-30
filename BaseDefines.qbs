@@ -9,8 +9,12 @@ Product{
     // I literally can't do anything about deprecated copy warning within sleepy-discord
     // have to shitcode here to see actual relevant warnings in my code
     // and not a shitton of deprecations warnings I can do nothing about
-    cpp.cxxFlags: ["-Wno-unused-function", "-Wno-deprecated-copy"]
-    //cpp.cxxFlags: ["-Wno-unused-function"]
+    cpp.cxxFlags:{
+        if(!qbs.toolchain.contains("msvc"))
+            return ["-Wno-unused-function", "-Wno-deprecated-copy"]
+        return []
+    }
+
     destinationDirectory: {
         var path = project.rootFolder
         path += qbs.buildVariant == "release" ? "/release" : "/debug"
@@ -22,7 +26,9 @@ Product{
         return env
     }
     cpp.compilerWrapper: {
+        if(!qbs.toolchain.contains("msvc"))
             return ["ccache"]
+        return []
     }
     cpp.defines: ["MAJOR_PROTOCOL_VERSION=2", "MINOR_PROTOCOL_VERSION=0","NONEXISTENT_OPUS"]
 }
