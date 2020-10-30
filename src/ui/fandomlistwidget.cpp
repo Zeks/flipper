@@ -712,7 +712,7 @@ void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
     ReloadModel();
 }
 
-void FandomListWidget::OnTreeItemSelectionChanged(const QModelIndex&, const QModelIndex& newIndex)
+void FandomListWidget::OnTreeItemSelectionChanged(const QModelIndex& newIndex, const QModelIndex&)
 {
     if(!newIndex.isValid())
         return;
