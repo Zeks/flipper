@@ -207,6 +207,7 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
             it++;
         }
     }
+    //auto* fandomState = result.mutable_();
     return result;
 }
 
@@ -355,9 +356,18 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
         result.recsHash[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
     for(int i = 0; i < userData.scores_list().list_of_fics_size(); i++)
         result.scoresHash[userData.scores_list().list_of_fics(i)] = userData.scores_list().list_of_scores(i);
+
     for(int i = 0; i < userData.ignored_fandoms().fandom_ids_size(); i++)
         userThreadData->ignoredFandoms[userData.ignored_fandoms().fandom_ids(i)] = userData.ignored_fandoms().ignore_crossovers(i);
 
+    for(int i = 0; i < userData.fandomstatetokens_size(); i++){
+        core::fandom_lists::FandomSearchStateToken token;
+        auto id = userData.fandomstatetokens().at(i).id();
+        token.id = userData.fandomstatetokens().at(i).id();
+        token.inclusionMode = static_cast<core::fandom_lists::EInclusionMode>(userData.fandomstatetokens().at(i).inclusion_mode());
+        token.crossoverInclusionMode = static_cast<core::fandom_lists::ECrossoverInclusionMode>(userData.fandomstatetokens().at(i).crossover_inclusion_mode());
+        result.fandomStates.insert_or_assign(id, std::move(token));
+    }
 
     return result;
 }
@@ -799,6 +809,7 @@ void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core:
     for(auto snooze : std::as_const(this->userData.allSnoozedFics))
         userData->add_snoozes(snooze);
 
+
     auto* ignoredFandoms = userData->mutable_ignored_fandoms();
 
     for(auto i = this->userData.ignoredFandoms.cbegin(); i != this->userData.ignoredFandoms.cend(); i++)
@@ -809,6 +820,13 @@ void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core:
             continue;
         ignoredFandoms->add_fandom_ids(key);
         ignoredFandoms->add_ignore_crossovers(i.value());
+    }
+
+    for(auto it = this->userData.fandomStates.cbegin(); it != this->userData.fandomStates.cend(); it++){
+        auto token = userData->add_fandomstatetokens();
+        token->set_id(it->second.id);
+        token->set_inclusion_mode(static_cast<::ProtoSpace::EInclusionMode>((it->second.inclusionMode)));
+        token->set_crossover_inclusion_mode(static_cast<::ProtoSpace::ECrossoverInclusionMode>((it->second.crossoverInclusionMode)));
     }
 
     auto tagData = task.mutable_filter()->mutable_tag_filter();
@@ -889,6 +907,12 @@ int FicSourceGRPCImpl::GetFicCount(const core::StoryFilter& filter)
     {
         ignoredFandoms->add_fandom_ids(i.key());
         ignoredFandoms->add_ignore_crossovers(i.value());
+    }
+    for(auto it = this->userData.fandomStates.cbegin(); it != this->userData.fandomStates.cend(); it++){
+        auto token = userData->add_fandomstatetokens();
+        token->set_id(it->second.id);
+        token->set_inclusion_mode(static_cast<::ProtoSpace::EInclusionMode>((it->second.inclusionMode)));
+        token->set_crossover_inclusion_mode(static_cast<::ProtoSpace::ECrossoverInclusionMode>((it->second.crossoverInclusionMode)));
     }
 
     grpc::Status status = stub_->GetFicCount(&context, task, response.data());

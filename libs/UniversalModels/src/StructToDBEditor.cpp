@@ -1,5 +1,0 @@
-
-
-
-#include "../include/StructToDBEditor.h"
-

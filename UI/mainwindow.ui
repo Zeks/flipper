@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1147</width>
-    <height>1359</height>
+    <width>1148</width>
+    <height>1559</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -901,7 +901,7 @@
                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Used to enable/disable fandom ignore. If this is checked fics from fandoms you have ignored will not be shown in your recommendation list.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                      <property name="text">
-                      <string>Fandom Ignore</string>
+                      <string>Fandom Lists</string>
                      </property>
                      <property name="checked">
                       <bool>true</bool>
@@ -1549,7 +1549,7 @@
              <rect>
               <x>178</x>
               <y>9</y>
-              <width>157</width>
+              <width>160</width>
               <height>60</height>
              </rect>
             </property>
@@ -1589,7 +1589,7 @@
              <rect>
               <x>10</x>
               <y>10</y>
-              <width>175</width>
+              <width>181</width>
               <height>60</height>
              </rect>
             </property>
@@ -2862,127 +2862,18 @@
                     <property name="bottomMargin">
                      <number>0</number>
                     </property>
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_27">
-                      <property name="font">
-                       <font>
-                        <weight>75</weight>
-                        <bold>true</bold>
-                       </font>
-                      </property>
-                      <property name="text">
-                       <string>Ignored Fandoms</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3">
-                     <widget class="QLabel" name="lblIgnoredFandomsInfo">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>24</width>
-                        <height>24</height>
-                       </size>
-                      </property>
-                      <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you want to change the ignore mode (crossovers or not) remove the fandom via right click and re-add it with new settings. To quickly select the fandom you want to ignore: click on the fandom section of the displayed fic. More than one click cycles fandoms.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="pixmap">
-                       <pixmap resource="../icons.qrc">:/icons/icons/question1.png</pixmap>
-                      </property>
-                      <property name="scaledContents">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="2">
-                     <widget class="QCheckBox" name="chkOtherFandoms">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If checked, the next Reload will only search in ignored fandoms.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                      <property name="text">
-                       <string>Reverse ignores</string>
-                      </property>
-                     </widget>
-                    </item>
                    </layout>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QListView" name="lvIgnoredFandoms">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QComboBox" name="cbIgnoreFandomSelector">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
+                  <widget class="FandomListWidget" name="wdgFandomListPlaceholder" native="true">
                    <property name="minimumSize">
                     <size>
-                     <width>100</width>
-                     <height>0</height>
+                     <width>0</width>
+                     <height>400</height>
                     </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A list of all fandoms for category. Uses auto-complete so you just have to start typing.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="editable">
-                    <bool>true</bool>
                    </property>
                   </widget>
-                 </item>
-                 <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_9">
-                   <item>
-                    <widget class="QPushButton" name="pbIgnoreFandom">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Pressing this will ignore the fandom currently in the combobox to the right. If &amp;quot;Also crossovers&amp;quot; is checked it will also stop displaying fics that have this fandom as a second one. To remove a fandom from ignores or changes &amp;quot;Also crossovers&amp;quot; mode, right clock on it in the list and remove it. Then add it back.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string>Ignore Fandom</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QCheckBox" name="chkIgnoreIncludesCrossovers">
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;If this is checked pressing &amp;quot;Ignore fandom&amp;quot; will also exclude fandoms that have the ignored fandom as a crossover fandom in addition to purely being of that fandom.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string>Also Crossovers</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
                  </item>
                 </layout>
                </widget>
@@ -3838,7 +3729,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1147</width>
+     <width>1148</width>
      <height>21</height>
     </rect>
    </property>
@@ -3858,7 +3749,13 @@
   <customwidget>
    <class>TagWidget</class>
    <extends>QWidget</extends>
-   <header>tagwidget.h</header>
+   <header>ui/tagwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FandomListWidget</class>
+   <extends>QWidget</extends>
+   <header>ui/fandomlistwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
@@ -3867,7 +3764,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgRecsSource"/>
   <buttongroup name="bgRecsMode"/>
+  <buttongroup name="bgRecsSource"/>
  </buttongroups>
 </ui>

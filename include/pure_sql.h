@@ -9,6 +9,7 @@
 #include <QSharedPointer>
 #include "core/section.h"
 #include "core/fandom.h"
+#include "core/fandom_list.h"
 #include "core/fic_genre_data.h"
 #include "core/recommendation_list.h"
 #include "core/experimental/fic_relations.h"
@@ -38,6 +39,11 @@ namespace puresql{
 static constexpr int genreArraySize = 22;
 //bool ExecAndCheck(QSqlQuery& q);
 bool CheckExecution(QSqlQuery& q);
+
+struct DBVerificationResult{
+  bool success = true;
+  QStringList data;
+};
 
 enum IDType{
     idt_db = 0,
@@ -108,6 +114,8 @@ DiagnosticSQLResult<core::FandomPtr> GetFandom(int id, bool loadFandomStats,  QS
 
 DiagnosticSQLResult<bool>  IgnoreFandom(int id, bool includeCrossovers, QSqlDatabase db);
 DiagnosticSQLResult<bool>  RemoveFandomFromIgnoredList(int id, QSqlDatabase db);
+DiagnosticSQLResult<bool>  ProcessIgnoresIntoFandomLists(QSqlDatabase db);
+
 DiagnosticSQLResult<QStringList>  GetIgnoredFandoms(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, bool>> GetIgnoredFandomIDs(QSqlDatabase db);
 DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>, QSqlDatabase db);
@@ -130,6 +138,23 @@ DiagnosticSQLResult<bool> RemoveFandomFromRecentList(QString name, QSqlDatabase 
 
 DiagnosticSQLResult<QStringList> GetFandomNamesForFicId(int ficId, QSqlDatabase db);
 DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDatabase);
+
+
+DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomLists(QSqlDatabase);
+DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFandomStatesInUserList(int list_id, QSqlDatabase);
+DiagnosticSQLResult<bool> AddFandomToUserList(uint32_t list_id, uint32_t fandom_id,  QString fandom_name, QSqlDatabase);
+DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase);
+DiagnosticSQLResult<int> AddNewFandomList(QString name, QSqlDatabase);
+DiagnosticSQLResult<bool> RemoveFandomList(uint32_t list_id, QSqlDatabase);
+
+DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList&, QSqlDatabase);
+DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List &, QSqlDatabase);
+DiagnosticSQLResult<bool> FlipListValues(uint32_t list_id, QSqlDatabase);
+
+
+
+
+
 
 DiagnosticSQLResult<int>  GetFicIdByAuthorAndName(QString author, QString title, QSqlDatabase db);
 DiagnosticSQLResult<int> GetFicIdByWebId(QString website, int webId, QSqlDatabase db);
@@ -423,10 +448,6 @@ DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSour
 DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
 DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
 
-struct DBVerificationResult{
-  bool success = true;
-  QStringList data;
-};
 DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase db);
 
 namespace Internal{

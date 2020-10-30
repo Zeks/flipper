@@ -35,7 +35,7 @@ Project {
         "flipper.qbs",
         "gui_condition.qbs",
         "environment_plugs.qbs",
-        "libs/UniversalModels/UniversalModels.qbs",
+        "libs/ui-models/UniversalModels.qbs",
         "libs/Logger/logger.qbs",
     ]
 }

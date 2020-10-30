@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #pragma once
 
 #include "storyfilter.h"
-#include "libs/UniversalModels/include/TableDataInterface.h"
-#include "libs/UniversalModels/include/TableDataListHolder.h"
-#include "libs/UniversalModels/include/AdaptingTableModel.h"
+#include "libs/ui-models/include/TableDataInterface.h"
+#include "libs/ui-models/include/TableDataListHolder.h"
+#include "libs/ui-models/include/AdaptingTableModel.h"
 #include "include/tasks/fandom_task_processor.h"
 #include "include/tasks/author_task_processor.h"
 //#include "qml_ficmodel.h"
@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 namespace interfaces{
 class Fandoms;
+class FandomLists;
 class Fanfics;
 class Authors;
 class Tags;
@@ -55,6 +56,7 @@ public:
 
 class QLineEdit;
 class QLabel;
+class TreeItemInterface;
 
 struct FilterFrame{
 
@@ -71,6 +73,7 @@ struct FilterFrame{
 
     QSharedPointer<core::Query> currentQuery; // the last query created by query builder. reused when querying subsequent pages
     core::StoryFilter filter; // an intermediary to keep UI filter data to be passed into query builder
+    std::shared_ptr<TreeItemInterface> savedFandomLists;
 };
 
 
@@ -135,6 +138,7 @@ public:
     struct Interfaces{
         // the interface classes used to avoid direct database access in the application
         QSharedPointer<interfaces::Fandoms> fandoms;
+        std::shared_ptr<interfaces::FandomLists> fandomLists;
         QSharedPointer<interfaces::Fanfics> fanfics;
         QSharedPointer<interfaces::Authors> authors;
         QSharedPointer<interfaces::Tags> tags;

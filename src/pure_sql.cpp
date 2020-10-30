@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/genres.h"
 #include "EGenres.h"
 #include "include/in_tag_accessor.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include "fmt/format.h"
 #include <QSqlQuery>
 #include <QSqlError>
@@ -2069,6 +2070,55 @@ DiagnosticSQLResult<bool> RemoveFandomFromIgnoredList(int fandom_id, QSqlDatabas
     return SqlContext<bool>(db, std::move(qs), BP1(fandom_id))();
 }
 
+DiagnosticSQLResult<bool> ProcessIgnoresIntoFandomLists(QSqlDatabase db)
+{
+    // first we read the ignorelist and verify it's not empty
+    int numberOfIgnorelistRecords = 0;
+    DiagnosticSQLResult<bool> result;
+    result.success = true;
+    {
+        std::string qs = " select count(*) as count from ignored_fandoms";
+        SqlContext<int> ctx(db, std::move(qs));
+        ctx.FetchSingleValue<int>("count", 0);
+        if(!ctx.result.success)
+        {
+            // we assume that this table no longer exists and move on
+            return result;
+        }
+        else
+            numberOfIgnorelistRecords = ctx.result.data;
+    }
+
+    // if there is nothing in ignores - we have nothing to do
+    if(numberOfIgnorelistRecords == 0)
+        return result;
+    {
+        int index = 0;
+        std::string qs = " select * from ignored_fandoms";
+        SqlContext<bool> ctx(db, std::move(qs));
+        ctx.ForEachInSelect([&index, db](QSqlQuery& q){
+            auto qs = "insert into fandom_list_data(list_id, fandom_id, fandom_name, enabled_state, inclusion_mode, crossover_mode, ui_index)"
+                      " values(0, :fandom_id, (select name from fandomindex where id = :fandom_id_repeat), 1, 1, :crossover_mode, :ui_index)";
+            SqlContext<bool> ctx(db, std::move(qs));
+            ctx.bindValue("fandom_id", q.value(QStringLiteral("fandom_id")).toInt());
+            ctx.bindValue("fandom_id_repeat", q.value(QStringLiteral("fandom_id")).toInt());
+            auto includeCrossovers = q.value(QStringLiteral("fandom_id")).toInt();
+            ctx.bindValue("crossover_mode", includeCrossovers ? 0 : 1);
+            ctx.bindValue("ui_index", index);
+            index++;
+            ctx();
+            if(ctx.result.success)
+            {
+                SqlContext<bool> ctx(db, "delete from ignored_fandoms where fandom_id = :fandom_id");
+                ctx.bindValue("fandom_id", q.value(QStringLiteral("fandom_id")).toInt());
+                ctx();
+            }
+        });
+        result = ctx.result;
+    }
+    return result;
+}
+
 DiagnosticSQLResult<QStringList> GetIgnoredFandoms(QSqlDatabase db)
 {
     std::string qs = "select name from fandomindex where id in (select fandom_id from ignored_fandoms) order by name asc";
@@ -2097,10 +2147,13 @@ DiagnosticSQLResult<QHash<int, QString>> GetFandomNamesForIDs(QList<int>ids, QSq
 
 DiagnosticSQLResult<QHash<int, bool> > GetIgnoredFandomIDs(QSqlDatabase db)
 {
-    std::string qs = "select fandom_id, including_crossovers from ignored_fandoms order by fandom_id asc";
+    std::string qs = "select fandom_id, crossover_mode from fandom_list_data where list_id = 0 and inclusion_mode = 1 "
+                     " and list_id in (select id from fandom_lists where is_enabled = 1) "
+                     " and enabled_state = 1 "
+                     " order by fandom_id asc";
     SqlContext<QHash<int, bool> > ctx(db);
-    ctx.FetchSelectFunctor(std::move(qs), [](QHash<int, bool>& data, QSqlQuery& q){
-        data[q.value("fandom_id").toInt()] = q.value("including_crossovers").toBool();
+    ctx.FetchSelectFunctor(std::move(qs), [](auto& data, QSqlQuery& q){
+        data[q.value(QStringLiteral("fandom_id")).toInt()] = q.value(QStringLiteral("crossover_mode")).toInt() *in(0, 2); // todo check this
     }, true);
     return std::move(ctx.result);
 }
@@ -2201,6 +2254,141 @@ DiagnosticSQLResult<bool> AddUrlToFandom(int fandomID, core::Url url, QSqlDataba
     return ctx(true);
 }
 
+DiagnosticSQLResult<std::vector<core::fandom_lists::List::ListPtr>> FetchFandomLists(QSqlDatabase db)
+{
+    using ListPtr = core::fandom_lists::List::ListPtr;
+    using List = core::fandom_lists::List;
+    std::string qs = " select * from fandom_lists";
+
+    SqlContext<std::vector<core::fandom_lists::List::ListPtr>> ctx(db, std::move(qs));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        ListPtr list(new List);
+        list->id = q.value(QStringLiteral("id")).toInt();
+        list->name = q.value(QStringLiteral("name")).toString();
+        list->isEnabled= q.value(QStringLiteral("is_enabled")).toBool();
+        list->isDefault = q.value(QStringLiteral("is_default")).toBool();
+        list->uiIndex = q.value(QStringLiteral("ui_index")).toInt();
+        ctx.result.data.push_back(list);
+    });
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<std::vector<core::fandom_lists::FandomStateInList>> FetchFandomStatesInUserList(int list_id, QSqlDatabase db)
+{
+    using FandomState = core::fandom_lists::FandomStateInList;
+    using FandomInclusionMode = core::fandom_lists::EInclusionMode;
+    using CrossoverInclusionMode = core::fandom_lists::ECrossoverInclusionMode;
+
+    std::string qs = " select * from fandom_list_data where list_id=:list_id order by fandom_id asc";
+
+    SqlContext<std::vector<core::fandom_lists::FandomStateInList>> ctx(db, std::move(qs), BP1(list_id));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        FandomState state;
+        state.list_id = q.value(QStringLiteral("list_id")).toInt();
+        state.name = q.value(QStringLiteral("fandom_name")).toString();
+        state.id = q.value(QStringLiteral("fandom_id")).toInt();
+        state.isEnabled = q.value(QStringLiteral("enabled_state")).toBool();
+        state.uiIndex = q.value(QStringLiteral("ui_index")).toInt();
+        state.crossoverInclusionMode = static_cast<CrossoverInclusionMode>(q.value(QStringLiteral("crossover_mode")).toInt());
+        state.inclusionMode= static_cast<FandomInclusionMode>(q.value(QStringLiteral("inclusion_mode")).toInt());
+        ctx.result.data.push_back(state);
+    });
+    return std::move(ctx.result);
+}
+
+
+DiagnosticSQLResult<bool> AddFandomToUserList(uint32_t list_id, uint32_t fandom_id, QString fandom_name, QSqlDatabase db)
+{
+    std::string qs = "insert into fandom_list_data(list_id, fandom_id, fandom_name) values(:list_id, :fandom_id, :fandom_name)";
+    SqlContext<bool> ctx(db, std::move(qs), BP3(list_id, fandom_id, fandom_name));
+    return ctx(true);
+}
+
+DiagnosticSQLResult<bool> RemoveFandomFromUserList(uint32_t list_id, uint32_t fandom_id, QSqlDatabase db)
+{
+    std::string qs = "delete from fandom_list_data where list_id = :list_id and fandom_id = :fandom_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(list_id, fandom_id));
+    return ctx(true);
+}
+
+DiagnosticSQLResult<bool> RemoveFandomList(uint32_t list_id, QSqlDatabase db)
+{
+    std::string qs = "delete from fandom_lists where id = :list_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(list_id));
+    return ctx(true);
+}
+
+
+DiagnosticSQLResult<int> AddNewFandomList(QString name, QSqlDatabase db)
+{
+    int maxFandomId = 0;
+    {
+        std::string qs = "select max(id) as maxid from fandom_lists";
+        SqlContext<int>ctx(db, std::move(qs));
+        ctx.FetchSingleValue<int>("maxid", -1);
+        maxFandomId = ctx.result.data;
+    }
+    DiagnosticSQLResult<int> result;
+    int id = maxFandomId + 1;
+    std::string qs = "insert into fandom_lists(id, name) values(:id, :name)";
+    SqlContext<int> ctx(db, std::move(qs), BP2(id, name));
+    ctx(true);
+    if(!ctx.result.success){
+        result.data = -1;
+        result.success = false;
+    }
+    else
+        result.data = id;
+    return result;
+}
+
+DiagnosticSQLResult<bool> EditFandomStateForList(const core::fandom_lists::FandomStateInList & fandomState, QSqlDatabase db)
+{
+    std::string qs = "update fandom_list_data set "
+                     " enabled_state = :enabled_state,"
+                     " inclusion_mode = :inclusion_mode,"
+                     " crossover_mode = :crossover_mode,"
+                     " ui_index = :ui_index "
+                     " where list_id = :list_id and fandom_id = :fandom_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("enabled_state", fandomState.isEnabled);
+    ctx.bindValue("inclusion_mode", static_cast<int>(fandomState.inclusionMode));
+    ctx.bindValue("crossover_mode", static_cast<int>(fandomState.crossoverInclusionMode));
+    ctx.bindValue("ui_index", fandomState.uiIndex);
+    ctx.bindValue("list_id", fandomState.list_id);
+    ctx.bindValue("fandom_id", fandomState.id);
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+DiagnosticSQLResult<bool> EditListState(const core::fandom_lists::List& listState, QSqlDatabase db)
+{
+    std::string qs = "update fandom_lists set "
+                     " name = :name,"
+                     " is_enabled = :is_enabled,"
+                     " is_expanded = :is_expanded,"
+                     " ui_index = :ui_index"
+                     " where id = :id ";
+
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("name", listState.name);
+    ctx.bindValue("is_enabled", listState.isEnabled);
+    ctx.bindValue("is_expanded", listState.isExpanded);
+    ctx.bindValue("ui_index", listState.uiIndex);
+    ctx.bindValue("id", listState.id);
+    ctx.ExecAndCheck(true);
+    return ctx.result;
+}
+
+
+DiagnosticSQLResult<bool> FlipListValues(uint32_t list_id, QSqlDatabase db){
+    std::string qs = "update fandom_list_data set "
+                       " inclusion_mode = CASE WHEN inclusion_mode = 1 THEN 0 ELSE 1 END"
+                     "  where list_id = :list_id  ";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(list_id));
+    return ctx(true);
+}
+
 DiagnosticSQLResult<QList<int>> GetRecommendersForFicIdAndListId(int fic_id, QSqlDatabase db)
 {
     std::string qs = "Select distinct recommender_id from recommendations where fic_id = :fic_id";
@@ -2225,7 +2413,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
         QStringList parts;
 
         if(tags.size() > 0)
-            parts.push_back(QString("tag in ('{0}')").arg(tags.join("','")));
+            parts.push_back(QString("tag in ('%1')").arg(tags.join("','")));
 
         if(parts.size() > 0)
         {
@@ -2238,7 +2426,7 @@ DiagnosticSQLResult<QSet<int>> GetFicsTaggedWith(QStringList tags, bool useAND, 
     }
     else {
         std::string qs = "select distinct fic_id from fictags ft where ";
-        QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '{0}') ";
+        QString prototype = " exists (select fic_id from fictags where ft.fic_id = fic_id and tag = '%1') ";
         QStringList parts;
 
         QStringList tokens;
@@ -4326,6 +4514,18 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
         result.success = true;
     return result;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 

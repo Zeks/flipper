@@ -26,13 +26,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSettings>
 #include <QTextStream>
 #include <QCoreApplication>
-#include <third_party/quazip/quazip.h>
-#include <third_party/quazip/JlCompress.h>
+//#include <third_party/quazip/quazip.h>
+//#include <third_party/quazip/JlCompress.h>
 #include "include/queryinterfaces.h"
 #include "include/transaction.h"
 #include "include/in_tag_accessor.h"
 #include "pure_sql.h"
 #include "logger/QsLog.h"
+#include "GlobalHeaders/snippets_templates.h"
 
 namespace database{
 
@@ -224,40 +225,110 @@ void cfInIgnoredFandoms(sqlite3_context* ctx, int , sqlite3_value** argv)
 {
     int fandom1 = sqlite3_value_int(argv[0]);
     int fandom2 = sqlite3_value_int(argv[1]);
-    //QList<int> fandoms = {fandom1, fandom2};
-//    if(!fandoms.size())
-//        sqlite3_result_int(ctx, 0);
+    using namespace core::fandom_lists;
     auto* data = ThreadData::GetUserData();
+    // whitelist branch
+    if(data->hasWhitelistedFandoms){
+        if(fandom2 == -1){
+            auto it = data->fandomStates.find(fandom1);
+            bool isWhitelisted = it != data->fandomStates.end()
+                    && it->second.inclusionMode == EInclusionMode::im_include
+                    && it->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_pure);
+            if(!isWhitelisted)
+            {
+                sqlite3_result_int(ctx,1);
+                return;
+            }
+        }
+        else{
+            auto itFirstFandom = data->fandomStates.find(fandom1);
+            auto itSecondFandom = data->fandomStates.find(fandom2);
+            if(itFirstFandom == data->fandomStates.end() && itSecondFandom == data->fandomStates.end()){
+                sqlite3_result_int(ctx,1);
+                return;
+            }
+            else if(itFirstFandom == data->fandomStates.end() && itSecondFandom != data->fandomStates.end()){
+                bool isWhitelisted = itSecondFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                if(!isWhitelisted)
+                {
+                    sqlite3_result_int(ctx,1);
+                    return;
+                }
+
+            }
+            else if(itFirstFandom != data->fandomStates.end() && itSecondFandom == data->fandomStates.end()){
+                bool isWhitelisted = itFirstFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                if(!isWhitelisted)
+                {
+                    sqlite3_result_int(ctx,1);
+                    return;
+                }
+            }
+            else{
+                bool isFirstWhitelisted = itFirstFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                bool isSecondWhitelisted = itSecondFandom->second.inclusionMode == EInclusionMode::im_include
+                        && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+                if(!(isFirstWhitelisted || isSecondWhitelisted))
+                {
+                    sqlite3_result_int(ctx,1);
+                    return;
+                }
+
+            }
+        }
+    }
+
+    // ignores branch
     if(fandom2 == -1)
     {
-        if(data->ignoredFandoms.contains(fandom1))
+        auto it = data->fandomStates.find(fandom1);
+        bool isIgnored = it != data->fandomStates.end()
+                && it->second.inclusionMode == EInclusionMode::im_exclude
+                && it->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+        if(isIgnored)
+        {
             sqlite3_result_int(ctx, 1);
-        else
-            sqlite3_result_int(ctx, 0);
+            return;
+        }
     }
     else
     {
-        bool hasUnignored = false;
-        for(auto fandom: {fandom1, fandom2})
-        {
-            auto it = data->ignoredFandoms.find(fandom);
-            if(it == data->ignoredFandoms.end())
-            {
-                hasUnignored = true;
-                continue;
-            }
-            if(it.value() == true)
-            {
+        // this is SO going to break >_<
+        auto itFirstFandom = data->fandomStates.find(fandom1);
+        auto itSecondFandom = data->fandomStates.find(fandom2);
+
+        if(itFirstFandom == data->fandomStates.end() && itSecondFandom == data->fandomStates.end()){
+            // do nothing here, wil lassign 0 later
+        }
+        else if(itFirstFandom == data->fandomStates.end() && itSecondFandom != data->fandomStates.end()){
+            if(itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers)){
                 sqlite3_result_int(ctx, 1);
                 return;
             }
         }
-        if(hasUnignored)
-            sqlite3_result_int(ctx, 0);
-        else
-            sqlite3_result_int(ctx, 1);
-
+        else if(itSecondFandom == data->fandomStates.end() && itFirstFandom != data->fandomStates.end()){
+            if(itFirstFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers)){
+                sqlite3_result_int(ctx, 1);
+                return;
+            }
+        }
+        else{
+            bool firstFandomIgnored = itFirstFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itFirstFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+            bool secondFandomIgnored = itSecondFandom->second.inclusionMode == EInclusionMode::im_exclude
+                    && itSecondFandom->second.crossoverInclusionMode *in(ECrossoverInclusionMode::cim_select_all,ECrossoverInclusionMode::cim_select_crossovers);
+            if(firstFandomIgnored || secondFandomIgnored){
+                sqlite3_result_int(ctx, 1);
+                return;
+            }
+        }
     }
+    sqlite3_result_int(ctx,0);
 }
 
 void cfInActiveTags(sqlite3_context* ctx, int , sqlite3_value** argv)
@@ -363,7 +434,6 @@ bool ReadDbFile(QString file, QString connectionName)
     QFile data(file);
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     auto reportSchemaErrors = settings.value("Settings/reportSchemaErrors", false).toBool();
 
     QLOG_INFO() << "Reading init file: " << file;
@@ -615,7 +685,6 @@ QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
     InstallCustomFunctions(db);
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    settings.setIniCodec(QTextCodec::codecForName("UTF-8"));
     ReadDbFile(sqlFile, setDefault ? "" : connectionName);
     bool uuidSuccess = database::puresql::EnsureUUIDForUserDatabase(QUuid::createUuid(), db).success;
     QLOG_INFO() << "Database status: " << connectionName << ", open : " << isOpen << "uuid success: " << uuidSuccess;

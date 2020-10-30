@@ -71,12 +71,9 @@ App{
         "src/discord/discord_pagegetter.cpp",
         "src/discord/discord_server.cpp",
         "src/discord/discord_user.cpp",
-        "src/discord/fandom_filter_token.cpp",
         "src/discord/favourites_fetching.cpp",
         "src/discord/fetch_filters.cpp",
         "src/discord/help_generator.cpp",
-        "src/discord/limits.cpp",
-        "src/discord/task.cpp",
         "src/discord/task_environment.cpp",
         "src/discord/task_runner.cpp",
         "src/environment.cpp",
@@ -206,7 +203,7 @@ App{
 
     cpp.staticLibraries: {
         var libs = []
-        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl", "pthread"]
+        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl"]
         libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }
