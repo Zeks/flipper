@@ -20,10 +20,10 @@ namespace fandom_lists{
         virtual ~ListBase(){};
         bool isEnabled = true;;
         bool isExpanded = true;;
-        uint32_t id;
+        uint32_t id = 0;
         QString name;
-        uint16_t uiIndex;
-        EEntityType type;
+        uint16_t uiIndex = 0;
+        EEntityType type = et_list;
         EInclusionMode inclusionMode = im_exclude;
         EInclusionMode Rotate(EInclusionMode mode){
             if(mode == im_exclude)
@@ -49,8 +49,8 @@ namespace fandom_lists{
     struct FandomStateInList: public ListBase{
         FandomStateInList():ListBase(et_fandom){}
         using ListBase::Rotate;
-        uint32_t list_id;
-        ECrossoverInclusionMode crossoverInclusionMode;
+        uint32_t list_id = 0;
+        ECrossoverInclusionMode crossoverInclusionMode = cim_select_all;
         ECrossoverInclusionMode Rotate(ECrossoverInclusionMode mode){
             if(mode == cim_select_all)
                 return cim_select_crossovers;
@@ -63,7 +63,7 @@ namespace fandom_lists{
     struct FandomSearchStateToken{
         uint32_t id;
         EInclusionMode inclusionMode = im_exclude;
-        ECrossoverInclusionMode crossoverInclusionMode;
+        ECrossoverInclusionMode crossoverInclusionMode = cim_select_all;
     };
 
 }

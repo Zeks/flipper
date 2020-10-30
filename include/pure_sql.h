@@ -447,6 +447,9 @@ DiagnosticSQLResult<bool> PassTagSetToAnotherDatabase(QSqlDatabase dbSource, QSq
 DiagnosticSQLResult<bool> PassRecentFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
 DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
 DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassFandomListSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+DiagnosticSQLResult<bool> PassFandomListDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget);
+
 
 DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase db);
 

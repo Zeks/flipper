@@ -161,6 +161,28 @@ void FandomListWidget::SetupItemControllers()
         return view->font();
     });
 
+    listItemController->AddGetter(1, {Qt::ToolTipRole}, [](const core::fandom_lists::List*)->QVariant{
+        return "Double clicking here flips whole list between inclusion and exlusion mode.";
+    });
+    fandomItemController->AddGetter(1, {Qt::ToolTipRole}, [](const core::fandom_lists::FandomStateInList* fandom)->QVariant{
+        QString tooltip = "Double clicking here changes inclusion/exclusion mode for this fandom.";
+        if(fandom->inclusionMode == core::fandom_lists::EInclusionMode::im_include)
+            tooltip +="\nCurrently active: include this fandom.";
+        else
+            tooltip +="\nCurrently active: exclude this fandom.";
+        return tooltip;
+    });
+    fandomItemController->AddGetter(2, {Qt::ToolTipRole}, [](const core::fandom_lists::FandomStateInList* fandom)->QVariant{
+        QString tooltip = "Double clicking here changes inclusion mode for crossovers between whole fandom, only crossovers and only non crossover.";
+        if(fandom->crossoverInclusionMode == core::fandom_lists::ECrossoverInclusionMode::cim_select_all)
+            tooltip +="\nCurrently active: select whole fandom including crossovers.";
+        else if(fandom->crossoverInclusionMode == core::fandom_lists::ECrossoverInclusionMode::cim_select_crossovers)
+            tooltip +="\nCurrently active: include only crossovers for this fandom.";
+        else
+            tooltip +="\nCurrently active: include only non crossovers for this fandom.";
+        return tooltip;
+    });
+
 
     // SETTERS
     listItemController->AddSetter(3,displayRoles, [](core::fandom_lists::List* data, QVariant value)->bool{
@@ -234,7 +256,8 @@ void FandomListWidget::InitButtonConnections()
     connect(ui->pbAddFandomToSelectedList, &QPushButton::clicked, this, &FandomListWidget::OnAddCurrentFandomToList);
     connect(ui->pbIgnoreFandom, &QPushButton::clicked, this, &FandomListWidget::OnIgnoreCurrentFandom);
     connect(ui->pbWhitelistFandom, &QPushButton::clicked, this, &FandomListWidget::OnWhitelistCurrentFandom);
-    connect(ui->cbFandoms, &QComboBox::editTextChanged, this, &FandomListWidget::OnCheckComboboxText);
+    connect(ui->cbFandoms, &QComboBox::editTextChanged, this, &FandomListWidget::OnCheckFandomsText);
+    connect(ui->cbFandomLists, &QComboBox::editTextChanged, this, &FandomListWidget::OnCheckFandomListText);
 
     connect(ui->pbAddNewFandomList, &QPushButton::clicked, [&]{AddNewList();});
     connect(ui->pbDeleteFandomList, &QPushButton::clicked, [&](){
@@ -257,6 +280,10 @@ void FandomListWidget::CreateContextMenus()
     listItemMenu->addAction("Rename list", [&]{RenameListUnderCursor();});
     listItemMenu->addAction("Delete list", [&]{DeleteListUnderCursor();});
     fandomItemMenu->addAction("Delete fandom", [&]{DeleteFandomUnderCursor();});
+
+    noItemMenu->addAction("Collapse all", [&]{CollapseTree();});
+    listItemMenu->addAction("Collapse all", [&]{CollapseTree();});
+    fandomItemMenu->addAction("Collapse all", [&]{CollapseTree();});
 
 }
 
@@ -592,6 +619,8 @@ void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, 
     auto item = TreeFunctions::CreateInterfaceFromData<FandomStateInList, TreeItemInterface, TreeItem>
             (node, newFandomState, fandomItemController);
     item->setCheckState(Qt::Checked);
+    node->setCheckState(Qt::Checked);
+
     node->addChild(item);
     auto children = node->GetChildren();
     std::sort(children.begin(),children.end(), [](const auto& i1,const auto& i2){
@@ -601,6 +630,7 @@ void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, 
     node->AddChildren(children);
     env->interfaces.fandomLists->AddFandomToList(basePtr->id, fandomId, name);
     env->interfaces.fandomLists->EditFandomStateForList(newFandomState);
+    node->SetChildrenExclusive(Qt::Checked);
     ReloadModel();
     ScrollToFandom(node, fandomId);
 }
@@ -611,6 +641,7 @@ QModelIndex FandomListWidget::FindIndexForPath(QStringList path)
     for(auto listIndex = 0; listIndex < treeModel->rowCount(QModelIndex()); listIndex++){
         QModelIndex currentListIndex = treeModel->index(listIndex, 3);
         //auto data = currentListIndex.data(Qt::DisplayRole).toString();
+        QString sectionData = currentListIndex.data(Qt::DisplayRole).toString();
         if(currentListIndex.data(Qt::DisplayRole).toString() == path.at(currentDepth))
         {
             currentDepth++;
@@ -618,7 +649,8 @@ QModelIndex FandomListWidget::FindIndexForPath(QStringList path)
                 return currentListIndex;
             for(auto fandomIndex = 0; fandomIndex < treeModel->rowCount(currentListIndex); fandomIndex++){
                 auto currentFandomIndex = treeModel->index(fandomIndex, 3, currentListIndex);
-                if(currentListIndex.data(Qt::DisplayRole).toString() == path.at(currentDepth))
+                QString itemData = currentFandomIndex.data(Qt::DisplayRole).toString();
+                if(currentFandomIndex.data(Qt::DisplayRole).toString() == path.at(currentDepth))
                     return currentFandomIndex;
             }
         }
@@ -636,6 +668,16 @@ void FandomListWidget::ReloadModel()
     treeModel->InsertRootItem(rootItem);
     TreeFunctions::ApplyNodePathExpandState<TreeItemInterface, TreeItem, ListBase>(dataAccessFunc, expandedNodes, ui->tvFandomLists, treeModel, QModelIndex());
 
+}
+
+void FandomListWidget::CollapseTree()
+{
+    QModelIndex startIndex;
+    for(int i(0); i < treeModel->rowCount(QModelIndex()); ++i)
+    {
+        QModelIndex child = treeModel->index(i, 0, startIndex);
+        ui->tvFandomLists->setExpanded(child, false);
+    }
 }
 
 void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
@@ -776,7 +818,7 @@ void FandomListWidget::OnAddCurrentFandomToList()
     ScrollToFandom(sharedList, id);
 }
 
-void FandomListWidget::OnCheckComboboxText(const QString & text)
+void FandomListWidget::OnCheckFandomsText(const QString & text)
 {
     if(text.length() > 0){
         ui->pbAddFandomToSelectedList->setEnabled(true);
@@ -787,6 +829,16 @@ void FandomListWidget::OnCheckComboboxText(const QString & text)
         ui->pbAddFandomToSelectedList->setEnabled(false);
         ui->pbIgnoreFandom->setEnabled(false);
         ui->pbWhitelistFandom->setEnabled(false);
+    }
+}
+
+void FandomListWidget::OnCheckFandomListText(const QString & text)
+{
+    if(text *in("Ignores" , "Whitelist")){
+        ui->pbDeleteFandomList->setEnabled(false);
+    }
+    else{
+        ui->pbDeleteFandomList->setEnabled(true);
     }
 }
 

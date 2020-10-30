@@ -75,7 +75,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Th&lt;span style=&quot; font-size:10pt;&quot;&gt;ese are just recent searches so that relevant fandoms can be accessed quickly. You can search on all other fandoms by typing them into the combobox next to &amp;quot;Searched Fandom&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This view allows you to refine which fandoms you want or do not want to see. By default it has two sections: Ignores and Whitelist and corresponding buttons to send fandoms from the edit below to those. &lt;/p&gt;&lt;p&gt;Anything in Ignores gets hidden from displayed results.&lt;/p&gt;&lt;p&gt;When Whitelist isn't empty anything that &lt;span style=&quot; font-weight:600;&quot;&gt;isn't &lt;/span&gt;on it is automatically hidden.&lt;/p&gt;&lt;p&gt;Sections can be enabled/disabled by checking and unchecking them.&lt;/p&gt;&lt;p&gt;If you want to have your own named list for something like, for example &lt;span style=&quot; font-style:italic;&quot;&gt;&amp;quot;HP but without Fairy Tail&amp;quot; &lt;/span&gt;you can do this by creating a new list and adding HP and Fairy tail there and manually switching their display mode to + and - respectively. &lt;/p&gt;&lt;p&gt;Clicking on the &amp;quot;shuffle&amp;quot; button toggles the mode between &lt;span style=&quot; font-style:italic;&quot;&gt;all&lt;/span&gt;, &lt;span style=&quot; font-style:italic;&quot;&gt;only pure fandoms&lt;/span&gt; and &lt;span style=&quot; font-style:italic;&quot;&gt;only crossovers&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string/>
@@ -119,6 +119,9 @@
          <height>0</height>
         </size>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The arrow button to the right will add currently entered fandom above into  this list.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
       </widget>
      </item>
      <item row="0" column="0">
@@ -143,6 +146,9 @@
      </item>
      <item row="1" column="2">
       <widget class="QPushButton" name="pbDeleteFandomList">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use it to delete a fandom list. Ignores and Whitelist are special cases and can't be deleted.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -166,6 +172,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Adds fandom to &lt;span style=&quot; font-weight:600;&quot;&gt;Ignores&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -177,6 +186,9 @@
      </item>
      <item row="1" column="1">
       <widget class="QPushButton" name="pbAddNewFandomList">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Used to add  new fandom lists&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -201,6 +213,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter fandom you want to add to one of the lists here.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="editable">
         <bool>true</bool>
        </property>
@@ -213,6 +228,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Adds fandom to &lt;span style=&quot; font-weight:600;&quot;&gt;Whitelist&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string/>
@@ -230,6 +248,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Adds the currently selected fandom to the list to the left.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string/>

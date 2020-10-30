@@ -55,6 +55,8 @@ public:
     virtual bool PassClientDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
     virtual bool PassReadingDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
     virtual bool PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassFandomListSetToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassFandomListDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
 
     QSqlDatabase GetDatabase() {return db;}
     void SetDatabase(QSqlDatabase db) {this->db = db;}

@@ -4475,6 +4475,38 @@ DiagnosticSQLResult<bool> PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbSou
     return ctx();
 }
 
+
+DiagnosticSQLResult<bool> PassFandomListSetToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    // need to delete default data from instantiated backup DB so that constraint doesn't fail
+    {
+        std::string qs = "delete from fandom_lists";
+        SqlContext<bool> ctx(dbTarget, std::move(qs));
+        ctx();
+    }
+    QList<std::string> keyList = {"id", "name","is_enabled", "is_default","is_expanded", "ui_index"};
+    QList<std::string> keyListCopy = {"id", "name","is_enabled", "is_default","is_expanded", "ui_index"};
+    std::string insertQS = "insert into fandom_lists"
+                           "(id, name,is_enabled, is_default,is_expanded, ui_index) "
+                           "values(:id, :name,:is_enabled, :is_default,:is_expanded, :ui_index)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from fandom_lists", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
+    return ctx();
+}
+
+
+DiagnosticSQLResult<bool> PassFandomListDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
+{
+    QList<std::string> keyList = {"list_id", "fandom_id","fandom_name", "enabled_state","inclusion_mode", "crossover_mode","ui_index"};
+    QList<std::string> keyListCopy = {"list_id", "fandom_id","fandom_name", "enabled_state","inclusion_mode", "crossover_mode","ui_index"};
+    std::string insertQS = "insert into fandom_list_data(list_id,fandom_id,fandom_name,enabled_state,inclusion_mode,crossover_mode,ui_index) "
+                           " values(:list_id,:fandom_id,:fandom_name,:enabled_state,:inclusion_mode,:crossover_mode,:ui_index)";
+    ParallelSqlContext<bool> ctx (dbSource, "select * from fandom_list_data", std::move(keyList),
+                                  dbTarget, std::move(insertQS), std::move(keyListCopy));
+    return ctx();
+
+}
+
 DiagnosticSQLResult<bool> PassClientDataToAnotherDatabase(QSqlDatabase dbSource, QSqlDatabase dbTarget)
 {
     {
@@ -4514,6 +4546,7 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
         result.success = true;
     return result;
 }
+
 
 
 

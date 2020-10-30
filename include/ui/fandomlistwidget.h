@@ -53,6 +53,7 @@ private:
     void AddFandomToList(std::shared_ptr<TreeItemInterface>, uint32_t, core::fandom_lists::EInclusionMode mode);
     QModelIndex FindIndexForPath(QStringList);
     void ReloadModel();
+    void CollapseTree();
 
     Ui::FandomListWidget *ui;
 
@@ -83,7 +84,8 @@ private slots:
     void OnIgnoreCurrentFandom();
     void OnWhitelistCurrentFandom();
     void OnAddCurrentFandomToList();
-    void OnCheckComboboxText(const QString&);
+    void OnCheckFandomsText(const QString&);
+    void OnCheckFandomListText(const QString&);
 };
 
 

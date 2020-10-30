@@ -1250,6 +1250,8 @@ void CoreEnvironment::BackupUserDatabase()
     interfaces.userDb->PassRecentFandomsToAnotherDatabase(backupDb);
     interfaces.userDb->PassReadingDataToAnotherDatabase(backupDb);
     interfaces.userDb->PassIgnoredFandomsToAnotherDatabase(backupDb);
+    interfaces.userDb->PassFandomListSetToAnotherDatabase(backupDb);
+    interfaces.userDb->PassFandomListDataToAnotherDatabase(backupDb);
     transaction.finalize();
 }
 
