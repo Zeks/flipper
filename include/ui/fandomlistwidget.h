@@ -85,6 +85,7 @@ private slots:
     void OnWhitelistCurrentFandom();
     void OnAddCurrentFandomToList();
     void OnCheckFandomsText(const QString&);
+    //void OnFandomActivatedInCombobox(int);
     void OnCheckFandomListText(const QString&);
 };
 

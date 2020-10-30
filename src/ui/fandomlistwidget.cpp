@@ -257,6 +257,7 @@ void FandomListWidget::InitButtonConnections()
     connect(ui->pbIgnoreFandom, &QPushButton::clicked, this, &FandomListWidget::OnIgnoreCurrentFandom);
     connect(ui->pbWhitelistFandom, &QPushButton::clicked, this, &FandomListWidget::OnWhitelistCurrentFandom);
     connect(ui->cbFandoms, &QComboBox::editTextChanged, this, &FandomListWidget::OnCheckFandomsText);
+    //connect(ui->cbFandoms, qOverload<int>(&QComboBox::activated), this, &FandomListWidget::OnFandomActivatedInCombobox);
     connect(ui->cbFandomLists, &QComboBox::editTextChanged, this, &FandomListWidget::OnCheckFandomListText);
 
     connect(ui->pbAddNewFandomList, &QPushButton::clicked, [&]{AddNewList();});
@@ -310,6 +311,7 @@ void FandomListWidget::AddNewList()
     rootItem->addChild(newListItem);
     newListPointer->SetParent(rootItem);
     ui->cbFandomLists->addItem(name);
+    ui->cbFandomLists->setCurrentText(name);
     ReloadModel();
 }
 
@@ -609,6 +611,21 @@ void FandomListWidget::AddFandomToList(std::shared_ptr<TreeItemInterface> node, 
     using namespace core::fandom_lists;
     auto name = env->interfaces.fandoms->GetNameForID(fandomId);
 
+    auto filter = [name](TreeItemInterface* interface){
+        ListBase* basePtr = static_cast<ListBase*>(interface->InternalPointer());
+        return basePtr->name == name;
+
+    };
+    auto listItem = TreeFunctions::FlattenHierarchy<TreeItemInterface>(node.get(),TreeFunctions::RootChecks<TreeItemInterface>{filter});
+    for(auto item: listItem)
+    {
+        ListBase* basePtr = static_cast<ListBase*>(item->InternalPointer());
+        if(basePtr->name == name){
+            ScrollToFandom(node, fandomId);
+            return;
+        }
+    }
+
     FandomStateInList newFandomState;
     newFandomState.id = fandomId;
     newFandomState.name = name;
@@ -832,6 +849,23 @@ void FandomListWidget::OnCheckFandomsText(const QString & text)
         ui->pbWhitelistFandom->setEnabled(false);
     }
 }
+
+//void FandomListWidget::OnFandomActivatedInCombobox(int)
+//{
+//    auto listName = ui->cbFandomLists->currentText();
+//    auto index = FindIndexForPath({listName});
+//    if(!index.isValid())
+//        return;
+
+//    using namespace core::fandom_lists;
+//    auto pointer = static_cast<TreeItemInterface*>(index.internalPointer());
+//    auto sharedList = pointer->shared_from_this();
+
+//    QString fandom = ui->cbFandoms->currentText();
+//    auto id = env->interfaces.fandoms->GetIDForName(fandom);
+//    auto mode = listName == "Ignores" ? core::fandom_lists::EInclusionMode::im_exclude : core::fandom_lists::EInclusionMode::im_include;
+//    AddFandomToList(sharedList, id, mode);
+//}
 
 void FandomListWidget::OnCheckFandomListText(const QString & text)
 {
