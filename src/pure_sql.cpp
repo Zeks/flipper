@@ -2098,7 +2098,7 @@ DiagnosticSQLResult<bool> ProcessIgnoresIntoFandomLists(QSqlDatabase db)
         SqlContext<bool> ctx(db, std::move(qs));
         ctx.ForEachInSelect([&index, db](QSqlQuery& q){
             auto qs = "insert into fandom_list_data(list_id, fandom_id, fandom_name, enabled_state, inclusion_mode, crossover_mode, ui_index)"
-                      " values(0, :fandom_id, (select name from fandomindex where id = :fandom_id_repeat), 1, 1, :crossover_mode, :ui_index)";
+                      " values(0, :fandom_id, (select name from fandomindex where id = :fandom_id_repeat), 1, 0, :crossover_mode, :ui_index)";
             SqlContext<bool> ctx(db, std::move(qs));
             ctx.bindValue("fandom_id", q.value(QStringLiteral("fandom_id")).toInt());
             ctx.bindValue("fandom_id_repeat", q.value(QStringLiteral("fandom_id")).toInt());
