@@ -42,10 +42,11 @@ bool Tags::CreateTag(QString tag)
 QStringList Tags::ReadUserTags()
 {
     QStringList tags = database::puresql::ReadUserTags(db).data;
-    if(tags.empty())
+    QSet<QString> baseSet = {"Liked", "Disliked","Limbo", "Hide", "Meh", "Spoiler", "Wait", "Stem", "Queue", "Finished", "Gems", "Rec", "Series"};
+    for(auto basicTag: baseSet)
     {
-        tags = CreateDefaultTagList();
-        database::puresql::PushTaglistIntoDatabase(tags,db);
+        if(!tags.contains(basicTag))
+            tags.push_back(basicTag);
     }
     return tags;
 }
