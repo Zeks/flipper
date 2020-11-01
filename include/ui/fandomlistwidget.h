@@ -70,7 +70,6 @@ private:
     std::shared_ptr<FandomControllerType> fandomItemController;
     CustomIconDelegate* modeDelegate;
     CustomIconDelegate* crossoverDelegate;
-    CustomIconDelegate* dummyDelegate;
 
     QModelIndex clickedIndex;
 

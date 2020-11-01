@@ -145,7 +145,7 @@ auto vectorUnifier = [](auto& dest, auto source){
     dest+=source;
 };
 auto hashUnifier = [](auto& dest, auto source){
-    dest.insert(source);
+    dest.unite(source);
 };
 auto genresFetchFunc = [](auto& container, QDataStream& in){
     int key;

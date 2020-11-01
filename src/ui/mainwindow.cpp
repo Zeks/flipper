@@ -3202,8 +3202,9 @@ void MainWindow::on_pbRefreshRecList_clicked()
 
     auto defaultParams = CreateReclistParamsFromUI(true);
     auto params = env->interfaces.recs->FetchParamsForRecList(ui->cbRecGroup->currentText());
-    params->PassSetupParamsInto(*defaultParams);
-    params = defaultParams;
+    params->userFFNId = env->interfaces.recs->GetUserProfile();
+    //params->PassSetupParamsInto(*defaultParams);
+    //params = defaultParams;
 
     if(!params)
     {
