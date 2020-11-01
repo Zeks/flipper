@@ -1565,7 +1565,7 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
 {
     SqlContext<int> ctx(db);
     QLOG_INFO() << "keys list:" << hash.keys();
-
+    std::vector<uint32_t> idsToRemove;
     for(auto i = hash.begin(); i != hash.end(); i++)
     {
         ctx.bindValue("ffn_id", i.key());
@@ -1580,8 +1580,10 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, QSqlDa
         if(ctx.result.data != -1)
             i.value() = ctx.result.data; // todo check this iterator usage is valid
         else
-            hash.remove(i.key());
+            idsToRemove.push_back(i.key());
     }
+    for(auto id: idsToRemove)
+        hash.remove(id);
 
     QLOG_INFO() << "Resulting list:" << hash;
 
