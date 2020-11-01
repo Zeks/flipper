@@ -43,7 +43,7 @@ App{
     Depends { name: "grpc_generation" }
     Depends { name: "Environment" }
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY"])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "FMT_HEADER_ONLY"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",
@@ -56,6 +56,7 @@ App{
     cpp.systemIncludePaths: [
         sourceDirectory +"/proto",
         sourceDirectory + "/third_party",
+        sourceDirectory + "/third_party/fmt/include",
         "/home/zeks/grpc/third_party/protobuf/src",
         Environment.sqliteFolder,
         sourceDirectory + "/../"]
@@ -81,6 +82,7 @@ App{
         "include/threaded_data/common_traits.h",
         "include/threaded_data/threaded_load.h",
         "include/threaded_data/threaded_save.h",
+        "src/Interfaces/fandom_lists.cpp",
         "src/calc_data_holder.cpp",
         "src/core/fandom.cpp",
         "src/core/fanfic.cpp",
@@ -193,12 +195,12 @@ App{
     ]
     cpp.cFlags: {
         var flags = []
-        flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
+        if(!qbs.toolchain.contains("msvc"))
+            flags = [ "-Wno-unused-variable", "-Wno-unused-parameter", "-Wno-cast-function-type", "-Wno-implicit-fallthrough"]
         return flags
     }
     }
     cpp.staticLibraries: {
-        //var libs = ["UniversalModels", "logger", "quazip"]
         var libs = []
         if(qbs.toolchain.contains("msvc"))
             libs = []
@@ -208,9 +210,9 @@ App{
         if(qbs.toolchain.contains("msvc"))
             libs = libs.concat(["User32","Ws2_32", "gdi32", "Advapi32"])
         if(qbs.toolchain.contains("msvc"))
-            libs = libs.concat(["grpc", "grpc++", "gpr"])
+            libs = libs.concat(["grpc", "grpc++", "gpr", "zlib", "cares", "crypto", "ssl", "libprotobufd"])
         else
-            libs = libs.concat(["grpc", "grpc++", "gpr"])
+            libs = ["dl", "protobuf", "grpc", "grpc++", "gpr","cpr", "curl", "crypto", "ssl", "pthread"]
         return libs
     }
 
