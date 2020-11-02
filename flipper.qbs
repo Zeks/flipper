@@ -46,7 +46,7 @@ App{
 
     Precompiled{condition:Environment.usePrecompiledHeader}
 
-    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.3", "FMT_HEADER_ONLY"])
+    cpp.defines: base.concat(["L_TREE_CONTROLLER_LIBRARY", "L_LOGGER_LIBRARY", "_WIN32_WINNT=0x0601", "CLIENT_VERSION=1.4.1", "FMT_HEADER_ONLY"])
     cpp.includePaths: [
         sourceDirectory,
         sourceDirectory + "/../",

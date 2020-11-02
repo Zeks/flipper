@@ -101,8 +101,8 @@ struct TypeStringHolder<discord::RngCommand>{
         static constexpr std::string_view prefixlessPattern = "?<roll>roll";
         static constexpr std::string_view pattern = "roll\\s(best|good|all)";
         static constexpr std::string_view help = "`\n%1roll best/good/all` will display a set of 3 random fics from within a selected range in the recommendations.";
-        static constexpr std::string_view tips = "You can roll fics from your recommendations gatcha style using `%1roll best` (or `%1roll good` or `%1roll all`).";
-        static constexpr std::string_view shorthand = "`{0}roll` - rolls fics from your recommendations gatcha style";
+        static constexpr std::string_view tips = "You can roll fics from your recommendations gacha style using `%1roll best` (or `%1roll good` or `%1roll all`).";
+        static constexpr std::string_view shorthand = "`{0}roll` - rolls fics from your recommendations gacha style";
 };
 template <>
 struct TypeStringHolder<discord::ChangeServerPrefixCommand>{

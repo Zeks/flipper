@@ -5,6 +5,7 @@
 #include "ui-models/include/ItemController.h"
 #include "core/fandom_list.h"
 #include <QMenu>
+#include <chrono>
 
 namespace Ui {
 class FandomListWidget;
@@ -72,6 +73,8 @@ private:
     CustomIconDelegate* crossoverDelegate;
 
     QModelIndex clickedIndex;
+    std::pair<uint32_t,uint32_t> lastAdded;
+    std::chrono::high_resolution_clock::time_point lastAdditionTime;
 
 
 private slots:
@@ -84,7 +87,7 @@ private slots:
     void OnWhitelistCurrentFandom();
     void OnAddCurrentFandomToList();
     void OnCheckFandomsText(const QString&);
-    //void OnFandomActivatedInCombobox(int);
+    void OnFandomActivatedInCombobox();
     void OnCheckFandomListText(const QString&);
 };
 
