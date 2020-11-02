@@ -55,6 +55,7 @@ private:
     QModelIndex FindIndexForPath(QStringList);
     void ReloadModel();
     void CollapseTree();
+    core::fandom_lists::EInclusionMode FetchInclusionModeForList(std::shared_ptr<TreeItemInterface>);
 
     Ui::FandomListWidget *ui;
 

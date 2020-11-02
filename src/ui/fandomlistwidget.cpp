@@ -742,6 +742,28 @@ void FandomListWidget::CollapseTree()
     }
 }
 
+core::fandom_lists::EInclusionMode FandomListWidget::FetchInclusionModeForList(std::shared_ptr<TreeItemInterface> item)
+{
+    bool excludeList = true;
+
+    using namespace core::fandom_lists;
+    ListBase* basePtr = static_cast<ListBase*>(item->InternalPointer());
+    TreeFunctions::Visit<TreeItemInterface>([&](TreeItemInterface* item)->void{
+        if(!item)
+            return;
+        ListBase* fandomPtr = static_cast<ListBase*>(item->InternalPointer());
+        if(fandomPtr->type == core::fandom_lists::et_fandom
+                && static_cast<FandomStateInList*>(fandomPtr)->list_id == basePtr->id)
+        {
+           if(fandomPtr->inclusionMode == core::fandom_lists::EInclusionMode::im_include)
+           {
+               excludeList = false;
+           }
+        }
+    }, treeModel, QModelIndex());
+    return excludeList ? core::fandom_lists::EInclusionMode::im_exclude : core::fandom_lists::EInclusionMode::im_include;
+}
+
 void FandomListWidget::OnTreeItemDoubleClicked(const QModelIndex &index)
 {
     ui->tvFandomLists->blockSignals(true);
@@ -840,6 +862,9 @@ void FandomListWidget::OnIgnoreCurrentFandom()
         ScrollToFandom(ignoresItem, id);
         return;
     }
+    auto mode = FetchInclusionModeForList(ignoresItem);
+    if(ignoresItem->childCount() == 0)
+        mode = core::fandom_lists::EInclusionMode::im_exclude;
     AddFandomToList(ignoresItem, id, core::fandom_lists::EInclusionMode::im_exclude);
     ScrollToFandom(ignoresItem, id);
 }
@@ -859,7 +884,10 @@ void FandomListWidget::OnWhitelistCurrentFandom()
         ScrollToFandom(whitelistItem, id);
         return;
     }
-    AddFandomToList(whitelistItem, id, core::fandom_lists::EInclusionMode::im_include);
+    auto mode = FetchInclusionModeForList(whitelistItem);
+    if(whitelistItem->childCount() == 0)
+        mode = core::fandom_lists::EInclusionMode::im_include;
+    AddFandomToList(whitelistItem, id, mode);
     ScrollToFandom(whitelistItem, id);
 }
 
@@ -876,25 +904,8 @@ void FandomListWidget::OnAddCurrentFandomToList()
 
     QString fandom = ui->cbFandoms->currentText();
     auto id = env->interfaces.fandoms->GetIDForName(fandom);
-    bool excludeList = true;
 
-    ListBase* basePtr = static_cast<ListBase*>(sharedList->InternalPointer());
-    TreeFunctions::Visit<TreeItemInterface>([&](TreeItemInterface* item)->void{
-        if(!item)
-            return;
-        ListBase* fandomPtr = static_cast<ListBase*>(item->InternalPointer());
-        if(fandomPtr->type == core::fandom_lists::et_fandom
-                && static_cast<FandomStateInList*>(fandomPtr)->list_id == basePtr->id)
-        {
-           if(fandomPtr->inclusionMode == core::fandom_lists::EInclusionMode::im_include)
-           {
-               excludeList = false;
-           }
-        }
-    }, treeModel, QModelIndex());
-
-
-    auto mode = excludeList ? core::fandom_lists::EInclusionMode::im_exclude : core::fandom_lists::EInclusionMode::im_include;
+    auto mode = FetchInclusionModeForList(sharedList);
     if(listName == "Ignores" && ignoresItem->childCount() == 0)
         mode = core::fandom_lists::EInclusionMode::im_exclude;
     AddFandomToList(sharedList, id, mode);
@@ -928,29 +939,9 @@ void FandomListWidget::OnFandomActivatedInCombobox()
 
     QString fandom = ui->cbFandoms->currentText();
     auto id = env->interfaces.fandoms->GetIDForName(fandom);
-
-    ListBase* basePtr = static_cast<ListBase*>(sharedList->InternalPointer());
-
-    bool excludeList = true;
-    TreeFunctions::Visit<TreeItemInterface>([&](TreeItemInterface* item)->void{
-        if(!item)
-            return;
-        ListBase* fandomPtr = static_cast<ListBase*>(item->InternalPointer());
-        if(fandomPtr->type == core::fandom_lists::et_fandom
-                && static_cast<FandomStateInList*>(fandomPtr)->list_id == basePtr->id)
-        {
-           if(fandomPtr->inclusionMode == core::fandom_lists::EInclusionMode::im_include)
-           {
-               excludeList = false;
-           }
-        }
-    }, treeModel, QModelIndex());
-
-
-    auto mode = excludeList ? core::fandom_lists::EInclusionMode::im_exclude : core::fandom_lists::EInclusionMode::im_include;
+    auto mode = FetchInclusionModeForList(sharedList);
     if(listName == "Ignores" && ignoresItem->childCount() == 0)
         mode = core::fandom_lists::EInclusionMode::im_exclude;
-
     AddFandomToList(sharedList, id, mode);
 }
 
