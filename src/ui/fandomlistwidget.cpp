@@ -865,7 +865,7 @@ void FandomListWidget::OnIgnoreCurrentFandom()
     auto mode = FetchInclusionModeForList(ignoresItem);
     if(ignoresItem->childCount() == 0)
         mode = core::fandom_lists::EInclusionMode::im_exclude;
-    AddFandomToList(ignoresItem, id, core::fandom_lists::EInclusionMode::im_exclude);
+    AddFandomToList(ignoresItem, id, mode);
     ScrollToFandom(ignoresItem, id);
 }
 
