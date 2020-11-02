@@ -1225,7 +1225,11 @@ void ServitorWindow::on_pbReprocessAllFavPages_clicked()
     authorInterface->db = db;
     authorInterface->portableDBInterface = dbInterface;
 
-    auto authors = authorInterface->GetAllAuthors("ffn");
+    QList<core::AuthorPtr> authors;
+    {
+        database::Transaction transaction(db);
+        authors = authorInterface->GetAllAuthors("ffn");
+    }
 
 
     auto fandomInterface = QSharedPointer<interfaces::Fandoms> (new interfaces::Fandoms());
