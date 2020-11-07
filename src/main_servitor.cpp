@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include <QApplication>
-#include <QSqlDatabase>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_query.h"
 #include <QSqlError>
 #include <QMetaType>
 #include <QSqlDriver>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QSettings>
 #include <QPluginLoader>
 
@@ -55,14 +55,14 @@ int main(int argc, char *argv[])
     a.setApplicationName("servitor");
     //database::BackupDatabase();
     SetupLogger();
-    QString path = "CrawlerDB.sqlite";
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    std::string path = "CrawlerDB.sqlite";
+    sql::Database db = sql::Database::addDatabase("QSQLITE");
     db.setDatabaseName(path);
     db.open();
 
 
     path = "PageCache.sqlite";
-    QSqlDatabase pcDb = QSqlDatabase::addDatabase("QSQLITE", "PageCache");
+    sql::Database pcDb = sql::Database::addDatabase("QSQLITE", "PageCache");
     pcDb.setDatabaseName(path);
     pcDb.open();
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     QSharedPointer<database::IDBWrapper> tasksInterface (new database::SqliteInterface());
     QSharedPointer<database::IDBWrapper> pageCacheInterface (new database::SqliteInterface());
 
-    QSqlDatabase mainDb;
+    sql::Database mainDb;
     mainDb = dbInterface->InitDatabase("CrawlerDB", true);
 
     auto pageCacheDb = pageCacheInterface->InitDatabase("PageCache");
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     dbInterface->ReadDbFile("dbcode/dbinit.sql", "CrawlerDB");
 
     pageCacheInterface->ReadDbFile("dbcode/pagecacheinit.sql", "PageCache");
-    QSqlDatabase tasksDb;
+    sql::Database tasksDb;
     tasksDb = tasksInterface->InitDatabase("Tasks");
     tasksInterface->ReadDbFile("dbcode/tasksinit.sql", "Tasks");
     ////////////////////////////////////

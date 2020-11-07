@@ -35,7 +35,7 @@ int FFNFanfics::GetWebIDFromID(int value)
 
 bool FFNFanfics::DeactivateFic(int ficId)
 {
-    return database::puresql::DeactivateStory(ficId, QStringLiteral("ffn"), db).success;
+    return sql::DeactivateStory(ficId, QStringLiteral("ffn"), db).success;
 }
 
 int FFNFanfics::GetIdForUrl(QString url)

@@ -1,19 +1,25 @@
 #pragma once
-#include "sql_abstractions/sql_transaction.h"
+#include "sql_abstractions/sql_database.h"
 #include "sql_abstractions/sql_query.h"
 #include "sql_abstractions/sql_error.h"
-#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_transaction.h"
 #include "sql_abstractions/string_trimmer.h"
 #include <fmt/format.h>
+
+#include <string>
 #include <functional>
 #include <memory>
 #include <array>
 #include <unordered_map>
 #include <iostream>
+#include <QDebug>
+
+
 
 
 namespace sql{
-bool ExecAndCheck(Query& q, bool reportErrors = true,  bool ignoreUniqueness = false);
+
+bool ExecAndCheck(sql::Query& q, bool reportErrors = true,  bool ignoreUniqueness = false);
 
 template <typename T>
 struct DiagnosticSQLResult
@@ -21,7 +27,7 @@ struct DiagnosticSQLResult
     bool success = true;
     std::string oracleError;
     T data;
-    bool ExecAndCheck(Query& q, bool ignoreUniqueness = false) {
+    bool ExecAndCheck(sql::Query& q, bool ignoreUniqueness = false) {
         bool success = sql::ExecAndCheck(q, true, ignoreUniqueness);
         bool uniqueTriggered = ignoreUniqueness && q.lastError().text().find("UNIQUE constraint failed") != std::string::npos;
         if(uniqueTriggered)
@@ -30,12 +36,12 @@ struct DiagnosticSQLResult
         {
             success = false;
             oracleError = q.lastError().text();
-            std::cout << oracleError;
-            std::cout << q.lastQuery();
+            qDebug() << QString::fromStdString(oracleError);
+            qDebug() << QString::fromStdString(q.lastQuery());
         }
         return success;
     }
-    bool CheckDataAvailability(Query& q, bool allowEmptyRecords = false){
+    bool CheckDataAvailability(sql::Query& q, bool allowEmptyRecords = false){
         if(!q.next())
         {
             if(!allowEmptyRecords)
@@ -53,13 +59,13 @@ struct DiagnosticSQLResult
 template <typename ResultType>
 struct SqlContext
 {
-    SqlContext(Database db) : q(db), transaction(db){
+    SqlContext(sql::Database db) : q(db), transaction(db){
     }
-    SqlContext(Database db, std::string&& qs) :qs(qs), q(db), transaction(db) {
+    SqlContext(sql::Database db, std::string&& qs) :qs(qs), q(db), transaction(db) {
         Prepare(qs);
     }
 
-    SqlContext(Database db, std::list<std::string>&& queries) : q(db), transaction(db)
+    SqlContext(sql::Database db, std::vector<std::string>&& queries) : q(db), transaction(db)
     {
         for(const auto& query : queries)
         {
@@ -69,19 +75,19 @@ struct SqlContext
         }
     }
 
-    SqlContext(Database db, std::string&& qs,  std::function<void(SqlContext<ResultType>*)> func) : qs(qs), q(db), transaction(db),  func(func){
+    SqlContext(sql::Database db, std::string&& qs,  std::function<void(SqlContext<ResultType>*)> func) : qs(qs), q(db), transaction(db),  func(func){
         Prepare(qs);
         func(this);
     }
 
-    SqlContext(Database db, std::string&& qs, std::unordered_map<std::string, Query::Variant>&& hash) :  qs(qs), q(db),  transaction(db){
+    SqlContext(sql::Database db, std::string&& qs, std::unordered_map<std::string, Variant>&& hash) :  qs(qs), q(db),  transaction(db){
         Prepare(qs);
 
         for(auto i = hash.begin(); i != hash.end(); i++)
             bindValue(i->first, std::move(i->second));
     }
 
-    SqlContext(Database db, std::unordered_map<std::string, Query::Variant>&& hash) :  q(db),  transaction(db){
+    SqlContext(sql::Database db, std::unordered_map<std::string, Variant>&& hash) :  q(db),  transaction(db){
         for(auto i = hash.begin(); i != hash.end(); i++)
             bindValue(i->first, std::move(i->second));
     }
@@ -105,7 +111,7 @@ struct SqlContext
         bindValues.clear();
     }
 
-    void ExecuteWithArgsSubstitution(std::list<std::string>&& keys){
+    void ExecuteWithArgsSubstitution(std::vector<std::string>&& keys){
         for(const auto& key : keys)
         {
             auto newString = qs;
@@ -132,8 +138,33 @@ struct SqlContext
             }
         }
     }
-    template <typename KeyType>
-    void ExecuteWithKeyListAndBindFunctor(std::vector<KeyType> keyList, std::function<void(KeyType&& key, Query& q)>&& functor, bool ignoreUniqueness = false){
+
+    template <typename HashKey, typename HashValue>
+    void ExecuteWithArgsHash(std::vector<std::string> nameKeys, QHash<HashKey, HashValue> args, bool ignoreUniqueness = false){
+        BindValues();
+        for(const auto& key : args.keys())
+        {
+            q.bindValue(":" + nameKeys[0], key);
+            q.bindValue(":" + nameKeys[1], args[key]);
+            if(!ExecAndCheck(ignoreUniqueness))
+            {
+                qDebug() << "breaking out of cycle";
+                break;
+            }
+        }
+    }
+//    template <typename KeyType>
+//    void ExecuteWithKeyListAndBindFunctor(std::vector<KeyType> keyList, std::function<void(KeyType&& key, sql::Query& q)>&& functor, bool ignoreUniqueness = false){
+//        BindValues();
+//        for(auto&& key : keyList)
+//        {
+//            functor(std::move(key), q);
+//            if(!ExecAndCheck(ignoreUniqueness))
+//                break;
+//        }
+//    }
+    template<template <class> class  ContainerType, typename KeyType>
+    void ExecuteWithKeyListAndBindFunctor(ContainerType<KeyType> keyList, std::function<void(KeyType&& key, sql::Query& q)>&& functor, bool ignoreUniqueness = false){
         BindValues();
         for(auto&& key : keyList)
         {
@@ -143,8 +174,19 @@ struct SqlContext
         }
     }
 
-    template <typename ValueType>
-    void ExecuteWithValueList(std::string keyName, std::vector<ValueType>&& valueList, bool ignoreUniqueness = false){
+    template<template <class> class  ContainerType, template <class> class  PointerType, typename KeyType>
+    void ExecuteWithKeyListAndBindFunctor(ContainerType<PointerType<KeyType>> keyList, std::function<void(PointerType<KeyType> key, sql::Query& q)>&& functor, bool ignoreUniqueness = false){
+        BindValues();
+        for(auto&& key : keyList)
+        {
+            functor(std::move(key), q);
+            if(!ExecAndCheck(ignoreUniqueness))
+                break;
+        }
+    }
+
+    template <template <class> class  ContainerType, typename ValueType>
+    void ExecuteWithValueList(std::string keyName, ContainerType<ValueType>&& valueList, bool ignoreUniqueness = false){
         BindValues();
         for(auto&& value : valueList)
         {
@@ -153,6 +195,17 @@ struct SqlContext
                 break;
         }
     }
+    template <template <class> class  ContainerType, typename ValueType>
+    void ExecuteWithValueList(std::string keyName, const ContainerType<ValueType>& valueList, bool ignoreUniqueness = false){
+        BindValues();
+        for(auto value : valueList)
+        {
+            q.bindValue(":" + keyName, value);
+            if(!ExecAndCheck(ignoreUniqueness))
+                break;
+        }
+    }
+
 
     bool ExecAndCheck(bool ignoreUniqueness = false){
         BindValues();
@@ -171,7 +224,7 @@ struct SqlContext
             return false;
         return true;
     }
-    void FetchSelectFunctor(std::string&& select, std::function<void(ResultType& data, Query& q)>&& f, bool allowEmptyRecords = false)
+    void FetchSelectFunctor(std::string&& select, std::function<void(ResultType& data, sql::Query& q)>&& f, bool allowEmptyRecords = false)
     {
         Prepare(select);
         BindValues();
@@ -188,7 +241,7 @@ struct SqlContext
     }
     template <typename ValueType>
     void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::string&& countQuery = "",
-                                  std::function<ValueType(Query&)>&& func = std::function<ValueType(Query&)>())
+                                  std::function<ValueType(sql::Query&)>&& func = std::function<ValueType(sql::Query&)>())
     {
         if(countQuery.length() == 0)
             qs = "select count(*) from ( " + actualQuery + " ) ";
@@ -200,7 +253,7 @@ struct SqlContext
 
         if(!CheckDataAvailability())
             return;
-        int size = std::get<int>(q.value(0));
+        int size = q.value(0).toInt();
         //qDebug () << "query size: " << size;
         if(size == 0)
             return;
@@ -217,7 +270,7 @@ struct SqlContext
 
         do{
             if(!func)
-                result.data += std::get<typename ResultType::value_type>(q.value(fieldName.c_str()));
+                result.data += q.value(fieldName.c_str()).template value<typename ResultType::value_type>();
             else
                 result.data += func(q);
         } while(q.next());
@@ -225,7 +278,7 @@ struct SqlContext
 
     template <typename ValueType>
     void FetchLargeSelectIntoListWithoutSize(std::string&& fieldName, std::string&& actualQuery,
-                                  std::function<ValueType(Query&)>&& func = std::function<ValueType(Query&)>())
+                                  std::function<ValueType(sql::Query&)>&& func = std::function<ValueType(sql::Query&)>())
     {
         qs = actualQuery;
         Prepare(qs);
@@ -237,7 +290,7 @@ struct SqlContext
 
         do{
             if(!func)
-                result.data += std::get<typename ResultType::value_type>(q.value(fieldName.c_str()));
+                result.data += q.value(fieldName.c_str()).template value<typename ResultType::value_type>();
             else
                 result.data += func(q);
         } while(q.next());
@@ -255,7 +308,7 @@ struct SqlContext
         if(!CheckDataAvailability())
             return;
         do{
-            result.data[std::get<typename ResultType::key_type>(q.value(idFieldName.c_str()))] =  std::get<typename ResultType::mapped_type>(q.value(valueFieldName.c_str()));;
+            result.data[q.value(idFieldName.c_str()).template value<typename ResultType::key_type>()] =  q.value(valueFieldName.c_str()).template value<typename ResultType::mapped_type>();
         } while(q.next());
     }
 
@@ -280,10 +333,10 @@ struct SqlContext
                 result.success = true;
             return;
         }
-        result.data = std::get<T>(q.value(valueName.c_str()));
+        result.data = q.value(valueName.c_str()).template value<T>();
     }
 
-    void ExecuteList(std::list<std::string>&& queries){
+    void ExecuteList(std::vector<std::string>&& queries){
         bool execResult = true;
         for(const auto& query : queries)
         {
@@ -299,26 +352,31 @@ struct SqlContext
     }
 
     void BindValues(){
-        for(const QueryBinding& bind : std::as_const(bindValues))
+        for(const auto& bind : std::as_const(bindValues))
         {
             q.bindValue(":" + bind.key, bind.value);
         }
     }
 
     //template<typename KeyType, typename LamdaType>
-    //void ProcessKeys(QList<KeyType> keys, const LamdaType& func){
-    template<typename KeyType>
-    void ProcessKeys(std::vector<KeyType> keys, const std::function<void(std::string key, Query&)>& func){
+    //void ProcessKeys(std::vector<KeyType> keys, const LamdaType& func){
+    template<template <class> class  ContainerType, typename KeyType>
+    void ProcessKeys(ContainerType<KeyType> keys, const std::function<void(const std::string& key, sql::Query&)>& func){
+        for(auto key : keys)
+            func(key, q);
+    }
+    template<template <class> class  ContainerType, typename KeyType>
+    void ProcessKeys(ContainerType<KeyType> keys, const std::function<void(const QString& key, sql::Query&)>& func){
         for(auto key : keys)
             func(key, q);
     }
 
-    void for_each(std::function<void(Query&)> func){
+    void for_each(std::function<void(sql::Query&)> func){
         while(q.next())
             func(q);
     }
 
-    DiagnosticSQLResult<ResultType> ForEachInSelect(const std::function<void(Query&)>& func){
+    DiagnosticSQLResult<ResultType> ForEachInSelect(const std::function<void(sql::Query&)>& func){
         BindValues();
         if(!ExecAndCheck())
             return result;
@@ -335,10 +393,10 @@ struct SqlContext
         return success;
     }
 
-    Query::Variant value(std::string name){return q.value(name);}
-    std::string trimmedValue(std::string name){return trim_copy(std::get<std::string>(q.value(name)));}
+    Variant value(std::string name){return q.value(name);}
+    std::string trimmedValue(std::string name){return trim_copy(q.value(name).toString());}
 
-    void bindValue(std::string&& key, const Query::Variant& value){
+    void bindValue(std::string&& key, const Variant& value){
         auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
             return b.key == key;
         });
@@ -347,7 +405,7 @@ struct SqlContext
         else
             bindValues.emplace_back(QueryBinding{key, value});
     }
-    void bindValue(const std::string& key, const Query::Variant& value){
+    void bindValue(const std::string& key, const Variant& value){
         auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
             return b.key == key;
         });
@@ -357,7 +415,7 @@ struct SqlContext
             bindValues.emplace_back(QueryBinding{key, value});
     }
 
-    void bindValue(const std::string& key, Query::Variant&& value){
+    void bindValue(const std::string& key, Variant&& value){
         auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
             return b.key == key;
         });
@@ -366,7 +424,7 @@ struct SqlContext
         else
             bindValues.emplace_back(QueryBinding{key, value});
     }
-    void bindValue(std::string&& key, Query::Variant&& value){
+    void bindValue(std::string&& key, Variant&& value){
         auto it = std::find_if(bindValues.begin(), bindValues.end(), [key](const QueryBinding& b){
             return b.key == key;
         });
@@ -380,9 +438,9 @@ struct SqlContext
     bool Next() { return q.next();}
     DiagnosticSQLResult<ResultType> result;
     std::string qs;
-    Query q;
+    sql::Query q;
     Transaction transaction;
-    std::list<QueryBinding> bindValues;
+    std::vector<QueryBinding> bindValues;
     std::function<void(SqlContext<ResultType>*)> func;
 };
 
@@ -392,8 +450,8 @@ struct SqlContext
 template <typename ResultType>
 struct ParallelSqlContext
 {
-    ParallelSqlContext(Database source, std::string&& sourceQuery, std::vector<std::string>&& sourceFields,
-                       Database target, std::string&& targetQuery, std::vector<std::string>&& targetFields):
+    ParallelSqlContext(sql::Database source, std::string&& sourceQuery, std::vector<std::string>&& sourceFields,
+                       sql::Database target, std::string&& targetQuery, std::vector<std::string>&& targetFields):
         sourceQ(source), targetQ(target),
         sourceDB(source), targetDB(target), transaction(target) {
         sourceQ.prepare(sourceQuery);
@@ -411,15 +469,16 @@ struct ParallelSqlContext
         if(!result.ExecAndCheck(sourceQ))
             return result;
 
-        Query::Variant value;
+        Variant value;
         while(sourceQ.next())
         {
             for(int i = 0; i < sourceFields.size(); ++i )
             {
                 //qDebug() << "binding field: " << sourceFields[i];
-                if(valueConverters.contains(sourceFields[i]))
+                auto it = valueConverters.find(sourceFields[i]);
+                if(it != valueConverters.end())
                 {
-                    value = valueConverters.value(sourceFields.at(i))(sourceFields.at(i), sourceQ, targetDB, result);
+                    value = it->second(sourceFields.at(i), sourceQ, targetDB, result);
                     if(!result.success)
                         return result;
                 }
@@ -439,14 +498,14 @@ struct ParallelSqlContext
     }
     bool Success() const {return result.success;}
     DiagnosticSQLResult<ResultType> result;
-    Query sourceQ;
-    Query targetQ;
-    Database sourceDB;
-    Database targetDB;
+    sql::Query sourceQ;
+    sql::Query targetQ;
+    sql::Database sourceDB;
+    sql::Database targetDB;
     std::vector<std::string> sourceFields;
     std::vector<std::string> targetFields;
     Transaction transaction;
-    std::unordered_map<std::string,std::function<Query::Variant(const std::string&, Query, Database, DiagnosticSQLResult<ResultType>&)>> valueConverters;
+    std::unordered_map<std::string,std::function<Variant(const std::string&, sql::Query, sql::Database, DiagnosticSQLResult<ResultType>&)>> valueConverters;
 };
 
 }

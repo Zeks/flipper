@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "discord/discord_user.h"
 #include "discord/db_vendor.h"
 #include "include/pure_sql.h"
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QDebug>
 
 namespace interfaces {

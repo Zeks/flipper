@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "core/section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
-#include "QSqlDatabase"
+#include "sql_abstractions/sql_database.h"
 #include "QReadWriteLock"
 
 
@@ -116,7 +116,7 @@ public:
     QHash<QPair<int, int>, QHash<int, int>> grpcCacheForLists;
     QHash<int, QStringList> authorsCacheForLists;
 
-    QSqlDatabase db;
+    sql::Database db;
 
     QSharedPointer<Authors> authorInterface;
     QSharedPointer<database::IDBWrapper> portableDBInterface;

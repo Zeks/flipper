@@ -1,6 +1,7 @@
 #include "core/recommendation_list.h"
 #include <QDebug>
 #include <QDataStream>
+#include <iostream>
 
 namespace core {
 
@@ -8,7 +9,7 @@ void core::RecommendationList:: Log()
 {
 
     qDebug() << "List id: " << id ;
-    qDebug() << "name: " << name ;
+    qDebug() << "name: " << name;
     qDebug() << "automatic: " << isAutomatic;
     qDebug() << "useWeighting: " << useWeighting;
     qDebug() << "useDislikes: " << useDislikes;
@@ -17,11 +18,11 @@ void core::RecommendationList:: Log()
     qDebug() << "hasAuxDataFilled: " << hasAuxDataFilled;
     qDebug() << "maxUnmatchedPerMatch: " << maxUnmatchedPerMatch;
     qDebug() << "ficCount: " << ficCount ;
-    qDebug() << "tagToUse: " << tagToUse ;
+    qDebug() << "tagToUse: " << tagToUse;
     qDebug() << "minimumMatch: " << minimumMatch ;
     qDebug() << "alwaysPickAt: " << alwaysPickAt ;
     qDebug() << "pickRatio: " << maxUnmatchedPerMatch ;
-    qDebug() << "created: " << created ;
+    qDebug() << "created: " << created.toString();
     //qDebug() << "source fics: " << ficData.sourceFics;
 }
 

@@ -20,7 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/queryinterfaces.h"
 #include "include/rng.h"
 
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_query.h"
 #include <functional>
 #include <random>
 
@@ -130,7 +131,7 @@ protected:
     QSharedPointer<IWhereFilter> ignoredFandomsBuilder;
     QSharedPointer<IWhereFilter> inRecommendationsBuilder;
     QSharedPointer<Query> query;
-    QSqlDatabase db;
+    sql::Database db;
     QString userToken;
     bool thinClientMode = false;
 };
@@ -151,6 +152,6 @@ private:
 //    QString wherePart;
 
 //    QSharedPointer<Query> query;
-//    QSqlDatabase db;
+//    sql::Database db;
 };
 }

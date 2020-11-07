@@ -54,7 +54,7 @@ void SetupLogger()
 
 
 
-typedef database::puresql::DiagnosticSQLResult<database::puresql::DBVerificationResult> VerificationResult;
+typedef sql::DiagnosticSQLResult<sql::DBVerificationResult> VerificationResult;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);

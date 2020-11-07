@@ -30,7 +30,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <QtConcurrent>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QCoreApplication>
 
 void SetupLogger()
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     if(fandoms.size() > 0)
         fandomsInterface->UploadFandomsIntoDatabase(fandoms);
     database::discord_queries::FillUserUids(fandomsInterface->db);
-    QSqlDatabase::removeDatabase("DiscordDB");
+    sql::Database::removeDatabase("DiscordDB");
 
     //discord::InitHelpForCommands();
     discord::Client client(token);

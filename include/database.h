@@ -1,10 +1,10 @@
 #pragma once
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 
 namespace core{
 struct Database{
     Database(){}
     virtual ~Database(){}
-    QSqlDatabase db;
+    sql::Database db;
 };
 }

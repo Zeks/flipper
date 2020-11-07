@@ -7,13 +7,13 @@
 namespace sql{
 class Transaction{
 public:
-    Transaction(SqlDatabase);
+    Transaction(Database);
     Transaction(const Transaction&) = default;
     ~Transaction();
     bool start();
     bool cancel();
     bool finalize();
-    SqlDatabase db;
+    Database db;
     bool isOpen = false;
     static QReadWriteLock lock;
     static std::set<std::string> transactionSet;

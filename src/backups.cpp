@@ -21,10 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QStandardPaths>
 #include <QMessageBox>
 
-database::puresql::DiagnosticSQLResult<database::puresql::DBVerificationResult> VerifyDatabase(QString name){
+sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(QString name){
 
-    database::puresql::DiagnosticSQLResult<database::puresql::DBVerificationResult>  result;
-    auto db = QSqlDatabase::addDatabase("QSQLITE","TEST");
+    sql::DiagnosticSQLResult<sql::DBVerificationResult>  result;
+    auto db = sql::Database::addDatabase("QSQLITE","TEST");
     db.setDatabaseName(name);
     bool open = db.open();
     if(!open)
@@ -33,7 +33,7 @@ database::puresql::DiagnosticSQLResult<database::puresql::DBVerificationResult> 
         result.data.data.push_back("Database file failed to open");
         return result;
     }
-    result = database::puresql::VerifyDatabaseIntegrity(db);
+    result = sql::VerifyDatabaseIntegrity(db);
     db.close();
     return result;
 }

@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include "pure_sql.h"
 namespace dbfix{
-    //void EnsureFandomIndexExists(QSqlDatabase db);
-    void FillFFNId(QSqlDatabase db);
-    void ReplaceUrlInLinkedAuthorsWithID(QSqlDatabase db);
-    bool RebindDuplicateFandoms(QSqlDatabase db);
-    void TrimUserUrls(QSqlDatabase db);
-    database::puresql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(QSqlDatabase db);
+    //void EnsureFandomIndexExists(sql::Database db);
+    void FillFFNId(sql::Database db);
+    void ReplaceUrlInLinkedAuthorsWithID(sql::Database db);
+    bool RebindDuplicateFandoms(sql::Database db);
+    void TrimUserUrls(sql::Database db);
+    sql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(sql::Database db);
     //void SetLastFandomUpdateTo
 }

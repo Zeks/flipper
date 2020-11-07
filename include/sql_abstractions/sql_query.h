@@ -1,7 +1,13 @@
 #pragma once
+#include "sql_abstractions/sql_variant.h"
 #include <memory>
 #include <vector>
 #include <variant>
+#include <type_traits>
+#include <string>
+#include <QDateTime>
+#include <QSqlRecord>
+
 namespace sql{
 
 class Database;
@@ -10,11 +16,13 @@ class QueryImpl;
 
 class Query{
 public:
-    using Variant = std::variant<std::string, int32_t, int64_t, uint32_t, uint64_t>;
+
     Query(Database);
+    Query(std::string, Database);
     bool prepare(const std::string&);
     bool prepare(std::string&&);
     bool exec();
+    void setForwardOnly(bool);
 
     void bindVector(const std::vector<Variant>&);
     void bindValue(const std::string&, const Variant&);
@@ -29,14 +37,17 @@ public:
     Variant value(const std::string&)  const;
     Variant value(std::string&&)  const;
     Variant value(const char*) const;
+    QSqlRecord record();
     Error lastError() const;
     std::string lastQuery() const;
 
-    std::unique_ptr<QueryImpl> d;
+    std::shared_ptr<QueryImpl> d;
 };
 struct QueryBinding{
     std::string key;
-    Query::Variant value;
+    Variant value;
 };
 
 };
+
+

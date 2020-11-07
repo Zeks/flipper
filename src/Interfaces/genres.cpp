@@ -98,7 +98,7 @@ bool interfaces::Genres::IsGenreList(QStringList list)
 
 bool Genres::LoadGenres()
 {
-    genres = database::puresql::GetAllGenres(db).data;
+    genres = sql::GetAllGenres(db).data;
     if(genres.empty())
         return false;
     return true;
@@ -106,36 +106,36 @@ bool Genres::LoadGenres()
 
 genre_stats::FicGenreData Genres::GetGenreDataForFic(int id)
 {
-    return  database::puresql::GetRealGenresForFic(id, db).data;
+    return  sql::GetRealGenresForFic(id, db).data;
 }
 
 QVector<genre_stats::FicGenreData> Genres::GetGenreDataForQueuedFics()
 {
-    return  database::puresql::GetGenreDataForQueuedFics(db).data;
+    return  sql::GetGenreDataForQueuedFics(db).data;
 }
 
 void Genres::QueueFicsForGenreDetection(int minAuthorRecs, int minFoundLists,int minFaves)
 {
-    database::puresql::QueueFicsForGenreDetection(minAuthorRecs, minFoundLists, minFaves, db);
+    sql::QueueFicsForGenreDetection(minAuthorRecs, minFoundLists, minFaves, db);
 }
 
 bool Genres::WriteDetectedGenres(QVector<genre_stats::FicGenreData> fics)
 {
-    return database::puresql::WriteDetectedGenres(fics, db).success;
+    return sql::WriteDetectedGenres(fics, db).success;
 }
 
 bool Genres::WriteDetectedGenresIteration2(QVector<genre_stats::FicGenreData> fics)
 {
-    return database::puresql::WriteDetectedGenresIteration2(fics, db).success;
+    return sql::WriteDetectedGenresIteration2(fics, db).success;
 }
 
 
 QHash<int, QList<genre_stats::GenreBit> > Genres::GetFullGenreList(bool useOriginalgenres)
 {
     if(loadOriginalGenresOnly)
-        return database::puresql::GetFullGenreList(db, true).data;
+        return sql::GetFullGenreList(db, true).data;
     else
-        return database::puresql::GetFullGenreList(db, useOriginalgenres).data;
+        return sql::GetFullGenreList(db, useOriginalgenres).data;
 }
 
 void Genres::LogGenreDistribution(std::array<double, 22> &data, QString target)

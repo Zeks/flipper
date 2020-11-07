@@ -18,7 +18,7 @@ public:
     UserFavouritesParser(QObject* parent = nullptr);
     void Reset();
     bool FetchDesktopUserPage(QString userId);
-    bool FetchDesktopUserPage(QString userId, QSqlDatabase, ECacheMode cacheMode = ECacheMode::dont_use_cache, bool isId = true);
+    bool FetchDesktopUserPage(QString userId, sql::Database, ECacheMode cacheMode = ECacheMode::dont_use_cache, bool isId = true);
     QuickParseResult QuickParseAvailable();
     void FetchFavouritesFromDesktopPage();
     void FetchFavouritesFromMobilePage(int startBoundary = 26);
@@ -28,7 +28,7 @@ public:
     QString userId;
     QMetaObject::Connection connection;
     ECacheMode cacheMode = ECacheMode::dont_use_cache;
-    QSqlDatabase cacheDbToUse;
+    sql::Database cacheDbToUse;
 
 signals:
     void progress(int pagesRead, int totalPages);

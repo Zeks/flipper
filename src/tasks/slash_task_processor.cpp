@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include <QThread>
 
-SlashProcessor::SlashProcessor(QSqlDatabase db,
+SlashProcessor::SlashProcessor(sql::Database db,
                                QSharedPointer<interfaces::Fanfics> fanficInterface,
                                QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                QSharedPointer<interfaces::Authors> authorsInterface,
@@ -76,7 +76,7 @@ inline void SlashProcessor::AddToSlashHash(QList<core::AuthorPtr> authors,
 
 void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr > authors)
 {
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     database::Transaction transaction(db);
 
     auto keyWordSlashRepo = fanficsInterface->GetAllKnownSlashFics();
@@ -192,7 +192,7 @@ void SlashProcessor::CreateListOfSlashCandidates(double neededNotslashMatchesCoe
     qDebug () << "finished";
 }
 
-void SlashProcessor::AssignSlashKeywordsMetaInfomation(QSqlDatabase db)
+void SlashProcessor::AssignSlashKeywordsMetaInfomation(sql::Database db)
 {
     database::Transaction transaction(db);
     CommonRegex rx;
@@ -204,7 +204,7 @@ void SlashProcessor::AssignSlashKeywordsMetaInfomation(QSqlDatabase db)
     transaction.finalize();
 }
 
-void SlashProcessor::DoFullCycle(QSqlDatabase db, int passCount)
+void SlashProcessor::DoFullCycle(sql::Database db, int passCount)
 {
     //auto authors = authorsInterface->GetAllAuthors("ffn", true);
     {

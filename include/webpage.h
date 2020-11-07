@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include <QDateTime>
 #include <QByteArray>
 #include <QScopedPointer>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QThread>
 #include "ECacheMode.h"
 #include <atomic>

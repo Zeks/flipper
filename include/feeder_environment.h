@@ -57,8 +57,8 @@ public:
     void InitInterfaces();
 
     // used to build the actual query to be used in the database from filters
-    QSqlQuery BuildQuery(bool countOnly = false);
-    inline core::Fanfic LoadFanfic(QSqlQuery& q);
+    sql::Query BuildQuery(bool countOnly = false);
+    inline core::Fanfic LoadFanfic(sql::Query& q);
     void LoadData(SlashFilterState);
     int GetResultCount();
 

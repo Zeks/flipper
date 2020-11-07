@@ -203,13 +203,13 @@ public:
 
     bool ResumeUnfinishedTasks();
 
-    void CreateSimilarListForGivenFic(int id,  QSqlDatabase db);
+    void CreateSimilarListForGivenFic(int id,  sql::Database db);
     QVector<int> GetListSourceFFNIds(int listId);
     QVector<int> GetFFNIds(QSet<int> fics);
 
     void Log(QString);
 
-    core::AuthorPtr LoadAuthor(QString url, QSqlDatabase db);
+    core::AuthorPtr LoadAuthor(QString url, sql::Database db);
     QSet<QString> LoadAuthorFicIdsForRecCreation(QString url,
                                                  QLabel* infoTarget = nullptr,
                                                  bool silent = false);
@@ -261,6 +261,6 @@ signals:
 };
 namespace env {
     WebPage RequestPage(QString pageUrl, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
-    WebPage RequestPage(QString pageUrl, QSqlDatabase, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
+    WebPage RequestPage(QString pageUrl, sql::Database, ECacheMode forcedCacheMode = ECacheMode::use_cache, bool autoSaveToDB = false);
 }
 

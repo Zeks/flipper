@@ -31,17 +31,17 @@ void Tags::LoadAlltags()
 
 bool Tags::DeleteTag(QString tag)
 {
-    return database::puresql::DeleteTagFromDatabase(tag, db).success;
+    return sql::DeleteTagFromDatabase(tag, db).success;
 }
 
 bool Tags::CreateTag(QString tag)
 {
-    return database::puresql::CreateTagInDatabase(tag, db).success;
+    return sql::CreateTagInDatabase(tag, db).success;
 }
 
 QStringList Tags::ReadUserTags()
 {
-    QStringList tags = database::puresql::ReadUserTags(db).data;
+    QStringList tags = sql::ReadUserTags(db).data;
     QSet<QString> baseSet = {"Liked", "Disliked","Limbo", "Hide", "Meh", "Spoiler", "Wait", "Stem", "Queue", "Finished", "Gems", "Rec", "Series"};
     for(auto basicTag: baseSet)
     {
@@ -57,13 +57,13 @@ bool Tags::SetTagForFic(int ficId, QString tag)
     if(!allTags.contains(tag))
         CreateTag(tag);
     allTags.push_back(tag);
-    database::puresql::AssignTagToFanfic(tag, ficId, db);
+    sql::AssignTagToFanfic(tag, ficId, db);
     return true;
 }
 
 bool Tags::RemoveTagFromFic(int ficId, QString tag)
 {
-    return database::puresql::RemoveTagFromFanfic(tag, ficId, db).success;
+    return sql::RemoveTagFromFanfic(tag, ficId, db).success;
 }
 
 QStringList Tags::CreateDefaultTagList()
@@ -87,7 +87,7 @@ QStringList Tags::CreateDefaultTagList()
 bool Tags::ExportToFile(QString filename)
 {
     QString exportFile = filename;
-    auto closeDb = QSqlDatabase::database("TagExport");
+    auto closeDb = sql::Database::database("TagExport");
     if(closeDb.isOpen())
         closeDb.close();
     bool success = QFile::remove(exportFile);
@@ -95,14 +95,14 @@ bool Tags::ExportToFile(QString filename)
     QSharedPointer<database::IDBWrapper> tagExportInterface (new database::SqliteInterface());
     auto tagExportDb = tagExportInterface->InitDatabase("TagExport", false);
     tagExportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagExport");
-    database::puresql::ExportTagsToDatabase(db, tagExportDb);
+    sql::ExportTagsToDatabase(db, tagExportDb);
     return true;
 }
 
 bool Tags::ImportFromFile(QString filename)
 {
     QString importFile = filename;
-    auto closeDb = QSqlDatabase::database("TagExport");
+    auto closeDb = sql::Database::database("TagExport");
     if(closeDb.isOpen())
         closeDb.close();
     if(!QFile::exists(importFile))
@@ -114,29 +114,29 @@ bool Tags::ImportFromFile(QString filename)
     auto tagImportDb = tagImportInterface->InitDatabase("TagExport", false);
     tagImportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagImport");
     database::Transaction transaction(db);
-    database::puresql::ImportTagsFromDatabase(db, tagImportInterface->GetDatabase());
+    sql::ImportTagsFromDatabase(db, tagImportInterface->GetDatabase());
     transaction.finalize();
     return true;
 }
 
 QSet<int> Tags::GetAllTaggedFics(TagIDFetcherSettings)
 {
-    return database::puresql::GetAllTaggedFics(db).data;
+    return sql::GetAllTaggedFics(db).data;
 }
 
 QSet<int> Tags::GetFicsTaggedWith(TagIDFetcherSettings settings)
 {
-    return database::puresql::GetFicsTaggedWith(settings.tags, settings.useAND, db).data;
+    return sql::GetFicsTaggedWith(settings.tags, settings.useAND, db).data;
 }
 
 QSet<int> Tags::GetAuthorsForTags(QStringList tags)
 {
-    return database::puresql::GetAuthorsForTags(tags, db).data;
+    return sql::GetAuthorsForTags(tags, db).data;
 }
 
 QVector<core::Identity> Tags::GetAllFicsThatDontHaveDBID()
 {
-    auto result =  database::puresql::GetAllFicsThatDontHaveDBID(db).data;
+    auto result =  sql::GetAllFicsThatDontHaveDBID(db).data;
     QVector<core::Identity> pack;
     pack.reserve(result.size());
     for(auto id: std::as_const(result))
@@ -150,22 +150,22 @@ QVector<core::Identity> Tags::GetAllFicsThatDontHaveDBID()
 
 QHash<QString, int> Tags::GetTagSizes(QStringList tags)
 {
-    return database::puresql::GetTagSizes(tags, db).data;
+    return sql::GetTagSizes(tags, db).data;
 }
 
 bool Tags::FillDBIDsForFics(QVector<core::Identity> pack)
 {
-    return database::puresql::FillDBIDsForFics(pack, db).success;
+    return sql::FillDBIDsForFics(pack, db).success;
 }
 
 bool Tags::FetchTagsForFics(QVector<core::Fanfic> * fics)
 {
-    return database::puresql::FetchTagsForFics(fics, db).success;
+    return sql::FetchTagsForFics(fics, db).success;
 }
 
 bool Tags::RemoveTagsFromEveryFic(QStringList tags)
 {
-    return database::puresql::RemoveTagsFromEveryFic(tags, db).data;
+    return sql::RemoveTagsFromEveryFic(tags, db).data;
 }
 
 }

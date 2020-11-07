@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QString>
 #include <QDateTime>
 #include <QSharedPointer>
@@ -32,13 +32,13 @@ public:
     virtual bool RebaseFandomsToZero() = 0;
     virtual QStringList FetchRecentFandoms() = 0;
     virtual QDateTime GetCurrentDateTime() = 0;
-    virtual QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db = QSqlDatabase()) = 0;
+    virtual QStringList GetIdListForQuery(QSharedPointer<core::Query> query, sql::Database db = sql::Database()) = 0;
     virtual bool BackupDatabase(QString dbname) = 0;
     virtual bool ReadDbFile(QString file, QString connectionName = QStringLiteral("")) = 0;
-    virtual QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false) = 0;
-    virtual QSqlDatabase InitDatabase2(QString fileName, QString connectionName, bool setDefault = false) = 0;
-    virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false) = 0;
-    virtual QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
+    virtual sql::Database InitDatabase(QString connectionName, bool setDefault = false) = 0;
+    virtual sql::Database InitDatabase2(QString fileName, QString connectionName, bool setDefault = false) = 0;
+    virtual sql::Database InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false) = 0;
+    virtual sql::Database InitAndUpdateDatabaseForFile(QString folder,
                                                       QString file,
                                                       QString sqlFile,
                                                       QString connectionName,
@@ -46,23 +46,23 @@ public:
     virtual bool EnsureUUIDForUserDatabase() = 0;
     virtual QString GetUserToken() = 0;
 
-    virtual bool PassScoresToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassSnoozesToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassFicTagsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassFicNotesToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassTagSetToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassRecentFandomsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassClientDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassReadingDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassFandomListSetToAnotherDatabase(QSqlDatabase dbTarget) = 0;
-    virtual bool PassFandomListDataToAnotherDatabase(QSqlDatabase dbTarget) = 0;
+    virtual bool PassScoresToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassSnoozesToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassFicTagsToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassFicNotesToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassTagSetToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassRecentFandomsToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassClientDataToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassReadingDataToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassIgnoredFandomsToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassFandomListSetToAnotherDatabase(sql::Database dbTarget) = 0;
+    virtual bool PassFandomListDataToAnotherDatabase(sql::Database dbTarget) = 0;
 
-    QSqlDatabase GetDatabase() {return db;}
-    void SetDatabase(QSqlDatabase db) {this->db = db;}
+    sql::Database GetDatabase() {return db;}
+    void SetDatabase(sql::Database db) {this->db = db;}
 
     QString userToken;
 protected:
-    QSqlDatabase db;
+    sql::Database db;
 };
 }

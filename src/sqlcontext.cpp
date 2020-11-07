@@ -15,11 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-#include "sqlcontext.h"
+#include "sql_abstractions/sql_context.h"
 #include "logger/QsLog.h"
 namespace database {
 namespace puresql{
-bool ExecAndCheck(QSqlQuery& q, bool reportErrors ,  bool ignoreUniqueness )
+bool ExecAndCheck(sql::Query& q, bool reportErrors ,  bool ignoreUniqueness )
 {
     bool success = q.exec();
 
@@ -27,18 +27,18 @@ Q_UNUSED(success)
 
     if(q.lastError().isValid())
     {
-        if(reportErrors && !(ignoreUniqueness && q.lastError().text().contains("UNIQUE constraint failed")))
+        if(reportErrors && !(ignoreUniqueness && q.lastError().text().find("UNIQUE constraint failed") != std::string::npos))
         {
-            if(q.lastError().text().contains("record"))
+            if(q.lastError().text().find("record") != std::string::npos)
                 QLOG_ERROR() << "Error while performing a query: ";
             QLOG_ERROR() << " ";
             QLOG_ERROR() << " ";
             QLOG_ERROR() << "Error while performing a query: ";
-            QLOG_ERROR_PURE()<< q.lastQuery();
-            QLOG_ERROR() << "Error was: " <<  q.lastError();
-            QLOG_ERROR() << q.lastError().nativeErrorCode();
-            QLOG_ERROR() << q.lastError().driverText();
-            QLOG_ERROR() << q.lastError().databaseText();
+            QLOG_ERROR_PURE() << QString::fromStdString(q.lastQuery());
+            QLOG_ERROR() << "Error was: " <<  QString::fromStdString(q.lastError().text());
+//            QLOG_ERROR() << q.lastError().nativeErrorCode();
+//            QLOG_ERROR() << q.lastError().driverText();
+//            QLOG_ERROR() << q.lastError().databaseText();
         }
         return false;
     }

@@ -37,8 +37,8 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 class AuthorLoadProcessor: public PageConsumer{
 Q_OBJECT
 public:
-    AuthorLoadProcessor(QSqlDatabase db,
-                        QSqlDatabase taskDb,
+    AuthorLoadProcessor(sql::Database db,
+                        sql::Database taskDb,
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::Authors> authorsInterface,
@@ -47,8 +47,8 @@ public:
     void Run(PageTaskPtr task);
     QSharedPointer<database::IDBWrapper> dbInterface;
 private:
-    QSqlDatabase db;
-    QSqlDatabase taskDB;
+    sql::Database db;
+    sql::Database taskDB;
     QSharedPointer<interfaces::Fanfics> fanfics;
     QSharedPointer<interfaces::Fandoms> fandoms;
     QSharedPointer<interfaces::Authors> authors;

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "core/section.h"
 #include "QScopedPointer"
 #include "QSharedPointer"
-#include "QSqlDatabase"
+#include "sql_abstractions/sql_database.h"
 #include "QReadWriteLock"
 
 
@@ -51,7 +51,7 @@ public:
     bool RemoveTagsFromEveryFic(QStringList);
 
 
-QSqlDatabase db;
+sql::Database db;
 QSharedPointer<Fandoms> fandomInterface;
 private:
     QStringList CreateDefaultTagList();

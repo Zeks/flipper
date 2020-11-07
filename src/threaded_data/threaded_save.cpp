@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
+#include <iostream>
 
 struct DataKeeper{
     QFile data;

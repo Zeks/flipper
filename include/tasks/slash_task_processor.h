@@ -39,7 +39,7 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 class SlashProcessor : public QObject{
 Q_OBJECT
 public:
-    SlashProcessor(QSqlDatabase db,
+    SlashProcessor(sql::Database db,
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::Authors> authorsInterface,
@@ -51,11 +51,11 @@ public:
                                QSet<int> knownSlashFics,
                                QHash<int, int>& slashHash, bool checkRx = true);
     void CreateListOfSlashCandidates(double neededNotslashMatchesCoeff, QList<core::AuthorPtr> authors);
-    void DoFullCycle(QSqlDatabase db, int passCount);
-    void AssignSlashKeywordsMetaInfomation(QSqlDatabase db);
+    void DoFullCycle(sql::Database db, int passCount);
+    void AssignSlashKeywordsMetaInfomation(sql::Database db);
 
     private:
-    QSqlDatabase db;
+    sql::Database db;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;

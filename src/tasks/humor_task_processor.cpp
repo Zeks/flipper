@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include <QThread>
 
-HumorProcessor::HumorProcessor(QSqlDatabase db,
+HumorProcessor::HumorProcessor(sql::Database db,
                                QSharedPointer<interfaces::Fanfics> fanficInterface,
                                QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                QSharedPointer<interfaces::PageTask> pageInterface,
@@ -84,7 +84,7 @@ inline void HumorProcessor::AddToCountingHumorHash(QList<core::AuthorPtr> author
 
 void HumorProcessor::CreateListOfHumorCandidates(QList<core::AuthorPtr > authors)
 {
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     database::Transaction transaction(db);
 
     QHash<int, std::array<double, 22>> authorGenreHash;

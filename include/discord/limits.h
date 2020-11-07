@@ -4,7 +4,7 @@
 #include <QQueue>
 #include <QReadWriteLock>
 #include <QReadLocker>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QWriteLocker>
 #include <QHash>
 #include <chrono>

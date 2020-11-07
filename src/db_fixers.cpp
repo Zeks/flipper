@@ -22,9 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QSet>
 #include <QDebug>
 #include <QMap>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QSqlError>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QRegularExpression>
 
 namespace dbfix{
@@ -49,13 +49,13 @@ QString ConvertName(QString name)
     return result;
 }
 
-void FillFFNId(QSqlDatabase db)
+void FillFFNId(sql::Database db)
 {
     database::Transaction transaction(db);
     QString qs = "select id, url from recommenders";
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare(qs);
-    database::puresql::ExecAndCheck(q);
+    sql::ExecAndCheck(q);
     QHash<int, int> idToFFNId;
     while(q.next())
     {
@@ -72,32 +72,32 @@ void FillFFNId(QSqlDatabase db)
 
 
     }
-    QSqlQuery fixQ(db);
+    sql::Query fixQ(db);
     fixQ.prepare("update recommenders set ffn_id = :ffn_id where id = :id");
     for(auto id : idToFFNId.keys())
     {
         fixQ.bindValue(":id", id);
         auto ffnId= idToFFNId[id];
         fixQ.bindValue(":ffn_id", ffnId);
-        database::puresql::ExecAndCheck(fixQ);
+        sql::ExecAndCheck(fixQ);
     }
     transaction.finalize();
 }
 
 
-void TrimUserUrls(QSqlDatabase db)
+void TrimUserUrls(sql::Database db)
 {
-    database::puresql::DiagnosticSQLResult<bool> result;
+    sql::DiagnosticSQLResult<bool> result;
     database::Transaction transaction(db);
     QString qs = "select rowid, url from pagecache";
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare(qs);
     q.exec();
     result.CheckDataAvailability(q);
     if(!result.success)
         return;
 
-    QSqlQuery fixQ(db);
+    sql::Query fixQ(db);
     fixQ.prepare("update pagecache set url = :url where rowid = :row_id");
     //QRegularExpression rxEnd("(/u/(\\d+)/)(.*)", QRegularExpression::InvertedGreedinessOption);
     bool success = true;
@@ -132,27 +132,27 @@ void TrimUserUrls(QSqlDatabase db)
 }
 
 
-database::puresql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(QSqlDatabase db)
+sql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(sql::Database db)
 {
-    database::puresql::DiagnosticSQLResult<bool> result;
+    sql::DiagnosticSQLResult<bool> result;
 
     database::Transaction transaction(db);
     // first we wipe the original slash table
     QString qs = QString("delete from slash_data");
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare(qs);
     if(!result.ExecAndCheck(q))
         return result;
 
     QString insertQS = QString("insert into slash_data(fic_id, keywords_yes, keywords_no, keywords_result, first_iteration, second_iteration)"
                                "  values(:fic_id, :keywords_yes, :keywords_no, :keywords_result, :first_iteration, :second_iteration)");
-    QSqlQuery insertQ(db);
+    sql::Query insertQ(db);
     insertQ.prepare(insertQS);
 
     qs = QString("select id, slash_keywords, not_slash_keywords,slash_keywords_result, first_slash_iteration, second_slash_iteration from fanfics ");
     if(!db.isOpen())
         qDebug() << "not open";
-    QSqlQuery importTagsQ(db);
+    sql::Query importTagsQ(db);
     importTagsQ.prepare(qs);
     if(!result.ExecAndCheck(importTagsQ))
         return result;
@@ -176,13 +176,13 @@ database::puresql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(QSqlDatab
 }
 
 
-void ReplaceUrlInLinkedAuthorsWithID(QSqlDatabase db)
+void ReplaceUrlInLinkedAuthorsWithID(sql::Database db)
 {
     database::Transaction transaction(db);
     QString qs = "select rowid, recommender_id, url from LinkedAuthors";
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare(qs);
-    database::puresql::ExecAndCheck(q);
+    sql::ExecAndCheck(q);
     QHash<int, int> idToFFNId;
     while(q.next())
     {
@@ -199,21 +199,21 @@ void ReplaceUrlInLinkedAuthorsWithID(QSqlDatabase db)
 
 
     }
-    QSqlQuery fixQ(db);
+    sql::Query fixQ(db);
     fixQ.prepare("update LinkedAuthors set ffn_id = :ffn_id where rowid = :row_id");
     for(auto id : idToFFNId.keys())
     {
         fixQ.bindValue(":row_id", id);
         auto ffnId= idToFFNId[id];
         fixQ.bindValue(":ffn_id", ffnId);
-        database::puresql::ExecAndCheck(fixQ);
+        sql::ExecAndCheck(fixQ);
     }
     transaction.finalize();
 }
 
-bool RebindDuplicateFandoms(QSqlDatabase db)
+bool RebindDuplicateFandoms(sql::Database db)
 {
-    auto result = database::puresql::GetAllFandoms(db);
+    auto result = sql::GetAllFandoms(db);
     if(!result.success)
         return false;
     auto fandoms = result.data;
@@ -258,7 +258,7 @@ bool RebindDuplicateFandoms(QSqlDatabase db)
         rebinds[fandom->GetName()].push_back(newFandomId);
     }
 
-    auto ficfandomsResult = database::puresql::GetWholeFicFandomsTable(db);
+    auto ficfandomsResult = sql::GetWholeFicFandomsTable(db);
     QHash<int, QList<int>> ficfandoms  = ficfandomsResult.data;
     if(!ficfandomsResult.success)
         return false;
@@ -290,27 +290,27 @@ bool RebindDuplicateFandoms(QSqlDatabase db)
     try {
 
         bool result = true;
-        result = result && database::puresql::EraseFicFandomsTable(db).success;
+        result = result && sql::EraseFicFandomsTable(db).success;
         for(auto key : resultingList.keys())
         {
             auto list = resultingList[key];
             auto last = std::unique(list.begin(), list.end());
             list.erase(last, list.end());
             for(auto id : list)
-                result = result && database::puresql::AddFandomForFic(id, key, db).success;
+                result = result && sql::AddFandomForFic(id, key, db).success;
         }
         if(!result)
             throw std::logic_error("");
 
 
 //        for(auto key: fandomNameToNewId.keys())
-//            result = result && database::puresql::CreateFandomIndexRecord(fandomNameToNewId[key], key, db);
+//            result = result && sql::CreateFandomIndexRecord(fandomNameToNewId[key], key, db);
 //        if(!result)
 //            throw std::logic_error("");
         for(auto id: fandomIdToNewId.keys())
         {
 
-            database::puresql::DiagnosticSQLResult<bool> diag;
+            sql::DiagnosticSQLResult<bool> diag;
             for(auto url : idToFandom[id]->GetUrls())
             {
                 if(url.GetUrl().isEmpty())
@@ -318,7 +318,7 @@ bool RebindDuplicateFandoms(QSqlDatabase db)
                     auto fandom = idToFandom[id];
                     continue;
                 }
-                diag = database::puresql::AddUrlToFandom(fandomIdToNewId[id], url, db);
+                diag = sql::AddUrlToFandom(fandomIdToNewId[id], url, db);
                 result = result && diag.success;
             }
         }
@@ -332,7 +332,7 @@ bool RebindDuplicateFandoms(QSqlDatabase db)
     for(auto id: fandomIdToNewId.keys())
     {
         if(id != fandomIdToNewId[id])
-            database::puresql::DeleteFandom(id, db);
+            sql::DeleteFandom(id, db);
     }
 
     transaction.finalize();

@@ -102,6 +102,8 @@ App{
         "src/rec_calc/rec_calculator_mood_adjusted.cpp",
         "src/rec_calc/rec_calculator_weighted.cpp",
         "src/servers/token_processing.cpp",
+        "src/sql_abstractions/sql_database.cpp",
+        "src/sql_abstractions/sql_variant.cpp",
         "src/ui/servitorwindow.cpp",
         "src/Interfaces/data_source.cpp",
         "include/Interfaces/base.h",

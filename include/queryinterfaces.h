@@ -19,21 +19,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QString>
 #include <QVariantHash>
 #include <QSharedPointer>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_query.h"
 #include "storyfilter.h"
 //#include "Interfaces/db_interface.h"
 namespace database { class IDBWrapper; }
 
 namespace core {
-struct QueryBinding{
-    QString key;
-    QVariant value;
-};
 struct Query
 {
     void Clear(){ str.clear(); bindings.clear();}
-    QString str;
-    QList<QueryBinding> bindings;
+    std::string str;
+    QList<sql::QueryBinding> bindings;
     //QVariantHash bindings;
 };
 

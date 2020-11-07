@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QHash>
 #include <QEventLoop>
 #include <QSignalMapper>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QProgressBar>
 #include <QLabel>
 #include <QTextBrowser>

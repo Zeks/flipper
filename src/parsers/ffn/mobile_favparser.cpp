@@ -69,7 +69,7 @@ QSet<QString> MobileFavouritesFetcher::Execute()
     return urlResult;
 }
 
-QSet<QString> MobileFavouritesFetcher::Execute(QSqlDatabase db, ECacheMode cacheMode)
+QSet<QString> MobileFavouritesFetcher::Execute(sql::Database db, ECacheMode cacheMode)
 {
     // first we need to create an m. link
     QString url = QString("https://m.fanfiction.net/u/%1//?a=fs").arg(userId);

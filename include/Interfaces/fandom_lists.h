@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
 #include "core/fandom_list.h"
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QSharedPointer>
 #include <functional>
 #include <unordered_set>
@@ -58,7 +58,7 @@ public:
     // nah, not the time to do it right now.
     // will prolly refactor all together
     // public until refactor to maintain uniformity of use between interface
-    QSqlDatabase db;
+    sql::Database db;
 private:
     QSharedPointer<interfaces::FandomListsImpl> d;
 };

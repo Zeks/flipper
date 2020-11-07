@@ -34,7 +34,7 @@ bool UserFavouritesParser::FetchDesktopUserPage(QString userId)
     return false;
 }
 
-bool UserFavouritesParser::FetchDesktopUserPage(QString userId, QSqlDatabase db, ECacheMode cacheMode, bool isId)
+bool UserFavouritesParser::FetchDesktopUserPage(QString userId, sql::Database db, ECacheMode cacheMode, bool isId)
 {
     this->userId = userId;
     QStringList result;

@@ -17,23 +17,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #pragma once
 
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/string_hasher.h"
 #include <QReadWriteLock>
 #include <QSet>
 
 namespace database{
 class Transaction{
 public:
-    Transaction(QSqlDatabase);
+    Transaction(sql::Database);
     Transaction(const Transaction&) = default;
     ~Transaction();
     bool start();
     bool cancel();
     bool finalize();
-    QSqlDatabase db;
+    sql::Database db;
     bool isOpen = false;
     static QReadWriteLock lock;
-    static QSet<QString> transactionSet;
+    static QSet<std::string> transactionSet;
 };
 
 }

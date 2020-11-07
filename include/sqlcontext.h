@@ -4,33 +4,16 @@
 #include <fmt/format.h>
 
 #include <QString>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlError>
-#include <QVariant>
-#include <QDebug>
-#include <QSharedPointer>
-
 #include <functional>
 #include <memory>
 #include <array>
 #include <unordered_map>
-
-namespace std
-{
-    inline namespace __cxx11{
-    inline uint qHash(const std::string& key, uint seed = 0)
-     {
-         return qHash(QByteArray::fromRawData(key.data(), key.length()), seed);
-     }
-    }
-}
+#include "sql_abstractions/string_hasher.h"
 
 
 
 namespace database {
 namespace puresql{
-
 
 struct QueryBinding{
     std::string key;
@@ -38,7 +21,7 @@ struct QueryBinding{
 };
 
 
-bool ExecAndCheck(QSqlQuery& q, bool reportErrors = true,  bool ignoreUniqueness = false);
+bool ExecAndCheck(sql::Query& q, bool reportErrors = true,  bool ignoreUniqueness = false);
 
 template <typename T>
 struct DiagnosticSQLResult
@@ -46,8 +29,8 @@ struct DiagnosticSQLResult
     bool success = true;
     QString oracleError;
     T data;
-    bool ExecAndCheck(QSqlQuery& q, bool ignoreUniqueness = false) {
-        bool success = database::puresql::ExecAndCheck(q, true, ignoreUniqueness);
+    bool ExecAndCheck(sql::Query& q, bool ignoreUniqueness = false) {
+        bool success = sql::ExecAndCheck(q, true, ignoreUniqueness);
         bool uniqueTriggered = ignoreUniqueness && q.lastError().text().contains(QStringLiteral("UNIQUE constraint failed"));
         if(uniqueTriggered)
             return true;
@@ -56,11 +39,11 @@ struct DiagnosticSQLResult
             success = false;
             oracleError = q.lastError().text();
             qDebug().noquote() << oracleError;
-            qDebug().noquote() << q.lastQuery();
+            qDebug() << q.lastQuery();
         }
         return success;
     }
-    bool CheckDataAvailability(QSqlQuery& q, bool allowEmptyRecords = false){
+    bool CheckDataAvailability(sql::Query& q, bool allowEmptyRecords = false){
         if(!q.next())
         {
             if(!allowEmptyRecords)
@@ -78,13 +61,13 @@ struct DiagnosticSQLResult
 template <typename ResultType>
 struct SqlContext
 {
-    SqlContext(QSqlDatabase db) : q(db), transaction(db){
+    SqlContext(sql::Database db) : q(db), transaction(db){
     }
-    SqlContext(QSqlDatabase db, std::string&& qs) :qs(qs), q(db), transaction(db) {
+    SqlContext(sql::Database db, std::string&& qs) :qs(qs), q(db), transaction(db) {
         Prepare(qs);
     }
 
-    SqlContext(QSqlDatabase db, std::list<std::string>&& queries) : q(db), transaction(db)
+    SqlContext(sql::Database db, std::list<std::string>&& queries) : q(db), transaction(db)
     {
         for(const auto& query : queries)
         {
@@ -94,19 +77,19 @@ struct SqlContext
         }
     }
 
-    SqlContext(QSqlDatabase db, std::string&& qs,  std::function<void(SqlContext<ResultType>*)> func) : qs(qs), q(db), transaction(db),  func(func){
+    SqlContext(sql::Database db, std::string&& qs,  std::function<void(SqlContext<ResultType>*)> func) : qs(qs), q(db), transaction(db),  func(func){
         Prepare(qs);
         func(this);
     }
 
-    SqlContext(QSqlDatabase db, std::string&& qs, std::unordered_map<std::string, QVariant>&& hash) :  qs(qs), q(db),  transaction(db){
+    SqlContext(sql::Database db, std::string&& qs, std::unordered_map<std::string, QVariant>&& hash) :  qs(qs), q(db),  transaction(db){
         Prepare(qs);
 
         for(auto i = hash.begin(); i != hash.end(); i++)
             bindValue(i->first, std::move(i->second));
     }
 
-    SqlContext(QSqlDatabase db, std::unordered_map<std::string, QVariant>&& hash) :  q(db),  transaction(db){
+    SqlContext(sql::Database db, std::unordered_map<std::string, QVariant>&& hash) :  q(db),  transaction(db){
         for(auto i = hash.begin(); i != hash.end(); i++)
             bindValue(i->first, std::move(i->second));
     }
@@ -158,7 +141,7 @@ struct SqlContext
         }
     }
     template <typename KeyType>
-    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType&& key, QSqlQuery& q)>&& functor, bool ignoreUniqueness = false){
+    void ExecuteWithKeyListAndBindFunctor(QList<KeyType> keyList, std::function<void(KeyType&& key, sql::Query& q)>&& functor, bool ignoreUniqueness = false){
         BindValues();
         for(auto&& key : keyList)
         {
@@ -207,7 +190,7 @@ struct SqlContext
             return false;
         return true;
     }
-    void FetchSelectFunctor(std::string&& select, std::function<void(ResultType& data, QSqlQuery& q)>&& f, bool allowEmptyRecords = false)
+    void FetchSelectFunctor(std::string&& select, std::function<void(ResultType& data, sql::Query& q)>&& f, bool allowEmptyRecords = false)
     {
         Prepare(select);
         BindValues();
@@ -224,7 +207,7 @@ struct SqlContext
     }
     template <typename ValueType>
     void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::string&& countQuery = "",
-                                  std::function<ValueType(QSqlQuery&)>&& func = std::function<ValueType(QSqlQuery&)>())
+                                  std::function<ValueType(sql::Query&)>&& func = std::function<ValueType(sql::Query&)>())
     {
         if(countQuery.length() == 0)
             qs = "select count(*) from ( " + actualQuery + " ) ";
@@ -261,7 +244,7 @@ struct SqlContext
 
     template <typename ValueType>
     void FetchLargeSelectIntoListWithoutSize(std::string&& fieldName, std::string&& actualQuery,
-                                  std::function<ValueType(QSqlQuery&)>&& func = std::function<ValueType(QSqlQuery&)>())
+                                  std::function<ValueType(sql::Query&)>&& func = std::function<ValueType(sql::Query&)>())
     {
         qs = actualQuery;
         Prepare(qs);
@@ -344,17 +327,17 @@ struct SqlContext
     //template<typename KeyType, typename LamdaType>
     //void ProcessKeys(QList<KeyType> keys, const LamdaType& func){
     template<typename KeyType>
-    void ProcessKeys(QList<KeyType> keys, const std::function<void(QString key, QSqlQuery&)>& func){
+    void ProcessKeys(QList<KeyType> keys, const std::function<void(QString key, sql::Query&)>& func){
         for(auto key : keys)
             func(key, q);
     }
 
-    void for_each(std::function<void(QSqlQuery&)> func){
+    void for_each(std::function<void(sql::Query&)> func){
         while(q.next())
             func(q);
     }
 
-    DiagnosticSQLResult<ResultType> ForEachInSelect(const std::function<void(QSqlQuery&)>& func){
+    DiagnosticSQLResult<ResultType> ForEachInSelect(const std::function<void(sql::Query&)>& func){
         BindValues();
         if(!ExecAndCheck())
             return result;
@@ -416,7 +399,7 @@ struct SqlContext
     bool Next() { return q.next();}
     DiagnosticSQLResult<ResultType> result;
     std::string qs;
-    QSqlQuery q;
+    sql::Query q;
     Transaction transaction;
     std::list<QueryBinding> bindValues;
     std::function<void(SqlContext<ResultType>*)> func;
@@ -428,8 +411,8 @@ struct SqlContext
 template <typename ResultType>
 struct ParallelSqlContext
 {
-    ParallelSqlContext(QSqlDatabase source, std::string&& sourceQuery, QList<std::string>&& sourceFields,
-                       QSqlDatabase target, std::string&& targetQuery, QList<std::string>&& targetFields):
+    ParallelSqlContext(sql::Database source, std::string&& sourceQuery, QList<std::string>&& sourceFields,
+                       sql::Database target, std::string&& targetQuery, QList<std::string>&& targetFields):
         sourceQ(source), targetQ(target),
         sourceDB(source), targetDB(target), transaction(target) {
         sourceQ.prepare(QString::fromStdString(sourceQuery));
@@ -475,14 +458,14 @@ struct ParallelSqlContext
     }
     bool Success() const {return result.success;}
     DiagnosticSQLResult<ResultType> result;
-    QSqlQuery sourceQ;
-    QSqlQuery targetQ;
-    QSqlDatabase sourceDB;
-    QSqlDatabase targetDB;
+    sql::Query sourceQ;
+    sql::Query targetQ;
+    sql::Database sourceDB;
+    sql::Database targetDB;
     QList<std::string> sourceFields;
     QList<std::string> targetFields;
     Transaction transaction;
-    QHash<std::string,std::function<QVariant(const std::string&, QSqlQuery, QSqlDatabase, DiagnosticSQLResult<ResultType>&)>> valueConverters;
+    QHash<std::string,std::function<QVariant(const std::string&, sql::Query, sql::Database, DiagnosticSQLResult<ResultType>&)>> valueConverters;
 };
 
 }
