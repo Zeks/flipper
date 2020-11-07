@@ -2,9 +2,10 @@
 #include <string>
 #include <memory>
 namespace sql{
-class DatabaseImpl;
+class DatabaseImplBase;
 class Database{
 public:
+    Database();
     static Database addDatabase(std::string, std::string = "");
     static Database database(std::string s = "");
     void setDatabaseName(std::string);
@@ -14,10 +15,9 @@ public:
     bool commit();
     bool rollback();
     void* internalPointer();
-    bool close();
+    void close();
     std::string connectionName();
-
-    std::shared_ptr<DatabaseImpl> d;
+    std::shared_ptr<DatabaseImplBase> d;
 };
 
 }

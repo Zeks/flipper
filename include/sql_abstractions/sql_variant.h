@@ -45,6 +45,7 @@ public:
     QDate toDate() const;
     bool toBool() const;
     QByteArray toByteArray() const;
+    QByteArray toQVariant() const;
 
     template <typename T>
     T value();
@@ -63,27 +64,14 @@ std::string Variant::value<std::string>(){return toString();}
 template <> inline
 QDateTime Variant::value<QDateTime>(){return toDateTime();}
 
+
+
+struct QueryBinding{
+    std::string key;
+    Variant value;
+};
+
 }
-
-
-//template<typename T, typename... Ts> inline
-//QDataStream& operator<<(QDataStream& os, const std::variant<T, Ts...>& v)
-//{
-//    std::visit([&os](const auto & arg) {
-//        using X = std::decay_t<decltype(arg)>;
-//        if constexpr(std::is_same_v<X, long int>)
-//            os << qint64(arg);
-//        if constexpr(std::is_same_v<X, uint64_t>)
-//            os << quint64(arg);
-
-//    }, v);
-//    return os;
-//}
-
-//inline QDataStream &operator<<(QDataStream & out, const sql::Variant& variant){
-//   out << variant.data;
-//   return out;
-//}
 
 template<typename T, typename... Ts> inline
 QDebug operator<<(QDebug os, const std::variant<T, Ts...>& v)

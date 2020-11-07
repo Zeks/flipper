@@ -12,7 +12,8 @@ namespace sql{
 
 class Database;
 class Error;
-class QueryImpl;
+class QueryImplBase;
+
 
 class Query{
 public:
@@ -29,6 +30,8 @@ public:
     void bindValue(const std::string&, Variant&&);
     void bindValue(std::string&&, const Variant&);
     void bindValue(std::string&&, Variant&&);
+    void bindValue(const QueryBinding&);
+    void bindValue(QueryBinding&&);
     bool next();
 
 
@@ -41,11 +44,7 @@ public:
     Error lastError() const;
     std::string lastQuery() const;
 
-    std::shared_ptr<QueryImpl> d;
-};
-struct QueryBinding{
-    std::string key;
-    Variant value;
+    std::shared_ptr<QueryImplBase> d;
 };
 
 };
