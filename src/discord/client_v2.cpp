@@ -137,7 +137,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(!result.matched())
         return;
 
-    if(message.content != "!permit" && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
+    if(message.content != (std::string(server->GetCommandPrefix()) + "permit") && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
         return;
 
     auto commands = parser->Execute(result.get<0>().to_string(), server, message);
