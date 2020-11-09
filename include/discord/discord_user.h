@@ -165,6 +165,12 @@ struct User{
     LargeListToken GetLargeListToken() const;
     void SetLargeListToken(const LargeListToken &value);
 
+    int GetPerfectRngFicsSize() const;
+    void SetPerfectRngFicsSize(int value);
+
+    int GetGoodRngFicsSize() const;
+    void SetGoodRngFicsSize(int value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -191,6 +197,8 @@ private:
     int forcedRatio = 0;
     int perfectRngScoreCutoff = 0;
     int goodRngScoreCutoff = 0;
+    int perfectRngFicsSize = 0;
+    int goodRngFicsSize = 0;
     int favouritesSize = 0;
     int largeListCounter;
 

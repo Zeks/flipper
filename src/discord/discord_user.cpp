@@ -570,6 +570,30 @@ void User::SetLargeListToken(const LargeListToken &value)
     QWriteLocker locker(&lock);
     largeListToken = value;
 }
+
+int User::GetPerfectRngFicsSize() const
+{
+    QReadLocker locker(&lock);
+    return perfectRngFicsSize;
+}
+
+void User::SetPerfectRngFicsSize(int value)
+{
+    QWriteLocker locker(&lock);
+    perfectRngFicsSize = value;
+}
+
+int User::GetGoodRngFicsSize() const
+{
+    QReadLocker locker(&lock);
+    return goodRngFicsSize;
+}
+
+void User::SetGoodRngFicsSize(int value)
+{
+    QWriteLocker locker(&lock);
+    goodRngFicsSize = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

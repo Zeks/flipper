@@ -221,7 +221,11 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
         command.variantHash[QStringLiteral("ratio")] = 0;
         result.Push(std::move(command));
     }
+    auto prefix = QString::fromStdString(std::string(server->GetCommandPrefix()));
+    QString newFicspart = QString("\nIf you have added new fics to your favourites, do `%1recs >refresh %2` instead, to update your recommendations.");
+    newFicspart=newFicspart.arg(prefix,QString::fromStdString(match.get<2>().to_string()));
     createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(QString::fromStdString(match.get<2>().to_string()));
+    createRecs.textForPreExecution+=newFicspart;
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
     result.Push(std::move(createRecs));
@@ -338,6 +342,12 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(const SleepyDiscord::Message&
         ignoredFandoms.variantHash[QStringLiteral("reset")] = true;
     ignoredFandoms.variantHash[QStringLiteral("fandom")] = QString::fromStdString(fandom).trimmed();
     AddFilterCommand(std::move(ignoredFandoms));
+
+    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+    createRecs.ids.push_back(user->FfnID().toUInt());
+    createRecs.variantHash[QStringLiteral("refresh")] = true;
+    result.Push(std::move(createRecs));
+
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
     displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
@@ -374,12 +384,12 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(const SleepyDiscord::Message& me
             }
         }
     }
-
+    bool hasIgnores = ignoredFics.ids.size() > 0 || ignoredFics.variantHash.size() > 0;
     AddFilterCommand(std::move(ignoredFics));
-    if(!silent && (ignoredFics.variantHash.size() > 0 || ignoredFics.ids.size() > 0))
+    if(hasIgnores)
     {
         Command displayRecs = NewCommand(server, message,user->GetLastPageType());
-        displayRecs.ids.push_back(0);
+        displayRecs.ids.push_back(user->CurrentRecommendationsPage());
         displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
         result.Push(std::move(displayRecs));
 
@@ -535,12 +545,18 @@ bool RngCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<RngCommand>::name;
 }
 
+std::once_flag settingsFlagPrefix;
 CommandChain ChangeServerPrefixCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     bool isAdmin = CheckAdminRole(message);
+    static std::string ownerId;
+    std::call_once(settingsFlagPrefix, [&](){
+        QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
+        ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toStdString();
+    });
 
-    if(isAdmin || sleepyServer.ownerID == message.author.ID)
+    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == ownerId)
     {
         Command command = NewCommand(server, message,ct_change_server_prefix);
         auto match = ctre::search<TypeStringHolder<ChangeServerPrefixCommand>::pattern>(message.content);
@@ -570,15 +586,20 @@ bool ChangeServerPrefixCommand::IsThisCommand(const std::string &cmd)
 }
 
 
-
+std::once_flag settingsFlagChannel;
 CommandChain ChangePermittedChannelCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
 {
     if(this->server->GetServerId().length() == 0)
         return std::move(result);
+    static std::string ownerId;
+    std::call_once(settingsFlagChannel, [&](){
+        QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
+        ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toStdString();
+    });
 
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     bool isAdmin = CheckAdminRole(message);
-    if(isAdmin || sleepyServer.ownerID == message.author.ID)
+    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == ownerId)
     {
         Command command = NewCommand(server, message,ct_set_permitted_channel);
         command.variantHash[QStringLiteral("channel")] = QString::fromStdString(message.channelID.string());
