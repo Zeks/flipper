@@ -416,6 +416,8 @@ const static auto basicRecommendationsParamReader = [](RequestContext& reqContex
     params->name =  proto_converters::FS(task->data().list_name());
     params->minimumMatch = task->data().general_params().min_fics_to_match();
     params->userFFNId = task->data().general_params().users_ffn_profile_id();
+    params->listSizeMultiplier = task->data().general_params().list_size_multiplier() == 0 ? 200 : task->data().general_params().list_size_multiplier() ;
+    params->ficFavouritesCutoff = task->data().general_params().source_favourites_cutoff();
     QLOG_INFO() << "Read user's FFN id: " << params->userFFNId;
     if(params->userFFNId != -1)
         params->userFFNId  = reqContext.dbContext.authors->GetRecommenderIDByFFNId(params->userFFNId);

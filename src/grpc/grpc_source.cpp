@@ -641,14 +641,12 @@ class FicSourceGRPCImpl{
     //    friend class GrpcServiceBase;
 public:
     FicSourceGRPCImpl(QString connectionString, int deadline)
-        :stub_(ProtoSpace::Feeder::NewStub(grpc::CreateChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials()))),
-          deadline(deadline)
+        : deadline(deadline)
     {
-            grpc::ChannelArguments args;
-            args.SetMaxReceiveMessageSize(100000000);
-            auto customChannel = grpc::CreateCustomChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials(), args);
-            stub_ = ProtoSpace::Feeder::NewStub(customChannel);
+            CreateStub(connectionString);
+            this->connectionString = connectionString;
     }
+    void CreateStub(QString);
     ServerStatus GetStatus();
     bool GetInternalIDsForFics(QVector<core::Identity> * ficList);
     bool GetFFNIDsForFics(QVector<core::Identity> * ficList);
@@ -674,9 +672,19 @@ public:
     QString userToken;
     QString applicationToken;
     UserData userData;
+    QString connectionString;
 };
 #define TO_STR2(x) #x
 #define STRINGIFY(x) TO_STR2(x)
+void FicSourceGRPCImpl::CreateStub(QString connectionString)
+{
+    grpc::ChannelArguments args;
+    args.SetMaxReceiveMessageSize(100000000);
+    auto customChannel = grpc::CreateCustomChannel(connectionString.toStdString(), grpc::InsecureChannelCredentials(), args);
+    auto newStub = ProtoSpace::Feeder::NewStub(customChannel);
+    stub_.reset(newStub.release()) ;
+}
+
 ServerStatus FicSourceGRPCImpl::GetStatus()
 {
     ServerStatus serverStatus;
@@ -776,6 +784,7 @@ bool FicSourceGRPCImpl::GetFFNIDsForFics(QVector<core::Identity> *ficList)
 
 void FicSourceGRPCImpl::FetchData(const core::StoryFilter &filter, QVector<core::Fanfic> * fics)
 {
+    QLOG_INFO() << "Fetching fics data: ";
     grpc::ClientContext context;
 
     ProtoSpace::SearchTask task;
@@ -972,6 +981,8 @@ static const auto paramToTaskFiller = [](auto& task, QSharedPointer<core::Recomm
     params->set_use_dislikes(recList->useDislikes);
     params->set_use_dead_fic_ignore(recList->useDeadFicIgnore);
     params->set_min_fics_to_match(recList->minimumMatch);
+    params->set_list_size_multiplier(recList->listSizeMultiplier);
+    params->set_source_favourites_cutoff(recList->ficFavouritesCutoff);
     params->set_max_unmatched_to_one_matched(static_cast<int>(recList->maxUnmatchedPerMatch));
     params->set_use_weighting(recList->useWeighting);
     params->set_use_mood_filtering(recList->useMoodAdjustment);
@@ -1164,6 +1175,8 @@ void FicSourceGRPCImpl::ProcessStandardError(const grpc::Status& status)
         break;
     }
     error+= "GRPC:" + QString::fromStdString(status.error_message());
+    if(!error.isEmpty())
+        QLOG_INFO() << "GRPC error: " << error;
 }
 
 core::FavListDetails FicSourceGRPCImpl::GetStatsForFicList(QVector<core::Identity> ficList)

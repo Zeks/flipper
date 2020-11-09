@@ -65,7 +65,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
         filter.ensureCompleted = true;
     if(user->GetHideDead())
         filter.ensureActive= true;
-    QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
+    //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
 
 
@@ -143,7 +143,7 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     if(user->GetHideDead())
         filter.ensureActive= true;
     userData.allTaggedFics = user->GetIgnoredFics();
-    QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
+    //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
 
 
@@ -211,7 +211,7 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
         filter.ensureCompleted = true;
     if(user->GetHideDead())
         filter.ensureActive= true;
-    QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
+    //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
     source->userData = userData;
     auto count = source->GetFicCount(filter);

@@ -75,7 +75,7 @@ bool database::Transaction::finalize()
         return false;
     if(!db.commit())
         return false;
-    QLOG_TRACE() << "finalizing transaction";
+    //QLOG_TRACE() << "finalizing transaction";
     transactionSet.remove(db.connectionName());
     isOpen = false;
     return true;

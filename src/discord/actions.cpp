@@ -346,6 +346,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         action->text = QStringLiteral("Recommendation list has been created for FFN ID: ") + QString::number(command.ids.at(0));
     command.user->SetRngBustScheduled(true);
     environment->ficSource->ClearUserData();
+    QThread::msleep(10);
     return action;
 }
 
@@ -564,7 +565,7 @@ void  FillActiveFilterPartInEmbedAsField(SleepyDiscord::Embed& embed, QSharedPoi
 
 QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
-    QLOG_TRACE() << "Creating page results";
+    //QLOG_TRACE() << "Creating page results";
 
     environment->ficSource->ClearUserData();
     auto page = command.ids.at(0);
@@ -581,7 +582,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
         fic.score = userFics->ficToScore.value(fic.identity.id);
-    QLOG_TRACE() << "Fetched fics";
+    //QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
     //QString authorUrlProto = "[%1](https://www.fanfiction.net/u/%2)";

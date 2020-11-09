@@ -151,12 +151,26 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
 
     Command createRecs = NewCommand(server, message,ct_fill_recommendations);
     if(id.length() == 0){
-        Command nullCommand = NewCommand(server, message,ct_null_command);
-        nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Not a valid ID or user url.");
-        nullCommand.originalMessageToken = message;
-        nullCommand.server = this->server;
-        result.Push(std::move(nullCommand));
-        return std::move(result);
+        if(!user->FfnID().isEmpty()){
+            Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+            createRecs.ids.push_back(user->FfnID().toInt());
+            createRecs.variantHash[QStringLiteral("refresh")] = true;
+            createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
+            result.Push(std::move(createRecs));
+            Command command = NewCommand(server, message,ct_display_page);
+            command.ids.push_back(user->CurrentRecommendationsPage());
+            result.Push(std::move(command));
+            return std::move(result);
+        }
+        else
+        {
+            Command nullCommand = NewCommand(server, message,ct_null_command);
+            nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Not a valid ID or user url.");
+            nullCommand.originalMessageToken = message;
+            nullCommand.server = this->server;
+            result.Push(std::move(nullCommand));
+            return std::move(result);
+        }
     }
     user->SetSimilarFicsId(0);
 
