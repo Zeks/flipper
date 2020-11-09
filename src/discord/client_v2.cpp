@@ -185,10 +185,16 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
         messageInfo.token.messageID = messageID;
         if(emoji.name *in("👉", "👈")){
-            if(emoji.name == "👉"){
-                removeReaction(channelID,messageID,"%f0%9f%91%89", userID);
-            }else{
-                removeReaction(channelID,messageID,"%f0%9f%91%88", userID);
+            try{
+                if(emoji.name == "👉"){
+                    removeReaction(channelID,messageID,"%f0%9f%91%89", userID);
+                }else{
+                    removeReaction(channelID,messageID,"%f0%9f%91%88", userID);
+                }
+            }
+            catch (const SleepyDiscord::ErrorCode& error){
+                if(error != 403)
+                    QLOG_INFO() << "Discord error:" << error;
             }
             bool scrollDirection = emoji.name == "👉" ? true : false;
             CommandChain command;
@@ -202,7 +208,13 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         {
             auto newRoll = CreateRollCommand(user,server, messageInfo.token);
             executor->Push(std::move(newRoll));
-            removeReaction(channelID,messageID,"%f0%9f%94%81", userID);
+            try{
+                removeReaction(channelID,messageID,"%f0%9f%94%81", userID);
+            }
+            catch (const SleepyDiscord::ErrorCode& error){
+                if(error != 403)
+                    QLOG_INFO() << "Discord error:" << error;
+            }
         }
 
     }
