@@ -32,6 +32,7 @@ namespace discord {
                 //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<SimilarFicsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ChangePermittedChannelCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<PurgeCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ResetFiltersCommand>::prefixlessPattern, str::rightBrace, str::rightBrace>;
     }

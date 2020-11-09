@@ -113,6 +113,17 @@ struct TypeStringHolder<discord::ChangeServerPrefixCommand>{
         static constexpr std::string_view shorthand = "{0}prefix so";
 };
 
+template <>
+struct TypeStringHolder<discord::ChangePermittedChannelCommand>{
+        static constexpr std::string_view name = "permit";
+        static constexpr std::string_view prefixlessPattern = "?<pref>permit";
+        static constexpr std::string_view pattern = "permit";
+        static constexpr std::string_view help = "\nBot management commands:\n`%permit` sets the bot to work in this channel only (admin only)";
+        static constexpr std::string_view shorthand = "{0}permit";
+};
+
+
+
 //template <>
 //struct TypeStringHolder<discord::ForceListParamsCommand>{
 //        static constexpr std::string_view name = "force";

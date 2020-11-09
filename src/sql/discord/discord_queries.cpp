@@ -65,8 +65,16 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetWordcountFilter({minWords, maxWords});
         user->SetShowCompleteOnly(q.value(QStringLiteral("show_complete_only")).toInt());
         user->SetStrictFreshSort(q.value(QStringLiteral("strict_fresh_sorting")).toInt());
+        discord::LargeListToken token;
+        token.date = QDate::fromString(q.value(QStringLiteral("last_large_list_generated")).toString(), "yyyyMMdd");
+        token.counter = q.value(QStringLiteral("last_large_list_counter")).toInt();
+        user->SetLargeListToken(token);
         ctx.result.data = user;
     });
+    std::string page = "select at_page from user_lists where user_id = :user_id";
+    SqlContext<int> ctxPage(db, std::move(page), BP1(user_id));
+    ctxPage.FetchSingleValue<int>("at_page", 0);
+    ctx.result.data->AdvancePage(ctxPage.result.data, false);
     return std::move(ctx.result);
 }
 
@@ -91,6 +99,7 @@ DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(QSqlDatabase db, 
 
 
         server->SetOwnerId(q.value(QStringLiteral("owner_id")).toString());
+        server->SetDedicatedChannelId(q.value(QStringLiteral("dedicated_channel_id")).toString().toStdString());
         server->SetCommandPrefix(q.value(QStringLiteral("command_prefix")).toString().toStdString());
         server->SetServerName(q.value(QStringLiteral("server_name")).toString());
 
@@ -173,6 +182,16 @@ DiagnosticSQLResult<bool> WriteServerPrefix(QSqlDatabase db, const std::string& 
     std::string qs = "update discord_servers set command_prefix = :new_prefix where server_id = :server_id";
     QString server_id = QString::fromStdString(serverId);
     SqlContext<bool> ctx(db, std::move(qs), BP2(server_id, new_prefix));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<bool> WriteServerDedicatedChannel(QSqlDatabase db, const std::string &serverId, const std::string & dedicatedChannelI)
+{
+    std::string qs = "update discord_servers set dedicated_channel_id = :dedicated_channel_id where server_id = :server_id";
+    QString server_id = QString::fromStdString(serverId);
+    QString dedicated_channel_id = QString::fromStdString(dedicatedChannelI);
+    SqlContext<bool> ctx(db, std::move(qs), BP2(server_id, dedicated_channel_id));
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
@@ -308,6 +327,14 @@ DiagnosticSQLResult<bool> WriteUserFFNId(QSqlDatabase db, QString user_id, int f
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<bool> WriteUserFavouritesSize(QSqlDatabase db, QString user_id, int favourites_size)
+{
+    std::string qs = "update discord_users set favourites_size = :favourites_size where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, favourites_size));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
 DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
 {
     std::string qs = "select user_id from discord_users where uuid is null";
@@ -352,18 +379,29 @@ DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> SetHideDeadFilter(QSqlDatabase db, QString user_id, bool show_complete_only)
+DiagnosticSQLResult<bool> WriteLargeListReparseToken(QSqlDatabase db, QString user_id, discord::LargeListToken token)
 {
-    std::string qs = "update discord_users set show_complete_only = :show_complete_only where user_id = :user_id";
-    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, show_complete_only));
+    std::string qs = "update discord_users set last_large_list_generated = :last_large_list_generated, last_large_list_counter = :last_large_list_counter where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("user_id", user_id);
+    ctx.bindValue("last_large_list_generated", token.date.toString("yyyyMMdd"));
+    ctx.bindValue("last_large_list_counter", token.counter);
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString user_id, bool hide_dead)
+DiagnosticSQLResult<bool> SetHideDeadFilter(QSqlDatabase db, QString user_id, bool hide_dead)
 {
     std::string qs = "update discord_users set hide_dead = :hide_dead where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, hide_dead));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString user_id, bool show_complete_only)
+{
+    std::string qs = "update discord_users set show_complete_only = :show_complete_only  where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, show_complete_only));
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
@@ -419,6 +457,10 @@ DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString user_id, 
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
+
+
+
+
 
 
 }

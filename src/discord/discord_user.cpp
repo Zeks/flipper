@@ -86,10 +86,11 @@ void User::SetPage(int newPage)
     currentRecsPage = newPage;
 }
 
-void User::AdvancePage(int value)
+void User::AdvancePage(int value, bool countAsQuery)
 {
     QWriteLocker locker(&lock);
-    lastEasyQuery = std::chrono::system_clock::now();
+    if(countAsQuery)
+        lastEasyQuery = std::chrono::system_clock::now();
     currentRecsPage += value;
     if(currentRecsPage < 0)
         currentRecsPage = 0;
@@ -520,6 +521,54 @@ void User::SetIsValid(bool value)
 {
     QWriteLocker locker(&lock);
     isValid = value;
+}
+
+int User::GetFavouritesSize() const
+{
+    QReadLocker locker(&lock);
+    return favouritesSize;
+}
+
+void User::SetFavouritesSize(int value)
+{
+    QWriteLocker locker(&lock);
+    favouritesSize = value;
+}
+
+QDate User::GetLastLargeListRegenerationDate() const
+{
+    QReadLocker locker(&lock);
+    return lastLargeListRegenerationDate;
+}
+
+void User::SetLastLargeListRegenerationDate(const QDate &value)
+{
+    QWriteLocker locker(&lock);
+    lastLargeListRegenerationDate = value;
+}
+
+int User::GetLargeListCounter() const
+{
+    QReadLocker locker(&lock);
+    return largeListCounter;
+}
+
+void User::SetLargeListCounter(int value)
+{
+    QWriteLocker locker(&lock);
+    largeListCounter = value;
+}
+
+LargeListToken User::GetLargeListToken() const
+{
+    QReadLocker locker(&lock);
+    return largeListToken;
+}
+
+void User::SetLargeListToken(const LargeListToken &value)
+{
+    QWriteLocker locker(&lock);
+    largeListToken = value;
 }
 void Users::AddUser(QSharedPointer<User> user)
 {

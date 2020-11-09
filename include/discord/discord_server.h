@@ -26,8 +26,8 @@ struct Server{
     QString GetOwnerId() const;
     void SetOwnerId(const QString& value);
 
-    QString GetDedicatedChannelId() const;
-    void SetDedicatedChannelId(const QString& value);
+    std::string GetDedicatedChannelId() const;
+    void SetDedicatedChannelId(const std::string& value);
 
     std::string_view GetCommandPrefix() const;
     void SetCommandPrefix(const std::string& value);
@@ -60,7 +60,7 @@ struct Server{
     std::string serverId;
     QString serverName;
     QString ownerId;
-    QString dedicatedChannelId;
+    std::string dedicatedChannelId;
     std::string commandPrefix = "!";
 
     bool isValid = false;

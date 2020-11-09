@@ -122,6 +122,14 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     paddingField.value = paddingText;
 
 
+    SleepyDiscord::EmbedField adminCommandsField;
+    adminCommandsField.isInline = false;
+    adminCommandsField.name = "Admin only commands:";
+    std::string admintText = "`{0}prefix new_prefix` changes bot's command prefix. `.` can't be used in a prefix\n";
+    admintText  +="`{0}permit` forces the bot to answer in this channel only";
+    admintText=fmt::format(admintText, serverPrefix);
+    adminCommandsField.value = admintText;
+
     SleepyDiscord::EmbedField supportField;
     supportField.isInline = false;
     supportField.name = "Support:";
@@ -137,6 +145,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     embed.fields.push_back(paddingField);
     embed.fields.push_back(fanficField);
     embed.fields.push_back(fandomField);
+    embed.fields.push_back(adminCommandsField);
     embed.fields.push_back(supportField);
 
     SleepyDiscord::EmbedFooter footer;

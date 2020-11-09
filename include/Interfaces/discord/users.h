@@ -43,12 +43,14 @@ public:
     QSharedPointer<discord::User> GetUser(QString);
     void WriteUser(QSharedPointer<discord::User>);
     void WriteUserFFNId(QString user_id, int ffn_id);
+    void WriteUserFavouritesSize(QString, int);
     int WriteUserList(QString user_id,
                       QString list_name, discord::EListType list_type,
                       int min_match, int match_ratio, int always_at);
     bool WriteForcedListParams(QString user_id, int forceMinMatches, int forcedRatio);
     bool WriteForceLikedAuthors(QString user_id, bool);
     bool WriteFreshSortingParams(QString user_id, bool, bool);
+    bool WriteLargeListReparseToken(QString user_id, discord::LargeListToken);
     bool SetHideDeadFilter(QString user_id, bool);
     bool SetCompleteFilter(QString user_id, bool);
 

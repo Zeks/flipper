@@ -30,7 +30,9 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User>);
     DiagnosticSQLResult<bool> WriteServer(QSqlDatabase db, QSharedPointer<discord::Server>);
     DiagnosticSQLResult<bool> WriteServerPrefix(QSqlDatabase db, const std::string&, QString);
+    DiagnosticSQLResult<bool> WriteServerDedicatedChannel(QSqlDatabase db, const std::string&, const std::string&);
     DiagnosticSQLResult<bool> WriteUserFFNId(QSqlDatabase db, QString user_id, int ffn_id);
+    DiagnosticSQLResult<bool> WriteUserFavouritesSize(QSqlDatabase db, QString, int);
     DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QString list_name);
     DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id,
                                            QString list_name, discord::EListType list_type,
@@ -38,6 +40,8 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id, int forceMinMatches, int forcedRatio);
     DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString , bool);
     DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_id, bool, bool);
+    DiagnosticSQLResult<bool> WriteLargeListReparseToken(QSqlDatabase db, QString user_id, discord::LargeListToken);
+
     DiagnosticSQLResult<bool> SetHideDeadFilter(QSqlDatabase db, QString , bool);
     DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString , bool);
 

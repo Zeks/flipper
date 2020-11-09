@@ -44,6 +44,7 @@ ACTION(IgnoreFicAction);
 ACTION(TimeoutActiveAction);
 ACTION(NoUserInformationAction);
 ACTION(ChangePrefixAction);
+ACTION(SetChannelAction);
 ACTION(SetForcedListParamsAction);
 ACTION(SetForceLikedAuthorsAction);
 ACTION(InsufficientPermissionsAction);

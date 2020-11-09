@@ -39,6 +39,7 @@ public:
     virtual bool IsThisCommand(const std::string&) = 0;
     void AddFilterCommand(Command&&);
     static void EnsureUserExists(QString, QString userName);
+    bool CheckAdminRole(const SleepyDiscord::Message & message);
     //QRegularExpression rx;
     Command nullCommand;
     CommandChain result;
@@ -135,6 +136,14 @@ public:
     virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
     virtual bool IsThisCommand(const std::string& cmd);
 };
+
+class ChangePermittedChannelCommand: public CommandCreator{
+public:
+    ChangePermittedChannelCommand() = default;
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 
 //class ForceListParamsCommand: public RecommendationsCommand{
 //public:

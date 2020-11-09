@@ -62,6 +62,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
     helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
+    helpString +=  GetHelpForCommandIfActive<ChangePermittedChannelCommand>();
     helpString +=  GetHelpForCommandIfActive<PurgeCommand>();
 
 
@@ -216,8 +217,31 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
 //    ankerl::nanobench::Bench().minEpochIterations(6).run(
 //                [&](){
     command.user->initNewRecsQuery();
+
     auto ffnId = QString::number(command.ids.at(0));
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
+    auto largeListToken =  command.user->GetLargeListToken();
+    An<interfaces::Users> usersDbInterface;
+    if(!refreshing){
+        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 2)
+        {
+            action->text = "Only two profile reparses per day are allowed for lists over 500 fics.";
+            action->stopChain = true;
+            return action;
+        }
+
+        if(largeListToken.date == QDate::currentDate()){
+            largeListToken.counter++;
+            command.user->SetLargeListToken(largeListToken);
+        }
+        else{
+            largeListToken.date = QDate::currentDate();
+            largeListToken.counter = 1;
+            command.user->SetLargeListToken(largeListToken);
+        }
+        usersDbInterface->WriteLargeListReparseToken(command.user->UserID(), largeListToken);
+    }
+
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
@@ -241,7 +265,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     {
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
         environment->fandoms->db = dbToken->db;
-        An<interfaces::Users> usersDbInterface;
+
         usersDbInterface->WriteForcedListParams(command.user->UserID(), recList->minimumMatch,recList->maxUnmatchedPerMatch);
     }
 
@@ -284,6 +308,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     }
 
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
+    bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
@@ -312,7 +337,10 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         Command displayRecs = NewCommand(command.server, command.originalMessageToken, ct_display_page);
         displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
         displayRecs.user = command.user;
-        displayRecs.ids.push_back(0);
+        if(!keepPage)
+            displayRecs.ids.push_back(0);
+        else
+            displayRecs.ids.push_back(command.user->CurrentRecommendationsPage());
         CommandChain chain;
         chain.user = command.user;
         chain.Push(std::move(newRecsCommand));
@@ -346,7 +374,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         action->text = QStringLiteral("Recommendation list has been created for FFN ID: ") + QString::number(command.ids.at(0));
     command.user->SetRngBustScheduled(true);
     environment->ficSource->ClearUserData();
-    QThread::msleep(10);
+    QThread::msleep(50);
     return action;
 }
 
@@ -892,6 +920,20 @@ QSharedPointer<SendMessageCommand> ChangePrefixAction::ExecuteImpl(QSharedPointe
         action->text = QStringLiteral("Prefix wasn't changed because of an error");
     return action;
 }
+
+QSharedPointer<SendMessageCommand> SetChannelAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    if(command.variantHash.contains(QStringLiteral("channel"))){
+        auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+        command.server->SetDedicatedChannelId(command.variantHash.value(QStringLiteral("channel")).toString().trimmed().toStdString());
+        database::discord_queries::WriteServerDedicatedChannel(dbToken->db, command.server->GetServerId(), command.server->GetDedicatedChannelId());
+        action->text = QStringLiteral("Acknowledged, the bot will only respond in this channel.");
+    }
+    else
+        action->text = QStringLiteral("Prefix wasn't changed because of an error");
+    return action;
+}
+
 QSharedPointer<SendMessageCommand> InsufficientPermissionsAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&&)
 {
     action->text = QStringLiteral("You don't have required permissions on the server to run this command.");
@@ -1156,6 +1198,9 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new MobileRecsCreationAction());
     case ECommandType::ct_set_wordcount_limit:
         return QSharedPointer<ActionBase>(new SetWordcountLimitAction());
+    case ECommandType::ct_set_permitted_channel:
+        return QSharedPointer<ActionBase>(new SetChannelAction());
+
     default:
         return QSharedPointer<ActionBase>(new NullAction());
     }

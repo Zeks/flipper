@@ -45,6 +45,12 @@ void Users::WriteUserFFNId(QString user_id, int ffn_id)
     database::discord_queries::WriteUserFFNId(dbToken->db, user_id, ffn_id);
 }
 
+void Users::WriteUserFavouritesSize(QString user_id, int favouritesSize)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::WriteUserFavouritesSize(dbToken->db, user_id, favouritesSize);
+}
+
 int Users::WriteUserList(QString user_id, QString list_name, discord::EListType list_type, int min_match, int match_ratio, int always_at)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
@@ -67,6 +73,12 @@ bool Users::WriteFreshSortingParams(QString user_id, bool useFreshSorting, bool 
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     return database::discord_queries::WriteFreshSortingParams(dbToken->db, user_id, useFreshSorting, strictFreshSorting).data;
+}
+
+bool Users::WriteLargeListReparseToken(QString user_id, discord::LargeListToken token)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    return database::discord_queries::WriteLargeListReparseToken(dbToken->db, user_id, token).data;
 }
 
 bool Users::SetHideDeadFilter(QString user_id, bool value)

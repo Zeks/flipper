@@ -39,6 +39,11 @@ struct LastPageCommandMemo{
     SleepyDiscord::Snowflake<SleepyDiscord::Channel> channel;
 };
 
+struct LargeListToken{
+    int counter = 0;
+    QDate date;
+};
+
 struct User{
     User():lock(QReadWriteLock::Recursive){InitFicsPtr();}
     ~User() = default;
@@ -54,7 +59,7 @@ struct User{
     void initNewEasyQuery();
     int CurrentRecommendationsPage() const;
     void SetPage(int newPage);
-    void AdvancePage(int value);
+    void AdvancePage(int value, bool countAsQuery = true);
     bool HasUnfinishedRecRequest() const;
     void SetPerformingRecRequest(bool);
     void SetCurrentListId(int listId);
@@ -151,6 +156,14 @@ struct User{
 
     bool GetIsValid() const;
     void SetIsValid(bool value);
+    int GetFavouritesSize() const;
+    void SetFavouritesSize(int value);
+    QDate GetLastLargeListRegenerationDate() const;
+    void SetLastLargeListRegenerationDate(const QDate &value);
+    int GetLargeListCounter() const;
+    void SetLargeListCounter(int value);
+    LargeListToken GetLargeListToken() const;
+    void SetLargeListToken(const LargeListToken &value);
 
 private:
     bool isValid = false;
@@ -178,6 +191,10 @@ private:
     int forcedRatio = 0;
     int perfectRngScoreCutoff = 0;
     int goodRngScoreCutoff = 0;
+    int favouritesSize = 0;
+    int largeListCounter;
+
+    QDate lastLargeListRegenerationDate;
 
     QString lastUsedRoll = QStringLiteral("all");
 
@@ -197,6 +214,7 @@ private:
     QHash<int, int> positionToId;
     ECommandType lastPageType = ct_display_page;
     LastPageCommandMemo lastPageCommandMemo;
+    LargeListToken largeListToken;
     mutable QReadWriteLock lock;
 };
 

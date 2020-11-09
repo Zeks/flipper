@@ -72,6 +72,24 @@ void CommandCreator::EnsureUserExists(QString userId, QString userName)
     }
 }
 
+bool CommandCreator::CheckAdminRole(const SleepyDiscord::Message &message)
+{
+    SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
+    const auto& member = client->getMember(this->server->GetServerId(), message.author.ID).cast();
+    bool isAdmin = false;
+    auto roles = member.roles;
+    for(auto& roleId : roles){
+        auto role = sleepyServer.findRole(roleId);
+        auto permissions = role->permissions;
+        if(SleepyDiscord::hasPremission(permissions, SleepyDiscord::ADMINISTRATOR))
+        {
+            isAdmin = true;
+            break;
+        }
+    }
+    return isAdmin;
+}
+
 
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message &message, ECommandType type){
     Command command;
@@ -111,6 +129,7 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
         Command createRecs = NewCommand(server, message,ct_fill_recommendations);
         createRecs.ids.push_back(user->FfnID().toInt());
         createRecs.variantHash[QStringLiteral("refresh")] = QStringLiteral("yes");
+        createRecs.variantHash[QStringLiteral("keep_page")] = QStringLiteral("yes");
         createRecs.textForPreExecution = QString(QStringLiteral("Restoring recommendations for user %1 into an active set, please wait a bit")).arg(user->FfnID());
         result.hasParseCommand = true;
         result.Push(std::move(createRecs));
@@ -519,19 +538,8 @@ bool RngCommand::IsThisCommand(const std::string &cmd)
 CommandChain ChangeServerPrefixCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
-    //std::list<SleepyDiscord::ServerMember>::iterator member = sleepyServer.findMember(message.author.ID);
-    const auto& member = client->getMember(this->server->GetServerId(), message.author.ID).cast();
-    bool isAdmin = false;
-    auto roles = member.roles;
-    for(auto& roleId : roles){
-        auto role = sleepyServer.findRole(roleId);
-        auto permissions = role->permissions;
-        if(SleepyDiscord::hasPremission(permissions, SleepyDiscord::ADMINISTRATOR))
-        {
-            isAdmin = true;
-            break;
-        }
-    }
+    bool isAdmin = CheckAdminRole(message);
+
     if(isAdmin || sleepyServer.ownerID == message.author.ID)
     {
         Command command = NewCommand(server, message,ct_change_server_prefix);
@@ -559,6 +567,34 @@ CommandChain ChangeServerPrefixCommand::ProcessInputImpl(const SleepyDiscord::Me
 bool ChangeServerPrefixCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<ChangeServerPrefixCommand>::name;
+}
+
+
+
+CommandChain ChangePermittedChannelCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    if(this->server->GetServerId().length() == 0)
+        return std::move(result);
+
+    SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
+    bool isAdmin = CheckAdminRole(message);
+    if(isAdmin || sleepyServer.ownerID == message.author.ID)
+    {
+        Command command = NewCommand(server, message,ct_set_permitted_channel);
+        command.variantHash[QStringLiteral("channel")] = QString::fromStdString(message.channelID.string());
+        result.Push(std::move(command));
+    }
+    else
+    {
+        Command command = NewCommand(server, message,ct_insufficient_permissions);
+        result.Push(std::move(command));
+    }
+    return std::move(result);
+}
+
+bool ChangePermittedChannelCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ChangePermittedChannelCommand>::name;
 }
 
 //ForceListParamsCommand::ForceListParamsCommand()
@@ -893,11 +929,12 @@ CommandChain WordcountCommand::ProcessInputImpl(const SleepyDiscord::Message& me
     return std::move(result);
 }
 
+
+
 bool WordcountCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<WordcountCommand>::name;
 }
-
 
 
 

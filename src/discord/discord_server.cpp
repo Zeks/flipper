@@ -41,13 +41,13 @@ namespace discord {
         ownerId = value;
     }
 
-    QString Server::GetDedicatedChannelId() const
+    std::string Server::GetDedicatedChannelId() const
     {
         QReadLocker locker(&lock);
         return dedicatedChannelId;
     }
 
-    void Server::SetDedicatedChannelId(const QString& value)
+    void Server::SetDedicatedChannelId(const std::string& value)
     {
         QWriteLocker locker(&lock);
         dedicatedChannelId = value;

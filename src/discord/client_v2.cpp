@@ -119,9 +119,6 @@ void Client::onMessage(SleepyDiscord::Message message) {
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
     std::string_view sv (message.content);
 
-    if(server->GetServerId() == "342065231842902017" && message.channelID != "769193920394952706")
-        return;
-
     const auto commandPrefix = server->GetCommandPrefix();
     if(sv == botPrefixRequest)
         sendMessage(message.channelID, "Prefix for this server is: " + std::string(commandPrefix));
@@ -129,10 +126,18 @@ void Client::onMessage(SleepyDiscord::Message message) {
     if(sv.substr(0, commandPrefix.length()) != commandPrefix)
         return;
 
+    if(message.content.length() > 500){
+        sendMessage(message.channelID, "Your command is too long. Perhaps you've mistyped accidentally?");
+        return;
+    }
+
     sv.remove_prefix(commandPrefix.length());
 
     auto result = ctre::search<pattern>(sv);;
     if(!result.matched())
+        return;
+
+    if(message.content != "permit" && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
         return;
 
     auto commands = parser->Execute(result.get<0>().to_string(), server, message);
@@ -201,7 +206,10 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
 void Client::Log(const SleepyDiscord::Message& message)
 {
-    QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content);
+    if(message.content.length() > 100)
+        QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content.substr(0, 100) + "...");
+    else
+        QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content);
 }
 
 void Client::timerEvent(QTimerEvent *)
