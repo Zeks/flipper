@@ -91,7 +91,7 @@ DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(QSqlDatabase db, 
 
         server->SetBanned(q.value(QStringLiteral("server_banned")).toBool());
         server->SetSilenced(q.value(QStringLiteral("server_silenced")).toBool());
-        server->SetAnswerInPm(q.value(QStringLiteral("bot_answers_in_pm")).toBool());
+        server->SetAnswerInPm(q.value(QStringLiteral("bot_answers_in_pm")).toBool());//test
 
         server->SetParserRequestLimit(q.value(QStringLiteral("parse_request_limit")).toInt());
         server->SetTotalRequests(q.value(QStringLiteral("total_requests")).toInt());
