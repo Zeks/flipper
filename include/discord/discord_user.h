@@ -228,6 +228,7 @@ private:
 
 
 struct Users{
+    Users();
     void AddUser(QSharedPointer<User>);
     void RemoveUserData(QSharedPointer<User>);
     bool HasUser(QString);

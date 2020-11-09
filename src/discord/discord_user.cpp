@@ -594,6 +594,11 @@ void User::SetGoodRngFicsSize(int value)
     QWriteLocker locker(&lock);
     goodRngFicsSize = value;
 }
+Users::Users():lock(QReadWriteLock::Recursive)
+{
+
+}
+
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

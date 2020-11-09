@@ -71,10 +71,12 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetLargeListToken(token);
         ctx.result.data = user;
     });
+    if(!ctx.result.data)
+        return std::move(ctx.result);
     std::string page = "select at_page from user_lists where user_id = :user_id";
     SqlContext<int> ctxPage(db, std::move(page), BP1(user_id));
     ctxPage.FetchSingleValue<int>("at_page", 0);
-    ctx.result.data->AdvancePage(ctxPage.result.data, false);
+    ctx.result.data->SetPage(ctxPage.result.data);
     return std::move(ctx.result);
 }
 
