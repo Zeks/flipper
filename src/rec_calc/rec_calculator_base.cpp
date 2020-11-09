@@ -629,7 +629,7 @@ void RecCalculatorImplBase::FetchAuthorRelations()
         sumratio.minListSize = item.minListSize;
         sumratio.maxListSize= item.maxListSize;
         //QLOG_INFO() << "ratio: " <<  i.key() << " own size: " << ownFavourites.cardinality() << " projected cardinality: " << ownFavourites.cardinality() * 200  << " sum cardinality: " << sumratio.ficsAfterIgnore.cardinality();
-        if(ratioCutoff == std::numeric_limits<uint16_t>::max() && (sumratio.ficsAfterIgnore.cardinality() > (ownFavourites.cardinality() * 200)))
+        if(ratioCutoff == std::numeric_limits<uint16_t>::max() && (sumratio.ficsAfterIgnore.cardinality() > (ownFavourites.cardinality() * params->listSizeMultiplier)))
         {
             QLOG_INFO() << "Picking ratio: " << i.key();
             ratioCutoff = i.key();

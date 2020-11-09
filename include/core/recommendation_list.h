@@ -72,6 +72,7 @@ public:
     int maxUnmatchedPerMatch = -1;
     int userFFNId = -1;
     int sigma2Distance = -1;
+    int listSizeMultiplier = 200;
     uint16_t ratioCutoff = std::numeric_limits<uint16_t>::max();
 
     double quadraticDeviation = -1;
