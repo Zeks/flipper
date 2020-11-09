@@ -87,7 +87,7 @@ PageTaskPtr CreatePageTaskFromUrls(QSharedPointer<interfaces::PageTask>pageTask,
 {
     database::Transaction transaction(pageTask->db);
 
-    auto timestamp = currentDateTime;
+    auto timestamp = currentDateTime;// test
     qDebug() << "Task timestamp" << timestamp;
     auto task = PageTask::CreateNewTask();
     task->allowedSubtaskRetries = subTaskRetries;
