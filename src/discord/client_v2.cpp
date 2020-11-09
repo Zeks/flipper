@@ -185,6 +185,11 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
         messageInfo.token.messageID = messageID;
         if(emoji.name *in("👉", "👈")){
+            if(emoji.name == "👉"){
+                removeReaction(channelID,messageID,"%f0%9f%91%89", userID);
+            }else{
+                removeReaction(channelID,messageID,"%f0%9f%91%88", userID);
+            }
             bool scrollDirection = emoji.name == "👉" ? true : false;
             CommandChain command;
             if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
@@ -197,7 +202,9 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
         {
             auto newRoll = CreateRollCommand(user,server, messageInfo.token);
             executor->Push(std::move(newRoll));
+            removeReaction(channelID,messageID,"%f0%9f%94%81", userID);
         }
+
     }
     else if(userID != getID()){
         sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` or `sohelp` command or spawn a new list with your own FFN id.");
