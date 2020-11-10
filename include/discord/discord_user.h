@@ -31,8 +31,15 @@ class Users;
 namespace discord{
 
 struct WordcountFilter{
+    enum EFilterMode{
+        fm_none = 0,
+        fm_less = 1,
+        fm_more = 2,
+        fm_between = 3,
+    };
     uint64_t firstLimit = 0;
     uint64_t secondLimit = 0;
+    EFilterMode filterMode = fm_none;
 };
 struct LastPageCommandMemo{
     SleepyDiscord::Snowflake<SleepyDiscord::Message> message;

@@ -298,7 +298,6 @@ static std::string CreateMention(const std::string& string){
 QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     command.user->initNewRecsQuery();
-
     QString ffnId;
     bool isId = true;
     if(!command.variantHash.contains(QStringLiteral("url"))){
@@ -310,6 +309,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         ffnId = command.variantHash[QStringLiteral("url")].toString();
     }
 
+
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
     bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
     QSharedPointer<core::RecommendationList> listParams;
@@ -317,8 +317,12 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
     ffnId = userFavourites.ffnId;
+    command.user->SetFfnID(ffnId);
     command.ids.clear();
     command.ids.push_back(userFavourites.ffnId.toUInt());
+    An<interfaces::Users> usersDbInterface;
+    if(ffnId.toInt() > 0)
+        usersDbInterface->WriteUserFFNId(command.user->UserID(), ffnId.toInt());
 
 
     // here, we check that we were able to fetch favourites at all
@@ -547,11 +551,11 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
     }
     static constexpr uint16_t oneThousandWords = 1000;
     auto wordcountFilter = command.user->GetWordcountFilter();
-    if(wordcountFilter.firstLimit !=0 && wordcountFilter.secondLimit/oneThousandWords == 99999999)
+    if(wordcountFilter.filterMode == WordcountFilter::fm_more)
         result += QString(QStringLiteral("\nShowing fics with > %1k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords));
-    if(wordcountFilter.firstLimit == 0 && wordcountFilter.secondLimit != 0)
+    if(wordcountFilter.filterMode == WordcountFilter::fm_less)
         result += QString(QStringLiteral("\nShowing fics with < %1k words.")).arg(QString::number(wordcountFilter.secondLimit/oneThousandWords));
-    if(wordcountFilter.firstLimit != 0 && wordcountFilter.secondLimit != 0  && wordcountFilter.secondLimit/1000 != 99999999)
+    if(wordcountFilter.filterMode == WordcountFilter::fm_between)
         result += QString(QStringLiteral("\nShowing fics between %1k and %2k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords),QString::number(wordcountFilter.secondLimit/oneThousandWords));
 
 
@@ -1154,7 +1158,16 @@ QSharedPointer<SendMessageCommand> SetWordcountLimitAction::ExecuteImpl(QSharedP
 {
     //auto ficIds = command.ids;
     static constexpr int thousandWords = 1000;
-    command.user->SetWordcountFilter({command.ids.at(0)*1000,command.ids.at(1)*thousandWords});
+    WordcountFilter filter;
+    filter.firstLimit = command.ids.at(0)*thousandWords;
+    filter.secondLimit = command.ids.at(1)*thousandWords;
+    if(command.variantHash["filter_type"] == "less")
+        filter.filterMode = WordcountFilter::fm_less;
+    else if(command.variantHash["filter_type"] == "more")
+        filter.filterMode = WordcountFilter::fm_more;
+    else if(command.variantHash["filter_type"] == "between")
+        filter.filterMode = WordcountFilter::fm_between;
+    command.user->SetWordcountFilter(filter);
     An<interfaces::Users> usersDbInterface;
     usersDbInterface->SetWordcountFilter(command.user->UserID(),command.user->GetWordcountFilter());
     return action;
@@ -1244,6 +1257,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

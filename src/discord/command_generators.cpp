@@ -969,6 +969,7 @@ CommandChain WordcountCommand::ProcessInputImpl(const SleepyDiscord::Message& me
         command.ids.push_back(0);
         command.ids.push_back(0);
     }
+    command.variantHash["filter_type"] = QString::fromStdString(filterType);
     AddFilterCommand(std::move(command));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
