@@ -64,6 +64,11 @@ struct CommandChain{
         this->commands.emplace_back(std::move(item));
         return *this;
     };
+    CommandChain& operator+=(CommandChain&& other){
+        for(auto&& item : other.commands)
+        this->commands.emplace_back(std::move(item));
+        return *this;
+    };
     void Reset(){
         commands.clear();
         hasParseCommand = false;

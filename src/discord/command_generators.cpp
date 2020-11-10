@@ -223,6 +223,8 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
     }
     auto prefix = QString::fromStdString(std::string(server->GetCommandPrefix()));
     QString newFicspart = QString("\nIf you have added new fics to your favourites, do `%1recs >refresh %2` instead, to update your recommendations.");
+    if(refresh.length() != 0)
+        newFicspart = "";
     newFicspart=newFicspart.arg(prefix,QString::fromStdString(match.get<2>().to_string()));
     createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(QString::fromStdString(match.get<2>().to_string()));
     createRecs.textForPreExecution+=newFicspart;
@@ -492,6 +494,16 @@ void SendMessageCommand::Invoke(Client * client)
             for(const auto& reaction: std::as_const(reactionsToAdd))
                 client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
         };
+        auto removeReaction = [&](SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage){
+            for(const auto& reaction: std::as_const(reactionsToRemove))
+                try{
+                client->removeReaction(originalMessageToken.channelID, targetMessage, reaction.toStdString(), user->UserID().toStdString());
+            }
+            catch (const SleepyDiscord::ErrorCode& error){
+                if(error != 403)
+                    QLOG_INFO() << "Discord error:" << error;
+            }
+        };
         if(targetMessage.string().length() == 0){
             if(embed.empty())
             {
@@ -512,12 +524,16 @@ void SendMessageCommand::Invoke(Client * client)
                         this->user->SetLastPageMessage({resultingMessage, originalMessageToken.channelID});
                     client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken, originalCommandType});
                     addReaction(resultingMessage);
+
                 }
             }
         }
         else{
+            if(reactionsToRemove.size() > 0)
+                removeReaction(targetMessage);
+            else
             // editing message doesn't change its Id so rehashing isn't required
-            client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
+                client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
         }
         if(!diagnosticText.isEmpty())
             client->sendMessage(originalMessageToken.channelID, diagnosticText.toStdString());
@@ -831,6 +847,20 @@ CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, Q
     return result;
 }
 
+CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken & message, const std::string& reaction)
+{
+    CommandChain result;
+    Command command = NewCommand(server, message,ct_remove_reactions);
+    command.variantHash["to_remove"]=QStringList{QString::fromStdString(reaction)};
+
+    command.targetMessage = message.messageID;
+    command.user = user;
+    result.Push(std::move(command));
+    return result;
+}
+
+
+
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
 {
     CommandChain result;
@@ -961,5 +991,6 @@ bool WordcountCommand::IsThisCommand(const std::string &cmd)
 
 
 }
+
 
 

@@ -1160,6 +1160,17 @@ QSharedPointer<SendMessageCommand> SetWordcountLimitAction::ExecuteImpl(QSharedP
     return action;
 }
 
+QSharedPointer<SendMessageCommand> RemoveReactions::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    if(command.targetMessage.string().length() > 0){
+        action->targetMessage = command.targetMessage;
+        auto reactionsToRemove = command.variantHash["to_remove"].toStringList();
+        action->reactionsToRemove = reactionsToRemove;
+    }
+    return action;
+}
+
+
 
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
@@ -1211,6 +1222,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SetWordcountLimitAction());
     case ECommandType::ct_set_permitted_channel:
         return QSharedPointer<ActionBase>(new SetChannelAction());
+    case ECommandType::ct_remove_reactions:
+        return QSharedPointer<ActionBase>(new RemoveReactions());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());
