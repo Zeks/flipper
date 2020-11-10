@@ -23,6 +23,7 @@ alter table discord_users add column dead_fic_days_range integer default 365;
 alter table discord_users add column favourites_size integer default 0;
 alter table discord_users add column last_large_list_generated varchar;
 alter table discord_users add column last_large_list_counter int;
+alter table discord_users add column words_filter_type integer default 0;
 
 CREATE INDEX if not exists I_discord_users ON discord_users (user_id ASC);  
 

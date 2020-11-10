@@ -35,13 +35,13 @@ void CommandController::Push(CommandChain&& chain)
     std::lock_guard<std::recursive_mutex> guard(lock);
     if(activeUsers.contains(userId))
     {
-        client->sendMessage(message.channelID, CreateMention(message.authorID.string())+ ", your previous command is still executing, please wait");
+        client->sendMessageWrapper(message.channelID, message.serverID, CreateMention(message.authorID.string())+ ", your previous command is still executing, please wait");
         return;
     }
     else if(activeParseCommand)
     {
         if(chain.hasParseCommand || chain.hasFullParseCommand){
-            client->sendMessage(message.channelID, CreateMention(message.authorID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
+            client->sendMessageWrapper(message.channelID,  message.serverID, CreateMention(message.authorID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
             queue.emplace_back(std::move(chain));
             return;
         }
@@ -49,7 +49,7 @@ void CommandController::Push(CommandChain&& chain)
     activeUsers.insert(userId);
     auto runner = FetchFreeRunner();
     if(!runner){
-        client->sendMessage(message.channelID, CreateMention(message.authorID.string()) + ", there are no free command runners, putting your command on the queue. Your position is: " + QString::number(queue.size()).toStdString());
+        client->sendMessageWrapper(message.channelID, message.serverID, CreateMention(message.authorID.string()) + ", there are no free command runners, putting your command on the queue. Your position is: " + QString::number(queue.size()).toStdString());
         queue.emplace_back(std::move(chain));
         return;
     }

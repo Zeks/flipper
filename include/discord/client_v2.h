@@ -41,6 +41,14 @@ struct ChannelSet{
     QReadWriteLock lock;
 };
 
+struct MessageResponseWrapper{
+    MessageResponseWrapper(bool isValid, SleepyDiscord::ObjectResponse<SleepyDiscord::Message> message):isValid(isValid), response(message)
+    {}
+    MessageResponseWrapper(bool isValid):isValid(isValid)
+    {}
+    bool isValid = true;
+    std::optional<SleepyDiscord::ObjectResponse<SleepyDiscord::Message>> response;
+};
 
 class Client: public QObject , public SleepyDiscord::DiscordClient {
     Q_OBJECT
@@ -56,8 +64,8 @@ public:
     void onMessage(SleepyDiscord::Message message) override;
     void onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji) override;
     void onReady (SleepyDiscord::Ready readyData) override;
-//    SleepyDiscord::ObjectResponse<SleepyDiscord::Message> sendMessage (SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string &message, const SleepyDiscord::Embed &embed);
-//    SleepyDiscord::ObjectResponse<SleepyDiscord::Message> sendMessage (SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string &message);
+    MessageResponseWrapper sendMessageWrapper (SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID, const std::string &message, const SleepyDiscord::Embed &embed);
+    MessageResponseWrapper sendMessageWrapper (SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID, const std::string &message);
     void Log(const SleepyDiscord::Message&);
 
     QSharedPointer<CommandParser> parser;

@@ -161,6 +161,10 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
     filter.crossoversOnly = false;
     filter.showOriginsInLists = false;
     filter.recordLimit = size;
+    auto userWordcountFilter = user->GetWordcountFilter();
+    filter.minWords = userWordcountFilter.firstLimit;
+    filter.maxWords = userWordcountFilter.secondLimit;
+    filter.deadFicDaysRange = user->GetDeadFicDaysRange();
 
     if(user->GetSortFreshFirst()){
         filter.listOpenMode = true;

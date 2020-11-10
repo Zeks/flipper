@@ -117,7 +117,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     std::string paddingText = "Use the next commands to apply filters to displayed recommendations."
                          "To get detailed help for each of them use `{0}help commandname`\n"
             "Most of them have additional optional parameters you might want to use."
-            "\n\nTo reset any filter repeat its command without arguments or issue '{0}xfilter' command to reset everything at the same time.";
+            "\n\nTo reset any filter repeat its command without arguments or issue `{0}xfilter` command to reset everything at the same time.";
     paddingText=fmt::format(paddingText, serverPrefix);
     paddingField.value = paddingText;
 
@@ -125,7 +125,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     SleepyDiscord::EmbedField adminCommandsField;
     adminCommandsField.isInline = false;
     adminCommandsField.name = "Admin only commands:";
-    std::string admintText = "`{0}prefix new_prefix` changes bot's command prefix. `.` can't be used in a prefix\n";
+    std::string admintText = "`{0}prefix new_prefix` changes bot's command prefix.\n";
     admintText  +="`{0}permit` forces the bot to answer in this channel only";
     admintText=fmt::format(admintText, serverPrefix);
     adminCommandsField.value = admintText;

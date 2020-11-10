@@ -201,7 +201,9 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     //command.user->SetPerfectRngFics(perfectRngFics);
     //command.user->SetGoodRngFics(goodRngFics);
     command.user->SetPerfectRngScoreCutoff(perfectCutoff);
+    command.user->SetPerfectRngFicsSize(perfectRngFics.size());
     command.user->SetGoodRngScoreCutoff(goodCutoff);
+    command.user->SetGoodRngFicsSize(goodRngFics.size());
     environment->ficSource->ClearUserData();
     return recList;
 }
@@ -256,7 +258,8 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     // here, we check that we were able to fetch all favourites with desktop link and reschedule the task otherwise
     if(userFavourites.requiresFullParse)
     {
-        action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
+        if(!refreshing)
+            action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
         return action;
     }
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
@@ -295,7 +298,6 @@ static std::string CreateMention(const std::string& string){
 QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     command.user->initNewRecsQuery();
-
     QString ffnId;
     bool isId = true;
     if(!command.variantHash.contains(QStringLiteral("url"))){
@@ -307,6 +309,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         ffnId = command.variantHash[QStringLiteral("url")].toString();
     }
 
+
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
     bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
     QSharedPointer<core::RecommendationList> listParams;
@@ -314,8 +317,12 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
     ffnId = userFavourites.ffnId;
+    command.user->SetFfnID(ffnId);
     command.ids.clear();
     command.ids.push_back(userFavourites.ffnId.toUInt());
+    An<interfaces::Users> usersDbInterface;
+    if(ffnId.toInt() > 0)
+        usersDbInterface->WriteUserFFNId(command.user->UserID(), ffnId.toInt());
 
 
     // here, we check that we were able to fetch favourites at all
@@ -329,7 +336,8 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     if(userFavourites.requiresFullParse)
     {
         action->stopChain = true;
-        action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
+        if(!refreshing)
+            action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
         Command newRecsCommand = NewCommand(command.server, command.originalMessageToken, ct_create_recs_from_mobile_page);
         newRecsCommand.variantHash = command.variantHash;
         newRecsCommand.ids = command.ids;
@@ -543,16 +551,23 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
     }
     static constexpr uint16_t oneThousandWords = 1000;
     auto wordcountFilter = command.user->GetWordcountFilter();
-    if(wordcountFilter.firstLimit !=0 && wordcountFilter.secondLimit/oneThousandWords == 99999999)
+    if(wordcountFilter.filterMode == WordcountFilter::fm_more)
         result += QString(QStringLiteral("\nShowing fics with > %1k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords));
-    if(wordcountFilter.firstLimit == 0 && wordcountFilter.secondLimit != 0)
+    if(wordcountFilter.filterMode == WordcountFilter::fm_less)
         result += QString(QStringLiteral("\nShowing fics with < %1k words.")).arg(QString::number(wordcountFilter.secondLimit/oneThousandWords));
-    if(wordcountFilter.firstLimit != 0 && wordcountFilter.secondLimit != 0  && wordcountFilter.secondLimit/1000 != 99999999)
+    if(wordcountFilter.filterMode == WordcountFilter::fm_between)
         result += QString(QStringLiteral("\nShowing fics between %1k and %2k words.")).arg(QString::number(wordcountFilter.firstLimit/oneThousandWords),QString::number(wordcountFilter.secondLimit/oneThousandWords));
 
 
     if(command.user->GetLastPageType() == ct_display_rng)
+    {
+        auto rollType = command.user->GetLastUsedRoll();
         result += QString(QStringLiteral("\nRolling in range: %1.")).arg(command.user->GetLastUsedRoll());
+        if(rollType == "good")
+            result += QString(QStringLiteral(" Among %1 decently matched fics")).arg(QString::number(command.user->GetGoodRngFicsSize()));
+        if(rollType == "best")
+            result += QString(QStringLiteral(" Among %1 greatly matched fics")).arg(QString::number(command.user->GetPerfectRngFicsSize()));
+    }
     if(command.user->GetUseLikedAuthorsOnly())
         result += QStringLiteral("\nLiked authors filter is active.");
     if(command.user->GetSortFreshFirst())
@@ -928,6 +943,10 @@ QSharedPointer<SendMessageCommand> SetChannelAction::ExecuteImpl(QSharedPointer<
         command.server->SetDedicatedChannelId(command.variantHash.value(QStringLiteral("channel")).toString().trimmed().toStdString());
         database::discord_queries::WriteServerDedicatedChannel(dbToken->db, command.server->GetServerId(), command.server->GetDedicatedChannelId());
         action->text = QStringLiteral("Acknowledged, the bot will only respond in this channel.");
+        command.server->SetAllowedToAddReactions(true);
+        command.server->SetAllowedToRemoveReactions(true);
+        command.server->SetAllowedToEditMessages(true);
+        command.server->ClearForbiddenChannels();
     }
     else
         action->text = QStringLiteral("Prefix wasn't changed because of an error");
@@ -1143,11 +1162,31 @@ QSharedPointer<SendMessageCommand> SetWordcountLimitAction::ExecuteImpl(QSharedP
 {
     //auto ficIds = command.ids;
     static constexpr int thousandWords = 1000;
-    command.user->SetWordcountFilter({command.ids.at(0)*1000,command.ids.at(1)*thousandWords});
+    WordcountFilter filter;
+    filter.firstLimit = command.ids.at(0)*thousandWords;
+    filter.secondLimit = command.ids.at(1)*thousandWords;
+    if(command.variantHash["filter_type"] == "less")
+        filter.filterMode = WordcountFilter::fm_less;
+    else if(command.variantHash["filter_type"] == "more")
+        filter.filterMode = WordcountFilter::fm_more;
+    else if(command.variantHash["filter_type"] == "between")
+        filter.filterMode = WordcountFilter::fm_between;
+    command.user->SetWordcountFilter(filter);
     An<interfaces::Users> usersDbInterface;
     usersDbInterface->SetWordcountFilter(command.user->UserID(),command.user->GetWordcountFilter());
     return action;
 }
+
+QSharedPointer<SendMessageCommand> RemoveReactions::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    if(command.targetMessage.string().length() > 0){
+        action->targetMessage = command.targetMessage;
+        auto reactionsToRemove = command.variantHash["to_remove"].toStringList();
+        action->reactionsToRemove = reactionsToRemove;
+    }
+    return action;
+}
+
 
 
 
@@ -1200,6 +1239,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SetWordcountLimitAction());
     case ECommandType::ct_set_permitted_channel:
         return QSharedPointer<ActionBase>(new SetChannelAction());
+    case ECommandType::ct_remove_reactions:
+        return QSharedPointer<ActionBase>(new RemoveReactions());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());
@@ -1220,6 +1261,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

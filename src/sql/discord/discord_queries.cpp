@@ -62,7 +62,8 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
 
         auto minWords = static_cast<uint64_t>(q.value(QStringLiteral("words_filter_range_begin")).toULongLong());
         auto maxWords = static_cast<uint64_t>(q.value(QStringLiteral("words_filter_range_end")).toULongLong());
-        user->SetWordcountFilter({minWords, maxWords});
+        auto filterType = static_cast<discord::WordcountFilter::EFilterMode>(q.value(QStringLiteral("words_filter_type")).toInt());
+        user->SetWordcountFilter({minWords, maxWords, filterType});
         user->SetShowCompleteOnly(q.value(QStringLiteral("show_complete_only")).toInt());
         user->SetStrictFreshSort(q.value(QStringLiteral("strict_fresh_sorting")).toInt());
         discord::LargeListToken token;
@@ -71,6 +72,8 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetLargeListToken(token);
         ctx.result.data = user;
     });
+    if(!ctx.result.data)
+        return std::move(ctx.result);;
     std::string page = "select at_page from user_lists where user_id = :user_id";
     SqlContext<int> ctxPage(db, std::move(page), BP1(user_id));
     ctxPage.FetchSingleValue<int>("at_page", 0);
@@ -441,11 +444,15 @@ DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id)
 
 DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, discord::WordcountFilter filter)
 {
-    std::string qs = "update discord_users set words_filter_range_begin = :words_filter_range_begin, words_filter_range_end = :words_filter_range_end where user_id = :user_id";
+    std::string qs = "update discord_users set "
+                     " words_filter_range_begin = :words_filter_range_begin, "
+                     " words_filter_range_end = :words_filter_range_end,"
+                     " words_filter_type = :words_filter_type where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("user_id", userId);
     ctx.bindValue("words_filter_range_begin", QVariant::fromValue<long long>(filter.firstLimit));
     ctx.bindValue("words_filter_range_end", QVariant::fromValue<long long>(filter.secondLimit));
+    ctx.bindValue("words_filter_type", static_cast<int>(filter.filterMode));
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }

@@ -16,6 +16,13 @@
 //#include "third_party/str_concat.h"
 #include "third_party/ctre.hpp"
 
+class rapidjson_exception : public std::runtime_error
+{
+public:
+rapidjson_exception() : std::runtime_error("json schema invalid") {}
+};
+#define RAPIDJSON_ASSERT(x)  if(x); else throw rapidjson_exception();
+
 namespace discord {
 std::atomic<bool> Client::allowMessages = true;
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
@@ -111,45 +118,50 @@ constexpr auto matchSimple(std::string_view sv) noexcept {
 }
 
 void Client::onMessage(SleepyDiscord::Message message) {
-    Log(message);
+    try{
+        Log(message);
 
-    if(message.author.bot || !message.content.size())
-        return;
+        if(message.author.bot || !message.content.size())
+            return;
 
-    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
-    std::string_view sv (message.content);
+        QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
+        std::string_view sv (message.content);
 
-    const auto commandPrefix = server->GetCommandPrefix();
-    if(sv == botPrefixRequest)
-        sendMessage(message.channelID, "Prefix for this server is: " + std::string(commandPrefix));
+        const auto commandPrefix = server->GetCommandPrefix();
+        if(sv == botPrefixRequest)
+            sendMessageWrapper(message.channelID, message.serverID, "Prefix for this server is: " + std::string(commandPrefix));
 
-    if(sv.substr(0, commandPrefix.length()) != commandPrefix)
-        return;
+        if(sv.substr(0, commandPrefix.length()) != commandPrefix)
+            return;
 
-    if(message.content.length() > 500){
-        sendMessage(message.channelID, "Your command is too long. Perhaps you've mistyped accidentally?");
-        return;
+        if(message.content.length() > 500){
+            sendMessageWrapper(message.channelID, message.serverID, "Your command is too long. Perhaps you've mistyped accidentally?");
+            return;
+        }
+
+        sv.remove_prefix(commandPrefix.length());
+
+        auto result = ctre::search<pattern>(sv);;
+        if(!result.matched())
+            return;
+
+        if(message.content != (std::string(server->GetCommandPrefix()) + "permit") && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
+            return;
+
+        auto commands = parser->Execute(result.get<0>().to_string(), server, message);
+        if(commands.Size() == 0)
+            return;
+
+        // instantiating channel -> server pairing if necessary to avoid hitting the api in onReaction needlessly
+        if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
+            channelToServerHash.push(message.channelID.number(), message.serverID.number());
+        }
+
+        executor->Push(std::move(commands));
     }
-
-    sv.remove_prefix(commandPrefix.length());
-
-    auto result = ctre::search<pattern>(sv);;
-    if(!result.matched())
-        return;
-
-    if(message.content != "permit" && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
-        return;
-
-    auto commands = parser->Execute(result.get<0>().to_string(), server, message);
-    if(commands.Size() == 0)
-        return;
-
-    // instantiating channel -> server pairing if necessary to avoid hitting the api in onReaction needlessly
-    if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
-        channelToServerHash.push(message.channelID.number(), message.serverID.number());
+    catch(const rapidjson_exception& e){
+        qDebug() << e.what();
     }
-
-    executor->Push(std::move(commands));
 }
 
 static std::string CreateMention(const std::string& string){
@@ -158,56 +170,67 @@ static std::string CreateMention(const std::string& string){
 
 
 void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, SleepyDiscord::Snowflake<SleepyDiscord::Message> messageID, SleepyDiscord::Emoji emoji){
-    if(userID == getID())
-        return;
-    if(!actionableEmoji.contains(emoji.name))
-        return;
-    if(!messageSourceAndTypeHash.contains(messageID.number()))
-        return;
-
-    QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
-    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
-                                                                         channelToServerHash.contains(channelID.number())
-                                                                         ? channelToServerHash.value(channelID.number()) : 0);
-
-    if(server->GetServerId() == "342065231842902017" && channelID != "769193920394952706")
-        return;
-
-    bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
-    if(isOriginalUser){
-        An<Users> users;
-        auto user = users->GetUser(QString::fromStdString(userID.string()));
-        if(!user)
+    try{
+        if(userID == getID())
             return;
-        QLOG_INFO() << "bot is fetching message information";
-        //auto message = getMessage(channelID, messageID);
+        if(!actionableEmoji.contains(emoji.name))
+            return;
+        if(!messageSourceAndTypeHash.contains(messageID.number()))
+            return;
 
-        auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
-        messageInfo.token.messageID = messageID;
-        if(emoji.name *in("👉", "👈")){
-            bool scrollDirection = emoji.name == "👉" ? true : false;
-            CommandChain command;
-            if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
-                command = CreateChangeRecommendationsPageCommand(user,server, messageInfo.token, scrollDirection);
-            else
-                command = CreateChangeHelpPageCommand(user,server, messageInfo.token, scrollDirection);
-            executor->Push(std::move(command));
+        QLOG_INFO() << "entered the onReaction core body with reaction: " << QString::fromStdString(emoji.name);
+        QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID,
+                                                                             channelToServerHash.contains(channelID.number())
+                                                                             ? channelToServerHash.value(channelID.number()) : 0);
+
+        bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
+        if(isOriginalUser){
+            An<Users> users;
+            auto user = users->GetUser(QString::fromStdString(userID.string()));
+            if(!user)
+                return;
+            QLOG_INFO() << "bot is fetching message information";
+
+            auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
+            messageInfo.token.messageID = messageID;
+            if(emoji.name *in("👉", "👈")){
+
+
+                bool scrollDirection = emoji.name == "👉" ? true : false;
+                CommandChain command;
+                if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
+                    command = CreateChangeRecommendationsPageCommand(user,server, messageInfo.token, scrollDirection);
+                else
+                    command = CreateChangeHelpPageCommand(user,server, messageInfo.token, scrollDirection);
+
+                command += CreateRemoveReactionCommand(user,server, messageInfo.token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
+                executor->Push(std::move(command));
+            }
+            else if(emoji.name == "🔁")
+            {
+                CommandChain commands;
+                commands = CreateRollCommand(user,server, messageInfo.token);
+                commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%f0%9f%94%81");
+                executor->Push(std::move(commands));
+            }
+
         }
-        else if(emoji.name == "🔁")
-        {
-            auto newRoll = CreateRollCommand(user,server, messageInfo.token);
-            executor->Push(std::move(newRoll));
+        else if(userID != getID()){
+            sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` or `sohelp` command or spawn a new list with your own FFN id.");
         }
     }
-    else if(userID != getID()){
-        sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` or `sohelp` command or spawn a new list with your own FFN id.");
+    catch(const rapidjson_exception& e){
+        qDebug() << e.what();
     }
 }
 
 void Client::Log(const SleepyDiscord::Message& message)
 {
     if(message.content.length() > 100)
-        QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content.substr(0, 100) + "...");
+    {
+        auto pos = message.content.find(' ', 100);
+        QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content.substr(0, pos) + "...");
+    }
     else
         QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content);
 }
@@ -223,23 +246,65 @@ void discord::Client::onReady(SleepyDiscord::Ready )
     botPrefixRequest = "<@!" + getID().string() + "> prefix";
 }
 
-//SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message, const SleepyDiscord::Embed& embed)
-//{
-//    QLOG_INFO() << "bot is sending response message";
-//    if(allowMessages)
-//        return SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed);
-//    SleepyDiscord::Response dummyResponse;
-//    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
-//}
+MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,
+                                                                          SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
+                                                                          const std::string& message,
+                                                                          const SleepyDiscord::Embed& embed)
+{
 
-//SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message)
-//{
-//    QLOG_INFO() << "bot is sending response message";
-//    if(allowMessages)
-//        return SleepyDiscord::DiscordClient::sendMessage(channelID, message);
-//    SleepyDiscord::Response dummyResponse;
-//    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
-//}
+    QLOG_INFO() << "bot is sending response message";
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, serverID.string());
+    try{
+    if(allowMessages){
+        if(server && server->IsAllowedChannelForSendMessage(channelID)){
+            return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed)};
+        }
+        else{
+            QLOG_INFO() << "Message sending prevented due to lack of permissions";
+        }
+    }
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        if(error != 403)
+            QLOG_INFO() << "Discord error:" << error;
+        else{
+            // we don't have permissions to send messages on this server and channel, preventing this from happening again
+            if(server){
+                server->AddForbiddenChannelForSendMessage(channelID.string());
+            }
+        }
+    }
+    return {false};
+}
+
+MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,
+                                                  SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
+                                                  const std::string& message)
+{
+    QLOG_INFO() << "bot is sending response message";
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, serverID.string());
+    try{
+        if(allowMessages){
+            if(server && server->IsAllowedChannelForSendMessage(channelID)){
+                return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message)};
+            }
+            else{
+                QLOG_INFO() << "Message sending prevented due to lack of permissions";
+            }
+        }
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        if(error != 403)
+            QLOG_INFO() << "Discord error:" << error;
+        else{
+            // we don't have permissions to send messages on this server and channel, preventing this from happening again
+            if(server){
+                server->AddForbiddenChannelForSendMessage(channelID.string());
+            }
+        }
+    }
+    return {false};
+}
 }
 
 

@@ -31,8 +31,15 @@ class Users;
 namespace discord{
 
 struct WordcountFilter{
+    enum EFilterMode{
+        fm_none = 0,
+        fm_less = 1,
+        fm_more = 2,
+        fm_between = 3,
+    };
     uint64_t firstLimit = 0;
     uint64_t secondLimit = 0;
+    EFilterMode filterMode = fm_none;
 };
 struct LastPageCommandMemo{
     SleepyDiscord::Snowflake<SleepyDiscord::Message> message;
@@ -165,6 +172,15 @@ struct User{
     LargeListToken GetLargeListToken() const;
     void SetLargeListToken(const LargeListToken &value);
 
+    int GetPerfectRngFicsSize() const;
+    void SetPerfectRngFicsSize(int value);
+
+    int GetGoodRngFicsSize() const;
+    void SetGoodRngFicsSize(int value);
+
+    bool GetTimeoutWarningShown() const;
+    void SetTimeoutWarningShown(bool value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -181,6 +197,7 @@ private:
     bool hideDead = false;
     bool strictFreshSort = false;
     bool rngBustScheduled = false;
+    bool timeoutWarningShown = false;
 
     int currentRecsPage = 0;
     int currentHelpPage = 0;
@@ -191,6 +208,8 @@ private:
     int forcedRatio = 0;
     int perfectRngScoreCutoff = 0;
     int goodRngScoreCutoff = 0;
+    int perfectRngFicsSize = 0;
+    int goodRngFicsSize = 0;
     int favouritesSize = 0;
     int largeListCounter;
 

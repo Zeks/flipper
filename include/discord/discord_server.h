@@ -7,6 +7,7 @@
 #include <QDateTime>
 #include <chrono>
 #include <regex>
+#include <set>
 
 #include "GlobalHeaders/SingletonHolder.h"
 
@@ -56,7 +57,20 @@ struct Server{
     QDateTime GetLastActive() const;
     void SetLastActive(const QDateTime& value);
 
-    private:
+    bool GetAllowedToRemoveReactions() const;
+    void SetAllowedToRemoveReactions(bool value);
+    void AddForbiddenChannelForSendMessage(std::string);
+    void RemoveForbiddenChannelForSendMessage(std::string);
+    bool IsAllowedChannelForSendMessage(std::string);
+    void ClearForbiddenChannels();
+
+    bool GetAllowedToAddReactions() const;
+    void SetAllowedToAddReactions(bool value);
+
+    bool GetAllowedToEditMessages() const;
+    void SetAllowedToEditMessages(bool value);
+
+private:
     std::string serverId;
     QString serverName;
     QString ownerId;
@@ -69,10 +83,15 @@ struct Server{
     bool answerInPm = false;
     int parserRequestLimit = 0;
     int totalRequests = 0;
+    bool allowedToRemoveReactions = true;
+    bool allowedToAddReactions = true;
+    bool allowedToEditMessages = true;
+
+
 
     QDateTime firstActive;
     QDateTime lastActive;
-
+    std::set<std::string> forbiddenChannels;
 
     mutable QReadWriteLock lock = QReadWriteLock(QReadWriteLock::Recursive);
 };

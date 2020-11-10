@@ -221,7 +221,13 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
         command.variantHash[QStringLiteral("ratio")] = 0;
         result.Push(std::move(command));
     }
+    auto prefix = QString::fromStdString(std::string(server->GetCommandPrefix()));
+    QString newFicspart = QString("\nIf you have added new fics to your favourites, do `%1recs >refresh %2` instead, to update your recommendations.");
+    if(refresh.length() != 0)
+        newFicspart = "";
+    newFicspart=newFicspart.arg(prefix,QString::fromStdString(match.get<2>().to_string()));
     createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(QString::fromStdString(match.get<2>().to_string()));
+    createRecs.textForPreExecution+=newFicspart;
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.ids.push_back(0);
     result.Push(std::move(createRecs));
@@ -338,6 +344,12 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(const SleepyDiscord::Message&
         ignoredFandoms.variantHash[QStringLiteral("reset")] = true;
     ignoredFandoms.variantHash[QStringLiteral("fandom")] = QString::fromStdString(fandom).trimmed();
     AddFilterCommand(std::move(ignoredFandoms));
+
+    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+    createRecs.ids.push_back(user->FfnID().toUInt());
+    createRecs.variantHash[QStringLiteral("refresh")] = true;
+    result.Push(std::move(createRecs));
+
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
     displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
@@ -355,7 +367,6 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(const SleepyDiscord::Message& me
     Command ignoredFics = NewCommand(server, message,ct_ignore_fics);
     auto match = ctre::search<TypeStringHolder<IgnoreFicCommand>::patternCommand>(message.content);
     auto full = match.get<1>().to_string();
-    bool silent = false;
     if(full.length() > 0){
         ignoredFics.variantHash[QStringLiteral("everything")] = true;
         ignoredFics.ids.clear();
@@ -363,8 +374,6 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(const SleepyDiscord::Message& me
     else{
         for(auto match : ctre::range<TypeStringHolder<IgnoreFicCommand>::patternNum>(message.content)){
             auto silentStr = match.get<1>().to_string();
-            if(silentStr.length() != 0)
-                silent = true;
             auto numbers = QString::fromStdString(match.get<2>().to_string()).split(QStringLiteral(" "));
             for(const auto& number : numbers){
                 auto id = number.toInt();
@@ -374,12 +383,12 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(const SleepyDiscord::Message& me
             }
         }
     }
-
+    bool hasIgnores = ignoredFics.ids.size() > 0 || ignoredFics.variantHash.size() > 0;
     AddFilterCommand(std::move(ignoredFics));
-    if(!silent && (ignoredFics.variantHash.size() > 0 || ignoredFics.ids.size() > 0))
+    if(hasIgnores)
     {
         Command displayRecs = NewCommand(server, message,user->GetLastPageType());
-        displayRecs.ids.push_back(0);
+        displayRecs.ids.push_back(user->CurrentRecommendationsPage());
         displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
         result.Push(std::move(displayRecs));
 
@@ -394,12 +403,12 @@ bool IgnoreFicCommand::IsThisCommand(const std::string &cmd)
 
 CommandChain SetIdentityCommand::ProcessInputImpl(const SleepyDiscord::Message&)
 {
-//    Command command;
-//    command.type = ct_set_identity;
-//    auto match = matches.next();
-//    command.ids.push_back(match.captured(1).toUInt());
-//    command.originalMessage = message;
-//    result.Push(command);
+    //    Command command;
+    //    command.type = ct_set_identity;
+    //    auto match = matches.next();
+    //    command.ids.push_back(match.captured(1).toUInt());
+    //    command.originalMessage = message;
+    //    result.Push(command);
     return std::move(result);
 }
 
@@ -419,6 +428,9 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
     auto user = users->GetUser(QString::fromStdString(message.author.ID.string()));
     if(user->secsSinceLastsEasyQuery() < 3)
     {
+        if(user->GetTimeoutWarningShown())
+            return result;
+        user->SetTimeoutWarningShown(true);
         Command command = NewCommand(server, message,ct_timeout_active);
         command.ids.push_back(3-user->secsSinceLastsEasyQuery());
         command.variantHash[QStringLiteral("reason")] = QStringLiteral("One command can be issued each 3 seconds. Please wait %1 more seconds.");
@@ -427,6 +439,7 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
         result.stopExecution = true;
         return result;
     }
+    user->SetTimeoutWarningShown(false);
 
     for(auto& processor: commandProcessors)
     {
@@ -447,7 +460,7 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
     result.AddUserToCommands(user);
     for(const auto& command: std::as_const(result.commands)){
         if(!command.textForPreExecution.isEmpty())
-            client->sendMessage(command.originalMessageToken.channelID, command.textForPreExecution.toStdString());
+            client->sendMessageWrapper(command.originalMessageToken.channelID, command.originalMessageToken.serverID,command.textForPreExecution.toStdString());
     }
     return result;
 }
@@ -479,38 +492,104 @@ void SendMessageCommand::Invoke(Client * client)
 {
     try{
         auto addReaction = [&](const SleepyDiscord::Message& newMessage){
-            for(const auto& reaction: std::as_const(reactionsToAdd))
-                client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
+            An<discord::Servers> servers;
+            auto server = servers->GetServer(originalMessageToken.serverID);
+            try{
+                if(server && server->GetAllowedToAddReactions())
+                    for(const auto& reaction: std::as_const(reactionsToAdd))
+                        client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
+            }
+            catch (const SleepyDiscord::ErrorCode& error){
+                if(error != 403)
+                    QLOG_INFO() << "Discord error:" << error;
+                else{
+                    // we don't have permissions to add reaction on this server, preventing this from happening again
+                    if(server){
+                        server->SetAllowedToAddReactions(false);
+                    }
+                }
+            }
         };
+        auto removeReaction = [&](SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage){
+            for(const auto& reaction: std::as_const(reactionsToRemove))
+                try{
+                An<discord::Servers> servers;
+                auto server = servers->GetServer(originalMessageToken.serverID);
+                if(server && server->GetAllowedToRemoveReactions())
+                    client->removeReaction(originalMessageToken.channelID, targetMessage, reaction.toStdString(), user->UserID().toStdString());
+            }
+            catch (const SleepyDiscord::ErrorCode& error){
+                if(error != 403)
+                    QLOG_INFO() << "Discord error:" << error;
+                else{
+                    // we don't have permissions to edit reaction on this server, preventing this from happening again
+                    An<discord::Servers> servers;
+                    auto server = servers->GetServer(originalMessageToken.serverID);
+                    if(server){
+                        server->SetAllowedToRemoveReactions(false);
+                    }
+                }
+            }
+        };
+        An<discord::Servers> servers;
+        auto server = servers->GetServer(originalMessageToken.serverID);
         if(targetMessage.string().length() == 0){
             if(embed.empty())
             {
                 SleepyDiscord::Embed embed;
                 if(text.length() > 0)
                 {
-                    auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
-                    // I don't need to add reactions or hash messages without filled embeds
+                    try{
+                        if(server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
+                            client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID,text.toStdString(), embed);
+                    }
+                    catch (const SleepyDiscord::ErrorCode& error){
+                        if(error != 403)
+                            QLOG_INFO() << "Discord error:" << error;
+                        else{
+                            // we don't have permissions to send messages on this server and channel, preventing this from happening again
+                            if(server){
+                                server->AddForbiddenChannelForSendMessage(originalMessageToken.channelID.string());
+                            }
+                        }
+                    }
                 }
             }
             else{
-                auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
-
-                // I only need to hash messages that the user can later react to
-                // meaning page, rng and help commands
-                if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
-                    if(originalCommandType *in(ct_display_page, ct_display_rng))
-                        this->user->SetLastPageMessage({resultingMessage, originalMessageToken.channelID});
-                    client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken, originalCommandType});
-                    addReaction(resultingMessage);
+                try{
+                    auto resultingMessage = client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID, text.toStdString(), embed);
+                    if(resultingMessage.response.has_value()){
+                        // I only need to hash messages that the user can later react to
+                        // meaning page, rng and help commands
+                        if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
+                            if(originalCommandType *in(ct_display_page, ct_display_rng))
+                                this->user->SetLastPageMessage({resultingMessage.response->cast(), originalMessageToken.channelID});
+                            client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
+                            addReaction(resultingMessage.response.value().cast());
+                        }
+                    }
+                }
+                catch (const SleepyDiscord::ErrorCode& error){
+                    if(error != 403)
+                        QLOG_INFO() << "Discord error:" << error;
+                    else{
+                        // we don't have permissions to send messages on this server and channel, preventing this from happening again
+                        if(server){
+                            server->AddForbiddenChannelForSendMessage(originalMessageToken.channelID.string());
+                        }
+                    }
                 }
             }
         }
         else{
-            // editing message doesn't change its Id so rehashing isn't required
-            client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
+            if(reactionsToRemove.size() > 0)
+                removeReaction(targetMessage);
+            else
+                // editing message doesn't change its Id so rehashing isn't required
+                client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
         }
         if(!diagnosticText.isEmpty())
-            client->sendMessage(originalMessageToken.channelID, diagnosticText.toStdString());
+            client->sendMessageWrapper(originalMessageToken.channelID,originalMessageToken.serverID, diagnosticText.toStdString());
     }
     catch (const SleepyDiscord::ErrorCode& error){
         QLOG_INFO() << "Discord error:" << error;
@@ -535,12 +614,18 @@ bool RngCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<RngCommand>::name;
 }
 
+std::once_flag settingsFlagPrefix;
 CommandChain ChangeServerPrefixCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     bool isAdmin = CheckAdminRole(message);
+    static std::string ownerId;
+    std::call_once(settingsFlagPrefix, [&](){
+        QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
+        ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toStdString();
+    });
 
-    if(isAdmin || sleepyServer.ownerID == message.author.ID)
+    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == ownerId)
     {
         Command command = NewCommand(server, message,ct_change_server_prefix);
         auto match = ctre::search<TypeStringHolder<ChangeServerPrefixCommand>::pattern>(message.content);
@@ -570,15 +655,20 @@ bool ChangeServerPrefixCommand::IsThisCommand(const std::string &cmd)
 }
 
 
-
+std::once_flag settingsFlagChannel;
 CommandChain ChangePermittedChannelCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
 {
     if(this->server->GetServerId().length() == 0)
         return std::move(result);
+    static std::string ownerId;
+    std::call_once(settingsFlagChannel, [&](){
+        QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
+        ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toStdString();
+    });
 
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     bool isAdmin = CheckAdminRole(message);
-    if(isAdmin || sleepyServer.ownerID == message.author.ID)
+    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == ownerId)
     {
         Command command = NewCommand(server, message,ct_set_permitted_channel);
         command.variantHash[QStringLiteral("channel")] = QString::fromStdString(message.channelID.string());
@@ -810,6 +900,20 @@ CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> user, Q
     return result;
 }
 
+CommandChain CreateRemoveReactionCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken & message, const std::string& reaction)
+{
+    CommandChain result;
+    Command command = NewCommand(server, message,ct_remove_reactions);
+    command.variantHash["to_remove"]=QStringList{QString::fromStdString(reaction)};
+
+    command.targetMessage = message.messageID;
+    command.user = user;
+    result.Push(std::move(command));
+    return result;
+}
+
+
+
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> user, QSharedPointer<Server> server, const MessageToken& message, bool shiftRight)
 {
     CommandChain result;
@@ -921,6 +1025,7 @@ CommandChain WordcountCommand::ProcessInputImpl(const SleepyDiscord::Message& me
         command.ids.push_back(0);
         command.ids.push_back(0);
     }
+    command.variantHash["filter_type"] = QString::fromStdString(filterType);
     AddFilterCommand(std::move(command));
     Command displayRecs = NewCommand(server, message,ct_display_page);
     displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
@@ -940,5 +1045,6 @@ bool WordcountCommand::IsThisCommand(const std::string &cmd)
 
 
 }
+
 
 

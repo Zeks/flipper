@@ -54,6 +54,7 @@ ACTION(ShowFreshRecommendationsAction);
 ACTION(ShowCompleteAction);
 ACTION(HideDeadAction);
 ACTION(PurgeAction);
+ACTION(RemoveReactions);
 ACTION(ResetFiltersAction);
 ACTION(CreateSimilarFicListAction);
 ACTION(SetWordcountLimitAction);
