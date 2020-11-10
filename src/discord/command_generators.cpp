@@ -367,7 +367,6 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(const SleepyDiscord::Message& me
     Command ignoredFics = NewCommand(server, message,ct_ignore_fics);
     auto match = ctre::search<TypeStringHolder<IgnoreFicCommand>::patternCommand>(message.content);
     auto full = match.get<1>().to_string();
-    bool silent = false;
     if(full.length() > 0){
         ignoredFics.variantHash[QStringLiteral("everything")] = true;
         ignoredFics.ids.clear();
@@ -375,8 +374,6 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(const SleepyDiscord::Message& me
     else{
         for(auto match : ctre::range<TypeStringHolder<IgnoreFicCommand>::patternNum>(message.content)){
             auto silentStr = match.get<1>().to_string();
-            if(silentStr.length() != 0)
-                silent = true;
             auto numbers = QString::fromStdString(match.get<2>().to_string()).split(QStringLiteral(" "));
             for(const auto& number : numbers){
                 auto id = number.toInt();
