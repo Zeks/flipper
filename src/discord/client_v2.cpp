@@ -255,8 +255,14 @@ MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<Sleep
     QLOG_INFO() << "bot is sending response message";
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, serverID.string());
     try{
-    if(allowMessages)
-        return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed)};
+    if(allowMessages){
+        if(server && server->IsAllowedChannelForSendMessage(channelID)){
+            return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed)};
+        }
+        else{
+            QLOG_INFO() << "Message sending prevented due to lack of permissions";
+        }
+    }
     }
     catch (const SleepyDiscord::ErrorCode& error){
         if(error != 403)
@@ -268,19 +274,24 @@ MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<Sleep
             }
         }
     }
-    SleepyDiscord::Response dummyResponse;
     return {false};
 }
 
 MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,
-                                                                          SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
-                                                                          const std::string& message)
+                                                  SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
+                                                  const std::string& message)
 {
     QLOG_INFO() << "bot is sending response message";
     QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, serverID.string());
     try{
-    if(allowMessages)
-        return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message)};
+        if(allowMessages){
+            if(server && server->IsAllowedChannelForSendMessage(channelID)){
+                return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message)};
+            }
+            else{
+                QLOG_INFO() << "Message sending prevented due to lack of permissions";
+            }
+        }
     }
     catch (const SleepyDiscord::ErrorCode& error){
         if(error != 403)
@@ -292,7 +303,6 @@ MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<Sleep
             }
         }
     }
-    SleepyDiscord::Response dummyResponse;
     return {false};
 }
 }
