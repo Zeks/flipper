@@ -495,7 +495,7 @@ void SendMessageCommand::Invoke(Client * client)
             An<discord::Servers> servers;
             auto server = servers->GetServer(originalMessageToken.serverID);
             try{
-                if(server && server->GetAllowedToAddReactions())
+                if(!server || server->GetAllowedToAddReactions())
                     for(const auto& reaction: std::as_const(reactionsToAdd))
                         client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
             }
@@ -515,7 +515,7 @@ void SendMessageCommand::Invoke(Client * client)
                 try{
                 An<discord::Servers> servers;
                 auto server = servers->GetServer(originalMessageToken.serverID);
-                if(server && server->GetAllowedToRemoveReactions())
+                if(!server || server->GetAllowedToRemoveReactions())
                     client->removeReaction(originalMessageToken.channelID, targetMessage, reaction.toStdString(), user->UserID().toStdString());
             }
             catch (const SleepyDiscord::ErrorCode& error){
