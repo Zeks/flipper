@@ -193,41 +193,28 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
             if(!user)
                 return;
             QLOG_INFO() << "bot is fetching message information";
-            //auto message = getMessage(channelID, messageID);
 
             auto messageInfo = messageSourceAndTypeHash.value(messageID.number());
             messageInfo.token.messageID = messageID;
             if(emoji.name *in("👉", "👈")){
-                try{
-                    if(emoji.name == "👉"){
-                        removeReaction(channelID,messageID,"%f0%9f%91%89", userID);
-                    }else{
-                        removeReaction(channelID,messageID,"%f0%9f%91%88", userID);
-                    }
-                }
-                catch (const SleepyDiscord::ErrorCode& error){
-                    if(error != 403)
-                        QLOG_INFO() << "Discord error:" << error;
-                }
+
+
                 bool scrollDirection = emoji.name == "👉" ? true : false;
                 CommandChain command;
                 if(messageInfo.sourceCommandType == ECommandType::ct_display_page)
                     command = CreateChangeRecommendationsPageCommand(user,server, messageInfo.token, scrollDirection);
                 else
                     command = CreateChangeHelpPageCommand(user,server, messageInfo.token, scrollDirection);
+
+                command += CreateRemoveReactionCommand(user,server, messageInfo.token, emoji.name == "👉" ? "%f0%9f%91%89" : "%f0%9f%91%88");
                 executor->Push(std::move(command));
             }
             else if(emoji.name == "🔁")
             {
-                auto newRoll = CreateRollCommand(user,server, messageInfo.token);
-                executor->Push(std::move(newRoll));
-                try{
-                    removeReaction(channelID,messageID,"%f0%9f%94%81", userID);
-                }
-                catch (const SleepyDiscord::ErrorCode& error){
-                    if(error != 403)
-                        QLOG_INFO() << "Discord error:" << error;
-                }
+                CommandChain commands;
+                commands = CreateRollCommand(user,server, messageInfo.token);
+                commands += CreateRemoveReactionCommand(user,server, messageInfo.token, "%f0%9f%94%81");
+                executor->Push(std::move(commands));
             }
 
         }

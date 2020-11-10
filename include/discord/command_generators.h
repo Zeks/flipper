@@ -234,6 +234,7 @@ public:
     QString text;
     QString diagnosticText;
     QStringList reactionsToAdd;
+    QStringList reactionsToRemove;
     QSharedPointer<User> user;
     MessageToken originalMessageToken;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
@@ -248,6 +249,7 @@ public:
 CommandChain CreateRollCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & );
 CommandChain CreateChangeRecommendationsPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken & , bool shiftRight = true);
 CommandChain CreateChangeHelpPageCommand(QSharedPointer<User> , QSharedPointer<Server> , const MessageToken &, bool shiftRight = true);
+CommandChain CreateRemoveReactionCommand(QSharedPointer<User> , QSharedPointer<Server> server, const MessageToken &message, const std::string &reaction);
 Command NewCommand(QSharedPointer<discord::Server> server, const SleepyDiscord::Message& message, ECommandType type);
 Command NewCommand(QSharedPointer<discord::Server> server, const MessageToken& message, ECommandType type);
 }
