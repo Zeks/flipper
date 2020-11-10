@@ -178,6 +178,9 @@ struct User{
     int GetGoodRngFicsSize() const;
     void SetGoodRngFicsSize(int value);
 
+    bool GetTimeoutWarningShown() const;
+    void SetTimeoutWarningShown(bool value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -194,6 +197,7 @@ private:
     bool hideDead = false;
     bool strictFreshSort = false;
     bool rngBustScheduled = false;
+    bool timeoutWarningShown = false;
 
     int currentRecsPage = 0;
     int currentHelpPage = 0;

@@ -594,6 +594,18 @@ void User::SetGoodRngFicsSize(int value)
     QWriteLocker locker(&lock);
     goodRngFicsSize = value;
 }
+
+bool User::GetTimeoutWarningShown() const
+{
+    QReadLocker locker(&lock);
+    return timeoutWarningShown;
+}
+
+void User::SetTimeoutWarningShown(bool value)
+{
+    QWriteLocker locker(&lock);
+    timeoutWarningShown = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

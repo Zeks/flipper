@@ -943,6 +943,10 @@ QSharedPointer<SendMessageCommand> SetChannelAction::ExecuteImpl(QSharedPointer<
         command.server->SetDedicatedChannelId(command.variantHash.value(QStringLiteral("channel")).toString().trimmed().toStdString());
         database::discord_queries::WriteServerDedicatedChannel(dbToken->db, command.server->GetServerId(), command.server->GetDedicatedChannelId());
         action->text = QStringLiteral("Acknowledged, the bot will only respond in this channel.");
+        command.server->SetAllowedToAddReactions(true);
+        command.server->SetAllowedToRemoveReactions(true);
+        command.server->SetAllowedToEditMessages(true);
+        command.server->ClearForbiddenChannels();
     }
     else
         action->text = QStringLiteral("Prefix wasn't changed because of an error");

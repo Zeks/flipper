@@ -403,12 +403,12 @@ bool IgnoreFicCommand::IsThisCommand(const std::string &cmd)
 
 CommandChain SetIdentityCommand::ProcessInputImpl(const SleepyDiscord::Message&)
 {
-//    Command command;
-//    command.type = ct_set_identity;
-//    auto match = matches.next();
-//    command.ids.push_back(match.captured(1).toUInt());
-//    command.originalMessage = message;
-//    result.Push(command);
+    //    Command command;
+    //    command.type = ct_set_identity;
+    //    auto match = matches.next();
+    //    command.ids.push_back(match.captured(1).toUInt());
+    //    command.originalMessage = message;
+    //    result.Push(command);
     return std::move(result);
 }
 
@@ -428,6 +428,9 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
     auto user = users->GetUser(QString::fromStdString(message.author.ID.string()));
     if(user->secsSinceLastsEasyQuery() < 3)
     {
+        if(user->GetTimeoutWarningShown())
+            return result;
+        user->SetTimeoutWarningShown(true);
         Command command = NewCommand(server, message,ct_timeout_active);
         command.ids.push_back(3-user->secsSinceLastsEasyQuery());
         command.variantHash[QStringLiteral("reason")] = QStringLiteral("One command can be issued each 3 seconds. Please wait %1 more seconds.");
@@ -436,6 +439,7 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
         result.stopExecution = true;
         return result;
     }
+    user->SetTimeoutWarningShown(false);
 
     for(auto& processor: commandProcessors)
     {
@@ -488,40 +492,91 @@ void SendMessageCommand::Invoke(Client * client)
 {
     try{
         auto addReaction = [&](const SleepyDiscord::Message& newMessage){
-            for(const auto& reaction: std::as_const(reactionsToAdd))
-                client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
-        };
-        auto removeReaction = [&](SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage){
-            for(const auto& reaction: std::as_const(reactionsToRemove))
-                try{
-                client->removeReaction(originalMessageToken.channelID, targetMessage, reaction.toStdString(), user->UserID().toStdString());
+            An<discord::Servers> servers;
+            auto server = servers->GetServer(originalMessageToken.serverID);
+            try{
+                if(server && server->GetAllowedToAddReactions())
+                    for(const auto& reaction: std::as_const(reactionsToAdd))
+                        client->addReaction(originalMessageToken.channelID, newMessage.ID, reaction.toStdString());
             }
             catch (const SleepyDiscord::ErrorCode& error){
                 if(error != 403)
                     QLOG_INFO() << "Discord error:" << error;
+                else{
+                    // we don't have permissions to add reaction on this server, preventing this from happening again
+                    if(server){
+                        server->SetAllowedToAddReactions(false);
+                    }
+                }
             }
         };
+        auto removeReaction = [&](SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage){
+            for(const auto& reaction: std::as_const(reactionsToRemove))
+                try{
+                An<discord::Servers> servers;
+                auto server = servers->GetServer(originalMessageToken.serverID);
+                if(server && server->GetAllowedToRemoveReactions())
+                    client->removeReaction(originalMessageToken.channelID, targetMessage, reaction.toStdString(), user->UserID().toStdString());
+            }
+            catch (const SleepyDiscord::ErrorCode& error){
+                if(error != 403)
+                    QLOG_INFO() << "Discord error:" << error;
+                else{
+                    // we don't have permissions to edit reaction on this server, preventing this from happening again
+                    An<discord::Servers> servers;
+                    auto server = servers->GetServer(originalMessageToken.serverID);
+                    if(server){
+                        server->SetAllowedToRemoveReactions(false);
+                    }
+                }
+            }
+        };
+        An<discord::Servers> servers;
+        auto server = servers->GetServer(originalMessageToken.serverID);
         if(targetMessage.string().length() == 0){
             if(embed.empty())
             {
                 SleepyDiscord::Embed embed;
                 if(text.length() > 0)
                 {
-                    auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
-                    // I don't need to add reactions or hash messages without filled embeds
+                    try{
+                        if(server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
+                            client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
+                    }
+                    catch (const SleepyDiscord::ErrorCode& error){
+                        if(error != 403)
+                            QLOG_INFO() << "Discord error:" << error;
+                        else{
+                            // we don't have permissions to send messages on this server and channel, preventing this from happening again
+                            if(server){
+                                server->AddForbiddenChannelForSendMessage(originalMessageToken.channelID.string());
+                            }
+                        }
+                    }
                 }
             }
             else{
-                auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
+                try{
+                    auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
 
-                // I only need to hash messages that the user can later react to
-                // meaning page, rng and help commands
-                if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
-                    if(originalCommandType *in(ct_display_page, ct_display_rng))
-                        this->user->SetLastPageMessage({resultingMessage, originalMessageToken.channelID});
-                    client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken, originalCommandType});
-                    addReaction(resultingMessage);
-
+                    // I only need to hash messages that the user can later react to
+                    // meaning page, rng and help commands
+                    if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
+                        if(originalCommandType *in(ct_display_page, ct_display_rng))
+                            this->user->SetLastPageMessage({resultingMessage, originalMessageToken.channelID});
+                        client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken, originalCommandType});
+                        addReaction(resultingMessage);
+                    }
+                }
+                catch (const SleepyDiscord::ErrorCode& error){
+                    if(error != 403)
+                        QLOG_INFO() << "Discord error:" << error;
+                    else{
+                        // we don't have permissions to send messages on this server and channel, preventing this from happening again
+                        if(server){
+                            server->AddForbiddenChannelForSendMessage(originalMessageToken.channelID.string());
+                        }
+                    }
                 }
             }
         }
@@ -529,7 +584,7 @@ void SendMessageCommand::Invoke(Client * client)
             if(reactionsToRemove.size() > 0)
                 removeReaction(targetMessage);
             else
-            // editing message doesn't change its Id so rehashing isn't required
+                // editing message doesn't change its Id so rehashing isn't required
                 client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
         }
         if(!diagnosticText.isEmpty())

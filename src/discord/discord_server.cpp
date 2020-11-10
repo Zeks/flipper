@@ -160,13 +160,73 @@ namespace discord {
         QWriteLocker locker(&lock);
         lastActive = value;
     }
+    
+    bool Server::GetAllowedToRemoveReactions() const
+    {
+        QReadLocker locker(&lock);
+        return allowedToRemoveReactions;
+    }
+    
+    void Server::SetAllowedToRemoveReactions(bool value)
+    {
+        QWriteLocker locker(&lock);
+        allowedToRemoveReactions = value;
+    }
 
+    void Server::AddForbiddenChannelForSendMessage(std::string channel)
+    {
+        QWriteLocker locker(&lock);
+        forbiddenChannels.insert(channel);
+    }
+
+    void Server::RemoveForbiddenChannelForSendMessage(std::string channel)
+    {
+        QWriteLocker locker(&lock);
+        forbiddenChannels.erase(channel);
+    }
+
+    bool Server::IsAllowedChannelForSendMessage(std::string channel)
+    {
+        QReadLocker locker(&lock);
+        return forbiddenChannels.find(channel) == forbiddenChannels.end();
+    }
+
+    void Server::ClearForbiddenChannels()
+    {
+        QWriteLocker locker(&lock);
+        forbiddenChannels.clear();
+    }
+
+    bool Server::GetAllowedToAddReactions() const
+    {
+        QReadLocker locker(&lock);
+        return allowedToAddReactions;
+    }
+
+    void Server::SetAllowedToAddReactions(bool value)
+    {
+        QWriteLocker locker(&lock);
+        allowedToAddReactions = value;
+    }
+
+    bool Server::GetAllowedToEditMessages() const
+    {
+        QReadLocker locker(&lock);
+        return allowedToEditMessages;
+    }
+
+    void Server::SetAllowedToEditMessages(bool value)
+    {
+        QWriteLocker locker(&lock);
+        allowedToEditMessages = value;
+    }
+    
     void Servers::AddServer(QSharedPointer<Server> server)
     {
         QWriteLocker locker(&lock);
         servers[server->GetServerId()] = server;
     }
-
+    
     bool Servers::HasServer(const std::string& server)
     {
         QReadLocker locker(&lock);

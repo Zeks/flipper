@@ -125,7 +125,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     SleepyDiscord::EmbedField adminCommandsField;
     adminCommandsField.isInline = false;
     adminCommandsField.name = "Admin only commands:";
-    std::string admintText = "`{0}prefix new_prefix` changes bot's command prefix. `.` can't be used in a prefix\n";
+    std::string admintText = "`{0}prefix new_prefix` changes bot's command prefix.\n";
     admintText  +="`{0}permit` forces the bot to answer in this channel only";
     admintText=fmt::format(admintText, serverPrefix);
     adminCommandsField.value = admintText;
