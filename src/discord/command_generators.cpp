@@ -540,7 +540,7 @@ void SendMessageCommand::Invoke(Client * client)
                 if(text.length() > 0)
                 {
                     try{
-                        if(server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
+                        if(!server || server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
                             client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID,text.toStdString(), embed);
                     }
                     catch (const SleepyDiscord::ErrorCode& error){
@@ -557,7 +557,10 @@ void SendMessageCommand::Invoke(Client * client)
             }
             else{
                 try{
-                    auto resultingMessage = client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID, text.toStdString(), embed);
+
+                    MessageResponseWrapper resultingMessage;
+                    if(!server || server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
+                        resultingMessage = client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID, text.toStdString(), embed);
                     if(resultingMessage.response.has_value()){
                         // I only need to hash messages that the user can later react to
                         // meaning page, rng and help commands

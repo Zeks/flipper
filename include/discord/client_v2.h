@@ -42,6 +42,7 @@ struct ChannelSet{
 };
 
 struct MessageResponseWrapper{
+    MessageResponseWrapper(){}
     MessageResponseWrapper(bool isValid, SleepyDiscord::ObjectResponse<SleepyDiscord::Message> message):isValid(isValid), response(message)
     {}
     MessageResponseWrapper(bool isValid):isValid(isValid)
