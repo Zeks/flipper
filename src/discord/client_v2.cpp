@@ -129,13 +129,13 @@ void Client::onMessage(SleepyDiscord::Message message) {
 
         const auto commandPrefix = server->GetCommandPrefix();
         if(sv == botPrefixRequest)
-            sendMessage(message.channelID, "Prefix for this server is: " + std::string(commandPrefix));
+            sendMessageWrapper(message.channelID, message.serverID, "Prefix for this server is: " + std::string(commandPrefix));
 
         if(sv.substr(0, commandPrefix.length()) != commandPrefix)
             return;
 
         if(message.content.length() > 500){
-            sendMessage(message.channelID, "Your command is too long. Perhaps you've mistyped accidentally?");
+            sendMessageWrapper(message.channelID, message.serverID, "Your command is too long. Perhaps you've mistyped accidentally?");
             return;
         }
 
@@ -183,9 +183,6 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
                                                                              channelToServerHash.contains(channelID.number())
                                                                              ? channelToServerHash.value(channelID.number()) : 0);
 
-        if(server->GetServerId() == "342065231842902017" && channelID != "769193920394952706")
-            return;
-
         bool isOriginalUser = messageSourceAndTypeHash.same_user(messageID.number(), userID.number());
         if(isOriginalUser){
             An<Users> users;
@@ -219,7 +216,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
         }
         else if(userID != getID()){
-            sendMessage(channelID, CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` or `sohelp` command or spawn a new list with your own FFN id.");
+            sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` or `sohelp` command or spawn a new list with your own FFN id.");
         }
     }
     catch(const rapidjson_exception& e){
@@ -249,23 +246,55 @@ void discord::Client::onReady(SleepyDiscord::Ready )
     botPrefixRequest = "<@!" + getID().string() + "> prefix";
 }
 
-//SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message, const SleepyDiscord::Embed& embed)
-//{
-//    QLOG_INFO() << "bot is sending response message";
-//    if(allowMessages)
-//        return SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed);
-//    SleepyDiscord::Response dummyResponse;
-//    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
-//}
+MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,
+                                                                          SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
+                                                                          const std::string& message,
+                                                                          const SleepyDiscord::Embed& embed)
+{
 
-//SleepyDiscord::ObjectResponse<SleepyDiscord::Message> Client::sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID, const std::string& message)
-//{
-//    QLOG_INFO() << "bot is sending response message";
-//    if(allowMessages)
-//        return SleepyDiscord::DiscordClient::sendMessage(channelID, message);
-//    SleepyDiscord::Response dummyResponse;
-//    return SleepyDiscord::ObjectResponse<SleepyDiscord::Message>{dummyResponse};
-//}
+    QLOG_INFO() << "bot is sending response message";
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, serverID.string());
+    try{
+    if(allowMessages)
+        return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message, embed)};
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        if(error != 403)
+            QLOG_INFO() << "Discord error:" << error;
+        else{
+            // we don't have permissions to send messages on this server and channel, preventing this from happening again
+            if(server){
+                server->AddForbiddenChannelForSendMessage(channelID.string());
+            }
+        }
+    }
+    SleepyDiscord::Response dummyResponse;
+    return {false};
+}
+
+MessageResponseWrapper Client::sendMessageWrapper(SleepyDiscord::Snowflake<SleepyDiscord::Channel> channelID,
+                                                                          SleepyDiscord::Snowflake<SleepyDiscord::Server> serverID,
+                                                                          const std::string& message)
+{
+    QLOG_INFO() << "bot is sending response message";
+    QSharedPointer<discord::Server> server = GetServerInstanceForChannel(channelID, serverID.string());
+    try{
+    if(allowMessages)
+        return {true, SleepyDiscord::DiscordClient::sendMessage(channelID, message)};
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        if(error != 403)
+            QLOG_INFO() << "Discord error:" << error;
+        else{
+            // we don't have permissions to send messages on this server and channel, preventing this from happening again
+            if(server){
+                server->AddForbiddenChannelForSendMessage(channelID.string());
+            }
+        }
+    }
+    SleepyDiscord::Response dummyResponse;
+    return {false};
+}
 }
 
 

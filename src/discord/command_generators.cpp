@@ -460,7 +460,7 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
     result.AddUserToCommands(user);
     for(const auto& command: std::as_const(result.commands)){
         if(!command.textForPreExecution.isEmpty())
-            client->sendMessage(command.originalMessageToken.channelID, command.textForPreExecution.toStdString());
+            client->sendMessageWrapper(command.originalMessageToken.channelID, command.originalMessageToken.serverID,command.textForPreExecution.toStdString());
     }
     return result;
 }
@@ -541,7 +541,7 @@ void SendMessageCommand::Invoke(Client * client)
                 {
                     try{
                         if(server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
-                            client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
+                            client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID,text.toStdString(), embed);
                     }
                     catch (const SleepyDiscord::ErrorCode& error){
                         if(error != 403)
@@ -557,15 +557,16 @@ void SendMessageCommand::Invoke(Client * client)
             }
             else{
                 try{
-                    auto resultingMessage = client->sendMessage(originalMessageToken.channelID, text.toStdString(), embed).cast();
-
-                    // I only need to hash messages that the user can later react to
-                    // meaning page, rng and help commands
-                    if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
-                        if(originalCommandType *in(ct_display_page, ct_display_rng))
-                            this->user->SetLastPageMessage({resultingMessage, originalMessageToken.channelID});
-                        client->messageSourceAndTypeHash.push(resultingMessage.ID.number(),{originalMessageToken, originalCommandType});
-                        addReaction(resultingMessage);
+                    auto resultingMessage = client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID, text.toStdString(), embed);
+                    if(resultingMessage.response.has_value()){
+                        // I only need to hash messages that the user can later react to
+                        // meaning page, rng and help commands
+                        if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
+                            if(originalCommandType *in(ct_display_page, ct_display_rng))
+                                this->user->SetLastPageMessage({resultingMessage.response->cast(), originalMessageToken.channelID});
+                            client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
+                            addReaction(resultingMessage.response.value().cast());
+                        }
                     }
                 }
                 catch (const SleepyDiscord::ErrorCode& error){
@@ -588,7 +589,7 @@ void SendMessageCommand::Invoke(Client * client)
                 client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
         }
         if(!diagnosticText.isEmpty())
-            client->sendMessage(originalMessageToken.channelID, diagnosticText.toStdString());
+            client->sendMessageWrapper(originalMessageToken.channelID,originalMessageToken.serverID, diagnosticText.toStdString());
     }
     catch (const SleepyDiscord::ErrorCode& error){
         QLOG_INFO() << "Discord error:" << error;
