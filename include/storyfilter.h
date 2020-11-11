@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 struct SlashFilterState
 {
     void Log();
-    bool slashFilterEnabled = true;
+    bool slashFilterEnabled = false;
     bool applyLocalEnabled = false;
     bool excludeSlash = true;
     bool includeSlash = false;
