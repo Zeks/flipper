@@ -299,6 +299,7 @@ QString User::UserID() const
 
 QString User::GetUuid() const
 {
+    QReadLocker locker(&lock);
     return uuid.toString();
 }
 

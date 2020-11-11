@@ -42,6 +42,8 @@ void CommandController::Push(CommandChain&& chain)
     {
         if(chain.hasParseCommand || chain.hasFullParseCommand){
             client->sendMessageWrapper(message.channelID,  message.serverID, CreateMention(message.authorID.string()) + ", another recommendation list is being created at the moment. Putting your request into the queue, please wait a bit.");
+            if(chain.Size() > 0 )
+                chain.user = (*chain.commands.begin()).user;
             queue.emplace_back(std::move(chain));
             return;
         }
