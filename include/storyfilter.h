@@ -25,17 +25,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 struct SlashFilterState
 {
     void Log();
-    bool slashFilterEnabled;
-    bool applyLocalEnabled;
-    bool excludeSlash;
-    bool includeSlash;
-    bool excludeSlashLocal;
-    bool includeSlashLocal;
-    bool enableFandomExceptions;
+    bool slashFilterEnabled = true;
+    bool applyLocalEnabled = false;
+    bool excludeSlash = true;
+    bool includeSlash = false;
+    bool excludeSlashLocal = false;
+    bool includeSlashLocal = false;
+    bool enableFandomExceptions = false;
     QList<int> fandomExceptions;
-    int slashFilterLevel;
-    bool onlyExactLevel;
-    bool onlyMatureForSlash;
+    int slashFilterLevel = 0;
+    bool onlyExactLevel = false;
+    bool onlyMatureForSlash = false;
 };
 namespace core{
 
