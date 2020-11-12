@@ -59,7 +59,7 @@ QSharedPointer<SendMessageCommand> HelpAction::ExecuteImpl(QSharedPointer<TaskEn
     helpString +=  GetHelpForCommandIfActive<ShowFreshRecsCommand>();
     helpString +=  GetHelpForCommandIfActive<ShowCompletedCommand>();
     helpString +=  GetHelpForCommandIfActive<HideDeadCommand>();
-    helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
+    //helpString +=  GetHelpForCommandIfActive<SimilarFicsCommand>();
     helpString +=  GetHelpForCommandIfActive<ResetFiltersCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangeServerPrefixCommand>();
     helpString +=  GetHelpForCommandIfActive<ChangePermittedChannelCommand>();

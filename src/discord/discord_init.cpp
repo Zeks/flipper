@@ -26,7 +26,7 @@ namespace discord {
         RegisterCommand<HideDeadCommand>(parser);
         RegisterCommand<PurgeCommand>(parser);
         RegisterCommand<ResetFiltersCommand>(parser);
-        RegisterCommand<SimilarFicsCommand>(parser);
+        //RegisterCommand<SimilarFicsCommand>(parser);
         RegisterCommand<WordcountCommand>(parser);
         // this command requires actually implementing full mobile parser
         // RegisterCommand<ShowFullFavouritesCommand>(parser);
