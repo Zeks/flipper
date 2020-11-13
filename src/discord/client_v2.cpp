@@ -216,7 +216,9 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
         }
         else if(userID != getID()){
-            sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + " Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `sorecs` or `sohelp` command or spawn a new list with your own FFN id.");
+            QString str = QString(" Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `%1recs` or `%1help` command or spawn a new list with your own FFN id.");
+            str=str.arg(QString::fromStdString(std::string(server->GetCommandPrefix())));
+            sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + str.toStdString());
         }
     }
     catch(const rapidjson_exception& e){

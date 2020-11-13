@@ -157,7 +157,7 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
     {
         Command nullCommand = NewCommand(server, message,ct_timeout_active);
         nullCommand.ids.push_back(minRecsInterval-user->secsSinceLastsEasyQuery());
-        nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Recommendations can only be regenerated once on 60 seconds.Please wait %1 more seconds.");
+        nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("Recommendations can only be regenerated once in 60 seconds.Please wait %1 more seconds.");
         nullCommand.originalMessageToken = message;
         nullCommand.server = this->server;
         result.Push(std::move(nullCommand));
