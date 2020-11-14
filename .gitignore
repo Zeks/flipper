@@ -21,6 +21,7 @@ ui_*
 third_party/sqlite3/*
 fpmtmp/*
 deployment/*
+shell/deployment/*
 proto/*.pb.cc
 proto/*.pb.h
 Run/*.log
@@ -62,3 +63,4 @@ libs/logger/llogger.pri
 
 
 modules/modules/localvariables*
+
