@@ -231,10 +231,10 @@ void Client::Log(const SleepyDiscord::Message& message)
     if(message.content.length() > 100)
     {
         auto pos = message.content.find(' ', 100);
-        QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content.substr(0, pos) + "...");
+        QLOG_INFO() << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content.substr(0, pos) + "...");
     }
     else
-        QLOG_INFO() << QString::fromStdString(message.channelID.string() + " " + message.author.username + message.author.ID.string() + " " + message.content);
+        QLOG_INFO() << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content);
 }
 
 void Client::timerEvent(QTimerEvent *)
