@@ -941,9 +941,15 @@ QSharedPointer<SendMessageCommand> SetChannelAction::ExecuteImpl(QSharedPointer<
 {
     if(command.variantHash.contains(QStringLiteral("channel"))){
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
-        command.server->SetDedicatedChannelId(command.variantHash.value(QStringLiteral("channel")).toString().trimmed().toStdString());
+        auto channelId = command.variantHash.value(QStringLiteral("channel")).toString().trimmed().toStdString();
+        if(channelId == command.server->GetDedicatedChannelId())
+            channelId = "";
+        command.server->SetDedicatedChannelId(channelId );
         database::discord_queries::WriteServerDedicatedChannel(dbToken->db, command.server->GetServerId(), command.server->GetDedicatedChannelId());
-        action->text = QStringLiteral("Acknowledged, the bot will only respond in this channel.");
+        if(channelId.length() > 0)
+            action->text = QStringLiteral("Acknowledged, bot will only respond in this channel.");
+        else
+            action->text = QStringLiteral("Acknowledged, bot will now respond across the whole server.");
         command.server->SetAllowedToAddReactions(true);
         command.server->SetAllowedToRemoveReactions(true);
         command.server->SetAllowedToEditMessages(true);
