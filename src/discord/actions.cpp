@@ -271,6 +271,8 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
             action->stopChain = true;
             return action;
         }
+        if(page && page->getLastParsed() != QDate::currentDate())
+            page->setDailyParseCounter(0);
     }
 
 
@@ -332,13 +334,18 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     command.user->initNewRecsQuery();
     QString ffnId;
     bool isId = true;
-    if(!command.variantHash.contains(QStringLiteral("url"))){
-        ffnId = QString::number(command.ids.at(0));
-        isId = true;
+    if(command.variantHash.contains(QStringLiteral("url"))){
+        isId = false;
+        ffnId = command.variantHash[QStringLiteral("url")].toString().trimmed();
+    }
+    else if(command.variantHash.contains(QStringLiteral("user"))){
+        isId = false;
+        ffnId = command.variantHash[QStringLiteral("user")].toString().trimmed();
+        ffnId = "https://www.fanfiction.net/~" + ffnId;
     }
     else{
-        isId = false;
-        ffnId = command.variantHash[QStringLiteral("url")].toString();
+        ffnId = QString::number(command.ids.at(0));
+        isId = true;
     }
 
 

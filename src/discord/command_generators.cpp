@@ -220,7 +220,13 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
     if(isNumConvertible)
         createRecs.ids.push_back(std::stoi(id));
     else
-        createRecs.variantHash[QStringLiteral("url")] = QString::fromStdString(id);
+    {
+        QString temp = QString::fromStdString(id);
+        if(temp.contains("fanfiction"))
+            createRecs.variantHash[QStringLiteral("url")] = QString::fromStdString(id);
+        else
+            createRecs.variantHash[QStringLiteral("user")] = QString::fromStdString(id);
+    }
 
     if(refresh.length() == 0)
     {
