@@ -82,3 +82,12 @@ last_request DATETIME,
 total_requests integer 
 );
 CREATE INDEX if not exists I_SERVER_ID ON discord_servers (server_id ASC);
+
+CREATE TABLE if not exists ffn_pages(
+page_id varchar unique PRIMARY KEY,
+last_parse varchar,
+daily_parse_counter integer default 0,
+total_parse_counter integer default 0,
+favourites integer default 0
+);
+CREATE INDEX if not exists I_PAGE_IDS ON ffn_pages (page_id ASC);

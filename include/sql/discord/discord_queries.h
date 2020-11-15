@@ -14,6 +14,7 @@
 #include "Interfaces/discord/users.h"
 #include "discord/discord_user.h"
 #include "discord/discord_server.h"
+#include "discord/discord_ffn_page.h"
 #include "discord/fandom_filter_token.h"
 #include "sqlcontext.h"
 namespace database {
@@ -22,6 +23,9 @@ namespace discord_queries{
 
     DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QString);
     DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(QSqlDatabase db, const std::string& server_id);
+    DiagnosticSQLResult<QSharedPointer<discord::FFNPage>> GetFFNPage(QSqlDatabase db, const std::string& pageId);
+
+
     DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString userId);
     DiagnosticSQLResult<discord::FandomFilter> GetFilterList(QSqlDatabase db, QString userId);
     DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(QSqlDatabase db, QString userId);
@@ -29,6 +33,8 @@ namespace discord_queries{
 
     DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User>);
     DiagnosticSQLResult<bool> WriteServer(QSqlDatabase db, QSharedPointer<discord::Server>);
+    DiagnosticSQLResult<bool> WriteFFNPage(QSqlDatabase db, QSharedPointer<discord::FFNPage>);
+    DiagnosticSQLResult<bool> UpdateFFNPage(QSqlDatabase db, QSharedPointer<discord::FFNPage>);
     DiagnosticSQLResult<bool> WriteServerPrefix(QSqlDatabase db, const std::string&, QString);
     DiagnosticSQLResult<bool> WriteServerDedicatedChannel(QSqlDatabase db, const std::string&, const std::string&);
     DiagnosticSQLResult<bool> WriteUserFFNId(QSqlDatabase db, QString user_id, int ffn_id);
@@ -62,6 +68,8 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id);
     DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, discord::WordcountFilter);
     DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString userId, int days);
+
+
 
  }
 }

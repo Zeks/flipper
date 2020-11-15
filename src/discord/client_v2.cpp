@@ -231,7 +231,10 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
         }
         else if(userID != getID()){
-            QString str = QString(" Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `%1recs` or `%1help` command or spawn a new list with your own FFN id.");
+            QString str = QString(" Navigation emoji are only working for the person that the bot responded to. Perhaps you need to do one of the following:"
+                                  "\n- create your own recommendations with `%1recs YOUR_FFN_ID`"
+                                  "\n- repost your recommendations with `%1page`"
+                                  "\n- call your own help page with `%help`");
             str=str.arg(QString::fromStdString(std::string(server->GetCommandPrefix())));
             sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + str.toStdString());
         }

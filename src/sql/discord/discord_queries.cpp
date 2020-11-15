@@ -112,6 +112,24 @@ DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(QSqlDatabase db, 
 }
 
 
+DiagnosticSQLResult<QSharedPointer<discord::FFNPage> > GetFFNPage(QSqlDatabase db, const std::string &pageId)
+{
+    std::string qs = "select * from ffn_pages where page_id = :page_id";
+
+    QString page_id = QString::fromStdString(pageId);
+    SqlContext<QSharedPointer<discord::FFNPage>> ctx(db, std::move(qs), BP1(page_id));
+    ctx.ForEachInSelect([&](QSqlQuery& q){
+        QSharedPointer<discord::FFNPage> page(new discord::FFNPage);
+        page->setId(pageId);
+        page->setDailyParseCounter(q.value("daily_parse_counter").toInt());
+        page->setTotalParseCounter(q.value("total_parse_counter").toInt());
+        page->setFavourites(q.value("favourites").toInt());
+        page->setLastParsed(QDate::fromString(q.value("last_parse").toString(), "yyyyMMdd"));
+        ctx.result.data = page;
+    });
+    return std::move(ctx.result);
+}
+
 
 DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString user_id){
     std::string qs = "select * from ignored_fandoms where user_id = :user_id";
@@ -179,6 +197,37 @@ DiagnosticSQLResult<bool> WriteServer(QSqlDatabase db, QSharedPointer<discord::S
     ctx.ExecAndCheck(false);
     return std::move(ctx.result);
 }
+
+DiagnosticSQLResult<bool> WriteFFNPage(QSqlDatabase db, QSharedPointer<discord::FFNPage> page)
+{
+    std::string qs = "INSERT INTO ffn_pages(page_id, last_parse, favourites, daily_parse_counter, total_parse_counter) "
+                 "values(:page_id, :last_parse, :favourites, 1, 1)";
+    SqlContext<bool> ctx(db, std::move(qs));
+
+    ctx.bindValue("page_id", QString::fromStdString(page->getId()));
+    ctx.bindValue("last_parse", page->getLastParsed().toString("yyyyMMdd"));
+    ctx.bindValue("favourites", page->getFavourites());
+    ctx.ExecAndCheck(false);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<bool> UpdateFFNPage(QSqlDatabase db, QSharedPointer<discord::FFNPage> page)
+{
+    std::string qs = "update ffn_pages set "
+                     " last_parse = :last_parse, favourites = :favourites, "
+                     " daily_parse_counter = :daily_parse_counter, total_parse_counter = :total_parse_counter "
+                     " where page_id = :page_id ";
+    SqlContext<bool> ctx(db, std::move(qs));
+
+    ctx.bindValue("last_parse", page->getLastParsed().toString("yyyyMMdd"));
+    ctx.bindValue("favourites", page->getFavourites());
+    ctx.bindValue("daily_parse_counter", page->getDailyParseCounter());
+    ctx.bindValue("total_parse_counter", page->getTotalParseCounter());
+    ctx.bindValue("page_id", QString::fromStdString(page->getId()));
+    ctx.ExecAndCheck(false);
+    return std::move(ctx.result);
+}
+
 
 DiagnosticSQLResult<bool> WriteServerPrefix(QSqlDatabase db, const std::string& serverId, QString new_prefix)
 {
@@ -464,6 +513,11 @@ DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString user_id, 
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
+
+
+
+
+
 
 
 
