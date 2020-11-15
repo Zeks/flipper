@@ -79,8 +79,13 @@ public:
     std::string botPrefixRequest;
     ChannelSet nonPmChannels;
     static std::atomic<bool> allowMessages;
+    static std::atomic<int64_t> mirrorTargetChannel;
+    static std::atomic<int64_t> mirrorSourceChannel;
+    static std::atomic<int64_t> botPmChannel;
+
 protected:
     virtual void timerEvent(QTimerEvent *) override;
 };
 
 }
+

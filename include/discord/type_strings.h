@@ -220,6 +220,24 @@ struct TypeStringHolder<discord::WordcountCommand>{
         static constexpr std::string_view shorthand = "`{0}words` - limits the size of the fics displayed";
 };
 
+template <>
+struct TypeStringHolder<discord::ChangeTargetCommand>{
+        static constexpr std::string_view name = "target";
+        static constexpr std::string_view prefixlessPattern = "?<target>target";
+        static constexpr std::string_view pattern = "target\\s(\\d+)";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 
+template <>
+struct TypeStringHolder<discord::SendMessageToChannelCommand>{
+        static constexpr std::string_view name = "send";
+        static constexpr std::string_view prefixlessPattern = "?<send>send";
+        static constexpr std::string_view pattern = "send\\s(.+)";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 
 

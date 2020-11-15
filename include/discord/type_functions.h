@@ -29,6 +29,8 @@ namespace discord {
                 TypeStringHolder<ShowFreshRecsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ShowCompletedCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<HideDeadCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<SendMessageToChannelCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<ChangeTargetCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<SimilarFicsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeServerPrefixCommand>::prefixlessPattern, str::separator,

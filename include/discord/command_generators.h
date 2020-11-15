@@ -44,6 +44,7 @@ public:
     Command nullCommand;
     CommandChain result;
     QString userId;
+    static std::atomic<uint64_t> ownerId;
     Client* client = nullptr;
     QSharedPointer<discord::Server> server;
     bool currentOperationRestoresActiveSet = false;
@@ -216,6 +217,19 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class ChangeTargetCommand: public CommandCreator{
+public:
+    ChangeTargetCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+class SendMessageToChannelCommand: public CommandCreator{
+public:
+    SendMessageToChannelCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
 
 class CommandParser{
 public:
@@ -238,6 +252,7 @@ public:
     QSharedPointer<User> user;
     MessageToken originalMessageToken;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
+    SleepyDiscord::Snowflake<SleepyDiscord::Channel> targetChannel;
     ECommandType originalCommandType = ct_none;
     std::list<CommandChain> commandsToReemit;
     QStringList errors;

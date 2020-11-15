@@ -1,6 +1,7 @@
 #include "discord/actions.h"
 #include "discord/command_generators.h"
 #include "discord/discord_init.h"
+#include "discord/client_v2.h"
 #include "discord/help_generator.h"
 #include "discord/db_vendor.h"
 #include "discord/client_v2.h"
@@ -1188,6 +1189,21 @@ QSharedPointer<SendMessageCommand> RemoveReactions::ExecuteImpl(QSharedPointer<T
 }
 
 
+QSharedPointer<SendMessageCommand> SetTargetChannelAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    if(command.variantHash["channel"].toString() == "null")
+        Client::mirrorSourceChannel = 0;
+    else
+        Client::mirrorSourceChannel = command.variantHash["channel"].toString().toULongLong();
+    return action;
+}
+
+QSharedPointer<SendMessageCommand> SendMessageToChannelAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    action->targetChannel = SleepyDiscord::Snowflake<SleepyDiscord::Channel>(std::to_string(Client::mirrorSourceChannel));
+    action->text = command.variantHash["messageText"].toString();
+    return action;
+}
 
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
@@ -1241,6 +1257,10 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SetChannelAction());
     case ECommandType::ct_remove_reactions:
         return QSharedPointer<ActionBase>(new RemoveReactions());
+    case ECommandType::ct_set_target_channel:
+        return QSharedPointer<ActionBase>(new SetTargetChannelAction());
+    case ECommandType::ct_send_to_channel:
+        return QSharedPointer<ActionBase>(new SendMessageToChannelAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());

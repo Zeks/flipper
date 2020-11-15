@@ -58,6 +58,8 @@ ACTION(RemoveReactions);
 ACTION(ResetFiltersAction);
 ACTION(CreateSimilarFicListAction);
 ACTION(SetWordcountLimitAction);
+ACTION(SetTargetChannelAction);
+ACTION(SendMessageToChannelAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

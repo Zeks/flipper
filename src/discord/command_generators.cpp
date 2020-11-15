@@ -13,6 +13,7 @@
 
 #include <QSettings>
 namespace discord{
+std::atomic<uint64_t> CommandCreator::ownerId;
 QStringList SendMessageCommand::tips = {};
 QSharedPointer<User> CommandCreator::user;
 void CommandChain::Push(Command&& command)
@@ -142,18 +143,10 @@ bool RecommendationsCommand::IsThisCommand(const std::string &)
     return false; //cmd == TypeStringHolder<RecommendationsCommand>::name;
 }
 
-std::once_flag settingsFlag;
 CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
-
-    static std::string ownerId;
-    std::call_once(settingsFlag, [&](){
-        QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
-        ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toStdString();
-    });
-
     static constexpr int minRecsInterval = 60;
-    if(user->secsSinceLastsRecQuery() < minRecsInterval && message.author.ID.string() != ownerId)
+    if(user->secsSinceLastsRecQuery() < minRecsInterval && message.author.ID.string() != std::to_string(ownerId))
     {
         Command nullCommand = NewCommand(server, message,ct_timeout_active);
         nullCommand.ids.push_back(minRecsInterval-user->secsSinceLastsEasyQuery());
@@ -533,15 +526,18 @@ void SendMessageCommand::Invoke(Client * client)
         };
         An<discord::Servers> servers;
         auto server = servers->GetServer(originalMessageToken.serverID);
+        auto channelToSendTo = originalMessageToken.channelID;
         if(targetMessage.string().length() == 0){
             if(embed.empty())
             {
+                if(targetChannel.string().length() > 0 && targetChannel.string() != "0")
+                    channelToSendTo = targetChannel;
                 SleepyDiscord::Embed embed;
                 if(text.length() > 0)
                 {
                     try{
-                        if(!server || server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
-                            client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID,text.toStdString(), embed);
+                        if(!server || server->IsAllowedChannelForSendMessage(channelToSendTo.string()))
+                            client->sendMessageWrapper(channelToSendTo, originalMessageToken.serverID,text.toStdString(), embed);
                     }
                     catch (const SleepyDiscord::ErrorCode& error){
                         if(error != 403)
@@ -549,7 +545,7 @@ void SendMessageCommand::Invoke(Client * client)
                         else{
                             // we don't have permissions to send messages on this server and channel, preventing this from happening again
                             if(server){
-                                server->AddForbiddenChannelForSendMessage(originalMessageToken.channelID.string());
+                                server->AddForbiddenChannelForSendMessage(channelToSendTo.string());
                             }
                         }
                     }
@@ -560,13 +556,13 @@ void SendMessageCommand::Invoke(Client * client)
 
                     MessageResponseWrapper resultingMessage;
                     if(!server || server->IsAllowedChannelForSendMessage(originalMessageToken.channelID.string()))
-                        resultingMessage = client->sendMessageWrapper(originalMessageToken.channelID, originalMessageToken.serverID, text.toStdString(), embed);
+                        resultingMessage = client->sendMessageWrapper(channelToSendTo, originalMessageToken.serverID, text.toStdString(), embed);
                     if(resultingMessage.response.has_value()){
                         // I only need to hash messages that the user can later react to
                         // meaning page, rng and help commands
                         if(originalCommandType *in(ct_display_page, ct_display_rng, ct_display_help)){
                             if(originalCommandType *in(ct_display_page, ct_display_rng))
-                                this->user->SetLastPageMessage({resultingMessage.response->cast(), originalMessageToken.channelID});
+                                this->user->SetLastPageMessage({resultingMessage.response->cast(), channelToSendTo});
                             client->messageSourceAndTypeHash.push(resultingMessage.response->cast().ID.number(),{originalMessageToken, originalCommandType});
                             addReaction(resultingMessage.response.value().cast());
                         }
@@ -578,7 +574,7 @@ void SendMessageCommand::Invoke(Client * client)
                     else{
                         // we don't have permissions to send messages on this server and channel, preventing this from happening again
                         if(server){
-                            server->AddForbiddenChannelForSendMessage(originalMessageToken.channelID.string());
+                            server->AddForbiddenChannelForSendMessage(channelToSendTo.string());
                         }
                     }
                 }
@@ -589,10 +585,10 @@ void SendMessageCommand::Invoke(Client * client)
                 removeReaction(targetMessage);
             else
                 // editing message doesn't change its Id so rehashing isn't required
-                client->editMessage(originalMessageToken.channelID, targetMessage, text.toStdString(), embed);
+                client->editMessage(channelToSendTo, targetMessage, text.toStdString(), embed);
         }
         if(!diagnosticText.isEmpty())
-            client->sendMessageWrapper(originalMessageToken.channelID,originalMessageToken.serverID, diagnosticText.toStdString());
+            client->sendMessageWrapper(channelToSendTo,originalMessageToken.serverID, diagnosticText.toStdString());
     }
     catch (const SleepyDiscord::ErrorCode& error){
         QLOG_INFO() << "Discord error:" << error;
@@ -617,18 +613,11 @@ bool RngCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<RngCommand>::name;
 }
 
-std::once_flag settingsFlagPrefix;
 CommandChain ChangeServerPrefixCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     bool isAdmin = CheckAdminRole(message);
-    static std::string ownerId;
-    std::call_once(settingsFlagPrefix, [&](){
-        QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
-        ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toStdString();
-    });
-
-    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == ownerId)
+    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == std::to_string(ownerId))
     {
         Command command = NewCommand(server, message,ct_change_server_prefix);
         auto match = ctre::search<TypeStringHolder<ChangeServerPrefixCommand>::pattern>(message.content);
@@ -657,21 +646,14 @@ bool ChangeServerPrefixCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<ChangeServerPrefixCommand>::name;
 }
 
-
-std::once_flag settingsFlagChannel;
 CommandChain ChangePermittedChannelCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
 {
     if(this->server->GetServerId().length() == 0)
         return std::move(result);
-    static std::string ownerId;
-    std::call_once(settingsFlagChannel, [&](){
-        QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
-        ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toStdString();
-    });
 
     SleepyDiscord::Server sleepyServer = client->getServer(this->server->GetServerId());
     bool isAdmin = CheckAdminRole(message);
-    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == ownerId)
+    if(isAdmin || sleepyServer.ownerID == message.author.ID ||  message.author.ID.string() == std::to_string(ownerId))
     {
         Command command = NewCommand(server, message,ct_set_permitted_channel);
         command.variantHash[QStringLiteral("channel")] = QString::fromStdString(message.channelID.string());
@@ -1045,6 +1027,69 @@ bool WordcountCommand::IsThisCommand(const std::string &cmd)
 }
 
 
+CommandChain ChangeTargetCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
+{
+    if(message.author.ID.string() != std::to_string(ownerId))
+        return std::move(result);
+
+    Command command = NewCommand(server, message,ct_set_target_channel);
+    auto match = ctre::search<TypeStringHolder<ChangeTargetCommand>::pattern>(message.content);
+    auto channel = match.get<1>().to_string();
+    if(channel.length() == 0){
+        command.variantHash["channel"] = QString::fromStdString(channel);
+        result.Push(std::move(command));
+        return std::move(result);
+    }
+    if(channel == "1"){
+        command.variantHash["channel"] = QString::fromStdString(message.channelID.string());
+        result.Push(std::move(command));
+        return std::move(result);
+    }
+    command.variantHash["channel"] = QString::fromStdString(channel);
+    result.Push(std::move(command));
+    return std::move(result);
+}
+
+
+
+bool ChangeTargetCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ChangeTargetCommand>::name;
+}
+
+
+CommandChain SendMessageToChannelCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
+{
+    if(message.author.ID.string() != std::to_string(ownerId))
+        return std::move(result);
+    Command command = NewCommand(server, message,ct_send_to_channel);
+    auto match = ctre::search<TypeStringHolder<SendMessageToChannelCommand>::pattern>(message.content);
+    auto messageText = match.get<1>().to_string();
+
+    if(messageText.length() == 0)
+    {
+        auto pushNullCommand = [&](const QString& reason){
+            Command nullCommand = NewCommand(server, message,ct_null_command);
+            nullCommand.type = ct_null_command;
+            nullCommand.variantHash[QStringLiteral("reason")] = reason;
+            nullCommand.originalMessageToken = message;
+            nullCommand.server = this->server;
+            result.Push(std::move(nullCommand));
+        };
+        pushNullCommand("No message to send");
+        return std::move(result);
+    }
+    command.variantHash["messageText"] = QString::fromStdString(messageText);
+    result.Push(std::move(command));
+    return std::move(result);
+}
+
+
+
+bool SendMessageToChannelCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<SendMessageToChannelCommand>::name;
+}
 
 
 }

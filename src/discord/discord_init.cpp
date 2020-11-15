@@ -25,6 +25,8 @@ namespace discord {
         RegisterCommand<ShowCompletedCommand>(parser);
         RegisterCommand<HideDeadCommand>(parser);
         RegisterCommand<PurgeCommand>(parser);
+        RegisterCommand<ChangeTargetCommand>(parser);
+        RegisterCommand<SendMessageToChannelCommand>(parser);
         RegisterCommand<ResetFiltersCommand>(parser);
         //RegisterCommand<SimilarFicsCommand>(parser);
         RegisterCommand<WordcountCommand>(parser);
