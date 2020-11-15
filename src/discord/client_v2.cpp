@@ -62,8 +62,8 @@ void Client::InitClient()
     auto ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toULongLong();
     CommandCreator::ownerId = ownerId;
     Client::mirrorSourceChannel = 0;
-    Client::mirrorTargetChannel = settings.value(QStringLiteral("Login/text_to")).toString().toULongLong();
-    Client::botPmChannel = settings.value(QStringLiteral("Login/pm_to")).toString().toULongLong();
+    Client::mirrorTargetChannel = settings.value(QStringLiteral("Login/text_to")).toULongLong();
+    Client::botPmChannel = settings.value(QStringLiteral("Login/pm_to")).toULongLong();
 
     actionableEmoji = {"🔁","👈","👉"};
 }
@@ -159,7 +159,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(!result.matched())
             return;
 
-        bool priorityCommand = message.content.substr(server->GetCommandPrefix().length(), 6) *in("permit", "target");
+        bool priorityCommand = message.content.substr(server->GetCommandPrefix().length(), 6) *in("permit", "target") || sv.substr(0, 4) == "send";
         if(!priorityCommand && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
             return;
 
@@ -256,7 +256,7 @@ void Client::Log(const SleepyDiscord::Message& message)
         sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(mirrorTargetChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
 
     //qDebug()  << "mention: " << QString::fromStdString(CreateMention(getID().string()));
-    thread_local std::string botMention = "<@!" + getID().string() + ">";
+    thread_local std::string botMention = getID().string();
     if(message.author.ID != getID() && !message.author.bot && (message.content.find(botMention) != std::string::npos || message.content.find("ocrates") != std::string::npos))
         sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(botPmChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
     }
