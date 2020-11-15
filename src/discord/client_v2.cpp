@@ -251,6 +251,7 @@ void Client::Log(const SleepyDiscord::Message& message)
     else
         QLOG_INFO() << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content);
 
+    try{
     if(message.channelID.number() == mirrorSourceChannel)
         sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(mirrorTargetChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
 
@@ -258,6 +259,10 @@ void Client::Log(const SleepyDiscord::Message& message)
     thread_local std::string botMention = "<@!" + getID().string() + ">";
     if(message.author.ID != getID() && !message.author.bot && (message.content.find(botMention) != std::string::npos || message.content.find("ocrates") != std::string::npos))
         sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(botPmChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        QLOG_INFO() << "Discord error:" << error;
+    }
 }
 
 void Client::timerEvent(QTimerEvent *)
