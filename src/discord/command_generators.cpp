@@ -179,10 +179,13 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
     Command createRecs = NewCommand(server, message,ct_fill_recommendations);
     if(id.length() == 0){
         if(!user->FfnID().isEmpty()){
+
             Command createRecs = NewCommand(server, message,ct_fill_recommendations);
             createRecs.ids.push_back(user->FfnID().toInt());
-            createRecs.variantHash[QStringLiteral("refresh")] = true;
             createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
+            if(refresh.length() == 0)
+                createRecs.variantHash[QStringLiteral("refresh")] = true;
+
             result.Push(std::move(createRecs));
             Command command = NewCommand(server, message,ct_display_page);
             command.ids.push_back(user->CurrentRecommendationsPage());

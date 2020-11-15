@@ -45,7 +45,7 @@ template <>
 struct TypeStringHolder<discord::RecsCreationCommand> {
         static constexpr std::string_view name = "recs";
         static constexpr std::string_view prefixlessPattern = "?<recs>recs";
-        static constexpr std::string_view pattern = "recs(\\s{1,}>refresh){0,1}((\\s{1,}\\d{4,10})|(\\s{1,}https:.{1}.{1}www.fanfiction.net.{1}.{1,100}))";
+        static constexpr std::string_view pattern = "recs(\\s{1,}>{0,1}refresh){0,1}((\\s{1,}\\d{4,10})|(\\s{1,}https:.{1}.{1}www.fanfiction.net.{1}.{1,100}){0,1})";
         static constexpr std::string_view help = "Basic commands:\n`%1recs USER_FFN_ID(or an url to your user page)` to create recommendations."
                                                  "\n`%1recs >refresh FFN_ID` if you want the bot to re-read your favourites.";
 
