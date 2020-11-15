@@ -1,5 +1,5 @@
 /*
-Flipper is a replacement search engine for fanfiction.net search results
+Flipper is a recommendation and search engine for fanfiction.net
 Copyright (C) 2017-2018  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify
