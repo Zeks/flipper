@@ -61,10 +61,11 @@ private:
 struct FfnPages{
     void AddPage(QSharedPointer<FFNPage>);
     bool HasPage(const std::string&);
+    void UpdatePageFromAction(const std::string&, int favourites);
     QSharedPointer<FFNPage> GetPage(const std::string&) const;
     bool LoadPage(const std::string&);
     QHash<std::string,QSharedPointer<FFNPage>> pages;
-    QReadWriteLock lock;
+    mutable QReadWriteLock lock = QReadWriteLock(QReadWriteLock::Recursive);
 };
 }
 

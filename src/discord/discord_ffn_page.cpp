@@ -75,13 +75,13 @@ void FFNPage::setId(const std::string &value)
     id = value;
 }
 
-void discord::FfnPages::AddPage(QSharedPointer<discord::FFNPage> page)
+void FfnPages::AddPage(QSharedPointer<discord::FFNPage> page)
 {
     QWriteLocker locker(&lock);
     pages[page->getId()] = page;
 }
 
-bool discord::FfnPages::HasPage(const std::string & id)
+bool FfnPages::HasPage(const std::string & id)
 {
     QReadLocker locker(&lock);
     if(pages.contains(id))
@@ -89,15 +89,60 @@ bool discord::FfnPages::HasPage(const std::string & id)
     return false;
 }
 
-QSharedPointer<discord::FFNPage> discord::FfnPages::GetPage(const std::string & id) const
+void FfnPages::UpdatePageFromAction(const std::string & pageId, int favourites)
 {
+
+    bool pageLoaded = HasPage(pageId);
+    QSharedPointer<FFNPage> page;
+
+    if(pageLoaded)
+        page = GetPage(pageId);
+    else if(LoadPage(pageId)){
+        page = GetPage(pageId);
+    }
+    else{
+        // page isn't in the database, need to create it there first
+        page.reset(new FFNPage);
+        page->setId(pageId);
+        page->setFavourites(favourites);
+        page->setLastParsed(QDate::currentDate());
+        page->setTotalParseCounter(0);
+        page->setDailyParseCounter(0);
+        {
+            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+            database::discord_queries::WriteFFNPage(dbToken->db, page);
+        }
+        {
+            QWriteLocker locker(&lock);
+            pages[pageId] = page;
+        }
+    }
+    if(page){
+        page->setFavourites(favourites);
+        page->setTotalParseCounter(page->getTotalParseCounter()+1);
+        if(page->getLastParsed() != QDate::currentDate())
+            page->setDailyParseCounter(1);
+        else
+            page->setDailyParseCounter(page->getDailyParseCounter()+1);
+        page->setLastParsed(QDate::currentDate());
+        {
+            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+            database::discord_queries::UpdateFFNPage(dbToken->db, page);
+        }
+    }
+}
+
+QSharedPointer<discord::FFNPage> FfnPages::GetPage(const std::string & id) const
+{
+    QReadLocker locker(&lock);
     if(!pages.contains(id))
         return {};
     return pages[id];
 }
 
-bool discord::FfnPages::LoadPage(const std::string & id)
+bool FfnPages::LoadPage(const std::string & id)
 {
+    QWriteLocker locker(&lock);
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     auto page = database::discord_queries::GetFFNPage(dbToken->db, id).data;
     if(!page)

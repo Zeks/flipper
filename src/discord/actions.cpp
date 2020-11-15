@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/actions.h"
 #include "discord/command_generators.h"
 #include "discord/discord_init.h"
+#include "discord/discord_ffn_page.h"
 #include "discord/client_v2.h"
 #include "discord/help_generator.h"
 #include "discord/db_vendor.h"
@@ -236,6 +237,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
 //                [&](){
     command.user->initNewRecsQuery();
 
+
     auto ffnId = QString::number(command.ids.at(0));
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
     auto largeListToken =  command.user->GetLargeListToken();
@@ -259,6 +261,18 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         }
         usersDbInterface->WriteLargeListReparseToken(command.user->UserID(), largeListToken);
     }
+    An<FfnPages> pages;
+    if(!refreshing)
+    {
+        pages->LoadPage(ffnId.toStdString());
+        auto page = pages->GetPage(ffnId.toStdString());
+        if(page && page->getLastParsed() == QDate::currentDate() && page->getDailyParseCounter() >=2){
+            action->text = "Only two ffn profile reparses per day are allowed for lists over 500 fics and this ID has already reached reparse limit.";
+            action->stopChain = true;
+            return action;
+        }
+    }
+
 
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
@@ -275,9 +289,11 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     if(userFavourites.requiresFullParse)
     {
         if(!refreshing)
-            action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
+            action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.\nNote that if size of your favourites is significanly bigger than 500 you will have to wait for a couple minutes.");
         return action;
     }
+    if(!refreshing)
+        pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
     if(wasAutomatic && !recList->isAutomatic)
@@ -333,6 +349,8 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
 
     FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
     ffnId = userFavourites.ffnId;
+
+
     command.user->SetFfnID(ffnId);
     command.ids.clear();
     command.ids.push_back(userFavourites.ffnId.toUInt());
@@ -373,6 +391,9 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         action->commandsToReemit.push_back(std::move(chain));
         return action;
     }
+    An<FfnPages> pages;
+    if(!refreshing)
+        pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
     if(wasAutomatic && !recList->isAutomatic)
