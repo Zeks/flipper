@@ -271,6 +271,10 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
 void Client::Log(const SleepyDiscord::Message& message)
 {
+    // I really don't need mudae anywhere in my logs
+    if(message.content.substr(0,2) == "$m" || message.author.ID.string() == "432610292342587392")
+        return;
+
     if(message.content.length() > 100)
     {
         auto pos = message.content.find(' ', 100);
