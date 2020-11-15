@@ -42,6 +42,7 @@ namespace discord {
         RegisterCommand<PurgeCommand>(parser);
         RegisterCommand<ChangeTargetCommand>(parser);
         RegisterCommand<SendMessageToChannelCommand>(parser);
+        RegisterCommand<ToggleBanCommand>(parser);
         RegisterCommand<ResetFiltersCommand>(parser);
         //RegisterCommand<SimilarFicsCommand>(parser);
         RegisterCommand<WordcountCommand>(parser);

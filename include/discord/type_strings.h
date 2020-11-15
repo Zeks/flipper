@@ -255,4 +255,13 @@ struct TypeStringHolder<discord::SendMessageToChannelCommand>{
         static constexpr std::string_view shorthand = "";
 };
 
+template <>
+struct TypeStringHolder<discord::ToggleBanCommand>{
+        static constexpr std::string_view name = "ban";
+        static constexpr std::string_view prefixlessPattern = "?<ban>ban";
+        static constexpr std::string_view pattern = "ban\\s([A-Za-z]+)\\s(\\d+)";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 

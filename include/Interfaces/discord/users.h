@@ -62,6 +62,7 @@ public:
     void TagFanfic(QString userId, QString tag, int ficId);
     void UnTagFanfic(QString userId, QString tag, int ficId); // empty tag removes all
     void BanUser(QString userId);
+    void UnbanUser(QString userId);
     void UpdateCurrentPage(QString userId, int page);
     void UnfilterFandom(QString userId, int fandomId);
     void ResetFandomFilter(QString userId);

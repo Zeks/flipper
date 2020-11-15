@@ -434,6 +434,21 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
     CommandCreator::EnsureUserExists(QString::fromStdString(message.author.ID), QString::fromStdString(message.author.username));
     An<Users> users;
     auto user = users->GetUser(QString::fromStdString(message.author.ID.string()));
+    if(user && user->GetBanned() ){
+        if(!user->GetShownBannedMessage()){
+            user->SetShownBannedMessage(true);
+            Command command = NewCommand(server, message,ct_timeout_active);
+            command.ids.push_back(3-user->secsSinceLastsEasyQuery());
+            command.variantHash[QStringLiteral("reason")] = QStringLiteral("You have been banned from using the bot.\n"
+                                                                           "The most likely reason for this is some kind of malicious misuse interfering with requests from other people.\n"
+                                                                           "If you want to appeal the ban, join: https://discord.gg/AdDvX5H");
+            command.user = user;
+            result.Push(std::move(command));
+            result.stopExecution = true;
+            return result;
+        }
+        return {};
+    }
     if(user->secsSinceLastsEasyQuery() < 3)
     {
         if(user->GetTimeoutWarningShown())
@@ -1104,6 +1119,39 @@ CommandChain SendMessageToChannelCommand::ProcessInputImpl(const SleepyDiscord::
 bool SendMessageToChannelCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<SendMessageToChannelCommand>::name;
+}
+
+CommandChain ToggleBanCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    if(message.author.ID.string() != std::to_string(ownerId))
+        return std::move(result);
+    Command command = NewCommand(server, message,ct_toggle_ban);
+    auto match = ctre::search<TypeStringHolder<ToggleBanCommand>::pattern>(message.content);
+    auto type = match.get<1>().to_string();
+    auto id = match.get<2>().to_string();
+
+    if(type.length() == 0 || id.length() == 0)
+    {
+        auto pushNullCommand = [&](const QString& reason){
+            Command nullCommand = NewCommand(server, message,ct_null_command);
+            nullCommand.type = ct_null_command;
+            nullCommand.variantHash[QStringLiteral("reason")] = reason;
+            nullCommand.originalMessageToken = message;
+            nullCommand.server = this->server;
+            result.Push(std::move(nullCommand));
+        };
+        pushNullCommand("Either type or ID is empty.");
+        return std::move(result);
+    }
+    command.variantHash["type"] = QString::fromStdString(type);
+    command.variantHash["id"] = QString::fromStdString(id);
+    result.Push(std::move(command));
+    return std::move(result);
+}
+
+bool ToggleBanCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<ToggleBanCommand>::name;
 }
 
 

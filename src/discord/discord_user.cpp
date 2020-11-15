@@ -622,6 +622,24 @@ void User::SetTimeoutWarningShown(bool value)
     QWriteLocker locker(&lock);
     timeoutWarningShown = value;
 }
+
+bool User::GetShownBannedMessage() const
+{
+    QReadLocker locker(&lock);
+    return shownBannedMessage;
+}
+
+void User::SetShownBannedMessage(bool value)
+{
+    QWriteLocker locker(&lock);
+    shownBannedMessage = value;
+}
+
+bool User::GetBanned() const
+{
+    QReadLocker locker(&lock);
+    return banned;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

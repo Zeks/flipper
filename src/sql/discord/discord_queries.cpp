@@ -323,6 +323,23 @@ DiagnosticSQLResult<bool> UnbanUser(QSqlDatabase db, QString user_id){
     return std::move(ctx.result);
 }
 
+DiagnosticSQLResult<bool> BanServer(QSqlDatabase db, QString server_id)
+{
+    std::string qs = "update discord_servers set server_banned = 1 where server_id = :server_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(server_id));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<bool> UnbanServer(QSqlDatabase db, QString server_id)
+{
+    std::string qs = "update discord_servers set server_banned = 0 where server_id = :server_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP1(server_id));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+
 DiagnosticSQLResult<bool> UpdateCurrentPage(QSqlDatabase db, QString user_id, int page)
 {
     std::string qs = "update user_lists set at_page = :page where user_id = :user_id";
@@ -513,6 +530,7 @@ DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString user_id, 
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
+
 
 
 

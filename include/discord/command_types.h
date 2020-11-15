@@ -34,6 +34,7 @@ enum ECommandType{
     ct_remove_reactions = 31,
     ct_set_target_channel = 32,
     ct_send_to_channel = 33,
+    ct_toggle_ban = 34,
 };
 
 }

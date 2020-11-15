@@ -154,6 +154,16 @@ void Client::onMessage(SleepyDiscord::Message message) {
             return;
 
         QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
+        if(server->GetBanned()){
+            if(!server->GetShownBannedMessage()){
+                server->SetShownBannedMessage(true);
+                sendMessageWrapper(message.channelID, message.serverID, "This server has been banned from using the bot.\n"
+                                                                        "The most likely reason for this happening is malicious misuse by its members.\n"
+                                                                        "If you want to appeal the ban, join: https://discord.gg/AdDvX5H");
+            }
+            return;
+        }
+
         std::string_view sv (message.content);
 
         const auto commandPrefix = server->GetCommandPrefix();

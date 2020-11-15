@@ -1247,6 +1247,50 @@ QSharedPointer<SendMessageCommand> SendMessageToChannelAction::ExecuteImpl(QShar
     return action;
 }
 
+QSharedPointer<SendMessageCommand> ToggleBanAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    auto type = command.variantHash["type"].toString();
+    auto id = command.variantHash["id"].toString();
+    action->targetChannel = SleepyDiscord::Snowflake<SleepyDiscord::Channel>(std::to_string(Client::botPmChannel));
+    if(type == "user")
+    {
+        An<interfaces::Users> usersDbInterface;
+        An<Users> users;
+        users->LoadUser(id);
+        auto user = users->GetUser(id);
+        if(user){
+            user->SetBanned(!user->GetBanned());
+            if(user->GetBanned()){
+                usersDbInterface->BanUser(id);
+                action->text = "User has been banned: " + id;
+            }
+            else{
+                usersDbInterface->UnbanUser(id);
+                action->text = "User has been unbanned: " + id;
+            }
+        }
+
+    }else{
+        An<Servers> servers;
+        servers->LoadServer(id.toStdString());
+        auto server = servers->GetServer(id.toStdString());
+        if(server){
+            server->SetBanned(!server->GetBanned());
+            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+            if(server->GetBanned()){
+                action->text = "Server has been banned: " + id;
+                database::discord_queries::BanServer(dbToken->db,id);
+            }
+            else{
+                database::discord_queries::UnbanServer(dbToken->db,id);
+                action->text = "Server has been unbanned: " + id;
+            }
+        }
+
+    }
+    return action;
+}
+
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
 {
@@ -1303,6 +1347,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SetTargetChannelAction());
     case ECommandType::ct_send_to_channel:
         return QSharedPointer<ActionBase>(new SendMessageToChannelAction());
+    case ECommandType::ct_toggle_ban:
+        return QSharedPointer<ActionBase>(new ToggleBanAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());
@@ -1323,6 +1369,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

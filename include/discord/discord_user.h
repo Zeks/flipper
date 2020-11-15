@@ -196,6 +196,11 @@ struct User{
     bool GetTimeoutWarningShown() const;
     void SetTimeoutWarningShown(bool value);
 
+    bool GetShownBannedMessage() const;
+    void SetShownBannedMessage(bool value);
+
+    bool GetBanned() const;
+
 private:
     bool isValid = false;
     QString userID;
@@ -204,6 +209,7 @@ private:
     QString ffnID;
 
     bool banned = false;
+    bool shownBannedMessage = false;
     bool readsSlash = false;
     bool hasUnfinishedRecRequest = false;
     bool useLikedAuthorsOnly = false;

@@ -85,6 +85,9 @@ struct Server{
     bool GetAllowedToEditMessages() const;
     void SetAllowedToEditMessages(bool value);
 
+    bool GetShownBannedMessage() const;
+    void SetShownBannedMessage(bool value);
+
 private:
     std::string serverId;
     QString serverName;
@@ -94,6 +97,7 @@ private:
 
     bool isValid = false;
     bool banned = false;
+    bool shownBannedMessage = false;
     bool silenced = false;
     bool answerInPm = false;
     int parserRequestLimit = 0;

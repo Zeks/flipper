@@ -235,6 +235,18 @@ namespace discord {
         QWriteLocker locker(&lock);
         allowedToEditMessages = value;
     }
+
+    bool Server::GetShownBannedMessage() const
+    {
+        QReadLocker locker(&lock);
+        return shownBannedMessage;
+    }
+
+    void Server::SetShownBannedMessage(bool value)
+    {
+        QWriteLocker locker(&lock);
+        shownBannedMessage = value;
+    }
     
     void Servers::AddServer(QSharedPointer<Server> server)
     {

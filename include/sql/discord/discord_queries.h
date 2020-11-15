@@ -73,6 +73,8 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> UnTagFanfic(QSqlDatabase db, QString user_id, int fic_id, QString fic_tag); // empty tag removes all
     DiagnosticSQLResult<bool> BanUser(QSqlDatabase db, QString user_id);
     DiagnosticSQLResult<bool> UnbanUser(QSqlDatabase db, QString user_id);
+    DiagnosticSQLResult<bool> BanServer(QSqlDatabase db, QString server_id);
+    DiagnosticSQLResult<bool> UnbanServer(QSqlDatabase db, QString server_id);
     DiagnosticSQLResult<bool> UpdateCurrentPage(QSqlDatabase db, QString user_id, int page);
     DiagnosticSQLResult<bool> UnfilterFandom(QSqlDatabase db, QString user_id, int fandomId);
     DiagnosticSQLResult<bool> ResetFandomFilter(QSqlDatabase db, QString user_id);

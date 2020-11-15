@@ -75,6 +75,7 @@ ACTION(CreateSimilarFicListAction);
 ACTION(SetWordcountLimitAction);
 ACTION(SetTargetChannelAction);
 ACTION(SendMessageToChannelAction);
+ACTION(ToggleBanAction);
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

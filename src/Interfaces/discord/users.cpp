@@ -134,6 +134,11 @@ void Users::BanUser(QString userId)
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     database::discord_queries::BanUser(dbToken->db, userId);
 }
+void Users::UnbanUser(QString userId)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::UnbanUser(dbToken->db, userId);
+}
 
 void Users::UpdateCurrentPage(QString userId, int page)
 {
