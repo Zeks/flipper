@@ -68,9 +68,13 @@ void Client::InitClient()
     fictionalDMServer.reset(new discord::Server());
     discord::InitDefaultCommandSet(this->parser);
     std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
+    int i = 0;
     for(const auto& server : sleepyServers){
+        i++;
         InitDiscordServerIfNecessary(server.ID);
+        qDebug () << QString::fromStdString(server.name);
     }
+    qDebug () << "scount" << i;
     InitTips();
 
     QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
