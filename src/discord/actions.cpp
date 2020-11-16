@@ -332,10 +332,15 @@ static std::string CreateMention(const std::string& string){
 QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     command.user->initNewRecsQuery();
+
     QString ffnId;
-    bool isId = true;
+    bool isId = false;
+    bool isHttp = false;
+    bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
+    bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
+
     if(command.variantHash.contains(QStringLiteral("url"))){
-        isId = false;
+        isHttp = true;
         ffnId = command.variantHash[QStringLiteral("url")].toString().trimmed();
     }
     else if(command.variantHash.contains(QStringLiteral("user"))){
@@ -344,13 +349,20 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         ffnId = "https://www.fanfiction.net/~" + ffnId;
     }
     else{
-        ffnId = QString::number(command.ids.at(0));
         isId = true;
+        ffnId = QString::number(command.ids.at(0));
+    }
+    An<FfnPages> pages;
+    if(isId)
+    {
+        if(!pages->HasPage(ffnId.toStdString()))
+            pages->LoadPage(ffnId.toStdString());
+        auto page = pages->GetPage(ffnId.toStdString());
+        if(refreshing && page && page->getLastParsed() != QDate::currentDate())
+            refreshing = false;
     }
 
 
-    bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
-    bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
@@ -398,7 +410,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         action->commandsToReemit.push_back(std::move(chain));
         return action;
     }
-    An<FfnPages> pages;
+
     if(!refreshing)
         pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
