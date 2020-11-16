@@ -1049,7 +1049,7 @@ QSharedPointer<SendMessageCommand> ShowFreshRecommendationsAction::ExecuteImpl(Q
     if(!command.user->GetSortFreshFirst() ||
             (strict && command.user->GetSortFreshFirst() && !command.user->GetStrictFreshSort())){
         usersDbInterface->WriteFreshSortingParams(command.user->UserID(), true, strict);
-        action->text = QStringLiteral("Fresh sorting mode turned on, to disable use the same command again.");
+        action->text = QStringLiteral("Fresh sorting mode turned on, to disable use the same command again.\nPlease note that server receives new fics from fanfiction.net approximately once a month.");
         if(command.user->GetSortFreshFirst())
             action->text = QStringLiteral("Enabling strict mode for fresh sort.");
         command.user->SetSortFreshFirst(true);

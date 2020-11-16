@@ -239,7 +239,8 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
         result.Push(std::move(command));
     }
     auto prefix = QString::fromStdString(std::string(server->GetCommandPrefix()));
-    QString newFicspart = QString("\nIf you have added new fics to your favourites, do `%1recs >refresh %2` instead, to update your recommendations.");
+    QString newFicspart = QString("\nIf you have recently added new fics to your favourites, do `%1recs >refresh %2` instead, to update your recommendations.\n"
+                                  "Note that fanfiction.net takes approximately 30 minutes to update your page after you add more favs. Refreshing is pointless before that happens.");
     if(refresh.length() != 0)
         newFicspart = "";
     newFicspart=newFicspart.arg(prefix,QString::fromStdString(match.get<2>().to_string()));
@@ -661,10 +662,25 @@ CommandChain ChangeServerPrefixCommand::ProcessInputImpl(const SleepyDiscord::Me
         Command command = NewCommand(server, message,ct_change_server_prefix);
         auto match = ctre::search<TypeStringHolder<ChangeServerPrefixCommand>::pattern>(message.content);
         auto newPrefix = QString::fromStdString(match.get<1>().to_string()).trimmed();
+        thread_local QRegularExpression invalidSymbolsRx("[^a-z0-9!~.&#$%:]");
+        auto invalidSymbols = invalidSymbolsRx.match(newPrefix);
+        if(invalidSymbols.hasMatch()){
+            command.type = ct_null_command;
+            command.textForPreExecution = QStringLiteral("prefix cannot contain symbols other than lowercase english letters, numbers and `!~.&#$%:`");
+            result.Push(std::move(command));
+            return std::move(result);
+        }
         if(newPrefix.isEmpty())
         {
             command.type = ct_null_command;
             command.textForPreExecution = QStringLiteral("prefix cannot be empty");
+            result.Push(std::move(command));
+            return std::move(result);
+        }
+        if(newPrefix.length() > 10)
+        {
+            command.type = ct_null_command;
+            command.textForPreExecution = QStringLiteral("prefix cannot be longer than 10 characters");
             result.Push(std::move(command));
             return std::move(result);
         }
