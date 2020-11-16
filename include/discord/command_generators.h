@@ -1,4 +1,19 @@
-﻿#pragma once
+﻿/*Flipper is a recommendation and search engine for fanfiction.net
+Copyright (C) 2017-2020  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>*/
+#pragma once
 #include <QList>
 #include <QString>
 #include <QRegularExpression>
@@ -44,6 +59,7 @@ public:
     Command nullCommand;
     CommandChain result;
     QString userId;
+    static std::atomic<uint64_t> ownerId;
     Client* client = nullptr;
     QSharedPointer<discord::Server> server;
     bool currentOperationRestoresActiveSet = false;
@@ -216,6 +232,26 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class ChangeTargetCommand: public CommandCreator{
+public:
+    ChangeTargetCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+class SendMessageToChannelCommand: public CommandCreator{
+public:
+    SendMessageToChannelCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
+class ToggleBanCommand: public CommandCreator{
+public:
+    ToggleBanCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
 
 class CommandParser{
 public:
@@ -238,6 +274,7 @@ public:
     QSharedPointer<User> user;
     MessageToken originalMessageToken;
     SleepyDiscord::Snowflake<SleepyDiscord::Message> targetMessage;
+    SleepyDiscord::Snowflake<SleepyDiscord::Channel> targetChannel;
     ECommandType originalCommandType = ct_none;
     std::list<CommandChain> commandsToReemit;
     QStringList errors;

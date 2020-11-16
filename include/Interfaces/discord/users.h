@@ -1,5 +1,5 @@
 /*
-Flipper is a replacement search engine for fanfiction.net search results
+Flipper is a recommendation and search engine for fanfiction.net
 Copyright (C) 2017-2018  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify
@@ -62,6 +62,7 @@ public:
     void TagFanfic(QString userId, QString tag, int ficId);
     void UnTagFanfic(QString userId, QString tag, int ficId); // empty tag removes all
     void BanUser(QString userId);
+    void UnbanUser(QString userId);
     void UpdateCurrentPage(QString userId, int page);
     void UnfilterFandom(QString userId, int fandomId);
     void ResetFandomFilter(QString userId);

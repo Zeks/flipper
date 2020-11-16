@@ -111,7 +111,14 @@ int main(int argc, char *argv[]) {
     client.InitCommandExecutor();
     client.executor->Init(4);
     auto serverSetup = [&](){
-    client.run();
+        while(true){
+            try{
+                client.run();
+            }
+            catch (const SleepyDiscord::ErrorCode& error){
+                QLOG_INFO() << "Discord error:" << error;
+            }
+        }
     };
     QtConcurrent::run(serverSetup);
     return a.exec();

@@ -1,7 +1,23 @@
+/*Flipper is a recommendation and search engine for fanfiction.net
+Copyright (C) 2017-2020  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/client_v2.h"
 #include "discord/command_controller.h"
 #include "discord/command_generators.h"
 #include "discord/command.h"
+#include "discord/actions.h"
 #include "discord/discord_server.h"
 #include "discord/discord_init.h"
 #include "discord/type_functions.h"
@@ -13,6 +29,7 @@
 #include <QRegularExpression>
 #include <string_view>
 #include <QSharedPointer>
+#include <QSettings>
 //#include "third_party/str_concat.h"
 #include "third_party/ctre.hpp"
 
@@ -25,6 +42,11 @@ rapidjson_exception() : std::runtime_error("json schema invalid") {}
 
 namespace discord {
 std::atomic<bool> Client::allowMessages = true;
+
+std::atomic<int64_t> Client::mirrorTargetChannel = 0;
+std::atomic<int64_t> Client::mirrorSourceChannel = 0;
+std::atomic<int64_t> Client::botPmChannel = 0;
+
 Client::Client(const std::string token, const char numOfThreads, QObject *obj):QObject(obj),
     SleepyDiscord::DiscordClient(token, numOfThreads)
 {
@@ -50,6 +72,13 @@ void Client::InitClient()
         InitDiscordServerIfNecessary(server.ID);
     }
     InitTips();
+
+    QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
+    auto ownerId = settings.value(QStringLiteral("Login/ownerId")).toString().toULongLong();
+    CommandCreator::ownerId = ownerId;
+    Client::mirrorSourceChannel = 0;
+    Client::mirrorTargetChannel = settings.value(QStringLiteral("Login/text_to")).toULongLong();
+    Client::botPmChannel = settings.value(QStringLiteral("Login/pm_to")).toULongLong();
 
     actionableEmoji = {"🔁","👈","👉"};
 }
@@ -125,6 +154,16 @@ void Client::onMessage(SleepyDiscord::Message message) {
             return;
 
         QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
+        if(server->GetBanned()){
+            if(!server->GetShownBannedMessage()){
+                server->SetShownBannedMessage(true);
+                sendMessageWrapper(message.channelID, message.serverID, "This server has been banned from using the bot.\n"
+                                                                        "The most likely reason for this happening is malicious misuse by its members.\n"
+                                                                        "If you want to appeal the ban, join: https://discord.gg/AdDvX5H");
+            }
+            return;
+        }
+
         std::string_view sv (message.content);
 
         const auto commandPrefix = server->GetCommandPrefix();
@@ -145,7 +184,8 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(!result.matched())
             return;
 
-        if(message.content != (std::string(server->GetCommandPrefix()) + "permit") && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
+        bool priorityCommand = message.content.substr(server->GetCommandPrefix().length(), 6) *in("permit", "target") || sv.substr(0, 4) == "send";
+        if(!priorityCommand && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
             return;
 
         auto commands = parser->Execute(result.get<0>().to_string(), server, message);
@@ -216,7 +256,10 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
         }
         else if(userID != getID()){
-            QString str = QString(" Navigation commands are only working for the person that the bot responded to. If you want your own copy of those, repeat their `%1recs` or `%1help` command or spawn a new list with your own FFN id.");
+            QString str = QString(" Navigation emoji are only working for the person that the bot responded to. Perhaps you need to do one of the following:"
+                                  "\n- create your own recommendations with `%1recs YOUR_FFN_ID`"
+                                  "\n- repost your recommendations with `%1page`"
+                                  "\n- call your own help page with `%help`");
             str=str.arg(QString::fromStdString(std::string(server->GetCommandPrefix())));
             sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + str.toStdString());
         }
@@ -228,6 +271,10 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 
 void Client::Log(const SleepyDiscord::Message& message)
 {
+    // I really don't need mudae anywhere in my logs
+    if(message.content.substr(0,2) == "$m" || message.author.ID.string() == "432610292342587392")
+        return;
+
     if(message.content.length() > 100)
     {
         auto pos = message.content.find(' ', 100);
@@ -235,6 +282,19 @@ void Client::Log(const SleepyDiscord::Message& message)
     }
     else
         QLOG_INFO() << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content);
+
+    try{
+    if(message.channelID.number() == mirrorSourceChannel)
+        sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(mirrorTargetChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
+
+    //qDebug()  << "mention: " << QString::fromStdString(CreateMention(getID().string()));
+    thread_local std::string botMention = getID().string();
+    if(message.author.ID != getID() && !message.author.bot && (message.content.find(botMention) != std::string::npos || message.content.find("ocrates") != std::string::npos))
+        sendMessage(SleepyDiscord::Snowflake<SleepyDiscord::Channel>(botPmChannel), message.author.username + "#" + message.author.discriminator + " says: " + message.content);
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        QLOG_INFO() << "Discord error:" << error;
+    }
 }
 
 void Client::timerEvent(QTimerEvent *)

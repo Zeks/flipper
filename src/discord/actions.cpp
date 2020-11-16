@@ -1,6 +1,23 @@
+/*Flipper is a recommendation and search engine for fanfiction.net
+Copyright (C) 2017-2020  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/actions.h"
 #include "discord/command_generators.h"
 #include "discord/discord_init.h"
+#include "discord/discord_ffn_page.h"
+#include "discord/client_v2.h"
 #include "discord/help_generator.h"
 #include "discord/db_vendor.h"
 #include "discord/client_v2.h"
@@ -220,6 +237,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
 //                [&](){
     command.user->initNewRecsQuery();
 
+
     auto ffnId = QString::number(command.ids.at(0));
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
     auto largeListToken =  command.user->GetLargeListToken();
@@ -243,6 +261,20 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         }
         usersDbInterface->WriteLargeListReparseToken(command.user->UserID(), largeListToken);
     }
+    An<FfnPages> pages;
+    if(!refreshing)
+    {
+        pages->LoadPage(ffnId.toStdString());
+        auto page = pages->GetPage(ffnId.toStdString());
+        if(page && page->getLastParsed() == QDate::currentDate() && page->getDailyParseCounter() >=2){
+            action->text = "Only two ffn profile reparses per day are allowed for lists over 500 fics and this ID has already reached reparse limit.";
+            action->stopChain = true;
+            return action;
+        }
+        if(page && page->getLastParsed() != QDate::currentDate())
+            page->setDailyParseCounter(0);
+    }
+
 
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
@@ -259,9 +291,11 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     if(userFavourites.requiresFullParse)
     {
         if(!refreshing)
-            action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.");
+            action->text = QStringLiteral("Your favourite list is bigger than 500 favourites, sending it to secondary parser. You will be pinged when the recommendations are ready.\nNote that if size of your favourites is significanly bigger than 500 you will have to wait for a couple minutes.");
         return action;
     }
+    if(!refreshing)
+        pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment, command);
     if(wasAutomatic && !recList->isAutomatic)
@@ -298,25 +332,44 @@ static std::string CreateMention(const std::string& string){
 QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
 {
     command.user->initNewRecsQuery();
+
     QString ffnId;
-    bool isId = true;
-    if(!command.variantHash.contains(QStringLiteral("url"))){
-        ffnId = QString::number(command.ids.at(0));
-        isId = true;
-    }
-    else{
-        isId = false;
-        ffnId = command.variantHash[QStringLiteral("url")].toString();
-    }
-
-
+    bool isId = false;
+    bool isHttp = false;
     bool refreshing = command.variantHash.contains(QStringLiteral("refresh"));
     bool keepPage = command.variantHash.contains(QStringLiteral("keep_page"));
+
+    if(command.variantHash.contains(QStringLiteral("url"))){
+        isHttp = true;
+        ffnId = command.variantHash[QStringLiteral("url")].toString().trimmed();
+    }
+    else if(command.variantHash.contains(QStringLiteral("user"))){
+        isId = false;
+        ffnId = command.variantHash[QStringLiteral("user")].toString().trimmed();
+        ffnId = "https://www.fanfiction.net/~" + ffnId;
+    }
+    else{
+        isId = true;
+        ffnId = QString::number(command.ids.at(0));
+    }
+    An<FfnPages> pages;
+    if(isId)
+    {
+        if(!pages->HasPage(ffnId.toStdString()))
+            pages->LoadPage(ffnId.toStdString());
+        auto page = pages->GetPage(ffnId.toStdString());
+        if(refreshing && page && page->getLastParsed() != QDate::currentDate())
+            refreshing = false;
+    }
+
+
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
     FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
     ffnId = userFavourites.ffnId;
+
+
     command.user->SetFfnID(ffnId);
     command.ids.clear();
     command.ids.push_back(userFavourites.ffnId.toUInt());
@@ -357,6 +410,9 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         action->commandsToReemit.push_back(std::move(chain));
         return action;
     }
+
+    if(!refreshing)
+        pages->UpdatePageFromAction(ffnId.toStdString(), userFavourites.links.size());
     bool wasAutomatic = command.user->GetForcedMinMatch() == 0;
     auto recList = FillUserRecommendationsFromFavourites(ffnId, userFavourites.links, environment,command);
     if(wasAutomatic && !recList->isAutomatic)
@@ -940,9 +996,15 @@ QSharedPointer<SendMessageCommand> SetChannelAction::ExecuteImpl(QSharedPointer<
 {
     if(command.variantHash.contains(QStringLiteral("channel"))){
         auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
-        command.server->SetDedicatedChannelId(command.variantHash.value(QStringLiteral("channel")).toString().trimmed().toStdString());
+        auto channelId = command.variantHash.value(QStringLiteral("channel")).toString().trimmed().toStdString();
+        if(channelId == command.server->GetDedicatedChannelId())
+            channelId = "";
+        command.server->SetDedicatedChannelId(channelId );
         database::discord_queries::WriteServerDedicatedChannel(dbToken->db, command.server->GetServerId(), command.server->GetDedicatedChannelId());
-        action->text = QStringLiteral("Acknowledged, the bot will only respond in this channel.");
+        if(channelId.length() > 0)
+            action->text = QStringLiteral("Acknowledged, bot will only respond in this channel.");
+        else
+            action->text = QStringLiteral("Acknowledged, bot will now respond across the whole server.");
         command.server->SetAllowedToAddReactions(true);
         command.server->SetAllowedToRemoveReactions(true);
         command.server->SetAllowedToEditMessages(true);
@@ -999,7 +1061,7 @@ QSharedPointer<SendMessageCommand> ShowFreshRecommendationsAction::ExecuteImpl(Q
     if(!command.user->GetSortFreshFirst() ||
             (strict && command.user->GetSortFreshFirst() && !command.user->GetStrictFreshSort())){
         usersDbInterface->WriteFreshSortingParams(command.user->UserID(), true, strict);
-        action->text = QStringLiteral("Fresh sorting mode turned on, to disable use the same command again.");
+        action->text = QStringLiteral("Fresh sorting mode turned on, to disable use the same command again.\nPlease note that server receives new fics from fanfiction.net approximately once a month.");
         if(command.user->GetSortFreshFirst())
             action->text = QStringLiteral("Enabling strict mode for fresh sort.");
         command.user->SetSortFreshFirst(true);
@@ -1188,6 +1250,65 @@ QSharedPointer<SendMessageCommand> RemoveReactions::ExecuteImpl(QSharedPointer<T
 }
 
 
+QSharedPointer<SendMessageCommand> SetTargetChannelAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    if(command.variantHash["channel"].toString() == "null")
+        Client::mirrorSourceChannel = 0;
+    else
+        Client::mirrorSourceChannel = command.variantHash["channel"].toString().toULongLong();
+    return action;
+}
+
+QSharedPointer<SendMessageCommand> SendMessageToChannelAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    action->targetChannel = SleepyDiscord::Snowflake<SleepyDiscord::Channel>(std::to_string(Client::mirrorSourceChannel));
+    action->text = command.variantHash["messageText"].toString();
+    return action;
+}
+
+QSharedPointer<SendMessageCommand> ToggleBanAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    auto type = command.variantHash["type"].toString();
+    auto id = command.variantHash["id"].toString();
+    action->targetChannel = SleepyDiscord::Snowflake<SleepyDiscord::Channel>(std::to_string(Client::botPmChannel));
+    if(type == "user")
+    {
+        An<interfaces::Users> usersDbInterface;
+        An<Users> users;
+        users->LoadUser(id);
+        auto user = users->GetUser(id);
+        if(user){
+            user->SetBanned(!user->GetBanned());
+            if(user->GetBanned()){
+                usersDbInterface->BanUser(id);
+                action->text = "User has been banned: " + id;
+            }
+            else{
+                usersDbInterface->UnbanUser(id);
+                action->text = "User has been unbanned: " + id;
+            }
+        }
+
+    }else{
+        An<Servers> servers;
+        servers->LoadServer(id.toStdString());
+        auto server = servers->GetServer(id.toStdString());
+        if(server){
+            server->SetBanned(!server->GetBanned());
+            auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+            if(server->GetBanned()){
+                action->text = "Server has been banned: " + id;
+                database::discord_queries::BanServer(dbToken->db,id);
+            }
+            else{
+                database::discord_queries::UnbanServer(dbToken->db,id);
+                action->text = "Server has been unbanned: " + id;
+            }
+        }
+
+    }
+    return action;
+}
 
 
 QSharedPointer<ActionBase> GetAction(ECommandType type)
@@ -1241,6 +1362,12 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SetChannelAction());
     case ECommandType::ct_remove_reactions:
         return QSharedPointer<ActionBase>(new RemoveReactions());
+    case ECommandType::ct_set_target_channel:
+        return QSharedPointer<ActionBase>(new SetTargetChannelAction());
+    case ECommandType::ct_send_to_channel:
+        return QSharedPointer<ActionBase>(new SendMessageToChannelAction());
+    case ECommandType::ct_toggle_ban:
+        return QSharedPointer<ActionBase>(new ToggleBanAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());
@@ -1261,6 +1388,7 @@ QSharedPointer<SendMessageCommand> ShowFullFavouritesAction::ExecuteImpl(QShared
 
 
 }
+
 
 
 

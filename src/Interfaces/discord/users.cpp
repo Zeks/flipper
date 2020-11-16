@@ -1,5 +1,5 @@
 /*
-Flipper is a replacement search engine for fanfiction.net search results
+Flipper is a recommendation and search engine for fanfiction.net
 Copyright (C) 2017-2018  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify
@@ -133,6 +133,11 @@ void Users::BanUser(QString userId)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
     database::discord_queries::BanUser(dbToken->db, userId);
+}
+void Users::UnbanUser(QString userId)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    database::discord_queries::UnbanUser(dbToken->db, userId);
 }
 
 void Users::UpdateCurrentPage(QString userId, int page)

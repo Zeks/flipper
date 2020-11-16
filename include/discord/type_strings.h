@@ -1,3 +1,18 @@
+/*Flipper is a recommendation and search engine for fanfiction.net
+Copyright (C) 2017-2020  Marchenko Nikolai
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 #include "discord/command_generators.h"
 
@@ -30,7 +45,7 @@ template <>
 struct TypeStringHolder<discord::RecsCreationCommand> {
         static constexpr std::string_view name = "recs";
         static constexpr std::string_view prefixlessPattern = "?<recs>recs";
-        static constexpr std::string_view pattern = "recs(\\s{1,}>refresh){0,1}((\\s{1,}\\d{4,10})|(\\s{1,}https:.{1}.{1}www.fanfiction.net.{1}.{1,100}))";
+        static constexpr std::string_view pattern = "recs(\\s{1,}>{0,1}refresh){0,1}((\\s{1,}\\d{4,10})|(\\s{1,}https:.{1}.{1}www.fanfiction.net.{1}.{1,100})|(\\s[A-Za-z]+)){0,1}";
         static constexpr std::string_view help = "Basic commands:\n`%1recs USER_FFN_ID(or an url to your user page)` to create recommendations."
                                                  "\n`%1recs >refresh FFN_ID` if you want the bot to re-read your favourites.";
 
@@ -220,6 +235,33 @@ struct TypeStringHolder<discord::WordcountCommand>{
         static constexpr std::string_view shorthand = "`{0}words` - limits the size of the fics displayed";
 };
 
+template <>
+struct TypeStringHolder<discord::ChangeTargetCommand>{
+        static constexpr std::string_view name = "target";
+        static constexpr std::string_view prefixlessPattern = "?<target>target";
+        static constexpr std::string_view pattern = "target\\s(\\d+)";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 
+template <>
+struct TypeStringHolder<discord::SendMessageToChannelCommand>{
+        static constexpr std::string_view name = "send";
+        static constexpr std::string_view prefixlessPattern = "?<send>send";
+        static constexpr std::string_view pattern = "send\\s(.+)";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 
+template <>
+struct TypeStringHolder<discord::ToggleBanCommand>{
+        static constexpr std::string_view name = "ban";
+        static constexpr std::string_view prefixlessPattern = "?<ban>ban";
+        static constexpr std::string_view pattern = "ban\\s([A-Za-z]+)\\s(\\d+)";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 

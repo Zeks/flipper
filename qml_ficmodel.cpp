@@ -1,6 +1,6 @@
 /*
-Flipper is a replacement search engine for fanfiction.net search results
-Copyright (C) 2017-2019  Marchenko Nikolai
+Flipper is a recommendation and search engine for fanfiction.net
+Copyright (C) 2017-2020  Marchenko Nikolai
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
