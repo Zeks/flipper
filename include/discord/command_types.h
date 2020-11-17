@@ -35,6 +35,7 @@ enum ECommandType{
     ct_set_target_channel = 32,
     ct_send_to_channel = 33,
     ct_toggle_ban = 34,
+    ct_display_statistics = 35,
 };
 
 }

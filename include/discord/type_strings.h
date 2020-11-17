@@ -265,3 +265,14 @@ struct TypeStringHolder<discord::ToggleBanCommand>{
         static constexpr std::string_view shorthand = "";
 };
 
+template <>
+struct TypeStringHolder<discord::StatsCommand>{
+        static constexpr std::string_view name = "stats";
+        static constexpr std::string_view prefixlessPattern = "?<stats>stats";
+        static constexpr std::string_view pattern = "stats";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
+
+

@@ -46,6 +46,7 @@ namespace discord {
                 TypeStringHolder<HideDeadCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<SendMessageToChannelCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ToggleBanCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<StatsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeTargetCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<SimilarFicsCommand>::prefixlessPattern, str::separator,
@@ -61,3 +62,4 @@ constexpr auto matchCommand(std::string_view sv) noexcept {
 }
 
 }
+

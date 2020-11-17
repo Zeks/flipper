@@ -1179,6 +1179,20 @@ bool ToggleBanCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<ToggleBanCommand>::name;
 }
 
+CommandChain StatsCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    if(message.author.ID.string() != std::to_string(ownerId))
+        return std::move(result);
+    auto servers = client->getServers();
+    client->sendMessage(message.channelID, "Bot is on: " + QString::number(servers.list().size()).toStdString() + " servers");
+    return std::move(result);
+}
+
+bool StatsCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<StatsCommand>::name;
+}
+
 
 }
 

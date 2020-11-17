@@ -32,6 +32,7 @@ namespace discord {
         //RegisterCommand<SetIdentityCommand>(parser);
         RegisterCommand<DisplayHelpCommand>(parser);
         RegisterCommand<RngCommand>(parser);
+        RegisterCommand<StatsCommand>(parser);
         RegisterCommand<ChangeServerPrefixCommand>(parser);
         RegisterCommand<ChangePermittedChannelCommand>(parser);
         //RegisterCommand<ForceListParamsCommand>(parser);
@@ -89,6 +90,7 @@ namespace discord {
     }
 
 }
+
 
 
 
