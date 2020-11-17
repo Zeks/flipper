@@ -67,14 +67,15 @@ void Client::InitClient()
 {
     fictionalDMServer.reset(new discord::Server());
     discord::InitDefaultCommandSet(this->parser);
-    std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
-    int i = 0;
-    for(const auto& server : sleepyServers){
-        i++;
-        InitDiscordServerIfNecessary(server.ID);
-        qDebug () << QString::fromStdString(server.name);
-    }
-    qDebug () << "scount" << i;
+    // in case of frequent relaunches this could get rate limited
+//    std::vector<SleepyDiscord::Server>  sleepyServers = getServers();
+//    int i = 0;
+//    for(const auto& server : sleepyServers){
+//        i++;
+//        InitDiscordServerIfNecessary(server.ID);
+//        qDebug () << QString::fromStdString(server.name);
+//    }
+//    qDebug () << "scount" << i;
     InitTips();
 
     QSettings settings(QStringLiteral("settings/settings_discord.ini"), QSettings::IniFormat);
@@ -263,7 +264,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
             QString str = QString(" Navigation emoji are only working for the person that the bot responded to. Perhaps you need to do one of the following:"
                                   "\n- create your own recommendations with `%1recs YOUR_FFN_ID`"
                                   "\n- repost your recommendations with `%1page`"
-                                  "\n- call your own help page with `%help`");
+                                  "\n- call your own help page with `%1help`");
             str=str.arg(QString::fromStdString(std::string(server->GetCommandPrefix())));
             sendMessageWrapper(channelID, server->GetServerId(), CreateMention(userID.string()) + str.toStdString());
         }
@@ -276,7 +277,7 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 void Client::Log(const SleepyDiscord::Message& message)
 {
     // I really don't need mudae anywhere in my logs
-    if(message.content.substr(0,2) == "$m" || message.author.ID.string() == "432610292342587392")
+    if(message.content.substr(0,2) == "$m" || message.author.ID.string() == "432610292342587392" || message.channelID.string() == "766287922860130306")
         return;
 
     if(message.content.length() > 100)
