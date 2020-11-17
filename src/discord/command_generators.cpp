@@ -1183,8 +1183,13 @@ CommandChain StatsCommand::ProcessInputImpl(const SleepyDiscord::Message & messa
 {
     if(message.author.ID.string() != std::to_string(ownerId))
         return std::move(result);
-    auto servers = client->getServers();
-    client->sendMessage(message.channelID, "Bot is on: " + QString::number(servers.list().size()).toStdString() + " servers");
+    try{
+        auto servers = client->getServers();
+        client->sendMessage(message.channelID, "Bot is on: " + QString::number(servers.list().size()).toStdString() + " servers");
+    }
+    catch (const SleepyDiscord::ErrorCode& error){
+        QLOG_INFO() << "Discord error:" << error;
+    }
     return std::move(result);
 }
 
