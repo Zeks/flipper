@@ -229,7 +229,7 @@ bool MainWindow::Init(bool scheduleSlashFilterOn)
 
     this->setWindowTitle("Flipper");
     this->setAttribute(Qt::WA_QuitOnClose);
-
+    InitSortingCombobox();
 
     ui->dteFavRateCut->setDate(QDate::currentDate().addDays(-366));
     ui->pbLoadDatabase->setStyleSheet("QPushButton {background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(179, 229, 160, 128), stop:1 rgba(98, 211, 162, 128))}"
@@ -832,6 +832,21 @@ MainWindow::~MainWindow()
     WriteSettings();
     env->WriteSettings();
     delete ui;
+}
+
+void MainWindow::InitSortingCombobox()
+{
+    ui->cbSortMode->clear();
+    ui->cbSortMode->addItem("Wordcount", static_cast<int>(core::StoryFilter::sm_wordcount));
+    ui->cbSortMode->addItem("Favourites", static_cast<int>(core::StoryFilter::sm_favourites));
+    ui->cbSortMode->addItem("Trending", static_cast<int>(core::StoryFilter::sm_trending));
+    ui->cbSortMode->addItem("Update Date", static_cast<int>(core::StoryFilter::sm_updatedate));
+    ui->cbSortMode->addItem("Publish Date", static_cast<int>(core::StoryFilter::sm_publisdate));
+    ui->cbSortMode->addItem("Metsascore", static_cast<int>(core::StoryFilter::sm_metascore));
+    ui->cbSortMode->addItem("WCRC-R", static_cast<int>(core::StoryFilter::sm_wcrcr));
+    ui->cbSortMode->addItem("Your Score", static_cast<int>(core::StoryFilter::sm_userscores));
+    ui->cbSortMode->addItem("Minimize Dislikes", static_cast<int>(core::StoryFilter::sm_minimize_dislikes));
+    ui->cbSortMode->addItem("Gems", static_cast<int>(core::StoryFilter::sm_gems));
 }
 
 
@@ -2188,58 +2203,16 @@ FilterErrors MainWindow::ValidateFilter()
 }
 
 
-core::StoryFilter::ESortMode SortRecoder(int index){
+core::StoryFilter::ESortMode SortRecoder(QComboBox* cb, int index){
 
-    switch(index){
-    case 0:
-        return core::StoryFilter::sm_wordcount;
-    case 1:
-        return core::StoryFilter::sm_favourites;
-    case 2:
-        return core::StoryFilter::sm_trending;
-    case 3:
-        return core::StoryFilter::sm_updatedate;
-    case 4:
-        return core::StoryFilter::sm_publisdate;
-    case 5:
-        return core::StoryFilter::sm_metascore;
-    case 6:
-        return core::StoryFilter::sm_wcrcr;
-    case 7:
-        return core::StoryFilter::sm_userscores;
-    case 8:
-        return core::StoryFilter::sm_minimize_dislikes;
-    case 9:
-        return core::StoryFilter::sm_gems;
-    default: return core::StoryFilter::sm_undefined;
-    }
+    return static_cast<core::StoryFilter::ESortMode>(cb->itemData(index).toInt());
 }
 
-int SortRecoderToUi(core::StoryFilter::ESortMode index){
+int SortRecoderToUi(QComboBox* cb, core::StoryFilter::ESortMode index){
 
-    switch(index){
-    case core::StoryFilter::sm_wordcount:
-        return 0;
-    case core::StoryFilter::sm_favourites:
-        return 1;
-    case core::StoryFilter::sm_trending:
-        return 2;
-    case core::StoryFilter::sm_updatedate:
-        return 3;
-    case core::StoryFilter::sm_publisdate:
-        return 4;
-    case core::StoryFilter::sm_metascore:
-        return 5;
-    case core::StoryFilter::sm_wcrcr:
-        return 6;
-    case core::StoryFilter::sm_userscores:
-        return 7;
-    case core::StoryFilter::sm_minimize_dislikes:
-        return 8;
-    case core::StoryFilter::sm_gems:
-        return 9;
-    default: return 0;
-    }
+    for(auto i = 0; i < cb->count(); i++)
+        if(cb->itemData(i).toUInt() == index)
+            return i;
 }
 
 
@@ -2351,7 +2324,7 @@ core::StoryFilter MainWindow::ProcessGUIIntoStoryFilter(core::StoryFilter::EFilt
     filter.reviewBias = static_cast<core::StoryFilter::EReviewBiasMode>(ui->cbBiasFavor->currentIndex());
     filter.biasOperator = static_cast<core::StoryFilter::EBiasOperator>(ui->cbBiasOperator->currentIndex());
     filter.reviewBiasRatio = ui->leBiasValue->text().toDouble();
-    filter.sortMode = SortRecoder(ui->cbSortMode->currentIndex());
+    filter.sortMode = SortRecoder(ui->cbSortMode, ui->cbSortMode->currentIndex());
     //filter.sortMode = static_cast<core::StoryFilter::ESortMode>(ui->cbSortMode->currentIndex() + 1);
 
     if(ui->chkUseReclistMatches->isChecked())
@@ -2669,7 +2642,7 @@ void MainWindow::ProcessStoryFilterIntoGUI(core::StoryFilter filter)
     else
         ui->leBiasValue->setText("2.5");
 
-    ui->cbSortMode->setCurrentIndex(SortRecoderToUi(filter.sortMode));
+    ui->cbSortMode->setCurrentIndex(SortRecoderToUi(ui->cbSortMode, filter.sortMode));
 
 
     if(filter.minRecommendations > 0)
@@ -3551,7 +3524,7 @@ void MainWindow::FetchScoresForFics()
         core::ReclistFilter filter;
         filter.mainListId = mainListId;
         filter.secondListId = secondListId;
-        filter.scoreType = SortRecoder(ui->cbSortMode->currentIndex()) ==  core::StoryFilter::sm_minimize_dislikes ?
+        filter.scoreType = SortRecoder(ui->cbSortMode, ui->cbSortMode->currentIndex()) ==  core::StoryFilter::sm_minimize_dislikes ?
                     core::StoryFilter::st_minimal_dislikes : core::StoryFilter::st_points;
         env->LoadNewScoreValuesForFanfics(filter, env->fanfics);
         holder->SetData(env->fanfics);

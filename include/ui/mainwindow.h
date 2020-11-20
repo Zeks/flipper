@@ -129,7 +129,7 @@ public:
 
 
     ~MainWindow();
-
+    void InitSortingCombobox();
     // used to set up connections between database and interfaces
     // and between differnt interfaces themselves
     void InitInterfaces();
