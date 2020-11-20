@@ -179,7 +179,14 @@ CommandChain RecsCreationCommand::ProcessInputImpl(const SleepyDiscord::Message&
     Command createRecs = NewCommand(server, message,ct_fill_recommendations);
     if(id.length() == 0){
         if(!user->FfnID().isEmpty()){
-
+            if(message.content.find("FFN_ID") != std::string::npos){
+                Command nullCommand = NewCommand(server, message,ct_null_command);
+                nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("You need to replace FFN_ID with your own ID on fanfiction.net.");
+                nullCommand.originalMessageToken = message;
+                nullCommand.server = this->server;
+                result.Push(std::move(nullCommand));
+                return std::move(result);
+            }
             Command createRecs = NewCommand(server, message,ct_fill_recommendations);
             createRecs.ids.push_back(user->FfnID().toInt());
             createRecs.textForPreExecution = QString(QStringLiteral("Creating recommendations for ffn user %1. Please wait, depending on your list size, it might take a while.")).arg(user->FfnID());
@@ -356,11 +363,14 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(const SleepyDiscord::Message&
 
     if(full.length() > 0)
         ignoredFandoms.variantHash[QStringLiteral("with_crossovers")] = true;
-    else
+    else{
         ignoredFandoms.variantHash[QStringLiteral("with_crossovers")] = false;
+        ignoredFandoms.textForPreExecution = "If you want to also ignore crossovers, repeat the command with >full added before the fandom";
+    }
     if(reset.length() > 0)
         ignoredFandoms.variantHash[QStringLiteral("reset")] = true;
     ignoredFandoms.variantHash[QStringLiteral("fandom")] = QString::fromStdString(fandom).trimmed();
+
     AddFilterCommand(std::move(ignoredFandoms));
 
     Command createRecs = NewCommand(server, message,ct_fill_recommendations);
@@ -410,6 +420,14 @@ CommandChain IgnoreFicCommand::ProcessInputImpl(const SleepyDiscord::Message& me
         displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
         result.Push(std::move(displayRecs));
 
+    }
+    else{
+        Command nullCommand = NewCommand(server, message,ct_null_command);
+        nullCommand.type = ct_null_command;
+        nullCommand.variantHash[QStringLiteral("reason")] = QStringLiteral("xfic command needs IDs of fics *in the displayed list* separated with whitespaces.");
+        nullCommand.originalMessageToken = message;
+        nullCommand.server = this->server;
+        result.Push(std::move(nullCommand));
     }
     return std::move(result);
 }

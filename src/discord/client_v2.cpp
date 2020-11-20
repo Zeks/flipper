@@ -153,10 +153,9 @@ constexpr auto matchSimple(std::string_view sv) noexcept {
 
 void Client::onMessage(SleepyDiscord::Message message) {
     try{
-        Log(message);
-
+        auto logRest = [&]{Log(message);};
         if(message.author.bot || !message.content.size())
-            return;
+            return logRest();
 
         QSharedPointer<discord::Server> server = GetServerInstanceForChannel(message.channelID, message.serverID.string());
         if(server->GetBanned()){
@@ -166,7 +165,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
                                                                         "The most likely reason for this happening is malicious misuse by its members.\n"
                                                                         "If you want to appeal the ban, join: https://discord.gg/AdDvX5H");
             }
-            return;
+            return logRest();
         }
 
         std::string_view sv (message.content);
@@ -176,32 +175,32 @@ void Client::onMessage(SleepyDiscord::Message message) {
             sendMessageWrapper(message.channelID, message.serverID, "Prefix for this server is: " + std::string(commandPrefix));
 
         if(sv.substr(0, commandPrefix.length()) != commandPrefix)
-            return;
+            return logRest();
 
         if(message.content.length() > 500){
             sendMessageWrapper(message.channelID, message.serverID, "Your command is too long. Perhaps you've mistyped accidentally?");
-            return;
+            return logRest();
         }
 
         sv.remove_prefix(commandPrefix.length());
 
         auto result = ctre::search<pattern>(sv);;
         if(!result.matched())
-            return;
+            return logRest();
 
         bool priorityCommand = message.content.substr(server->GetCommandPrefix().length(), 6) *in("permit", "target") || sv.substr(0, 4) == "send";
         if(!priorityCommand && server->GetServerId().length() > 0 && server->GetDedicatedChannelId().length() > 0 && message.channelID.string() != server->GetDedicatedChannelId())
-            return;
+            return logRest();
 
         auto commands = parser->Execute(result.get<0>().to_string(), server, message);
         if(commands.Size() == 0)
-            return;
+            return logRest();
 
         // instantiating channel -> server pairing if necessary to avoid hitting the api in onReaction needlessly
         if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
             channelToServerHash.push(message.channelID.number(), message.serverID.number());
         }
-
+        QLOG_INFO() << "COMMAND:" << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content);
         executor->Push(std::move(commands));
     }
     catch(const rapidjson_exception& e){
@@ -278,7 +277,8 @@ void Client::Log(const SleepyDiscord::Message& message)
 {
     // I really don't need mudae anywhere in my logs
     if(message.content.length() == 0 || message.content.substr(0,2) *in("$m","$w") || message.author.ID.string() == "432610292342587392"
-            || message.channelID.string() *in("766287922860130306", "769018158836875294", "766274737349197824"))
+            || message.channelID.string() *in("766287922860130306", "769018158836875294", "766274737349197824")
+            || message.author.ID.string() *in("338511469769654274"))
         return;
 
     if(message.content.length() > 100)

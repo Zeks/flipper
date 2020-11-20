@@ -45,7 +45,7 @@ template <>
 struct TypeStringHolder<discord::RecsCreationCommand> {
         static constexpr std::string_view name = "recs";
         static constexpr std::string_view prefixlessPattern = "?<recs>recs";
-        static constexpr std::string_view pattern = "recs(\\s{1,}>{0,1}refresh){0,1}((\\s{1,}\\d{4,10})|(\\s{1,}https:.{1}.{1}www.fanfiction.net.{1}.{1,100})|(\\s[A-Za-z]+)){0,1}";
+        static constexpr std::string_view pattern = "rec[s]{0,1}(\\s{1,}>{0,1}refresh){0,1}((\\s{1,}\\d{4,10})|(\\s{1,}https:.{1}.{1}www.fanfiction.net.{1}.{1,100})|(\\s[A-Za-z]+)){0,1}";
         static constexpr std::string_view help = "Basic commands:\n`%1recs USER_FFN_ID(or an url to your user page)` to create recommendations."
                                                  "\n`%1recs >refresh FFN_ID` if you want the bot to re-read your favourites.";
 
@@ -92,7 +92,7 @@ template <>
 struct TypeStringHolder<discord::IgnoreFicCommand>{
         static constexpr std::string_view name = "xfic";
         static constexpr std::string_view prefixlessPattern = "?<xfic>xfic";
-        static constexpr std::string_view pattern = "xfic((\\s{1,}\\d{1,2}){1,10})|(\\s{1,}>all)";
+        static constexpr std::string_view pattern = "xfic\\s((\\d{1,2}\\s{1,}){1,10})|(>all)";
         static constexpr std::string_view patternCommand = "xfic\\s{1,}(all){1,}";
         static constexpr std::string_view patternNum = "(?<silent>>silent\\s){0,1}(?<ids>\\d{1,2}\\s?)";
         static constexpr std::string_view help = "\nFanfic commands:\n`%1xfic X` will ignore a fic (you need input position in the last output), X Y Z to ignore multiple\n"

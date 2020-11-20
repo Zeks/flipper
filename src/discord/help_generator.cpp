@@ -150,6 +150,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     supportField.name = "Support:";
     std::string supportText = "If you need help with the bot itself, join its [official server](https://discord.gg/dpAnunJ)\n";
     supportText  +="If you want to support the bot's development and hosting you can do it on [Patreon](https://www.patreon.com/zekses)";
+    supportText  +="If you want to add this bot to your server use this [link](https://discord.com/api/oauth2/authorize?client_id=742050608235937916&permissions=337984&scope=bot)";
     supportText=fmt::format(supportText, serverPrefix);
 
     supportField.value = supportText;
