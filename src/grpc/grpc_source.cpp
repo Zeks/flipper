@@ -188,13 +188,12 @@ ProtoSpace::Filter StoryFilterIntoProto(const core::StoryFilter& filter,
     recommendations->set_show_origins_in_lists(filter.showOriginsInLists);
     recommendations->set_display_purged_fics(filter.displayPurgedFics);
     {
-        auto it= filter.recsHash.cbegin();
-        auto itEnd = filter.recsHash.cend();
-        while(it != itEnd)
-        {
-            userData->mutable_recommendation_list()->add_list_of_fics(it.key());
-            userData->mutable_recommendation_list()->add_list_of_matches(it.value());
-            it++;
+        for(auto& [key, value]: filter.recommendationScoresSearchToken.ficToScore){
+            userData->mutable_recommendation_list()->add_list_of_fics(key);
+            userData->mutable_recommendation_list()->add_list_of_matches(value);
+        }
+        for(auto& [key, value]: filter.recommendationScoresSearchToken.ficToPureVotes){
+            userData->mutable_recommendation_list()->add_list_of_pure_votes(value);
         }
     }
     {
@@ -352,8 +351,10 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
 
     result.ignoredFandomCount = userData.ignored_fandoms().fandom_ids_size();
     result.recommendationsCount = userData.recommendation_list().list_of_fics_size();
-    for(int i = 0; i < userData.recommendation_list().list_of_fics_size(); i++)
-        result.recsHash[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
+    for(int i = 0; i < userData.recommendation_list().list_of_fics_size(); i++){
+        result.recommendationScoresSearchToken.ficToScore[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
+        result.recommendationScoresSearchToken.ficToPureVotes[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_pure_votes(i);
+    }
     for(int i = 0; i < userData.scores_list().list_of_fics_size(); i++)
         result.scoresHash[userData.scores_list().list_of_fics(i)] = userData.scores_list().list_of_scores(i);
 
@@ -1010,13 +1011,13 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
    recList->ficData->fics.clear();
    recList->ficData->fics.reserve(response.fic_ids_size());
    recList->ficData->purges.reserve(response.fic_ids_size());
-   recList->ficData->matchCounts.reserve(response.fic_ids_size());
+   recList->ficData->metascores.reserve(response.fic_ids_size());
    recList->ficData->noTrashScores.reserve(response.fic_ids_size());
 
     for(int i = 0; i < response.fic_ids_size(); i++)
        recList->ficData->fics.push_back(response.fic_ids(i));
     for(int i = 0; i < response.fic_matches_size(); i++)
-        recList->ficData->matchCounts.push_back(response.fic_matches(i));
+        recList->ficData->metascores.push_back(response.fic_matches(i));
     for(int i = 0; i < response.purged_size(); i++)
         recList->ficData->purges.push_back(response.purged(i));
     for(int i = 0; i < response.no_trash_score_size(); i++)

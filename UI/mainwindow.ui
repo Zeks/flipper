@@ -826,6 +826,11 @@
                        <string>Minimize Dislikes</string>
                       </property>
                      </item>
+                     <item>
+                      <property name="text">
+                       <string>Gems</string>
+                      </property>
+                     </item>
                     </widget>
                    </item>
                    <item>
@@ -3764,7 +3769,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="bgRecsMode"/>
   <buttongroup name="bgRecsSource"/>
+  <buttongroup name="bgRecsMode"/>
  </buttongroups>
 </ui>

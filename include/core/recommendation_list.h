@@ -37,13 +37,14 @@ struct RecommendationListFicData
     QSet<int> sourceFics;
     QVector<int> fics;
     QVector<int> purges;
-    QVector<int> matchCounts;
+    QVector<int> metascores;
     QVector<double> noTrashScores;
     QVector<int> authorIds;
     QHash<int, int> matchReport;
-    QHash<int, int> ficToScore;
+    QHash<int, int> ficToMetascore;
     QHash<int, core::MatchBreakdown> breakdowns;
 };
+
 
 
 class RecommendationList : public DBEntity{

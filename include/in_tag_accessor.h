@@ -52,7 +52,8 @@ struct RecommendationsData{
     QSet<int> sourceFics;
     QSet<int> matchedAuthors;
     QHash<int, int> listData;
-    QHash<int,int> recommendationList;
+    std::unordered_map<int,int> ficMetascores;
+    std::unordered_map<int,int> ficVotes;
     QHash<int,int> scoresList;
     QString token;
 };

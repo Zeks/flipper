@@ -285,7 +285,7 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 
 
-DiagnosticSQLResult<QHash<int,int>> GetRelevanceScoresInFilteredReclist(const core::ReclistFilter &filter, QSqlDatabase db);
+DiagnosticSQLResult<core::RecommendationListFicSearchToken> GetRelevanceScoresInFilteredReclist(const core::ReclistFilter &filter, QSqlDatabase db);
 
 
 

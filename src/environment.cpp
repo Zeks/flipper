@@ -135,11 +135,13 @@ void CoreEnvironment::LoadData()
             reclistFilter.displayPurged = filter.displayPurgedFics;
 
 
-            filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
+            filter.recommendationScoresSearchToken = interfaces.recs->GetAllFicsHash(reclistFilter);
             if(filter.showRecSources == core::StoryFilter::ssm_hide)
             {
-                for(auto fic : sources)
-                    filter.recsHash.remove(fic);
+                for(auto fic : sources){
+                    filter.recommendationScoresSearchToken.ficToScore.erase(fic);
+                    filter.recommendationScoresSearchToken.ficToPureVotes.erase(fic);
+                }
 
             }
             filter.scoresHash = ficScores;
@@ -400,7 +402,7 @@ int CoreEnvironment::GetResultCount()
     reclistFilter.limiter = filter.sourcesLimiter;
     reclistFilter.displayPurged = filter.displayPurgedFics;
     reclistFilter.scoreType = scoreType;
-    filter.recsHash = interfaces.recs->GetAllFicsHash(reclistFilter);
+    filter.recommendationScoresSearchToken = interfaces.recs->GetAllFicsHash(reclistFilter);
 
     ficScores= interfaces.fanfics->GetScoresForFics();
     filter.scoresHash = ficScores;

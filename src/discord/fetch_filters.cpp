@@ -50,10 +50,10 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
         if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
         if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->matchCounts.at(i) > 1))
-        filter.recsHash[userFics->fics[i]] = userFics->matchCounts.at(i);
+                || (user->GetStrictFreshSort() && userFics->metascores.at(i) > 1))
+        filter.recsHash[userFics->fics[i]] = userFics->metascores.at(i);
     }
-    userFics->ficToScore = filter.recsHash;
+    userFics->ficToMetascore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
@@ -128,10 +128,10 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
     {
         if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
-        if(userFics->matchCounts.at(i) >=qualityCutoff)
-            filter.recsHash[userFics->fics[i]] = userFics->matchCounts.at(i);
+        if(userFics->metascores.at(i) >=qualityCutoff)
+            filter.recsHash[userFics->fics[i]] = userFics->metascores.at(i);
     }
-    userFics->ficToScore = filter.recsHash;
+    userFics->ficToMetascore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
@@ -200,10 +200,10 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
         if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
         if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->matchCounts.at(i)>1))
-        filter.recsHash[userFics->fics[i]] = userFics->matchCounts.at(i);
+                || (user->GetStrictFreshSort() && userFics->metascores.at(i)>1))
+        filter.recsHash[userFics->fics[i]] = userFics->metascores.at(i);
     }
-    userFics->ficToScore = filter.recsHash;
+    userFics->ficToMetascore = filter.recsHash;
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;

@@ -177,13 +177,13 @@ QSharedPointer<core::RecommendationList> FillUserRecommendationsFromFavourites(Q
     //QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
     QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
     int count = 0;
-    if(recList->ficData->matchCounts.isEmpty())
+    if(recList->ficData->metascores.isEmpty())
         return recList;
 
     for(int i = 0; i < recList->ficData->fics.size(); i++){
-        if(recList->ficData->matchCounts.at(i) > 1)
+        if(recList->ficData->metascores.at(i) > 1)
         {
-            matchFicToScore[recList->ficData->matchCounts.at(i)].insert(recList->ficData->fics.at(i));
+            matchFicToScore[recList->ficData->metascores.at(i)].insert(recList->ficData->fics.at(i));
             count++;
         }
     }
@@ -308,7 +308,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
 
     //qDebug() << "after filling";
 
-    if(recList->ficData->matchCounts.isEmpty())
+    if(recList->ficData->metascores.isEmpty())
     {
         command.user->SetFfnID(ffnId);
         action->text = QStringLiteral("Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495");
@@ -426,7 +426,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     }
 
 
-    if(recList->ficData->matchCounts.isEmpty())
+    if(recList->ficData->metascores.isEmpty())
     {
         command.user->SetFfnID(ffnId);
         action->text = QString::fromStdString(CreateMention(command.user->UserID().toStdString()) + " Couldn't create recommendations. Recommendations server is not available or you don't have any favourites on your ffn page. If it isn't the latter case, you can ping the author: zekses#3495");
@@ -680,7 +680,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     int pageCount = FetchPageCountForFilterCommand(environment->ficSource, command.user, listSize);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
-        fic.score = userFics->ficToScore.value(fic.identity.id);
+        fic.score = userFics->ficToMetascore.value(fic.identity.id);
     //QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
@@ -778,7 +778,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     FetchFicsForDisplayRngCommand(3, environment->ficSource, command.user, &fics, scoreCutoff);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
-        fic.score = userFics->ficToScore.value(fic.identity.id);
+        fic.score = userFics->ficToMetascore.value(fic.identity.id);
 
     QLOG_TRACE() << QStringLiteral("Fetched fics for rng");
 
@@ -1207,7 +1207,7 @@ QSharedPointer<SendMessageCommand> CreateSimilarFicListAction::ExecuteImpl(QShar
     //QMap<int, int> scoreStatus; // maps maptch count to fic count with this match
     //QMap<int, QSet<int>> matchFicToScore; // maps maptch count to fic count with this match
 
-    if(recList->ficData->matchCounts.isEmpty())
+    if(recList->ficData->metascores.isEmpty())
     {
         action->text = QStringLiteral("Couldn't create the list. Recommendations server is not available?");
         action->stopChain = true;

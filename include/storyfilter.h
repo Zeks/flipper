@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QVector>
 #include <QSet>
 #include "core/fandom_list.h"
+
 struct SlashFilterState
 {
     void Log();
@@ -37,8 +38,15 @@ struct SlashFilterState
     bool onlyExactLevel = false;
     bool onlyMatureForSlash = false;
 };
+
+
 namespace core{
 
+struct RecommendationListFicSearchToken
+{
+    std::unordered_map<int, int> ficToScore;
+    std::unordered_map<int, int> ficToPureVotes;
+};
 
 struct StoryFilter{
     void Log();
@@ -58,15 +66,16 @@ struct StoryFilter{
         sm_undefined         = 0,
         sm_wordcount         = 1,
         sm_favourites        = 2,
-        sm_trending           = 3,
+        sm_trending          = 3,
         sm_updatedate        = 4,
         sm_publisdate        = 5,
-        sm_metascore          = 6,
+        sm_metascore         = 6,
         sm_wcrcr             = 7,
         sm_revtofav          = 8,
         sm_genrevalues       = 9,
-        sm_userscores            = 10,
+        sm_userscores        = 10,
         sm_minimize_dislikes = 11,
+        sm_gems              = 12,
 
     };
     enum EReviewBiasMode{
@@ -184,7 +193,8 @@ struct StoryFilter{
     double reviewBiasRatio = 0;
 
     QList<int> recFics;
-    QHash<int, int> recsHash; // for use on the server
+    RecommendationListFicSearchToken recommendationScoresSearchToken;
+    //QHash<int, int> recsHash; // for use on the server
     QHash<int, int> scoresHash; // for use on the server
     std::unordered_map<int,core::fandom_lists::FandomSearchStateToken> fandomStates;
     QString userToken;

@@ -202,14 +202,14 @@ QVector<int> RecommendationLists::GetAllSourceFicIDs(int listId)
     return result;
 }
 
-QHash<int, int> RecommendationLists::GetAllFicsHash(core::ReclistFilter filter)
+core::RecommendationListFicSearchToken RecommendationLists::GetAllFicsHash(core::ReclistFilter filter)
 {
-    QHash<int, int> result;
+    core::RecommendationListFicSearchToken result;
     if(!EnsureList(filter.mainListId))
         return result;
 
     result = database::puresql::GetRelevanceScoresInFilteredReclist(filter ,db).data;
-    grpcCacheForLists[{filter.mainListId, filter.minMatchCount}] = result;
+    //grpcCacheForLists[{filter.mainListId, filter.minMatchCount}] = result.ficToScore;
 
     return result;
 }
@@ -266,12 +266,12 @@ void RecommendationLists::DeleteLocalList(int listId)
     QList<QPair<int, int>> keysToRemove;
 
 
-    for(auto i = grpcCacheForLists.cbegin(); i != grpcCacheForLists.cend(); i++){
-        if(i.key().first == listId)
-            keysToRemove.push_back(i.key());
-    }
-    for(auto key : keysToRemove)
-        grpcCacheForLists.remove(key);
+//    for(auto i = grpcCacheForLists.cbegin(); i != grpcCacheForLists.cend(); i++){
+//        if(i.key().first == listId)
+//            keysToRemove.push_back(i.key());
+//    }
+//    for(auto key : keysToRemove)
+//        grpcCacheForLists.remove(key);
 
     authorsCacheForLists.remove(list->id);
     cachedAuthorStats.remove(list->id);

@@ -83,7 +83,7 @@ public:
     int GetMatchCountForRecommenderOnList(int authorId, int listId);
     QVector<int> GetAllFicIDs(int listId, core::StoryFilter::ESourceListLimiter limiter);
     QVector<int> GetAllSourceFicIDs(int listId);
-    QHash<int, int> GetAllFicsHash(core::ReclistFilter);
+    core::RecommendationListFicSearchToken GetAllFicsHash(core::ReclistFilter);
     QStringList GetNamesForListId(int listId);
     QList<core::AuthorPtr> GetAuthorsForRecommendationList(int listId);
     QString GetAuthorsForRecommendationListClient(int listId);
@@ -113,7 +113,7 @@ public:
 
     QHash<int, QList<core::AuhtorStatsPtr>> cachedAuthorStats;
     QHash<int, QVector<int>> ficsCacheForLists;
-    QHash<QPair<int, int>, QHash<int, int>> grpcCacheForLists;
+    //QHash<QPair<int, int>, std::unordered_map<int, int>> grpcCacheForLists;
     QHash<int, QStringList> authorsCacheForLists;
 
     QSqlDatabase db;

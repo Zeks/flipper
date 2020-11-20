@@ -43,11 +43,11 @@ void RecommendationListFicData::Clear()
     sourceFics.clear();
     fics.clear();
     purges.clear();
-    matchCounts.clear();
+    metascores.clear();
     noTrashScores.clear();
     authorIds.clear();
     matchReport.clear();
-    ficToScore.clear();
+    ficToMetascore.clear();
     breakdowns.clear();
 }
 

@@ -327,7 +327,7 @@ bool User::ReadsSlash()
 bool User::HasActiveSet()
 {
     QReadLocker locker(&lock);
-    return fics->matchCounts.size() > 0;
+    return fics->metascores.size() > 0;
 }
 
 void User::SetFicList(QSharedPointer<core::RecommendationListFicData> fics)

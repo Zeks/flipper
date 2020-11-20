@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "querybuilder.h"
 #include "pure_sql.h"
 #include "Interfaces/db_interface.h"
+#include "GlobalHeaders/snippets_templates.h"
 #include <QDebug>
 
 namespace  core{
@@ -39,7 +40,7 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
     query = NewQuery();
 
     queryString.clear();
-    bool scoreSorting = filter.sortMode == StoryFilter::sm_metascore  || filter.sortMode == StoryFilter::sm_minimize_dislikes;
+    bool scoreSorting = filter.sortMode *in(StoryFilter::sm_metascore, StoryFilter::sm_minimize_dislikes, StoryFilter::sm_gems);
 
     bool useRecommendationFiltering = scoreSorting || filter.listOpenMode;
     useRecommendationFiltering = useRecommendationFiltering && filter.recommendationsCount > 0;
@@ -58,7 +59,9 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
         queryString = " f.ID as id ";
         if(useRecommendationOrdering)
         {
-            queryString += " , cfRecommendationsMatchCount(f.id) as sumrecs ";
+            queryString += " , cfRecommendationsMetascore(f.id) as sumrecs ";
+            if(filter.sortMode == StoryFilter::sm_gems)
+                queryString += " , cfRecommendationsPureVotes(f.id) as sumvotes ";
             queryString = queryString.arg(userToken);
         }
         if(useScoresOrdering)
@@ -139,6 +142,8 @@ QString DefaultQueryBuilder::CreateCustomFields(StoryFilter filter)
     //queryString+=ProcessSumFaves(filter);
     queryString+=ProcessFandoms(filter);
     queryString+=ProcessSumRecs(filter);
+    if(filter.sortMode == StoryFilter::sm_gems)
+        queryString+=ProcessSumVotes(filter);
     queryString+=ProcessScores(filter);
     queryString+=ProcessTags(filter);
     queryString+=ProcessUrl(filter);
@@ -242,7 +247,16 @@ QString DefaultQueryBuilder::ProcessSumRecs(StoryFilter , bool )
 {
 
     QString result;
-    result = QString(" cfRecommendationsMatchCount(f.id) as sumrecs, ");
+    result = QString(" cfRecommendationsMetascore(f.id) as sumrecs, ");
+
+    return result;
+}
+
+QString DefaultQueryBuilder::ProcessSumVotes(StoryFilter , bool )
+{
+
+    QString result;
+    result = QString(" cfRecommendationsPureVotes(f.id) as sumvotes, ");
 
     return result;
 }
@@ -597,6 +611,8 @@ QString DefaultQueryBuilder::ProcessDiffField(StoryFilter filter)
         diffField = " genrevalue";
     else if(filter.sortMode == StoryFilter::sm_userscores)
         diffField = " scores ";
+    else if(filter.sortMode == StoryFilter::sm_gems)
+        diffField = " (cast(sumvotes as float)/cast(favourites + 15 as float)) * (cast(sumrecs as float)/cast(sumvotes as float)) ";
     diffField += filter.descendingDirection ? " DESC" : " ASC";
 
     return diffField;
@@ -719,7 +735,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
         return result;
     QStringList idList;
     QString part = "  and ID IN ( %1 ) ";
-    wherePart = " cfRecommendationsMatchCount(f.id) as sumrecs, cfRecommendationsMatchCount(f.id) as scores,  1 as junk from fanfics f where 1 = 1 " + wherePart;
+    wherePart = " cfRecommendationsMetascore(f.id) as sumrecs, cfScoresMatchCount(f.id) as scores,  1 as junk from fanfics f where 1 = 1 " + wherePart;
     wherePart = wherePart.arg(userToken);
     wherePart.replace("COLLATE NOCASE", "");
     wherePart+=" COLLATE NOCASE";

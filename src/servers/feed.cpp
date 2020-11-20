@@ -1036,9 +1036,10 @@ core::StoryFilter FeederService::FilterFromTask(const ProtoSpace::Filter & grpcf
     }).run();
 
     auto* recs = ThreadData::GetRecommendationData();
-    QLOG_INFO() << "Using rec list of size: " << filter.recsHash.size();
+    QLOG_INFO() << "Using rec list of size: " << filter.recommendationScoresSearchToken.ficToScore.size();
 
-    recs->recommendationList = filter.recsHash;
+    recs->ficMetascores = filter.recommendationScoresSearchToken.ficToScore;
+    recs->ficVotes = filter.recommendationScoresSearchToken.ficToPureVotes;
     recs->scoresList = filter.scoresHash;
 
     auto* userData = ThreadData::GetUserData();
