@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
         ServerBuilder builder;
         builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
         builder.RegisterService(&service);
+        builder.SetMaxMessageSize(1024 * 1024 * 1024);
         std::unique_ptr<Server> server(builder.BuildAndStart());
         QLOG_INFO() << "Starting server";
         stateFile.setValue("server_state", "Ready");
