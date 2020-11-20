@@ -276,9 +276,10 @@ void Client::onReaction(SleepyDiscord::Snowflake<SleepyDiscord::User> userID, Sl
 void Client::Log(const SleepyDiscord::Message& message)
 {
     // I really don't need mudae anywhere in my logs
-    if(message.content.length() == 0 || message.content.substr(0,2) *in("$m","$w") || message.author.ID.string() == "432610292342587392"
-            || message.channelID.string() *in("766287922860130306", "769018158836875294", "766274737349197824")
-            || message.author.ID.string() *in("338511469769654274"))
+    if(message.content.length() == 0 || message.content.substr(0,2) *in("$m","$w"))
+        return;
+
+    if(message.author.bot && message.author.ID != getID())
         return;
 
     if(message.content.length() > 100)
