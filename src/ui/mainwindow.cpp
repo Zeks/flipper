@@ -842,7 +842,7 @@ void MainWindow::InitSortingCombobox()
     ui->cbSortMode->addItem("Trending", static_cast<int>(core::StoryFilter::sm_trending));
     ui->cbSortMode->addItem("Update Date", static_cast<int>(core::StoryFilter::sm_updatedate));
     ui->cbSortMode->addItem("Publish Date", static_cast<int>(core::StoryFilter::sm_publisdate));
-    ui->cbSortMode->addItem("Metsascore", static_cast<int>(core::StoryFilter::sm_metascore));
+    ui->cbSortMode->addItem("Metascore", static_cast<int>(core::StoryFilter::sm_metascore));
     ui->cbSortMode->addItem("WCRC-R", static_cast<int>(core::StoryFilter::sm_wcrcr));
     ui->cbSortMode->addItem("Your Score", static_cast<int>(core::StoryFilter::sm_userscores));
     ui->cbSortMode->addItem("Minimize Dislikes", static_cast<int>(core::StoryFilter::sm_minimize_dislikes));
