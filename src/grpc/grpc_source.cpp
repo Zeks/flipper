@@ -353,7 +353,8 @@ core::StoryFilter ProtoIntoStoryFilter(const ProtoSpace::Filter& filter, const P
     result.recommendationsCount = userData.recommendation_list().list_of_fics_size();
     for(int i = 0; i < userData.recommendation_list().list_of_fics_size(); i++){
         result.recommendationScoresSearchToken.ficToScore[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_matches(i);
-        result.recommendationScoresSearchToken.ficToPureVotes[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_pure_votes(i);
+        if(userData.recommendation_list().list_of_pure_votes_size() > 0)
+            result.recommendationScoresSearchToken.ficToPureVotes[userData.recommendation_list().list_of_fics(i)] = userData.recommendation_list().list_of_pure_votes(i);
     }
     for(int i = 0; i < userData.scores_list().list_of_fics_size(); i++)
         result.scoresHash[userData.scores_list().list_of_fics(i)] = userData.scores_list().list_of_scores(i);
@@ -1014,16 +1015,17 @@ static const auto basicRecListFiller = [](const ::ProtoSpace::RecommendationList
    recList->ficData->metascores.reserve(response.fic_ids_size());
    recList->ficData->noTrashScores.reserve(response.fic_ids_size());
 
-    for(int i = 0; i < response.fic_ids_size(); i++)
+    for(int i = 0; i < response.fic_ids_size(); i++){
        recList->ficData->fics.push_back(response.fic_ids(i));
+       if(response.fic_votes_size() > 0)
+        recList->ficData->ficToVotes[response.fic_ids(i)] = response.fic_votes(i);
+    }
     for(int i = 0; i < response.fic_matches_size(); i++)
         recList->ficData->metascores.push_back(response.fic_matches(i));
     for(int i = 0; i < response.purged_size(); i++)
         recList->ficData->purges.push_back(response.purged(i));
     for(int i = 0; i < response.no_trash_score_size(); i++)
         recList->ficData->noTrashScores.push_back(response.no_trash_score(i));
-
-
     for(int i = 0; i < response.author_ids_size(); i++)
        recList->ficData->authorIds.push_back(response.author_ids(i));
 

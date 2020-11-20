@@ -66,6 +66,7 @@ ACTION(InsufficientPermissionsAction);
 ACTION(NullAction);
 ACTION(ShowFullFavouritesAction);
 ACTION(ShowFreshRecommendationsAction);
+ACTION(ShowGemsAction);
 ACTION(ShowCompleteAction);
 ACTION(HideDeadAction);
 ACTION(PurgeAction);
@@ -76,6 +77,7 @@ ACTION(SetWordcountLimitAction);
 ACTION(SetTargetChannelAction);
 ACTION(SendMessageToChannelAction);
 ACTION(ToggleBanAction);
+
 
 struct ActionChain{
     void Clear(){actions.clear();performedParseCommand = false;}

@@ -232,6 +232,14 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+
+class GemsCommand: public RecommendationsCommand{
+public:
+    GemsCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 class ChangeTargetCommand: public CommandCreator{
 public:
     ChangeTargetCommand(){}

@@ -1099,6 +1099,22 @@ bool WordcountCommand::IsThisCommand(const std::string &cmd)
     return cmd == TypeStringHolder<WordcountCommand>::name;
 }
 
+CommandChain GemsCommand::ProcessInputImpl(const SleepyDiscord::Message &message)
+{
+    Command command = NewCommand(server, message,ct_show_gems);
+    AddFilterCommand(std::move(command));
+
+    Command displayRecs = NewCommand(server, message,ct_display_page);
+    displayRecs.ids.push_back(0);
+    displayRecs.variantHash[QStringLiteral("refresh_previous")] = true;
+    result.Push(std::move(displayRecs));
+    return std::move(result);
+}
+
+bool GemsCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<GemsCommand>::name;
+}
 
 CommandChain ChangeTargetCommand::ProcessInputImpl(const SleepyDiscord::Message& message)
 {
@@ -1215,6 +1231,8 @@ bool StatsCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<StatsCommand>::name;
 }
+
+
 
 
 }

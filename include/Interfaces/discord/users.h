@@ -50,6 +50,7 @@ public:
     bool WriteForcedListParams(QString user_id, int forceMinMatches, int forcedRatio);
     bool WriteForceLikedAuthors(QString user_id, bool);
     bool WriteFreshSortingParams(QString user_id, bool, bool);
+    bool WriteGemSortingParams(QString user_id, bool);
     bool WriteLargeListReparseToken(QString user_id, discord::LargeListToken);
     bool SetHideDeadFilter(QString user_id, bool);
     bool SetCompleteFilter(QString user_id, bool);

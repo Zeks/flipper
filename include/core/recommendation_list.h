@@ -41,7 +41,8 @@ struct RecommendationListFicData
     QVector<double> noTrashScores;
     QVector<int> authorIds;
     QHash<int, int> matchReport;
-    QHash<int, int> ficToMetascore;
+    std::unordered_map<int, int> ficToMetascore;
+    std::unordered_map<int, int> ficToVotes;
     QHash<int, core::MatchBreakdown> breakdowns;
 };
 

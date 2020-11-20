@@ -61,6 +61,8 @@ namespace discord_queries{
     DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id, int forceMinMatches, int forcedRatio);
     DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString , bool);
     DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_id, bool, bool);
+    DiagnosticSQLResult<bool> WriteGemSortingParams(QSqlDatabase db, QString user_id, bool);
+
     DiagnosticSQLResult<bool> WriteLargeListReparseToken(QSqlDatabase db, QString user_id, discord::LargeListToken);
 
     DiagnosticSQLResult<bool> SetHideDeadFilter(QSqlDatabase db, QString , bool);

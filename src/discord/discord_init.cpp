@@ -33,6 +33,7 @@ namespace discord {
         RegisterCommand<DisplayHelpCommand>(parser);
         RegisterCommand<RngCommand>(parser);
         RegisterCommand<StatsCommand>(parser);
+        RegisterCommand<GemsCommand>(parser);
         RegisterCommand<ChangeServerPrefixCommand>(parser);
         RegisterCommand<ChangePermittedChannelCommand>(parser);
         //RegisterCommand<ForceListParamsCommand>(parser);

@@ -201,6 +201,9 @@ struct User{
 
     bool GetBanned() const;
 
+    bool GetSortGemsFirst() const;
+    void SetSortGemsFirst(bool value);
+
 private:
     bool isValid = false;
     QString userID;
@@ -214,6 +217,7 @@ private:
     bool hasUnfinishedRecRequest = false;
     bool useLikedAuthorsOnly = false;
     bool sortFreshFirst = false;
+    bool sortGemsFirst = false;
     bool showCompleteOnly = false;
     bool hideDead = false;
     bool strictFreshSort = false;

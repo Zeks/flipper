@@ -75,6 +75,12 @@ bool Users::WriteFreshSortingParams(QString user_id, bool useFreshSorting, bool 
     return database::discord_queries::WriteFreshSortingParams(dbToken->db, user_id, useFreshSorting, strictFreshSorting).data;
 }
 
+bool Users::WriteGemSortingParams(QString user_id, bool useGemSorting)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    return database::discord_queries::WriteGemSortingParams(dbToken->db, user_id, useGemSorting).data;
+}
+
 bool Users::WriteLargeListReparseToken(QString user_id, discord::LargeListToken token)
 {
     auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));

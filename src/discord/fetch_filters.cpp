@@ -34,7 +34,11 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     if(user->GetSortFreshFirst()){
         filter.listOpenMode = true;
         filter.sortMode = core::StoryFilter::sm_publisdate;
-    }else
+    }else if(user->GetSortGemsFirst()){
+        filter.listOpenMode = true;
+        filter.sortMode = core::StoryFilter::sm_gems;
+    }
+    else
         filter.sortMode = core::StoryFilter::sm_metascore;
 
     filter.reviewBias = core::StoryFilter::bias_none;
@@ -51,9 +55,13 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
             continue;
         if(!user->GetStrictFreshSort()
                 || (user->GetStrictFreshSort() && userFics->metascores.at(i) > 1))
-        filter.recsHash[userFics->fics[i]] = userFics->metascores.at(i);
+        filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
     }
-    userFics->ficToMetascore = filter.recsHash;
+    if(user->GetSortGemsFirst())
+        filter.recommendationScoresSearchToken.ficToPureVotes = userFics->ficToVotes;
+    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
+//    userFics->ficToVotes = filter.recommendationScoresSearchToken.ficToPureVotes;
+
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
@@ -79,7 +87,7 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     if(user->GetShowCompleteOnly())
         filter.ensureCompleted = true;
     if(user->GetHideDead())
-        filter.ensureActive= true;
+        filter.ensureActive = true;
     //QLOG_INFO() << "ignored fics: " << user->GetIgnoredFics();
 
 
@@ -90,10 +98,6 @@ void FetchFicsForDisplayPageCommand(QSharedPointer<FicSourceGRPC> source,
     source->FetchData(filter, fics);
 
 }
-
-
-
-
 
 void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> source, QSharedPointer<User> user, QVector<core::Fanfic> *fics, int qualityCutoff)
 {
@@ -129,9 +133,9 @@ void FetchFicsForDisplayRngCommand(int size, QSharedPointer<FicSourceGRPC> sourc
         if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
         if(userFics->metascores.at(i) >=qualityCutoff)
-            filter.recsHash[userFics->fics[i]] = userFics->metascores.at(i);
+            filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
     }
-    userFics->ficToMetascore = filter.recsHash;
+    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
@@ -184,7 +188,11 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
     if(user->GetSortFreshFirst()){
         filter.listOpenMode = true;
         filter.sortMode = core::StoryFilter::sm_publisdate;
-    }else
+    }else if(user->GetSortGemsFirst()){
+        filter.listOpenMode = true;
+        filter.sortMode = core::StoryFilter::sm_gems;
+    }
+    else
         filter.sortMode = core::StoryFilter::sm_metascore;
 
     filter.reviewBias = core::StoryFilter::bias_none;
@@ -200,10 +208,13 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
         if(userFics->sourceFics.contains(userFics->fics.at(i)))
             continue;
         if(!user->GetStrictFreshSort()
-                || (user->GetStrictFreshSort() && userFics->metascores.at(i)>1))
-        filter.recsHash[userFics->fics[i]] = userFics->metascores.at(i);
+                || (user->GetStrictFreshSort() && userFics->metascores.at(i) > 1))
+        filter.recommendationScoresSearchToken.ficToScore[userFics->fics[i]] = userFics->metascores.at(i);
     }
-    userFics->ficToMetascore = filter.recsHash;
+    if(user->GetSortGemsFirst())
+        filter.recommendationScoresSearchToken.ficToPureVotes = userFics->ficToVotes;
+    userFics->ficToMetascore = filter.recommendationScoresSearchToken.ficToScore;
+//    userFics->ficToVotes = filter.recommendationScoresSearchToken.ficToPureVotes;
     auto fandomFilter = user->GetCurrentFandomFilter();
     if(fandomFilter.tokens.size() > 0){
         filter.fandom = fandomFilter.tokens.at(0).id;
@@ -236,5 +247,4 @@ int FetchPageCountForFilterCommand(QSharedPointer<FicSourceGRPC> source, QShared
     auto count = source->GetFicCount(filter);
     return count/size;
 }
-
 }

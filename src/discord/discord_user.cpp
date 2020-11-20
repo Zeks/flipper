@@ -392,6 +392,8 @@ bool User::GetSortFreshFirst() const
 void User::SetSortFreshFirst(bool value)
 {
     QWriteLocker locker(&lock);
+    if(value)
+        sortGemsFirst = false;
     sortFreshFirst = value;
 }
 
@@ -639,6 +641,20 @@ bool User::GetBanned() const
 {
     QReadLocker locker(&lock);
     return banned;
+}
+
+bool User::GetSortGemsFirst() const
+{
+    QReadLocker locker(&lock);
+    return sortGemsFirst;
+}
+
+void User::SetSortGemsFirst(bool value)
+{
+    QWriteLocker locker(&lock);
+    if(value)
+        sortFreshFirst = false;
+    sortGemsFirst = value;
 }
 void Users::AddUser(QSharedPointer<User> user)
 {

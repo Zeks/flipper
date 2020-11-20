@@ -29,10 +29,11 @@ enum class EHelpPages{
     list_modes_help = 2,
     recs_help = 3,
     fresh_help = 4,
-    roll_help = 5,
-    fanfic_filter_help = 6,
-    fandom_filter_help = 7,
-    last_help_page = 7,
+    gems_help = 5,
+    roll_help = 6,
+    fanfic_filter_help = 7,
+    fandom_filter_help = 8,
+    last_help_page = 8,
 };
 
     SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string_view serverPrefix);
@@ -41,6 +42,7 @@ enum class EHelpPages{
     SleepyDiscord::Embed  GetListModesPage(std::string_view serverPrefix);
     SleepyDiscord::Embed  GetRecsHelpPage(std::string_view serverPrefix);
     SleepyDiscord::Embed  GetFreshHelpPage(std::string_view serverPrefix);
+    SleepyDiscord::Embed  GetGemsHelpPage(std::string_view serverPrefix);
     SleepyDiscord::Embed  GetRollHelpPage(std::string_view serverPrefix);
     SleepyDiscord::Embed  GetFanficFiltersHelpPage(std::string_view serverPrefix);
     SleepyDiscord::Embed  GetFandomFiltersHelpPage(std::string_view serverPrefix);

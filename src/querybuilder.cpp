@@ -625,7 +625,7 @@ QString DefaultQueryBuilder::ProcessStatusFilters(StoryFilter filter)
                            "("
                            " strftime('%s',f.updated)-strftime('%s',CURRENT_TIMESTAMP) "
                            " ) AS real "
-                           " )/60/60/24 >-%1";
+                           " )/60/60/24 >-%1 or f.complete = 1";
     activeString=activeString.arg(QString::number(filter.deadFicDaysRange));
 
     if(filter.ensureCompleted)

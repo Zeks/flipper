@@ -57,7 +57,7 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetBanned(q.value(QStringLiteral("banned")).toBool());
         user->SetUseLikedAuthorsOnly(q.value(QStringLiteral("use_liked_authors_only")).toBool());
         user->SetUuid(q.value(QStringLiteral("uuid")).toString());
-        user->SetSortFreshFirst(q.value(QStringLiteral("use_fresh_sorting")).toInt());
+        //user->SetSortFreshFirst(q.value(QStringLiteral("use_fresh_sorting")).toInt());
         user->SetHideDead(q.value(QStringLiteral("hide_dead")).toInt());
 
         auto minWords = static_cast<uint64_t>(q.value(QStringLiteral("words_filter_range_begin")).toULongLong());
@@ -66,6 +66,11 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
         user->SetWordcountFilter({minWords, maxWords, filterType});
         user->SetShowCompleteOnly(q.value(QStringLiteral("show_complete_only")).toInt());
         user->SetStrictFreshSort(q.value(QStringLiteral("strict_fresh_sorting")).toInt());
+        auto sortingMode = q.value(QStringLiteral("sorting_mode")).toInt();
+        if(sortingMode == 1)
+            user->SetSortFreshFirst(true);
+        else if(sortingMode == 2)
+            user->SetSortGemsFirst(true);
         discord::LargeListToken token;
         token.date = QDate::fromString(q.value(QStringLiteral("last_large_list_generated")).toString(), "yyyyMMdd");
         token.counter = q.value(QStringLiteral("last_large_list_counter")).toInt();
@@ -442,8 +447,18 @@ DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString user_i
 
 DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_id, bool use_fresh_sorting, bool strict_fresh_sorting)
 {
-    std::string qs = "update discord_users set use_fresh_sorting = :use_fresh_sorting, strict_fresh_sorting = :strict_fresh_sorting where user_id = :user_id";
-    SqlContext<bool> ctx(db, std::move(qs), BP3(user_id, use_fresh_sorting, strict_fresh_sorting));
+    std::string qs = "update discord_users set sorting_mode = :sorting_mode, strict_fresh_sorting = :strict_fresh_sorting where user_id = :user_id";
+    int sorting_mode = use_fresh_sorting ? 1 : 0;
+    SqlContext<bool> ctx(db, std::move(qs), BP3(user_id, sorting_mode, strict_fresh_sorting));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<bool> WriteGemSortingParams(QSqlDatabase db, QString user_id, bool useGemSorting)
+{
+    std::string qs = "update discord_users set sorting_mode = :sorting_mode where user_id = :user_id";
+    int sorting_mode = useGemSorting ? 2 : 0;
+    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, sorting_mode));
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
@@ -530,6 +545,8 @@ DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString user_id, 
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
+
+
 
 
 

@@ -177,6 +177,16 @@ struct TypeStringHolder<discord::ShowFreshRecsCommand>{
 };
 
 template <>
+struct TypeStringHolder<discord::GemsCommand>{
+        static constexpr std::string_view name = "gems";
+        static constexpr std::string_view prefixlessPattern = "?<gems>gems";
+        static constexpr std::string_view pattern = "gems";
+        static constexpr std::string_view help = "`%1gems` Will toggle sorting on least favourited fics on favourite lists closest to yours.";
+        static constexpr std::string_view tips = "You can display potentially great but barely favourited fics with `%1gems`.";
+        static constexpr std::string_view shorthand = "`{0}gems` - displays unpopular but potentially good fics";
+};
+
+template <>
 struct TypeStringHolder<discord::ShowCompletedCommand>{
         static constexpr std::string_view name = "complete";
         static constexpr std::string_view prefixlessPattern = "?<complete>complete";
@@ -274,5 +284,7 @@ struct TypeStringHolder<discord::StatsCommand>{
         static constexpr std::string_view tips = "";
         static constexpr std::string_view shorthand = "";
 };
+
+
 
 

@@ -628,6 +628,8 @@ void  FillActiveFilterPartInEmbed(SleepyDiscord::Embed& embed, QSharedPointer<Ta
         result += QStringLiteral("\nLiked authors filter is active.");
     if(command.user->GetSortFreshFirst())
         result += QStringLiteral("\nFresh recommendations sorting is active.");
+    if(command.user->GetSortGemsFirst())
+        result += QStringLiteral("\nGems recommendations sorting is active.");
     if(command.user->GetShowCompleteOnly())
         result += QStringLiteral("\nOnly showing fics that are complete.");
     if(command.user->GetHideDead())
@@ -680,7 +682,7 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     int pageCount = FetchPageCountForFilterCommand(environment->ficSource, command.user, listSize);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
-        fic.score = userFics->ficToMetascore.value(fic.identity.id);
+        fic.score = userFics->ficToMetascore[fic.identity.id];
     //QLOG_TRACE() << "Fetched fics";
     SleepyDiscord::Embed embed;
     //QString urlProto = "[%1](https://www.fanfiction.net/s/%2)";
@@ -778,7 +780,7 @@ QSharedPointer<SendMessageCommand> DisplayRngAction::ExecuteImpl(QSharedPointer<
     FetchFicsForDisplayRngCommand(3, environment->ficSource, command.user, &fics, scoreCutoff);
     auto userFics = command.user->FicList();
     for(auto& fic : fics)
-        fic.score = userFics->ficToMetascore.value(fic.identity.id);
+        fic.score = userFics->ficToMetascore[fic.identity.id];
 
     QLOG_TRACE() << QStringLiteral("Fetched fics for rng");
 
@@ -1076,6 +1078,27 @@ QSharedPointer<SendMessageCommand> ShowFreshRecommendationsAction::ExecuteImpl(Q
     return action;
 }
 
+QSharedPointer<SendMessageCommand> ShowGemsAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
+{
+    auto dbToken = An<discord::DatabaseVendor>()->GetDatabase(QStringLiteral("users"));
+    environment->fandoms->db = dbToken->db;
+    An<interfaces::Users> usersDbInterface;
+    command.user->SetStrictFreshSort(false);
+    command.user->SetSortFreshFirst(false);
+    if(!command.user->GetSortGemsFirst()){
+        usersDbInterface->WriteGemSortingParams(command.user->UserID(), true);
+        action->text = QStringLiteral("Gem sorting mode turned on, to disable use the same command again.");
+        command.user->SetSortGemsFirst(true);
+    }
+    else{
+        usersDbInterface->WriteGemSortingParams(command.user->UserID(), false);
+        command.user->SetSortGemsFirst(false);
+        action->text = QStringLiteral("Disabling gems sort.");
+    }
+    return action;
+}
+
+
 
 
 QSharedPointer<SendMessageCommand> ShowCompleteAction::ExecuteImpl(QSharedPointer<TaskEnvironment> environment, Command&& command)
@@ -1147,6 +1170,7 @@ QSharedPointer<SendMessageCommand> ResetFiltersAction::ExecuteImpl(QSharedPointe
     user->SetHideDead(false);
     user->SetShowCompleteOnly(false);
     user->SetSortFreshFirst(false);
+    user->SetSortGemsFirst(false);
     user->SetStrictFreshSort(false);
     user->SetUseLikedAuthorsOnly(false);
     user->SetWordcountFilter({0,0});
@@ -1368,6 +1392,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new SendMessageToChannelAction());
     case ECommandType::ct_toggle_ban:
         return QSharedPointer<ActionBase>(new ToggleBanAction());
+    case ECommandType::ct_show_gems:
+        return QSharedPointer<ActionBase>(new ShowGemsAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());

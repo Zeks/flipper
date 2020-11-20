@@ -36,6 +36,7 @@ enum ECommandType{
     ct_send_to_channel = 33,
     ct_toggle_ban = 34,
     ct_display_statistics = 35,
+    ct_show_gems= 36,
 };
 
 }

@@ -35,6 +35,8 @@ SleepyDiscord::Embed GetHelpPage(int pageNumber, std::string_view serverPrefix)
         return GetRecsHelpPage(serverPrefix);
     case EHelpPages::fresh_help:
         return GetFreshHelpPage(serverPrefix);
+    case EHelpPages::gems_help:
+        return GetGemsHelpPage(serverPrefix);
     case EHelpPages::roll_help:
         return GetRollHelpPage(serverPrefix);
     case EHelpPages::fanfic_filter_help:
@@ -112,6 +114,7 @@ SleepyDiscord::Embed GetTopLevelHelpPage(std::string_view serverPrefix)
     std::string listTypesText;
     listTypesText += std::string(TypeStringHolder<RecsCreationCommand>::shorthand) + "\n";
     listTypesText += std::string(TypeStringHolder<ShowFreshRecsCommand>::shorthand) + "\n";
+    listTypesText += std::string(TypeStringHolder<GemsCommand>::shorthand) + "\n";
     listTypesText += std::string(TypeStringHolder<RngCommand>::shorthand) + "\n";
     //listTypesText += std::string(TypeStringHolder<SimilarFicsCommand>::shorthand) + "\n";
     listTypesText=fmt::format(listTypesText, serverPrefix);
@@ -337,6 +340,28 @@ SleepyDiscord::Embed GetFreshHelpPage(std::string_view serverPrefix)
     return embed;
 }
 
+
+SleepyDiscord::Embed GetGemsHelpPage(std::string_view serverPrefix)
+{
+    SleepyDiscord::Embed embed;
+
+    SleepyDiscord::EmbedField freshRecsField;
+    freshRecsField.isInline = false;
+    freshRecsField.name = "Gems recommendations mode usage:";
+    std::string fieldText = "`{0}gems` is used to switch your recommedations to display fics that appear on favourite lists very similar to yours but barely have any favourites."
+                            " The idea is, that the fact they appear on these favourite lists at all should override their lack of popularity and make them relevant for you. "
+                            "\n\nExamples:"
+                            "\n`{0}gems`"
+                            "\n\nTo switch the bot back to top recommendations display, repeat `{0}gems` command";
+    fieldText=fmt::format(fieldText, serverPrefix);
+    freshRecsField.value = fieldText;
+
+    embed.fields.push_back(freshRecsField);
+
+    embed.color = 0xff0000;
+    return embed;
+}
+
 SleepyDiscord::Embed GetRollHelpPage(std::string_view serverPrefix)
 {
     SleepyDiscord::Embed embed;
@@ -500,6 +525,8 @@ SleepyDiscord::Embed GetFandomFiltersHelpPage(std::string_view serverPrefix)
     embed.color = 0xff0000;
     return embed;
 }
+
+
 
 
 }

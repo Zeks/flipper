@@ -24,6 +24,7 @@ alter table discord_users add column favourites_size integer default 0;
 alter table discord_users add column last_large_list_generated varchar;
 alter table discord_users add column last_large_list_counter int;
 alter table discord_users add column words_filter_type integer default 0;
+alter table discord_users add column sorting_mode integer default 0;
 
 CREATE INDEX if not exists I_discord_users ON discord_users (user_id ASC);  
 

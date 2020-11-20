@@ -635,6 +635,7 @@ Status FeederService::RecommendationListCreation(ServerContext* context, const P
                 targetList->add_purged(0);
             }
             targetList->add_fic_matches(adjustedVotes);
+            targetList->add_fic_votes(list.pureMatches.value(key));
             if(!task->data().response_data_controls().ignore_breakdowns())
                 targetList->add_no_trash_score(list.sumNegativeVotesForFic[key]);
 
