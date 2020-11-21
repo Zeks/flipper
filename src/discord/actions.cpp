@@ -1290,6 +1290,20 @@ QSharedPointer<SendMessageCommand> SendMessageToChannelAction::ExecuteImpl(QShar
     return action;
 }
 
+QSharedPointer<SendMessageCommand> SusAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
+{
+    action->targetChannel = SleepyDiscord::Snowflake<SleepyDiscord::Channel>(std::to_string(Client::mirrorSourceChannel));
+    if(command.variantHash.contains("sus")){
+        action->text = "Done, impersonating: " + command.variantHash["sus"].toString();
+        command.user->SetImpersonatedId(command.variantHash["sus"].toString());
+    }
+    else{
+        command.user->SetImpersonatedId("");
+        action->text = "Done, impersonating no one.";
+    }
+    return action;
+}
+
 QSharedPointer<SendMessageCommand> ToggleBanAction::ExecuteImpl(QSharedPointer<TaskEnvironment>, Command&& command)
 {
     auto type = command.variantHash["type"].toString();
@@ -1394,6 +1408,8 @@ QSharedPointer<ActionBase> GetAction(ECommandType type)
         return QSharedPointer<ActionBase>(new ToggleBanAction());
     case ECommandType::ct_show_gems:
         return QSharedPointer<ActionBase>(new ShowGemsAction());
+    case ECommandType::ct_sus_user:
+        return QSharedPointer<ActionBase>(new SusAction());
 
     default:
         return QSharedPointer<ActionBase>(new NullAction());

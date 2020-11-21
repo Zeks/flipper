@@ -462,6 +462,14 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
     CommandCreator::EnsureUserExists(QString::fromStdString(message.author.ID), QString::fromStdString(message.author.username));
     An<Users> users;
     auto user = users->GetUser(QString::fromStdString(message.author.ID.string()));
+    if(!user->GetImpersonatedId().isEmpty()){
+        users->LoadUser(user->GetImpersonatedId());
+        auto impersonatedtUser = users->GetUser(user->GetImpersonatedId());
+        if(impersonatedtUser)
+            user = impersonatedtUser;
+        else
+            return {};
+    }
     if(user && user->GetBanned() ){
         if(!user->GetShownBannedMessage()){
             user->SetShownBannedMessage(true);
@@ -477,6 +485,7 @@ CommandChain CommandParser::Execute(const std::string& command, QSharedPointer<d
         }
         return {};
     }
+
     if(user->secsSinceLastsEasyQuery() < 3)
     {
         if(user->GetTimeoutWarningShown())
@@ -1211,6 +1220,29 @@ CommandChain ToggleBanCommand::ProcessInputImpl(const SleepyDiscord::Message & m
 bool ToggleBanCommand::IsThisCommand(const std::string &cmd)
 {
     return cmd == TypeStringHolder<ToggleBanCommand>::name;
+}
+
+CommandChain SusCommand::ProcessInputImpl(const SleepyDiscord::Message & message)
+{
+    if(message.author.ID.string() != std::to_string(ownerId))
+        return std::move(result);
+    Command command = NewCommand(server, message,ct_sus_user);
+    auto match = matchCommand<PageChangeCommand>(message.content);
+    if(match.get<1>().to_string().length() > 0)
+    {
+        command.variantHash["sus"] = QString::fromStdString(match.get<1>().to_string());
+        result.Push(std::move(command));
+    }
+    else
+    {
+        result.Push(std::move(command));
+    }
+    return std::move(result);
+}
+
+bool SusCommand::IsThisCommand(const std::string &cmd)
+{
+    return cmd == TypeStringHolder<SusCommand>::name;
 }
 
 CommandChain StatsCommand::ProcessInputImpl(const SleepyDiscord::Message & message)

@@ -41,6 +41,7 @@ namespace discord {
         RegisterCommand<ShowFreshRecsCommand>(parser);
         RegisterCommand<ShowCompletedCommand>(parser);
         RegisterCommand<HideDeadCommand>(parser);
+        RegisterCommand<SusCommand>(parser);
         RegisterCommand<PurgeCommand>(parser);
         RegisterCommand<ChangeTargetCommand>(parser);
         RegisterCommand<SendMessageToChannelCommand>(parser);

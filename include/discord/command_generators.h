@@ -268,6 +268,13 @@ public:
     virtual bool IsThisCommand(const std::string& cmd);
 };
 
+class SusCommand: public CommandCreator{
+public:
+    SusCommand(){}
+    virtual CommandChain ProcessInputImpl(const SleepyDiscord::Message&);
+    virtual bool IsThisCommand(const std::string& cmd);
+};
+
 class CommandParser{
 public:
     CommandChain Execute(const std::string &command, QSharedPointer<Server> server, const SleepyDiscord::Message &);

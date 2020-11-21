@@ -286,5 +286,14 @@ struct TypeStringHolder<discord::StatsCommand>{
 };
 
 
+template <>
+struct TypeStringHolder<discord::SusCommand>{
+        static constexpr std::string_view name = "sus";
+        static constexpr std::string_view prefixlessPattern = "?<sus>sus";
+        static constexpr std::string_view pattern = "sus\\s{1,}(\\d{1,12})";
+        static constexpr std::string_view help = "";
+        static constexpr std::string_view tips = "";
+        static constexpr std::string_view shorthand = "";
+};
 
 

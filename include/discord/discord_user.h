@@ -204,9 +204,13 @@ struct User{
     bool GetSortGemsFirst() const;
     void SetSortGemsFirst(bool value);
 
+    QString GetImpersonatedId() const;
+    void SetImpersonatedId(const QString &value);
+
 private:
     bool isValid = false;
     QString userID;
+    QString impersonatedId;
     QString userName;
     QUuid uuid;
     QString ffnID;

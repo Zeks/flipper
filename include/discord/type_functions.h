@@ -47,6 +47,7 @@ namespace discord {
                 TypeStringHolder<SendMessageToChannelCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ToggleBanCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<StatsCommand>::prefixlessPattern, str::separator,
+                TypeStringHolder<SusCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<GemsCommand>::prefixlessPattern, str::separator,
                 TypeStringHolder<ChangeTargetCommand>::prefixlessPattern, str::separator,
                 //TypeStringHolder<ShowFullFavouritesCommand>::prefixlessPattern, str::separator,

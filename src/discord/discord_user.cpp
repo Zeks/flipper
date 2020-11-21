@@ -656,6 +656,18 @@ void User::SetSortGemsFirst(bool value)
         sortFreshFirst = false;
     sortGemsFirst = value;
 }
+
+QString User::GetImpersonatedId() const
+{
+    QReadLocker locker(&lock);
+    return impersonatedId;
+}
+
+void User::SetImpersonatedId(const QString &value)
+{
+    QWriteLocker locker(&lock);
+    impersonatedId = value;
+}
 void Users::AddUser(QSharedPointer<User> user)
 {
     QWriteLocker locker(&lock);

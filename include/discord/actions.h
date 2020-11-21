@@ -77,6 +77,7 @@ ACTION(SetWordcountLimitAction);
 ACTION(SetTargetChannelAction);
 ACTION(SendMessageToChannelAction);
 ACTION(ToggleBanAction);
+ACTION(SusAction);
 
 
 struct ActionChain{
