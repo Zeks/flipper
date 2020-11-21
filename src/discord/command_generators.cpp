@@ -381,10 +381,10 @@ CommandChain IgnoreFandomCommand::ProcessInputImpl(const SleepyDiscord::Message&
 
     AddFilterCommand(std::move(ignoredFandoms));
 
-    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
-    createRecs.ids.push_back(user->FfnID().toUInt());
-    createRecs.variantHash[QStringLiteral("refresh")] = true;
-    result.Push(std::move(createRecs));
+//    Command createRecs = NewCommand(server, message,ct_fill_recommendations);
+//    createRecs.ids.push_back(user->FfnID().toUInt());
+//    createRecs.variantHash[QStringLiteral("refresh")] = true;
+//    result.Push(std::move(createRecs));
 
     Command displayRecs = NewCommand(server, message,user->GetLastPageType());
     displayRecs.ids.push_back(0);
