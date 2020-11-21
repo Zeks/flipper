@@ -73,7 +73,7 @@ QuickParseResult UserFavouritesParser::QuickParseAvailable()
         result.canDoQuickParse = false;
     result.validFavouritesCount = true;
 
-    QRegularExpression rxUid("uid=(\\d+)");
+    QRegularExpression rxUid("fanfiction.net.u.(\\d+)");
     match = rxUid.match(dektopPage.content);
     if(match.hasMatch())
         result.mobileUserId = match.captured(1);

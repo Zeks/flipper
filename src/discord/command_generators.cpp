@@ -132,6 +132,14 @@ CommandChain RecommendationsCommand::ProcessInput(Client* client, QSharedPointer
 
     An<Users> users;
     auto user = users->GetUser(QString::fromStdString(message.author.ID));
+    if(!user->GetImpersonatedId().isEmpty()){
+        users->LoadUser(user->GetImpersonatedId());
+        auto impersonatedtUser = users->GetUser(user->GetImpersonatedId());
+        if(impersonatedtUser)
+            user = impersonatedtUser;
+        else
+            return {};
+    }
     if(!user->HasActiveSet()){
         if(user->FfnID().isEmpty() || user->FfnID() == QStringLiteral("-1"))
         {
@@ -1227,7 +1235,7 @@ CommandChain SusCommand::ProcessInputImpl(const SleepyDiscord::Message & message
     if(message.author.ID.string() != std::to_string(ownerId))
         return std::move(result);
     Command command = NewCommand(server, message,ct_sus_user);
-    auto match = matchCommand<PageChangeCommand>(message.content);
+    auto match = matchCommand<SusCommand>(message.content);
     if(match.get<1>().to_string().length() > 0)
     {
         command.variantHash["sus"] = QString::fromStdString(match.get<1>().to_string());
