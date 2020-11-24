@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #include "discord/db_vendor.h"
 #include "logger/QsLog.h"
 #include <QUuid>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QSqlError>
 
 namespace discord {
@@ -46,10 +46,10 @@ void DatabaseVendor::AddConnectionToken(QString name, const SqliteConnectionToke
         pageCache = token;
 }
 
-QSqlDatabase DatabaseVendor::InstantiateDatabase(const SqliteConnectionToken & token)
+sql::Database DatabaseVendor::InstantiateDatabase(const SqliteConnectionToken & token)
 {
-    QSqlDatabase db;
-    db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), token.databaseName + QUuid::createUuid().toString());
+    sql::Database db;
+    db = sql::Database::addDatabase(QStringLiteral("QSQLITE"), token.databaseName + QUuid::createUuid().toString());
     QString filename = token.folder.isEmpty() ? token.databaseName : token.folder + "/" + token.databaseName;
     db.setDatabaseName(filename + QStringLiteral(".sqlite"));
     db.open();

@@ -24,16 +24,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QNetworkReply>
 #include <QUrl>
 #include <QObject>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
+#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_error.h"
 #include <QSqlRecord>
-#include <QSqlDatabase>
 #include <QDebug>
-#include <QSqlDatabase>
 #include <QSqlError>
 #include <QEventLoop>
 #include <QThread>
 #include <QCoreApplication>
 #include <QSettings>
+#include <iostream>
 
 
 
@@ -53,12 +54,12 @@ public:
     WebPage GetPageFromDB(QString url);
     WebPage GetPageFromNetwork(QString url);
     void SavePageToDB(const WebPage&);
-    void SetDatabase(QSqlDatabase _db);
+    void SetDatabase(sql::Database _db);
     void WipeOldCache();
     void WipeAllCache();
     QDate automaticCacheDateCutoff;
     bool autoCacheForCurrentDate = true;
-    QSqlDatabase db;
+    sql::Database db;
 
 public slots:
     //void OnNetworkReply(QNetworkReply*);
@@ -113,13 +114,13 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-//    auto db = QSqlDatabase::database("PageCache");
+//    auto db = sql::Database::database("PageCache");
     bool dbOpen = db.isOpen();
     if(!dbOpen)
         return result;
     {
         // first we search for the exact page in the database
-        QSqlQuery q(db);
+        sql::Query q(db);
         q.prepare("select * from PageCache where url = :URL ");
         q.bindValue(":URL", url);
         q.exec();
@@ -128,7 +129,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         if(q.lastError().isValid())
         {
             qDebug() << "Reading url: " << url;
-            qDebug() << "Error getting page from database: " << q.lastError();
+            qDebug() << "Error getting page from database: " << QString::fromStdString(q.lastError().text());
             return result;
         }
 
@@ -192,13 +193,13 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare("delete from pagecache where url = :url");
     q.bindValue(":url", page.url);
     q.exec();
     QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
                      "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
-    q.prepare(insert);
+    q.prepare(insert.toStdString());
     q.bindValue(":URL", page.url);
     q.bindValue(":GENERATION_DATE", QDateTime::currentDateTime());
     q.bindValue(":CONTENT", qCompress(page.content.toUtf8()));
@@ -208,11 +209,11 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     if(q.lastError().isValid())
     {
         qDebug() << "Writing url: " << page.url;
-        qDebug() << "Error saving page to database: "  << q.lastError();
+        qDebug() << "Error saving page to database: "  << QString::fromStdString(q.lastError().text());
     }
 }
 
-void PageGetterPrivate::SetDatabase(QSqlDatabase _db)
+void PageGetterPrivate::SetDatabase(sql::Database _db)
 {
     db  = _db;
 }
@@ -220,25 +221,25 @@ void PageGetterPrivate::SetDatabase(QSqlDatabase _db)
 void PageGetterPrivate::WipeOldCache()
 {
     //" and updated > date('now', '-60 days') ";
-    QSqlQuery q(QSqlDatabase::database("PageCache"));
+    sql::Query q(sql::Database::database("PageCache"));
     q.prepare("delete from pagecache where generation_date < date('now', '-2 days')");
     q.exec();
     if(q.lastError().isValid())
-        qDebug() << "Error wiping cache: "  << q.lastError();
+        qDebug() << "Error wiping cache: "  << QString::fromStdString(q.lastError().text());
 }
 
 void PageGetterPrivate::WipeAllCache()
 {
-    QSqlQuery q(QSqlDatabase::database("PageCache"));
+    sql::Query q(sql::Database::database("PageCache"));
     q.prepare("delete from pagecache");
     q.exec();
     if(q.lastError().isValid())
-        qDebug() << "Error wiping cache: "  << q.lastError();
+        qDebug() << "Error wiping cache: "  << QString::fromStdString(q.lastError().text());
 
     q.prepare("vacuum");
     q.exec();
     if(q.lastError().isValid())
-        qDebug() << "Error wiping cache: "  << q.lastError();
+        qDebug() << "Error wiping cache: "  << QString::fromStdString(q.lastError().text());
 }
 
 PageManager::PageManager() : d(new PageGetterPrivate)
@@ -251,7 +252,7 @@ PageManager::~PageManager()
     qDebug() << "deleting page manager";
 }
 
-void PageManager::SetDatabase(QSqlDatabase _db)
+void PageManager::SetDatabase(sql::Database _db)
 {
     d->SetDatabase(_db);
 }
@@ -323,7 +324,7 @@ void PageThreadWorker::Task(QString url,
 {
     FuncCleanup f([&](){working = false;});
     //qDebug() << updateLimit;
-    database::Transaction pcTransaction(QSqlDatabase::database("PageCache"));
+    database::Transaction pcTransaction(sql::Database::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     pager->WipeOldCache();
@@ -419,7 +420,7 @@ void PageThreadWorker::FandomTask(const FandomParseTask& task)
 {
     FuncCleanup f([&](){working = false;});
     //qDebug() << updateLimit;
-    database::Transaction pcTransaction(QSqlDatabase::database(QStringLiteral("PageCache")));
+    database::Transaction pcTransaction(sql::Database::database("PageCache"));
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);
     pager->WipeOldCache();
@@ -448,7 +449,7 @@ void PageThreadWorker::TaskList(QStringList urls, ECacheMode cacheMode,  int del
     // kinda have to split pagecache db from service db I guess
     // which is only natural anyway... probably
     // still not helping for multithreading later on
-    auto db = QSqlDatabase::database(QStringLiteral("PageCache"));
+    auto db = sql::Database::database("PageCache");
     database::Transaction pcTransaction(db);
     working = true;
     QScopedPointer<PageManager> pager(new PageManager);

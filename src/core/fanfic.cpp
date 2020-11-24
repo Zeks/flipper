@@ -1,6 +1,6 @@
 #include "core/fanfic.h"
 #include "core/section.h"
-
+#include <iostream>
 
 namespace core {
 Fanfic::Fanfic(){

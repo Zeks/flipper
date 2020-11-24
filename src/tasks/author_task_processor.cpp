@@ -36,8 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QFutureWatcher>
 #include <QtConcurrent>
 
-AuthorLoadProcessor::AuthorLoadProcessor(QSqlDatabase db,
-                                         QSqlDatabase taskDb,
+AuthorLoadProcessor::AuthorLoadProcessor(sql::Database db,
+                                         sql::Database taskDb,
                                          QSharedPointer<interfaces::Fanfics> fanficInterface,
                                          QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                          QSharedPointer<interfaces::Authors> authorsInterface,
@@ -139,7 +139,7 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
 
         if(subtask->finished)
         {
-            qDebug() << "subtask: " << subtask->id << " already processed its " << QString::number(subtask->content->size()) << "entities";
+            qDebug() << "subtask: " << subtask->id << " already processed its " << subtask->content->size() << "entities";
             qDebug() << "skipping";
             currentCounter+=subtask->content->size();
             emit updateCounter(currentCounter);
@@ -204,14 +204,14 @@ void AuthorLoadProcessor::Run(PageTaskPtr task)
             else
                 cachedPages++;
 
-            qDebug() << "Page loaded in: " << webPage.LoadedIn();
+            qDebug() << "Page loaded in: " << webPage.LoadedIn().toStdString();
             emit updateCounter(currentCounter);
             auto webId = url_utils::GetWebId(webPage.url, "ffn").toInt();
             auto author = authors->GetByWebID("ffn", webId);
 
             QCoreApplication::processEvents();
             {
-                qDebug() << "processing page:" << webPage.pageIndex << " " << webPage.url;
+                qDebug() << "processing page:" << webPage.pageIndex << " " << webPage.url.toStdString();
                 auto startRecLoad = std::chrono::high_resolution_clock::now();
                 auto splittings = page_utils::SplitJob(webPage.content);
                 futures.reserve(splittings.parts.size());

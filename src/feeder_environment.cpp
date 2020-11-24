@@ -21,27 +21,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/pure_sql.h"
 #include "include/url_utils.h"
 #include "querybuilder.h"
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QDebug>
 #include <QSettings>
 #include <QSqlError>
 #include <QTextCodec>
 #include <memory>
 
-QSqlQuery FeederEnvironment::BuildQuery(bool countOnly)
+sql::Query FeederEnvironment::BuildQuery(bool countOnly)
 {
-    QSqlDatabase db = QSqlDatabase::database();
+    sql::Database db = sql::Database::database();
     if(countOnly)
         currentQuery = countQueryBuilder.Build(filter);
     else
         currentQuery = queryBuilder.Build(filter);
-    QSqlQuery q(db);
+    sql::Query q(db);
     q.prepare(currentQuery->str);
     auto it = currentQuery->bindings.cbegin();
     auto end = currentQuery->bindings.cend();
     while(it != end)
     {
-        if(currentQuery->str.contains(it->key))
+        if(currentQuery->str.find(it->key) != std::string::npos)
         {
             qDebug() << it->key << " " << it->value;
             q.bindValue(it->key, it->value);
@@ -56,13 +56,13 @@ void FeederEnvironment::LoadData(SlashFilterState slashFilter)
     auto q = BuildQuery();
     q.setForwardOnly(true);
     q.exec();
-    qDebug().noquote() << q.lastQuery();
+    qDebug() << q.lastQuery();
     if(q.lastError().isValid())
     {
         qDebug() << " ";
         qDebug() << " ";
-        qDebug() << "Error loading data:" << q.lastError();
-        qDebug().noquote() << q.lastQuery();
+        qDebug() << "Error loading data:" << q.lastError().text();
+        qDebug() << q.lastQuery();
     }
     int counter = 0;
     fanfics.clear();
@@ -127,27 +127,27 @@ void FeederEnvironment::Init()
 }
 
 
-inline core::Fanfic FeederEnvironment::LoadFanfic(QSqlQuery& q)
+inline core::Fanfic FeederEnvironment::LoadFanfic(sql::Query& q)
 {
     core::Fanfic result;
     result.identity.id = q.value("ID").toInt();
-    result.fandom = q.value("FANDOM").toString();
+    result.fandom = QString::fromStdString(q.value("FANDOM").toString());
     result.author = core::Author::NewAuthor();
-    result.author->name = q.value("AUTHOR").toString();
-    result.title = q.value("TITLE").toString();
-    result.summary = q.value("SUMMARY").toString();
-    result.genreString = q.value("GENRES").toString();
-    result.charactersFull = q.value("CHARACTERS").toString().replace("not found", "");
-    result.rated = q.value("RATED").toString();
+    result.author->name = QString::fromStdString(q.value("AUTHOR").toString());
+    result.title = QString::fromStdString(q.value("TITLE").toString());
+    result.summary = QString::fromStdString(q.value("SUMMARY").toString());
+    result.genreString = QString::fromStdString(q.value("GENRES").toString());
+    result.charactersFull = QString::fromStdString(q.value("CHARACTERS").toString()).replace("not found", "");
+    result.rated = QString::fromStdString(q.value("RATED").toString());
     auto published = q.value("PUBLISHED").toDateTime();
     auto updated   = q.value("UPDATED").toDateTime();
     result.published = published;
     result.updated= updated;
-    result.SetUrl("ffn",q.value("URL").toString());
-    result.userData.tags = q.value("TAGS").toString();
-    result.wordCount = q.value("WORDCOUNT").toString();
-    result.favourites = q.value("FAVOURITES").toString();
-    result.reviews = q.value("REVIEWS").toString();
+    result.SetUrl("ffn",QString::fromStdString(q.value("URL").toString()));
+    result.userData.tags = QString::fromStdString(q.value("TAGS").toString());
+    result.wordCount = QString::fromStdString(q.value("WORDCOUNT").toString());
+    result.favourites =QString::fromStdString(q.value("FAVOURITES").toString());
+    result.reviews = QString::fromStdString(q.value("REVIEWS").toString());
     result.chapters = QString::number(q.value("CHAPTERS").toInt());
     result.complete= q.value("COMPLETE").toInt();
     result.userData.atChapter = q.value("AT_CHAPTER").toInt();
@@ -168,7 +168,7 @@ int FeederEnvironment::GetResultCount()
 {
     auto q = BuildQuery(true);
     q.setForwardOnly(true);
-    if(!database::puresql::ExecAndCheck(q))
+    if(!sql::ExecAndCheck(q))
         return -1;
     q.next();
     auto result =  q.value("records").toInt();

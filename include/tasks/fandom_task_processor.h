@@ -77,7 +77,7 @@ struct ForcedFandomUpdateDate{
 class FandomLoadProcessor: public PageConsumer{
 Q_OBJECT
 public:
-    FandomLoadProcessor(QSqlDatabase db,
+    FandomLoadProcessor(sql::Database db,
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::PageTask> pageInterface,
@@ -94,7 +94,7 @@ public:
 
 private:
     FandomParseTask task;
-    QSqlDatabase db;
+    sql::Database db;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::PageTask> pageInterface;

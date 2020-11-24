@@ -36,7 +36,7 @@ class FFNFandomIndexParserBase;
 class FandomListReloadProcessor: public QObject{
     Q_OBJECT
 public:
-    FandomListReloadProcessor(QSqlDatabase db,
+    FandomListReloadProcessor(sql::Database db,
                               QSharedPointer<interfaces::Fanfics> fanficInterface,
                               QSharedPointer<interfaces::Fandoms> fandomsInterface,
                               QSharedPointer<interfaces::PageTask> pageInterface,
@@ -50,7 +50,7 @@ public:
 
 
 private:
-    QSqlDatabase db;
+    sql::Database db;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::PageTask> pageInterface;

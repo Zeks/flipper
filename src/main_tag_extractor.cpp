@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 #include <QCoreApplication>
-#include <QSqlDatabase>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_database.h"
+#include "sql_abstractions/sql_query.h"
 #include <QSqlError>
 #include <QMetaType>
 #include <QSqlDriver>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 
 #include "Interfaces/tags.h"
 #include "Interfaces/db_interface.h"
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     QSharedPointer<database::IDBWrapper> tagExportInterface (new database::SqliteInterface());
     auto tagExportDb = tagExportInterface->InitDatabase("TagExport", false);
     tagExportInterface->ReadDbFile("dbcode/tagexportinit.sql", "TagExport");
-    database::puresql::ExportTagsToDatabase(mainDb, tagExportDb);
+    sql::ExportTagsToDatabase(mainDb, tagExportDb);
 
     return 0;
 }

@@ -44,11 +44,11 @@ namespace discord_queries{
 
 
 
-DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QString user_id){
+DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(sql::Database db, QString user_id){
     std::string qs = "select * from discord_users where user_id = :user_id";
 
     SqlContext<QSharedPointer<discord::User>> ctx(db, std::move(qs), BP1(user_id));
-    ctx.ForEachInSelect([&](QSqlQuery& q){
+    ctx.ForEachInSelect([&](sql::Query& q){
         QSharedPointer<discord::User> user(new discord::User);
         user->SetUserID(user_id);
         user->SetUserName(q.value(QStringLiteral("user_name")).toString());
@@ -86,12 +86,12 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(QSqlDatabase db, QStr
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(QSqlDatabase db, const std::string& serverId){
+DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(sql::Database db, const std::string& serverId){
     std::string qs = "select * from discord_servers where server_id = :server_id";
 
     QString server_id = QString::fromStdString(serverId);
     SqlContext<QSharedPointer<discord::Server>> ctx(db, std::move(qs), BP1(server_id));
-    ctx.ForEachInSelect([&](QSqlQuery& q){
+    ctx.ForEachInSelect([&](sql::Query& q){
         QSharedPointer<discord::Server> server(new discord::Server);
         server->SetServerId(serverId);
 
@@ -136,29 +136,29 @@ DiagnosticSQLResult<QSharedPointer<discord::FFNPage> > GetFFNPage(QSqlDatabase d
 }
 
 
-DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(QSqlDatabase db, QString user_id){
+DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(sql::Database db, QString user_id){
     std::string qs = "select * from ignored_fandoms where user_id = :user_id";
 
     SqlContext<discord::FandomFilter> ctx(db, std::move(qs), BP1(user_id));
-    ctx.ForEachInSelect([&](QSqlQuery& q){
+    ctx.ForEachInSelect([&](sql::Query& q){
         ctx.result.data.AddFandom(q.value(QStringLiteral("fandom_id")).toInt(),
                                   q.value(QStringLiteral("including_crossovers")).toBool());
     });
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<discord::FandomFilter> GetFilterList(QSqlDatabase db, QString user_id){
+DiagnosticSQLResult<discord::FandomFilter> GetFilterList(sql::Database db, QString user_id){
     std::string qs = "select * from filtered_fandoms where user_id = :user_id";
 
     SqlContext<discord::FandomFilter> ctx(db, std::move(qs), BP1(user_id));
-    ctx.ForEachInSelect([&](QSqlQuery& q){
+    ctx.ForEachInSelect([&](sql::Query& q){
         ctx.result.data.AddFandom(q.value(QStringLiteral("fandom_id")).toInt(),
                                   q.value(QStringLiteral("including_crossovers")).toBool());
     });
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(QSqlDatabase db, QString user_id)
+DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(sql::Database db, QString user_id)
 {
     std::string qs = "select fic_id from fic_tags where user_id = :user_id and fic_tag = 'ignored'";
 
@@ -167,18 +167,18 @@ DiagnosticSQLResult<QSet<int>> GetFicIgnoreList(QSqlDatabase db, QString user_id
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<int> GetCurrentPage(QSqlDatabase db, QString user_id)
+DiagnosticSQLResult<int> GetCurrentPage(sql::Database db, QString user_id)
 {
     std::string qs = "select at_page from user_lists where user_id = :user_id";
 
     SqlContext<int> ctx(db, std::move(qs), BP1(user_id));
-    ctx.ForEachInSelect([&](QSqlQuery& q){
+    ctx.ForEachInSelect([&](sql::Query& q){
         ctx.result.data = q.value(QStringLiteral("at_page")).toInt();
     });
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::User> user){
+DiagnosticSQLResult<bool> WriteUser(sql::Database db, QSharedPointer<discord::User> user){
     std::string qs = "INSERT INTO discord_users(user_id, user_name, ffn_id, reads_slash, current_list, banned, uuid) values(:user_id, :user_name, :ffn_id, :reads_slash, 0, 0, :uuid)";
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("user_id", user->UserID());
@@ -190,7 +190,7 @@ DiagnosticSQLResult<bool> WriteUser(QSqlDatabase db, QSharedPointer<discord::Use
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteServer(QSqlDatabase db, QSharedPointer<discord::Server> server)
+DiagnosticSQLResult<bool> WriteServer(sql::Database db, QSharedPointer<discord::Server> server)
 {
     std::string qs = "INSERT INTO discord_servers(server_id, server_name, active_since, last_request) "
                  "values(:server_id, :server_name, :active_since, :last_request)";
@@ -234,7 +234,7 @@ DiagnosticSQLResult<bool> UpdateFFNPage(QSqlDatabase db, QSharedPointer<discord:
 }
 
 
-DiagnosticSQLResult<bool> WriteServerPrefix(QSqlDatabase db, const std::string& serverId, QString new_prefix)
+DiagnosticSQLResult<bool> WriteServerPrefix(sql::Database db, const std::string& serverId, QString new_prefix)
 {
     std::string qs = "update discord_servers set command_prefix = :new_prefix where server_id = :server_id";
     QString server_id = QString::fromStdString(serverId);
@@ -253,7 +253,7 @@ DiagnosticSQLResult<bool> WriteServerDedicatedChannel(QSqlDatabase db, const std
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id, QString list_name,
+DiagnosticSQLResult<int> WriteUserList(sql::Database db, QString user_id, QString list_name,
                                        discord::EListType list_type,
                                        int min_match, int match_ratio, int always_at)
 {
@@ -270,7 +270,7 @@ DiagnosticSQLResult<int> WriteUserList(QSqlDatabase db, QString user_id, QString
     return result;
 }
 
-DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QString list_name)
+DiagnosticSQLResult<bool> DeleteUserList(sql::Database db, QString user_id, QString list_name)
 {
     std::string qs = "delete from user_lists where user_id = :user_id and list_id = 0";
     //auto generated= QDateTime::currentDateTimeUtc();
@@ -280,26 +280,26 @@ DiagnosticSQLResult<bool> DeleteUserList(QSqlDatabase db, QString user_id, QStri
 }
 
 
-DiagnosticSQLResult<bool> IgnoreFandom(QSqlDatabase db, QString user_id, int fandom_id, bool including_crossovers){
+DiagnosticSQLResult<bool> IgnoreFandom(sql::Database db, QString user_id, int fandom_id, bool including_crossovers){
     UnignoreFandom(db, user_id, fandom_id);
     std::string qs = "INSERT INTO ignored_fandoms(user_id, fandom_id,including_crossovers) values(:user_id, :fandom_id, :including_crossovers)";
     SqlContext<bool> ctx(db, std::move(qs), BP3(user_id, fandom_id, including_crossovers));
     ctx.ExecAndCheck(false);
     return std::move(ctx.result);
 }
-DiagnosticSQLResult<bool> UnignoreFandom(QSqlDatabase db, QString user_id, int fandom_id){
+DiagnosticSQLResult<bool> UnignoreFandom(sql::Database db, QString user_id, int fandom_id){
     std::string qs = "delete from ignored_fandoms where user_id= :user_id and fandom_id = :fandom_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, fandom_id));
     ctx.ExecAndCheck(false);
     return std::move(ctx.result);
 }
-DiagnosticSQLResult<bool> TagFanfic(QSqlDatabase db, QString user_id, int fic_id, QString fic_tag){
+DiagnosticSQLResult<bool> TagFanfic(sql::Database db, QString user_id, int fic_id, QString fic_tag){
     std::string qs = "INSERT INTO fic_tags(user_id, fic_id,fic_tag) values(:user_id, :fic_id, :fic_tag)";
     SqlContext<bool> ctx(db, std::move(qs), BP3(user_id, fic_id, fic_tag));
     ctx.ExecAndCheck(false);
     return std::move(ctx.result);
 }
-DiagnosticSQLResult<bool> UnTagFanfic(QSqlDatabase db, QString user_id, int fic_id, QString fic_tag){
+DiagnosticSQLResult<bool> UnTagFanfic(sql::Database db, QString user_id, int fic_id, QString fic_tag){
     if(fic_tag.isEmpty())
     {
         std::string qs = "delete from fic_tags where user_id= :user_id and fic_id = :fic_id";
@@ -315,13 +315,13 @@ DiagnosticSQLResult<bool> UnTagFanfic(QSqlDatabase db, QString user_id, int fic_
     }
 
 }
-DiagnosticSQLResult<bool> BanUser(QSqlDatabase db, QString user_id){
+DiagnosticSQLResult<bool> BanUser(sql::Database db, QString user_id){
     std::string qs = "update discord_users set banned = 1 where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(user_id));
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
-DiagnosticSQLResult<bool> UnbanUser(QSqlDatabase db, QString user_id){
+DiagnosticSQLResult<bool> UnbanUser(sql::Database db, QString user_id){
     std::string qs = "update discord_users set banned = 0 where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(user_id));
     ctx.ExecAndCheck(true);
@@ -345,7 +345,7 @@ DiagnosticSQLResult<bool> UnbanServer(QSqlDatabase db, QString server_id)
 }
 
 
-DiagnosticSQLResult<bool> UpdateCurrentPage(QSqlDatabase db, QString user_id, int page)
+DiagnosticSQLResult<bool> UpdateCurrentPage(sql::Database db, QString user_id, int page)
 {
     std::string qs = "update user_lists set at_page = :page where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, page));
@@ -353,7 +353,7 @@ DiagnosticSQLResult<bool> UpdateCurrentPage(QSqlDatabase db, QString user_id, in
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> UnfilterFandom(QSqlDatabase db, QString user_id, int fandom_id)
+DiagnosticSQLResult<bool> UnfilterFandom(sql::Database db, QString user_id, int fandom_id)
 {
     std::string qs = "delete from filtered_fandoms where user_id = :user_id and fandom_id = :fandom_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, fandom_id));
@@ -361,7 +361,7 @@ DiagnosticSQLResult<bool> UnfilterFandom(QSqlDatabase db, QString user_id, int f
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fandom_id, bool including_crossovers)
+DiagnosticSQLResult<bool> FilterFandom(sql::Database db, QString user_id, int fandom_id, bool including_crossovers)
 {
     std::string qs = "insert into filtered_fandoms(user_id, fandom_id, including_crossovers) values(:user_id, :fandom_id, :including_crossovers)";
     SqlContext<bool> ctx(db, std::move(qs), BP3(user_id, fandom_id, including_crossovers));
@@ -369,7 +369,7 @@ DiagnosticSQLResult<bool> FilterFandom(QSqlDatabase db, QString user_id, int fan
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> ResetFandomFilter(QSqlDatabase db, QString user_id)
+DiagnosticSQLResult<bool> ResetFandomFilter(sql::Database db, QString user_id)
 {
     std::string qs = "delete from filtered_fandoms where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(user_id));
@@ -377,7 +377,7 @@ DiagnosticSQLResult<bool> ResetFandomFilter(QSqlDatabase db, QString user_id)
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> ResetFandomIgnores(QSqlDatabase db, QString user_id)
+DiagnosticSQLResult<bool> ResetFandomIgnores(sql::Database db, QString user_id)
 {
     std::string qs = "delete from ignored_fandoms where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(user_id));
@@ -385,7 +385,7 @@ DiagnosticSQLResult<bool> ResetFandomIgnores(QSqlDatabase db, QString user_id)
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> ResetFicIgnores(QSqlDatabase db, QString user_id)
+DiagnosticSQLResult<bool> ResetFicIgnores(sql::Database db, QString user_id)
 {
     std::string qs = "delete from fic_tags where user_id = :user_id and tag = 'ignore'";
     SqlContext<bool> ctx(db, std::move(qs), BP1(user_id));
@@ -393,7 +393,7 @@ DiagnosticSQLResult<bool> ResetFicIgnores(QSqlDatabase db, QString user_id)
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteUserFFNId(QSqlDatabase db, QString user_id, int ffn_id)
+DiagnosticSQLResult<bool> WriteUserFFNId(sql::Database db, QString user_id, int ffn_id)
 {
     std::string qs = "update discord_users set ffn_id = :ffn_id where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, ffn_id));
@@ -409,7 +409,7 @@ DiagnosticSQLResult<bool> WriteUserFavouritesSize(QSqlDatabase db, QString user_
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
+DiagnosticSQLResult<bool> FillUserUids(sql::Database db)
 {
     std::string qs = "select user_id from discord_users where uuid is null";
 
@@ -429,7 +429,7 @@ DiagnosticSQLResult<bool> FillUserUids(QSqlDatabase db)
     return result;
 }
 
-DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id, int forced_min_matches, int forced_ratio)
+DiagnosticSQLResult<bool> WriteForcedListParams(sql::Database db, QString user_id, int forced_min_matches, int forced_ratio)
 {
     std::string qs = "update discord_users set forced_min_matches = :forced_min_matches, forced_ratio = :forced_ratio where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP3(user_id, forced_min_matches, forced_ratio));
@@ -437,7 +437,7 @@ DiagnosticSQLResult<bool> WriteForcedListParams(QSqlDatabase db, QString user_id
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString user_id, bool use_liked_authors_only)
+DiagnosticSQLResult<bool> WriteForceLikedAuthors(sql::Database db, QString user_id, bool use_liked_authors_only)
 {
     std::string qs = "update discord_users set use_liked_authors_only = :use_liked_authors_only where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, use_liked_authors_only));
@@ -445,7 +445,7 @@ DiagnosticSQLResult<bool> WriteForceLikedAuthors(QSqlDatabase db, QString user_i
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_id, bool use_fresh_sorting, bool strict_fresh_sorting)
+DiagnosticSQLResult<bool> WriteFreshSortingParams(sql::Database db, QString user_id, bool use_fresh_sorting, bool strict_fresh_sorting)
 {
     std::string qs = "update discord_users set sorting_mode = :sorting_mode, strict_fresh_sorting = :strict_fresh_sorting where user_id = :user_id";
     int sorting_mode = use_fresh_sorting ? 1 : 0;
@@ -454,7 +454,7 @@ DiagnosticSQLResult<bool> WriteFreshSortingParams(QSqlDatabase db, QString user_
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteGemSortingParams(QSqlDatabase db, QString user_id, bool useGemSorting)
+DiagnosticSQLResult<bool> WriteGemSortingParams(sql::Database db, QString user_id, bool useGemSorting)
 {
     std::string qs = "update discord_users set sorting_mode = :sorting_mode where user_id = :user_id";
     int sorting_mode = useGemSorting ? 2 : 0;
@@ -463,26 +463,16 @@ DiagnosticSQLResult<bool> WriteGemSortingParams(QSqlDatabase db, QString user_id
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteLargeListReparseToken(QSqlDatabase db, QString user_id, discord::LargeListToken token)
+DiagnosticSQLResult<bool> SetHideDeadFilter(sql::Database db, QString user_id, bool show_complete_only)
 {
-    std::string qs = "update discord_users set last_large_list_generated = :last_large_list_generated, last_large_list_counter = :last_large_list_counter where user_id = :user_id";
-    SqlContext<bool> ctx(db, std::move(qs));
-    ctx.bindValue("user_id", user_id);
-    ctx.bindValue("last_large_list_generated", token.date.toString("yyyyMMdd"));
-    ctx.bindValue("last_large_list_counter", token.counter);
+    std::string qs = "update discord_users set sorting_mode = :sorting_mode where user_id = :user_id";
+    int sorting_mode = useGemSorting ? 2 : 0;
+    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, sorting_mode));
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> SetHideDeadFilter(QSqlDatabase db, QString user_id, bool hide_dead)
-{
-    std::string qs = "update discord_users set hide_dead = :hide_dead where user_id = :user_id";
-    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, hide_dead));
-    ctx.ExecAndCheck(true);
-    return std::move(ctx.result);
-}
-
-DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString user_id, bool show_complete_only)
+DDiagnosticSQLResult<bool> SetCompleteFilter(sql::Database db, QString user_id, bool show_complete_only)
 {
     std::string qs = "update discord_users set show_complete_only = :show_complete_only  where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, show_complete_only));
@@ -490,7 +480,7 @@ DiagnosticSQLResult<bool> SetCompleteFilter(QSqlDatabase db, QString user_id, bo
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id)
+DiagnosticSQLResult<bool> CompletelyRemoveUser(sql::Database db, QString user_id)
 {
     if(user_id.isEmpty()){
         DiagnosticSQLResult<bool> falseResult;
@@ -523,7 +513,7 @@ DiagnosticSQLResult<bool> CompletelyRemoveUser(QSqlDatabase db, QString user_id)
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, discord::WordcountFilter filter)
+DiagnosticSQLResult<bool> SetWordcountFilter(sql::Database db, QString userId, discord::WordcountFilter filter)
 {
     std::string qs = "update discord_users set "
                      " words_filter_range_begin = :words_filter_range_begin, "
@@ -538,7 +528,7 @@ DiagnosticSQLResult<bool> SetWordcountFilter(QSqlDatabase db, QString userId, di
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> SetDeadFicDaysRange(QSqlDatabase db, QString user_id, int dead_fic_days_range)
+DiagnosticSQLResult<bool> SetDeadFicDaysRange(sql::Database db, QString user_id, int dead_fic_days_range)
 {
     std::string qs = "update discord_users set dead_fic_days_range = :dead_fic_days_range where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, dead_fic_days_range));

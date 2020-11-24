@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>*/
 #pragma once
 #include <QObject>
 #include <QDate>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QSharedPointer>
 #include <QSet>
 #include "ECacheMode.h"
@@ -40,7 +40,7 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 class RecommendationsProcessor : public QObject{
     Q_OBJECT
 public:
-    RecommendationsProcessor(QSqlDatabase db,
+    RecommendationsProcessor(sql::Database db,
                                    QSharedPointer<interfaces::Fanfics> fanficInterface,
                                    QSharedPointer<interfaces::Fandoms> fandomsInterface,
                                    QSharedPointer<interfaces::Authors> authorsInterface,
@@ -54,7 +54,7 @@ public:
     void SetStagedAuthors(QList<core::AuthorPtr> list);
 
 private:
-    QSqlDatabase db;
+    sql::Database db;
     QList<core::AuthorPtr> stagedAuthors;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;

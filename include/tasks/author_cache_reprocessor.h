@@ -38,7 +38,7 @@ typedef QSharedPointer<PageTask> PageTaskPtr;
 class AuthorCacheReprocessor: public PageConsumer{
 Q_OBJECT
 public:
-    AuthorCacheReprocessor(QSqlDatabase db,
+    AuthorCacheReprocessor(sql::Database db,
                         QSharedPointer<interfaces::Fanfics> fanficInterface,
                         QSharedPointer<interfaces::Fandoms> fandomsInterface,
                         QSharedPointer<interfaces::Authors> authorsInterface,
@@ -48,7 +48,7 @@ public:
 
 
 private:
-    QSqlDatabase db;
+    sql::Database db;
     QSharedPointer<interfaces::Fanfics> fanficsInterface;
     QSharedPointer<interfaces::Fandoms> fandomsInterface;
     QSharedPointer<interfaces::Authors> authorsInterface;

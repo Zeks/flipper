@@ -31,7 +31,7 @@ struct LockedDatabase : public core::Database{
     LockedDatabase(std::recursive_mutex& lock):core::Database(), lockGuard(lock){}
     ~LockedDatabase();
     std::lock_guard<std::recursive_mutex> lockGuard;
-    QSqlDatabase db;
+    sql::Database db;
 };
 
 
@@ -41,7 +41,7 @@ public:
     QSharedPointer<LockedDatabase> GetDatabase(QString name);
     void AddConnectionToken(QString, const SqliteConnectionToken &);
 private:
-    QSqlDatabase InstantiateDatabase(const SqliteConnectionToken&);
+    sql::Database InstantiateDatabase(const SqliteConnectionToken&);
     SqliteConnectionToken users;
     SqliteConnectionToken pageCache;
     std::recursive_mutex usersLock;

@@ -1,7 +1,7 @@
 #pragma once
 #include "ECacheMode.h"
 #include <QObject>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 
 namespace parsers{
 namespace ffn{

@@ -126,11 +126,11 @@ QSharedPointer<Query> DefaultQueryBuilder::Build(StoryFilter filter,
             queryString += BuildSortMode(filter) + CreateLimitQueryPart(filter);
     }
 
-    query->str = "select " + queryString;
+    query->str = "select " + queryString.toStdString();
     queryString.replace(" fid ", " f.id ");
     queryString.replace(" fid)", " f.id)");
     queryString.replace("(fid", "(f.id");
-    qDebug().noquote() << "Created query is:" << query->str;
+    qDebug().noquote() << "Created query is:" << QString::fromStdString(query->str);
 
 
     return query;
@@ -745,7 +745,7 @@ QString DefaultQueryBuilder::ProcessRandomization(StoryFilter filter, QString wh
     {
         auto q = NewQuery();
         q->bindings = query->bindings;
-        q->str = wherePart;
+        q->str = wherePart.toStdString();
 
         auto values = rng->Get(q, userToken, db, filter);
         if(values.size() == 0)
@@ -783,13 +783,13 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         {
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreInclusion))
-                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
         }
         if(!filter.genreExclusion.isEmpty())
         {
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreExclusion))
-                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
         }
     }
     else
@@ -799,9 +799,9 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreInclusion))
             {
-                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
-                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
-                q->bindings.push_back({":genreinc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
             }
         }
         if(!filter.genreExclusion.isEmpty())
@@ -809,9 +809,9 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreExclusion))
             {
-                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
-                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
-                q->bindings.push_back({":genreexc" + QString::number(counter++),genre});
+                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
             }
         }
     }
@@ -834,8 +834,8 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         {
             if(word.trimmed().isEmpty())
                 continue;
-            q->bindings.push_back({":incword" + QString::number(counter++),word});
-            q->bindings.push_back({":incword" + QString::number(counter++),word});
+            q->bindings.push_back({":incword" + QString::number(counter++).toStdString(),word});
+            q->bindings.push_back({":incword" + QString::number(counter++).toStdString(),word});
         }
     }
     if(!filter.wordExclusion.isEmpty())
@@ -845,8 +845,8 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         {
             if(word.trimmed().isEmpty())
                 continue;
-            q->bindings.push_back({":excword" + QString::number(counter++),word});
-            q->bindings.push_back({":excword" + QString::number(counter++),word}); // todo change on DB switch
+            q->bindings.push_back({":excword" + QString::number(counter++).toStdString(),word});
+            q->bindings.push_back({":excword" + QString::number(counter++).toStdString(),word}); // todo change on DB switch
         }
     }
     if(filter.recordLimit > 0)
@@ -929,7 +929,7 @@ QSharedPointer<Query> CountQueryBuilder::Build(StoryFilter filter, bool createLi
     auto q = DefaultQueryBuilder::Build(filter, createLimits);
     q->str = "select count(*) as records from ("+ q->str +")";
     QLOG_INFO_PURE() << "//////////";
-    QLOG_INFO_PURE() << "COUNT QUERY:" << q->str;
+    QLOG_INFO_PURE() << "COUNT QUERY:" << QString::fromStdString(q->str);
     QLOG_INFO_PURE() << "//////////";
     return q;
 }

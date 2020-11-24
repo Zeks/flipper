@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "Interfaces/fandoms.h"
 #include "Interfaces/db_interface.h"
 #include "include/pure_sql.h"
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QDebug>
 
 namespace interfaces {
@@ -127,12 +127,12 @@ bool Authors::EnsureAuthorLoaded(int id)
 
 bool Authors::UpdateAuthorRecord(const core::AuthorPtr& author)
 {
-    auto result = database::puresql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
-    database::puresql::WipeAuthorStatistics(author,db);
+    auto result = sql::UpdateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    sql::WipeAuthorStatistics(author,db);
     //ConvertFandomsToIds(author, fandomInterface);
-    auto f1Result = database::puresql::WriteAuthorFavouriteStatistics(author,db);
-    auto f2Result = database::puresql::WriteAuthorFavouriteGenreStatistics(author,db);
-    auto f3Result = database::puresql::WriteAuthorFavouriteFandomStatistics(author,db);
+    auto f1Result = sql::WriteAuthorFavouriteStatistics(author,db);
+    auto f2Result = sql::WriteAuthorFavouriteGenreStatistics(author,db);
+    auto f3Result = sql::WriteAuthorFavouriteFandomStatistics(author,db);
 
     return result.success && f1Result.success && f2Result.success && f3Result.success;
 }
@@ -142,44 +142,44 @@ bool Authors::UpdateAuthorFavouritesUpdateDate(core::AuthorPtr author)
     if(!author)
         return false;
 
-    auto result = database::puresql::UpdateAuthorFavouritesUpdateDate(author->id, QDate(author->stats.favouritesLastUpdated).startOfDay(), db).success;
+    auto result = sql::UpdateAuthorFavouritesUpdateDate(author->id, QDate(author->stats.favouritesLastUpdated).startOfDay(), db).success;
     return result;
 }
 
 bool Authors::LoadAuthor(QString name, QString website)
 {
-    auto result = database::puresql::GetAuthorByNameAndWebsite(name, website,db);
+    auto result = sql::GetAuthorByNameAndWebsite(name, website,db);
     auto author = result.data;
     if(!result.success || !author)
         return false;
     bool success = true;
-    success = success && database::puresql::LoadAuthorStatistics(author, db).success;
+    success = success && sql::LoadAuthorStatistics(author, db).success;
     AddAuthorToIndex(author);
     return success;
 }
 
 bool Authors::LoadAuthor(QString website, int id)
 {
-    auto result = database::puresql::GetAuthorByIDAndWebsite(id, website, db);
+    auto result = sql::GetAuthorByIDAndWebsite(id, website, db);
     auto author = result.data;
     if(!result.success || !author)
         return false;
 
     bool success = true;
-    success = success && database::puresql::LoadAuthorStatistics(author, db).success;
+    success = success && sql::LoadAuthorStatistics(author, db).success;
     AddAuthorToIndex(author);
     return true;
 }
 
 bool Authors::LoadAuthor(int id)
 {
-    auto result = database::puresql::GetAuthorById(id,db);
+    auto result = sql::GetAuthorById(id,db);
     auto author = result.data;
     if(!result.success || !author)
         return false;
 
     bool success = true;
-    success = success && database::puresql::LoadAuthorStatistics(author, db).success;
+    success = success && sql::LoadAuthorStatistics(author, db).success;
     AddAuthorToIndex(author);
     return true;
 }
@@ -211,7 +211,7 @@ QList<core::AuthorPtr> Authors::GetAllByName(QString name)
 
 QSet<int> Authors::GetAllMatchesWithRecsUID(QSharedPointer<core::RecommendationList> params, QString uid)
 {
-    return database::puresql::GetAllMatchesWithRecsUID(params, uid, db).data;
+    return sql::GetAllMatchesWithRecsUID(params, uid, db).data;
 }
 
 core::AuthorPtr Authors::GetByWebID(QString website, int id)
@@ -225,7 +225,7 @@ core::AuthorPtr Authors::GetByWebID(QString website, int id)
 
 int Authors::GetRecommenderIDByFFNId(int id)
 {
-    return database::puresql::GetRecommenderIDByFFNId(id, db).data;
+    return sql::GetRecommenderIDByFFNId(id, db).data;
 }
 
 //core::AuthorPtr Authors::GetByUrl(QString url)
@@ -264,9 +264,9 @@ QList<core::AuthorPtr > Authors::GetAllAuthors(QString website, bool forced)
 QList<core::AuthorPtr> Authors::GetAllAuthorsLimited(QString website, int limit)
 {
     QList<core::AuthorPtr> result;
-    result = database::puresql::GetAllAuthors(website, db, limit).data;
+    result = sql::GetAllAuthors(website, db, limit).data;
     for(auto& author: qAsConst(result))
-        database::puresql::LoadAuthorStatistics(author, db);
+        sql::LoadAuthorStatistics(author, db);
     return result;
 }
 
@@ -275,9 +275,9 @@ QList<core::AuthorPtr> Authors::GetAllAuthorsWithFavUpdateSince(QString website,
                                                                 int limit)
 {
     QList<core::AuthorPtr> result;
-    result = database::puresql::GetAllAuthorsWithFavUpdateSince(website,date, db, limit).data;
+    result = sql::GetAllAuthorsWithFavUpdateSince(website,date, db, limit).data;
     for(const auto& author: qAsConst(result))
-        database::puresql::LoadAuthorStatistics(author, db);
+        sql::LoadAuthorStatistics(author, db);
     return result;
 }
 
@@ -286,9 +286,9 @@ QList<core::AuthorPtr> Authors::GetAllAuthorsWithFavUpdateBetween(QString websit
                                                                  QDateTime dateEnd, int limit)
 {
     QList<core::AuthorPtr> result;
-    result = database::puresql::GetAllAuthorsWithFavUpdateBetween(website,dateStart, dateEnd, db, limit).data;
+    result = sql::GetAllAuthorsWithFavUpdateBetween(website,dateStart, dateEnd, db, limit).data;
     for(const auto& author: std::as_const(result))
-        database::puresql::LoadAuthorStatistics(author, db);
+        sql::LoadAuthorStatistics(author, db);
     return result;
 }
 
@@ -311,13 +311,13 @@ QStringList Authors::GetAllAuthorsUrls(QString website, bool forced)
 
 QStringList Authors::GetAllAuthorsFavourites(int id)
 {
-    auto result = database::puresql::GetAllAuthorFavourites(id, db);
+    auto result = sql::GetAllAuthorFavourites(id, db);
     return result.data;
 }
 
 QList<int> Authors::GetAllAuthorRecommendationIDs(int id)
 {
-    auto result = database::puresql::GetAllAuthorRecommendationIDs(id, db);
+    auto result = sql::GetAllAuthorRecommendationIDs(id, db);
     return result.data;
 }
 
@@ -325,7 +325,7 @@ QList<int> Authors::GetAllAuthorIds()
 {
     //! todo need to regenerate cache
     if(cachedAuthorIds.empty())
-        cachedAuthorIds = database::puresql::GetAllAuthorIds(db).data;
+        cachedAuthorIds = sql::GetAllAuthorIds(db).data;
     return cachedAuthorIds;
 }
 
@@ -346,22 +346,22 @@ QList<int> Authors::GetFicList(const core::AuthorPtr& author) const
     if(!author)
         return result;
 
-    auto sqlResult = database::puresql::GetAllAuthorRecommendations(author->id,  db);
+    auto sqlResult = sql::GetAllAuthorRecommendations(author->id,  db);
     result = sqlResult.data;
     return result;
 }
 
 int Authors::GetCountOfRecsForTag(int authorId, QString tag)
 {
-    auto result = database::puresql::GetCountOfTagInAuthorRecommendations(authorId, tag, db).data;
+    auto result = sql::GetCountOfTagInAuthorRecommendations(authorId, tag, db).data;
     return result;
 }
 
 bool Authors::LoadAuthors(QString website, bool )
 {
-    authors = database::puresql::GetAllAuthors(website, db).data;
+    authors = sql::GetAllAuthors(website, db).data;
     for(const auto& author: std::as_const(authors))
-        database::puresql::LoadAuthorStatistics(author, db);
+        sql::LoadAuthorStatistics(author, db);
     if(authors.size() == 0)
         return false;
     Reindex();
@@ -370,16 +370,16 @@ bool Authors::LoadAuthors(QString website, bool )
 
 QHash<int, QSet<int> > Authors::LoadFullFavouritesHashset()
 {
-    auto result = database::puresql::LoadFullFavouritesHashset(db).data;
+    auto result = sql::LoadFullFavouritesHashset(db).data;
     return result;
 }
 
-void LoadIDForAuthor(const core::AuthorPtr& author, QSqlDatabase db)
+void LoadIDForAuthor(const core::AuthorPtr& author, sql::Database db)
 {
     const auto websites = author->GetWebsites();
     for(const auto& website : websites)
     {
-        auto id = database::puresql::GetAuthorIdFromWebID(author->GetWebID(website),website, db).data;
+        auto id = sql::GetAuthorIdFromWebID(author->GetWebID(website),website, db).data;
         author->AssignId(id);
         if(id > -1)
             break;
@@ -392,12 +392,12 @@ bool Authors::CreateAuthorRecord(core::AuthorPtr author)
 {
 
 
-    auto result = database::puresql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
-    database::puresql::WipeAuthorStatistics(author,db);
+    auto result = sql::CreateAuthorRecord(author,portableDBInterface->GetCurrentDateTime(), db);
+    sql::WipeAuthorStatistics(author,db);
     //ConvertFandomsToIds(author, fandomInterface);
-    auto f1Result = database::puresql::WriteAuthorFavouriteStatistics(author,db);
-    auto f2Result = database::puresql::WriteAuthorFavouriteGenreStatistics(author,db);
-    auto f3Result = database::puresql::WriteAuthorFavouriteFandomStatistics(author,db);
+    auto f1Result = sql::WriteAuthorFavouriteStatistics(author,db);
+    auto f2Result = sql::WriteAuthorFavouriteGenreStatistics(author,db);
+    auto f3Result = sql::WriteAuthorFavouriteFandomStatistics(author,db);
 
     return result.success && f1Result.success && f2Result.success && f3Result.success;
 }
@@ -450,42 +450,42 @@ bool Authors::AssignNewNameForAuthor(core::AuthorPtr author, QString name)
     if(!author)
         return false;
 
-    return database::puresql::AssignNewNameForAuthor(author, name, db).success;
+    return sql::AssignNewNameForAuthor(author, name, db).success;
 }
 
 QSet<int> Authors::GetAuthorsForFics(QSet<int> fics)
 {
-    return database::puresql::GetAuthorsForFics(fics, db).data;
+    return sql::GetAuthorsForFics(fics, db).data;
 }
 
 QSet<int> Authors::GetRecommendersForFics(QSet<int> fics)
 {
-    return database::puresql::GetRecommendersForFics(fics, db).data;
+    return sql::GetRecommendersForFics(fics, db).data;
 }
 
 QHash<uint32_t, int> Authors::GetHashAuthorsForFics(QSet<int> fics)
 {
-    return database::puresql::GetHashAuthorsForFics(fics, db).data;
+    return sql::GetHashAuthorsForFics(fics, db).data;
 }
 
 bool Authors::AssignAuthorNamesForWebIDsInFanficTable()
 {
-    return database::puresql::AssignAuthorNamesForWebIDsInFanficTable(db).data;
+    return sql::AssignAuthorNamesForWebIDsInFanficTable(db).data;
 }
 
 QHash<int, std::array<double, 22> > Authors::GetListGenreData()
 {
-    return database::puresql::GetListGenreData(db).data;
+    return sql::GetListGenreData(db).data;
 }
 
 QHash<int, core::AuthorFavFandomStatsPtr> Authors::GetAuthorListFandomStatistics(QList<int> authors)
 {
-    return database::puresql::GetAuthorListFandomStatistics(authors, db).data;
+    return sql::GetAuthorListFandomStatistics(authors, db).data;
 }
 
 QHash<uint32_t, genre_stats::ListMoodData> Authors::GetMoodDataForLists()
 {
-    return database::puresql::GetMoodDataForLists(db).data;
+    return sql::GetMoodDataForLists(db).data;
 }
 
 
@@ -504,7 +504,7 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
     result->authorId= author->id;
     result->totalRecommendations= author->recCount;
 
-    result->matchesWithReference= database::puresql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db).data;
+    result->matchesWithReference= sql::GetCountOfTagInAuthorRecommendations(author->id, list->tagToUse, db).data;
     if(result->matchesWithReference == 0)
         result->matchRatio = std::numeric_limits<double>::max();
     else
@@ -521,26 +521,26 @@ QSharedPointer<core::AuthorRecommendationStats> Authors::GetStatsForTag(int auth
 //{
 //    if(!EnsureAuthorLoaded(authorId) || list.isEmpty())
 //        return false;
-//    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, list, db);
+//    return sql::UploadLinkedAuthorsForAuthor(authorId, list, db);
 //}
 
 bool Authors::UploadLinkedAuthorsForAuthor(int authorId, QString website , const QList<int>& ids)
 {
     if(!EnsureAuthorLoaded(authorId) || ids.isEmpty())
         return false;
-    return database::puresql::UploadLinkedAuthorsForAuthor(authorId, website, ids, db).success;
+    return sql::UploadLinkedAuthorsForAuthor(authorId, website, ids, db).success;
 }
 
 bool Authors::DeleteLinkedAuthorsForAuthor(int authorId)
 {
     if(!EnsureAuthorLoaded(authorId))
         return false;
-    return database::puresql::DeleteLinkedAuthorsForAuthor(authorId, db).success;
+    return sql::DeleteLinkedAuthorsForAuthor(authorId, db).success;
 }
 
 QVector<int> Authors::GetAllUnprocessedLinkedAuthors()
 {
-    return database::puresql::GetAllUnprocessedLinkedAuthors(db).data;
+    return sql::GetAllUnprocessedLinkedAuthors(db).data;
 }
 
 bool Authors::WipeAuthorStatisticsRecords()
@@ -555,7 +555,7 @@ bool Authors::CreateStatisticsRecordsForAuthors()
 
 bool Authors::CalculateSlashStatisticsPercentages(QString fieldUsed)
 {
-    auto result = database::puresql::CalculateSlashStatisticsPercentages(fieldUsed, db);
+    auto result = sql::CalculateSlashStatisticsPercentages(fieldUsed, db);
     return result.success;
 }
 
@@ -563,26 +563,26 @@ bool Authors::CalculateSlashStatisticsPercentages(QString fieldUsed)
 // moved them to dump temporarily
 //bool  Authors::RemoveAuthor(int id)
 //{
-//    QSqlDatabase db = QSqlDatabase::database();
-//    QSqlQuery q1(db);
+//    sql::Database db = sql::Database::database();
+//    sql::Query q1(db);
 //    QString qsl = "delete from recommendations where recommender_id = %1";
 //    qsl=qsl.arg(QString::number(id));
 //    q1.prepare(qsl);
-//    if(!database::puresql::ExecAndCheck(q1))
+//    if(!sql::ExecAndCheck(q1))
 //        return false;
 
-//    QSqlQuery q2(db);
+//    sql::Query q2(db);
 //    qsl = "delete from recommenders where id = %1";
 //    qsl=qsl.arg(id);
 //    q2.prepare(qsl);
-//    if(!database::puresql::ExecAndCheck(q2))
+//    if(!sql::ExecAndCheck(q2))
 //        return false;
 //    return true;
 //}
 
 //bool Authors::RemoveAuthor(core::AuthorPtr author, QString website)
 //{
-//    int id = database::puresql::GetAuthorIdFromUrl(author->url(website),db);
+//    int id = sql::GetAuthorIdFromUrl(author->url(website),db);
 //    if(id == -1)
 //        return false;
 //    return RemoveAuthor(id);

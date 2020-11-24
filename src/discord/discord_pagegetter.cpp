@@ -26,11 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QUrl>
 #include <QObject>
 #include <QCoreApplication>
-#include <QSqlQuery>
+#include "sql_abstractions/sql_query.h"
 #include <QSqlRecord>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QDebug>
-#include <QSqlDatabase>
+#include "sql_abstractions/sql_database.h"
 #include <QSqlError>
 namespace discord {
 
@@ -92,7 +92,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         return result;
 
     // first we search for the exact page in the database
-    QSqlQuery q(dbToken->db);
+    sql::Query q(dbToken->db);
     q.prepare(QStringLiteral("select * from PageCache where url = :URL "));
     q.bindValue(QStringLiteral(":URL"), url);
     q.exec();
@@ -101,7 +101,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
     if(q.lastError().isValid())
     {
         qDebug() << "Reading url: " << url;
-        qDebug() << "Error getting page from database: " << q.lastError();
+        qDebug() << "Error getting page from database: " << q.lastError().text();
         return result;
     }
 
@@ -166,7 +166,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 void PageGetterPrivate::SavePageToDB(const WebPage & page)
 {
     auto dbToken = dbGetter();
-    QSqlQuery q(dbToken->db);
+    sql::Query q(dbToken->db);
     q.prepare(QStringLiteral("delete from pagecache where url = :url"));
     q.bindValue(QStringLiteral(":url"), page.url);
     q.exec();
@@ -182,7 +182,7 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     if(q.lastError().isValid())
     {
         qDebug() << QStringLiteral("Writing url: ") << page.url;
-        qDebug() << QStringLiteral("Error saving page to database: ")  << q.lastError();
+        qDebug() << QStringLiteral("Error saving page to database: ")  << q.lastError().text();
     }
 }
 

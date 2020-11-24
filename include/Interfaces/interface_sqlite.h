@@ -31,33 +31,33 @@ public:
     bool RebaseFandomsToZero();
     QStringList FetchRecentFandoms();
     QDateTime GetCurrentDateTime();
-    QStringList GetIdListForQuery(QSharedPointer<core::Query> query, QSqlDatabase db = QSqlDatabase());
+    QStringList GetIdListForQuery(QSharedPointer<core::Query> query, sql::Database db = sql::Database());
     bool BackupDatabase(QString dbname);
     bool ReadDbFile(QString file, QString connectionName);
 
-    QSqlDatabase InitDatabase(QString connectionName, bool setDefault = false);
-    virtual QSqlDatabase InitDatabase2(QString fileName, QString connectionName, bool setDefault = false);
+    sql::Database InitDatabase(QString connectionName, bool setDefault = false);
+    virtual sql::Database InitDatabase2(QString fileName, QString connectionName, bool setDefault = false);
 
 
-    QSqlDatabase InitAndUpdateDatabaseForFile(QString folder,
+    sql::Database InitAndUpdateDatabaseForFile(QString folder,
                                               QString file,
                                               QString sqlFile,
                                               QString connectionName,
                                               bool setDefault = false);
 
-    bool PassScoresToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassSnoozesToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassFicTagsToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassFicNotesToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassTagSetToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassRecentFandomsToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassClientDataToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassReadingDataToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassIgnoredFandomsToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassFandomListSetToAnotherDatabase(QSqlDatabase dbTarget);
-    bool PassFandomListDataToAnotherDatabase(QSqlDatabase dbTarget);
+    bool PassScoresToAnotherDatabase(sql::Database dbTarget);
+    bool PassSnoozesToAnotherDatabase(sql::Database dbTarget);
+    bool PassFicTagsToAnotherDatabase(sql::Database dbTarget);
+    bool PassFicNotesToAnotherDatabase(sql::Database dbTarget);
+    bool PassTagSetToAnotherDatabase(sql::Database dbTarget);
+    bool PassRecentFandomsToAnotherDatabase(sql::Database dbTarget);
+    bool PassClientDataToAnotherDatabase(sql::Database dbTarget);
+    bool PassReadingDataToAnotherDatabase(sql::Database dbTarget);
+    bool PassIgnoredFandomsToAnotherDatabase(sql::Database dbTarget);
+    bool PassFandomListSetToAnotherDatabase(sql::Database dbTarget);
+    bool PassFandomListDataToAnotherDatabase(sql::Database dbTarget);
 
-    virtual QSqlDatabase InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false);
+    virtual sql::Database InitNamedDatabase(QString dbName, QString fileName, bool setDefault = false);
     bool EnsureUUIDForUserDatabase();
     virtual QString GetUserToken();
 };
