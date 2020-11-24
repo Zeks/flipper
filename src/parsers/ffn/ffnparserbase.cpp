@@ -39,10 +39,10 @@ void FFNParserBase::ProcessCharacters(core::FanficSectionInFFNFavourites &sectio
 
 void FFNParserBase::ProcessStatSection(core::FanficSectionInFFNFavourites &section)
 {
-    thread_local QRegExp rxWords("Words:\\s(\\d{1,8})");
-    thread_local QRegExp rxChapters("Chapters:\\s(\\d{1,5})");
-    thread_local QRegExp rxReviews("Reviews:\\s(\\d{1,5})");
-    thread_local QRegExp rxFavs("Favs:\\s(\\d{1,5})");
+    thread_local QRegExp rxWords("Words:\\s(\\d{1,10})");
+    thread_local QRegExp rxChapters("Chapters:\\s(\\d{1,6})");
+    thread_local QRegExp rxReviews("Reviews:\\s(\\d{1,6})");
+    thread_local QRegExp rxFavs("Favs:\\s(\\d{1,6})");
     thread_local QRegExp rxPublished("Published:\\s<span\\sdata-xutime='(\\d+)'");
     thread_local QRegExp rxUpdated("Updated:\\s<span\\sdata-xutime='(\\d+)'");
     thread_local QRegExp rxRated("Rated:\\s(.{1})");

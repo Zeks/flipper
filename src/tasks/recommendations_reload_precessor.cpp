@@ -66,6 +66,9 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     database::Transaction transaction(db);
 
     auto& authors = stagedAuthors;
+    std::sort(authors.begin(), authors.end(), [](const auto& a1, const auto& a2){
+        return a1->stats.favouritesLastChecked > a2->stats.favouritesLastChecked;
+    });
     emit requestProgressbar(authors.size());
     QSet<QString> fandoms;
     //QList<core::FicRecommendation> recommendations;

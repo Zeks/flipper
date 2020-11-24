@@ -382,27 +382,32 @@ DiagnosticSQLResult<core::FicPtr> GetFicById( int ficId, QSqlDatabase db)
 DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, QSqlDatabase db, bool alwaysUpdateIfNotInsert)
 {
     auto getKeyQuery = fmt::format("Select ( select count(*) from FANFICS where  {0}_id = :site_id1) as COUNT_NAMED,"
-                                  " ( select count(*) from FANFICS where  {0}_id = :site_id2 "
-                                  "and (updated < :updated or updated is null)) as count_updated",fic->webSite.toStdString());
+                                  " ( select count(*) from FANFICS where  {0}_id = :site_id2 and (updated < :updated or updated is null)) as count_updated,"
+                                  " ( select count(*) from FANFICS where  {0}_id = :site_id3 and (favourites < :favourites or favourites is null)) as count_faved"
+                                   ,fic->webSite.toStdString());
 
     SqlContext<bool> ctx(db, std::move(getKeyQuery));
     ctx.bindValue("site_id1", fic->identity.web.GetPrimaryId());
     ctx.bindValue("site_id2", fic->identity.web.GetPrimaryId());
     ctx.bindValue("updated", fic->updated);
+    ctx.bindValue("site_id3", fic->identity.web.GetPrimaryId());
+    ctx.bindValue("favourites", fic->favourites);
     if(!fic)
         return std::move(ctx.result);
 
     int countNamed = 0;
     int countUpdated = 0;
+    int countUpdatedFaves = 0;
     ctx.ForEachInSelect([&](QSqlQuery& q){
         countNamed = q.value(QStringLiteral("COUNT_NAMED")).toInt();
         countUpdated = q.value(QStringLiteral("count_updated")).toInt();
+        countUpdatedFaves = q.value(QStringLiteral("count_faved")).toInt();
     });
     if(!ctx.Success())
         return std::move(ctx.result);
 
     bool requiresInsert = countNamed == 0;
-    bool requiresUpdate = countUpdated > 0;
+    bool requiresUpdate = countUpdated > 0 || countUpdatedFaves > 0;
 //    if(fic->fandom.contains("Greatest Showman"))
 //        qDebug() << fic->fandom;
     if(alwaysUpdateIfNotInsert || (!requiresInsert && requiresUpdate))
@@ -4570,4 +4575,5 @@ DiagnosticSQLResult<DBVerificationResult> VerifyDatabaseIntegrity(QSqlDatabase d
 }
 
 }
+
 
