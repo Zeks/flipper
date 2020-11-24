@@ -401,7 +401,7 @@ DiagnosticSQLResult<bool> SetUpdateOrInsert(QSharedPointer<core::Fanfic> fic, sq
     ctx.ForEachInSelect([&](sql::Query& q){
         countNamed = q.value("COUNT_NAMED").toInt();
         countUpdated = q.value("count_updated").toInt();
-        countUpdatedFaves = q.value(QStringLiteral("count_faved")).toInt();
+        countUpdatedFaves = q.value("count_faved").toInt();
     });
     if(!ctx.Success())
         return std::move(ctx.result);
@@ -594,7 +594,7 @@ DiagnosticSQLResult<QSet<int> > GetAuthorsForFics(QSet<int> fics, sql::Database 
     userThreadData->ficsForAuthorSearch = fics;
     std::string qs = "select distinct author_id from fanfics where cfInFicsForAuthors(id) > 0";
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList<int>("author_id", std::move(qs), "",[](sql::Query& q){
+    ctx.FetchLargeSelectIntoList<int>("author_id", std::move(qs), [](sql::Query& q){
         return q.value("author_id").toInt();
     });
     ctx.result.data.remove(0);
@@ -611,7 +611,7 @@ DiagnosticSQLResult<QSet<int>> GetRecommendersForFics(QSet<int> fics, sql::Datab
         list.push_back(QString::number(fic));
     qs = fmt::format(qs, "'" + list.join("','").toStdString() + "'");
     SqlContext<QSet<int>> ctx(db);
-    ctx.FetchLargeSelectIntoList<int>("recommender_id", std::move(qs), "",[](sql::Query& q){
+    ctx.FetchLargeSelectIntoList<int>("recommender_id", std::move(qs), [](sql::Query& q){
         return q.value("recommender_id").toInt();
     });
     ctx.result.data.remove(0);
@@ -683,9 +683,9 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthors(QString website,  sql:
 
     //!!! bindvalue incorrect for first query?
     SqlContext<QList<core::AuthorPtr>> ctx(db, {{"site",website}});
-    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", std::move(qs), "select count(*) from recommenders where website_type = :site",[](sql::Query& q){
+    ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", std::move(qs), [](sql::Query& q){
         return AuthorFromQuery(q);
-    });
+    }, "select count(*) from recommenders where website_type = :site");
     return std::move(ctx.result);
 }
 
@@ -714,10 +714,9 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateSince(QStr
     ctx.bindValue("site",website);
     ctx.bindValue("date",date);
     ctx.FetchLargeSelectIntoList<core::AuthorPtr>("", std::move(qs),
-                                                  "select count(*) from recommenders where website_type = :site",
                                                   [](sql::Query& q){
         return AuthorFromQuery(q);
-    });
+    },"select count(*) from recommenders where website_type = :site");
 
 
     return std::move(ctx.result);
@@ -751,10 +750,9 @@ DiagnosticSQLResult<QList<core::AuthorPtr>> GetAllAuthorsWithFavUpdateBetween(QS
     ctx.bindValue("date_end",dateEnd);
     ctx.bindValue("site",website);
     ctx.FetchLargeSelectIntoList<core::AuthorPtr>("",  std::move(qs),
-                                                  "select count(*) from recommenders where website_type = :site",
                                                   [](sql::Query& q){
         return AuthorFromQuery(q);
-    });
+    }, "select count(*) from recommenders where website_type = :site");
 
 
     return std::move(ctx.result);
@@ -1031,7 +1029,7 @@ DiagnosticSQLResult<QVector<int>> GetAllSourceFicIDsFromRecommendationList(int l
 
 
 
-DiagnosticSQLResult<core::RecommendationListFicSearchToken> GetRelevanceScoresInFilteredReclist(const core::ReclistFilter& filter, QSqlDatabase db)
+DiagnosticSQLResult<core::RecommendationListFicSearchToken> GetRelevanceScoresInFilteredReclist(const core::ReclistFilter& filter, sql::Database db)
 {
     std::string qs = "select fic_id, "
                      " (votes_common + votes_uncommon + votes_rare + votes_unique) as pure_votes, "
@@ -1065,7 +1063,7 @@ DiagnosticSQLResult<core::RecommendationListFicSearchToken> GetRelevanceScoresIn
     if(filter.minMatchCount != 0)
         ctx.bindValue("match_count",filter.minMatchCount);
     ctx.ForEachInSelect([&](sql::Query& q){
-        ctx.result.data.ficToScore[q.value("fic_id").toInt()] = q.value(QString::fromStdString(pointsField)).toInt();
+        ctx.result.data.ficToScore[q.value("fic_id").toInt()] = q.value(pointsField).toInt();
         ctx.result.data.ficToPureVotes[q.value("fic_id").toInt()] = q.value("pure_votes").toInt();
     });
     return std::move(ctx.result);

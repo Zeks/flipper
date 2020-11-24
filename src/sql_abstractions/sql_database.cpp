@@ -17,7 +17,7 @@ Database Database::addDatabase(std::string driver, std::string name)
     auto impl = std::make_shared<DatabaseImplSqlite>();
     impl->db =  impl->addDatabase(driver, name);
     db.d = impl;
-    databases.insert_or_assign(name, databases);
+    databases.insert_or_assign(name, db);
     return db;
 }
 

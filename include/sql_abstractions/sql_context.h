@@ -240,8 +240,7 @@ struct SqlContext
         } while(q.next());
     }
     template <typename ValueType>
-    void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::string&& countQuery = "",
-                                  std::function<ValueType(sql::Query&)>&& func = std::function<ValueType(sql::Query&)>())
+    void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::function<ValueType(sql::Query&)>&& func, std::string&& countQuery = "")
     {
         if(countQuery.length() == 0)
             qs = "select count(*) from ( " + actualQuery + " ) ";
@@ -269,10 +268,40 @@ struct SqlContext
             return;
 
         do{
-            if(!func)
-                result.data += q.value(fieldName.c_str()).template value<typename ResultType::value_type>();
-            else
                 result.data += func(q);
+        } while(q.next());
+    }
+
+    template <typename ValueType>
+    void FetchLargeSelectIntoList(std::string&& fieldName, std::string&& actualQuery, std::string&& countQuery = "")
+    {
+        if(countQuery.length() == 0)
+            qs = "select count(*) from ( " + actualQuery + " ) ";
+        else
+            qs = countQuery;
+        Prepare(qs);
+        if(!ExecAndCheck())
+            return;
+
+        if(!CheckDataAvailability())
+            return;
+        int size = q.value(0).toInt();
+        //qDebug () << "query size: " << size;
+        if(size == 0)
+            return;
+        result.data.reserve(size);
+
+        qs = actualQuery;
+        Prepare(qs);
+        //BindValues();
+
+        if(!ExecAndCheck())
+            return;
+        if(!CheckDataAvailability())
+            return;
+
+        do{
+           result.data += q.value(fieldName.c_str()).template value<typename ResultType::value_type>();
         } while(q.next());
     }
 

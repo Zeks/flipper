@@ -45,7 +45,7 @@ public:
     QDate toDate() const;
     bool toBool() const;
     QByteArray toByteArray() const;
-    QByteArray toQVariant() const;
+    QVariant toQVariant() const;
 
     template <typename T>
     T value();
@@ -54,6 +54,8 @@ public:
 template <> inline
 uint64_t Variant::value<uint64_t>(){return toInt();}
 template <> inline
+int Variant::value<int>(){return toInt();}
+template <> inline
 bool Variant::value<bool>(){return toBool();}
 template <> inline
 int64_t Variant::value<int64_t>(){return toInt();}
@@ -61,6 +63,8 @@ template <> inline
 double Variant::value<double>(){return toDouble();}
 template <> inline
 std::string Variant::value<std::string>(){return toString();}
+template <> inline
+QString Variant::value<QString>(){return QString::fromStdString(toString());}
 template <> inline
 QDateTime Variant::value<QDateTime>(){return toDateTime();}
 

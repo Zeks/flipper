@@ -8,7 +8,7 @@ namespace sql{
 
 class QueryImplBase{
 public:
-    virtual ~QueryImplBase();
+    virtual ~QueryImplBase(){};
     virtual bool prepare(const std::string&) = 0;
     virtual bool prepare(std::string&&) = 0;
     virtual bool exec() = 0;

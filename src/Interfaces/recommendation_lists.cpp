@@ -510,7 +510,7 @@ QStringList RecommendationLists::GetAllRecommendationListNames(bool forced)
 
 void RecommendationLists::FetchRecommendationsBreakdown(QVector<core::Fanfic> *fics, int listId)
 {
-    database::puresql::FetchRecommendationsBreakdown(fics, listId, db);
+    sql::FetchRecommendationsBreakdown(fics, listId, db);
 }
 
 void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fanfic> *fics, core::ReclistFilter filter)
@@ -519,7 +519,7 @@ void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fanfic> 
     for(const auto& fic: std::as_const(*fics))
         scores[fic.identity.id] = 0;
 
-    database::puresql::FetchRecommendationScoreForFics(scores, filter, db);
+    sql::FetchRecommendationScoreForFics(scores, filter, db);
     for(auto& fic: *fics){
         fic.recommendationsData.recommendationsMainList = scores[fic.identity.id];
     }
@@ -527,7 +527,7 @@ void RecommendationLists::FetchRecommendationScoreForFics(QVector<core::Fanfic> 
 
 void RecommendationLists::LoadPlaceAndRecommendationsData(QVector<core::Fanfic> *fics, core::ReclistFilter filter)
 {
-    database::puresql::LoadPlaceAndRecommendationsData(fics, filter, db);
+    sql::LoadPlaceAndRecommendationsData(fics, filter, db);
 }
 
 QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecList(QString name)
@@ -536,17 +536,17 @@ QSharedPointer<core::RecommendationList> RecommendationLists::FetchParamsForRecL
     if(id == -1)
         return QSharedPointer<core::RecommendationList>();
 
-    return database::puresql::FetchParamsForRecList(id, db).data;
+    return sql::FetchParamsForRecList(id, db).data;
 }
 
 bool RecommendationLists::WriteFicRecommenderRelationsForRecList(int listId, QHash<uint32_t, QVector<uint32_t> > data)
 {
-    return database::puresql::WriteFicRecommenderRelationsForRecList(listId,data, db).success;
+    return sql::WriteFicRecommenderRelationsForRecList(listId,data, db).success;
 }
 
 bool RecommendationLists::WriteAuthorStatsForRecList(int listId, QVector<core::AuthorResult> data)
 {
-    return database::puresql::WriteAuthorStatsForRecList(listId,data, db).success;
+    return sql::WriteAuthorStatsForRecList(listId,data, db).success;
 }
 
 
