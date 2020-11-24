@@ -618,9 +618,9 @@ sql::Database InitDatabase(QString name, bool setDefault)
     QString path = name;
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("qsqlite");
     else
-        db = sql::Database::addDatabase("QSQLITE", name.toStdString());
+        db = sql::Database::addDatabase("qsqlite", name.toStdString());
     db.setDatabaseName(path.toStdString() + ".sqlite");
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
@@ -660,9 +660,9 @@ sql::Database InitNamedDatabase(QString dbName, QString filename, bool setDefaul
 {
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("qsqlite");
     else
-        db = sql::Database::addDatabase("QSQLITE", dbName.toStdString());
+        db = sql::Database::addDatabase("qsqlite", dbName.toStdString());
     db.setDatabaseName(filename.toStdString() + ".sqlite");
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << dbName << ", open : " << isOpen;
@@ -676,9 +676,9 @@ sql::Database InitDatabase2(QString file, QString name, bool setDefault)
     //QString path = name;
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("qsqlite");
     else
-        db = sql::Database::addDatabase("QSQLITE", name.toStdString());
+        db = sql::Database::addDatabase("qsqlite", name.toStdString());
     db.setDatabaseName(file.toStdString() + ".sqlite");
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
@@ -695,9 +695,9 @@ sql::Database InitAndUpdateDatabaseForFile(QString folder,
 {
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("QSQLITE");
+        db = sql::Database::addDatabase("qsqlite");
     else
-        db = sql::Database::addDatabase("QSQLITE", connectionName.toStdString());
+        db = sql::Database::addDatabase("qsqlite", connectionName.toStdString());
     QString filename  = folder + "/" + file + ".sqlite";
     db.setDatabaseName(filename.toStdString());
     bool isOpen = db.open();

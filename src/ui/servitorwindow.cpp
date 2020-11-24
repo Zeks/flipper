@@ -1278,13 +1278,13 @@ void ServitorWindow::on_pbReprocessCacheLinked_clicked()
 void ServitorWindow::on_pbPCRescue_clicked()
 {
     QString path = "PageCache.sqlite";
-    sql::Database pcdb = sql::Database::addDatabase("QSQLITE", "PageCache");
+    sql::Database pcdb = sql::Database::addDatabase("qsqlite", "PageCache");
     pcdb.setDatabaseName(path.toStdString());
     pcdb.open();
 
 
     path = "PageCache_export.sqlite";
-    sql::Database pcExDb = sql::Database::addDatabase("QSQLITE", "PageCache_Export");
+    sql::Database pcExDb = sql::Database::addDatabase("qsqlite", "PageCache_Export");
     pcExDb.setDatabaseName(path.toStdString());
     pcExDb.open();
 
@@ -2034,7 +2034,7 @@ void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
 //void ServitorWindow::on_pbExtractDiscords_clicked()
 //{
 //    QString path = "PageCache.sqlite";
-//    sql::Database pcdb = sql::Database::addDatabase("QSQLITE", "PageCache");
+//    sql::Database pcdb = sql::Database::addDatabase("qsqlite", "PageCache");
 //    pcdb.setDatabaseName(path);
 //    pcdb.open();
 
@@ -2064,7 +2064,7 @@ void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
 //void ServitorWindow::on_pbExtractDiscords_clicked()
 //{
 //    QString path = "PageCache.sqlite";
-//    sql::Database pcdb = sql::Database::addDatabase("QSQLITE", "PageCache");
+//    sql::Database pcdb = sql::Database::addDatabase("qsqlite", "PageCache");
 //    pcdb.setDatabaseName(path);
 //    pcdb.open();
 
@@ -2111,7 +2111,7 @@ void ServitorWindow::on_cbUserIDs_currentIndexChanged(const QString &arg1)
 void ServitorWindow::on_pbExtractDiscords_clicked()
 {
     QString path = "PageCache.sqlite";
-    sql::Database pcdb = sql::Database::addDatabase("QSQLITE", "PageCache");
+    sql::Database pcdb = sql::Database::addDatabase("qsqlite", "PageCache");
     pcdb.setDatabaseName(path.toStdString());
     pcdb.open();
 

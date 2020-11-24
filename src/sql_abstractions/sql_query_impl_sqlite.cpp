@@ -115,4 +115,9 @@ std::string QueryImplSqlite::lastQuery() const
 
 }
 
+std::string QueryImplSqlite::implType() const
+{
+    return "qsqlite";
+}
+
 }

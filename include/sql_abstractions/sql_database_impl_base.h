@@ -17,5 +17,6 @@ class DatabaseImplBase{
     virtual std::string connectionName() = 0;
     virtual void* internalPointer() = 0;
     virtual bool isNull() = 0;
+    virtual std::string driverType() const = 0;
 };
 }

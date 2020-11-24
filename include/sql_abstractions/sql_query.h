@@ -25,7 +25,8 @@ public:
     bool exec();
     void setForwardOnly(bool);
 
-    void bindVector(const std::vector<Variant>&);
+    void bindVector(const std::vector<QueryBinding> &);
+    void bindVector(std::vector<QueryBinding> &&);
     void bindValue(const std::string&, const Variant&);
     void bindValue(const std::string&, Variant&&);
     void bindValue(std::string&&, const Variant&);
@@ -45,6 +46,8 @@ public:
     std::string lastQuery() const;
 
     std::shared_ptr<QueryImplBase> d;
+private:
+    void instantiateImpl(Database);
 };
 
 };

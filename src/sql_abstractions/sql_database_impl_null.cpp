@@ -52,4 +52,9 @@ bool DatabaseImplNull::isNull()
     return true;
 }
 
+std::string DatabaseImplNull::driverType() const
+{
+    return "null";
+}
+
 }

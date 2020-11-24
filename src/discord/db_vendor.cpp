@@ -49,7 +49,7 @@ void DatabaseVendor::AddConnectionToken(QString name, const SqliteConnectionToke
 sql::Database DatabaseVendor::InstantiateDatabase(const SqliteConnectionToken & token)
 {
     sql::Database db;
-    db = sql::Database::addDatabase(QStringLiteral("QSQLITE"), token.databaseName + QUuid::createUuid().toString());
+    db = sql::Database::addDatabase(QStringLiteral("qsqlite"), token.databaseName + QUuid::createUuid().toString());
     QString filename = token.folder.isEmpty() ? token.databaseName : token.folder + "/" + token.databaseName;
     db.setDatabaseName(filename + QStringLiteral(".sqlite"));
     db.open();

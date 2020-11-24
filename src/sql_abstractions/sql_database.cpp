@@ -34,6 +34,11 @@ void Database::setDatabaseName(std::string name)
     d->setDatabaseName(name);
 }
 
+std::string Database::driverType() const
+{
+    return d->driverType();
+}
+
 bool Database::open()
 {
     return d->open();

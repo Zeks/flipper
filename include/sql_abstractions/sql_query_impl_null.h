@@ -9,10 +9,9 @@
 #include "sql_abstractions/sql_query_impl_base.h"
 namespace sql{
 
-class QueryImplSqlite: public QueryImplBase{
+class QueryImplNull: public QueryImplBase{
 public:
-    QueryImplSqlite();
-    QueryImplSqlite(QSqlDatabase db);
+    QueryImplNull();
 
     bool prepare(const std::string &);
     bool prepare(std::string &&);
@@ -36,9 +35,5 @@ public:
     Error lastError() const;
     std::string lastQuery() const;
     std::string implType() const;
-
-    QSqlQuery q;
-
-
 };
 }

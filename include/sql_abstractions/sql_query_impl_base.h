@@ -32,6 +32,7 @@ public:
     virtual QSqlRecord record() = 0;
     virtual Error lastError() const = 0;
     virtual std::string lastQuery() const = 0;
+    virtual std::string implType() const = 0;
 
     std::shared_ptr<QueryImplBase> d;
 };

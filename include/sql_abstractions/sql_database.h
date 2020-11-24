@@ -9,6 +9,7 @@ public:
     static Database addDatabase(std::string, std::string = "");
     static Database database(std::string s = "");
     void setDatabaseName(std::string);
+    std::string driverType() const;
     bool open();
     bool isOpen() const;
     bool transaction();

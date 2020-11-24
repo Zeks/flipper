@@ -56,13 +56,13 @@ int main(int argc, char *argv[])
     //database::BackupDatabase();
     SetupLogger();
     std::string path = "CrawlerDB.sqlite";
-    sql::Database db = sql::Database::addDatabase("QSQLITE");
+    sql::Database db = sql::Database::addDatabase("qsqlite");
     db.setDatabaseName(path);
     db.open();
 
 
     path = "PageCache.sqlite";
-    sql::Database pcDb = sql::Database::addDatabase("QSQLITE", "PageCache");
+    sql::Database pcDb = sql::Database::addDatabase("qsqlite", "PageCache");
     pcDb.setDatabaseName(path);
     pcDb.open();
 

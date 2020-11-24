@@ -14,6 +14,7 @@ class DatabaseImplNull : public DatabaseImplBase{
     std::string connectionName() override;
     void *internalPointer() override;
     bool isNull() override;
+    std::string driverType() const override;
 };
 
 }
