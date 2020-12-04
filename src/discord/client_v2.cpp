@@ -200,7 +200,7 @@ void Client::onMessage(SleepyDiscord::Message message) {
         if(message.serverID.string().length() > 0 && !channelToServerHash.contains(message.channelID.number())){
             channelToServerHash.push(message.channelID.number(), message.serverID.number());
         }
-        QLOG_INFO() << "COMMAND:" << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content);
+        QLOG_INFO() << "\nCOMMAND:" << QString::fromStdString(message.serverID.string() + " " + message.channelID.string() + " " + message.author.username + "#" + message.author.discriminator + " " + message.author.ID.string() + " " + message.content + "\n");
         executor->Push(std::move(commands));
     }
     catch(const rapidjson_exception& e){
