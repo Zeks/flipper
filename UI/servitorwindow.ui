@@ -355,7 +355,7 @@
            <widget class="QLineEdit" name="leGetCachedData"/>
           </item>
           <item>
-           <widget class="QCheckBox" name="chkForcedLoad">
+           <widget class="QCheckBox" name="chkUseCache">
             <property name="text">
              <string>Use cache</string>
             </property>

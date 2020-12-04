@@ -76,37 +76,38 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
     // first, we get the page from cache anyway
     // not much point doing otherwise if the page is super fresh
     auto temp = GetPageFromDB(url);
+    auto pickNetworkVersion = [&](){
+        result = GetPageFromNetwork(url);
+        qDebug() << "From network";
+        if(result.isValid)
+            SavePageToDB(result);
+        result.isFromCache = false;
+    };
     if(temp.isValid)
         QLOG_INFO() << "Version from cache was generated: " << temp.generated;
-    if(useCache != ECacheMode::dont_use_cache && autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1))
+    bool freshlyFetchedAlready = autoCacheForCurrentDate && temp.generated.date() >= QDate::currentDate().addDays(-1);
+    if(useCache != ECacheMode::dont_use_cache && freshlyFetchedAlready)
     {
         result = temp;
         qDebug() << "pickign cache version";
         result.isFromCache = true;
         return result;
     }
-    if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
+    else if(useCache == ECacheMode::use_cache || useCache == ECacheMode::use_only_cache)
     {
         result = GetPageFromDB(url);
-        if(result.isValid)
-        {
-            if(useCache == ECacheMode::use_only_cache || result.generated > QDateTime::currentDateTime().addDays(-7))
-                result.isFromCache = true;
-        }
+        if(useCache == ECacheMode::use_only_cache && !result.isValid)
+            return result;
+
+        bool pageIsOldEnoughToregen = result.generated <= QDateTime::currentDateTime().addDays(-7);
+        if(!result.isValid || pageIsOldEnoughToregen)
+            pickNetworkVersion();
         else
-        {
-            result = GetPageFromNetwork(url);
-            qDebug() << "From network";
-            SavePageToDB(result);
-        }
+            result.isFromCache = true;
     }
     else
-    {
-        result = GetPageFromNetwork(url);
-        qDebug() << "From network";
-        if(result.isValid)
-            SavePageToDB(result);
-    }
+        pickNetworkVersion();
+
     return result;
 }
 
