@@ -157,7 +157,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     result.url = url;
     currentRequest = QNetworkRequest(QUrl(url));
     auto reply = manager.get(currentRequest);
-    int retries = 40;
+    int retries = 80;
     //qDebug() << "entering wait phase";
     while(!reply->isFinished() && retries > 0)
     {
