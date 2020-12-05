@@ -108,7 +108,6 @@ QSharedPointer<core::RecommendationList> CreateRecommendationParams(QString ffnI
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
     list->minimumMatch = 1;
-    list->maxUnmatchedPerMatch = 50;
     list->isAutomatic = true;
     list->useWeighting = true;
     list->alwaysPickAt = 9999;
@@ -124,7 +123,6 @@ QSharedPointer<core::RecommendationList> CreateSimilarFicParams()
 {
     QSharedPointer<core::RecommendationList> list(new core::RecommendationList);
     list->minimumMatch = 1;
-    list->maxUnmatchedPerMatch = 5000;
     list->isAutomatic = false;
     list->useWeighting = false;
     list->alwaysPickAt = 9999;
@@ -353,11 +351,14 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         ffnId = QString::number(command.ids.at(0));
     }
     An<FfnPages> pages;
+    bool knowsPage = false;
     if(isId)
     {
         if(!pages->HasPage(ffnId.toStdString()))
             pages->LoadPage(ffnId.toStdString());
         auto page = pages->GetPage(ffnId.toStdString());
+        if(page)
+            knowsPage = true;
         if(refreshing && page && page->getLastParsed() != QDate::currentDate())
             refreshing = false;
     }
@@ -366,7 +367,7 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
     QSharedPointer<core::RecommendationList> listParams;
     //QString error;
 
-    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
+    FavouritesFetchResult userFavourites = TryFetchingDesktopFavourites(ffnId, refreshing && knowsPage ? ECacheMode::use_only_cache : ECacheMode::dont_use_cache, isId);
     ffnId = userFavourites.ffnId;
 
 
