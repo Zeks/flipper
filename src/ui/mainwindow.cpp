@@ -2096,7 +2096,6 @@ void MainWindow::CreateSimilarListForGivenFic(int id)
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
-    params->maxUnmatchedPerMatch = 9999;
     params->alwaysPickAt = 1;
     params->name = "#similarfics";
     params->userFFNId = env->interfaces.recs->GetUserProfile();

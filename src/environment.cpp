@@ -888,7 +888,6 @@ void CoreEnvironment::CreateSimilarListForGivenFic(int id, sql::Database db)
     params->minimumMatch = 1;
     params->name = "similar";
     params->tagToUse = "generictag";
-    params->maxUnmatchedPerMatch = 9999;
     interfaces.tags->SetTagForFic(id, "generictag");
     BuildRecommendations(params, {id});
     interfaces.tags->DeleteTag("generictag");
@@ -1274,7 +1273,6 @@ int CoreEnvironment::CreateDefaultRecommendationsForCurrentUser()
 
     QSharedPointer<core::RecommendationList> params(new core::RecommendationList);
     params->minimumMatch = 1;
-    params->maxUnmatchedPerMatch = 50;
     params->alwaysPickAt = 9999;
     params->isAutomatic = true;
     params->useWeighting = true;

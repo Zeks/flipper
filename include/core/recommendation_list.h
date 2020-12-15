@@ -71,7 +71,7 @@ public:
     int ficCount =-1;
     int minimumMatch = -1;
     int alwaysPickAt = -2;
-    int maxUnmatchedPerMatch = -1;
+    int maxUnmatchedPerMatch = 5000;
     int userFFNId = -1;
     int sigma2Distance = -1;
     int listSizeMultiplier = 200;
