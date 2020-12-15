@@ -7,6 +7,7 @@ class Database{
 public:
     Database();
     static Database addDatabase(std::string, std::string = "");
+    static void removeDatabase(std::string = "");
     static Database database(std::string s = "");
     void setDatabaseName(std::string);
     std::string driverType() const;

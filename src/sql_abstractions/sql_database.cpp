@@ -21,6 +21,11 @@ Database Database::addDatabase(std::string driver, std::string name)
     return db;
 }
 
+void Database::removeDatabase(std::string name)
+{
+    databases.erase(name);
+}
+
 Database Database::database(std::string name)
 {
     auto it = databases.find(name);

@@ -37,6 +37,9 @@ public:
     using InternalVariant = std::variant<std::string, int64_t, uint64_t, double, QDateTime, bool, QByteArray>;
 
     int toInt(bool* success = nullptr) const;
+    // todo fix int64_t case
+    uint64_t toUInt64(bool* success = nullptr) const;
+    int64_t toInt64(bool* success = nullptr) const;
     uint toUInt(bool* success = nullptr)  const;
     double toDouble(bool* success = nullptr)  const;
     std::string toString()  const;

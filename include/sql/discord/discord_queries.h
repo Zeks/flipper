@@ -13,11 +13,12 @@
 #include "transaction.h"
 #include "Interfaces/discord/users.h"
 #include "discord/discord_user.h"
+#include "discord/discord_ffn_page.h"
 #include "discord/discord_server.h"
 #include "discord/fandom_filter_token.h"
 #include "sql_abstractions/sql_context.h"
 namespace database {
-using namespace puresql;
+using namespace sql;
 namespace discord_queries{
 
     DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(sql::Database db, QString);

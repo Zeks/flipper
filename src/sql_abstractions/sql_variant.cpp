@@ -65,6 +65,88 @@ int Variant::toInt(bool* success) const{
     return result;
 }
 
+uint64_t Variant::toUInt64(bool *success) const
+{
+    int result = 0;
+    std::visit([&](const auto& arg) {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, int64_t>){
+                    result = arg; // todo, error, should't be used like that, too lazy to add asert now
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, uint64_t>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, double>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, std::string>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, QDateTime>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, bool>){
+                    result = arg > 0;
+                }
+                else if constexpr (std::is_same_v<T, QByteArray>){
+                    if(success)
+                        *success = false;
+                }
+                else
+                static_assert(always_false_v<T>, "non-exhaustive visitor!");
+    }, data);
+    return result;
+}
+
+int64_t Variant::toInt64(bool *success) const
+{
+    int result = 0;
+    std::visit([&](const auto& arg) {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, int64_t>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, uint64_t>){
+                    result = arg; // todo, error, should't be used like that, too lazy to add asert now
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, double>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, std::string>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, QDateTime>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, bool>){
+                    result = arg > 0;
+                }
+                else if constexpr (std::is_same_v<T, QByteArray>){
+                    if(success)
+                        *success = false;
+                }
+                else
+                static_assert(always_false_v<T>, "non-exhaustive visitor!");
+    }, data);
+    return result;
+}
+
 uint Variant::toUInt(bool *success) const
 {
     uint result = 0;

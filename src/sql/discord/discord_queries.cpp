@@ -51,29 +51,29 @@ DiagnosticSQLResult<QSharedPointer<discord::User>> GetUser(sql::Database db, QSt
     ctx.ForEachInSelect([&](sql::Query& q){
         QSharedPointer<discord::User> user(new discord::User);
         user->SetUserID(user_id);
-        user->SetUserName(q.value(QStringLiteral("user_name")).toString());
-        user->SetFfnID(q.value(QStringLiteral("ffn_id")).toString());
-        user->SetCurrentListId(q.value(QStringLiteral("current_list")).toInt());
-        user->SetBanned(q.value(QStringLiteral("banned")).toBool());
-        user->SetUseLikedAuthorsOnly(q.value(QStringLiteral("use_liked_authors_only")).toBool());
-        user->SetUuid(q.value(QStringLiteral("uuid")).toString());
-        //user->SetSortFreshFirst(q.value(QStringLiteral("use_fresh_sorting")).toInt());
-        user->SetHideDead(q.value(QStringLiteral("hide_dead")).toInt());
+        user->SetUserName(QString::fromStdString(q.value("user_name").toString()));
+        user->SetFfnID(QString::fromStdString(q.value("ffn_id").toString()));
+        user->SetCurrentListId(q.value("current_list").toInt());
+        user->SetBanned(q.value("banned").toBool());
+        user->SetUseLikedAuthorsOnly(q.value("use_liked_authors_only").toBool());
+        user->SetUuid(QString::fromStdString(q.value("uuid").toString()));
+        //user->SetSortFreshFirst(q.value("use_fresh_sorting").toInt());
+        user->SetHideDead(q.value("hide_dead").toInt());
 
-        auto minWords = static_cast<uint64_t>(q.value(QStringLiteral("words_filter_range_begin")).toULongLong());
-        auto maxWords = static_cast<uint64_t>(q.value(QStringLiteral("words_filter_range_end")).toULongLong());
-        auto filterType = static_cast<discord::WordcountFilter::EFilterMode>(q.value(QStringLiteral("words_filter_type")).toInt());
+        auto minWords = static_cast<uint64_t>(q.value("words_filter_range_begin").toUInt64());
+        auto maxWords = static_cast<uint64_t>(q.value("words_filter_range_end").toUInt64());
+        auto filterType = static_cast<discord::WordcountFilter::EFilterMode>(q.value("words_filter_type").toInt());
         user->SetWordcountFilter({minWords, maxWords, filterType});
-        user->SetShowCompleteOnly(q.value(QStringLiteral("show_complete_only")).toInt());
-        user->SetStrictFreshSort(q.value(QStringLiteral("strict_fresh_sorting")).toInt());
-        auto sortingMode = q.value(QStringLiteral("sorting_mode")).toInt();
+        user->SetShowCompleteOnly(q.value("show_complete_only").toInt());
+        user->SetStrictFreshSort(q.value("strict_fresh_sorting").toInt());
+        auto sortingMode = q.value("sorting_mode").toInt();
         if(sortingMode == 1)
             user->SetSortFreshFirst(true);
         else if(sortingMode == 2)
             user->SetSortGemsFirst(true);
         discord::LargeListToken token;
-        token.date = QDate::fromString(q.value(QStringLiteral("last_large_list_generated")).toString(), "yyyyMMdd");
-        token.counter = q.value(QStringLiteral("last_large_list_counter")).toInt();
+        token.date = QDate::fromString(QString::fromStdString(q.value("last_large_list_generated").toString()), "yyyyMMdd");
+        token.counter = q.value("last_large_list_counter").toInt();
         user->SetLargeListToken(token);
         ctx.result.data = user;
     });
@@ -95,21 +95,21 @@ DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(sql::Database db,
         QSharedPointer<discord::Server> server(new discord::Server);
         server->SetServerId(serverId);
 
-        server->SetBanned(q.value(QStringLiteral("server_banned")).toBool());
-        server->SetSilenced(q.value(QStringLiteral("server_silenced")).toBool());
-        server->SetAnswerInPm(q.value(QStringLiteral("bot_answers_in_pm")).toBool());
+        server->SetBanned(q.value("server_banned").toBool());
+        server->SetSilenced(q.value("server_silenced").toBool());
+        server->SetAnswerInPm(q.value("bot_answers_in_pm").toBool());
 
-        server->SetParserRequestLimit(q.value(QStringLiteral("parse_request_limit")).toInt());
-        server->SetTotalRequests(q.value(QStringLiteral("total_requests")).toInt());
+        server->SetParserRequestLimit(q.value("parse_request_limit").toInt());
+        server->SetTotalRequests(q.value("total_requests").toInt());
 
-        server->SetFirstActive(q.value(QStringLiteral("active_since")).toDateTime());
-        server->SetLastActive(q.value(QStringLiteral("last_request")).toDateTime());
+        server->SetFirstActive(q.value("active_since").toDateTime());
+        server->SetLastActive(q.value("last_request").toDateTime());
 
 
-        server->SetOwnerId(q.value(QStringLiteral("owner_id")).toString());
-        server->SetDedicatedChannelId(q.value(QStringLiteral("dedicated_channel_id")).toString().toStdString());
-        server->SetCommandPrefix(q.value(QStringLiteral("command_prefix")).toString().toStdString());
-        server->SetServerName(q.value(QStringLiteral("server_name")).toString());
+        server->SetOwnerId(QString::fromStdString(q.value("owner_id").toString()));
+        server->SetDedicatedChannelId(q.value("dedicated_channel_id").toString());
+        server->SetCommandPrefix(q.value("command_prefix").toString());
+        server->SetServerName(QString::fromStdString(q.value("server_name").toString()));
 
         ctx.result.data = server;
     });
@@ -117,19 +117,19 @@ DiagnosticSQLResult<QSharedPointer<discord::Server>> GetServer(sql::Database db,
 }
 
 
-DiagnosticSQLResult<QSharedPointer<discord::FFNPage> > GetFFNPage(QSqlDatabase db, const std::string &pageId)
+DiagnosticSQLResult<QSharedPointer<discord::FFNPage> > GetFFNPage(sql::Database db, const std::string &pageId)
 {
     std::string qs = "select * from ffn_pages where page_id = :page_id";
 
     QString page_id = QString::fromStdString(pageId);
     SqlContext<QSharedPointer<discord::FFNPage>> ctx(db, std::move(qs), BP1(page_id));
-    ctx.ForEachInSelect([&](QSqlQuery& q){
+    ctx.ForEachInSelect([&](sql::Query& q){
         QSharedPointer<discord::FFNPage> page(new discord::FFNPage);
         page->setId(pageId);
         page->setDailyParseCounter(q.value("daily_parse_counter").toInt());
         page->setTotalParseCounter(q.value("total_parse_counter").toInt());
         page->setFavourites(q.value("favourites").toInt());
-        page->setLastParsed(QDate::fromString(q.value("last_parse").toString(), "yyyyMMdd"));
+        page->setLastParsed(QDate::fromString(QString::fromStdString(q.value("last_parse").toString()), "yyyyMMdd"));
         ctx.result.data = page;
     });
     return std::move(ctx.result);
@@ -141,8 +141,8 @@ DiagnosticSQLResult<discord::FandomFilter> GetFandomIgnoreList(sql::Database db,
 
     SqlContext<discord::FandomFilter> ctx(db, std::move(qs), BP1(user_id));
     ctx.ForEachInSelect([&](sql::Query& q){
-        ctx.result.data.AddFandom(q.value(QStringLiteral("fandom_id")).toInt(),
-                                  q.value(QStringLiteral("including_crossovers")).toBool());
+        ctx.result.data.AddFandom(q.value("fandom_id").toInt(),
+                                  q.value("including_crossovers").toBool());
     });
     return std::move(ctx.result);
 }
@@ -152,8 +152,8 @@ DiagnosticSQLResult<discord::FandomFilter> GetFilterList(sql::Database db, QStri
 
     SqlContext<discord::FandomFilter> ctx(db, std::move(qs), BP1(user_id));
     ctx.ForEachInSelect([&](sql::Query& q){
-        ctx.result.data.AddFandom(q.value(QStringLiteral("fandom_id")).toInt(),
-                                  q.value(QStringLiteral("including_crossovers")).toBool());
+        ctx.result.data.AddFandom(q.value("fandom_id").toInt(),
+                                  q.value("including_crossovers").toBool());
     });
     return std::move(ctx.result);
 }
@@ -173,7 +173,7 @@ DiagnosticSQLResult<int> GetCurrentPage(sql::Database db, QString user_id)
 
     SqlContext<int> ctx(db, std::move(qs), BP1(user_id));
     ctx.ForEachInSelect([&](sql::Query& q){
-        ctx.result.data = q.value(QStringLiteral("at_page")).toInt();
+        ctx.result.data = q.value("at_page").toInt();
     });
     return std::move(ctx.result);
 }
@@ -203,7 +203,7 @@ DiagnosticSQLResult<bool> WriteServer(sql::Database db, QSharedPointer<discord::
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteFFNPage(QSqlDatabase db, QSharedPointer<discord::FFNPage> page)
+DiagnosticSQLResult<bool> WriteFFNPage(sql::Database db, QSharedPointer<discord::FFNPage> page)
 {
     std::string qs = "INSERT INTO ffn_pages(page_id, last_parse, favourites, daily_parse_counter, total_parse_counter) "
                  "values(:page_id, :last_parse, :favourites, 1, 1)";
@@ -216,7 +216,7 @@ DiagnosticSQLResult<bool> WriteFFNPage(QSqlDatabase db, QSharedPointer<discord::
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> UpdateFFNPage(QSqlDatabase db, QSharedPointer<discord::FFNPage> page)
+DiagnosticSQLResult<bool> UpdateFFNPage(sql::Database db, QSharedPointer<discord::FFNPage> page)
 {
     std::string qs = "update ffn_pages set "
                      " last_parse = :last_parse, favourites = :favourites, "
@@ -243,7 +243,7 @@ DiagnosticSQLResult<bool> WriteServerPrefix(sql::Database db, const std::string&
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteServerDedicatedChannel(QSqlDatabase db, const std::string &serverId, const std::string & dedicatedChannelI)
+DiagnosticSQLResult<bool> WriteServerDedicatedChannel(sql::Database db, const std::string &serverId, const std::string & dedicatedChannelI)
 {
     std::string qs = "update discord_servers set dedicated_channel_id = :dedicated_channel_id where server_id = :server_id";
     QString server_id = QString::fromStdString(serverId);
@@ -328,7 +328,7 @@ DiagnosticSQLResult<bool> UnbanUser(sql::Database db, QString user_id){
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> BanServer(QSqlDatabase db, QString server_id)
+DiagnosticSQLResult<bool> BanServer(sql::Database db, QString server_id)
 {
     std::string qs = "update discord_servers set server_banned = 1 where server_id = :server_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(server_id));
@@ -336,7 +336,7 @@ DiagnosticSQLResult<bool> BanServer(QSqlDatabase db, QString server_id)
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> UnbanServer(QSqlDatabase db, QString server_id)
+DiagnosticSQLResult<bool> UnbanServer(sql::Database db, QString server_id)
 {
     std::string qs = "update discord_servers set server_banned = 0 where server_id = :server_id";
     SqlContext<bool> ctx(db, std::move(qs), BP1(server_id));
@@ -401,7 +401,7 @@ DiagnosticSQLResult<bool> WriteUserFFNId(sql::Database db, QString user_id, int 
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> WriteUserFavouritesSize(QSqlDatabase db, QString user_id, int favourites_size)
+DiagnosticSQLResult<bool> WriteUserFavouritesSize(sql::Database db, QString user_id, int favourites_size)
 {
     std::string qs = "update discord_users set favourites_size = :favourites_size where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, favourites_size));
@@ -463,16 +463,26 @@ DiagnosticSQLResult<bool> WriteGemSortingParams(sql::Database db, QString user_i
     return std::move(ctx.result);
 }
 
-DiagnosticSQLResult<bool> SetHideDeadFilter(sql::Database db, QString user_id, bool show_complete_only)
+DiagnosticSQLResult<bool> WriteLargeListReparseToken(sql::Database db, QString user_id, discord::LargeListToken token)
 {
-    std::string qs = "update discord_users set sorting_mode = :sorting_mode where user_id = :user_id";
-    int sorting_mode = useGemSorting ? 2 : 0;
-    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, sorting_mode));
+    std::string qs = "update discord_users set last_large_list_generated = :last_large_list_generated, last_large_list_counter = :last_large_list_counter where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs));
+    ctx.bindValue("user_id", user_id);
+    ctx.bindValue("last_large_list_generated", token.date.toString("yyyyMMdd"));
+    ctx.bindValue("last_large_list_counter", token.counter);
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);
 }
 
-DDiagnosticSQLResult<bool> SetCompleteFilter(sql::Database db, QString user_id, bool show_complete_only)
+DiagnosticSQLResult<bool> SetHideDeadFilter(sql::Database db, QString user_id, bool hide_dead)
+{
+    std::string qs = "update discord_users set hide_dead = :hide_dead where user_id = :user_id";
+    SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, hide_dead));
+    ctx.ExecAndCheck(true);
+    return std::move(ctx.result);
+}
+
+DiagnosticSQLResult<bool> SetCompleteFilter(sql::Database db, QString user_id, bool show_complete_only)
 {
     std::string qs = "update discord_users set show_complete_only = :show_complete_only  where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs), BP2(user_id, show_complete_only));
@@ -521,8 +531,8 @@ DiagnosticSQLResult<bool> SetWordcountFilter(sql::Database db, QString userId, d
                      " words_filter_type = :words_filter_type where user_id = :user_id";
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.bindValue("user_id", userId);
-    ctx.bindValue("words_filter_range_begin", QVariant::fromValue<long long>(filter.firstLimit));
-    ctx.bindValue("words_filter_range_end", QVariant::fromValue<long long>(filter.secondLimit));
+    ctx.bindValue("words_filter_range_begin", filter.firstLimit);
+    ctx.bindValue("words_filter_range_end", filter.secondLimit);
     ctx.bindValue("words_filter_type", static_cast<int>(filter.filterMode));
     ctx.ExecAndCheck(true);
     return std::move(ctx.result);

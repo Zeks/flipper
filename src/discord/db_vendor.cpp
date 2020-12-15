@@ -24,7 +24,7 @@ namespace discord {
 QSharedPointer<LockedDatabase> DatabaseVendor::GetDatabase(QString name)
 {
     QSharedPointer<LockedDatabase> databaseWrapper;
-    if(name == QStringLiteral("users"))
+    if(name == "users")
     {
         databaseWrapper.reset(new LockedDatabase(usersLock));
         auto db = InstantiateDatabase(users);
@@ -40,7 +40,7 @@ QSharedPointer<LockedDatabase> DatabaseVendor::GetDatabase(QString name)
 
 void DatabaseVendor::AddConnectionToken(QString name, const SqliteConnectionToken& token)
 {
-    if(name == QStringLiteral("users"))
+    if(name == "users")
         users = token;
     else
         pageCache = token;
@@ -49,9 +49,9 @@ void DatabaseVendor::AddConnectionToken(QString name, const SqliteConnectionToke
 sql::Database DatabaseVendor::InstantiateDatabase(const SqliteConnectionToken & token)
 {
     sql::Database db;
-    db = sql::Database::addDatabase(QStringLiteral("qsqlite"), token.databaseName + QUuid::createUuid().toString());
+    db = sql::Database::addDatabase("qsqlite", token.databaseName.toStdString() + QUuid::createUuid().toString().toStdString());
     QString filename = token.folder.isEmpty() ? token.databaseName : token.folder + "/" + token.databaseName;
-    db.setDatabaseName(filename + QStringLiteral(".sqlite"));
+    db.setDatabaseName(filename.toStdString() + ".sqlite");
     db.open();
     return db;
 }
