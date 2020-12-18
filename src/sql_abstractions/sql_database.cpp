@@ -47,7 +47,6 @@ Database Database::database(std::string name)
 
 void Database::setDatabaseName(std::string name)
 {
-    toUpper(name);
     d->setDatabaseName(name);
 }
 

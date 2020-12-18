@@ -1379,13 +1379,13 @@ DiagnosticSQLResult<bool>  UpdateAuthorRecord(core::AuthorPtr author, QDateTime 
     ctx.ExecAndCheck();
 
     //not reading those yet
-    //q1.bindValue(":info_wordcount", author->ficCount);
-    //    q1.bindValue(":last_published_fic_date", author->ficCount);
-    //    q1.bindValue(":first_published_fic_date", author->ficCount);
-    //    q1.bindValue(":own_wordcount", author->ficCount);
-    //    q1.bindValue(":own_favourites", author->ficCount);
-    //    q1.bindValue(":own_finished_ratio", author->ficCount);
-    //    q1.bindValue(":most_written_size", author->ficCount);
+    //q1.bindValue("info_wordcount", author->ficCount);
+    //    q1.bindValue("last_published_fic_date", author->ficCount);
+    //    q1.bindValue("first_published_fic_date", author->ficCount);
+    //    q1.bindValue("own_wordcount", author->ficCount);
+    //    q1.bindValue("own_favourites", author->ficCount);
+    //    q1.bindValue("own_finished_ratio", author->ficCount);
+    //    q1.bindValue("most_written_size", author->ficCount);
 
     return std::move(ctx.result);
 }

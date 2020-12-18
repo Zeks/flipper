@@ -71,7 +71,7 @@ FeederService::FeederService(QObject* parent): QObject(parent){
     rngData.reset(new core::RNGData);
 
     QSharedPointer<database::IDBWrapper> dbInterface (new database::SqliteInterface());
-    auto mainDb = dbInterface->InitDatabase("CrawlerDB", true);
+    auto mainDb = dbInterface->InitDatabase2("CrawlerDB", GetDbNameFromCurrentThread());
     dbInterface->ReadDbFile("dbcode/dbinit.sql",GetDbNameFromCurrentThread());
 
     An<core::RecCalculator> calculator;

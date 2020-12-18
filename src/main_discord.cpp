@@ -65,7 +65,7 @@ static inline QString CreateConnectString(QString ip,QString port)
 
 int main(int argc, char *argv[]) {
         QCoreApplication a(argc, argv);
-        a.setApplicationName("ffnet sane search engine");
+        a.setApplicationName("Socrates");
         SetupLogger();
         QSharedPointer<database::IDBWrapper> discordDbInterface (new database::SqliteInterface());
         //userDbInterface->EnsureUUIDForUserDatabase();

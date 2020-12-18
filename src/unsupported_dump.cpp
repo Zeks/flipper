@@ -55,8 +55,8 @@ bool EnsureFandomsNormalized()
         if(failureAtFirst || failureAtSecond)
             return false;
 
-        innerQ.bindValue(":fandom_id", fandoms[firstFandom]);
-        innerQ.bindValue(":fic_id", q.value("id").toInt());
+        innerQ.bindValue("fandom_id", fandoms[firstFandom]);
+        innerQ.bindValue("fic_id", q.value("id").toInt());
         if(!ExecAndCheck(innerQ))
         {
             db.rollback();
@@ -64,8 +64,8 @@ bool EnsureFandomsNormalized()
         }
         if(!secondFandom.isEmpty() && firstFandom!=secondFandom)
         {
-            innerQ.bindValue(":fandom_id", fandoms[secondFandom]);
-            innerQ.bindValue(":fic_id", q.value("id").toInt());
+            innerQ.bindValue("fandom_id", fandoms[secondFandom]);
+            innerQ.bindValue("fic_id", q.value("id").toInt());
             if(!ExecAndCheck(innerQ))
             {
                 db.rollback();
@@ -137,7 +137,7 @@ bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
     QString qs = QString(" delete from ficfandoms where fic_id = (select id from fanfics where %1_id = :fic_id)");
     qs=qs.arg(section.webSite);
     innerQ.prepare(qs);
-    innerQ.bindValue(":fic_id", section.webId);
+    innerQ.bindValue("fic_id", section.webId);
     if(!ExecAndCheck(innerQ))
     {
         db.rollback();
@@ -158,8 +158,8 @@ bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
         return false;
 
 
-    innerQ.bindValue(":fandom_id", fandoms[firstFandom]);
-    innerQ.bindValue(":fic_id", section.webId);
+    innerQ.bindValue("fandom_id", fandoms[firstFandom]);
+    innerQ.bindValue("fic_id", section.webId);
     if(!ExecAndCheck(innerQ))
     {
         db.rollback();
@@ -167,8 +167,8 @@ bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
     }
     if(!secondFandom.isEmpty() && firstFandom!=secondFandom)
     {
-        innerQ.bindValue(":fandom_id", fandoms[secondFandom]);
-        innerQ.bindValue(":fic_id", section.webId);
+        innerQ.bindValue("fandom_id", fandoms[secondFandom]);
+        innerQ.bindValue("fic_id", section.webId);
         if(!ExecAndCheck(innerQ))
         {
             db.rollback();
@@ -180,9 +180,9 @@ bool WriteFandomsForStory(core::Fic &section, QHash<QString, int> & fandoms)
                  " where %1_id = :fic_id");
     qs=qs.arg(section.webSite);
     innerQ.prepare(qs);
-    innerQ.bindValue(":fandom1", firstFandom);
-    innerQ.bindValue(":fandom2", secondFandom);
-    innerQ.bindValue(":fic_id", section.webId);
+    innerQ.bindValue("fandom1", firstFandom);
+    innerQ.bindValue("fandom2", secondFandom);
+    innerQ.bindValue("fic_id", section.webId);
     if(!ExecAndCheck(innerQ))
     {
         db.rollback();
@@ -283,8 +283,8 @@ int GetMatchCountForRecommenderOnList(int recommender_id, int list)
     sql::Query q1(db);
     QString qsl = "select fic_count from RecommendationListAuthorStats where list_id = :list_id and author_id = :author_id";
     q1.prepare(qsl);
-    q1.bindValue(":list_id", list);
-    q1.bindValue(":author_id", recommender_id);
+    q1.bindValue("list_id", list);
+    q1.bindValue("author_id", recommender_id);
     q1.exec();
     q1.next();
     CheckExecution(q1);

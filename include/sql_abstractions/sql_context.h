@@ -518,7 +518,7 @@ struct ParallelSqlContext
                     //qDebug() << "binding value: " << value;
                 }
                 //qDebug() << "to target field: " << targetFields[i];
-                targetQ.bindValue((":" + targetFields[i]).c_str(), value);
+                targetQ.bindValue((targetFields[i]).c_str(), value);
             }
 
             if(!result.ExecAndCheck(targetQ, ConvertBoolToError(ignoreUniqueness, {ESqlErrors::se_unique_row_violation})))

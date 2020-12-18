@@ -1324,7 +1324,7 @@ void ServitorWindow::on_pbPCRescue_clicked()
     for(const auto& author : authors)
     {
         //qDebug() << "Attempting to read url: " << author;
-        readQuery.bindValue(":url", author);
+        readQuery.bindValue("url", author);
         readQuery.exec();
         bool result = readQuery.next();
         if(!result || readQuery.value("url").toString().length() == 0)
@@ -1343,11 +1343,11 @@ void ServitorWindow::on_pbPCRescue_clicked()
         //qDebug() << "writing record: " << readQuery.value("url").toString();
 
         counter++;
-        exportQ.bindValue(":URL", readQuery.value("url").toString());
-        exportQ.bindValue(":GENERATION_DATE", readQuery.value("GENERATION_DATE").toDateTime());
-        exportQ.bindValue(":CONTENT", readQuery.value("CONTENT").toByteArray());
-        exportQ.bindValue(":COMPRESSED", readQuery.value("COMPRESSED").toInt());
-        exportQ.bindValue(":PAGE_TYPE", readQuery.value("PAGE_TYPE").toString());
+        exportQ.bindValue("URL", readQuery.value("url").toString());
+        exportQ.bindValue("GENERATION_DATE", readQuery.value("GENERATION_DATE").toDateTime());
+        exportQ.bindValue("CONTENT", readQuery.value("CONTENT").toByteArray());
+        exportQ.bindValue("COMPRESSED", readQuery.value("COMPRESSED").toInt());
+        exportQ.bindValue("PAGE_TYPE", readQuery.value("PAGE_TYPE").toString());
         exportQ.exec();
         if(exportQ.lastError().isValid())
             qDebug() << "Error writing record: " << exportQ.lastError().text();

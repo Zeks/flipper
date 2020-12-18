@@ -52,17 +52,17 @@ QString ConvertName(QString name)
 void FillFFNId(sql::Database db)
 {
     database::Transaction transaction(db);
-    QString qs = "select id, url from recommenders";
+    auto qs = "select id, url from recommenders";
     sql::Query q(db);
     q.prepare(qs);
     sql::ExecAndCheck(q);
     QHash<int, int> idToFFNId;
     while(q.next())
     {
-        QString url = q.value("url").toString();
+        auto url = q.value("url").toString();
         QRegExp rxEnd("(/u/(\\d+)/)(.*)");
         rxEnd.setMinimal(true);
-        rxEnd.indexIn(url);
+        rxEnd.indexIn(url.c_str());
         auto idPart = rxEnd.cap(2);
         qDebug() << idPart;
         bool ok = true;
@@ -76,9 +76,9 @@ void FillFFNId(sql::Database db)
     fixQ.prepare("update recommenders set ffn_id = :ffn_id where id = :id");
     for(auto id : idToFFNId.keys())
     {
-        fixQ.bindValue(":id", id);
+        fixQ.bindValue("id", id);
         auto ffnId= idToFFNId[id];
-        fixQ.bindValue(":ffn_id", ffnId);
+        fixQ.bindValue("ffn_id", ffnId);
         sql::ExecAndCheck(fixQ);
     }
     transaction.finalize();
@@ -89,7 +89,7 @@ void TrimUserUrls(sql::Database db)
 {
     sql::DiagnosticSQLResult<bool> result;
     database::Transaction transaction(db);
-    QString qs = "select rowid, url from pagecache";
+    auto qs = "select rowid, url from pagecache";
     sql::Query q(db);
     q.prepare(qs);
     q.exec();
@@ -104,22 +104,22 @@ void TrimUserUrls(sql::Database db)
     while(q.next())
     {
         int rowid = q.value("rowid").toInt();
-        QString originalurl = q.value("url").toString();
-        QString url = originalurl;
+        auto originalurl = q.value("url").toString();
+        auto url = originalurl;
 
-        if(!url.contains("/u/"))
+        if(url.find("/u/") == std::string::npos)
             continue;
-        auto id = url_utils::GetWebId(originalurl, "ffn");
+        auto id = url_utils::GetWebId(QString::fromStdString(originalurl), "ffn");
         bool ok = true;
         id.toInt(&ok);
         if(!ok)
             continue;
 
-        url = QString("https://www.fanfiction.net/u/") + id;
+        url = "https://www.fanfiction.net/u/" + id.toStdString();
 
-        fixQ.bindValue(":row_id", rowid);
-        fixQ.bindValue(":url", url);
-        if(!result.ExecAndCheck(fixQ, true))
+        fixQ.bindValue("row_id", rowid);
+        fixQ.bindValue("url", url);
+        if(!result.ExecAndCheck(fixQ, {sql::ESqlErrors::se_unique_row_violation}))
         {
             success = false;
             break;
@@ -138,18 +138,18 @@ sql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(sql::Database db)
 
     database::Transaction transaction(db);
     // first we wipe the original slash table
-    QString qs = QString("delete from slash_data");
+    auto qs = "delete from slash_data";
     sql::Query q(db);
     q.prepare(qs);
     if(!result.ExecAndCheck(q))
         return result;
 
-    QString insertQS = QString("insert into slash_data(fic_id, keywords_yes, keywords_no, keywords_result, first_iteration, second_iteration)"
-                               "  values(:fic_id, :keywords_yes, :keywords_no, :keywords_result, :first_iteration, :second_iteration)");
+    auto insertQS = "insert into slash_data(fic_id, keywords_yes, keywords_no, keywords_result, first_iteration, second_iteration)"
+                               "  values(:fic_id, :keywords_yes, :keywords_no, :keywords_result, :first_iteration, :second_iteration)";
     sql::Query insertQ(db);
     insertQ.prepare(insertQS);
 
-    qs = QString("select id, slash_keywords, not_slash_keywords,slash_keywords_result, first_slash_iteration, second_slash_iteration from fanfics ");
+    qs = "select id, slash_keywords, not_slash_keywords,slash_keywords_result, first_slash_iteration, second_slash_iteration from fanfics ";
     if(!db.isOpen())
         qDebug() << "not open";
     sql::Query importTagsQ(db);
@@ -160,12 +160,12 @@ sql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(sql::Database db)
     while(importTagsQ.next())
     {
         bool slashresult = importTagsQ.value("slash_keywords").toBool() && !importTagsQ.value("not_slash_keywords").toBool();
-        insertQ.bindValue(":fic_id", importTagsQ.value("id").toInt());
-        insertQ.bindValue(":keywords_yes", importTagsQ.value("slash_keywords").toInt());
-        insertQ.bindValue(":keywords_no", importTagsQ.value("not_slash_keywords").toInt());
-        insertQ.bindValue(":keywords_result",  slashresult);
-        insertQ.bindValue(":first_iteration", importTagsQ.value("first_slash_iteration").toInt());
-        insertQ.bindValue(":second_iteration", importTagsQ.value("second_slash_iteration").toInt());
+        insertQ.bindValue("fic_id", importTagsQ.value("id").toInt());
+        insertQ.bindValue("keywords_yes", importTagsQ.value("slash_keywords").toInt());
+        insertQ.bindValue("keywords_no", importTagsQ.value("not_slash_keywords").toInt());
+        insertQ.bindValue("keywords_result",  slashresult);
+        insertQ.bindValue("first_iteration", importTagsQ.value("first_slash_iteration").toInt());
+        insertQ.bindValue("second_iteration", importTagsQ.value("second_slash_iteration").toInt());
 
         if(!result.ExecAndCheck(insertQ))
             return result;
@@ -179,17 +179,17 @@ sql::DiagnosticSQLResult<bool> PassSlashDataIntoNewTable(sql::Database db)
 void ReplaceUrlInLinkedAuthorsWithID(sql::Database db)
 {
     database::Transaction transaction(db);
-    QString qs = "select rowid, recommender_id, url from LinkedAuthors";
+    auto qs = "select rowid, recommender_id, url from LinkedAuthors";
     sql::Query q(db);
     q.prepare(qs);
     sql::ExecAndCheck(q);
     QHash<int, int> idToFFNId;
     while(q.next())
     {
-        QString url = q.value("url").toString();
+        auto url = q.value("url").toString();
         QRegExp rxEnd("(/u/(\\d+)/)(.*)");
         rxEnd.setMinimal(true);
-        rxEnd.indexIn(url);
+        rxEnd.indexIn(url.c_str());
         auto idPart = rxEnd.cap(2);
         qDebug() << idPart;
         bool ok = true;
@@ -203,9 +203,9 @@ void ReplaceUrlInLinkedAuthorsWithID(sql::Database db)
     fixQ.prepare("update LinkedAuthors set ffn_id = :ffn_id where rowid = :row_id");
     for(auto id : idToFFNId.keys())
     {
-        fixQ.bindValue(":row_id", id);
+        fixQ.bindValue("row_id", id);
         auto ffnId= idToFFNId[id];
-        fixQ.bindValue(":ffn_id", ffnId);
+        fixQ.bindValue("ffn_id", ffnId);
         sql::ExecAndCheck(fixQ);
     }
     transaction.finalize();
@@ -302,11 +302,6 @@ bool RebindDuplicateFandoms(sql::Database db)
         if(!result)
             throw std::logic_error("");
 
-
-//        for(auto key: fandomNameToNewId.keys())
-//            result = result && sql::CreateFandomIndexRecord(fandomNameToNewId[key], key, db);
-//        if(!result)
-//            throw std::logic_error("");
         for(auto id: fandomIdToNewId.keys())
         {
 

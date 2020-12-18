@@ -2212,6 +2212,7 @@ int SortRecoderToUi(QComboBox* cb, core::StoryFilter::ESortMode index){
     for(auto i = 0; i < cb->count(); i++)
         if(cb->itemData(i).toUInt() == index)
             return i;
+    return 0;
 }
 
 
