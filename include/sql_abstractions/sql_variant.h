@@ -38,13 +38,13 @@ public:
     Variant(const QVariant&);
     Variant(QVariant&&v);
 
-    using InternalVariant = std::variant<std::monostate, std::string, int64_t, uint64_t, double, QDateTime, bool, QByteArray>;
+    using InternalVariant = std::variant<std::monostate, std::string, int, uint, int64_t, uint64_t, double, QDateTime, bool, QByteArray>;
 
     int toInt(bool* success = nullptr) const;
-    // todo fix int64_t case
-    uint64_t toUInt64(bool* success = nullptr) const;
-    int64_t toInt64(bool* success = nullptr) const;
     uint toUInt(bool* success = nullptr)  const;
+    // todo fix int64_t case
+    int64_t toInt64(bool* success = nullptr) const;
+    uint64_t toUInt64(bool* success = nullptr) const;
     double toDouble(bool* success = nullptr)  const;
     std::string toString()  const;
     float toFloat()  const;
@@ -59,13 +59,15 @@ public:
     InternalVariant data;
 };
 template <> inline
-uint64_t Variant::value<uint64_t>(){return toInt();}
+uint64_t Variant::value<uint64_t>(){return toUInt64();}
 template <> inline
 int Variant::value<int>(){return toInt();}
 template <> inline
+uint Variant::value<uint>(){return toUInt();}
+template <> inline
 bool Variant::value<bool>(){return toBool();}
 template <> inline
-int64_t Variant::value<int64_t>(){return toInt();}
+int64_t Variant::value<int64_t>(){return toInt64();}
 template <> inline
 double Variant::value<double>(){return toDouble();}
 template <> inline

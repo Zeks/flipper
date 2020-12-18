@@ -58,42 +58,54 @@ void QueryImplSqlite::setForwardOnly(bool value)
 void QueryImplSqlite::bindVector(const std::vector<QueryBinding>& bindList)
 {
     for(const auto& bind: bindList)
+    {
+        //qDebug() << QString::fromStdString(bind.key) << " " << bind.value.toQVariant();
         q.bindValue(":" + QString::fromStdString(bind.key), bind.value.toQVariant());
+    }
 }
 
 void QueryImplSqlite::bindVector(std::vector<QueryBinding> && bindList)
 {
     for(auto&& bind: bindList)
+    {
+        //qDebug() << QString::fromStdString(bind.key) << " " << bind.value.toQVariant();
         q.bindValue(":" + QString::fromStdString(bind.key), bind.value.toQVariant());
+    }
 }
 
 void QueryImplSqlite::bindValue(const std::string & key, const Variant & value)
 {
+    //qDebug() << QString::fromStdString(key) << " " << value.toQVariant();
     q.bindValue(":" + QString::fromStdString(key), value.toQVariant());
 }
 
 void QueryImplSqlite::bindValue(const std::string & key, Variant && value)
 {
+    //qDebug() << QString::fromStdString(key) << " " << value.toQVariant();
     q.bindValue(":" + QString::fromStdString(key), value.toQVariant());
 }
 
 void QueryImplSqlite::bindValue(std::string && key, const Variant & value)
 {
+    //qDebug() << QString::fromStdString(key) << " " << value.toQVariant();
     q.bindValue(":" + QString::fromStdString(key), value.toQVariant());
 }
 
 void QueryImplSqlite::bindValue(std::string && key, Variant && value)
 {
+    //qDebug() << QString::fromStdString(key) << " " << value.toQVariant();
     q.bindValue(":" + QString::fromStdString(key), value.toQVariant());
 }
 
 void QueryImplSqlite::bindValue(const QueryBinding & bind)
 {
+    //qDebug() << QString::fromStdString(bind.key) << " " << bind.value.toQVariant();
     q.bindValue(":" + QString::fromStdString(bind.key), bind.value.toQVariant());
 }
 
 void QueryImplSqlite::bindValue(QueryBinding && bind)
 {
+    //qDebug() << QString::fromStdString(bind.key) << " " << bind.value.toQVariant();
     q.bindValue(":" + QString::fromStdString(bind.key), bind.value.toQVariant());
 }
 

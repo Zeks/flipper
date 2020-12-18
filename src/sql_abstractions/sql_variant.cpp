@@ -1,4 +1,5 @@
 #include "sql_abstractions/sql_variant.h"
+#include <QUuid>
 
 namespace sql{
 
@@ -36,7 +37,7 @@ Variant::Variant(const QVariant & v)
         data = InternalVariant(v.toInt());
         break;
     case QVariant::UInt:
-        data = InternalVariant(v.toULongLong());
+        data = InternalVariant(v.toUInt());
         break;
     case QVariant::LongLong:
         data = InternalVariant(v.toLongLong());
@@ -75,13 +76,98 @@ int Variant::toInt(bool* success) const{
     int result = 0;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, uint>){
+                    if(arg > std::numeric_limits<int>::max())
+                        throw std::logic_error("can't fit uint value into int: " + QString::number(arg).toStdString());
 
-                if constexpr (std::is_same_v<T, int64_t>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
+                    if(arg > std::numeric_limits<int>::max())
+                        throw std::logic_error("can't fit int64 value into int: " + QString::number(arg).toStdString());
+
                     result = arg;
                     if(success)
                         *success = true;
                 }
                 else if constexpr (std::is_same_v<T, uint64_t>){
+                    if(arg > std::numeric_limits<int>::max())
+                        throw std::logic_error("can't fit uint64 value into int: " + QString::number(arg).toStdString());
+
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, double>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, std::string>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, QDateTime>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, bool>){
+                    result = arg > 0;
+                }
+                else if constexpr (std::is_same_v<T, QByteArray>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, std::monostate>){
+                    if(success)
+                        *success = false;
+                }
+                else
+                static_assert(always_false_v<T>, "non-exhaustive visitor!");
+    }, data);
+    return result;
+}
+
+
+
+uint Variant::toUInt(bool *success) const
+{
+    uint result = 0;
+    std::visit([&](const auto& arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, uint>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    if(arg < 0)
+                        throw std::logic_error("can't fit negative value into uint: " + QString::number(arg).toStdString());
+
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
+                    if(arg > std::numeric_limits<uint>::max())
+                        throw std::logic_error("can't fit int64 value into uint: " + QString::number(arg).toStdString());
+                    if(arg < 0)
+                        throw std::logic_error("can't fit negative value into uint: " + QString::number(arg).toStdString());
+
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, uint64_t>){
+                    if(arg > std::numeric_limits<uint>::max())
+                        throw std::logic_error("can't fit uint64 value into uint: " + QString::number(arg).toStdString());
+
                     result = arg;
                     if(success)
                         *success = true;
@@ -120,9 +206,23 @@ uint64_t Variant::toUInt64(bool *success) const
     int result = 0;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, uint>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    if(arg < 0)
+                        throw std::logic_error("can't fit negative value into uint64: " + QString::number(arg).toStdString());
 
-                if constexpr (std::is_same_v<T, int64_t>){
-                    result = arg; // todo, error, should't be used like that, too lazy to add asert now
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
+                    if(arg < 0)
+                        throw std::logic_error("can't fit negative value into uint64: " + QString::number(arg).toStdString());
+                    result = arg;
                     if(success)
                         *success = true;
                 }
@@ -165,14 +265,25 @@ int64_t Variant::toInt64(bool *success) const
     int result = 0;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, int64_t>){
+                if constexpr (std::is_same_v<T, uint>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    result = arg;
+                    if(success)
+                        *success = true;
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
                     result = arg;
                     if(success)
                         *success = true;
                 }
                 else if constexpr (std::is_same_v<T, uint64_t>){
-                    result = arg; // todo, error, should't be used like that, too lazy to add asert now
+                    if(arg > std::numeric_limits<int64_t>::max())
+                        throw std::logic_error("can't fit uint64 value into int64: " + QString::number(arg).toStdString());
+                    result = arg;
                     if(success)
                         *success = true;
                 }
@@ -205,57 +316,20 @@ int64_t Variant::toInt64(bool *success) const
     return result;
 }
 
-uint Variant::toUInt(bool *success) const
-{
-    uint result = 0;
-    std::visit([&](const auto& arg) {
-                using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, int64_t>){
-                    result = arg;
-                    if(success)
-                        *success = true;
-                }
-                else if constexpr (std::is_same_v<T, uint64_t>){
-                    result = arg;
-                    if(success)
-                        *success = true;
-                }
-                else if constexpr (std::is_same_v<T, double>){
-                    if(success)
-                        *success = false;
-                }
-                else if constexpr (std::is_same_v<T, std::string>){
-                    if(success)
-                        *success = false;
-                }
-                else if constexpr (std::is_same_v<T, QDateTime>){
-                    if(success)
-                        *success = false;
-                }
-                else if constexpr (std::is_same_v<T, bool>){
-                    result = arg > 0;
-                }
-                else if constexpr (std::is_same_v<T, QByteArray>){
-                    if(success)
-                        *success = false;
-                }
-                else if constexpr (std::is_same_v<T, std::monostate>){
-                    if(success)
-                        *success = false;
-                }
-                else
-                static_assert(always_false_v<T>, "non-exhaustive visitor!");
-    }, data);
-    return result;
-}
 double Variant::toDouble(bool* success) const
 {
     double result = 0.;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, int64_t>){
+                if constexpr (std::is_same_v<T, uint>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    if(success)
+                        *success = false;
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
                     if(success)
                         *success = false;
                 }
@@ -301,8 +375,13 @@ std::string Variant::toString() const
     std::string result;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, int64_t>){
+                if constexpr (std::is_same_v<T, uint>){
+                    result = std::to_string(arg);
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    result = std::to_string(arg);
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
                     result = std::to_string(arg);
                 }
                 else if constexpr (std::is_same_v<T, uint64_t>){
@@ -340,14 +419,18 @@ QDateTime Variant::toDateTime() const
     QDateTime result;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, int64_t>){
+                if constexpr (std::is_same_v<T, uint>){
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
                 }
                 else if constexpr (std::is_same_v<T, uint64_t>){
                 }
                 else if constexpr (std::is_same_v<T, double>){
                 }
                 else if constexpr (std::is_same_v<T, std::string>){
+                    result = QDateTime::fromString(QString::fromStdString(arg), Qt::ISODate);
                 }
                 else if constexpr (std::is_same_v<T, QDateTime>){
                     result = arg;
@@ -374,8 +457,13 @@ bool Variant::toBool() const
     bool result = false;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, int64_t>){
+                if constexpr (std::is_same_v<T, uint>){
+                    result = arg;
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    result = arg;
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
                     result = arg;
                 }
                 else if constexpr (std::is_same_v<T, uint64_t>){
@@ -405,8 +493,11 @@ QByteArray Variant::toByteArray() const
     QByteArray result;
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, int64_t>){
+                if constexpr (std::is_same_v<T, uint>){
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
                 }
                 else if constexpr (std::is_same_v<T, uint64_t>){
                 }
@@ -432,10 +523,24 @@ QByteArray Variant::toByteArray() const
 QVariant Variant::toQVariant() const
 {
     QVariant result;
+    //qDebug() << "entering variant fetch:" << QUuid::createUuid().toString();
     std::visit([&](const auto& arg) {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, int64_t>){
+                if constexpr (std::is_same_v<T, std::string>){
+                    //qDebug() << "called with string value: " << arg;
+                    result = QString::fromStdString(arg);
+                }
+                else if constexpr (std::is_same_v<T, uint>){
+                    //qDebug() << "called with uint value: " << arg;
+                    result = arg;
+                }
+                else if constexpr (std::is_same_v<T, int>){
+                    //qDebug() << "called with int value: " << arg;
+                    result = arg;
+                }
+                else if constexpr (std::is_same_v<T, int64_t>){
+                    //qDebug() << "called with int64 value: " << arg;
                     result = qint64(arg);
                 }
                 else if constexpr (std::is_same_v<T, uint64_t>){
@@ -444,9 +549,7 @@ QVariant Variant::toQVariant() const
                 else if constexpr (std::is_same_v<T, double>){
                     result = arg;
                 }
-                else if constexpr (std::is_same_v<T, std::string>){
-                    result = QString::fromStdString(arg);
-                }
+
                 else if constexpr (std::is_same_v<T, QDateTime>){
                     result = arg;
                 }

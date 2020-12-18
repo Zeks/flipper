@@ -58,11 +58,14 @@ sql::Query FicSourceDirect::BuildQuery(const core::StoryFilter& filter, bool cou
     {
         if(currentQuery->str.find(it->key) != std::string::npos)
         {
-            qDebug() << QString::fromStdString(it->key) << " " << it->value;
             q.bindValue(it->key, it->value);
+        }
+        else{
+            qDebug() << "Key not found: " << it->key;
         }
         ++it;
     }
+
     return q;
 }
 

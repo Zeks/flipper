@@ -763,33 +763,33 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
                                           QSharedPointer<Query> q)
 {
     if(filter.minWords > 0)
-        q->bindings.push_back({":minwordcount",filter.minWords});
+        q->bindings.push_back({"minwordcount",filter.minWords});
     if(filter.maxWords > 0)
-        q->bindings.push_back({":maxwordcount", filter.maxWords});
+        q->bindings.push_back({"maxwordcount", filter.maxWords});
     if(filter.minFavourites> 0)
-        q->bindings.push_back({":favourites",filter.minFavourites});
+        q->bindings.push_back({"favourites",filter.minFavourites});
     if(filter.listForRecommendations > -1)
     {
-        q->bindings.push_back({":list_id",filter.listForRecommendations});
-        q->bindings.push_back({":list_id2",filter.listForRecommendations});
+        q->bindings.push_back({"list_id",filter.listForRecommendations});
+        q->bindings.push_back({"list_id2",filter.listForRecommendations});
     }
     //    if(filter.minRecommendations > -1 && filter.listOpenMode)
-    //        q->bindings.push_back({":match_count",filter.minRecommendations});
+    //        q->bindings.push_back({"match_count",filter.minRecommendations});
     //    else if (filter.minRecommendations > -1)
-    //        q->bindings.push_back({":match_count",filter.minRecommendations + 1});
+    //        q->bindings.push_back({"match_count",filter.minRecommendations + 1});
     if(!filter.useRealGenres)
     {
         if(!filter.genreInclusion.isEmpty())
         {
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreInclusion))
-                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreinc" + QString::number(counter++).toStdString(),genre});
         }
         if(!filter.genreExclusion.isEmpty())
         {
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreExclusion))
-                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreexc" + QString::number(counter++).toStdString(),genre});
         }
     }
     else
@@ -799,9 +799,9 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreInclusion))
             {
-                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
-                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
-                q->bindings.push_back({":genreinc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreinc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreinc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreinc" + QString::number(counter++).toStdString(),genre});
             }
         }
         if(!filter.genreExclusion.isEmpty())
@@ -809,23 +809,23 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
             int counter = 1;
             for(const auto& genre : std::as_const(filter.genreExclusion))
             {
-                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
-                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
-                q->bindings.push_back({":genreexc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreexc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreexc" + QString::number(counter++).toStdString(),genre});
+                q->bindings.push_back({"genreexc" + QString::number(counter++).toStdString(),genre});
             }
         }
     }
     if(filter.fandom != -1 && filter.secondFandom == -1)
     {
-        q->bindings.push_back({":fandom_id1",filter.fandom});
-        q->bindings.push_back({":fandom_id2",filter.fandom});
+        q->bindings.push_back({"fandom_id1",filter.fandom});
+        q->bindings.push_back({"fandom_id2",filter.fandom});
     }
     if(filter.fandom != -1 && filter.secondFandom != -1)
     {
-        q->bindings.push_back({":fandom_id1",filter.fandom});
-        q->bindings.push_back({":fandom_id2",filter.secondFandom});
-        q->bindings.push_back({":fandom_id1_",filter.fandom});
-        q->bindings.push_back({":fandom_id2_",filter.secondFandom});
+        q->bindings.push_back({"fandom_id1",filter.fandom});
+        q->bindings.push_back({"fandom_id2",filter.secondFandom});
+        q->bindings.push_back({"fandom_id1_",filter.fandom});
+        q->bindings.push_back({"fandom_id2_",filter.secondFandom});
     }
     if(!filter.wordInclusion.isEmpty())
     {
@@ -834,8 +834,8 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         {
             if(word.trimmed().isEmpty())
                 continue;
-            q->bindings.push_back({":incword" + QString::number(counter++).toStdString(),word});
-            q->bindings.push_back({":incword" + QString::number(counter++).toStdString(),word});
+            q->bindings.push_back({"incword" + QString::number(counter++).toStdString(),word});
+            q->bindings.push_back({"incword" + QString::number(counter++).toStdString(),word});
         }
     }
     if(!filter.wordExclusion.isEmpty())
@@ -845,14 +845,14 @@ void DefaultQueryBuilder::ProcessBindings(StoryFilter filter,
         {
             if(word.trimmed().isEmpty())
                 continue;
-            q->bindings.push_back({":excword" + QString::number(counter++).toStdString(),word});
-            q->bindings.push_back({":excword" + QString::number(counter++).toStdString(),word}); // todo change on DB switch
+            q->bindings.push_back({"excword" + QString::number(counter++).toStdString(),word});
+            q->bindings.push_back({"excword" + QString::number(counter++).toStdString(),word}); // todo change on DB switch
         }
     }
     if(filter.recordLimit > 0)
-        q->bindings.push_back({":record_limit",filter.recordLimit});
+        q->bindings.push_back({"record_limit",filter.recordLimit});
     if(filter.recordPage > -1)
-        q->bindings.push_back({":record_offset",filter.recordPage * filter.recordLimit});
+        q->bindings.push_back({"record_offset",filter.recordPage * filter.recordLimit});
 
 }
 
