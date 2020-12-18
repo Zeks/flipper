@@ -13,28 +13,32 @@ class Variant{
 public:
     Variant();
     Variant(const std::string&);
+    Variant(std::string&&);
     Variant(const char*);
     Variant(const int32_t&);
-    Variant(const int64_t&);
-    Variant(const uint32_t&);
-    Variant(const uint64_t&);
-    Variant(const double&);
-    Variant(const QDateTime&);
-    Variant(const QDate&);
-    Variant(const QString&);
-    Variant(const bool&);
-    Variant(const QByteArray&);
-    Variant(std::string&&);
     Variant(int32_t&&);
+    Variant(const int64_t&);
     Variant(int64_t&&);
+    Variant(const uint32_t&);
     Variant(uint32_t&&);
+    Variant(const uint64_t&);
     Variant(uint64_t&&);
+    Variant(const double&);
     Variant(double&&);
+    Variant(const QDateTime&);
     Variant(QDateTime&&);
+    Variant(const QDate&);
     Variant(QDate&&);
+    Variant(const QString&);
+    Variant(QString&&);
+    Variant(const bool&);
     Variant(bool&&);
+    Variant(const QByteArray&);
     Variant(QByteArray&&);
-    using InternalVariant = std::variant<std::string, int64_t, uint64_t, double, QDateTime, bool, QByteArray>;
+    Variant(const QVariant&);
+    Variant(QVariant&&v);
+
+    using InternalVariant = std::variant<std::monostate, std::string, int64_t, uint64_t, double, QDateTime, bool, QByteArray>;
 
     int toInt(bool* success = nullptr) const;
     // todo fix int64_t case
@@ -84,7 +88,15 @@ template<typename T, typename... Ts> inline
 QDebug operator<<(QDebug os, const std::variant<T, Ts...>& v)
 {
     std::visit([&os](const auto & arg) {
-        os << arg;
+        using InnerType = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<InnerType, std::string>){
+            os << arg.c_str();
+        }
+        else if constexpr (std::is_same_v<InnerType, std::monostate>){
+            os << "empty Variant";
+        }
+        else
+            os << arg;
     }, v);
     return os;
 }

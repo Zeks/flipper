@@ -16,6 +16,7 @@ void cfReturnCapture(sqlite3_context* ctx, int argc, sqlite3_value** argv);
 void cfGetFirstFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv);
 void cfGetSecondFandom(sqlite3_context* ctx, int argc, sqlite3_value** argv);
 bool InstallCustomFunctions(QSqlDatabase db);
+bool InstallCustomFunctions(sql::Database db);
 bool ReadDbFile(QString file, QString connectionName);
 QStringList GetIdListForQuery(QSharedPointer<core::Query> query, sql::Database db);
 bool BackupSqliteDatabase(QString dbname);

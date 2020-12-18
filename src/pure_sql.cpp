@@ -264,10 +264,10 @@ DiagnosticSQLResult<bool> WriteFandomUrls(core::FandomPtr fandom, sql::Database 
     if(fandom->urls.size() == 0)
         fandom->urls.push_back(core::Url(QStringLiteral(""), "ffn"));
     ctx.ExecuteWithKeyListAndBindFunctor<QList,core::Url>(fandom->urls, [&](core::Url&& url, sql::Query& q){
-        q.bindValue(":id", fandom->id);
-        q.bindValue(":url", url.GetUrl());
-        q.bindValue(":website", fandom->source);
-        q.bindValue(":custom", fandom->section);
+        q.bindValue("id", fandom->id);
+        q.bindValue("url", url.GetUrl());
+        q.bindValue("website", fandom->source);
+        q.bindValue("custom", fandom->section);
     }, true);
     return std::move(ctx.result);
 }
@@ -1440,8 +1440,8 @@ DiagnosticSQLResult<bool>  PushTaglistIntoDatabase(QStringList tagList, sql::Dat
     std::string qs = "INSERT INTO TAGS (TAG, id) VALUES (:tag, :id)";
     SqlContext<bool> ctx(db, std::move(qs));
     ctx.ExecuteWithKeyListAndBindFunctor<QList, QString>(tagList, [&](QString&& tag, sql::Query q){
-        q.bindValue(":tag", tag);
-        q.bindValue(":id", counter);
+        q.bindValue("tag", tag);
+        q.bindValue("id", counter);
         counter++;
     }, true);
     return std::move(ctx.result);
@@ -1578,9 +1578,9 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, sql::D
         ctx.bindValue("ffn_id", i.key());
         ctx.FetchSingleValue<int>("id", -1,false, "select id from fanfics where ffn_id = :ffn_id");
         auto  error = ctx.result.oracleError;
-        if(error.length() !=  0 && error != "no data to read")
+        if(error.isValid() && error.getActualErrorType() != ESqlErrors::se_no_data_to_be_fetched)
         {
-            QLOG_ERROR() << "///ERROR///" << QString::fromStdString(error);
+            QLOG_ERROR() << "///ERROR///" << QString::fromStdString(error.text());
             ctx.result.success = false;
             break;
         }
@@ -1609,7 +1609,7 @@ DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, sql::Databas
         ctx.bindValue("id", it.key());
         ctx.FetchSingleValue<int>("ffn_id", -1, true, "select ffn_id from fanfics where id = :id");
         auto error = ctx.result.oracleError;
-        if(error.length() != 0 && error != "no data to read")
+        if(error.isValid() && error.getActualErrorType() != ESqlErrors::se_no_data_to_be_fetched)
         {
             ctx.result.success = false;
             break;
@@ -3208,15 +3208,15 @@ DiagnosticSQLResult<bool> CreateErrorsInDB(const SubTaskErrors& errors, sql::Dat
 
     SqlContext<bool>ctx(db, std::move(qs));
         ctx.ExecuteWithKeyListAndBindFunctor<QList, QSharedPointer, PageFailure>(errors, +[](PageFailurePtr error, sql::Query& q){
-        q.bindValue(":action_uuid", error->action->id.toString());
-        q.bindValue(":task_id", error->action->taskId);
-        q.bindValue(":sub_id", error->action->subTaskId);
-        q.bindValue(":url", error->url);
-        q.bindValue(":attempted_at", error->attemptTimeStamp);
-        q.bindValue(":last_seen", error->lastSeen);
-        q.bindValue(":error_code", static_cast<int>(error->errorCode));
-        q.bindValue(":error_level", static_cast<int>(error->errorlevel));
-        q.bindValue(":error", error->error);
+        q.bindValue("action_uuid", error->action->id.toString());
+        q.bindValue("task_id", error->action->taskId);
+        q.bindValue("sub_id", error->action->subTaskId);
+        q.bindValue("url", error->url);
+        q.bindValue("attempted_at", error->attemptTimeStamp);
+        q.bindValue("last_seen", error->lastSeen);
+        q.bindValue("error_code", static_cast<int>(error->errorCode));
+        q.bindValue("error_level", static_cast<int>(error->errorlevel));
+        q.bindValue("error", error->error);
     });
     return std::move(ctx.result);
 }
@@ -3462,7 +3462,7 @@ DiagnosticSQLResult<bool> AddFandomLink(int oldId, int newId, sql::Database db)
     ctx.bindValue("new_id",newId);
 
     ctx.ExecuteWithKeyListAndBindFunctor<AllocatedVector,std::string>(urls, [](std::string&& url, sql::Query& q){
-        q.bindValue(":url", url);
+        q.bindValue("url", url);
     });
     return std::move(ctx.result);
 }
@@ -3560,9 +3560,9 @@ DiagnosticSQLResult<bool> WriteAuthorFavouriteFandomStatistics(core::AuthorPtr a
     ctx.bindValue("author_id",author->id);
 
     ctx.ExecuteWithKeyListAndBindFunctor<QList,int>(author->stats.favouriteStats.fandomFactorsConverted.keys(), [&](auto&& key, auto& q){
-        q.bindValue(":fandom_id", key);
-        q.bindValue(":fandom_ratio", author->stats.favouriteStats.fandomFactorsConverted[key]);
-        q.bindValue(":fic_count", author->stats.favouriteStats.fandomsConverted[key]);
+        q.bindValue("fandom_id", key);
+        q.bindValue("fandom_ratio", author->stats.favouriteStats.fandomFactorsConverted[key]);
+        q.bindValue("fic_count", author->stats.favouriteStats.fandomsConverted[key]);
     });
 
     return std::move(ctx.result);
@@ -3843,7 +3843,7 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
     for(auto tempId: list)
     {
         counter++;
-        q.bindValue(":id", tempId);
+        q.bindValue("id", tempId);
         if(!result.ExecAndCheck(q))
         {
             qDebug() << QStringLiteral("failed to write slash");
@@ -3856,7 +3856,7 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
     for(auto tempId: std::as_const(list))
     {
         counter++;
-        q.bindValue(":id", tempId);
+        q.bindValue("id", tempId);
         if(!result.ExecAndCheck(q))
         {
             qDebug() << "failed to write slash";
@@ -3869,7 +3869,7 @@ DiagnosticSQLResult<bool> ProcessSlashFicsBasedOnWords(std::function<SlashPresen
     for(auto tempId: std::as_const(list))
     {
         counter++;
-        q.bindValue(":id", tempId);
+        q.bindValue("id", tempId);
         if(!result.ExecAndCheck(q))
         {
             qDebug() << "failed to write slash";

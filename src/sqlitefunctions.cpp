@@ -44,7 +44,7 @@ int GetLastIdForTable(QString tableName, sql::Database db)
     QString qs = QString("select seq from sqlite_sequence where name=:table_name");
     sql::Query q(db);
     q.prepare(qs.toStdString());
-    q.bindValue(":table_name", tableName);
+    q.bindValue("table_name", tableName);
     if(!sql::ExecAndCheck(q))
         return -1;
     q.next();
@@ -411,6 +411,10 @@ void cfGetSecondFandom(sqlite3_context* ctx, int , sqlite3_value** argv)
     sqlite3_result_text(ctx, qPrintable(result), result.length(), SQLITE_TRANSIENT);
 }
 
+bool InstallCustomFunctions(sql::Database db){
+    return InstallCustomFunctions(*static_cast<QSqlDatabase*>(db.internalPointer()));
+}
+
 bool InstallCustomFunctions(QSqlDatabase db)
 {
     //QLOG_INFO() << "Installing custom sqlite functions";
@@ -484,7 +488,7 @@ bool ReadDbFile(QString file, QString connectionName)
 
             q.prepare(statement.trimmed().toStdString());
             QLOG_TRACE() << "Executing: " << statement;
-            sql::ExecAndCheck(q, reportSchemaErrors);
+            sql::ExecAndCheck(q, reportSchemaErrors, {sql::ESqlErrors::se_duplicate_column,sql::ESqlErrors::se_unique_row_violation});
         }
         db.commit();
 
@@ -618,13 +622,13 @@ sql::Database InitDatabase(QString name, bool setDefault)
     QString path = name;
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("qsqlite");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = sql::Database::addDatabase("qsqlite", name.toStdString());
+        db = sql::Database::addDatabase("QSQLITE", name.toStdString());
     db.setDatabaseName(path.toStdString() + ".sqlite");
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
-    InstallCustomFunctions(*static_cast<QSqlDatabase*>(db.internalPointer()));
+    InstallCustomFunctions(db);
 
     return db;
 }
@@ -648,7 +652,7 @@ int CreateNewSubTask(int taskId, sql::Database db)
     sql::Query q(db);
     QString qsl = "insert into PageTaskParts(task_id) values(:task_id)";
     q.prepare(qsl.toStdString());
-    q.bindValue(":task_id", taskId);
+    q.bindValue("task_id", taskId);
     if(!sql::ExecAndCheck(q))
         return -1;
     auto id = GetLastIdForTable("PageTaskParts", db);
@@ -660,13 +664,13 @@ sql::Database InitNamedDatabase(QString dbName, QString filename, bool setDefaul
 {
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("qsqlite");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = sql::Database::addDatabase("qsqlite", dbName.toStdString());
+        db = sql::Database::addDatabase("QSQLITE", dbName.toStdString());
     db.setDatabaseName(filename.toStdString() + ".sqlite");
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << dbName << ", open : " << isOpen;
-    InstallCustomFunctions(*static_cast<QSqlDatabase*>(db.internalPointer()));
+    InstallCustomFunctions(db);
 
     return db;
 }
@@ -676,13 +680,13 @@ sql::Database InitDatabase2(QString file, QString name, bool setDefault)
     //QString path = name;
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("qsqlite");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = sql::Database::addDatabase("qsqlite", name.toStdString());
+        db = sql::Database::addDatabase("QSQLITE", name.toStdString());
     db.setDatabaseName(file.toStdString() + ".sqlite");
     bool isOpen = db.open();
     QLOG_INFO() << "Database status: " << name << ", open : " << isOpen;
-    InstallCustomFunctions(*static_cast<QSqlDatabase*>(db.internalPointer()));
+    InstallCustomFunctions(db);
 
     return db;
 }
@@ -695,14 +699,14 @@ sql::Database InitAndUpdateDatabaseForFile(QString folder,
 {
     sql::Database db;
     if(setDefault)
-        db = sql::Database::addDatabase("qsqlite");
+        db = sql::Database::addDatabase("QSQLITE");
     else
-        db = sql::Database::addDatabase("qsqlite", connectionName.toStdString());
+        db = sql::Database::addDatabase("QSQLITE", connectionName.toStdString());
     QString filename  = folder + "/" + file + ".sqlite";
     db.setDatabaseName(filename.toStdString());
     bool isOpen = db.open();
 
-    InstallCustomFunctions(*static_cast<QSqlDatabase*>(db.internalPointer()));
+    InstallCustomFunctions(db);
 
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     ReadDbFile(sqlFile, setDefault ? "" : connectionName);

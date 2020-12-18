@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 sql::DiagnosticSQLResult<sql::DBVerificationResult> VerifyDatabase(QString name){
 
     sql::DiagnosticSQLResult<sql::DBVerificationResult>  result;
-    auto db = sql::Database::addDatabase("qsqlite","TEST");
+    auto db = sql::Database::addDatabase("QSQLITE","TEST");
     db.setDatabaseName(name.toStdString());
     bool open = db.open();
     if(!open)

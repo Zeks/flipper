@@ -27,7 +27,7 @@ public:
     void bindValue(const QueryBinding &);
     void bindValue(QueryBinding &&);
     bool next();
-    bool supportsVectorizedBind() const;
+    constexpr bool supportsVectorizedBind() const;
     Variant value(int) const;
     Variant value(const std::string &) const;
     Variant value(std::string &&) const;
@@ -38,6 +38,7 @@ public:
     std::string implType() const;
 
     QSqlQuery q;
+    Error prepareErrorStorage;
 
 
 };

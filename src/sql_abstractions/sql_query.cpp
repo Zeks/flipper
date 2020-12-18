@@ -127,9 +127,9 @@ std::string Query::lastQuery() const
 
 void Query::instantiateImpl(Database db)
 {
-    if(db.driverType() == "sqlite"){
-        auto internals = static_cast<DatabaseImplSqlite*>(db.internalPointer());
-        d.reset(new QueryImplSqlite(internals->db));
+    if(db.driverType() == "QSQLITE"){
+        auto internals = *static_cast<QSqlDatabase*>(db.internalPointer());
+        d.reset(new QueryImplSqlite(internals));
     }
     else
         d.reset(new QueryImplNull());

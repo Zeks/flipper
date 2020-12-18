@@ -19,25 +19,26 @@
 
 namespace sql{
 
-bool ExecAndCheck(sql::Query& q, bool reportErrors = true,  bool ignoreUniqueness = false);
+bool ExecAndCheck(sql::Query& q, bool reportErrors = true, std::vector<ESqlErrors> expectedErrors = {});
+
+inline std::vector<ESqlErrors> ConvertBoolToError(bool errorEnabled, std::vector<ESqlErrors> expectedErrors){
+    if(errorEnabled)
+        return expectedErrors;
+    return {};
+};
 
 template <typename T>
 struct DiagnosticSQLResult
 {
     bool success = true;
-    std::string oracleError;
+    Error oracleError;
     T data;
-    bool ExecAndCheck(sql::Query& q, bool ignoreUniqueness = false) {
-        bool success = sql::ExecAndCheck(q, true, ignoreUniqueness);
-        bool uniqueTriggered = ignoreUniqueness && q.lastError().text().find("UNIQUE constraint failed") != std::string::npos;
-        if(uniqueTriggered)
-            return true;
-        if(!success && !uniqueTriggered)
+    bool ExecAndCheck(sql::Query& q, std::vector<ESqlErrors> expectedErrors = {}) {
+        bool success = sql::ExecAndCheck(q, true, expectedErrors);
+        if(!success)
         {
             success = false;
-            oracleError = q.lastError().text();
-            qDebug() << QString::fromStdString(oracleError);
-            qDebug() << QString::fromStdString(q.lastQuery());
+            oracleError = q.lastError();
         }
         return success;
     }
@@ -47,7 +48,7 @@ struct DiagnosticSQLResult
             if(!allowEmptyRecords)
             {
                 success = false;
-                oracleError = "no data to read";
+                oracleError = {"no data to read", ESqlErrors::se_no_data_to_be_fetched};
             }
             return false;
         }
@@ -107,8 +108,8 @@ struct SqlContext
 
     void ReplaceQuery(std::string&& query){
         qs = query;
-        Prepare(qs);
         bindValues.clear();
+        Prepare(qs);
     }
 
     void ExecuteWithArgsSubstitution(std::vector<std::string>&& keys){
@@ -129,8 +130,8 @@ struct SqlContext
         BindValues();
         for(const auto& key : args.keys())
         {
-            q.bindValue(":" + nameKeys[0], key);
-            q.bindValue(":" + nameKeys[1], args[key]);
+            q.bindValue(nameKeys[0], key);
+            q.bindValue(nameKeys[1], args[key]);
             if(!ExecAndCheck(ignoreUniqueness))
             {
                 qDebug() << "breaking out of cycle";
@@ -144,8 +145,8 @@ struct SqlContext
         BindValues();
         for(const auto& key : args.keys())
         {
-            q.bindValue(":" + nameKeys[0], key);
-            q.bindValue(":" + nameKeys[1], args[key]);
+            q.bindValue(nameKeys[0], key);
+            q.bindValue(nameKeys[1], args[key]);
             if(!ExecAndCheck(ignoreUniqueness))
             {
                 qDebug() << "breaking out of cycle";
@@ -190,7 +191,7 @@ struct SqlContext
         BindValues();
         for(auto&& value : valueList)
         {
-            q.bindValue(":" + keyName, std::move(value));
+            q.bindValue(keyName, std::move(value));
             if(!ExecAndCheck(ignoreUniqueness))
                 break;
         }
@@ -200,7 +201,7 @@ struct SqlContext
         BindValues();
         for(auto value : valueList)
         {
-            q.bindValue(":" + keyName, value);
+            q.bindValue(keyName, value);
             if(!ExecAndCheck(ignoreUniqueness))
                 break;
         }
@@ -209,7 +210,7 @@ struct SqlContext
 
     bool ExecAndCheck(bool ignoreUniqueness = false){
         BindValues();
-        return result.ExecAndCheck(q, ignoreUniqueness);
+        return result.ExecAndCheck(q, ConvertBoolToError(ignoreUniqueness, {ESqlErrors::se_unique_row_violation}));
     }
     bool CheckDataAvailability(bool allowEmptyRecords = false){
         return result.CheckDataAvailability(q, allowEmptyRecords);
@@ -383,7 +384,7 @@ struct SqlContext
     void BindValues(){
         for(const auto& bind : std::as_const(bindValues))
         {
-            q.bindValue(":" + bind.key, bind.value);
+            q.bindValue(bind.key, bind.value);
         }
     }
 
@@ -520,7 +521,7 @@ struct ParallelSqlContext
                 targetQ.bindValue((":" + targetFields[i]).c_str(), value);
             }
 
-            if(!result.ExecAndCheck(targetQ, ignoreUniqueness))
+            if(!result.ExecAndCheck(targetQ, ConvertBoolToError(ignoreUniqueness, {ESqlErrors::se_unique_row_violation})))
                 return result;
         }
         return result;

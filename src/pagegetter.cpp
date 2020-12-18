@@ -123,7 +123,7 @@ WebPage PageGetterPrivate::GetPageFromDB(QString url)
         // first we search for the exact page in the database
         sql::Query q(db);
         q.prepare("select * from PageCache where url = :URL ");
-        q.bindValue(":URL", url);
+        q.bindValue("URL", url);
         q.exec();
         bool dataFound = q.next();
 
@@ -196,16 +196,16 @@ void PageGetterPrivate::SavePageToDB(const WebPage & page)
     QSettings settings("settings/settings.ini", QSettings::IniFormat);
     sql::Query q(db);
     q.prepare("delete from pagecache where url = :url");
-    q.bindValue(":url", page.url);
+    q.bindValue("url", page.url);
     q.exec();
     QString insert = "INSERT INTO PAGECACHE(URL, GENERATION_DATE, CONTENT,  PAGE_TYPE, COMPRESSED) "
                      "VALUES(:URL, :GENERATION_DATE, :CONTENT, :PAGE_TYPE, :COMPRESSED)";
     q.prepare(insert.toStdString());
-    q.bindValue(":URL", page.url);
-    q.bindValue(":GENERATION_DATE", QDateTime::currentDateTime());
-    q.bindValue(":CONTENT", qCompress(page.content.toUtf8()));
-    q.bindValue(":COMPRESSED", 1);
-    q.bindValue(":PAGE_TYPE", static_cast<int>(page.type));
+    q.bindValue("URL", page.url);
+    q.bindValue("GENERATION_DATE", QDateTime::currentDateTime());
+    q.bindValue("CONTENT", qCompress(page.content.toUtf8()));
+    q.bindValue("COMPRESSED", 1);
+    q.bindValue("PAGE_TYPE", static_cast<int>(page.type));
     q.exec();
     if(q.lastError().isValid())
     {

@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     auto lastFandomId = fandomsInterface->GetLastFandomID();
     ficSource->GetFandomListFromServer(lastFandomId, &fandoms);
     if(fandoms.size() > 0)
-        fandomsInterface->UploadFandomsIntoDatabase(fandoms);
+        fandomsInterface->UploadFandomsIntoDatabase(fandoms, false);
     database::discord_queries::FillUserUids(fandomsInterface->db);
     sql::Database::removeDatabase("DiscordDB");
 

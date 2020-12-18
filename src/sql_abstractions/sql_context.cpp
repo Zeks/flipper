@@ -1,8 +1,9 @@
 #include "sql_abstractions/sql_context.h"
 #include "sql_abstractions/sql_query.h"
+#include "sql_abstractions/sql_error.h"
 #include "logger/QsLog.h"
 namespace sql{
-bool ExecAndCheck(sql::Query& q, bool reportErrors ,  bool ignoreUniqueness )
+bool ExecAndCheck(sql::Query& q, bool reportErrors, std::vector<ESqlErrors> expectedErrors)
 {
     bool success = q.exec();
 
@@ -10,7 +11,14 @@ bool ExecAndCheck(sql::Query& q, bool reportErrors ,  bool ignoreUniqueness )
 
     if(q.lastError().isValid())
     {
-        if(reportErrors && !(ignoreUniqueness && q.lastError().text().find("UNIQUE constraint failed") != std::string::npos))
+        auto error = q.lastError().getActualErrorType();
+        auto it = std::find(expectedErrors.begin(), expectedErrors.end(), error);
+        if(it != std::end(expectedErrors))
+        {
+            QLOG_WARN() << q.lastError().text();
+            return true;
+        }
+        if(reportErrors)
         {
             if(q.lastError().text().find("record") != std::string::npos)
                 QLOG_ERROR() << "Error while performing a query: ";
@@ -19,9 +27,6 @@ bool ExecAndCheck(sql::Query& q, bool reportErrors ,  bool ignoreUniqueness )
             QLOG_ERROR() << "Error while performing a query: ";
             QLOG_ERROR_PURE()<< q.lastQuery();
             QLOG_ERROR() << "Error was: " <<  q.lastError().text();
-//            QLOG_ERROR() << q.lastError().nativeErrorCode();
-//            QLOG_ERROR() << q.lastError().driverText();
-//            QLOG_ERROR() << q.lastError().databaseText();
         }
         return false;
     }
@@ -29,3 +34,4 @@ bool ExecAndCheck(sql::Query& q, bool reportErrors ,  bool ignoreUniqueness )
 }
 
 }
+

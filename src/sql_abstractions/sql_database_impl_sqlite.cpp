@@ -62,5 +62,5 @@ bool sql::DatabaseImplSqlite::isNull()
 
 std::string sql::DatabaseImplSqlite::driverType() const
 {
-    return "qsqlite";
+    return "QSQLITE";
 }

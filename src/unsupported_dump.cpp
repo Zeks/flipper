@@ -324,8 +324,8 @@ void PassTagsIntoTagsTable()
             qs = QString("insert into fictags(fic_id, tag) values(:fic_id, :tag)");
             sql::Query iq(db);
             iq.prepare(qs);
-            iq.bindValue(":fic_id",id);
-            iq.bindValue(":tag", tag);
+            iq.bindValue("fic_id",id);
+            iq.bindValue("tag", tag);
             iq.exec();
             if(iq.lastError().isValid())
             {

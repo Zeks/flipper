@@ -194,10 +194,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //                             "VALUES (:FANDOM, :URL, :CROSS, :SECTION)";
 //            sql::Query q(db);
 //            q.prepare(insert);
-//            q.bindValue(":FANDOM",fandom.name.replace("'","''"));
-//            q.bindValue(":URL",fandom.url.replace("'","''"));
-//            q.bindValue(":CROSS",fandom.crossoverUrl.replace("'","''"));
-//            q.bindValue(":SECTION",fandom.section.replace("'","''"));
+//            q.bindValue("FANDOM",fandom.name.replace("'","''"));
+//            q.bindValue("URL",fandom.url.replace("'","''"));
+//            q.bindValue("CROSS",fandom.crossoverUrl.replace("'","''"));
+//            q.bindValue("SECTION",fandom.section.replace("'","''"));
 //            q.exec();
 //            if(q.lastError().isValid())
 //                qDebug() << q.lastError().text();
@@ -210,10 +210,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 //                             "where section = :section and fandom = :fandom";
 //            sql::Query q(db);
 //            q.prepare(insert);
-//            q.bindValue(":fandom",fandom.name.replace("'","''"));
-//            q.bindValue(":normal",fandom.url.replace("'","''"));
-//            q.bindValue(":cross",fandom.crossoverUrl.replace("'","''"));
-//            q.bindValue(":section",fandom.section.replace("'","''"));
+//            q.bindValue("fandom",fandom.name.replace("'","''"));
+//            q.bindValue("normal",fandom.url.replace("'","''"));
+//            q.bindValue("cross",fandom.crossoverUrl.replace("'","''"));
+//            q.bindValue("section",fandom.section.replace("'","''"));
 //            q.exec();
 //            if(q.lastError().isValid())
 //                qDebug() << q.lastError().text();

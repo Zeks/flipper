@@ -48,7 +48,7 @@ public:
     virtual bool EnsureFandom(QString name);
     bool EnsureFandom(int id);
     QSet<QString> EnsureFandoms(QList<core::FicPtr>);
-    bool UploadFandomsIntoDatabase(QVector<core::Fandom>);
+    bool UploadFandomsIntoDatabase(QVector<core::Fandom>, bool writeUrls = true);
     bool RecalculateFandomStats(QStringList fandoms);
     void Reindex();
     void AddToIndex(core::FandomPtr);

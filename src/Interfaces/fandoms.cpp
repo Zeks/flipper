@@ -100,14 +100,14 @@ QSet<QString> Fandoms::EnsureFandoms(QList<core::FicPtr> fics)
     return uniqueFandoms;
 }
 
-bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms)
+bool Fandoms::UploadFandomsIntoDatabase(QVector<core::Fandom> fandoms, bool writeUrls)
 {
     bool result = true;
     database::Transaction transaction(db);
     for(auto fandom: fandoms)
     {
         core::FandomPtr fandomPtr(&fandom, [](core::Fandom*){});
-        result = result && CreateFandom(fandomPtr, true, true);
+        result = result && CreateFandom(fandomPtr, writeUrls, true);
     }
     transaction.finalize();
     return result;
