@@ -19,10 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include "include/transaction.h"
 #include "GlobalHeaders/run_once.h"
 #include "logger/QsLog.h"
+
+#include <QFile>
+#include <QTextStream>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QUrl>
+#include <QUuid>
 #include <QObject>
 #include <QSqlQuery>
 #include <QSqlRecord>
@@ -34,12 +38,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QThread>
 #include <QCoreApplication>
 #include <QSettings>
+#include <QProcess>
 
 
 
 class PageGetterPrivate : public QObject
 {
-Q_OBJECT
+    Q_OBJECT
 public:
     explicit PageGetterPrivate(QObject *parent=nullptr);
     QNetworkAccessManager manager;
@@ -66,8 +71,8 @@ public slots:
 
 PageGetterPrivate::PageGetterPrivate(QObject *parent): QObject(parent)
 {
-//    connect(&manager, SIGNAL (finished(QNetworkReply*)),
-//            this, SLOT (OnNetworkReply(QNetworkReply*)));
+    //    connect(&manager, SIGNAL (finished(QNetworkReply*)),
+    //            this, SLOT (OnNetworkReply(QNetworkReply*)));
 }
 
 WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
@@ -114,7 +119,7 @@ WebPage PageGetterPrivate::GetPage(QString url, ECacheMode useCache)
 WebPage PageGetterPrivate::GetPageFromDB(QString url)
 {
     WebPage result;
-//    auto db = QSqlDatabase::database("PageCache");
+    //    auto db = QSqlDatabase::database("PageCache");
     bool dbOpen = db.isOpen();
     if(!dbOpen)
         return result;
@@ -155,38 +160,62 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 {
     result = WebPage();
     result.url = url;
-    currentRequest = QNetworkRequest(QUrl(url));
-    auto reply = manager.get(currentRequest);
-    int retries = 80;
-    //qDebug() << "entering wait phase";
-    while(!reply->isFinished() && retries > 0)
+    QFile file("shell/flare_post.js");
+    QString curlQuery;
+    if (file.open(QFile::ReadOnly))
     {
-//        if(retries%10 == 0)
-//            qDebug() << "retries left: " << retries;
-        if(reply->isFinished())
-            break;
-        retries--;
-        QThread::msleep(500);
-        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    }
-    if(!reply->isFinished())
-    {
-        qDebug() << "failed to get the page in time";
-        return result;
+        QTextStream in(&file);
+        curlQuery = in.readAll();
     }
 
-    QByteArray data=reply->readAll();
+    QString id = QUuid::createUuid().toString();
+    QStringList params;
+    QProcess process;
+    QSettings settings("settings/settings_servitor.ini", QSettings::IniFormat);
+    QString servitorPort = settings.value("Settings/flarePort").toString();
 
-    error = reply->error();
-    reply->deleteLater();
-    if(error != QNetworkReply::NoError)
-        return result;
-    //QString str(data);
-    result.content = data;
+    QString filename = QString("tmp/favourites.html");
+    params << "-c" << "curl" << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
+           << "-H" << "'Content-Type: application/json'"
+           << "--data-raw" << curlQuery.arg(url) << ">" << filename;
+    process.start("curl" , params);
+    process.waitForFinished(-1); // will wait forever until finished
+    QString stdoutResult = process.readAllStandardOutput();
+    QString stderrResult = process.readAllStandardError();
 
-    result.isValid = true;
-    result.url = url;
-    result.source = EPageSource::network;
+    QFile tempFIle(filename);
+    if(tempFIle.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QTextStream out(&tempFIle);
+        out << stdoutResult;
+    }
+    file.close();
+
+    process.start("bash", QStringList() << "-c" << "shell/page_fixer.sh " + QString("%1").arg(filename));
+    process.waitForFinished(-1); // will wait forever until finished
+
+
+    stdoutResult = process.readAllStandardOutput();
+    stderrResult = process.readAllStandardError();
+    qDebug() << stdoutResult;
+    qDebug() << stderrResult;
+
+    QThread::msleep(500);
+    QFile favouritesfile(filename);
+    QString favourites;
+    if (favouritesfile.open(QFile::ReadOnly))
+    {
+        QTextStream in(&favouritesfile);
+        result.content = in.readAll();
+        result.isValid = true;
+        result.url = url;
+        result.source = EPageSource::network;
+    }
+    else{
+        result.isValid = false;
+        result.url = url;
+        result.source = EPageSource::network;
+    }
     return result;
 }
 

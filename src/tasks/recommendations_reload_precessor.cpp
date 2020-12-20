@@ -85,6 +85,8 @@ void RecommendationsProcessor::ReloadRecommendationsList(ECacheMode cacheMode)
     QLOG_INFO() << " Scheduled authors size: " << authors.size();
     for(auto author: authors)
     {
+//        if(counter > 0)
+//            break;
         if(counter%50 == 0)
         {
             QLOG_INFO() << "=========================================================================";
