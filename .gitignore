@@ -53,6 +53,7 @@ Run/feed_server.lib
 Run/flipper.lib
 Run/database/*
 Run/tmp/*
+Run/curl
 Run/shell/*
 xcf/*
 *.qbs.user.*
