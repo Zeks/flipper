@@ -24,16 +24,18 @@ rm -rf $dirname/$deployfolder
 mkdir -p $dirname/$deployfolder/dbcode
 mkdir -p $dirname/$deployfolder/libs
 mkdir -p $dirname/$deployfolder/settings
+mkdir -p $dirname/$deployfolder/scripts
 mkdir -p $dirname/$deployfolder/libs/plugins
 
 
 #settingFiles=( "settings_discord" )
 executableFiles=( discord )
-scripts=( discord_init dbinit pagecacheinit tasksinit )
+dbcode=( discord_init dbinit pagecacheinit tasksinit )
+scripts=( flare_post.js page_fixer.sh )
 
 CopyFilesToFolder settingFiles Run/settings $dirname/$deployfolder/settings  ".ini"
 CopyFilesToFolder executableFiles release $dirname/$deployfolder  
-CopyFilesToFolder scripts Run/dbcode $dirname/$deployfolder/dbcode  ".sql"
+CopyFilesToFolder dbcode Run/dbcode $dirname/$deployfolder/dbcode  ".sql"
 
 #copying .so dependencies to libs folder
 for filename in "${executableFiles[@]}"

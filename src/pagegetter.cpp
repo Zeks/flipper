@@ -160,7 +160,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
 {
     result = WebPage();
     result.url = url;
-    QFile file("shell/flare_post.js");
+    QFile file("scripts/flare_post.js");
     QString curlQuery;
     if (file.open(QFile::ReadOnly))
     {
@@ -171,10 +171,10 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     QString id = QUuid::createUuid().toString();
     QStringList params;
     QProcess process;
-    QSettings settings("settings/settings_servitor.ini", QSettings::IniFormat);
+    QSettings settings("settings/settings_solver.ini", QSettings::IniFormat);
     QString servitorPort = settings.value("Settings/flarePort").toString();
 
-    QString filename = QString("tmp/favourites.html");
+    QString filename = QString("tmpfaves/favourites.html");
     params << "-c" << "curl" << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
            << "-H" << "'Content-Type: application/json'"
            << "--data-raw" << curlQuery.arg(url) << ">" << filename;
@@ -191,7 +191,7 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     }
     file.close();
 
-    process.start("bash", QStringList() << "-c" << "shell/page_fixer.sh " + QString("%1").arg(filename));
+    process.start("bash", QStringList() << "-c" << "scripts/page_fixer.sh " + QString("%1").arg(filename));
     process.waitForFinished(-1); // will wait forever until finished
 
 
