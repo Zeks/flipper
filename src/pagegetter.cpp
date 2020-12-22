@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QUuid>
 #include <QObject>
@@ -174,7 +175,16 @@ WebPage PageGetterPrivate::GetPageFromNetwork(QString url)
     QSettings settings("settings/settings_solver.ini", QSettings::IniFormat);
     QString servitorPort = settings.value("Settings/flarePort").toString();
 
-    QString filename = QString("tmpfaves/favourites.html");
+    QRegularExpression rxNum("[0-9]{1,15}");
+    auto match = rxNum.match(url);
+    QString userPart;
+    if(match.hasMatch())
+        userPart=match.captured(0);
+    else
+        userPart=QUuid::createUuid().toString();
+
+
+    QString filename = QString("tmpfaves/favourites_%1.html").arg(userPart);
     params << "-c" << "curl" << "-L" << "-X" << "POST" << QString("http://%1/v1").arg(servitorPort)
            << "-H" << "'Content-Type: application/json'"
            << "--data-raw" << curlQuery.arg(url) << ">" << filename;

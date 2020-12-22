@@ -31,11 +31,14 @@ mkdir -p $dirname/$deployfolder/libs/plugins
 #settingFiles=( "settings_discord" )
 executableFiles=( discord )
 dbcode=( discord_init dbinit pagecacheinit tasksinit )
-scripts=( flare_post.js page_fixer.sh )
+jsscripts=( flare_post )
+shellscripts=( page_fixer )
 
 CopyFilesToFolder settingFiles Run/settings $dirname/$deployfolder/settings  ".ini"
 CopyFilesToFolder executableFiles release $dirname/$deployfolder  
 CopyFilesToFolder dbcode Run/dbcode $dirname/$deployfolder/dbcode  ".sql"
+CopyFilesToFolder shellscripts shell $dirname/$deployfolder/scripts  ".sh"
+CopyFilesToFolder jsscripts shell $dirname/$deployfolder/scripts  ".js"
 
 #copying .so dependencies to libs folder
 for filename in "${executableFiles[@]}"

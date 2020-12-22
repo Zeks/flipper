@@ -241,9 +241,9 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
     auto largeListToken =  command.user->GetLargeListToken();
     An<interfaces::Users> usersDbInterface;
     if(!refreshing){
-        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 2)
+        if(largeListToken.date == QDate::currentDate() && largeListToken.counter == 1)
         {
-            action->text = "Only two profile reparses per day are allowed for lists over 500 fics.";
+            action->text = "Only one profile reparse per day are allowed for lists over 500 fics.";
             action->stopChain = true;
             return action;
         }
@@ -265,7 +265,7 @@ QSharedPointer<SendMessageCommand> MobileRecsCreationAction::ExecuteImpl(QShared
         pages->LoadPage(ffnId.toStdString());
         auto page = pages->GetPage(ffnId.toStdString());
         if(page && page->getLastParsed() == QDate::currentDate() && page->getDailyParseCounter() >=2){
-            action->text = "Only two ffn profile reparses per day are allowed for lists over 500 fics and this ID has already reached reparse limit.";
+            action->text = "Only one ffn profile reparse per day is allowed for lists over 500 fics and this ID has already reached reparse limit.";
             action->stopChain = true;
             return action;
         }
@@ -359,8 +359,8 @@ QSharedPointer<SendMessageCommand> DesktopRecsCreationAction::ExecuteImpl(QShare
         auto page = pages->GetPage(ffnId.toStdString());
         if(page)
             knowsPage = true;
-        if(refreshing && page && page->getLastParsed() != QDate::currentDate())
-            refreshing = false;
+//        if(refreshing && page && page->getLastParsed() != QDate::currentDate())
+//            refreshing = false;
     }
 
 
@@ -715,15 +715,15 @@ QSharedPointer<SendMessageCommand> DisplayPageAction::ExecuteImpl(QSharedPointer
     static constexpr uint8_t promoFrequency = 7;
     bool showAppOrPatreon = rand() % promoFrequency == 0;
     SleepyDiscord::EmbedFooter footer;
+    //QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
     if(showAppOrPatreon){
-        QStringList appPromo =  {QStringLiteral("Socrates has a PC desktop app version called Flipper that has more filters and is more convenient to use. You can get it at https://github.com/Zeks/flipper/releases/latest"),
-                                 QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses")};
-        int shownId = rand() %2 == 0;
-        footer.text = appPromo.at(shownId).toStdString();
-        if(shownId == 1)
-            footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
-        else
-            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
+        QStringList appPromo =  {QStringLiteral("If you would like to support the bot, you can do it on https://www.patreon.com/Zekses")};
+//        int shownId = rand() %2 == 0;
+        footer.text = appPromo.at(0).toStdString();
+//        if(shownId == 1)
+        footer.iconUrl = "https://c5.patreon.com/external/logo/downloads_logomark_color_on_white@2x.png";
+//        else
+//            footer.iconUrl = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png";
     }
     else{
         if(tips.size() > 0)
