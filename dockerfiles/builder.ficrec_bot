@@ -83,9 +83,12 @@ RUN apt-get update && apt-get -y install curl libssl-dev \
    &&  echo 'MinProtocol = TLSv1.2' >> /etc/ssl/openssl.cnf \
    &&  echo 'CipherString = DEFAULT:@SECLEVEL=1' >> /etc/ssl/openssl.cnf 
 
+RUN mkdir /tmp/faves
+
 WORKDIR /root/
 COPY --from=bot_build /build/downloads/flipper/deployment .
 ENV LD_LIBRARY_PATH=/root/libs:$LD_LIBRARY_PATH
+RUN chmod +x scripts/page_fixer.sh
 RUN chmod +x discord
 CMD ["./discord"]  
 

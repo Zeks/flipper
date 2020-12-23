@@ -8,5 +8,6 @@ sed -i 's/RECS_BOT_NAME='"$oldVariableValue"'/RECS_BOT_NAME=BOTNAME/g' /home/PRO
 echo "loading new bot into docker"
 docker load -i /discord/BOTNAME.tar.gz
 echo "launching new bot"
-docker run -d --mount type=bind,source=/discord/database,target=/root/database --mount type=bind,source=/discord/settings,target=/root/settings BOTNAME
+containerId=`docker run -d --mount type=bind,source=/discord/database,target=/root/database --mount type=bind,source=/discord/settings,target=/root/settings --mount type=bind,source=/discord/tmp,target=/root/tmpfaves --mount type=bind,source=/discord/errors,target=/root/errors BOTNAME`
+docker network connect socrates $containerId
 

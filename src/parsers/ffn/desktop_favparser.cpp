@@ -415,6 +415,15 @@ QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString u
 
     recommender.author->name = authorName;
     recommender.author->SetWebID("ffn", url_utils::GetWebId(url, QStringLiteral("ffn")).toInt());
+    str = str.replace("s\" s", "s' s");
+    str = str.replace("=\"", "='");
+    str = str.replace("\">", "'>");
+    str = str.replace("\\'", "'");
+    str = str.replace(";\"", ";'");
+    str = str.replace("ago<", "<");
+    str = str.replace("&amp;", "&");
+
+
 
     auto profileUpdateDate = BouncingSearch(str, profilePageUpdatedFinder);
     auto profileCreateDate = BouncingSearch(str, profilePageCreatedFinder);
@@ -431,12 +440,12 @@ QList<QSharedPointer<core::Fanfic> > FavouriteStoryParser::ProcessPage(QString u
     {
         counter++;
         favCounter++;
-        section = GetSection(str, QStringLiteral("<div\\sclass=\'z-list\\sfavstories\'"), currentPosition);
+        section = GetSection(str, QStringLiteral("<div\\sclass=\[\'\"]z-list\\sfavstories[\'\"]"), currentPosition);
         if(!section.isValid)
         {
             favCounter--;
             ownCounter++;
-            section = GetSection(str, QStringLiteral("<div\\sclass=\'z-list\\smystories\'"), currentPosition);
+            section = GetSection(str, QStringLiteral("<div\\sclass=[\'\"]z-list\\smystories[\'\"]"), currentPosition);
             if(!section.isValid)
                 ownCounter--;
             ownStory = true;
@@ -646,7 +655,7 @@ void FavouriteStoryParser::GetFandomFromTaggedSection(core::FanficSectionInFFNFa
 
 void FavouriteStoryParser::GetTitle(core::FanficSectionInFFNFavourites & section, int& startfrom, QString text)
 {
-    thread_local QRegExp rxStart(QRegExp::escape("data-title=\""));
+    thread_local QRegExp rxStart(QRegExp::escape("data-title='"));
     thread_local QRegExp rxEnd(QRegExp::escape("\""));
     int indexStart = rxStart.indexIn(text, startfrom + 1);
     int indexEnd = rxEnd.indexIn(text, indexStart+13);
