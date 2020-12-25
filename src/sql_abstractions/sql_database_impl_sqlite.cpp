@@ -10,9 +10,9 @@ QSqlDatabase sql::DatabaseImplSqlite::database(std::string name)
     return QSqlDatabase::addDatabase(QString::fromStdString(name)) ;
 }
 
-void sql::DatabaseImplSqlite::setDatabaseName(std::string name)
+void sql::DatabaseImplSqlite::setConnectionToken(ConnectionToken token)
 {
-    db.setDatabaseName(QString::fromStdString(name));
+    db.setDatabaseName(QString::fromStdString(token.serviceName));
 }
 
 bool sql::DatabaseImplSqlite::open()

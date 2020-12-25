@@ -1,7 +1,10 @@
 #include "sql_abstractions/sql_query_impl_sqlite.h"
 #include "logger/QsLog.h"
 #include <QSqlError>
+#include <unordered_map>
 namespace sql {
+
+std::unordered_map<std::string, std::string> namedQueries;
 
 ESqlErrors SqliteErrorCodeToLocalErrorCode(int sqliteErrorCode){
     switch(sqliteErrorCode){
@@ -37,6 +40,13 @@ bool QueryImplSqlite::prepare(const std::string & sql)
     return result;
 }
 
+bool QueryImplSqlite::prepare(const std::string & name, const std::string & query)
+{
+    // does the same thign as the above ignoring name
+    Q_UNUSED(name);
+    return prepare(query);
+}
+
 bool QueryImplSqlite::prepare(std::string && sql)
 {
     prepareErrorStorage = {};
@@ -47,7 +57,10 @@ bool QueryImplSqlite::prepare(std::string && sql)
 
 bool QueryImplSqlite::exec()
 {
-    return q.exec();
+    auto result = q.exec();
+    if(namedQueries.find(queryName) == std::end(namedQueries))
+        namedQueries[queryName] = q.lastQuery().toStdString();
+    return result;
 }
 
 void QueryImplSqlite::setForwardOnly(bool value)
@@ -112,6 +125,12 @@ void QueryImplSqlite::bindValue(QueryBinding && bind)
 bool QueryImplSqlite::next()
 {
     return q.next();
+}
+
+void QueryImplSqlite::setNamedQuery(std::string name)
+{
+    // this doesn't do much because unlike postgres you can't pre-prepare
+    queryName = name;
 }
 
 constexpr bool QueryImplSqlite::supportsVectorizedBind() const

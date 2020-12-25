@@ -9,8 +9,7 @@ namespace sql{
 class QueryImplBase{
 public:
     virtual ~QueryImplBase(){};
-    virtual bool prepare(const std::string&) = 0;
-    virtual bool prepare(std::string&&) = 0;
+    virtual bool prepare(const std::string&, const std::string& = "") = 0;
     virtual bool exec() = 0;
     virtual void setForwardOnly(bool) = 0;
 
@@ -23,6 +22,7 @@ public:
     virtual void bindValue(const QueryBinding&) = 0;
     virtual void bindValue(QueryBinding&&) = 0;
     virtual bool next() = 0;
+    virtual void setNamedQuery(std::string) = 0;
 
     virtual bool supportsVectorizedBind() const = 0;
     virtual Variant value(int) const = 0;
@@ -33,8 +33,9 @@ public:
     virtual Error lastError() const = 0;
     virtual std::string lastQuery() const = 0;
     virtual std::string implType() const = 0;
-
-    std::shared_ptr<QueryImplBase> d;
+    std::string queryName;
+    static std::shared_ptr<std::unordered_map<std::string, std::string>> namedQueriesHolder;
+    //std::shared_ptr<QueryImplBase> d;
 };
 
 

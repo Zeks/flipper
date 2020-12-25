@@ -8,6 +8,7 @@
 #include "sql_abstractions/sql_database.h"
 
 namespace sql {
+std::unordered_map<std::string, std::string> namedQueries;
 
 Query::Query(Database db)
 {
@@ -30,9 +31,18 @@ bool Query::prepare(std::string && query)
     return d->prepare(query);
 }
 
+bool Query::prepare(const std::string & name, const std::string & query)
+{
+    setNamedQuery(name);
+    return d->prepare(name, query);
+}
+
 bool Query::exec()
 {
-    return d->exec();
+    auto result = d->exec();
+    if(namedQueries.find(d->queryName) == std::end(namedQueries))
+        namedQueries[d->queryName] = lastQuery();
+    return result;
 }
 
 void Query::setForwardOnly(bool value)
@@ -83,6 +93,11 @@ void Query::bindValue(QueryBinding && binding)
 bool Query::next()
 {
     return d->next();
+}
+
+void Query::setNamedQuery(std::string name)
+{
+
 }
 
 bool Query::supportsVectorizedBind() const

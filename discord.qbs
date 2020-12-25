@@ -55,6 +55,23 @@ App{
         "include/parsers/ffn/favparser_wrapper.h",
         "include/parsers/ffn/mobile_favparser.h",
         "include/sql/discord/discord_queries.h",
+        "include/sql_abstractions/sql_context.h",
+        "include/sql_abstractions/sql_database.h",
+        "include/sql_abstractions/sql_database_impl_base.h",
+        "include/sql_abstractions/sql_database_impl_null.h",
+        "include/sql_abstractions/sql_database_impl_pq.h",
+        "include/sql_abstractions/sql_database_impl_sqlite.h",
+        "include/sql_abstractions/sql_error.h",
+        "include/sql_abstractions/sql_query.h",
+        "include/sql_abstractions/sql_query_impl_base.h",
+        "include/sql_abstractions/sql_query_impl_null.h",
+        "include/sql_abstractions/sql_query_impl_pq.h",
+        "include/sql_abstractions/sql_query_impl_sqlite.h",
+        "include/sql_abstractions/sql_transaction.h",
+        "include/sql_abstractions/sql_variant.h",
+        "include/sql_abstractions/string_hasher.h",
+        "include/sql_abstractions/string_streamer.h",
+        "include/sql_abstractions/string_trimmer.h",
         "include/tasks/author_cache_reprocessor.h",
         "include/tasks/author_task_processor.h",
         "include/tasks/fandom_task_processor.h",
@@ -97,9 +114,11 @@ App{
         "src/sql_abstractions/sql_database.cpp",
         "src/sql_abstractions/sql_database_impl_base.cpp",
         "src/sql_abstractions/sql_database_impl_null.cpp",
+        "src/sql_abstractions/sql_database_impl_pq.cpp",
         "src/sql_abstractions/sql_database_impl_sqlite.cpp",
         "src/sql_abstractions/sql_query.cpp",
         "src/sql_abstractions/sql_query_impl_null.cpp",
+        "src/sql_abstractions/sql_query_impl_pq.cpp",
         "src/sql_abstractions/sql_query_impl_sqlite.cpp",
         "src/sql_abstractions/sql_transaction.cpp",
         "src/sql_abstractions/sql_variant.cpp",
@@ -216,7 +235,7 @@ App{
 
     cpp.staticLibraries: {
         var libs = []
-        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl"]
+        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl", "pqxx-7.3", "pq"]
         libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }

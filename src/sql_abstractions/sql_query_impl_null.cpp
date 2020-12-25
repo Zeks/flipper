@@ -1,18 +1,13 @@
 #include "sql_abstractions/sql_query_impl_null.h"
 namespace sql {
+std::shared_ptr<std::unordered_map<std::string, std::string>> QueryImplBase::namedQueriesHolder{new std::unordered_map<std::string, std::string>};
 QueryImplNull::QueryImplNull()
 {
 
 }
 
 
-bool QueryImplNull::prepare(const std::string & )
-{
-    throw std::logic_error("use of nulld sql driver");
-    return false;
-}
-
-bool QueryImplNull::prepare(std::string && )
+bool QueryImplNull::prepare(const std::string &, const std::string & )
 {
     throw std::logic_error("use of nulld sql driver");
     return false;

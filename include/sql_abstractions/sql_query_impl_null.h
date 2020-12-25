@@ -13,8 +13,7 @@ class QueryImplNull: public QueryImplBase{
 public:
     QueryImplNull();
 
-    bool prepare(const std::string &);
-    bool prepare(std::string &&);
+    bool prepare(const std::string &, const std::string &);
     bool exec();
     void setForwardOnly(bool);
     void bindVector(const std::vector<QueryBinding> &);

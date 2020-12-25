@@ -15,6 +15,7 @@ public:
     QueryImplSqlite(QSqlDatabase db);
 
     bool prepare(const std::string &);
+    bool prepare(const std::string &, const std::string &);
     bool prepare(std::string &&);
     bool exec();
     void setForwardOnly(bool);
@@ -27,6 +28,7 @@ public:
     void bindValue(const QueryBinding &);
     void bindValue(QueryBinding &&);
     bool next();
+    void setNamedQuery(std::string);
     constexpr bool supportsVectorizedBind() const;
     Variant value(int) const;
     Variant value(const std::string &) const;
@@ -39,6 +41,7 @@ public:
 
     QSqlQuery q;
     Error prepareErrorStorage;
+    std::string queryName;
 
 
 };

@@ -22,6 +22,7 @@ public:
     Query(std::string, Database);
     bool prepare(const std::string&);
     bool prepare(std::string&&);
+    bool prepare(const std::string&, const std::string&);
     bool exec();
     void setForwardOnly(bool);
 
@@ -34,6 +35,8 @@ public:
     void bindValue(const QueryBinding&);
     void bindValue(QueryBinding&&);
     bool next();
+
+    void setNamedQuery(std::string);
 
 
     bool supportsVectorizedBind() const;

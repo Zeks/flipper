@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "sql_abstractions/sql_connection_token.h"
 
 namespace sql{
 class DatabaseImplBase{
@@ -7,7 +8,7 @@ class DatabaseImplBase{
     DatabaseImplBase(){}
     virtual ~DatabaseImplBase(){};
 
-    virtual void setDatabaseName(std::string) = 0;
+    virtual void setConnectionToken(ConnectionToken) = 0;
     virtual bool open() = 0;
     virtual bool isOpen() const = 0;
     virtual bool transaction() = 0;

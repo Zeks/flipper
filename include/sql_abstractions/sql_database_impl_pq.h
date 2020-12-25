@@ -1,15 +1,13 @@
 #pragma once
-#include <string>
-#include <QSqlDatabase>
 #include "sql_abstractions/sql_database_impl_base.h"
-
-
-namespace sql{
-class DatabaseImplSqlite : public DatabaseImplBase{
+#include "sql_abstractions/pqxx_connection_wrapper.h"
+#include <pqxx/pqxx>
+#include <memory>
+namespace sql {
+class DatabaseImplPqImpl;
+class DatabaseImplPq : public DatabaseImplBase{
     public:
-    DatabaseImplSqlite():DatabaseImplBase(){}
-    static QSqlDatabase addDatabase(std::string, std::string = "");
-    static QSqlDatabase database(std::string s = "");
+    DatabaseImplPq();
     void setConnectionToken(ConnectionToken) override;
     bool open()override;
     bool isOpen() const override;
@@ -21,9 +19,9 @@ class DatabaseImplSqlite : public DatabaseImplBase{
     void *internalPointer() override;
     bool isNull() override;
     std::string driverType() const override;
-    QSqlDatabase db;
-private:
-
-
+    std::shared_ptr<DatabaseImplPqImpl> d;
+    std::shared_ptr<pqxx::work> getTransaction();
+    std::shared_ptr<PQXXConnectionWrapper> getConnection();
 };
+
 }
