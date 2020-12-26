@@ -1,13 +1,15 @@
 #pragma once
 #include "sql_abstractions/sql_database_impl_base.h"
 #include "sql_abstractions/pqxx_connection_wrapper.h"
+#include "sql_abstractions/shared_trick.h"
 #include <pqxx/pqxx>
 #include <memory>
 namespace sql {
 class DatabaseImplPqImpl;
-class DatabaseImplPq : public DatabaseImplBase{
+
+class DatabaseImplPq : public DatabaseImplBase, public inheritable_enable_shared_from_this<DatabaseImplPq>{
     public:
-    DatabaseImplPq();
+    DatabaseImplPq(std::string connectionName = "");
     void setConnectionToken(ConnectionToken) override;
     bool open()override;
     bool isOpen() const override;
@@ -21,7 +23,9 @@ class DatabaseImplPq : public DatabaseImplBase{
     std::string driverType() const override;
     std::shared_ptr<DatabaseImplPqImpl> d;
     std::shared_ptr<pqxx::work> getTransaction();
-    pqxx::connection* getConnection();
+    std::shared_ptr<pqxx::connection> getConnection();
+    std::shared_ptr<DatabaseImplPq> getShared(){return shared_from_this();}
+
 };
 
 }

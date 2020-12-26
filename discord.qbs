@@ -235,7 +235,7 @@ App{
 
     cpp.staticLibraries: {
         var libs = []
-        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl", "pqxx-7.3", "pq"]
+        libs = ["dl", "protobuf", "sleepy-discord", "cpr", "curl", "crypto", "ssl", "pqxx", "pq"]
         libs = libs.concat(["grpc", "grpc++", "gpr"])
         return libs
     }

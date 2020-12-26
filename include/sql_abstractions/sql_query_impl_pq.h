@@ -20,7 +20,6 @@ public:
     QueryImplPq(const std::string& query, std::shared_ptr<DatabaseImplPq>);
     QueryImplPq(std::string&& query, std::shared_ptr<DatabaseImplPq>);
 
-    //prepares a nameless statement with automatic uuid
     bool prepare(const std::string &, const std::string &) override;
     bool exec()  override;
     void setForwardOnly(bool)  override;
@@ -46,5 +45,7 @@ public:
 private:
     // not in interface
     bool NeedsPreparing(const std::string& statement);
+    void ExtractNamedPlaceholders(std::string_view);
+    std::string ReplaceNamedPlaceholders(std::string);
 };
 }

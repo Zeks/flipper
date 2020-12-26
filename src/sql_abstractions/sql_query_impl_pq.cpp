@@ -4,6 +4,8 @@
 #include <pqxx/pqxx>
 #include "fmt/format.h"
 #include "logger/QsLog.h"
+
+#include "third_party/ctre.hpp"
 #include <QUuid>
 #include <variant>
 #include <stdexcept>
@@ -17,6 +19,7 @@ struct QueryImplPqImpl{
     std::string Statement;
     std::optional<std::string> uniqueQueryIdentifier;
     std::vector<QueryBinding> bindings;
+    std::vector<std::string> foundNamedPlaceholders;
     pqxx::result resultSet;
     std::optional<pqxx::result::const_iterator> current_result_iterator;
     Error lastError;
@@ -43,6 +46,8 @@ QueryImplPq::QueryImplPq(std::string&& query, std::shared_ptr<DatabaseImplPq> im
 
 
 
+
+
 bool QueryImplPq::NeedsPreparing(const std::string& statement){
     if(statement.find("$1") == std::string::npos)
     {
@@ -53,14 +58,43 @@ bool QueryImplPq::NeedsPreparing(const std::string& statement){
     return true;
 }
 
-bool QueryImplPq::prepare(const std::string & name, const std::string & statement)
+void QueryImplPq::ExtractNamedPlaceholders(std::string_view view)
 {
-    if(!NeedsPreparing(statement))
+    static constexpr auto pattern = ctll::fixed_string{ "(^|[^:])(:[A-Za-z_][A-Za-z_0-9]+)" };
+    using namespace ctre::literals;
+
+    for(auto match : ctre::range<pattern>(view)){
+        d->foundNamedPlaceholders.emplace_back(match.get<2>().to_string());
+    }
+}
+
+std::string QueryImplPq::ReplaceNamedPlaceholders(std::string statement)
+{
+    auto counter = 1;
+    for(const auto& placeholder: d->foundNamedPlaceholders){
+        auto pos = statement.find(placeholder);
+        if(pos != std::string::npos){
+            statement.replace(pos, placeholder.length(), "$" + std::to_string(counter));
+        }
+        counter++;
+    }
+    return statement;
+}
+
+bool QueryImplPq::prepare(const std::string & statement, const std::string & name)
+{
+    ExtractNamedPlaceholders(statement);
+    if(d->foundNamedPlaceholders.size() > 0){
+        d->Statement = ReplaceNamedPlaceholders(statement);
+    }
+    if(!NeedsPreparing(d->Statement))
         return true;
     try {
-        d->uniqueQueryIdentifier = name;
-
-        d->database->getConnection()->prepare(*d->uniqueQueryIdentifier, statement);
+        if(name.empty())
+            d->uniqueQueryIdentifier = QUuid::createUuid().toString().toStdString();
+        else
+            d->uniqueQueryIdentifier = name;
+        d->database->getConnection()->prepare(*d->uniqueQueryIdentifier, d->Statement);
     }  catch (const pqxx::failure& e) {
         d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
         QLOG_ERROR() << e.what();
@@ -71,33 +105,45 @@ bool QueryImplPq::prepare(const std::string & name, const std::string & statemen
 
 
 std::string VariantToString(const Variant& wrapper){
+    std::string result;
     auto& v = wrapper.data;
     auto indexOfValue = v.index();
     switch(indexOfValue){
     case 0:
-        return "";
+        result = "";
+        break;
     case 1:
-        return std::get<std::string>(v);
+        result = std::get<std::string>(v);
+        break;
     case 2:
-        return std::to_string(std::get<int>(v));
+        result = std::to_string(std::get<int>(v));
+        break;
     case 3:
-        return std::to_string(std::get<uint>(v));
+        result = std::to_string(std::get<uint>(v));
+        break;
     case 4:
-        return std::to_string(std::get<int64_t>(v));
+        result = std::to_string(std::get<int64_t>(v));
+        break;
     case 5:
-        return std::to_string(std::get<uint64_t>(v));
+        result = std::to_string(std::get<uint64_t>(v));
+        break;
     case 6:
-        return std::to_string(std::get<double>(v));
+        result = std::to_string(std::get<double>(v));
+        break;
     case 7:
-        return std::to_string(std::get<int>(v));
+        result =  std::to_string(std::get<int>(v));
+        break;
     case 8:
-        return std::get<QDateTime>(v).toString("yyyy-MM-dd").toStdString();
+        result =  std::get<QDateTime>(v).toString("yyyy-MM-dd").toStdString();
+        break;
     case 9:
-        return std::get<QByteArray>(v).data(); // todo shitcode, verify
+        result =  std::get<QByteArray>(v).data(); // todo shitcode, verify
+        break;
     default:
         throw std::logic_error("all indexes should be handled in pg driver: " + std::to_string(indexOfValue));
     }
-
+    qDebug() << "Returning converted variant: " << result;
+    return result;
 }
 
 
@@ -109,7 +155,7 @@ bool QueryImplPq::exec()
 
     auto transaction = d->database->getTransaction();
 
-    if(!d->Statement.empty()){
+    if(!d->uniqueQueryIdentifier.has_value()){
         try{
             d->resultSet = transaction->exec(d->Statement);
         }
@@ -120,11 +166,34 @@ bool QueryImplPq::exec()
         }
     }
     else{
-        try{
-            auto dynamicParams = pqxx::prepare::make_dynamic_params(d->bindings, [](const auto& v){
-                return VariantToString(v.value);
+
+        auto fetchResultSet = [&](auto bindingsVector){
+            auto dynamicParams = pqxx::prepare::make_dynamic_params(bindingsVector, [](const auto& v){
+                if constexpr(std::is_same<typename decltype(bindingsVector)::value_type, std::reference_wrapper<QueryBinding>>::value)
+                    return VariantToString(v.get().value);
+                else
+                    return VariantToString(v.value);
             });
-            d->resultSet = transaction->exec_prepared(d->Statement, dynamicParams);
+            d->resultSet = transaction->exec_prepared(*d->uniqueQueryIdentifier, dynamicParams);
+        };
+        try{
+            std::vector<std::reference_wrapper<QueryBinding>> adjustedBindings;
+            if(d->foundNamedPlaceholders.size() > 0){
+                for(const auto& placeholder: d->foundNamedPlaceholders){
+                    auto it = std::find_if(d->bindings.begin(),d->bindings.end(),[placeholder](const auto& binding){
+                        return ":" + binding.key == placeholder;
+                    });
+                    if(it != d->bindings.end())
+                        adjustedBindings.push_back(std::ref(*it));
+                    else
+                        throw std::logic_error("trying to execute a query with bound param not in bound vector");
+                }
+                fetchResultSet(adjustedBindings);
+            }
+            else{
+                fetchResultSet(d->bindings);
+            }
+            d->database->getConnection()->unprepare(*d->uniqueQueryIdentifier);
         }
         catch (const pqxx::failure& e) {
             d->lastError = Error(e.what(), ESqlErrors::se_generic_sql_error);
@@ -132,7 +201,7 @@ bool QueryImplPq::exec()
             return false;
         }
     }
-    return false;
+    return true;
 }
 
 void QueryImplPq::setForwardOnly(bool )
@@ -219,12 +288,13 @@ Variant FieldToVariant(const pqxx::row::reference& field){
             QLOG_INFO() << "Date is returned as: " << field.c_str();
             v = Variant();
             break; // timestamp, test format: 1999-01-08
+        case 25:
         case 1114:
             v = Variant(field.c_str());
             break; // varchar
-            default:
+        default:
             throw std::logic_error("Received type that isn't available for processing:" + std::to_string(field.type()));
-                    break;
+            break;
         }
     }
     catch(const std::invalid_argument& e){
@@ -243,7 +313,7 @@ Variant QueryImplPq::value(int index) const
         throw std::logic_error("cannot fetch data from invalid iterator");
     auto row = d->current_result_iterator.operator->();
     auto field = row->at(index);
-   return FieldToVariant(field);
+    return FieldToVariant(field);
 }
 
 Variant QueryImplPq::value(const std::string & name) const

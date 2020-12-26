@@ -127,12 +127,6 @@ bool QueryImplSqlite::next()
     return q.next();
 }
 
-void QueryImplSqlite::setNamedQuery(std::string name)
-{
-    // this doesn't do much because unlike postgres you can't pre-prepare
-    queryName = name;
-}
-
 constexpr bool QueryImplSqlite::supportsVectorizedBind() const
 {
     return true;

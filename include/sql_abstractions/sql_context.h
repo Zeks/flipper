@@ -31,14 +31,14 @@ template <typename T>
 struct DiagnosticSQLResult
 {
     bool success = true;
-    Error oracleError;
+    Error sqlError;
     T data;
     bool ExecAndCheck(sql::Query& q, std::vector<ESqlErrors> expectedErrors = {}) {
         bool success = sql::ExecAndCheck(q, true, expectedErrors);
         if(!success)
         {
             success = false;
-            oracleError = q.lastError();
+            sqlError = q.lastError();
         }
         return success;
     }
@@ -48,7 +48,7 @@ struct DiagnosticSQLResult
             if(!allowEmptyRecords)
             {
                 success = false;
-                oracleError = {"no data to read", ESqlErrors::se_no_data_to_be_fetched};
+                sqlError = {"no data to read", ESqlErrors::se_no_data_to_be_fetched};
             }
             return false;
         }

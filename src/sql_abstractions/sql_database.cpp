@@ -2,6 +2,7 @@
 #include "sql_abstractions/sql_database_impl_base.h"
 #include "sql_abstractions/sql_database_impl_null.h"
 #include "sql_abstractions/sql_database_impl_sqlite.h"
+#include "sql_abstractions/sql_database_impl_pq.h"
 #include <locale>
 namespace sql {
 static std::unordered_map<std::string, Database> databases;
@@ -21,11 +22,20 @@ Database Database::addDatabase(std::string driver, std::string name)
 {
     toUpper(driver);toUpper(name);
     Database db;
-    auto impl = std::make_shared<DatabaseImplSqlite>();
-    impl->db =  impl->addDatabase(driver, name);
-    if(impl->connectionName() != name)
-        throw std::runtime_error("database wasn't created properly");
-    db.d = impl;
+
+    if(driver == "QSQLITE"){
+        auto impl = std::make_shared<DatabaseImplSqlite>();
+        impl->db =  impl->addDatabase(driver, name);
+        if(impl->connectionName() != name)
+            throw std::runtime_error("database wasn't created properly");
+        db.d = impl;
+    }
+    else if(driver == "PQXX")
+    {
+        auto impl = std::make_shared<DatabaseImplPq>(name);
+        db.d = impl;
+    }
+
     databases.insert_or_assign(name, db);
     return db;
 }

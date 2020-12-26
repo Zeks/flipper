@@ -1,6 +1,7 @@
 #include "sql_abstractions/sql_query.h"
 #include "sql_abstractions/sql_query_impl_base.h"
 #include "sql_abstractions/sql_query_impl_sqlite.h"
+#include "sql_abstractions/sql_query_impl_pq.h"
 #include "sql_abstractions/sql_query_impl_null.h"
 #include "sql_abstractions/sql_database_impl_sqlite.h"
 #include "sql_abstractions/sql_database_impl_null.h"
@@ -145,6 +146,10 @@ void Query::instantiateImpl(Database db)
     if(db.driverType() == "QSQLITE"){
         auto internals = *static_cast<QSqlDatabase*>(db.internalPointer());
         d.reset(new QueryImplSqlite(internals));
+    }
+    else if(db.driverType() == "PQXX"){
+        auto internals = static_cast<DatabaseImplPq*>(db.internalPointer())->getShared();
+        d.reset(new QueryImplPq(internals));
     }
     else
         d.reset(new QueryImplNull());

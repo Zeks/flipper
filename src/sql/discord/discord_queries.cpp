@@ -266,7 +266,7 @@ DiagnosticSQLResult<int> WriteUserList(sql::Database db, QString user_id, QStrin
     DiagnosticSQLResult<int> result;
     result.data = 0;
     result.success = ctx.result.success;
-    result.oracleError = ctx.result.oracleError;
+    result.sqlError = ctx.result.sqlError;
     return result;
 }
 

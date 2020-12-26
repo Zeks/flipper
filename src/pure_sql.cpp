@@ -538,7 +538,7 @@ DiagnosticSQLResult<bool> WriteFicRelations(QList<core::FicWeightResult> ficRela
         if(!ctx.result.success)
         {
             result.success = false;
-            result.oracleError = ctx.result.oracleError;
+            result.sqlError = ctx.result.sqlError;
             break;
         }
     }
@@ -560,7 +560,7 @@ DiagnosticSQLResult<bool> WriteAuthorsForFics(QHash<uint32_t, uint32_t> data,  s
         if(!ctx.result.success)
         {
             result.success = false;
-            result.oracleError = ctx.result.oracleError;
+            result.sqlError = ctx.result.sqlError;
             break;
         }
     }
@@ -1294,7 +1294,7 @@ DiagnosticSQLResult<bool> IsGenreList(QStringList list, QString website, sql::Da
 
     DiagnosticSQLResult<bool> realResult;
     realResult.success = ctx.result.success;
-    realResult.oracleError = ctx.result.oracleError;
+    realResult.sqlError = ctx.result.sqlError;
     realResult.data = ctx.result.data > 0;
     return realResult;
 
@@ -1577,7 +1577,7 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, sql::D
     {
         ctx.bindValue("ffn_id", i.key());
         ctx.FetchSingleValue<int>("id", -1,false, "select id from fanfics where ffn_id = :ffn_id");
-        auto  error = ctx.result.oracleError;
+        auto  error = ctx.result.sqlError;
         if(error.isValid() && error.getActualErrorType() != ESqlErrors::se_no_data_to_be_fetched)
         {
             QLOG_ERROR() << "///ERROR///" << QString::fromStdString(error.text());
@@ -1596,7 +1596,7 @@ DiagnosticSQLResult<bool> ConvertFFNTaggedFicsToDB(QHash<int, int>& hash, sql::D
 
     SqlContext<bool> ctx1(db);
     ctx1.result.success = ctx.result.success;
-    ctx1.result.oracleError = ctx.result.oracleError;
+    ctx1.result.sqlError = ctx.result.sqlError;
     return ctx1.result;
 }
 
@@ -1608,7 +1608,7 @@ DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, sql::Databas
     while(it != itEnd){
         ctx.bindValue("id", it.key());
         ctx.FetchSingleValue<int>("ffn_id", -1, true, "select ffn_id from fanfics where id = :id");
-        auto error = ctx.result.oracleError;
+        auto error = ctx.result.sqlError;
         if(error.isValid() && error.getActualErrorType() != ESqlErrors::se_no_data_to_be_fetched)
         {
             ctx.result.success = false;
@@ -1620,7 +1620,7 @@ DiagnosticSQLResult<bool> ConvertDBFicsToFFN(QHash<int, int>& hash, sql::Databas
 
     SqlContext<bool> ctx1(db);
     ctx1.result.success = ctx.result.success;
-    ctx1.result.oracleError = ctx.result.oracleError;
+    ctx1.result.sqlError = ctx.result.sqlError;
     return ctx1.result;
 }
 
@@ -3759,7 +3759,7 @@ DiagnosticSQLResult<QHash<int, core::AuthorFavFandomStatsPtr>> GetAuthorListFand
 
         if(!ctx.result.success)
         {
-            result.oracleError = ctx.result.oracleError;
+            result.sqlError = ctx.result.sqlError;
             //qDebug() << "GetAuthorListFandomStatistics: " << ctx.result.oracleError;
             result.success = false;
             result.data.clear();
@@ -4029,7 +4029,7 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, sql::Database db)
     ctx.FetchSingleValue<int>("cnt", 0);
     if(!ctx.Success())
     {
-        result.oracleError = ctx.result.oracleError;
+        result.sqlError = ctx.result.sqlError;
         return result;
     }
     result.success = true;
@@ -4045,7 +4045,7 @@ DiagnosticSQLResult<bool> EnsureUUIDForUserDatabase(QUuid id, sql::Database db)
     ctx();
     if(!ctx.Success())
     {
-        result.oracleError = ctx.result.oracleError;
+        result.sqlError = ctx.result.sqlError;
         result.success = false;
         return result;
     }
@@ -4181,9 +4181,10 @@ DiagnosticSQLResult<bool> FillFicDataForList(QSharedPointer<core::Recommendation
 
 DiagnosticSQLResult<QString> GetUserToken(sql::Database db)
 {
-    std::string qs = "Select value from user_settings where name = 'db_uuid'";
+    std::string qs = "Select value from user_settings where name = :db_uuid";
 
     SqlContext<QString> ctx(db, std::move(qs));
+    ctx.bindValue("db_uuid", "db_uuid");
     ctx.FetchSingleValue<QString>("value", "");
     return std::move(ctx.result);
 }
