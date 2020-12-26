@@ -11,6 +11,7 @@ namespace sql{
 template<class> inline constexpr bool always_false_v = false;
 class Variant{
 public:
+    using InternalVariant = std::variant<std::monostate, std::string, int, uint, int64_t, uint64_t, double, QDateTime, bool, QByteArray>;
     Variant();
     Variant(const std::string&);
     Variant(std::string&&);
@@ -38,7 +39,7 @@ public:
     Variant(const QVariant&);
     Variant(QVariant&&v);
 
-    using InternalVariant = std::variant<std::monostate, std::string, int, uint, int64_t, uint64_t, double, QDateTime, bool, QByteArray>;
+
 
     int toInt(bool* success = nullptr) const;
     uint toUInt(bool* success = nullptr)  const;
